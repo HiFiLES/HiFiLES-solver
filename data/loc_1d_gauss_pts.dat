@@ -1,0 +1,101 @@
+// gauss legendre points
+
+if(get_order==1)
+{
+	loc_1d_gauss_pts(0)=-0.577350269189626;
+	loc_1d_gauss_pts(1)=0.577350269189626;
+}
+else if(get_order==2)
+{
+	loc_1d_gauss_pts(0)=-0.774596669241483;
+	loc_1d_gauss_pts(1)=-0.000000000000000;
+	loc_1d_gauss_pts(2)=0.774596669241483;
+}
+else if(get_order==3)
+{
+	loc_1d_gauss_pts(0)=-0.861136311594053;
+	loc_1d_gauss_pts(1)=-0.339981043584856;
+	loc_1d_gauss_pts(2)=0.339981043584856;
+	loc_1d_gauss_pts(3)=0.861136311594053;
+}
+else if(get_order==4)
+{
+	loc_1d_gauss_pts(0)=-0.906179845938664;
+	loc_1d_gauss_pts(1)=-0.538469310105683;
+	loc_1d_gauss_pts(2)=-0.000000000000000;
+	loc_1d_gauss_pts(3)=0.538469310105683;
+	loc_1d_gauss_pts(4)=0.906179845938664;
+}
+else if(get_order==5)
+{
+	loc_1d_gauss_pts(0)=-0.932469514203152;
+	loc_1d_gauss_pts(1)=-0.661209386466264;
+	loc_1d_gauss_pts(2)=-0.238619186083197;
+	loc_1d_gauss_pts(3)=0.238619186083197;
+	loc_1d_gauss_pts(4)=0.661209386466265;
+	loc_1d_gauss_pts(5)=0.932469514203152;
+}
+else if(get_order==6)
+{
+	loc_1d_gauss_pts(0)=-0.949107912342758;
+	loc_1d_gauss_pts(1)=-0.741531185599395;
+	loc_1d_gauss_pts(2)=-0.405845151377397;
+	loc_1d_gauss_pts(3)=0.000000000000000;
+	loc_1d_gauss_pts(4)=0.405845151377397;
+	loc_1d_gauss_pts(5)=0.741531185599394;
+	loc_1d_gauss_pts(6)=0.949107912342758;
+}
+else if(get_order==7)
+{
+	loc_1d_gauss_pts(0)=-0.960289856497536;
+	loc_1d_gauss_pts(1)=-0.796666477413627;
+	loc_1d_gauss_pts(2)=-0.525532409916329;
+	loc_1d_gauss_pts(3)=-0.183434642495650;
+	loc_1d_gauss_pts(4)=0.183434642495650;
+	loc_1d_gauss_pts(5)=0.525532409916329;
+	loc_1d_gauss_pts(6)=0.796666477413627;
+	loc_1d_gauss_pts(7)=0.960289856497536;
+}
+else if(get_order==8)
+{
+	loc_1d_gauss_pts(0)=-0.968160239507626;
+	loc_1d_gauss_pts(1)=-0.836031107326636;
+	loc_1d_gauss_pts(2)=-0.613371432700591;
+	loc_1d_gauss_pts(3)=-0.324253423403809;
+	loc_1d_gauss_pts(4)=0.000000000000000;
+	loc_1d_gauss_pts(5)=0.324253423403809;
+	loc_1d_gauss_pts(6)=0.613371432700591;
+	loc_1d_gauss_pts(7)=0.836031107326636;
+	loc_1d_gauss_pts(8)=0.968160239507626;
+}
+else if(get_order==9)
+{
+	loc_1d_gauss_pts(0)=-0.973906528517172;
+	loc_1d_gauss_pts(1)=-0.865063366688985;
+	loc_1d_gauss_pts(2)=-0.679409568299024;
+	loc_1d_gauss_pts(3)=-0.433395394129247;
+	loc_1d_gauss_pts(4)=-0.148874338981631;
+	loc_1d_gauss_pts(5)=0.148874338981632;
+	loc_1d_gauss_pts(6)=0.433395394129247;
+	loc_1d_gauss_pts(7)=0.679409568299024;
+	loc_1d_gauss_pts(8)=0.865063366688984;
+	loc_1d_gauss_pts(9)=0.973906528517171;
+}
+else if(get_order==10)
+{
+	loc_1d_gauss_pts(0)=-0.978228658146057;
+	loc_1d_gauss_pts(1)=-0.887062599768095;
+	loc_1d_gauss_pts(2)=-0.730152005574049;
+	loc_1d_gauss_pts(3)=-0.519096129206812;
+	loc_1d_gauss_pts(4)=-0.269543155952345;
+	loc_1d_gauss_pts(5)=-0.000000000000000;
+	loc_1d_gauss_pts(6)=0.269543155952345;
+	loc_1d_gauss_pts(7)=0.519096129206812;
+	loc_1d_gauss_pts(8)=0.730152005574049;
+	loc_1d_gauss_pts(9)=0.887062599768095;
+	loc_1d_gauss_pts(10)=0.978228658146057;
+}
+else
+{
+	cout << "ERROR: Not set up for this order ...." << endl;
+}

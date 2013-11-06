@@ -1,0 +1,11 @@
+#
+#Copyright 2011 the Board of Trustees of The Leland Stanford Junior University. All Rights Reserved.
+#Developers (alphabetical by surname): Patrice Castonguay, Antony Jameson, Peter Vincent, David Williams.
+#
+
+NODE=     CPU
+CODE=     DEBUG
+BLAS=     STANDARD_BLAS
+COMP=     GCC
+PARALLEL= MPI
+TECIO=    NO

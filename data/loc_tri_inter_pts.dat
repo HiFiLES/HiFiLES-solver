@@ -1,0 +1,137 @@
+//Points located at the quadrature points from Williams, Shunn "Symmetric quadrature rules for simplexes based on sphere closed-packed 
+//lattice arrangements," Journal of Computational and Applied Mathematics, 2013, submitted
+if(get_order==1)
+{
+    loc_inter_pts(0,0) = -0.6666666666666667;
+    loc_inter_pts(1,0) = 0.3333333333333333;
+    loc_inter_pts(2,0) = -0.6666666666666667;
+ 
+    loc_inter_pts(0,1) = -0.6666666666666667;
+    loc_inter_pts(1,1) = -0.6666666666666667;
+    loc_inter_pts(2,1) = 0.3333333333333333;
+}
+else if(get_order==2)
+{
+    loc_inter_pts(0,0) = -0.8168475729804400;
+    loc_inter_pts(1,0) = -0.1081030181680711;
+    loc_inter_pts(2,0) = 0.6336951459608803;
+    loc_inter_pts(3,0) = -0.7837939636638578;
+    loc_inter_pts(4,0) = -0.1081030181680712;
+    loc_inter_pts(5,0) = -0.8168475729804400;
+    
+    loc_inter_pts(0,1) = -0.8168475729804400;
+    loc_inter_pts(1,1) = -0.7837939636638578;
+    loc_inter_pts(2,1) = -0.8168475729804400;
+    loc_inter_pts(3,1) = -0.1081030181680710;
+    loc_inter_pts(4,1) = -0.1081030181680710;
+    loc_inter_pts(5,1) = 0.6336951459608803;
+}
+else if(get_order==3)
+{
+    loc_inter_pts(0,0) = -0.8888718946604130;
+    loc_inter_pts(1,0) = -0.4089325765282142;
+    loc_inter_pts(2,0) = 0.2684214954914466;
+    loc_inter_pts(3,0) = 0.7777437893208270;
+    loc_inter_pts(4,0) = -0.8594889189632320;
+    loc_inter_pts(5,0) = -0.3333333333333333;
+    loc_inter_pts(6,0) = 0.2684214954914465;
+    loc_inter_pts(7,0) = -0.8594889189632320;
+    loc_inter_pts(8,0) = -0.4089325765282144;
+    loc_inter_pts(9,0) = -0.8888718946604140;
+    
+    loc_inter_pts(0,1) = -0.8888718946604140;
+    loc_inter_pts(1,1) = -0.8594889189632320;
+    loc_inter_pts(2,1) = -0.8594889189632320;
+    loc_inter_pts(3,1) = -0.8888718946604140;
+    loc_inter_pts(4,1) = -0.4089325765282145;
+    loc_inter_pts(5,1) = -0.3333333333333333;
+    loc_inter_pts(6,1) = -0.4089325765282145;
+    loc_inter_pts(7,1) = 0.2684214954914466;
+    loc_inter_pts(8,1) = 0.2684214954914466;
+    loc_inter_pts(9,1) = 0.7777437893208271;
+}
+else if(get_order==4)
+{
+    loc_inter_pts(0,0) = -0.9282582446085320;
+    loc_inter_pts(1,0) = -0.5969922362363997;
+    loc_inter_pts(2,0) = -0.0513824244458427;
+    loc_inter_pts(3,0) = 0.5023672622129675;
+    loc_inter_pts(4,0) = 0.8565164892170650;
+    loc_inter_pts(5,0) = -0.9053750259765680;
+    loc_inter_pts(6,0) = -0.5165412084640661;
+    loc_inter_pts(7,0) = 0.0330824169281324;
+    loc_inter_pts(8,0) = 0.5023672622129675;
+    loc_inter_pts(9,0) = -0.8972351511083140;
+    loc_inter_pts(10,0) = -0.5165412084640662;
+    loc_inter_pts(11,0) = -0.0513824244458428; 
+    loc_inter_pts(12,0) = -0.9053750259765680;
+    loc_inter_pts(13,0) = -0.5969922362363999;
+    loc_inter_pts(14,0) = -0.9282582446085330;
+ 
+    loc_inter_pts(0,1) = -0.9282582446085330;
+    loc_inter_pts(1,1) = -0.9053750259765680;
+    loc_inter_pts(2,1) = -0.8972351511083150;
+    loc_inter_pts(3,1) = -0.9053750259765680;
+    loc_inter_pts(4,1) = -0.9282582446085330;
+    loc_inter_pts(5,1) = -0.5969922362363997;
+    loc_inter_pts(6,1) = -0.5165412084640661;
+    loc_inter_pts(7,1) = -0.5165412084640661;
+    loc_inter_pts(8,1) = -0.5969922362363997;
+    loc_inter_pts(9,1) = -0.0513824244458427;
+    loc_inter_pts(10,1) = 0.0330824169281325;
+    loc_inter_pts(11,1) = -0.0513824244458427;
+    loc_inter_pts(12,1) = 0.5023672622129678;
+    loc_inter_pts(13,1) = 0.5023672622129678;
+    loc_inter_pts(14,1) = 0.8565164892170660;
+}
+else if(get_order==5)
+{
+    loc_inter_pts(0,0) = -0.9437740956346720;
+    loc_inter_pts(1,0) = -0.7028683754582263;
+    loc_inter_pts(2,0) = -0.2856074027686370;
+    loc_inter_pts(3,0) = 0.2099578235502646;
+    loc_inter_pts(4,0) = 0.6358019600569991;
+    loc_inter_pts(5,0) = 0.8875481912693450;
+    loc_inter_pts(6,0) = -0.9329335845987730;
+    loc_inter_pts(7,0) = -0.6457218030613650;
+    loc_inter_pts(8,0) = -0.1889828082651339;
+    loc_inter_pts(9,0) = 0.2914436061227302;
+    loc_inter_pts(10,0) = 0.6358019600569991;
+    loc_inter_pts(11,0) = -0.9243504207816280;
+    loc_inter_pts(12,0) = -0.6220343834697322;
+    loc_inter_pts(13,0) = -0.1889828082651339;
+    loc_inter_pts(14,0) = 0.2099578235502646;
+    loc_inter_pts(15,0) = -0.9243504207816280;
+    loc_inter_pts(16,0) = -0.6457218030613651;
+    loc_inter_pts(17,0) = -0.2856074027686371;
+    loc_inter_pts(18,0) = -0.9329335845987730;
+    loc_inter_pts(19,0) = -0.7028683754582263;
+    loc_inter_pts(20,0) = -0.9437740956346730;
+   
+    loc_inter_pts(0,1) = -0.9437740956346730;
+    loc_inter_pts(1,1) = -0.9329335845987730;
+    loc_inter_pts(2,1) = -0.9243504207816280;
+    loc_inter_pts(3,1) = -0.9243504207816280;
+    loc_inter_pts(4,1) = -0.9329335845987730;
+    loc_inter_pts(5,1) = -0.9437740956346730;
+    loc_inter_pts(6,1) = -0.7028683754582263;
+    loc_inter_pts(7,1) = -0.6457218030613650;
+    loc_inter_pts(8,1) = -0.6220343834697322;
+    loc_inter_pts(9,1) = -0.6457218030613650;
+    loc_inter_pts(10,1) = -0.7028683754582263;
+    loc_inter_pts(11,1) = -0.2856074027686371;
+    loc_inter_pts(12,1) = -0.1889828082651339;
+    loc_inter_pts(13,1) = -0.1889828082651339;
+    loc_inter_pts(14,1) = -0.2856074027686371;
+    loc_inter_pts(15,1) = 0.2099578235502648;
+    loc_inter_pts(16,1) = 0.2914436061227303;
+    loc_inter_pts(17,1) = 0.2099578235502648;
+    loc_inter_pts(18,1) = 0.6358019600569992;
+    loc_inter_pts(19,1) = 0.6358019600569992;
+    loc_inter_pts(20,1) = 0.8875481912693450;
+}
+else
+{
+    cout << "Haven't implemented this order in loc_inter_pts" << endl;
+    exit(1);
+}

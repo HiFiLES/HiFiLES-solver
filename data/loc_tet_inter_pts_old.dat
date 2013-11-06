@@ -1,0 +1,56 @@
+if(get_order==1)
+{
+      loc_inter_pts(0,0)=  0.1708203932499370;
+      loc_inter_pts(1,0)= -0.7236067977499789;
+      loc_inter_pts(2,0)= -0.7236067977499789;
+      loc_inter_pts(3,0)= -0.7236067977499789;
+
+      loc_inter_pts(0,1)= -0.7236067977499789;
+      loc_inter_pts(1,1)= -0.7236067977499789;
+      loc_inter_pts(2,1)= -0.7236067977499789;
+      loc_inter_pts(3,1)=  0.1708203932499370;
+
+      loc_inter_pts(0,2)= -0.7236067977499789;
+      loc_inter_pts(1,2)= -0.7236067977499789;
+      loc_inter_pts(2,2)=  0.1708203932499370;
+      loc_inter_pts(3,2)= -0.7236067977499789;
+}
+else if(get_order==2)
+{
+      loc_inter_pts(0,0)=  0.1368611683936889;
+      loc_inter_pts(1,0)= -0.7122870561312296;
+      loc_inter_pts(2,0)= -0.7122870561312296;
+      loc_inter_pts(3,0)= -0.7122870561312296;
+      loc_inter_pts(4,0)= -1.0000000000000000;
+      loc_inter_pts(5,0)=  0.0000000000000000;
+      loc_inter_pts(6,0)=  0.0000000000000000;
+      loc_inter_pts(7,0)=  0.0000000000000000;
+      loc_inter_pts(8,0)= -1.0000000000000000;
+      loc_inter_pts(9,0)= -1.0000000000000000;
+
+      loc_inter_pts(0,1)= -0.7122870561312296;
+      loc_inter_pts(1,1)= -0.7122870561312296;
+      loc_inter_pts(2,1)= -0.7122870561312296;
+      loc_inter_pts(3,1)=  0.1368611683936889;
+      loc_inter_pts(4,1)=  0.0000000000000000;
+      loc_inter_pts(5,1)= -1.0000000000000000;
+      loc_inter_pts(6,1)=  0.0000000000000000;
+      loc_inter_pts(7,1)= -1.0000000000000000;
+      loc_inter_pts(8,1)=  0.0000000000000000;
+      loc_inter_pts(9,1)= -1.0000000000000000;
+
+      loc_inter_pts(0,2)= -0.7122870561312296;
+      loc_inter_pts(1,2)= -0.7122870561312296;
+      loc_inter_pts(2,2)=  0.1368611683936889;
+      loc_inter_pts(3,2)= -0.7122870561312296;
+      loc_inter_pts(4,2)=  0.0000000000000000;
+      loc_inter_pts(5,2)=  0.0000000000000000;
+      loc_inter_pts(6,2)= -1.0000000000000000;
+      loc_inter_pts(7,2)= -1.0000000000000000;
+      loc_inter_pts(8,2)= -1.0000000000000000;
+      loc_inter_pts(9,2)=  0.0000000000000000;
+}
+else
+{ 
+FatalError("Haven't implemented this order in loc_inter_pts");
+}
