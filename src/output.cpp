@@ -36,7 +36,7 @@
 #endif
 
 #ifdef _GPU
-#include "util.h"
+#include "../include/util.h"
 #endif
 
 using namespace std;
@@ -412,10 +412,10 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   
 	// copy solution to cpu
 #ifdef _GPU
-	for(i=0;i<n_ele_types;i++) {
-    if (mesh_eles(i)->get_n_eles()!=0) {
+	for(i=0;i<FlowSol->n_ele_types;i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       
-		  mesh_eles(i)->cp_disu_upts_gpu_cpu();
+		  FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
       
     }
   }
@@ -993,9 +993,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   
 	// copy solution to cpu
 #ifdef _GPU
-	for(i=0;i<n_ele_types;i++)
+	for(i=0;i<FlowSol->n_ele_types;i++)
   {
-		mesh_eles(i)->cp_disu_upts_gpu_cpu();
+		FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
   }
 #endif
 	
@@ -1376,7 +1376,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 	
 #ifdef _GPU
   
-	for(i=0;i<n_ele_types;i++)
+	for(i=0;i<FlowSol->n_ele_types;i++)
 	{
 		//mesh_eles(i)->rm_tdisu_upts_cpu();
 		//mesh_eles(i)->rm_detjac_upts_cpu();
@@ -2782,10 +2782,10 @@ void write_restart(int in_file_num, struct solution* FlowSol)
   
 	// copy solution to cpu
 #ifdef _GPU
-	for(int i=0;i<n_ele_types;i++) {
-    if (mesh_eles(i)->get_n_eles()!=0) {
+	for(int i=0;i<FlowSol->n_ele_types;i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       
-		  mesh_eles(i)->cp_disu_upts_gpu_cpu();
+		  FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
       
     }
   }
@@ -2842,13 +2842,13 @@ void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
   
 	// copy solution to cpu
 #ifdef _GPU
-	for(int i=0;i<n_ele_types;i++) {
-    if (mesh_eles(i)->get_n_eles()!=0) {
+	for(int i=0;i<FlowSol->n_ele_types;i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       
-  		mesh_eles(i)->cp_disu_upts_gpu_cpu();
-      if (viscous==1)
+  		FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+      if (FlowSol->viscous==1)
       {
-  		  mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
+  		  FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
       }
     }
   }
@@ -2936,14 +2936,14 @@ void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
 	// copy solution to cpu
 #ifdef _GPU
   
-	for(int i=0;i<n_ele_types;i++)
+	for(int i=0;i<FlowSol->n_ele_types;i++)
 	{
-    if (mesh_eles(i)->get_n_eles()!=0)
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
 		{
-  		mesh_eles(i)->cp_disu_upts_gpu_cpu();
-      if (viscous==1)
+  		FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+      if (FlowSol->viscous==1)
       {
-  		  mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
+  		  FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
       }
     }
   }
@@ -3014,13 +3014,13 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 	
   // copy solution to cpu
 #ifdef _GPU
-	for(int i=0;i<n_ele_types;i++) {
-    if (mesh_eles(i)->get_n_eles()!=0) {
+	for(int i=0;i<FlowSol->n_ele_types;i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       
-		  mesh_eles(i)->cp_disu_upts_gpu_cpu();
-      if (viscous==1)
+		  FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+      if (FlowSol->viscous==1)
       {
-  		  mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
+  		  FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
       }
     }
   }
@@ -3183,10 +3183,10 @@ int monitor_residual(int in_file_num, struct solution* FlowSol)
   
 #ifdef _GPU
 	// copy residual to cpu
-	for(int i=0;i<n_ele_types;i++) {
-    if (mesh_eles(i)->get_n_eles()!=0) {
+	for(int i=0;i<FlowSol->n_ele_types;i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       
-		  mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
+		  FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
       
     }
   }
@@ -3262,10 +3262,10 @@ void check_stability(struct solution* FlowSol)
   
 	// copy solution to cpu
 #ifdef _GPU
-	for(int i=0;i<n_ele_types;i++) {
-    if (mesh_eles(i)->get_n_eles()!=0) {
+	for(int i=0;i<FlowSol->n_ele_types;i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       
-		  mesh_eles(i)->cp_disu_upts_gpu_cpu();
+		  FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
       
     }
   }

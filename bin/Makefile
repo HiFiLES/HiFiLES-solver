@@ -1,7 +1,13 @@
+# \file Makefile
+# \brief _____________________________
+# \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
+#                          Peter Vincent, David Williams (alphabetical by surname).
+#         - Current development: Aerospace Computing Laboratory (ACL) directed
+#                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
+# \version 1.0.0
 #
-#Copyright 2011 the Board of Trustees of The Leland Stanford Junior University. All Rights Reserved.
-#Developers (alphabetical by surname): Patrice Castonguay, Antony Jameson, Peter Vincent, David Williams.
-#
+# HiFiLES (High Fidelity Large Eddy Simulation).
+# Copyright (C) 2013 Aerospace Computing Laboratory.
 
 # Settings
 
@@ -25,29 +31,34 @@ ifeq ($(NODE),GPU)
 NVCC	= nvcc
 endif
 
-# Options
+# Pre-processing macros
 
-OPTS    = -g -I include -D_$(NODE) -D_$(BLAS) 
+OPTS    = -D_$(NODE) -D_$(BLAS) 
+
+ifeq ($(PARALLEL),MPI)
+	OPTS    += -D_$(PARALLEL) 
+endif
+
+# Includes
+
+OPTS    += -I /include 
 
 ifeq ($(NODE),GPU)
-	OPTS	+= -I/usr/local/cuda/include 
+	OPTS	+= -I $(CUDA_DIR)/include 
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
-	OPTS	+= -I /usr/local/cblas/include
+	OPTS	+= -I $(BLAS_DIR)/include
 endif
 
 ifeq ($(TECIO),YES)
-	TECIO_DIR = /usr/local/tecio-2013
 	OPTS += -I $(TECIO_DIR)/tecsrc
 endif
 
 ifeq ($(PARALLEL),MPI)
-	OPTS += -D_$(PARALLEL)
 	OPTS	+= -I /usr/include/mpich2-x86_64/
 	OPTS	+= -I /usr/lib64/openmpi/bin/
 
-	PARMETIS_DIR = /usr/local/parmetis-4.0.3
 	OPTS += -I $(PARMETIS_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/metis/include
 endif
@@ -84,11 +95,11 @@ ifeq ($(BLAS),ACCELERATE_BLAS)
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
-	LIBS	+= -L /usr/local/cblas/lib -lcblas
+	LIBS	+= -L $(BLAS_DIR)/lib -lcblas -latlas
 endif
 
 ifeq ($(NODE),GPU)
-	LIBS	+= -L /usr/local/cuda/lib64 -lcudart -lcublas -lcusparse -lm
+	LIBS	+= -L $(CUDA_DIR)/lib64 -lcudart -lcublas -lcusparse -lm
 endif
 
 
@@ -96,7 +107,7 @@ endif
 
 SRC	= ../src/
 vpath %.cpp ../src
-vpath %.cu ../cuda
+vpath %.cu ../src
 vpath %.h ../include
 
 # Objects
@@ -104,7 +115,7 @@ vpath %.h ../include
 OBJS    = HiFiLES.o geometry.o solver.o output.o eles.o eles_tris.o eles_quads.o eles_hexas.o eles_tets.o eles_pris.o inters.o int_inters.o bdy_inters.o funcs.o flux.o global.o input.o matrix.o cubature_1d.o cubature_tri.o cubature_quad.o cubature_hexa.o cubature_tet.o
 
 ifeq ($(NODE),GPU)
-	OBJS +=  cuda_kernels.o
+	OBJS	+=  cuda_kernels.o
 endif
 
 ifeq ($(PARALLEL),MPI)
@@ -113,7 +124,7 @@ ifeq ($(PARALLEL),MPI)
 endif
 	
 ifeq ($(TECIO),YES)
-	OBJS += $(TECIO_DIR)/libtecio.a
+	OBJS += $(TECIO_DIR)/tecio.a
 endif
 
 # Compile
@@ -186,7 +197,7 @@ cubature_hexa.o: cubature_hexa.cpp cubature_hexa.h error.h
 cubature_tet.o: cubature_tet.cpp cubature_tet.h error.h
 	$(CC) $(OPTS) -c $(SRC)cubature_tet.cpp
 
-flux.o: flux.cpp flux.h array.h	error.h input.h matrix.h error.h
+flux.o: flux.cpp flux.h array.h	error.h input.h error.h
 	$(CC) $(OPTS) -c $(SRC)flux.cpp
 	
 input.o: input.cpp input.h error.h

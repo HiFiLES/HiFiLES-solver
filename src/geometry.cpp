@@ -36,7 +36,7 @@
 #endif
 
 #ifdef _GPU
-#include "util.h"
+#include "../include/util.h"
 #endif
 
 using namespace std;
@@ -397,11 +397,11 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 #ifdef _GPU
   if (in_run_type==0)
   {
-	  for(int i=0;i<n_ele_types;i++) {
-      if (mesh_eles(i)->get_n_eles()!=0) {
+	  for(int i=0;i<FlowSol->n_ele_types;i++) {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
         
 	      if (FlowSol->rank==0) cout << "Moving eles to GPU ... " << endl;
-	  	  mesh_eles(i)->mv_all_cpu_gpu();
+	  	  FlowSol->mesh_eles(i)->mv_all_cpu_gpu();
       }
     }
   }
@@ -748,11 +748,11 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
   if (in_run_type==0)
   {
 	  if (FlowSol->rank==0) cout << "Moving interfaces to GPU ... " << endl;
-	  for(int i=0;i<n_int_inter_types;i++)
-	  	mesh_int_inters(i).mv_all_cpu_gpu();
+	  for(int i=0;i<FlowSol->n_int_inter_types;i++)
+	  	FlowSol->mesh_int_inters(i).mv_all_cpu_gpu();
     
-	  for(int i=0;i<n_bdy_inter_types;i++)
-	  	mesh_bdy_inters(i).mv_all_cpu_gpu();
+	  for(int i=0;i<FlowSol->n_bdy_inter_types;i++)
+	  	FlowSol->mesh_bdy_inters(i).mv_all_cpu_gpu();
   }
 #endif
   

@@ -41,7 +41,7 @@ extern "C"
 #include "cuda.h"
 #include "cuda_runtime_api.h"
 #include "cublas.h"
-#include "cuda_kernels.h"
+#include "../include/cuda_kernels.h"
 #endif
 
 #include "../include/global.h"

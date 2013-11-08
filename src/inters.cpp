@@ -24,7 +24,7 @@
 #include "../include/error.h"
 
 #if defined _GPU
-#include "../cuda/cuda_kernels.h"
+#include "../include/cuda_kernels.h"
 #endif
 
 #ifdef _MPI
