@@ -16,14 +16,10 @@ COMP=     GCC
 PARALLEL= MPI
 TECIO=    NO
 
-#BLAS_DIR= /usr/local/cblas
-BLAS_DIR= /usr/local/atlas
+BLAS_DIR= /usr/local/cblas
 
-#PARMETIS_DIR = /usr/local/parmetis-4.0.3
-PARMETIS_DIR = ../lib/parmetis-4.0.2
+PARMETIS_DIR = /usr/local/parmetis-4.0.3
 
-#TECIO_DIR = /usr/local/tecio-2013
-TECIO_DIR = ../lib/tecio-2008
+TECIO_DIR = lib/tecio-2008
 
-#CUDA_DIR = /usr/local/cuda
 CUDA_DIR = /usr/local/cuda
