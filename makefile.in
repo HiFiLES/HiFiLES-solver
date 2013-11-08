@@ -16,9 +16,9 @@ COMP=     GCC
 PARALLEL= MPI
 TECIO=    NO
 
-BLAS_DIR= /usr/local/cblas
+BLAS_DIR= /usr/local/atlas
 
-PARMETIS_DIR = /usr/local/parmetis-4.0.3
+PARMETIS_DIR = lib/parmetis-4.0.2
 
 TECIO_DIR = lib/tecio-2008
 
