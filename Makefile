@@ -122,7 +122,7 @@ endif
 
 ifeq ($(PARALLEL),MPI)
 	OBJS += $(OBJ)mpi_inters.o
-	OBJS += $(PARMETIS_DIR)/build/Darwin-x86_64/libparmetis/libparmetis.a $(PARMETIS_DIR)/build/Darwin-x86_64/libmetis/libmetis.a
+	OBJS += $(PARMETIS_DIR)/build/Linux-x86_64/libparmetis/libparmetis.a $(PARMETIS_DIR)/build/Linux-x86_64/libmetis/libmetis.a
 endif
 	
 ifeq ($(TECIO),YES)
