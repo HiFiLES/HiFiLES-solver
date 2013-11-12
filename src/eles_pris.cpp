@@ -11,6 +11,7 @@
  * Copyright (C) 2013 Aerospace Computing Laboratory.
  */
 
+#include <iomanip>
 #include <iostream>
 #include <cmath>
 
@@ -18,7 +19,6 @@
 #include "../include/eles.h"
 #include "../include/eles_pris.h"
 #include "../include/array.h"
-#include "../include/matrix.h"
 #include "../include/funcs.h"
 #include "../include/error.h"
 #include "../include/cubature_tri.h"
@@ -899,13 +899,13 @@ void eles_pris::set_vandermonde_tri()
 			vandermonde_tri(i,j) = eval_dubiner_basis_2d(loc_upts_pri_tri(0,i),loc_upts_pri_tri(1,i),j,order);
 
 	// Store its inverse
-	inv_vandermonde_tri = vandermonde_tri.get_inv();
+	inv_vandermonde_tri = inv_array(vandermonde_tri);
 }
 
 // initialize the vandermonde matrix
 void eles_pris::set_vandermonde_tri_restart()
 {
-  matrix vandermonde_tri_rest;
+  array<double> vandermonde_tri_rest;
   vandermonde_tri_rest.setup(n_upts_tri_rest,n_upts_tri_rest);
 
 	// create the vandermonde matrix
@@ -914,7 +914,7 @@ void eles_pris::set_vandermonde_tri_restart()
 			vandermonde_tri_rest(i,j) = eval_dubiner_basis_2d(loc_upts_pri_tri_rest(0,i),loc_upts_pri_tri_rest(1,i),j,order_rest);
 
 	// Store its inverse
-	inv_vandermonde_tri_rest = vandermonde_tri_rest.get_inv();
+	inv_vandermonde_tri_rest = inv_array(vandermonde_tri_rest);
 }
 
 int eles_pris::read_restart_info(ifstream& restart_file)

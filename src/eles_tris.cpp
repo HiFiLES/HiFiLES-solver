@@ -11,6 +11,7 @@
  * Copyright (C) 2013 Aerospace Computing Laboratory.
  */
 
+#include <iomanip>
 #include <iostream>
 #include <cmath>
 
@@ -34,7 +35,6 @@ extern "C"
 #include "../include/eles.h"
 #include "../include/eles_tris.h"
 #include "../include/array.h"
-#include "../include/matrix.h"
 #include "../include/funcs.h"
 #include "../include/cubature_1d.h"
 #include "../include/cubature_tri.h"
@@ -617,6 +617,7 @@ void eles_tris::set_tnorm_fpts(void)
 void eles_tris::set_vandermonde(void)
 {
   vandermonde.setup(n_upts_per_ele,n_upts_per_ele);
+  inv_vandermonde.setup(n_upts_per_ele,n_upts_per_ele);
 
 	// create the vandermonde matrix
 	for (int i=0;i<n_upts_per_ele;i++)
@@ -624,7 +625,7 @@ void eles_tris::set_vandermonde(void)
 			vandermonde(i,j) = eval_dubiner_basis_2d(loc_upts(0,i),loc_upts(1,i),j,order);
 
 	// Store its inverse
-	inv_vandermonde = vandermonde.get_inv();
+	inv_vandermonde = inv_array(vandermonde);
 }
 
 // initialize the vandermonde matrix for the restart file
@@ -632,6 +633,7 @@ void eles_tris::set_vandermonde_restart()
 {
   //matrix vandermonde_rest;
   vandermonde_rest.setup(n_upts_per_ele_rest,n_upts_per_ele_rest);
+  inv_vandermonde_rest.setup(n_upts_per_ele_rest,n_upts_per_ele_rest);
 
 	// create the vandermonde matrix
 	for (int i=0;i<n_upts_per_ele_rest;i++)
@@ -639,7 +641,7 @@ void eles_tris::set_vandermonde_restart()
 			vandermonde_rest(i,j) = eval_dubiner_basis_2d(loc_upts_rest(0,i),loc_upts_rest(1,i),j,order_rest);
 
 	// Store its inverse
-	inv_vandermonde_rest = vandermonde_rest.get_inv();
+	inv_vandermonde_rest = inv_array(vandermonde_rest);
 }
 
 /*! read restart info */

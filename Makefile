@@ -114,7 +114,7 @@ vpath %.h include
 
 # Objects
 
-OBJS    = $(OBJ)HiFiLES.o $(OBJ)geometry.o $(OBJ)solver.o $(OBJ)output.o $(OBJ)eles.o $(OBJ)eles_tris.o $(OBJ)eles_quads.o $(OBJ)eles_hexas.o $(OBJ)eles_tets.o $(OBJ)eles_pris.o $(OBJ)inters.o $(OBJ)int_inters.o $(OBJ)bdy_inters.o $(OBJ)funcs.o $(OBJ)flux.o $(OBJ)global.o $(OBJ)input.o $(OBJ)matrix.o $(OBJ)cubature_1d.o $(OBJ)cubature_tri.o $(OBJ)cubature_quad.o $(OBJ)cubature_hexa.o $(OBJ)cubature_tet.o
+OBJS    = $(OBJ)HiFiLES.o $(OBJ)geometry.o $(OBJ)solver.o $(OBJ)output.o $(OBJ)eles.o $(OBJ)eles_tris.o $(OBJ)eles_quads.o $(OBJ)eles_hexas.o $(OBJ)eles_tets.o $(OBJ)eles_pris.o $(OBJ)inters.o $(OBJ)int_inters.o $(OBJ)bdy_inters.o $(OBJ)funcs.o $(OBJ)flux.o $(OBJ)global.o $(OBJ)input.o $(OBJ)cubature_1d.o $(OBJ)cubature_tri.o $(OBJ)cubature_quad.o $(OBJ)cubature_hexa.o $(OBJ)cubature_tet.o
 
 ifeq ($(NODE),GPU)
 	OBJS	+=  $(OBJ)cuda_kernels.o
@@ -158,22 +158,22 @@ $(OBJ)solver.o: solver.cpp solver.h input.h  error.h
 $(OBJ)output.o: output.cpp output.h input.h  error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)eles.o: eles.cpp eles.h array.h error.h input.h matrix.h error.h
+$(OBJ)eles.o: eles.cpp eles.h array.h error.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
-$(OBJ)eles_tris.o: eles_tris.cpp eles_tris.h eles.h funcs.h input.h array.h matrix.h cubature_1d.h error.h
+$(OBJ)eles_tris.o: eles_tris.cpp eles_tris.h eles.h funcs.h input.h array.h cubature_1d.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)eles_quads.o: eles_quads.cpp eles_quads.h eles.h funcs.h input.h array.h matrix.h error.h
+$(OBJ)eles_quads.o: eles_quads.cpp eles_quads.h eles.h funcs.h input.h array.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)eles_hexas.o: eles_hexas.cpp eles_hexas.h eles.h funcs.h input.h array.h matrix.h error.h
+$(OBJ)eles_hexas.o: eles_hexas.cpp eles_hexas.h eles.h funcs.h input.h array.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)eles_tets.o: eles_tets.cpp eles_tets.h eles.h funcs.h input.h array.h matrix.h error.h cubature_tri.h
+$(OBJ)eles_tets.o: eles_tets.cpp eles_tets.h eles.h funcs.h input.h array.h error.h cubature_tri.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)eles_pris.o: eles_pris.cpp eles_pris.h eles.h funcs.h input.h array.h matrix.h error.h
+$(OBJ)eles_pris.o: eles_pris.cpp eles_pris.h eles.h funcs.h input.h array.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
 $(OBJ)inters.o: inters.cpp inters.h flux.h funcs.h input.h error.h
@@ -191,9 +191,6 @@ $(OBJ)mpi_inters.o: mpi_inters.cpp mpi_inters.h inters.h flux.h funcs.h input.h 
 endif
 
 $(OBJ)funcs.o: funcs.cpp funcs.h input.h error.h
-	$(CC) $(OPTS)  -c -o $@ $<
-
-$(OBJ)matrix.o: matrix.cpp matrix.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
 $(OBJ)cubature_1d.o: cubature_1d.cpp cubature_1d.h error.h

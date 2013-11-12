@@ -15,7 +15,6 @@
 
 #include "eles.h"
 #include "array.h"
-#include "matrix.h"
 
 class eles_tris: public eles
 {	
@@ -106,10 +105,10 @@ class eles_tris: public eles
 	void set_vandermonde_restart();	
 
 	// members
-	matrix vandermonde;
-	matrix vandermonde_rest;
-	matrix inv_vandermonde;
-	matrix inv_vandermonde_rest;
+	array<double> vandermonde;
+	array<double> vandermonde_rest;
+	array<double> inv_vandermonde;
+	array<double> inv_vandermonde_rest;
 
   array<double> loc_1d_fpts;
 

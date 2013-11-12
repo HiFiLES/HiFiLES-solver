@@ -15,7 +15,6 @@
 
 #include "eles.h"
 #include "array.h"
-#include "matrix.h"
 
 class eles_tets: public eles
 {	
@@ -84,14 +83,11 @@ class eles_tets: public eles
 
   void fill_opp_3(array<double>& opp_3);
 
-  void get_opp_3_dg_tet(matrix& opp_3_dg);
+  void get_opp_3_dg_tet(array<double>& opp_3_dg);
 	
   double eval_div_dg_tet(int in_index, array<double>& loc);
 
-  void compute_filt_matrix_tet(matrix& Filt, int vcjh_scheme_tet, double c_tet);
-
-
-
+  void compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet, double c_tet);
 
 	/*! evaluate nodal shape basis */
 	double eval_nodal_s_basis(int in_index, array<double> in_loc, int in_n_spts);
@@ -115,8 +111,8 @@ class eles_tets: public eles
 	void set_vandermonde_restart();	
 
 	// members
-  matrix vandermonde;
-	matrix inv_vandermonde;
-	matrix inv_vandermonde_rest;
+  array<double> vandermonde;
+	array<double> inv_vandermonde;
+	array<double> inv_vandermonde_rest;
 
 };
