@@ -11,6 +11,7 @@
  * Copyright (C) 2013 Aerospace Computing Laboratory.
  */
 
+#include <iomanip>
 #include <iostream>
 #include <cmath>
 
@@ -1164,7 +1165,7 @@ void eles_hexas::set_vandermonde(void)
 			vandermonde(i,j) = eval_legendre(loc_1d_upts(i),j);
 
 	// Store its inverse
-	inv_vandermonde = vandermonde.get_inv();
+	inv_vandermonde = inv_array(vandermonde);
 }
 
 // evaluate nodal basis

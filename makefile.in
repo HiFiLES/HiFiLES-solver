@@ -20,7 +20,7 @@ BLAS_DIR= /usr/local/atlas
 
 PARMETIS_DIR = lib/parmetis-4.0.2
 
-PARMETIS_BUILD_DIR = /usr/local/parmetis-4.0.2/build/Linux-x86_64
+PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/build/Linux-x86_64
 
 TECIO_DIR = lib/tecio-2008
 

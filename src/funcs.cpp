@@ -11,6 +11,8 @@
  * Copyright (C) 2013 Aerospace Computing Laboratory.
  */
 
+#include <iomanip>
+#include <iostream>
 #include <cmath>
 
 #if defined _ACCELERATE_BLAS
@@ -30,7 +32,6 @@ extern "C"
 #endif
 
 #include "../include/funcs.h"
-#include "../include/matrix.h"
 #include "../include/array.h"
 #include "../include/cubature_1d.h"
 #include "../include/global.h"
@@ -217,38 +218,21 @@ double eval_d_vcjh_1d(double in_r, int in_mode, int in_order, double in_eta)
 }
 
 
-void get_opp_3_tri(array<double>& opp_3, array<double>& loc_upts_tri, array<double>& loc_1d_fpts, matrix& vandermonde_tri, matrix& inv_vandermonde_tri, int n_upts_per_tri, int order, double c_tri, int vcjh_scheme_tri)
+void get_opp_3_tri(array<double>& opp_3, array<double>& loc_upts_tri, array<double>& loc_1d_fpts, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_per_tri, int order, double c_tri, int vcjh_scheme_tri)
 {
 
-  matrix Filt(n_upts_per_tri,n_upts_per_tri);
-  matrix opp_3_dg(n_upts_per_tri, 3*(order+1));
-  matrix m_temp;
+  array<double> Filt(n_upts_per_tri,n_upts_per_tri);
+  array<double> opp_3_dg(n_upts_per_tri, 3*(order+1));
+  array<double> m_temp;
 
   compute_filt_matrix_tri(Filt,vandermonde_tri,inv_vandermonde_tri,n_upts_per_tri,order,c_tri,vcjh_scheme_tri,loc_upts_tri);
 
   get_opp_3_dg(opp_3_dg, loc_upts_tri, loc_1d_fpts, n_upts_per_tri, order);
-
-  //cout << "opp_3_dg" << endl;
-  //opp_3_dg.print();
-  //cout << endl;
-
-  m_temp = Filt*opp_3_dg;
-
-  //cout << "opp_3_vcjh" << endl;
-  //m_temp.print();
-  //cout << endl;
-
-  for (int i=0;i<n_upts_per_tri;i++)
-  {
-    for (int j=0;j<3*(order+1);j++)
-    {
-      opp_3(i,j) = m_temp(i,j);
-    }
-  }
-
+  m_temp = mult_arrays(Filt,opp_3_dg);
+  opp_3 = array<double> (m_temp);
 }
 
-void get_opp_3_dg(matrix& opp_3_dg, array<double>& loc_upts_tri, array<double>& loc_1d_fpts, int n_upts_per_tri, int order)
+void get_opp_3_dg(array<double>& opp_3_dg, array<double>& loc_upts_tri, array<double>& loc_1d_fpts, int n_upts_per_tri, int order)
 {
 
   int i,j,k;
@@ -269,28 +253,18 @@ void get_opp_3_dg(matrix& opp_3_dg, array<double>& loc_upts_tri, array<double>& 
 			opp_3_dg(j,i)=eval_div_dg_tri(loc,edge,edge_fpt,order,loc_1d_fpts);
 		}
 	}
-
-
 }
 
 // Compute a modal filter matrix, given Vandermonde matrix and inverse
-void compute_modal_filter(array <double>& filter_upts, matrix& vandermonde, matrix& inv_vandermonde, int N)
+void compute_modal_filter(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N)
 {
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
 	int i,j;
-	array <double> van(N,N),invvan(N,N);
 	array <double> modal(N,N), mtemp(N,N);
-	for(i=0;i<N;i++)
-	{
-		for(j=0;j<N;j++)
-		{
-			modal(i,j)=0.0;
-			filter_upts(i,j) = 0.0;
-			van(i,j) = vandermonde(i,j);
-			invvan(i,j) = inv_vandermonde(i,j);
-		}
-	}
+
+	zero_array(modal);
+	zero_array(filter_upts);
 
 	// Modal coefficients
 	double eta,Cp;
@@ -309,49 +283,48 @@ void compute_modal_filter(array <double>& filter_upts, matrix& vandermonde, matr
 	cout<<"modal coeffs:"<<endl;
 	modal.print();
 
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,van.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
+	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
 
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,invvan.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
 	#else // inefficient matrix multiplication
 
 	// TODO: finish coding
 	int i,j;
-	matrix mtemp(N,N), filt(N,N);
-
-	for(i=0;i<N;i++)
-		for(j=0;j<N;j++)
-			filt(i,j) = 0.0;
+	array<double> mtemp(N,N);
 
 	for(i=0;i<N-1;i++)
-		filt(i,i) = 1.0;
+		filter_upts(i,i) = 1.0;
 
-	mtemp = inv_vandermonde*filt;
-	filt = mtemp*vandermonde;
-
-	for(i=0;i<N;i++)
-		for(j=0;j<N;j++)
-			filter_upts(i,j) = filt(i,j);
+	mtemp = mult_arrays(inv_vandermonde,filter_upts);
+	filter_upts = mult_arrays(mtemp,vandermonde);
 
 	#endif
 }
 
-void compute_filt_matrix_tri(matrix& Filt, matrix& vandermonde_tri, matrix& inv_vandermonde_tri, int n_upts_tri, int order, double c_tri, int vcjh_scheme_tri, array<double>& loc_upts_tri)
+void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_tri, int order, double c_tri, int vcjh_scheme_tri, array<double>& loc_upts_tri)
 {
 
   // -----------------
   // VCJH Filter
   // -----------------
-  matrix K;
-  matrix mass_matrix;
-  matrix mtemp_0, mtemp_1, mtemp_2;
-  
-  array<matrix> D_high_order;
-  array<matrix> D_T_D;
-    
   double ap;
   double c_plus;
   double c_plus_1d, c_sd_1d, c_hu_1d;
+
+  array<double> c_coeff(order+1);
+  array<double> K(n_upts_tri,n_upts_tri);
+  array<double> mass_matrix(n_upts_tri,n_upts_tri);
+  array<double> Identity(n_upts_tri,n_upts_tri);
+  array<double> mtemp_0, mtemp_1;
+  array<double> Filt_dubiner(n_upts_tri,n_upts_tri);
+  array<double> Dr(n_upts_tri,n_upts_tri), Ds(n_upts_tri,n_upts_tri);
+  array<double> tempr(n_upts_tri,n_upts_tri), temps(n_upts_tri,n_upts_tri);
+  array<double> D_high_order_trans(n_upts_tri,n_upts_tri);
+  array<double> vandermonde_tri_trans(n_upts_tri,n_upts_tri);
+
+  array<array <double> > D_high_order;
+  array<array <double> > D_T_D;
   
   // 1D prep
   ap = 1./pow(2.0,order)*factorial(2*order)/ (factorial(order)*factorial(order));
@@ -410,54 +383,26 @@ void compute_filt_matrix_tri(matrix& Filt, matrix& vandermonde_tri, matrix& inv_
   cout << "c_tri " << c_tri << endl;
   
   run_input.c_tri = c_tri;
-  
-  matrix Filt_dubiner(n_upts_tri,n_upts_tri);
-
-  // Compute the Dr and Ds operators based on position of solution points
-  matrix Dr,Ds;
-  Dr.setup(n_upts_tri,n_upts_tri);
-  Ds.setup(n_upts_tri,n_upts_tri);
 
 	// Evaluate the derivative normalized of Dubiner basis at position in_loc
 	for (int i=0;i<n_upts_tri;i++) {
     for (int j=0;j<n_upts_tri;j++) {
-      Dr(i,j) = eval_dr_dubiner_basis_2d(loc_upts_tri(0,i),loc_upts_tri(1,i),j,order);
-      Ds(i,j) = eval_ds_dubiner_basis_2d(loc_upts_tri(0,i),loc_upts_tri(1,i),j,order);
+      tempr(i,j) = eval_dr_dubiner_basis_2d(loc_upts_tri(0,i),loc_upts_tri(1,i),j,order);
+      temps(i,j) = eval_ds_dubiner_basis_2d(loc_upts_tri(0,i),loc_upts_tri(1,i),j,order);
     }
   }
 
-  
   //Convert to nodal derivatives
-  Dr = Dr*inv_vandermonde_tri;
-  Ds = Ds*inv_vandermonde_tri;
+  Dr = mult_arrays(tempr,inv_vandermonde_tri);
+  Ds = mult_arrays(temps,inv_vandermonde_tri);
 
-  //cout << "Dr nodal" << endl;
-  //Dr.print();
-  //cout << endl;
-  //cout << "Dr dubiner" << endl;
-  //(Dr*vandermonde_tri).print();
-  //cout << endl;
+	//Create identity matrix
+  zero_array(Identity);
 
-  //cout << "Ds nodal" << endl;
-  //Ds.print();
-  //cout << endl;
-  //cout << "Ds dubiner" << endl;
-  //(Ds*vandermonde_tri).print();
-  //cout << endl;
-
-  matrix Identity(n_upts_tri,n_upts_tri);
-  for (int i=0;i<n_upts_tri;i++) {
-    for (int j=0;j<n_upts_tri;j++) {
-      if (i==j)
-        Identity(i,j) = 1.;
-      else
-        Identity(i,j) = 0.;
-    }
-  }
+  for (int i=0;i<n_upts_tri;++i)
+    Identity(i,i) = 1.;
 
 	// Set array with binomial coefficients multiplied by value of c
-  array<double> c_coeff(order+1);
-
 	for(int k=0; k<(order+1);k++) {
 		c_coeff(k) = (1./n_upts_tri)*(factorial(order)/( factorial(k)*factorial(order-k) ));
     //cout << "k=" << k << "coeff= " << c_coeff(k) << endl;
@@ -467,61 +412,53 @@ void compute_filt_matrix_tri(matrix& Filt, matrix& vandermonde_tri, matrix& inv_
   D_T_D.setup(order+1);
 
   // Initialize K to zero
-  K.setup(n_upts_tri,n_upts_tri);
-
-  for (int i=0;i<n_upts_tri;i++) {
-    for (int j=0;j<n_upts_tri;j++)  {
-      K(i,j) = 0.;
-    }
-  }
+  zero_array(K);
 
   // Compute D_transpose*D
   for (int k=0;k<(order+1);k++)
   {
     D_high_order(k).setup(n_upts_tri,n_upts_tri);
     int m = order-k;
-    D_high_order(k) = Identity;
+    D_high_order(k) = array<double> (Identity);
     for (int k2=0;k2<k;k2++)
-      D_high_order(k) = D_high_order(k)*Ds;
+      D_high_order(k) = mult_arrays(D_high_order(k),Ds);
     for (int m2=0;m2<m;m2++)
-      D_high_order(k) = D_high_order(k)*Dr;
+      D_high_order(k) = mult_arrays(D_high_order(k),Dr);
 
-    D_T_D(k) = D_high_order(k).get_trans()*D_high_order(k);
-
-    //cout << "k=" << k << endl;
-    //(D_high_order(k)*vandermonde_tri).print();
-
-    //cout << endl;
-    //mtemp_2 = vandermonde_tri.get_trans()*D_T_D(k)*vandermonde_tri;
-    //mtemp_2.print();
-    //cout << endl;
+    D_high_order_trans = transpose_array(D_high_order(k));
+    D_T_D(k) = mult_arrays(D_high_order_trans,D_high_order(k));
 
     // Scale by c_coeff
-    for (int i=0;i<n_upts_tri;i++)
-      for (int j=0;j<n_upts_tri;j++)
+    for (int i=0;i<n_upts_tri;i++) {
+      for (int j=0;j<n_upts_tri;j++) {
         D_T_D(k)(i,j) = c_tri*c_coeff(k)*D_T_D(k)(i,j); 
-
-    K = K + D_T_D(k); //without jacobian scaling
+        K(i,j) += D_T_D(k)(i,j); //without jacobian scaling
+      }
+    }
   }
 
   //mass
-  mtemp_0 = vandermonde_tri*vandermonde_tri.get_trans();
-  mass_matrix = mtemp_0.get_inv();  //without jacobian scaling
+  vandermonde_tri_trans = transpose_array(vandermonde_tri);
+  mtemp_0 = mult_arrays(vandermonde_tri,vandermonde_tri_trans);
+  mass_matrix = inv_array(mtemp_0);  //without jacobian scaling
 
   //filter
-  mtemp_1 = Identity + mass_matrix.get_inv()*K;
-  Filt = mtemp_1.get_inv();
-  Filt_dubiner = inv_vandermonde_tri*Filt*vandermonde_tri;
+  mtemp_1 = array<double>(mtemp_0);
+  mtemp_1 = mult_arrays(mtemp_1,K);
+  for (int i=0;i<n_upts_tri;i++)
+    for (int j=0;j<n_upts_tri;j++)
+      mtemp_1(i,j) += Identity(i,j);
+
+  Filt = inv_array(mtemp_1);
+  Filt_dubiner = mult_arrays(inv_vandermonde_tri,Filt);
+  Filt_dubiner = mult_arrays(Filt_dubiner,vandermonde_tri);
 
   //cout << "Filt" << endl;
   //Filt.print();
-
-  cout << endl;
-    
+  //cout << endl;
   //cout << "Filt_dubiner" << endl;
   //Filt_dubiner.print();
   
-
   /*
   // ------------------------
   // Diagonal filter
@@ -605,10 +542,10 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   double integral, edge_length, gdotn_at_cubpt;
   double div_vcjh_basis;
 
-  matrix mtemp_0((in_order+1),(in_order+1));
-  matrix gdotn((in_order+1),1);
-  matrix coeff_gdotn((in_order+1),1);
-  matrix coeff_divg(n_upts_tri,1);
+  array<double> mtemp_0((in_order+1),(in_order+1));
+  array<double> gdotn((in_order+1),1);
+  array<double> coeff_gdotn((in_order+1),1);
+  array<double> coeff_divg(n_upts_tri,1);
 
   if (in_edge==0)
     edge_length=2.;
@@ -637,8 +574,8 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
         mtemp_0(i,j) = eval_jacobi(t,0,0,j);
   }
 
-  mtemp_0 = mtemp_0.get_inv();
-  coeff_gdotn = mtemp_0*gdotn;
+  mtemp_0 = inv_array(mtemp_0);
+  coeff_gdotn = mult_arrays(mtemp_0,gdotn);
 
   // 2. Perform the edge integrals to obtain coefficients sigma_i
   for (int i=0;i<n_upts_tri;i++)
@@ -2365,6 +2302,275 @@ double flt_res(int N, array<double>& wf, array<double>& B, double k_0, double k_
 	}
 	//cout<<"flt_res: "<<flt_res<<endl;
 	return flt_res;
+}
+
+// Set an array to zero
+void zero_array(array <double>& in_array)
+{
+  int dim_1_0 = in_array.get_dim(0);
+  int dim_1_1 = in_array.get_dim(1);
+  int dim_1_2 = in_array.get_dim(2);
+  int dim_1_3 = in_array.get_dim(3);
+
+	for (int i=0;i<dim_1_0;++i) {
+		for (int j=0;j<dim_1_1;++j) {
+			for (int k=0;k<dim_1_2;++k) {
+				for (int l=0;l<dim_1_3;++l) {
+					in_array(i,j,k,l) = 0.0;
+				}
+			}
+		}
+	}
+}
+
+// Add arrays M1 and M2
+array <double> add_arrays(array <double>& M1, array <double>& M2)
+{
+	// Get dimensions of arrays
+  int dim_1_0 = M1.get_dim(0);
+  int dim_1_1 = M1.get_dim(1);
+  int dim_1_2 = M1.get_dim(2);
+  int dim_1_3 = M1.get_dim(3);
+
+  int dim_2_0 = M2.get_dim(0);
+  int dim_2_1 = M2.get_dim(1);
+  int dim_2_2 = M2.get_dim(2);
+  int dim_2_3 = M2.get_dim(3);
+
+	if(dim_1_0==dim_2_0 and dim_1_1==dim_2_1 and dim_1_2==dim_2_2 and dim_1_3==dim_2_3) {
+		array <double> sum(dim_1_0,dim_1_1,dim_1_2,dim_1_3);
+		for (int i=0;i<dim_1_0;++i) {
+			for (int j=0;j<dim_1_1;++j) {
+				for (int k=0;k<dim_1_2;++k) {
+					for (int l=0;l<dim_1_3;++l) {
+						sum(i,j,k,l) = M1(i,j,k,l) + M2(i,j,k,l);
+					}
+				}
+			}
+		}
+	}
+	else {
+		cout << "ERROR: array dimensions are not compatible in sum function" << endl;
+		exit(1);
+	}
+}
+
+// Multiply M1(L*M) by M2(M*N)
+array <double> mult_arrays(array <double>& M1, array <double>& M2)
+{
+	// Get dimensions of arrays
+  int dim_1_0 = M1.get_dim(0);
+  int dim_1_1 = M1.get_dim(1);
+  int dim_1_2 = M1.get_dim(2);
+  int dim_1_3 = M1.get_dim(3);
+
+  int dim_2_0 = M2.get_dim(0);
+  int dim_2_1 = M2.get_dim(1);
+  int dim_2_2 = M2.get_dim(2);
+  int dim_2_3 = M2.get_dim(3);
+
+	// Only 2D arrays
+	if(dim_1_2==1 and dim_1_3==1 and dim_2_2==1 and dim_2_3==1) {
+		// Ensure consistent inner dimensions
+		if(dim_1_1==dim_2_0) {
+			array <double> product(dim_1_0,dim_2_1);
+
+			#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+  	
+			cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,dim_1_0,dim_2_1,dim_1_1,1.0,M1.get_ptr_cpu(),dim_1_0,M2.get_ptr_cpu(),dim_2_0,0.0,product.get_ptr_cpu(),dim_1_0);
+
+			#else
+
+			for (int i=0;i<dim_1_0;++i) {
+				for (int j=0;j<dim_2_1;++j) {
+					product(i,j) = 0.0;
+					for (int k=0;k<dim_1_1;++k) {
+						product(i,j) += M1(i,k)*M2(k,j);
+					}
+				}
+			}
+
+			#endif
+
+			return product;
+		}
+		else {
+			cout << "ERROR: array dimensions are not compatible in multiplication function" << endl;
+			exit(1);
+		}
+	}
+	else {
+		cout << "ERROR: Array multiplication function can only multiply 2-dimensional arrays together" << endl;
+		exit(1);
+	}
+}
+
+// method to get transpose of a square array
+array <double> transpose_array(array <double>& in_array)
+{
+	// Get dimensions of arrays
+  int dim_0 = in_array.get_dim(0);
+  int dim_1 = in_array.get_dim(1);
+  int dim_2 = in_array.get_dim(2);
+  int dim_3 = in_array.get_dim(3);
+
+	// Only 2D square arrays
+	if(dim_2==1 and dim_3==1 and dim_0==dim_1) {
+		int i,j;
+		array <double> transpose(dim_1,dim_0);
+
+		for(i=0;i<dim_0;i++) {
+			for(j=0;j<dim_1;j++) {
+				transpose(j,i)=in_array(i,j);
+			}
+		}
+		return transpose;
+	}
+	else {
+		cout << "ERROR: Array transpose function only accepts a 2-dimensional square array" << endl;
+		exit(1);
+	}
+}
+
+// method to get inverse of a square matrix
+
+array <double> inv_array(array <double>& in_array)
+{
+  // Get dimensions of array
+  int dim_0 = in_array.get_dim(0);
+  int dim_1 = in_array.get_dim(1);
+  int dim_2 = in_array.get_dim(2);
+  int dim_3 = in_array.get_dim(3);
+
+	if(dim_2==1 and dim_3==1) {
+		if(dim_0==dim_1)
+		{
+			// Gaussian elimination with full pivoting
+			// not to be used where speed is paramount
+			
+			int i,j,k;
+			int pivot_i, pivot_j;
+			int itemp_0;
+			double mag;
+			double max;
+			double dtemp_0;
+			double first;
+			array <double> atemp_0(dim_0);
+			array <double> identity(dim_0,dim_0);
+			array <double> input(dim_0,dim_0);
+			array <double> inverse(dim_0,dim_0);
+			array <double> inverse_out(dim_0,dim_0);
+			array<int> swap_0(dim_0);
+			array<int> swap_1(dim_0);
+
+			// setup input array
+			for(i=0;i<dim_0;i++)
+				for(j=0;j<dim_0;j++)
+					input(i,j) = in_array(i,j);
+
+	 		// setup swap arrays
+			for(i=0;i<dim_0;i++) {
+				swap_0(i)=i;
+				swap_1(i)=i;
+			}
+
+			// setup identity array		
+			for(i=0;i<dim_0;i++) {
+				for(j=0;j<dim_0;j++) {
+					identity(i,j)=0.0;
+				}
+				identity(i,i)=1.0;
+			}
+	
+			// make triangular
+			for(k=0;k<dim_0-1;k++) {
+				max=0;
+		
+				// find pivot
+				for(i=k;i<dim_0;i++) {
+					for(j=k;j<dim_0;j++) {
+						mag=input(i,j)*input(i,j);
+						if(mag>max) {
+							pivot_i=i;
+							pivot_j=j;
+							max=mag;
+						}
+					}
+				}
+		
+				// swap the swap arrays
+				itemp_0=swap_0(k);
+				swap_0(k)=swap_0(pivot_i);
+				swap_0(pivot_i)=itemp_0;
+				itemp_0=swap_1(k);
+				swap_1(k)=swap_1(pivot_j);
+				swap_1(pivot_j)=itemp_0;
+		
+				// swap the columns
+				for(i=0;i<dim_0;i++) {
+					atemp_0(i)=input(i,pivot_j);
+					input(i,pivot_j)=input(i,k);
+					input(i,k)=atemp_0(i);
+				}	
+			
+				// swap the rows
+				for(j=0;j<dim_0;j++) {
+					atemp_0(j)=input(pivot_i,j);
+					input(pivot_i,j)=input(k,j);
+					input(k,j)=atemp_0(j);
+					atemp_0(j)=identity(pivot_i,j); 
+					identity(pivot_i,j)=identity(k,j); 
+					identity(k,j)=atemp_0(j);
+				}
+		
+				// subtraction
+				for(i=k+1;i<dim_0;i++) {
+					first=input(i,k);
+					for(j=0;j<dim_0;j++) {
+						if(j>=k) {
+							input(i,j)=input(i,j)-((first/input(k,k))*input(k,j));
+						}
+						identity(i,j)=identity(i,j)-((first/input(k,k))*identity(k,j));
+					}
+				}
+
+				//exact zero
+				for(j=0;j<k+1;j++) {
+					for(i=j+1;i<dim_0;i++) {
+						input(i,j)=0.0;
+					}
+				}
+			}
+
+			// back substitute
+			for(i=dim_0-1;i>=0;i=i-1) {
+				for(j=0;j<dim_0;j++) {
+					dtemp_0=0.0;
+					for(k=i+1;k<dim_0;k++) {
+						dtemp_0=dtemp_0+(input(i,k)*inverse(k,j));
+					}
+					inverse(i,j)=(identity(i,j)-dtemp_0)/input(i,i);			
+				}
+			}
+	
+			// swap solution rows
+			for(i=0;i<dim_0;i++) {
+				for(j=0;j<dim_0;j++) {	
+					inverse_out(swap_1(i),j)=inverse(i,j);
+				}
+			}
+
+			return inverse_out;
+		}
+		else {
+			cout << "ERROR: Can only obtain inverse of a square array" << endl;
+			exit(1);
+		}
+	}
+	else {
+		cout << "ERROR: Array you are trying to invert has > 2 dimensions" << endl;
+		exit(1);
+	}
 }
 
 /*! END */

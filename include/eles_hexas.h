@@ -15,7 +15,6 @@
 
 #include "eles.h"
 #include "array.h"
-#include "matrix.h"
 
 class eles_hexas: public eles
 {	
@@ -111,8 +110,8 @@ class eles_hexas: public eles
 	void set_vandermonde(void);	
 
 	// members
-	matrix vandermonde;
-	matrix inv_vandermonde;
+	array<double> vandermonde;
+	array<double> inv_vandermonde;
 
   /*! return position of 1d solution point */
   double get_loc_1d_upt(int in_index);

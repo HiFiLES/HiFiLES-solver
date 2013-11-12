@@ -11,6 +11,7 @@
  * Copyright (C) 2013 Aerospace Computing Laboratory.
  */
 
+#include <iomanip>
 #include <iostream>
 #include <cmath>
 
@@ -34,7 +35,6 @@ extern "C"
 #include "../include/eles.h"
 #include "../include/eles_quads.h"
 #include "../include/array.h"
-#include "../include/matrix.h"
 #include "../include/funcs.h"
 #include "../include/cubature_1d.h"
 #include "../include/cubature_quad.h"
@@ -795,53 +795,6 @@ void eles_quads::compute_filter_upts(void)
 		// Compute modal filter
 		compute_modal_filter(filter_upts_1D, vandermonde, inv_vandermonde, N);
 
-		/*// TEST
-		array<double> H(N),W(N);
-  	array<double> invM(N,N);
-		matrix M(N,N);
-		for (i=0;i<N;i++)
-			H(i) = exp(-pow(pi,2)/24.);
-		//exp(-pow(pi*i/(N-1)/k_c,2)/24.);
-
-		cout<<setprecision(6)<<"H:"<<endl;
-		H.print();
-
-		for (i=0;i<N;i++)
-			for (j=0;j<N;j++)
-				M(i,j) = cos(-beta(i,j)*k_c*dlt);
-		//1 - pow(-beta(i,j)*k_c*dlt,2)/2. + pow(-beta(i,j)*k_c*dlt,4)/24. - pow(-beta(i,j)*k_c*dlt,6)/720.;
-
-		for (i=0;i<N;i++)
-			for (j=0;j<N;j++)
-				invM(i,j) = M(i,j);
-
-		cout<<setprecision(6)<<"M:"<<endl;
-		invM.print();
-
-		matrix Minv = M.get_inv();
-
-		for (i=0;i<N;i++)
-			for (j=0;j<N;j++)
-				invM(i,j) = Minv(i,j);
-
-		cout<<setprecision(6)<<"invM:"<<endl;
-		invM.print();
-
-		for (i=0;i<N;i++)
-		{
-			W(i)=0.;
-			for (j=0;j<N;j++)
-			{
-				W(i) += M(i,j)*H(j);
-			}
-		}
-
-		//cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,invM.get_ptr_cpu(),N,H.get_ptr_cpu(),N,0.0,W.get_ptr_cpu(),N);
-
-		cout<<setprecision(6)<<"W:"<<endl;
-		W.print();
-		// END TEST*/
-
 		sum = 0;
 		for(i=0;i<N;i++)
 			for(j=0;j<N;j++)
@@ -954,7 +907,7 @@ void eles_quads::set_vandermonde(void)
 			vandermonde(i,j) = eval_legendre(loc_1d_upts(i),j);
 
 	// Store its inverse
-	inv_vandermonde = vandermonde.get_inv();
+	inv_vandermonde = inv_array(vandermonde);
 }
 
 // evaluate nodal basis

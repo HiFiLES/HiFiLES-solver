@@ -15,7 +15,6 @@
 
 #include "eles.h"
 #include "array.h"
-#include "matrix.h"
 
 class eles_pris: public eles
 {	
@@ -114,9 +113,9 @@ class eles_pris: public eles
   array<double> loc_upts_pri_tri_rest;
   array<double> loc_upts_pri_1d_rest; 
 
-  matrix vandermonde_tri;
-  matrix inv_vandermonde_tri;
-  matrix inv_vandermonde_tri_rest;
+  array<double> vandermonde_tri;
+  array<double> inv_vandermonde_tri;
+  array<double> inv_vandermonde_tri_rest;
 
   //methods
   void set_vandermonde_tri();

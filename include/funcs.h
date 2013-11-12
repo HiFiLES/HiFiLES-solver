@@ -15,7 +15,6 @@
 
 #include <cmath>
 #include "array.h"
-#include "matrix.h"
 
 #if defined _GPU
 #include "cuda_runtime_api.h"
@@ -40,13 +39,13 @@ double eval_d_legendre(double in_r, int in_mode);
 /*! evaluate derivative of vcjh basis */
 double eval_d_vcjh_1d(double in_r, int in_mode, int in_order, double in_eta);
 
-void get_opp_3_tri(array<double>& opp_3, array<double>& loc_upts_tri, array<double>& loc_fpts_tri, matrix& vandermonde_tri, matrix& inv_vandermonde_tri, int n_upts_per_tri, int order, double c_tri, int vcjh_scheme_tri);
+void get_opp_3_tri(array<double>& opp_3, array<double>& loc_upts_tri, array<double>& loc_fpts_tri, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_per_tri, int order, double c_tri, int vcjh_scheme_tri);
 
-void get_opp_3_dg(matrix& opp_3_dg, array<double>& loc_upts_tri, array<double>& loc_fpts_tri, int n_upts_per_tri, int order);
+void get_opp_3_dg(array<double>& opp_3_dg, array<double>& loc_upts_tri, array<double>& loc_fpts_tri, int n_upts_per_tri, int order);
 
-void compute_modal_filter(array <double>& filter_upts, matrix& vandermonde, matrix& inv_vandermonde, int N);
+void compute_modal_filter(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N);
 
-void compute_filt_matrix_tri(matrix& Filt, matrix& vandermonde_tri, matrix& inv_vandermonde_tri, int n_upts_per_ele, int order, double c_tri, int vcjh_scheme_tri, array<double>& loc_upts_tri);
+void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_per_ele, int order, double c_tri, int vcjh_scheme_tri, array<double>& loc_upts_tri);
 
 /*! evaluate divergenge of vcjh basis on triangle */
 double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int in_order, array<double> &in_loc_fpts_1d);
@@ -197,6 +196,21 @@ void gaussj(int n, array<double>& A, array<double>& b);
 
 /*! Filter resolution function used with Gaussian filter*/
 double flt_res(int N, array<double>& wf, array<double>& B, double k_0, double k_c, int ctype);
+
+/*! Set an array to zero*/
+void zero_array(array <double>& in_array);
+
+/*! method to add together two arrays M1 and M2*/
+array <double> add_arrays(array <double>& M1, array <double>& M2);
+
+/*! method to multiply together two 2-dimensional arrays M1(L*M) by M2(M*N)*/
+array <double> mult_arrays(array <double>& M1, array <double>& M2);
+
+/*! method to get inverse of a square matrix*/
+array <double> inv_array(array <double>& input);
+
+/*! method to get transpose of a square array*/
+array <double> transpose_array(array <double>& in_array);
 
 /*! END */
 
