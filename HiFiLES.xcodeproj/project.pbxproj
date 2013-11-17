@@ -26,7 +26,6 @@
 		05CCBCB71824729D0074A979 /* input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05CCBC9F1824729C0074A979 /* input.cpp */; };
 		05CCBCB81824729D0074A979 /* int_inters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05CCBCA01824729C0074A979 /* int_inters.cpp */; };
 		05CCBCB91824729D0074A979 /* inters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05CCBCA11824729C0074A979 /* inters.cpp */; };
-		05CCBCBB1824729D0074A979 /* matrix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05CCBCA31824729D0074A979 /* matrix.cpp */; };
 		05CCBCBC1824729D0074A979 /* geometry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05CCBCA41824729D0074A979 /* geometry.cpp */; };
 		05CCBCBD1824729D0074A979 /* mpi_inters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05CCBCA51824729D0074A979 /* mpi_inters.cpp */; };
 		05E96FA318258403000BE589 /* output.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05E96FA118258403000BE589 /* output.cpp */; };
@@ -66,7 +65,6 @@
 		05CCBC9F1824729C0074A979 /* input.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = input.cpp; path = src/input.cpp; sourceTree = "<group>"; };
 		05CCBCA01824729C0074A979 /* int_inters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = int_inters.cpp; path = src/int_inters.cpp; sourceTree = "<group>"; };
 		05CCBCA11824729C0074A979 /* inters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = inters.cpp; path = src/inters.cpp; sourceTree = "<group>"; };
-		05CCBCA31824729D0074A979 /* matrix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = matrix.cpp; path = src/matrix.cpp; sourceTree = "<group>"; };
 		05CCBCA41824729D0074A979 /* geometry.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = geometry.cpp; path = src/geometry.cpp; sourceTree = "<group>"; };
 		05CCBCA51824729D0074A979 /* mpi_inters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mpi_inters.cpp; path = src/mpi_inters.cpp; sourceTree = "<group>"; };
 		05CCBCBF182472A70074A979 /* array.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = array.h; path = include/array.h; sourceTree = "<group>"; };
@@ -91,7 +89,6 @@
 		05CCBCD2182472A70074A979 /* int_inters.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = int_inters.h; path = include/int_inters.h; sourceTree = "<group>"; };
 		05CCBCD3182472A70074A979 /* inters.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = inters.h; path = include/inters.h; sourceTree = "<group>"; };
 		05CCBCD4182472A70074A979 /* macros.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = macros.h; path = include/macros.h; sourceTree = "<group>"; };
-		05CCBCD5182472A70074A979 /* matrix.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = matrix.h; path = include/matrix.h; sourceTree = "<group>"; };
 		05CCBCD6182472A70074A979 /* geometry.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = geometry.h; path = include/geometry.h; sourceTree = "<group>"; };
 		05CCBCD7182472A70074A979 /* mpi_inters.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = mpi_inters.h; path = include/mpi_inters.h; sourceTree = "<group>"; };
 		05CCBCD8182472A70074A979 /* parmetisbin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = parmetisbin.h; path = include/parmetisbin.h; sourceTree = "<group>"; };
@@ -259,7 +256,6 @@
 				05CCBCCF182472A70074A979 /* funcs.h */,
 				05CCBCD0182472A70074A979 /* global.h */,
 				05CCBCD1182472A70074A979 /* input.h */,
-				05CCBCD5182472A70074A979 /* matrix.h */,
 				05CCBCDB182472A70074A979 /* util.h */,
 				05AA0793182ADD4600471578 /* parmetis */,
 				05AA0792182ADCE200471578 /* interfaces */,
@@ -281,7 +277,6 @@
 				05CCBC9D1824729C0074A979 /* global.cpp */,
 				05CCBC9F1824729C0074A979 /* input.cpp */,
 				05CCBCA11824729C0074A979 /* inters.cpp */,
-				05CCBCA31824729D0074A979 /* matrix.cpp */,
 				051F2D5F182AD7A10029F49A /* interfaces */,
 				051F2D5E182AD7420029F49A /* elements */,
 				051F2D5D182AD72F0029F49A /* cubature */,
@@ -360,7 +355,6 @@
 				05CCBCAA1824729D0074A979 /* cubature_quad.cpp in Sources */,
 				05CCBCB01824729D0074A979 /* eles_tets.cpp in Sources */,
 				05CCBCB81824729D0074A979 /* int_inters.cpp in Sources */,
-				05CCBCBB1824729D0074A979 /* matrix.cpp in Sources */,
 				05CCBCAF1824729D0074A979 /* eles_quads.cpp in Sources */,
 				05CCBCAB1824729D0074A979 /* cubature_tet.cpp in Sources */,
 				05CCBCAD1824729D0074A979 /* eles_hexas.cpp in Sources */,

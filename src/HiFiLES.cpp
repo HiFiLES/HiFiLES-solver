@@ -51,6 +51,17 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 #endif
   
+  if (rank == 0) {
+    cout << " _    _  _  ______  _  _       ______   _____ " << endl;
+    cout << "| |  | |(_)|  ____|(_)| |     |  ____| / ____|" << endl;
+    cout << "| |__| | _ | |__    _ | |     | |__   | (___  " << endl;
+    cout << "|  __  || ||  __|  | || |     |  __|   \\___ \\ " << endl;
+    cout << "| |  | || || |     | || |____ | |____  ____) |" << endl;
+    cout << "|_|  |_||_||_|     |_||______||______||_____/ " << endl;
+    cout << "                                              " << endl;
+    cout << "Aerospace Computing Lab (Stanford University) " << endl;
+  }
+
   /////////////////////////////////////////////////
   /// Read config file and mesh
   /////////////////////////////////////////////////
@@ -122,10 +133,6 @@ int main(int argc, char *argv[]) {
     /// Flow solver
     /////////////////////////////////////////////////
     
-    /*! Visualize iteration number. */
-    if (i_steps%100 == 0 && FlowSol.rank == 0)
-      cout << "i=" << i_steps << endl;
-    
     /*! Advance the solution one time-step using a forward Euler method. */
     if(FlowSol.adv_type == 0) {
       CalcResidual(&FlowSol);
@@ -177,7 +184,7 @@ int main(int argc, char *argv[]) {
       compute_forces(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
     }
     
-    if (i_steps%run_input.monitor_res_freq == 0 || i_steps == 1 || i_steps%run_input.monitor_force_freq == 0)
+    if (i_steps%run_input.monitor_res_freq == 0 || i_steps%run_input.monitor_force_freq == 0)
       if (FlowSol.rank == 0) cout << endl;
     
     /*! Dump diagnostics. */
@@ -185,7 +192,7 @@ int main(int argc, char *argv[]) {
       CalcDiagnostics(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
     }
     
-    if (i_steps%run_input.diagnostics_freq == 0 || i_steps == 1)
+    if (i_steps%run_input.diagnostics_freq == 0)
       if (FlowSol.rank == 0) cout << endl;
     
     /*! Dump Paraview or Tecplot file. */

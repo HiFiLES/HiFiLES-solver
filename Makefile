@@ -95,7 +95,8 @@ ifeq ($(BLAS),ACCELERATE_BLAS)
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
-	LIBS	+= -L $(BLAS_DIR)/lib -lcblas -latlas
+        LIBS    += -L $(BLAS_DIR)/lib -lcblas
+#	LIBS	+= -latlas
 endif
 
 ifeq ($(NODE),GPU)
@@ -158,10 +159,10 @@ $(OBJ)solver.o: solver.cpp solver.h input.h  error.h
 $(OBJ)output.o: output.cpp output.h input.h  error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)eles.o: eles.cpp eles.h array.h error.h input.h error.h
+$(OBJ)eles.o: eles.cpp eles.h array.h error.h input.h array.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
-$(OBJ)eles_tris.o: eles_tris.cpp eles_tris.h eles.h funcs.h input.h array.h cubature_1d.h error.h
+$(OBJ)eles_tris.o: eles_tris.cpp eles_tris.h eles.h funcs.h input.h array.h array.h cubature_1d.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
 $(OBJ)eles_quads.o: eles_quads.cpp eles_quads.h eles.h funcs.h input.h array.h error.h

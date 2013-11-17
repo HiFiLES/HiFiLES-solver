@@ -3952,27 +3952,29 @@ void eles::calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_p
 	}
 }
 
-double eles::compute_res_upts(int in_norm_type, int in_field)
-{
+double eles::compute_res_upts(int in_norm_type, int in_field) {
 
-  // NOTE: div_tconf_upts must be on CPU
+  int i, j;
   double sum = 0.;
   double cell_sum = 0.;
-  for (int i=0;i<n_eles;i++) {
+  
+  // NOTE: div_tconf_upts must be on CPU
+  
+  for (i=0; i<n_eles; i++) {
     cell_sum=0;
-    for (int j=0;j<n_upts_per_ele;j++) {
-        if (in_norm_type==1) {
-          cell_sum += abs(div_tconf_upts(0)(j,i,in_field)/detjac_upts(j,i));
+    for (j=0; j<n_upts_per_ele; j++) {
+        if (in_norm_type == 1) {
+          cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i));
         }
-        else if (in_norm_type==2) {
-          cell_sum += div_tconf_upts(0)(j,i,in_field)/detjac_upts(j,i)*div_tconf_upts(0)(j,i,in_field)/detjac_upts(j,i);
+        else if (in_norm_type == 2) {
+          cell_sum += div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)*div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i);
         }
     }
-    sum+=cell_sum;
-    // if (rank==1)
-    //   cout << ele2global_ele(i) << "cell_sum=" << cell_sum << endl;
+    sum += cell_sum;
   }
+  
   return sum;
+  
 }
 
 
