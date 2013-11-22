@@ -11,7 +11,7 @@
 
 # Settings
 
-include makefile.in
+include makefiles/makefile.enrico_GPU.in
 
 # Compiler
 
@@ -58,7 +58,7 @@ endif
 #endif
 
 ifeq ($(PARALLEL),MPI)
-	OPTS	+= -I /usr/lib64/openmpi/bin/
+	OPTS	+= -I /usr/mpi/gcc/mvapich-1.2.0
 	OPTS	+= -I $(PARMETIS_DIR)/include
 	OPTS	+= -I $(PARMETIS_DIR)/metis/include
 endif
