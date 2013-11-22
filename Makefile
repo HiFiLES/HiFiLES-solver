@@ -33,15 +33,13 @@ endif
 
 # Pre-processing macros
 
-OPTS    = -D_$(NODE)  -D_$(BLAS) 
+OPTS    = -D_$(NODE)  -D_$(BLAS)#  -D_$(VTK)
 
 ifeq ($(PARALLEL),MPI)
 	OPTS    += -D_$(PARALLEL) 
 endif
 
 # Includes
-
-OPTS    += -I /include 
 
 ifeq ($(NODE),GPU)
 	OPTS	+= -I $(CUDA_DIR)/include 
@@ -55,12 +53,14 @@ ifeq ($(TECIO),YES)
 	OPTS += -I $(TECIO_DIR)/tecsrc
 endif
 
-ifeq ($(PARALLEL),MPI)
-	OPTS	+= -I /usr/include/mpich2-x86_64/
-	OPTS	+= -I /usr/lib64/openmpi/bin/
+#ifeq ($(VTK),YES)
+#	OPTS	+= -I $(VTKINCDIR)
+#endif
 
-	OPTS += -I $(PARMETIS_DIR)/include
-	OPTS += -I $(PARMETIS_DIR)/metis/include
+ifeq ($(PARALLEL),MPI)
+	OPTS	+= -I /usr/lib64/openmpi/bin/
+	OPTS	+= -I $(PARMETIS_DIR)/include
+	OPTS	+= -I $(PARMETIS_DIR)/metis/include
 endif
 
 ifeq ($(CODE),DEBUG)
@@ -78,7 +78,7 @@ endif
 
 ifeq ($(CODE),RELEASE)
 	ifeq ($(NODE),GPU)
-		OPTS += -w
+		OPTS	+= -w
 	endif
 endif
 
@@ -102,6 +102,9 @@ ifeq ($(NODE),GPU)
 	LIBS	+= -L $(CUDA_DIR)/lib64 -lcudart -lcublas -lcusparse -lm
 endif
 
+#ifeq ($(VTK),YES)
+#	LIBS	+= -L $(VTKLIBDIR) -lvtkImaging -lvtkGraphics -lvtkCommon -lvtkRendering -lvtkIO -lvtksys -lvtkFiltering -lpython2.7
+#endif
 
 # Source
 
@@ -144,7 +147,7 @@ help:
 	@echo ' '
 
 HiFiLES: $(OBJS)
-	$(CC) $(OPTS) -o $(BIN)HiFiLES $(OBJS) $(LIBS) 
+	$(CC) $(OPTS) -o $(BIN)HiFiLES $(OBJS) ${LIBS}
 
 $(OBJ)HiFiLES.o: HiFiLES.cpp geometry.h input.h flux.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
@@ -155,9 +158,9 @@ $(OBJ)geometry.o: geometry.cpp geometry.h input.h  error.h
 $(OBJ)solver.o: solver.cpp solver.h input.h  error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
-$(OBJ)output.o: output.cpp output.h input.h  error.h
+$(OBJ)output.o: output.cpp output.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
-	
+
 $(OBJ)eles.o: eles.cpp eles.h array.h error.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 

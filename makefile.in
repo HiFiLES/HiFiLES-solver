@@ -13,8 +13,9 @@ NODE=     CPU
 CODE=     DEBUG
 BLAS=     STANDARD_BLAS
 COMP=     GCC
-PARALLEL= NO
+PARALLEL= MPI
 TECIO=    NO
+VTK=      NO
 
 BLAS_DIR= /usr/local/atlas
 
@@ -25,3 +26,7 @@ PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/build/Linux-x86_64
 TECIO_DIR = lib/tecio-2008
 
 CUDA_DIR = /usr/local/cuda
+
+VTKLIBDIR = /usr/lib/vtk-5.4
+
+VTKINCDIR = /usr/include/vtk-5.4
