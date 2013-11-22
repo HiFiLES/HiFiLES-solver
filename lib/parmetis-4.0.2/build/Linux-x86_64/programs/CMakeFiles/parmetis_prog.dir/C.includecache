@@ -188,15 +188,15 @@ proto.h
 
 ../../programs/./proto.h
 
-/home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/programs/adaptgraph.c
+/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/adaptgraph.c
 parmetisbin.h
 -
 
-/home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/programs/io.c
+/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/io.c
 parmetisbin.h
 -
 
-/home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/programs/parmetis.c
+/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/parmetis.c
 parmetisbin.h
 -
 

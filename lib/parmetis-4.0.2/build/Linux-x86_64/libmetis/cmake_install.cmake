@@ -1,4 +1,4 @@
-# Install script for directory: /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis
+# Install script for directory: /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)

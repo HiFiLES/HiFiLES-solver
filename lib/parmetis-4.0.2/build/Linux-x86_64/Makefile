@@ -8,7 +8,7 @@ default_target: all
 #=============================================================================
 # Special targets provided by cmake.
 
-# Disable implicit rules so canoncical targets will work.
+# Disable implicit rules so canonical targets will work.
 .SUFFIXES:
 
 # Remove some rules from gmake that .SUFFIXES does not remove.
@@ -42,10 +42,10 @@ RM = /usr/bin/cmake -E remove -f
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2
+CMAKE_SOURCE_DIR = /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64
+CMAKE_BINARY_DIR = /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -113,9 +113,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles 0
 .PHONY : all
 
 # The main clean target

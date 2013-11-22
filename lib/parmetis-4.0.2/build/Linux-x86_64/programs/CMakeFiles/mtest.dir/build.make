@@ -4,7 +4,7 @@
 #=============================================================================
 # Special targets provided by cmake.
 
-# Disable implicit rules so canoncical targets will work.
+# Disable implicit rules so canonical targets will work.
 .SUFFIXES:
 
 # Remove some rules from gmake that .SUFFIXES does not remove.
@@ -38,10 +38,10 @@ RM = /usr/bin/cmake -E remove -f
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2
+CMAKE_SOURCE_DIR = /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64
+CMAKE_BINARY_DIR = /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64
 
 # Include any dependencies generated for this target.
 include programs/CMakeFiles/mtest.dir/depend.make
@@ -54,17 +54,17 @@ include programs/CMakeFiles/mtest.dir/flags.make
 
 programs/CMakeFiles/mtest.dir/mtest.c.o: programs/CMakeFiles/mtest.dir/flags.make
 programs/CMakeFiles/mtest.dir/mtest.c.o: ../../programs/mtest.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_1)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object programs/CMakeFiles/mtest.dir/mtest.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/mtest.dir/mtest.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/programs/mtest.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/mtest.dir/mtest.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/mtest.c
 
 programs/CMakeFiles/mtest.dir/mtest.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/mtest.dir/mtest.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/programs/mtest.c > CMakeFiles/mtest.dir/mtest.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/mtest.c > CMakeFiles/mtest.dir/mtest.c.i
 
 programs/CMakeFiles/mtest.dir/mtest.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/mtest.dir/mtest.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/programs/mtest.c -o CMakeFiles/mtest.dir/mtest.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/mtest.c -o CMakeFiles/mtest.dir/mtest.c.s
 
 programs/CMakeFiles/mtest.dir/mtest.c.o.requires:
 .PHONY : programs/CMakeFiles/mtest.dir/mtest.c.o.requires
@@ -74,21 +74,20 @@ programs/CMakeFiles/mtest.dir/mtest.c.o.provides: programs/CMakeFiles/mtest.dir/
 .PHONY : programs/CMakeFiles/mtest.dir/mtest.c.o.provides
 
 programs/CMakeFiles/mtest.dir/mtest.c.o.provides.build: programs/CMakeFiles/mtest.dir/mtest.c.o
-.PHONY : programs/CMakeFiles/mtest.dir/mtest.c.o.provides.build
 
 programs/CMakeFiles/mtest.dir/io.c.o: programs/CMakeFiles/mtest.dir/flags.make
 programs/CMakeFiles/mtest.dir/io.c.o: ../../programs/io.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_2)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_2)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object programs/CMakeFiles/mtest.dir/io.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/mtest.dir/io.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/programs/io.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/mtest.dir/io.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/io.c
 
 programs/CMakeFiles/mtest.dir/io.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/mtest.dir/io.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/programs/io.c > CMakeFiles/mtest.dir/io.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/io.c > CMakeFiles/mtest.dir/io.c.i
 
 programs/CMakeFiles/mtest.dir/io.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/mtest.dir/io.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/programs/io.c -o CMakeFiles/mtest.dir/io.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/io.c -o CMakeFiles/mtest.dir/io.c.s
 
 programs/CMakeFiles/mtest.dir/io.c.o.requires:
 .PHONY : programs/CMakeFiles/mtest.dir/io.c.o.requires
@@ -98,7 +97,6 @@ programs/CMakeFiles/mtest.dir/io.c.o.provides: programs/CMakeFiles/mtest.dir/io.
 .PHONY : programs/CMakeFiles/mtest.dir/io.c.o.provides
 
 programs/CMakeFiles/mtest.dir/io.c.o.provides.build: programs/CMakeFiles/mtest.dir/io.c.o
-.PHONY : programs/CMakeFiles/mtest.dir/io.c.o.provides.build
 
 # Object files for target mtest
 mtest_OBJECTS = \
@@ -110,12 +108,12 @@ mtest_EXTERNAL_OBJECTS =
 
 programs/mtest: programs/CMakeFiles/mtest.dir/mtest.c.o
 programs/mtest: programs/CMakeFiles/mtest.dir/io.c.o
+programs/mtest: programs/CMakeFiles/mtest.dir/build.make
 programs/mtest: libparmetis/libparmetis.a
 programs/mtest: libmetis/libmetis.a
-programs/mtest: programs/CMakeFiles/mtest.dir/build.make
 programs/mtest: programs/CMakeFiles/mtest.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --red --bold "Linking C executable mtest"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/programs && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/mtest.dir/link.txt --verbose=$(VERBOSE)
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/mtest.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 programs/CMakeFiles/mtest.dir/build: programs/mtest
@@ -126,10 +124,10 @@ programs/CMakeFiles/mtest.dir/requires: programs/CMakeFiles/mtest.dir/io.c.o.req
 .PHONY : programs/CMakeFiles/mtest.dir/requires
 
 programs/CMakeFiles/mtest.dir/clean:
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/programs && $(CMAKE_COMMAND) -P CMakeFiles/mtest.dir/cmake_clean.cmake
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs && $(CMAKE_COMMAND) -P CMakeFiles/mtest.dir/cmake_clean.cmake
 .PHONY : programs/CMakeFiles/mtest.dir/clean
 
 programs/CMakeFiles/mtest.dir/depend:
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2 /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/programs /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/programs /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/programs/CMakeFiles/mtest.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2 /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs/CMakeFiles/mtest.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : programs/CMakeFiles/mtest.dir/depend
 
