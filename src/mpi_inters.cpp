@@ -29,7 +29,7 @@
 #endif
 
 #if defined _GPU
-#include "cuda_kernels.h" 
+#include "../include/cuda_kernels.h" 
 #endif
 
 using namespace std;
