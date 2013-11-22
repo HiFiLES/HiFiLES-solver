@@ -20,7 +20,7 @@ order                             // Order of basis polynomials
 dt 
 0.0001
 n_steps
-5000
+30
 adv_type                          // 0: Forward Euler, 3: RK45
 0
 tau 
@@ -53,7 +53,7 @@ Monitoring, plotting parameters
 p_res                             // Plotting resolution, number of nodes per direction
 6
 write_type                        // 0: Paraview, 1: Tecplot
-0
+1
 n_plot_quantities
 8 rho u v w energy pressure mach vorticity
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces

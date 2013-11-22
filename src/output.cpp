@@ -3103,66 +3103,71 @@ void compute_error(int in_file_num, struct solution* FlowSol)
   
 }
 
-
-
-int monitor_residual(int in_file_num, struct solution* FlowSol)
-{
+int monitor_residual(int in_file_num, struct solution* FlowSol) {
+  
+  int i, j, n_upts = 0, n_fields;
+  double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
+  
+  
+  if (FlowSol->n_dims==2) n_fields = 4;
+  else n_fields = 5;
   
 #ifdef _GPU
 	// copy residual to cpu
-	for(int i=0;i<FlowSol->n_ele_types;i++) {
+	for(i=0; i<FlowSol->n_ele_types; i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
 		  FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
-      
     }
   }
 #endif
   
-  double sum = 0.;
-  double norm = 0.;
-  int n_upts = 0;
-	for(int i=0;i<FlowSol->n_ele_types;i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
-		  sum += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type,run_input.res_norm_field);
+	for(i=0; i<FlowSol->n_ele_types; i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
       n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
-      
+      for(j=0; j<n_fields; j++)
+        sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
     }
   }
   
 #ifdef _MPI
   
   int n_upts_global = 0;
-  double sum_global = 0.;
-  MPI_Reduce(&n_upts,&n_upts_global,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
-  MPI_Reduce(&sum,&sum_global,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  double sum_global[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   
   n_upts = n_upts_global;
-  sum = sum_global;
+  for(i=0; i<n_fields; i++) sum[i] = sum_global[i];
   
 #endif
   
-  if (FlowSol->rank==0)
-  {
-    norm=0.;
-    if (run_input.res_norm_type==1) // L1 norm
-    {
-      norm = sum/n_upts;
-    }
-    else if (run_input.res_norm_type==2) // L2 norm
-    {
-      norm = sqrt(sum)/n_upts;
-    }
-    else
-      FatalError("norm_type not recognized");
+  if (FlowSol->rank == 0) {
     
-    if (isnan(norm)) {
-      cout << "NaN residual at iteration " << in_file_num << ". Exiting" << endl;
-      return 1;
+    // Compute the norm
+    for(i=0; i<n_fields; i++) {
+      if (run_input.res_norm_type==1) { norm[i] = sum[i] / n_upts; } // L1 norm
+      else if (run_input.res_norm_type==2) { norm[i] = sqrt(sum[i]) / n_upts; } // L2 norm
+      else FatalError("norm_type not recognized");
+      
+      if (isnan(norm[i])) {
+        cout << "NaN residual at iteration " << in_file_num << ". Exiting" << endl;
+        return 1;
+      }
     }
     
-    cout << "iter=" << setw(8) << in_file_num << " residual= " << setprecision(10) << scientific << norm ;
+    // Write the header
+    if (write_heads) {
+      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]" << endl;
+      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]" << endl;
+    }
+    
+    // Screen output
+    cout.precision(8);
+    cout.setf(ios::fixed, ios::floatfield);
+    cout.width(6); cout << in_file_num;
+    for(i=0; i<n_fields; i++) { cout.width(15); cout << norm[i]; }
+    
   }
   
   return 0;

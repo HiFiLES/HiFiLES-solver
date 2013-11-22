@@ -13,11 +13,10 @@ NODE=     CPU
 CODE=     DEBUG
 BLAS=     STANDARD_BLAS
 COMP=     GCC
-PARALLEL= MPI
+PARALLEL= CPU
 TECIO=    NO
-VTK=      NO
 
-BLAS_DIR= /usr/local/cblas
+BLAS_DIR= /usr/include/atlas
 
 PARMETIS_DIR = /usr/local/parmetis-4.0.3
 
@@ -26,7 +25,3 @@ PARMETIS_BUILD_DIR = /usr/local/parmetis-4.0.3/build/Darwin-x86_64
 TECIO_DIR = /usr/local/tecio-2013
 
 CUDA_DIR = /usr/local/cuda
-
-VTKLIBDIR = /usr/lib/vtk-5.4
-
-VTKINCDIR = /usr/include/vtk-5.4
