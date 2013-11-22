@@ -39,6 +39,7 @@
 #include "../include/util.h"
 #endif
 
+// Using namespace standard
 using namespace std;
 
 #define MAX_V_PER_F 4
