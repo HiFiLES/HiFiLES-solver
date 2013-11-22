@@ -313,13 +313,14 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
   double c_plus_1d, c_sd_1d, c_hu_1d;
 
   array<double> c_coeff(order+1);
+  array<double> mtemp_0, mtemp_1, mtemp_2;
   array<double> K(n_upts_tri,n_upts_tri);
-  array<double> mass_matrix(n_upts_tri,n_upts_tri);
   array<double> Identity(n_upts_tri,n_upts_tri);
-  array<double> mtemp_0, mtemp_1;
   array<double> Filt_dubiner(n_upts_tri,n_upts_tri);
-  array<double> Dr(n_upts_tri,n_upts_tri), Ds(n_upts_tri,n_upts_tri);
-  array<double> tempr(n_upts_tri,n_upts_tri), temps(n_upts_tri,n_upts_tri);
+  array<double> Dr(n_upts_tri,n_upts_tri);
+  array<double> Ds(n_upts_tri,n_upts_tri);
+  array<double> tempr(n_upts_tri,n_upts_tri);
+  array<double> temps(n_upts_tri,n_upts_tri);
   array<double> D_high_order_trans(n_upts_tri,n_upts_tri);
   array<double> vandermonde_tri_trans(n_upts_tri,n_upts_tri);
 
@@ -408,25 +409,35 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
     //cout << "k=" << k << "coeff= " << c_coeff(k) << endl;
   }
 
-  D_high_order.setup(order+1);
-  D_T_D.setup(order+1);
-
   // Initialize K to zero
   zero_array(K);
 
   // Compute D_transpose*D
+  D_high_order.setup(order+1);
+  D_T_D.setup(order+1);
+
   for (int k=0;k<(order+1);k++)
   {
-    D_high_order(k).setup(n_upts_tri,n_upts_tri);
     int m = order-k;
     D_high_order(k) = array<double> (Identity);
     for (int k2=0;k2<k;k2++)
       D_high_order(k) = mult_arrays(D_high_order(k),Ds);
     for (int m2=0;m2<m;m2++)
       D_high_order(k) = mult_arrays(D_high_order(k),Dr);
+    //cout << "k=" << k << endl;
+    //cout<<"D_high_order(k)"<<endl;
+    //D_high_order(k).print();
+    //cout << endl;
 
     D_high_order_trans = transpose_array(D_high_order(k));
     D_T_D(k) = mult_arrays(D_high_order_trans,D_high_order(k));
+
+    //mtemp_2 = transpose_array(vandermonde_tri);
+    //mtemp_2 = mult_arrays(mtemp_2,D_high_order(k));
+    //mtemp_2 = mult_arrays(mtemp_2,vandermonde_tri);
+    //cout<<"V^T*D_high_order(k)*V"<<endl;
+    //mtemp_2.print();
+    //cout << endl;
 
     // Scale by c_coeff
     for (int i=0;i<n_upts_tri;i++) {
@@ -437,14 +448,14 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
     }
   }
 
-  //mass
+  //inverse mass matrix
   vandermonde_tri_trans = transpose_array(vandermonde_tri);
   mtemp_0 = mult_arrays(vandermonde_tri,vandermonde_tri_trans);
-  mass_matrix = inv_array(mtemp_0);  //without jacobian scaling
 
   //filter
   mtemp_1 = array<double>(mtemp_0);
   mtemp_1 = mult_arrays(mtemp_1,K);
+
   for (int i=0;i<n_upts_tri;i++)
     for (int j=0;j<n_upts_tri;j++)
       mtemp_1(i,j) += Identity(i,j);
@@ -458,12 +469,13 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
   //cout << endl;
   //cout << "Filt_dubiner" << endl;
   //Filt_dubiner.print();
-  
+  //cout << endl;
+
   /*
   // ------------------------
   // Diagonal filter
   // ------------------------
-  matrix Filt_dubiner(n_upts_tri,n_upts_tri);
+  //matrix Filt_dubiner(n_upts_tri,n_upts_tri);
   int n_upts_lower = (order+1)*order/2;
 
   double frac;
@@ -522,10 +534,11 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
     }
   }
 
-  Filt = vandermonde_tri*Filt_dubiner*inv_vandermonde_tri;
+  Filt = mult_arrays(vandermonde_tri,Filt_dubiner);
+  Filt = mult_arrays(Filt,inv_vandermonde_tri);
 
-  //cout << "Filt_dubiner_diag" << endl;
-  //Filt_dubiner.print();
+  cout << "Filt_dubiner_diag" << endl;
+  Filt_dubiner.print();
 
   cout << "Filt_diag" << endl;
   Filt.print();

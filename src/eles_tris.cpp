@@ -124,9 +124,10 @@ void eles_tris::setup_ele_type_specific(int in_run_type)
 
 	  temp_u.setup(n_fields);
 	  temp_f.setup(n_fields,n_dims);
-  }
-  else
-  {
+
+  //}
+  //else
+  //{
     if (viscous==1)
     {
 	  	set_opp_4(run_input.sparse_tri);
@@ -234,86 +235,41 @@ void eles_tris::set_connectivity_plot()
   int vertex_0,vertex_1,vertex_2;
   int count=0;
 
-  for (int j=0;j<n_eles;++j){
-    for(int k=0;k<p_res-1;++k){ // look to right from each point
-      for(int l=0;l<p_res-k-1;++l){
+	/*! Loop over the plot sub-elements oriented this way |\  */
+	/*!                                                   |_\ */
+	/*! no. of triangles=(p_res-1)*(p_res-2)/2                */
+  for(int k=0;k<p_res-1;++k){
+    for(int l=0;l<p_res-k-1;++l){
 
-        vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
-        vertex_1=vertex_0+1;
-        vertex_2=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
+      vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
+      vertex_1=vertex_0+1;
+      vertex_2=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
 
-        connectivity_plot(0,count) = ppt_to_pnode(j,vertex_0);
-        connectivity_plot(1,count) = ppt_to_pnode(j,vertex_1);
-        connectivity_plot(2,count) = ppt_to_pnode(j,vertex_2);
-        count++;
-      }
-    }
-		// I DON'T THINK THIS WORKS - THERE'S ONE EXTRA TRIANGLE
-		// AND SEVERAL TRIANGLES WRAP AROUND THE EDGE
-    //for(int k=0;k<p_res-2;++k){ //  look to left from each point
-      //for(int l=1;l<p_res-k-1;++l){
-
-        //vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
-        //vertex_1=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
-        //vertex_2=l-1+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
-
-		// My version of the 'upside-down' (left-facing) triangles
-		// n_triangles=(p_res-1)*(p_res-2)/2
-		for(int k=0;k<p_res-2;k++)
-		{
-			for(int l=0;l<p_res-k-2;l++)
-			{
-				vertex_0=l+1+k*p_res-((k*(k-1))/2);
-				vertex_1=vertex_0+p_res-k;
-				vertex_2=vertex_1-1;
-
-        connectivity_plot(0,count) = ppt_to_pnode(j,vertex_0);
-        connectivity_plot(1,count) = ppt_to_pnode(j,vertex_1);
-        connectivity_plot(2,count) = ppt_to_pnode(j,vertex_2);
-        count++;
-      }
+      connectivity_plot(0,count) = vertex_0;
+      connectivity_plot(1,count) = vertex_1;
+      connectivity_plot(2,count) = vertex_2;
+      count++;
     }
   }
-/* CGL050412: setting connectivity without redundant nodes
-  for (int j=0;j<n_eles;j++)
-  {
-    for(int k=0;k<p_res-1;k++) // look to right from each point
+
+	/*! And now loop over the remaining plot sub-elements oriented this way __  */
+	/*!                                                                     \ | */
+	/*!                                                                      \| */
+	/*! no. of additional triangles=(p_res-2)*(p_res-3)/2                       */
+	for(int k=0;k<p_res-2;k++)
+	{
+		for(int l=0;l<p_res-k-2;l++)
 		{
-		  for(int l=0;l<p_res-k-1;l++)
-		  {
-		    vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
-		    vertex_1=vertex_0+1;
-		    vertex_2=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
-		    vertex_0+=j*(p_res*(p_res+1)/2);
-		    vertex_1+=j*(p_res*(p_res+1)/2);
-		    vertex_2+=j*(p_res*(p_res+1)/2);
+			vertex_0=l+1+k*p_res-((k*(k-1))/2);
+			vertex_1=vertex_0+p_res-k;
+			vertex_2=vertex_1-1;
 
-        connectivity_plot(0,count) = vertex_0+1;
-        connectivity_plot(1,count) = vertex_1+1;
-        connectivity_plot(2,count) = vertex_2+1;
-        count++;
-		  }
-		}
-
-		for(int k=0;k<p_res-2;k++) //  look to left from each point
-		{
-			for(int l=1;l<p_res-k-1;l++)
-			{
-				vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
-				vertex_1=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
-				vertex_2=l-1+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
-
-				vertex_0+=j*(p_res*(p_res+1)/2);
-				vertex_1+=j*(p_res*(p_res+1)/2);
-				vertex_2+=j*(p_res*(p_res+1)/2);
-
-        connectivity_plot(0,count) = vertex_0+1;
-        connectivity_plot(1,count) = vertex_1+1;
-        connectivity_plot(2,count) = vertex_2+1;
-        count++;
-			}
-		}
-  }*/
+      connectivity_plot(0,count) = vertex_0;
+      connectivity_plot(1,count) = vertex_1;
+      connectivity_plot(2,count) = vertex_2;
+      count++;
+    }
+  }
 }
 
 

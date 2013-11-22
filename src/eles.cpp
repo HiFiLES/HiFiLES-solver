@@ -179,7 +179,13 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	  	grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
 	  	grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims); 
 	  }
-	  
+	  // Set connectivity array. Needed for Paraview output.
+    if (ele_type==3) // prism
+      connectivity_plot.setup(8,n_peles_per_ele);
+    else 
+      connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
+
+		set_connectivity_plot();
   }
   else if (in_run_type==1)
   {
@@ -190,9 +196,9 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
         pos_ppts(i,j).setup(n_dims);
 
     if (ele_type==3) // prism
-      connectivity_plot.setup(8,n_eles*n_peles_per_ele);
+      connectivity_plot.setup(8,n_peles_per_ele);
     else 
-      connectivity_plot.setup(n_verts_per_ele,n_eles*n_peles_per_ele);
+      connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
   }
 
   }
@@ -228,8 +234,14 @@ int* eles::get_connectivity_plot_ptr()
     return connectivity_plot.get_ptr_cpu();
 }
 
+array<int> eles::get_connectivity_plot()
+{
+    return connectivity_plot;
+}
+
 array<double> eles::calc_pos_pnode_vert(int in_ele, int in_vert)
 {
+	//cout << "in calc_pos_pnode_vert " << in_vert << ", " << n_verts_per_ele << endl;
   if (in_vert >= n_verts_per_ele)
     FatalError("in_vert >= n_verts_per_ele");
 
@@ -2022,6 +2034,11 @@ int eles::get_n_peles_per_ele(void)
 	return n_peles_per_ele;
 }
 
+// get number of verts_per_ele 
+int eles::get_n_verts_per_ele(void)
+{
+	return n_verts_per_ele;
+}
 
 // get number of elements
 

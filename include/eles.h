@@ -162,6 +162,9 @@ class eles
   // get number of peles_per_ele 
   int get_n_peles_per_ele(void);
 
+  // get number of verts_per_ele 
+  int get_n_verts_per_ele(void);
+
   /*! get number of solution points per element */
   int get_n_upts_per_ele(void);
   
@@ -271,6 +274,8 @@ class eles
   void set_disu_upts_to_zero_other_levels(void);
 
   int* get_connectivity_plot_ptr();
+
+  array<int> get_connectivity_plot();
 
   void get_plotq_ppts(int in_ele, array<double> &out_plotq_ppts, array<double>& plotq_pnodes);
 

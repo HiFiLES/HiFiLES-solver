@@ -128,9 +128,9 @@ void eles_tets::setup_ele_type_specific(int in_run_type)
 	  
 	  temp_u.setup(n_fields);
 	  temp_f.setup(n_fields,n_dims);
-  }
-  else
-  {
+  //}
+  //else
+  //{
 
     if (viscous==1)
     {
@@ -295,189 +295,108 @@ void eles_tets::set_connectivity_plot()
   int count=0;
   int temp = (p_res)*(p_res+1)*(p_res+2)/6;	
 
-  for (int m=0;m<n_eles;++m){
-    for(int k=0;k<p_res-1;++k){
-      for(int j=0;j<p_res-1-k;++j){
-        for(int i=0;i<p_res-1-k-j;++i){
+	/*! Loop over the plot sub-elements. */
+	/*! For tets there are 3 sets with different orientations */
+	/*! First set */
+  for(int k=0;k<p_res-1;++k){
+    for(int j=0;j<p_res-1-k;++j){
+      for(int i=0;i<p_res-1-k-j;++i){
 	  
-          vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i;
-          vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
-          vertex_2 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i;
-          vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i;
+        vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i;
+        vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
+        vertex_2 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i;
+        vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i;
 
-          connectivity_plot(0,count) = ppt_to_pnode(m,vertex_0);
-          connectivity_plot(1,count) = ppt_to_pnode(m,vertex_1);
-          connectivity_plot(2,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(3,count) = ppt_to_pnode(m,vertex_3);
-          count++;
-        }
-      }
-    }
-	  
-    for(int k=0;k<p_res-2;++k){
-      for(int j=0;j<p_res-2-k;++j){
-        for(int i=0;i<p_res-2-k-j;++i){
-          vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
-          vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
-          vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i + 1;
-          vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + (i-1) + 1;
-          vertex_4 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + (i-1) + 1;
-          vertex_5 = temp - (p_res-(k))*(p_res+1-(k))*(p_res+2-(k))/6 + (j+1)*(p_res-(k)) - (j)*(j+1)/2 + (i-1) + 1;
-
-          connectivity_plot(0,count) = ppt_to_pnode(m,vertex_0);
-          connectivity_plot(1,count) = ppt_to_pnode(m,vertex_1);
-          connectivity_plot(2,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(3,count) = ppt_to_pnode(m,vertex_5);
-          count++;
-
-          connectivity_plot(0,count) = ppt_to_pnode(m,vertex_0);
-          connectivity_plot(1,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(2,count) = ppt_to_pnode(m,vertex_4);
-          connectivity_plot(3,count) = ppt_to_pnode(m,vertex_5);
-          count++;
-
-          connectivity_plot(0,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(1,count) = ppt_to_pnode(m,vertex_3);
-          connectivity_plot(2,count) = ppt_to_pnode(m,vertex_4);
-          connectivity_plot(3,count) = ppt_to_pnode(m,vertex_5);
-          count++;
-
-          connectivity_plot(0,count) = ppt_to_pnode(m,vertex_1);
-          connectivity_plot(1,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(2,count) = ppt_to_pnode(m,vertex_3);
-          connectivity_plot(3,count) = ppt_to_pnode(m,vertex_5);
-          count++;
-        }
-      }
-    }
-
-    for(int k=0;k<p_res-3;++k){
-      for(int j=0;j<p_res-3-k;++j){
-        for(int i=0;i<p_res-3-k-j;++i){
-
-          vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
-          vertex_1 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + i + 1;
-          vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i ;
-          vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i + 1;
-
-          connectivity_plot(0,count) = ppt_to_pnode(m,vertex_0);
-          connectivity_plot(1,count) = ppt_to_pnode(m,vertex_1);
-          connectivity_plot(2,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(3,count) = ppt_to_pnode(m,vertex_3);
-          count++;
-
-        }
+        connectivity_plot(0,count) = vertex_0;
+        connectivity_plot(1,count) = vertex_1;
+        connectivity_plot(2,count) = vertex_2;
+        connectivity_plot(3,count) = vertex_3;
+        count++;
       }
     }
   }
-/* CGL050412: setting connectivity without redundant nodes
-  for (int m=0;m<n_eles;m++)
-  {
-	  for(int k=0;k<p_res-1;k++)
-	  {
-	  for(int j=0;j<p_res-1-k;j++)
-	  {
-	  for(int i=0;i<p_res-1-k-j;i++)
-	  {
-	  
-	  	vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i;
-	  	
-	  	vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
-	  	
-	  	vertex_2 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i;
-	  	
-	  	vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i;
-	  
-	  	vertex_0+=m*temp;
-	  	vertex_1+=m*temp;
-	  	vertex_2+=m*temp;
-	  	vertex_3+=m*temp;
-	 
-      connectivity_plot(0,count) = vertex_0+1;
-      connectivity_plot(1,count) = vertex_1+1;
-      connectivity_plot(2,count) = vertex_2+1;
-      connectivity_plot(3,count) = vertex_3+1;
-      count++;
-	  
-	  }
-	  }
-	  }
-	  
-	  for(int k=0;k<p_res-2;k++)
-	  {
-	  for(int j=0;j<p_res-2-k;j++)
-	  {
-	  for(int i=0;i<p_res-2-k-j;i++)
-	  {
-	  	vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
-	  	
-	  	vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
-	  	vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i + 1;
-	  	vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + (i-1) + 1;
-	  	vertex_4 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + (i-1) + 1;
-	  	vertex_5 = temp - (p_res-(k))*(p_res+1-(k))*(p_res+2-(k))/6 + (j+1)*(p_res-(k)) - (j)*(j+1)/2 + (i-1) + 1;
 
-	  	vertex_0+=m*temp;
-	  	vertex_1+=m*temp;
-	  	vertex_2+=m*temp;
-	  	vertex_3+=m*temp;
-	  	vertex_4+=m*temp;
-	  	vertex_5+=m*temp;
-	 
-      connectivity_plot(0,count) = vertex_0+1;
-      connectivity_plot(1,count) = vertex_1+1;
-      connectivity_plot(2,count) = vertex_2+1;
-      connectivity_plot(3,count) = vertex_5+1;
-      count++;
+	/*! Second set */
+  for(int k=0;k<p_res-2;++k){
+    for(int j=0;j<p_res-2-k;++j){
+      for(int i=0;i<p_res-2-k-j;++i){
+        vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
+        vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
+        vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i + 1;
+        vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + (i-1) + 1;
+        vertex_4 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + (i-1) + 1;
+        vertex_5 = temp - (p_res-(k))*(p_res+1-(k))*(p_res+2-(k))/6 + (j+1)*(p_res-(k)) - (j)*(j+1)/2 + (i-1) + 1;
 
-      connectivity_plot(0,count) = vertex_0+1;
-      connectivity_plot(1,count) = vertex_2+1;
-      connectivity_plot(2,count) = vertex_4+1;
-      connectivity_plot(3,count) = vertex_5+1;
-      count++;
+        connectivity_plot(0,count) = vertex_0;
+        connectivity_plot(1,count) = vertex_2;
+        connectivity_plot(2,count) = vertex_1;
+        connectivity_plot(3,count) = vertex_4;
+        count++;
 
-      connectivity_plot(0,count) = vertex_2+1;
-      connectivity_plot(1,count) = vertex_3+1;
-      connectivity_plot(2,count) = vertex_4+1;
-      connectivity_plot(3,count) = vertex_5+1;
-      count++;
+        connectivity_plot(0,count) = vertex_2;
+        connectivity_plot(1,count) = vertex_3;
+        connectivity_plot(2,count) = vertex_1;
+        connectivity_plot(3,count) = vertex_4;
+        count++;
 
-      connectivity_plot(0,count) = vertex_1+1;
-      connectivity_plot(1,count) = vertex_2+1;
-      connectivity_plot(2,count) = vertex_3+1;
-      connectivity_plot(3,count) = vertex_5+1;
-      count++;
-	  }
-	  }
-	  }
+        connectivity_plot(0,count) = vertex_5;
+        connectivity_plot(1,count) = vertex_1;
+        connectivity_plot(2,count) = vertex_3;
+        connectivity_plot(3,count) = vertex_4;
+        count++;
 
-	  for(int k=0;k<p_res-3;k++)
-	  {
-	  for(int j=0;j<p_res-3-k;j++)
-	  {
-	  for(int i=0;i<p_res-3-k-j;i++)
-	  {
-	  
-	  	vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
-	  	vertex_1 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + i + 1;
-	  	vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i ;
-	  	vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i + 1;
+        connectivity_plot(0,count) = vertex_0;
+        connectivity_plot(1,count) = vertex_4;
+        connectivity_plot(2,count) = vertex_1;
+        connectivity_plot(3,count) = vertex_5;
+        count++;
+				/*
+        connectivity_plot(0,count) = vertex_0;
+        connectivity_plot(1,count) = vertex_1;
+        connectivity_plot(2,count) = vertex_2;
+        connectivity_plot(3,count) = vertex_5;
+        count++;
 
-	  	vertex_0+=m*temp;
-	  	vertex_1+=m*temp;
-	  	vertex_2+=m*temp;
-	  	vertex_3+=m*temp;
-	  
-      connectivity_plot(0,count) = vertex_0+1;
-      connectivity_plot(1,count) = vertex_1+1;
-      connectivity_plot(2,count) = vertex_2+1;
-      connectivity_plot(3,count) = vertex_3+1;
-      count++;
+        connectivity_plot(0,count) = vertex_0;
+        connectivity_plot(1,count) = vertex_2;
+        connectivity_plot(2,count) = vertex_4;
+        connectivity_plot(3,count) = vertex_5;
+        count++;
 
-	  }
-	  }
-	  }
-  }*/
+        connectivity_plot(0,count) = vertex_2;
+        connectivity_plot(1,count) = vertex_3;
+        connectivity_plot(2,count) = vertex_4;
+        connectivity_plot(3,count) = vertex_5;
+        count++;
+
+        connectivity_plot(0,count) = vertex_1;
+        connectivity_plot(1,count) = vertex_2;
+        connectivity_plot(2,count) = vertex_3;
+        connectivity_plot(3,count) = vertex_5;
+        count++;
+				*/
+      }
+    }
+  }
+
+	/*! Third set */
+  for(int k=0;k<p_res-3;++k){
+    for(int j=0;j<p_res-3-k;++j){
+      for(int i=0;i<p_res-3-k-j;++i){
+
+        vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
+        vertex_1 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + i + 1;
+        vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i ;
+        vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i + 1;
+
+        connectivity_plot(0,count) = vertex_0;
+        connectivity_plot(1,count) = vertex_1;
+        connectivity_plot(2,count) = vertex_2;
+        connectivity_plot(3,count) = vertex_3;
+        count++;
+      }
+    }
+  }
 }
 
 
@@ -1496,29 +1415,28 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
   // VCJH Filter
   // -----------------
   int Ncoeff, indx;
+  double ap;
+  double c_plus;
+  double c_plus_1d, c_sd_1d, c_hu_1d;
   
+  Ncoeff = (order+1)*(order+2)/2;
+
   array <double> c_coeff(Ncoeff);
+  array <double> mtemp_0, mtemp_1;
   array <double> K(n_upts_per_ele,n_upts_per_ele);
-  array <double> mass_matrix(n_upts_per_ele,n_upts_per_ele);
-  array <double> D_high_order_trans(n_upts_per_ele,n_upts_per_ele);
-  array <double> mtemp_0(n_upts_per_ele,n_upts_per_ele);
-  array <double> mtemp_1(n_upts_per_ele,n_upts_per_ele);
-  array <double> Filt_dubiner(n_upts_per_ele,n_upts_per_ele);
-  array <double> vandermonde_trans(n_upts_per_ele,n_upts_per_ele);
   array <double> Identity(n_upts_per_ele,n_upts_per_ele);
+  array <double> Filt_dubiner(n_upts_per_ele,n_upts_per_ele);
   array <double> Dr(n_upts_per_ele,n_upts_per_ele);
   array <double> Ds(n_upts_per_ele,n_upts_per_ele);
   array <double> Dt(n_upts_per_ele,n_upts_per_ele);
   array <double> tempr(n_upts_per_ele,n_upts_per_ele);
   array <double> temps(n_upts_per_ele,n_upts_per_ele);
   array <double> tempt(n_upts_per_ele,n_upts_per_ele);
+  array <double> D_high_order_trans(n_upts_per_ele,n_upts_per_ele);
+  array <double> vandermonde_trans(n_upts_per_ele,n_upts_per_ele);
 
   array<array <double> > D_high_order;
   array<array <double> > D_T_D;
-  
-  double ap;
-  double c_plus;
-  double c_plus_1d, c_sd_1d, c_hu_1d;
   
   // 1D prep
   ap = 1./pow(2.0,order)*factorial(2*order)/ (factorial(order)*factorial(order));
@@ -1576,11 +1494,10 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
   }
   else
     FatalError("VCJH tetrahedral scheme not recognized");
-
-
-  run_input.c_tet = c_tet;
   
   cout << "c_tet " << c_tet << endl;
+
+  run_input.c_tet = c_tet;
 
 	// Evaluate the derivative normalized of Dubiner basis at position in_loc
 	for (int i=0;i<n_upts_per_ele;i++) {
@@ -1617,12 +1534,11 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
   //(Dt*vandermonde).print();
   //cout << endl;
 
+	//Create identity matrix
 	zero_array(Identity);
-  for (int i=0;i<n_upts_per_ele;i++) {
-    Identity(i,i) = 1.;
-  }
 
-  Ncoeff = (order+1)*(order+2)/2;
+  for (int i=0;i<n_upts_per_ele;i++)
+    Identity(i,i) = 1.;
 
 	// Set array with trinomial coefficients multiplied by value of c
   indx = 0;
@@ -1646,7 +1562,6 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
   {
     for(int w=1; w<=v; w++)
     {
-      D_high_order(indx).setup(n_upts_per_ele,n_upts_per_ele);
       D_high_order(indx) = array<double>(Identity);
     
       for (int i=1; i<=(order-v+1); i++)
@@ -1681,11 +1596,11 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
   //mass matrix
   vandermonde_trans = transpose_array(vandermonde);
   mtemp_0 = mult_arrays(vandermonde,vandermonde_trans);
-  mass_matrix = inv_array(mtemp_0);  //without jacobian scaling
 
   //filter
   mtemp_1 = array<double>(mtemp_0);
   mtemp_1 = mult_arrays(mtemp_1,K);
+
   for (int i=0;i<n_upts_per_ele;i++)
     for (int j=0;j<n_upts_per_ele;j++)
       mtemp_1(i,j) += Identity(i,j);
@@ -1696,8 +1611,7 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
 
   //cout << "Filt" << endl;
   //Filt.print();
-
-  cout << endl;
+  //cout << endl;
     
   //cout << "Filt_dubiner" << endl;
   //Filt_dubiner.print();
