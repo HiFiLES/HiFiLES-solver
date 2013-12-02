@@ -11,7 +11,7 @@
 
 # Settings
 
-include makefile.in
+include makefiles/makefile.enrico_GPU.in
 
 # Compiler
 
@@ -58,7 +58,7 @@ endif
 #endif
 
 ifeq ($(PARALLEL),MPI)
-	OPTS	+= -I /usr/lib64/openmpi/bin/
+	OPTS	+= -I /usr/mpi/gcc/mvapich-1.2.0
 	OPTS	+= -I $(PARMETIS_DIR)/include
 	OPTS	+= -I $(PARMETIS_DIR)/metis/include
 endif
@@ -95,7 +95,8 @@ ifeq ($(BLAS),ACCELERATE_BLAS)
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
-	LIBS	+= -L $(BLAS_DIR)/lib -lcblas -latlas
+        LIBS    += -L $(BLAS_DIR)/lib -lcblas
+#	LIBS	+= -latlas
 endif
 
 ifeq ($(NODE),GPU)
@@ -164,7 +165,7 @@ $(OBJ)output.o: output.cpp output.h input.h error.h
 $(OBJ)eles.o: eles.cpp eles.h array.h error.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
-$(OBJ)eles_tris.o: eles_tris.cpp eles_tris.h eles.h funcs.h input.h array.h cubature_1d.h error.h
+$(OBJ)eles_tris.o: eles_tris.cpp eles_tris.h eles.h funcs.h input.h array.h array.h cubature_1d.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
 $(OBJ)eles_quads.o: eles_quads.cpp eles_quads.h eles.h funcs.h input.h array.h error.h
