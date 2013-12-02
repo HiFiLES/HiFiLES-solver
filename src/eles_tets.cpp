@@ -327,6 +327,7 @@ void eles_tets::set_connectivity_plot()
         vertex_4 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + (i-1) + 1;
         vertex_5 = temp - (p_res-(k))*(p_res+1-(k))*(p_res+2-(k))/6 + (j+1)*(p_res-(k)) - (j)*(j+1)/2 + (i-1) + 1;
 
+
         connectivity_plot(0,count) = vertex_0;
         connectivity_plot(1,count) = vertex_2;
         connectivity_plot(2,count) = vertex_1;
@@ -350,31 +351,6 @@ void eles_tets::set_connectivity_plot()
         connectivity_plot(2,count) = vertex_1;
         connectivity_plot(3,count) = vertex_5;
         count++;
-				/*
-        connectivity_plot(0,count) = vertex_0;
-        connectivity_plot(1,count) = vertex_1;
-        connectivity_plot(2,count) = vertex_2;
-        connectivity_plot(3,count) = vertex_5;
-        count++;
-
-        connectivity_plot(0,count) = vertex_0;
-        connectivity_plot(1,count) = vertex_2;
-        connectivity_plot(2,count) = vertex_4;
-        connectivity_plot(3,count) = vertex_5;
-        count++;
-
-        connectivity_plot(0,count) = vertex_2;
-        connectivity_plot(1,count) = vertex_3;
-        connectivity_plot(2,count) = vertex_4;
-        connectivity_plot(3,count) = vertex_5;
-        count++;
-
-        connectivity_plot(0,count) = vertex_1;
-        connectivity_plot(1,count) = vertex_2;
-        connectivity_plot(2,count) = vertex_3;
-        connectivity_plot(3,count) = vertex_5;
-        count++;
-				*/
       }
     }
   }
