@@ -1572,9 +1572,9 @@ void eles::calc_disuf_upts(int in_disu_upts_from)
 	}
 	#endif
 
-	//#ifdef _GPU
-	//calc_disuf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu());
-	//#endif
+	#ifdef _GPU
+	calc_disuf_upts_kernel_wrapper(n_fields, n_upts_per_ele, n_eles, n_dims, run_input.SGS_model, disu_upts(in_disu_upts_from).get_ptr_gpu(), Lm.get_ptr_gpu(), Hm.get_ptr_gpu(), filter_upts.get_ptr_gpu());
+	#endif
   }
 }
 
@@ -1647,7 +1647,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 		#endif
 
 		#ifdef _GPU
-			calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
+			calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,ele_type,run_input.LES,run_input.SGS_model,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
 		#endif	
 
 	}

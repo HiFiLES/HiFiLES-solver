@@ -1,7 +1,15 @@
-/*
-Copyright 2011 the Board of Trustees of The Leland Stanford Junior University. All Rights Reserved.
-Developers (alphabetical by surname): Patrice Castonguay, Antony Jameson, Peter Vincent, David Williams.
-*/
+/*!
+ * \file cuda_kernels.cu
+ * \brief _____________________________
+ * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
+ *                          Peter Vincent, David Williams (alphabetical by surname).
+ *         - Current development: Aerospace Computing Laboratory (ACL) directed
+ *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
+ * \version 1.0.0
+ *
+ * HiFiLES (High Fidelity Large Eddy Simulation).
+ * Copyright (C) 2013 Aerospace Computing Laboratory.
+ */
 
 #define HALFWARP 16
 #include <iostream>
@@ -684,23 +692,6 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
       
       stensor[2] = (*mu)*(grad_vel[0*in_n_dims + 1] + grad_vel[1*in_n_dims + 0]); 
 
-			/*// If LES, calculate SGS stress tensor
-			if(run_input.LES==1)
-			{
-				calc_sgsf_upts(temp_u,temp_grad_u,detjac,j,temp_sgsf);
-
-				// Add SGS flux to viscous flux
-      #pragma unroll
-		  	for(k=0;k<n_fields;k++)
-  			{
-      #pragma unroll
-  				for(m=0;m<n_dims;m++)
-  				{
-					  temp_f(k,m) += temp_sgsf(k,m);
-					}
-				}
-			}*/
-
     }
     else if (in_field==0) {
       f[0] = 0.0;
@@ -787,6 +778,48 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
 			f[2] = -((q[1]/q[0])*stensor[4]+(q[2]/q[0])*stensor[5]+(q[3]/q[0])*stensor[2] + (*mu)*in_gamma*grad_ene[2]/in_prandtl);
     }
   }
+}
+
+__device__ void SGS_filter_width(double in_detjac, double delta, int in_ele_type)
+{
+	// Define filter width by Deardorff's unstructured element method
+	if (in_ele_type==0) // triangle
+	{
+		delta = in_detjac*2.0;
+	}
+	else if (in_ele_type==1) // quads
+	{
+		delta = in_detjac*4.0;
+	}
+	else if (in_ele_type==2) // tets
+	{
+		delta = in_detjac*8.0/6.0;
+	}
+	else if (in_ele_type==4) // hexas
+	{
+		delta = in_detjac*8.0;
+	}
+
+	//delta = run_input.filter_ratio*pow(vol,1./n_dims);
+	//delta *= delta;
+
+}
+
+template<int in_n_dims>
+__device__ void SGS_flux(int SGS_model, double delta, double* q, double* grad_q, double* grad_vel, double* grad_ene, double* stensor, double* f, double* inte, double in_prandtl, double in_gamma, int field)
+{
+			double Cs;
+			double trace=0.0;
+			double Smod=0.0;
+			double ke=0.0;
+			double Pr=0.5; // turbulent Prandtl number
+			double dlt, nu_t, vol, jac;
+			double rho;
+
+		 	//if(thread_id<(in_n_upts_per_ele*in_n_eles))
+		 	//{
+
+			//}
 }
 
 template<int in_n_fields, int in_n_dims>
@@ -1230,6 +1263,168 @@ __global__ void calc_tdisinvf_upts_AD_gpu_kernel(int in_n_upts_per_ele, int in_n
   }
 }
 
+// gpu kernel to calculate filtered solution at solution points
+template<int in_n_fields, int in_n_dims>
+__global__ void calc_disuf_upts_kernel(int in_n_upts_per_ele, int in_n_eles, int in_SGS_model, double* in_disu_upts_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr, double* in_filter_upts_ptr)
+{
+	const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
+	int i,j,k;
+	int n_upts;
+	int index;
+
+  double in_u[in_n_fields];
+  double out_u[in_n_fields];
+
+	int stride = in_n_upts_per_ele*in_n_eles;
+
+ 	if(thread_id<stride)
+ 	{
+    #pragma unroll
+    for (j=0;j<in_n_upts_per_ele;++j)
+		{
+			in_u[0] = in_disu_upts_ptr[thread_id];
+			in_u[1] = in_disu_upts_ptr[thread_id + 1*stride];
+			in_u[2] = in_disu_upts_ptr[thread_id + 2*stride];
+			in_u[in_n_fields-1] = in_disu_upts_ptr[thread_id + (in_n_fields-1)*stride] - 0.5*(in_u[1]*in_u[1]+in_u[2]*in_u[2])/in_u[0];
+			if (in_n_fields==5) {
+			in_u[3] = in_disu_upts_ptr[thread_id + 3*stride];
+				in_u[in_n_fields-1] -= 0.5*(in_u[3]*in_u[3])/in_u[0];
+			}
+
+			// Filter rho, rho*velocity, rho*int_energy
+			#pragma unroll
+	    for (int i=0;i<in_n_fields;i++)
+			{
+				out_u[i] = 0.0;
+				#pragma unroll
+	      for (k=0;k<in_n_upts_per_ele;++k)
+				{
+					out_u[i] += in_filter_upts_ptr[j*in_n_upts_per_ele + k]*in_u[i];
+				}
+			}
+
+			// Calculate Leonard terms if WSM or Similarity model
+			if(in_SGS_model==2 || in_SGS_model==4)
+			{
+				double uu[in_n_dims][in_n_dims];
+				double eu[in_n_dims];
+				double uuf[in_n_dims][in_n_dims];
+				double euf[in_n_dims];
+				double trace=0.0;
+
+				// Velocity and energy product terms
+				#pragma unroll
+		    for (int l=0;l<in_n_dims;l++)
+				{
+					#pragma unroll
+			    for (int m=0;m<in_n_dims;m++)
+					{
+						uu[l][m] = in_u[l+1]*in_u[m+1];
+						uuf[l][m] = 0.0;
+					}
+					eu[l] = in_u[in_n_fields-1]*in_u[l+1];
+					euf[l] = 0.0;
+				}
+
+				// Filter product terms
+				#pragma unroll
+		    for (int l=0;l<in_n_dims;l++)
+				{
+					#pragma unroll
+			    for (int m=0;m<in_n_dims;m++)
+					{
+						#pragma unroll
+			      for (k=0;k<in_n_upts_per_ele;++k)
+						{
+							uuf[l][m] += in_filter_upts_ptr[j*in_n_upts_per_ele+k]*uu[l][m];
+						}
+						euf[l] += in_filter_upts_ptr[j*in_n_upts_per_ele + k]*eu[l];
+					}
+				}
+
+				// Compute Leonard tensors
+				stride = in_n_upts_per_ele;
+				#pragma unroll
+		    for (int l=0;l<in_n_dims;l++)
+				{
+					#pragma unroll
+			    for (int m=0;m<in_n_dims;m++)
+					{
+						//in_Leonard_mom_ptr[j][l][m] = (uuf[l][m] - out_u[l+1]*out_u[m+1])/out_u[0]/out_u[0];
+						in_Leonard_mom_ptr[j + (l*in_n_dims+m)*stride] = (uuf[l][m] - out_u[l+1]*out_u[m+1])/out_u[0]/out_u[0];
+					}
+					//trace += in_Leonard_mom_ptr[j][l][l];
+					trace += in_Leonard_mom_ptr[j + (l*in_n_dims+l)*stride];
+
+					//in_Leonard_energy_ptr[j][l] = (euf[l] - out_u[l+1]*out_u[in_n_fields-1]);
+					in_Leonard_energy_ptr[j + l*stride] = (euf[l] - out_u[l+1]*out_u[in_n_fields-1]);
+				}
+
+				// Subtract trace
+				#pragma unroll
+		    for (int l=0;l<in_n_dims;l++)
+				{
+					in_Leonard_mom_ptr[j + (l*in_n_dims+l)*stride] -= trace/in_n_dims;
+				}
+			}
+
+			// Add kinetic energy to internal energy
+			out_u[in_n_fields-1] += 0.5*(out_u[1]*out_u[1]+out_u[2]*out_u[2])/out_u[0];
+			if (in_n_fields==5) {
+				out_u[in_n_fields-1] += 0.5*(out_u[3]*out_u[3])/out_u[0];
+			}
+
+			// Finally, write out filtered solution if using explicit SVV filtering
+			if(in_SGS_model==3)
+			{
+				#pragma unroll
+		    for (int i=0;i<in_n_fields;i++)
+				{
+					in_disu_upts_ptr[thread_id + i*stride] = out_u[i];
+				}
+			}
+
+		}
+	}
+}
+
+// wrapper for gpu kernel to calculate filtered solution at solution points
+void calc_disuf_upts_kernel_wrapper(int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, int in_SGS_model, double* in_disu_upts_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr, double* in_filter_upts_ptr)
+{
+	//printf("In CUDA LES filtering wrapper\n");
+	// HACK: fix 256 threads per block
+	int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+	if(in_n_dims==2)
+	{
+	  if (in_n_fields==4)
+  	{
+		  calc_disuf_upts_kernel <4,2> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
+  	}
+  	else if (in_n_fields==5)
+  	{
+		  calc_disuf_upts_kernel <5,2> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
+  	}
+  	else 
+  	  FatalError("n_fields not supported");
+	}
+	else if(in_n_dims==3)
+	{
+	  if (in_n_fields==4)
+  	{
+		  calc_disuf_upts_kernel <4,3> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
+  	}
+  	else if (in_n_fields==5)
+  	{
+		  calc_disuf_upts_kernel <5,3> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
+  	}
+  	else 
+  	  FatalError("n_fields not supported");
+	}
+  check_cuda_error("After",__FILE__, __LINE__);
+}
 
 // gpu kernel to calculate transformed discontinuous inviscid flux at solution points for the Navier-Stokes equation
 // otherwise, switch to one thread per output?
@@ -1524,7 +1719,7 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
 
 // gpu kernel to calculate transformed discontinuous viscous flux at solution points
 template<int in_n_dims, int in_n_fields, int in_n_comp>
-__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
+__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, int in_ele_type, int LES, int SGS_model, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
 {
 	const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
@@ -1579,6 +1774,16 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
     {
       vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
       
+			// If LES (but not SVV model), calculate SGS stress tensor
+			if(LES==1 && SGS_model!=3)
+			{
+				// Calculate filter width
+				jac = in_detjac_upts_ptr[thread_id];
+				SGS_filter_width(jac, delta, in_ele_type);
+
+				SGS_flux<in_n_dims>(SGS_model, delta, q, grad_q, grad_vel, grad_ene, stensor, f, &inte, in_prandtl, in_gamma, i);
+			}
+
       index = thread_id+i*stride;
       
       if(in_n_dims==2) {
@@ -2656,7 +2861,7 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
 }
 
 // wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points
-void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
+void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, int in_ele_type, int LES, int SGS_model, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
 {
 	// HACK: fix 256 threads per block
 	int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
@@ -2666,9 +2871,9 @@ void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims,
   if (equation==0)
   {
     if (in_n_dims==2)
-	    calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis);
+	    calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_ele_type,LES,SGS_model,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis);
     else if (in_n_dims==3)
-	    calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis);
+	    calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_ele_type,LES,SGS_model,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis);
     else
 		  FatalError("ERROR: Invalid number of dimensions ... ");
   }

@@ -1096,6 +1096,11 @@ void eles_hexas::compute_filter_upts(void)
 			}
 		}
 
+	// Copy filter to GPU for use in LES routines
+	#ifdef _GPU
+	filter_upts.cp_cpu_gpu();
+	#endif
+
 	cout<<"3D coeff sum " << sum << endl;
 	printf("\nLeaving filter computation function\n");
 }
