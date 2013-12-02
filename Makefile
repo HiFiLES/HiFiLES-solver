@@ -11,7 +11,7 @@
 
 # Settings
 
-include makefiles/makefile.enrico_GPU.in
+include makefile.in
 
 # Compiler
 
@@ -33,7 +33,7 @@ endif
 
 # Pre-processing macros
 
-OPTS    = -D_$(NODE)  -D_$(BLAS)#  -D_$(VTK)
+OPTS    = -D_$(NODE)  -D_$(BLAS)
 
 ifeq ($(PARALLEL),MPI)
 	OPTS    += -D_$(PARALLEL) 
@@ -52,10 +52,6 @@ endif
 ifeq ($(TECIO),YES)
 	OPTS += -I $(TECIO_DIR)/tecsrc
 endif
-
-#ifeq ($(VTK),YES)
-#	OPTS	+= -I $(VTKINCDIR)
-#endif
 
 ifeq ($(PARALLEL),MPI)
 	OPTS	+= -I /usr/mpi/gcc/mvapich-1.2.0
@@ -95,17 +91,12 @@ ifeq ($(BLAS),ACCELERATE_BLAS)
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
-        LIBS    += -L $(BLAS_DIR)/lib -lcblas
-#	LIBS	+= -latlas
+        LIBS    += -L $(BLAS_DIR)/lib -lcblas -latlas
 endif
 
 ifeq ($(NODE),GPU)
 	LIBS	+= -L $(CUDA_DIR)/lib64 -lcudart -lcublas -lcusparse -lm
 endif
-
-#ifeq ($(VTK),YES)
-#	LIBS	+= -L $(VTKLIBDIR) -lvtkImaging -lvtkGraphics -lvtkCommon -lvtkRendering -lvtkIO -lvtksys -lvtkFiltering -lpython2.7
-#endif
 
 # Source
 
