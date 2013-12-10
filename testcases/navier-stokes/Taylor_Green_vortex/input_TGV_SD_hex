@@ -20,7 +20,7 @@ order                             // Order of basis polynomials
 dt 
 0.001
 n_steps
-20000
+30
 adv_type                          // 0: Forward Euler, 3: RK45
 3
 tau 
@@ -65,9 +65,9 @@ plot_freq
 restart_dump_freq
 10000
 monitor_res_freq
-10000
+1
 monitor_force_freq
-10000
+100
 diagnostics_freq                  // Compute global integrals. 0=no diagnostics
 10
 n_diagnostics
