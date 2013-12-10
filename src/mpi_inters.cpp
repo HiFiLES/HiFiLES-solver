@@ -28,8 +28,8 @@
 #include "mpi.h"
 #endif
 
-#if defined _GPU
-#include "cuda_kernels.h" 
+#ifdef _GPU
+#include "../include/cuda_kernels.h" 
 #endif
 
 using namespace std;

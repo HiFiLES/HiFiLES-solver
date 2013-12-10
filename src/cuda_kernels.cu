@@ -780,46 +780,275 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
   }
 }
 
-__device__ void SGS_filter_width(double in_detjac, double delta, int in_ele_type)
+__device__ double SGS_filter_width(double in_detjac, int in_ele_type, int in_n_dims, double in_filter_ratio)
 {
 	// Define filter width by Deardorff's unstructured element method
+	double delta, vol;
+
 	if (in_ele_type==0) // triangle
 	{
-		delta = in_detjac*2.0;
+		vol = in_detjac*2.0;
 	}
 	else if (in_ele_type==1) // quads
 	{
-		delta = in_detjac*4.0;
+		vol = in_detjac*4.0;
 	}
 	else if (in_ele_type==2) // tets
 	{
-		delta = in_detjac*8.0/6.0;
+		vol = in_detjac*8.0/6.0;
 	}
 	else if (in_ele_type==4) // hexas
 	{
-		delta = in_detjac*8.0;
+		vol = in_detjac*8.0;
 	}
 
-	//delta = run_input.filter_ratio*pow(vol,1./n_dims);
-	//delta *= delta;
-
+	delta = in_filter_ratio*pow(vol,1./in_n_dims);
+	//printf("vol: %6.10f",vol);
+	//printf("delta: %6.10f",delta);
+	return delta;
 }
 
 template<int in_n_dims>
-__device__ void SGS_flux(int SGS_model, double delta, double* q, double* grad_q, double* grad_vel, double* grad_ene, double* stensor, double* f, double* inte, double in_prandtl, double in_gamma, int field)
+__device__ void SGS_flux(double* q, double* grad_q, double* grad_vel, double* grad_ene, double* sdtensor, double* straintensor, double* Leonard_mom, double* Leonard_ene, double* f, int SGS_model, double delta, double in_gamma, int in_field)
 {
-			double Cs;
-			double trace=0.0;
-			double Smod=0.0;
-			double ke=0.0;
-			double Pr=0.5; // turbulent Prandtl number
-			double dlt, nu_t, vol, jac;
-			double rho;
+	int i, j;
+	int eddy, sim;
+	double Cs, mu_t;
+	double Smod=0.0;
+	double Pr=0.5; // turbulent Prandtl number
+	double num=0.0;
+	double denom=0.0;
+	double diag=0.0;
+	double eps=1.e-10;
 
-		 	//if(thread_id<(in_n_upts_per_ele*in_n_eles))
-		 	//{
+	// Set flags depending on which SGS model we are using
+	// 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
+	if(SGS_model==0) {
+		eddy = 1;
+		sim = 0;
+	}
+	else if(SGS_model==1) {
+		eddy = 1;
+		sim = 0;
+	}
+	else if(SGS_model==2) {
+		eddy = 1;
+		sim = 1;
+	}
+	else if(SGS_model==3) {
+		eddy = 0;
+		sim = 0;
+	}
+	else if(SGS_model==4) {
+		eddy = 0;
+		sim = 1;
+	}
 
-			//}
+	// Calculate eddy viscosity
+
+	// Smagorinsky model
+	if(SGS_model==0) {
+
+		Cs=0.1;
+
+		// Calculate modulus of strain rate tensor
+		#pragma unroll
+		for (i=0;i<in_n_dims;i++) {
+			Smod += 2.0*straintensor[i]*straintensor[i];
+		}
+
+		// Now the off-diagonal components of strain tensor:
+	  if(in_n_dims==2) {
+			Smod += 4.0*straintensor[2]*straintensor[2];
+		}
+	  else if(in_n_dims==3) {
+			Smod += 4.0*(straintensor[3]*straintensor[3] + straintensor[4]*straintensor[4] + straintensor[5]*straintensor[5]);
+		}
+
+		// Finally, the modulus of strain rate tensor
+		Smod = sqrt(Smod);
+
+		mu_t = q[0]*Cs*Cs*delta*delta*Smod;
+	}
+
+	// WALE or WSM model
+	else if(SGS_model==1 || SGS_model==2) {
+
+		Cs=0.5;
+
+		// Square of velocity gradient tensor
+		#pragma unroll
+		for (i=0;i<in_n_dims;i++) {
+			sdtensor[i] = 0.0;
+			#pragma unroll
+			for (j=0;j<in_n_dims;j++) {
+				diag += grad_vel[i*in_n_dims + j]*grad_vel[j*in_n_dims + i]/3.0;
+				sdtensor[i] += grad_vel[i*in_n_dims + j]*grad_vel[j*in_n_dims + i];
+			}
+		}
+
+		// subtract trace from diagonal entries of tensor
+		#pragma unroll
+		for (i=0;i<in_n_dims;i++)
+			sdtensor[i] -= diag;
+
+		// off-diagonal terms of tensor
+	  if(in_n_dims==2) {
+			sdtensor[2] = 0.0;
+			#pragma unroll
+			for (j=0;j<in_n_dims;j++) {
+				sdtensor[2] += (grad_vel[0*in_n_dims + j]*grad_vel[j*in_n_dims + 1] + grad_vel[1*in_n_dims + j]*grad_vel[j*in_n_dims + 0])/2.0;
+			}
+		}
+	  else if(in_n_dims==3) {
+			sdtensor[3] = 0.0;
+			sdtensor[4] = 0.0;
+			sdtensor[5] = 0.0;
+			#pragma unroll
+			for (j=0;j<in_n_dims;j++) {
+				sdtensor[3] += (grad_vel[0*in_n_dims + j]*grad_vel[j*in_n_dims + 1] + grad_vel[1*in_n_dims + j]*grad_vel[j*in_n_dims + 0])/2.0;
+
+				sdtensor[4] += (grad_vel[0*in_n_dims + j]*grad_vel[j*in_n_dims + 2] + grad_vel[2*in_n_dims + j]*grad_vel[j*in_n_dims + 0])/2.0;
+
+				sdtensor[5] += (grad_vel[1*in_n_dims + j]*grad_vel[j*in_n_dims + 2] + grad_vel[2*in_n_dims + j]*grad_vel[j*in_n_dims + 1])/2.0;
+			}
+		}
+
+		// numerator and denominator of eddy viscosity term
+		#pragma unroll
+		for (i=0;i<in_n_dims;i++) {
+			num += sdtensor[i]*sdtensor[i];
+			denom += straintensor[i]*straintensor[i];
+		}
+
+		if(in_n_dims==2) {
+			num += 2.0*sdtensor[2]*sdtensor[2];
+			denom += 2.0*straintensor[2]*straintensor[2];
+		}
+		else if(in_n_dims==3) {
+			num += 2.0*(sdtensor[3]*sdtensor[3] + sdtensor[4]*sdtensor[4] + sdtensor[5]*sdtensor[5]);
+			denom += 2.0*(straintensor[3]*straintensor[3] + straintensor[4]*straintensor[4] + straintensor[5]*straintensor[5]);
+		}
+
+		denom = pow(denom,2.5) + pow(num,1.25);
+		num = pow(num,1.5);
+		mu_t = q[0]*Cs*Cs*delta*delta*num/(denom+eps);
+	}
+
+	// Now set the flux values
+	if (eddy==1) {
+		if (in_n_dims==2) {
+
+			// Density
+			if (in_field==0) {
+				f[0] = 0.0;
+				f[1] = 0.0;
+			}
+			// u
+			else if (in_field==1) {
+				f[0] = -2.0*mu_t*straintensor[0];
+				f[1] = -2.0*mu_t*straintensor[2];
+			}
+			// v
+			else if (in_field==2) {
+				f[0] = -2.0*mu_t*straintensor[2];
+				f[1] = -2.0*mu_t*straintensor[1];
+			}
+			// Energy
+			else if (in_field==3) {
+				f[0] = -1.0*in_gamma*mu_t/Pr*grad_ene[0];
+				f[1] = -1.0*in_gamma*mu_t/Pr*grad_ene[1];
+			}
+		}
+		else if(in_n_dims==3) {
+
+			// Density
+			if (in_field==0) {
+				f[0] = 0.0;
+				f[1] = 0.0;
+				f[2] = 0.0; 
+			}
+			// u
+			else if (in_field==1) {
+				f[0] = -2.0*mu_t*straintensor[0];
+				f[1] = -2.0*mu_t*straintensor[3];
+				f[2] = -2.0*mu_t*straintensor[4];
+			}
+			// v
+			else if (in_field==2) {
+				f[0] = -2.0*mu_t*straintensor[3];
+				f[1] = -2.0*mu_t*straintensor[1];
+				f[2] = -2.0*mu_t*straintensor[5];
+			}
+			// w
+			else if (in_field==3) {
+				f[0] = -2.0*mu_t*straintensor[4];
+				f[1] = -2.0*mu_t*straintensor[5];
+				f[2] = -2.0*mu_t*straintensor[2];
+			}
+			// Energy
+			else if (in_field==4) {
+				f[0] = -1.0*in_gamma*mu_t/Pr*grad_ene[0];
+				f[1] = -1.0*in_gamma*mu_t/Pr*grad_ene[1];
+				f[2] = -1.0*in_gamma*mu_t/Pr*grad_ene[2];
+			}
+		}
+	}
+	// Add similarity term to SGS fluxes if WSM or Similarity model
+	if (sim==1)
+	{
+		if(in_n_dims==2) {
+
+			// Density
+			if (in_field==0) {
+				f[0] += 0.0;
+				f[1] += 0.0;
+			}
+
+			// u
+			if (in_field==1) {
+				f[0] += q[0]*Leonard_mom[0];
+				f[1] += q[0]*Leonard_mom[1];
+			}
+			// v
+			else if (in_field==2) {
+				f[0] += q[0]*Leonard_mom[2];
+				f[1] += q[0]*Leonard_mom[3];
+			}
+			// Energy
+			else if (in_field==3) {
+				f[0] += q[0]*in_gamma*Leonard_ene[0];
+				f[1] += q[0]*in_gamma*Leonard_ene[1];
+			}
+		}
+		/*else if(in_n_dims==3)
+		{
+			// u
+			if (in_field==1) {
+				f[0] += 
+				f[1] += 
+				f[2] += 
+			}
+			// v
+			else if (in_field==2) {
+				f[0] += 
+				f[1] += 
+				f[2] += 
+			}
+			// w
+			else if (in_field==3) {
+				f[0] += 
+				f[1] += 
+				f[2] += 
+			}
+			// Energy
+			else if (in_field==4) {
+				f[0] += 
+				f[1] += 
+				f[2] += 
+			}
+		}*/
+	}
 }
 
 template<int in_n_fields, int in_n_dims>
@@ -1264,165 +1493,195 @@ __global__ void calc_tdisinvf_upts_AD_gpu_kernel(int in_n_upts_per_ele, int in_n
 }
 
 // gpu kernel to calculate filtered solution at solution points
-template<int in_n_fields, int in_n_dims>
-__global__ void calc_disuf_upts_kernel(int in_n_upts_per_ele, int in_n_eles, int in_SGS_model, double* in_disu_upts_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr, double* in_filter_upts_ptr)
+template<int in_n_fields, int in_n_dims, int in_n_upts_per_ele>
+__global__ void calc_disuf_upts_kernel(int in_n_eles, int in_SGS_model, double* in_disu_upts_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr, double* in_filter_upts_ptr)
 {
 	const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
-	int i,j,k;
-	int n_upts;
-	int index;
 
   double in_u[in_n_fields];
   double out_u[in_n_fields];
 
 	int stride = in_n_upts_per_ele*in_n_eles;
+	int i,j,k,l,m,ind;
 
- 	if(thread_id<stride)
- 	{
+ 	/*if(thread_id<stride) {
+
+		#pragma unroll
+    for (i=0;i<in_n_fields;i++) {
+			out_u[i] = 0.0;
+		}
+
+		// loop over solution points, construct filtered quantities point by point
+		// - not sure how to make this work!
     #pragma unroll
-    for (j=0;j<in_n_upts_per_ele;++j)
-		{
-			in_u[0] = in_disu_upts_ptr[thread_id];
+    for (j=0;j<in_n_upts_per_ele;++j) {
+
+			// Add nodal contribution to filtered solution out_u
+			#pragma unroll
+      for (k=0;k<in_n_upts_per_ele;++k) {
+				out_u[0] += in_filter_upts_ptr[j*in_n_upts_per_ele + k] * in_disu_upts_ptr[thread_id + 0*stride];
+
+				}
+			}
+
+			in_u[0] = in_disu_upts_ptr[thread_id + 0*stride];
 			in_u[1] = in_disu_upts_ptr[thread_id + 1*stride];
 			in_u[2] = in_disu_upts_ptr[thread_id + 2*stride];
-			in_u[in_n_fields-1] = in_disu_upts_ptr[thread_id + (in_n_fields-1)*stride] - 0.5*(in_u[1]*in_u[1]+in_u[2]*in_u[2])/in_u[0];
-			if (in_n_fields==5) {
-			in_u[3] = in_disu_upts_ptr[thread_id + 3*stride];
-				in_u[in_n_fields-1] -= 0.5*(in_u[3]*in_u[3])/in_u[0];
+
+			if (in_n_dims==2) {
+				in_u[3] = in_disu_upts_ptr[thread_id + (in_n_fields-1)*stride] - 0.5*(in_u[1]*in_u[1]+in_u[2]*in_u[2])/in_u[0];
+			}
+			else if (in_n_dims==3) {
+				in_u[3] = in_disu_upts_ptr[thread_id + 3*stride];
+				in_u[4] = in_disu_upts_ptr[thread_id + (in_n_fields-1)*stride] - 0.5*(in_u[1]*in_u[1]+in_u[2]*in_u[2]+in_u[3]*in_u[3])/in_u[0];
 			}
 
-			// Filter rho, rho*velocity, rho*int_energy
-			#pragma unroll
-	    for (int i=0;i<in_n_fields;i++)
-			{
-				out_u[i] = 0.0;
-				#pragma unroll
-	      for (k=0;k<in_n_upts_per_ele;++k)
-				{
-					out_u[i] += in_filter_upts_ptr[j*in_n_upts_per_ele + k]*in_u[i];
-				}
-			}
 
-			// Calculate Leonard terms if WSM or Similarity model
-			if(in_SGS_model==2 || in_SGS_model==4)
-			{
-				double uu[in_n_dims][in_n_dims];
-				double eu[in_n_dims];
-				double uuf[in_n_dims][in_n_dims];
-				double euf[in_n_dims];
-				double trace=0.0;
+		}
 
+		// Calculate Leonard terms if WSM or Similarity model
+		if(in_SGS_model==2 || in_SGS_model==4) {
+			double uu[in_n_dims*in_n_dims];
+			double uuf[in_n_dims*in_n_dims];
+			double eu[in_n_dims];
+			double euf[in_n_dims];
+			double diag;
+
+	    #pragma unroll
+	    for (j=0;j<in_n_upts_per_ele;++j) {
+				ind = j*in_n_fields;
+				stride = in_n_upts_per_ele;
 				// Velocity and energy product terms
 				#pragma unroll
-		    for (int l=0;l<in_n_dims;l++)
-				{
+		    for (l=0;l<in_n_dims;l++) {
 					#pragma unroll
-			    for (int m=0;m<in_n_dims;m++)
-					{
-						uu[l][m] = in_u[l+1]*in_u[m+1];
-						uuf[l][m] = 0.0;
+			    for (m=0;m<in_n_dims;m++) {
+						uu[j + (l*in_n_dims+m)*stride] = in_u[l+1]*in_u[m+1];
+						uuf[j + (l*in_n_dims+m)*stride] = 0.0;
 					}
-					eu[l] = in_u[in_n_fields-1]*in_u[l+1];
-					euf[l] = 0.0;
+					eu[j + l*stride] = in_u[in_n_fields-1]*in_u[l+1];
+					euf[j + l*stride] = 0.0;
 				}
+				printf("uu = %10.10f, %10.10f, %10.10f, %10.10f\n", uu[j + (0*in_n_dims+0)*stride], uu[j + (0*in_n_dims+1)*stride], uu[j + (1*in_n_dims+0)*stride], uu[j + (1*in_n_dims+1)*stride]);
 
-				// Filter product terms
+			}
+
+			// Filter product terms
+	    #pragma unroll
+	    for (j=0;j<in_n_upts_per_ele;++j) {
+
+				stride = in_n_upts_per_ele;
+
 				#pragma unroll
-		    for (int l=0;l<in_n_dims;l++)
-				{
+	      for (k=0;k<in_n_upts_per_ele;++k) {
 					#pragma unroll
-			    for (int m=0;m<in_n_dims;m++)
-					{
+			    for (l=0;l<in_n_dims;l++) {
 						#pragma unroll
-			      for (k=0;k<in_n_upts_per_ele;++k)
-						{
-							uuf[l][m] += in_filter_upts_ptr[j*in_n_upts_per_ele+k]*uu[l][m];
+				    for (m=0;m<in_n_dims;m++) {
+							uuf[j + (l*in_n_dims+m)*stride] += in_filter_upts_ptr[j + k*in_n_upts_per_ele] * uu[k + (l*in_n_dims+m)*stride];
 						}
-						euf[l] += in_filter_upts_ptr[j*in_n_upts_per_ele + k]*eu[l];
+						euf[j + l*stride] += in_filter_upts_ptr[j + k*in_n_upts_per_ele]*eu[k + l*stride];
 					}
 				}
+				printf("uuf = %10.10f, %10.10f, %10.10f, %10.10f\n", uuf[j + (0*in_n_dims+0)*stride], uuf[j + (0*in_n_dims+1)*stride], uuf[j + (1*in_n_dims+0)*stride], uuf[j + (1*in_n_dims+1)*stride]);
 
 				// Compute Leonard tensors
-				stride = in_n_upts_per_ele;
+				diag = 0.0;
 				#pragma unroll
-		    for (int l=0;l<in_n_dims;l++)
+		    for (l=0;l<in_n_dims;l++)
 				{
-					#pragma unroll
-			    for (int m=0;m<in_n_dims;m++)
-					{
-						//in_Leonard_mom_ptr[j][l][m] = (uuf[l][m] - out_u[l+1]*out_u[m+1])/out_u[0]/out_u[0];
-						in_Leonard_mom_ptr[j + (l*in_n_dims+m)*stride] = (uuf[l][m] - out_u[l+1]*out_u[m+1])/out_u[0]/out_u[0];
-					}
-					//trace += in_Leonard_mom_ptr[j][l][l];
-					trace += in_Leonard_mom_ptr[j + (l*in_n_dims+l)*stride];
+					// array index for convenience
+					ind = thread_id + l*stride;
 
-					//in_Leonard_energy_ptr[j][l] = (euf[l] - out_u[l+1]*out_u[in_n_fields-1]);
-					in_Leonard_energy_ptr[j + l*stride] = (euf[l] - out_u[l+1]*out_u[in_n_fields-1]);
+				out_u[j*in_n_fields+i] = 0.0;
+					#pragma unroll
+			    for (m=0;m<in_n_dims;m++)
+					{
+						in_Leonard_mom_ptr[ind + m*stride*in_n_dims] = (uuf[j + (l*in_n_dims+m)*stride] - out_u[j*in_n_fields + l+1]*out_u[j*in_n_fields + m+1]) / (out_u[j*in_n_fields + 0]*out_u[j*in_n_fields + 0]);
+					}
+
+					diag += (uuf[j + (l*in_n_dims+l)*stride] - out_u[j*in_n_fields + l+1]*out_u[j*in_n_fields + l+1])/(out_u[j*in_n_fields + 0]*out_u[j*in_n_fields + 0])/3.0;
+
+					in_Leonard_energy_ptr[ind] = (euf[j + l*stride] - out_u[j*in_n_fields + l+1]*out_u[j*in_n_fields + in_n_fields-1])/(out_u[j*in_n_fields + 0]*out_u[j*in_n_fields + 0]);
 				}
 
 				// Subtract trace
 				#pragma unroll
-		    for (int l=0;l<in_n_dims;l++)
+		    for (l=0;l<in_n_dims;l++)
 				{
-					in_Leonard_mom_ptr[j + (l*in_n_dims+l)*stride] -= trace/in_n_dims;
+					ind = thread_id + l*stride;
+					in_Leonard_mom_ptr[ind + l*stride*in_n_dims] -= diag;
 				}
+				printf("Leonard = %10.10f, %10.10f, %10.10f, %10.10f\n", in_Leonard_mom_ptr[thread_id], in_Leonard_mom_ptr[thread_id+stride*in_n_dims], in_Leonard_mom_ptr[thread_id+stride], in_Leonard_mom_ptr[thread_id+stride+stride*in_n_dims]);
 			}
 
 			// Add kinetic energy to internal energy
-			out_u[in_n_fields-1] += 0.5*(out_u[1]*out_u[1]+out_u[2]*out_u[2])/out_u[0];
+			out_u[j*in_n_fields + in_n_fields-1] += 0.5*(out_u[j*in_n_fields + 1]*out_u[j*in_n_fields + 1]+out_u[j*in_n_fields + 2]*out_u[j*in_n_fields + 2])/out_u[j*in_n_fields + 0];
 			if (in_n_fields==5) {
-				out_u[in_n_fields-1] += 0.5*(out_u[3]*out_u[3])/out_u[0];
+				out_u[j*in_n_fields + in_n_fields-1] += 0.5*(out_u[j*in_n_fields + 3]*out_u[j*in_n_fields + 3])/out_u[j*in_n_fields + 0];
 			}
 
 			// Finally, write out filtered solution if using explicit SVV filtering
 			if(in_SGS_model==3)
 			{
 				#pragma unroll
-		    for (int i=0;i<in_n_fields;i++)
+		    for (i=0;i<in_n_fields;i++)
 				{
-					in_disu_upts_ptr[thread_id + i*stride] = out_u[i];
+					in_disu_upts_ptr[thread_id + i*stride] = out_u[j*in_n_fields + i];
 				}
 			}
 
 		}
-	}
+	}*/
 }
 
 // wrapper for gpu kernel to calculate filtered solution at solution points
-void calc_disuf_upts_kernel_wrapper(int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, int in_SGS_model, double* in_disu_upts_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr, double* in_filter_upts_ptr)
+void calc_disuf_upts_kernel_wrapper(int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, int in_ele_type, int in_order, int in_SGS_model, double* in_disu_upts_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr, double* in_filter_upts_ptr)
 {
 	//printf("In CUDA LES filtering wrapper\n");
 	// HACK: fix 256 threads per block
 	int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
 
+	int npts;
+
   check_cuda_error("Before", __FILE__, __LINE__);
 
-	if(in_n_dims==2)
-	{
-	  if (in_n_fields==4)
-  	{
-		  calc_disuf_upts_kernel <4,2> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
-  	}
-  	else if (in_n_fields==5)
-  	{
-		  calc_disuf_upts_kernel <5,2> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
-  	}
-  	else 
-  	  FatalError("n_fields not supported");
+	// WE need to explicitly pass n_upts_per ele to the kernel
+	// which requires us to choose the ele type and calculate
+	// n_upts_per ele from the order.
+	// This is tedious but as far as I can see, unavoidable for the filtering kernel.
+
+	// Really? Every possible order needs its own if statement? Come on...
+	/*if(in_n_dims==2) {
+
+		// tris
+		if(in_ele_type==0) {
+			npts = (in_order+2)*(in_order+1)/2;
+
+			calc_disuf_upts_kernel <4,2,npts> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
+		}
+		// quads
+		else if(in_ele_type==1) {
+			npts = (in_order+1)*(in_order+1);
+
+			calc_disuf_upts_kernel <4,2,npts> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
+		}
+
 	}
-	else if(in_n_dims==3)
-	{
-	  if (in_n_fields==4)
-  	{
-		  calc_disuf_upts_kernel <4,3> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
-  	}
-  	else if (in_n_fields==5)
-  	{
-		  calc_disuf_upts_kernel <5,3> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
-  	}
-  	else 
-  	  FatalError("n_fields not supported");
-	}
+	else if(in_n_dims==3) {
+
+		// tets
+		if(in_ele_type==2) {
+			npts = (in_order+3)*(in_order+2)*(in_order+1)/6;
+		}
+		// hexas
+		else if(in_ele_type==4) {
+			npts = (in_order+1)*(in_order+1)*(in_order+1);
+		}
+
+	  calc_disuf_upts_kernel <5,3,npts> <<< n_blocks,256>>> (in_n_upts_per_ele, in_n_eles, in_SGS_model, in_disu_upts_ptr, in_Leonard_mom_ptr, in_Leonard_energy_ptr, in_filter_upts_ptr);
+	}*/
+
   check_cuda_error("After",__FILE__, __LINE__);
 }
 
@@ -1719,41 +1978,46 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
 
 // gpu kernel to calculate transformed discontinuous viscous flux at solution points
 template<int in_n_dims, int in_n_fields, int in_n_comp>
-__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, int in_ele_type, int LES, int SGS_model, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
+__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, int in_ele_type, double in_filter_ratio, int LES, int SGS_model, double* Leonard_mom, double* Leonard_ene, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
 {
 	const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
   double q[in_n_fields];
-  double f[in_n_dims];	
+  double f[in_n_dims];
+  double sgsf[in_n_dims];	// subgrid-scale flux set by SGS model
   double met[in_n_dims][in_n_dims];
-
-  double stensor[in_n_comp];
-  
+  double stensor[in_n_comp]; // viscous stress tensor
+  double straintensor[in_n_comp]; // for SGS models
+  double sdtensor[in_n_comp]; // for WALE SGS model
+	double lmtensor[in_n_dims*in_n_dims]; // local Leonard tensor for momentum
+	double letensor[in_n_dims]; // local Leonard tensor for energy
   double grad_ene[in_n_dims];
   double grad_vel[in_n_dims*in_n_dims];
-  double grad_q[in_n_fields*in_n_dims];
-  
-  double inte, mu;
+  double grad_q[in_n_fields*in_n_dims];  
+  double inte, mu, jac, delta;
 
-  int ind;
+	int i, j, k, ind;
 	int stride = in_n_upts_per_ele*in_n_eles;
 
  	if(thread_id<(in_n_upts_per_ele*in_n_eles))
  	{
     // Physical solution
     #pragma unroll
-    for (int i=0;i<in_n_fields;i++)
+    for (i=0;i<in_n_fields;i++) {
       q[i] = in_disu_upts_ptr[thread_id + i*stride];
+		}
 
     #pragma unroll
-    for (int i=0;i<in_n_dims;i++) 
+    for (i=0;i<in_n_dims;i++) {
       #pragma unroll
-      for (int j=0;j<in_n_dims;j++) 
+      for (j=0;j<in_n_dims;j++) {
         met[j][i] = in_inv_detjac_mul_jac_upts_ptr[thread_id + (i*in_n_dims+j)*stride];
-    
+    	}
+		}
+
     // Physical gradient
     #pragma unroll
-    for (int i=0;i<in_n_fields;i++)
+    for (i=0;i<in_n_fields;i++)
     {
       ind = thread_id + i*stride;
       grad_q[i*in_n_dims + 0] = in_grad_disu_upts_ptr[ind];
@@ -1770,18 +2034,46 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 
     // Flux computation
     #pragma unroll
-    for (int i=0;i<in_n_fields;i++)
-    {
+    for (i=0;i<in_n_fields;i++) {
+
       vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
-      
-			// If LES (but not SVV model), calculate SGS stress tensor
-			if(LES==1 && SGS_model!=3)
-			{
+
+			// If LES, calculate SGS stress tensor
+			if(LES) {
+				// Calculate strain rate tensor from viscous stress tensor
+				#pragma unroll
+				for (j=0;j<in_n_comp;j++)
+					straintensor[j] = stensor[j]/2.0/mu;
+
 				// Calculate filter width
 				jac = in_detjac_upts_ptr[thread_id];
-				SGS_filter_width(jac, delta, in_ele_type);
 
-				SGS_flux<in_n_dims>(SGS_model, delta, q, grad_q, grad_vel, grad_ene, stensor, f, &inte, in_prandtl, in_gamma, i);
+				delta = SGS_filter_width(jac, in_ele_type, in_n_dims, in_filter_ratio);
+
+				// Local Leonard tensors
+				#pragma unroll
+				for (j=0;j<in_n_dims;j++) {
+
+					// array index for convenience
+					ind = thread_id + j*stride;
+
+					// energy
+					letensor[j] = Leonard_ene[ind];
+
+					// momentum
+					#pragma unroll
+					for (k=0;k<in_n_dims;k++) {
+						lmtensor[j*in_n_dims + k] = Leonard_mom[ind + k*stride*in_n_dims];
+					}
+				}
+
+				SGS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, sdtensor, straintensor, lmtensor, letensor, sgsf, SGS_model, delta, in_gamma, i);
+
+				// Add SGS flux to viscous flux
+				#pragma unroll
+				for (j=0;j<in_n_dims;j++) {
+					f[j] += sgsf[j];
+				}
 			}
 
       index = thread_id+i*stride;
@@ -1853,65 +2145,6 @@ __global__ void calc_tdisvisf_upts_AD_gpu_kernel(int in_n_upts_per_ele, int in_n
     }
 
   }
-}
-
-// gpu kernel to calculate filtered solution at solution points
-template<int in_n_dims, int in_n_fields>
-__global__ void calc_disuf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_eles, double* in_disu_upts_ptr, double* in_disuf_upts_ptr)
-{
-	const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
-	int i,j,k;
-  double temp_u_upts[in_n_fields][in_n_upts_per_ele];
-  double temp_uf_upts[in_n_fields][in_n_upts_per_ele];
-
-
- 	if(thread_id<in_n_eles)
- 	{
-    // Temporary solution storage
-    #pragma unroll
-    for (int i=0;i<in_n_fields;i++)
-      #pragma unroll
-      for (j=0;j<in_n_upts_per_ele;++j)
-			{
-				temp_u_upts[i][j] = in_disu_upts_ptr[thread_id + i*in_n_eles];
-				temp_u_upts[i][j] = 0.0;
-			}
-		
-/*
- 	//physical solution at all solution pts in ele
-	for(i=0;i<n_eles;i++)
-	{
-		// Filter the solution
-		(*this).calc_disuf_upts_ele(temp_u_upts, temp_uf_upts);
-
-		// Check for NaNs
-		for(j=0;j<n_upts_per_ele;j++)
-		{
-	  	for(k=0;k<n_fields;k++)
-	  	{
-				if(isnan(temp_uf_upts(k,j)))
-				{
-					cout << "\nWARNING 1: NAN SOLUTION UF" << endl;
-					cout << "ele, pt, field: " <<i<<", "<<j<<", "<<k<< endl;
-					temp_uf_upts.print();
-					exit(1);
-				}
-	   	}
-		}
-
-		// Explicit SVV filtering: copy filtered solution back
-		if(run_input.SGS_model==3)
-		{
-			for(j=0;j<n_upts_per_ele;j++)
-			{
-		  	for(k=0;k<n_fields;k++)
-		  	{
-					disu_upts(in_disu_upts_from)(j,i,k) = temp_uf_upts(k,j);
-				}
-			}
-		}*/
-
-	}
 }
 
 // gpu kernel to calculate transformed discontinuous viscous flux at solution points
@@ -2861,7 +3094,7 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
 }
 
 // wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points
-void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, int in_ele_type, int LES, int SGS_model, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
+void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, int in_ele_type, double in_filter_ratio, int LES, int SGS_model, double* in_Leonard_mom_ptr, double* in_Leonard_ene_ptr, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
 {
 	// HACK: fix 256 threads per block
 	int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
@@ -2871,18 +3104,18 @@ void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims,
   if (equation==0)
   {
     if (in_n_dims==2)
-	    calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_ele_type,LES,SGS_model,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis);
+	    calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_filter_ratio, LES, SGS_model, in_Leonard_mom_ptr, in_Leonard_ene_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
     else if (in_n_dims==3)
-	    calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_ele_type,LES,SGS_model,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis);
+	    calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_filter_ratio, LES, SGS_model, in_Leonard_mom_ptr, in_Leonard_ene_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
     else
 		  FatalError("ERROR: Invalid number of dimensions ... ");
   }
   else if (equation==1)
   {
     if (in_n_dims==2)
-	    calc_tdisvisf_upts_AD_gpu_kernel<2> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_diff_coeff);
+	    calc_tdisvisf_upts_AD_gpu_kernel<2> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_disu_upts_ptr, out_tdisf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_diff_coeff);
     else if (in_n_dims==3)
-	    calc_tdisvisf_upts_AD_gpu_kernel<3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_diff_coeff);
+	    calc_tdisvisf_upts_AD_gpu_kernel<3> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_disu_upts_ptr, out_tdisf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_diff_coeff);
     else
 		  FatalError("ERROR: Invalid number of dimensions ... ");
   }

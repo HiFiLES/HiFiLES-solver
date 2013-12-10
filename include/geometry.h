@@ -13,8 +13,9 @@
 
 #pragma once
 
-#include "array.h"
 #include <string>
+
+#include "array.h"
 #include "input.h"
 #include "eles.h"
 #include "eles_tris.h"

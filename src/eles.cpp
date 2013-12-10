@@ -134,8 +134,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	{
 		if(run_input.SGS_model==2 || run_input.SGS_model==4)
 		{
-			Lm.setup(n_upts_per_ele,n_dims,n_dims);
-			Hm.setup(n_upts_per_ele,n_dims);
+			Lm.setup(n_eles,n_upts_per_ele,n_dims,n_dims);
+			Hm.setup(n_eles,n_upts_per_ele,n_dims);
 		}
 	}
 
@@ -724,7 +724,7 @@ void eles::advance_rk11(void)
 	#endif
 
 	#ifdef _GPU
-    RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term); 
+    RK11_update_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, disu_upts(0).get_ptr_gpu(), div_tconf_upts(0).get_ptr_gpu(), detjac_upts.get_ptr_gpu(), run_input.dt, run_input.const_src_term); 
   #endif
 
   /*
@@ -809,7 +809,7 @@ void eles::advance_rk45(int in_step)
 
 	#ifdef _GPU
 
-  RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term); 
+  RK45_update_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, disu_upts(0).get_ptr_gpu(), disu_upts(1).get_ptr_gpu(), div_tconf_upts(0).get_ptr_gpu(), detjac_upts.get_ptr_gpu(), rk4a,  rk4b, run_input.dt, run_input.const_src_term); 
 
   #endif
 
@@ -854,7 +854,7 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
 	  else if(opp_0_sparse==1) // mkl blas four-array csr format
 	  {
 	  	#if defined _MKL_BLAS
-	  	mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_0_data.get_ptr_cpu(),opp_0_cols.get_ptr_cpu(),opp_0_b.get_ptr_cpu(),opp_0_e.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),&n_upts_per_ele,&zero,disu_fpts.get_ptr_cpu(),&n_fpts_per_ele);
+	  	mkl_dcsrmm(&transa, &n_fpts_per_ele, &n_fields_mul_n_eles, &n_upts_per_ele, &one, matdescra, opp_0_data.get_ptr_cpu(), opp_0_cols.get_ptr_cpu(), opp_0_b.get_ptr_cpu(), opp_0_e.get_ptr_cpu(), disu_upts(in_disu_upts_from).get_ptr_cpu(), &n_upts_per_ele, &zero, disu_fpts.get_ptr_cpu(), &n_fpts_per_ele);
 
 	  	#endif
 	  }
@@ -869,7 +869,7 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
     }
     else if (opp_0_sparse==1)
     {
-      bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_0_ell_data.get_ptr_gpu(),opp_0_ell_indices.get_ptr_gpu(),opp_0_nnz_per_row,disu_upts(in_disu_upts_from).get_ptr_gpu(),disu_fpts.get_ptr_gpu(),ele_type,order,0);
+      bespoke_SPMV(n_fpts_per_ele, n_upts_per_ele, n_fields, n_eles, opp_0_ell_data.get_ptr_gpu(), opp_0_ell_indices.get_ptr_gpu(), opp_0_nnz_per_row, disu_upts(in_disu_upts_from).get_ptr_gpu(), disu_fpts.get_ptr_gpu(), ele_type, order, 0);
     }
 	  else
 	  {
@@ -931,7 +931,7 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 	#endif
 	
 	#ifdef _GPU
-	calc_tdisinvf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
+	calc_tdisinvf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.equation, run_input.wave_speed(0), run_input.wave_speed(1), run_input.wave_speed(2));
 
 
   //tdisinvf_upts.cp_gpu_cpu();
@@ -971,10 +971,10 @@ void eles::calc_norm_tdisf_fpts()
 	  {
 	  	#if defined _MKL_BLAS
 	  
-	  	mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_1_data(0).get_ptr_cpu(),opp_1_cols(0).get_ptr_cpu(),opp_1_b(0).get_ptr_cpu(),opp_1_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,norm_tdisf_fpts.get_ptr_cpu,&n_fpts_per_ele);
+	  	mkl_dcsrmm(&transa, &n_fpts_per_ele, &n_fields_mul_n_eles, &n_upts_per_ele, &one, matdescra, opp_1_data(0).get_ptr_cpu(), opp_1_cols(0).get_ptr_cpu(), opp_1_b(0).get_ptr_cpu(), opp_1_e(0).get_ptr_cpu(), tdisf_upts.get_ptr_cpu(0,0,0,0), &n_upts_per_ele, &zero, norm_tdisf_fpts.get_ptr_cpu, &n_fpts_per_ele);
 
       for (int i=1;i<n_dims;i++) {
-	  	  mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_1_data(i).get_ptr_cpu(),opp_1_cols(i).get_ptr_cpu(),opp_1_b(i).get_ptr_cpu(),opp_1_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),&n_upts_per_ele,&one,norm_tdisf_fpts.get_ptr_cpu(),&n_fpts_per_ele);
+	  	  mkl_dcsrmm(&transa, &n_fpts_per_ele, &n_fields_mul_n_eles, &n_upts_per_ele, &one, matdescra, opp_1_data(i).get_ptr_cpu(), opp_1_cols(i).get_ptr_cpu(), opp_1_b(i).get_ptr_cpu(), opp_1_e(i).get_ptr_cpu(), tdisf_upts.get_ptr_cpu(0,0,0,i), &n_upts_per_ele, &one, norm_tdisf_fpts.get_ptr_cpu(), &n_fpts_per_ele);
       }
 
 	  	#endif
@@ -998,10 +998,10 @@ void eles::calc_norm_tdisf_fpts()
     }
     else if (opp_1_sparse==1)
     {
-      bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_1_ell_data(0).get_ptr_gpu(),opp_1_ell_indices(0).get_ptr_gpu(),opp_1_nnz_per_row(0),tdisf_upts.get_ptr_gpu(0,0,0,0),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,0);
+      bespoke_SPMV(n_fpts_per_ele, n_upts_per_ele, n_fields, n_eles, opp_1_ell_data(0).get_ptr_gpu(), opp_1_ell_indices(0).get_ptr_gpu(), opp_1_nnz_per_row(0), tdisf_upts.get_ptr_gpu(0,0,0,0), norm_tdisf_fpts.get_ptr_gpu(), ele_type, order, 0);
       for (int i=1;i<n_dims;i++)
       {
-        bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_1_ell_data(i).get_ptr_gpu(),opp_1_ell_indices(i).get_ptr_gpu(),opp_1_nnz_per_row(i),tdisf_upts.get_ptr_gpu(0,0,0,i),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,1);
+        bespoke_SPMV(n_fpts_per_ele, n_upts_per_ele, n_fields, n_eles, opp_1_ell_data(i).get_ptr_gpu(), opp_1_ell_indices(i).get_ptr_gpu(), opp_1_nnz_per_row(i), tdisf_upts.get_ptr_gpu(0,0,0,i), norm_tdisf_fpts.get_ptr_gpu(), ele_type, order, 1);
       }
     }
 	  #endif	
@@ -1059,10 +1059,10 @@ void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
 	  {
 	  	#if defined _MKL_BLAS
 	  	
-	  	mkl_dcsrmm(&transa,&n_upts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_2_data(0).get_ptr_cpu(),opp_2_cols(0).get_ptr_cpu(),opp_2_b(0).get_ptr_cpu(),opp_2_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
+	  	mkl_dcsrmm(&transa, &n_upts_per_ele, &n_fields_mul_n_eles, &n_upts_per_ele, &one, matdescra, opp_2_data(0).get_ptr_cpu(), opp_2_cols(0).get_ptr_cpu(), opp_2_b(0).get_ptr_cpu(), opp_2_e(0).get_ptr_cpu(), tdisf_upts.get_ptr_cpu(0,0,0,0), &n_upts_per_ele, &zero, div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(), &n_upts_per_ele);
       for (int i=1;i<n_dims;i++)
       {
-	  	  mkl_dcsrmm(&transa,&n_upts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_2_data(i).get_ptr_cpu(),opp_2_cols(i).get_ptr_cpu(),opp_2_b(i).get_ptr_cpu(),opp_2_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),&n_upts_per_ele,&one,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
+	  	  mkl_dcsrmm(&transa, &n_upts_per_ele, &n_fields_mul_n_eles, &n_upts_per_ele, &one, matdescra, opp_2_data(i).get_ptr_cpu(), opp_2_cols(i).get_ptr_cpu(), opp_2_b(i).get_ptr_cpu(), opp_2_e(i).get_ptr_cpu(), tdisf_upts.get_ptr_cpu(0,0,0,i), &n_upts_per_ele, &one, div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(), &n_upts_per_ele);
       }
 
 	  	#endif
@@ -1086,9 +1086,9 @@ void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
     }
     else if (opp_2_sparse==1)
     {
-      bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_2_ell_data(0).get_ptr_gpu(),opp_2_ell_indices(0).get_ptr_gpu(),opp_2_nnz_per_row(0),tdisf_upts.get_ptr_gpu(0,0,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,0);
+      bespoke_SPMV(n_upts_per_ele, n_upts_per_ele, n_fields, n_eles, opp_2_ell_data(0).get_ptr_gpu(), opp_2_ell_indices(0).get_ptr_gpu(), opp_2_nnz_per_row(0), tdisf_upts.get_ptr_gpu(0,0,0,0), div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(), ele_type, order, 0);
       for (int i=1;i<n_dims;i++) { 
-        bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_2_ell_data(i).get_ptr_gpu(),opp_2_ell_indices(i).get_ptr_gpu(),opp_2_nnz_per_row(i),tdisf_upts.get_ptr_gpu(0,0,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
+        bespoke_SPMV(n_upts_per_ele, n_upts_per_ele, n_fields, n_eles, opp_2_ell_data(i).get_ptr_gpu(), opp_2_ell_indices(i).get_ptr_gpu(), opp_2_nnz_per_row(i), tdisf_upts.get_ptr_gpu(0,0,0,i), div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(), ele_type, order, 1);
       }
 
     }
@@ -1152,7 +1152,7 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
     }
     else if (opp_3_sparse==1)
     {
-      bespoke_SPMV(n_upts_per_ele,n_fpts_per_ele,n_fields,n_eles,opp_3_ell_data.get_ptr_gpu(),opp_3_ell_indices.get_ptr_gpu(),opp_3_nnz_per_row,norm_tconf_fpts.get_ptr_gpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
+      bespoke_SPMV(n_upts_per_ele, n_fpts_per_ele, n_fields, n_eles, opp_3_ell_data.get_ptr_gpu(), opp_3_ell_indices.get_ptr_gpu(), opp_3_nnz_per_row, norm_tconf_fpts.get_ptr_gpu(), div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(), ele_type, order, 1);
     }
 	  else
 	  {
@@ -1264,7 +1264,7 @@ void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
     {
       for (int i=0;i<n_dims;i++)
       {
-        bespoke_SPMV(Arows,Acols,n_fields,n_eles,opp_4_ell_data(i).get_ptr_gpu(),opp_4_ell_indices(i).get_ptr_gpu(),opp_4_nnz_per_row(i),disu_upts(in_disu_upts_from).get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(0,0,0,i),ele_type,order,0);
+        bespoke_SPMV(Arows, Acols, n_fields, n_eles, opp_4_ell_data(i).get_ptr_gpu(), opp_4_ell_indices(i).get_ptr_gpu(), opp_4_nnz_per_row(i), disu_upts(in_disu_upts_from).get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(0,0,0,i), ele_type, order, 0);
       }
     }
 	  #endif
@@ -1397,11 +1397,11 @@ void eles::calc_cor_grad_disu_upts(void)
     {
       for (int i=0;i<n_dims;i++)
       {
-        bespoke_SPMV(Arows,Acols,n_fields,n_eles,opp_5_ell_data(i).get_ptr_gpu(),opp_5_ell_indices(i).get_ptr_gpu(),opp_5_nnz_per_row(i),delta_disu_fpts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(0,0,0,i),ele_type,order,1);
+        bespoke_SPMV(Arows, Acols, n_fields, n_eles, opp_5_ell_data(i).get_ptr_gpu(), opp_5_ell_indices(i).get_ptr_gpu(), opp_5_nnz_per_row(i), delta_disu_fpts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(0,0,0,i), ele_type, order, 1);
       }
     }
 	  
-	  transform_grad_disu_upts_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.equation);
+	  transform_grad_disu_upts_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.equation);
 
 	  #endif	
   
@@ -1495,7 +1495,7 @@ void eles::calc_cor_grad_disu_fpts(void)
     {
       for (int i=0;i<n_dims;i++)
       {  
-        bespoke_SPMV(Arows,Acols,n_fields,n_eles,opp_6_ell_data.get_ptr_gpu(),opp_6_ell_indices.get_ptr_gpu(),opp_6_nnz_per_row,grad_disu_upts.get_ptr_gpu(0,0,0,i),grad_disu_fpts.get_ptr_gpu(0,0,0,i),ele_type,order,0);
+        bespoke_SPMV(Arows, Acols, n_fields, n_eles, opp_6_ell_data.get_ptr_gpu(), opp_6_ell_indices.get_ptr_gpu(), opp_6_nnz_per_row, grad_disu_upts.get_ptr_gpu(0,0,0,i), grad_disu_fpts.get_ptr_gpu(0,0,0,i), ele_type, order, 0);
       }
     }
 	  	
@@ -1541,7 +1541,7 @@ void eles::calc_disuf_upts(int in_disu_upts_from)
 		}
 
 		// Filter the solution and calculate Leonard tensors for similarity model
-		calc_disuf_upts_ele(temp_u_upts, temp_uf_upts);
+		calc_disuf_upts_ele(i, temp_u_upts, temp_uf_upts);
 
 		// Check for NaNs
 		for(j=0;j<n_upts_per_ele;j++)
@@ -1573,7 +1573,12 @@ void eles::calc_disuf_upts(int in_disu_upts_from)
 	#endif
 
 	#ifdef _GPU
-	calc_disuf_upts_kernel_wrapper(n_fields, n_upts_per_ele, n_eles, n_dims, run_input.SGS_model, disu_upts(in_disu_upts_from).get_ptr_gpu(), Lm.get_ptr_gpu(), Hm.get_ptr_gpu(), filter_upts.get_ptr_gpu());
+	// Define n_upts*n_fields solution arrays here, then pass to GPU kernel.
+
+	Lm.cp_cpu_gpu();
+	Hm.cp_cpu_gpu();
+
+	calc_disuf_upts_kernel_wrapper(n_fields, n_upts_per_ele, n_eles, n_dims, order, ele_type, run_input.SGS_model, disu_upts(in_disu_upts_from).get_ptr_gpu(), Lm.get_ptr_gpu(), Hm.get_ptr_gpu(), filter_upts.get_ptr_gpu());
 	#endif
   }
 }
@@ -1620,7 +1625,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 				// If LES, calculate SGS viscous flux
 				if(run_input.LES==1)
 				{
-					calc_sgsf_upts(temp_u,temp_grad_u,detjac,j,temp_sgsf);
+					calc_sgsf_upts(temp_u,temp_grad_u,detjac,i,j,temp_sgsf);
 
 					// Add SGS flux to viscous flux
 					for(k=0;k<n_fields;k++)
@@ -1647,22 +1652,22 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 		#endif
 
 		#ifdef _GPU
-			calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,ele_type,run_input.LES,run_input.SGS_model,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
+		calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, run_input.filter_ratio, run_input.LES, run_input.SGS_model, Lm.get_ptr_gpu(), Hm.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
 		#endif	
 
 	}
 }
   
 // Calculate SGS flux
-void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int upt, array<double>& temp_sgsf)
+void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf)
 {
 	int eddy, sim;
 	double Cs;
-	double trace=0.0;
+	double diag=0.0;
 	double Smod=0.0;
 	double ke=0.0;
 	double Pr=0.5; // turbulent Prandtl number
-	double dlt, delta, nu_t, vol;
+	double dlt, delta, mu_t, vol;
 	double rho, inte;
 	array<double> u(n_dims);
 	array<double> drho(n_dims), dene(n_dims), dke(n_dims), de(n_dims);
@@ -1704,22 +1709,23 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		exit(1);
 	}
 
-	// Filter width: local (2/order on reference element)
-	// or global (Deardorff measure on real element) coordinates?
-	// Use a measure appropriate to the filter being applied.
-
+	// Delta is the cutoff length-scale representing local grid resolution.
 	// OPTION 1. Approx resolution in 1D element. Interval is [-1:1]
 	// Appropriate for quads, hexes and tris. Not sure about tets.
 	//dlt = 2.0/order;
 
-	// OPTION 2. Deardorff definition
+	// OPTION 2. Deardorff definition (Deardorff, JFM 1970)
 	vol = (*this).calc_ele_vol(detjac);
 	delta = run_input.filter_ratio*pow(vol,1./n_dims);
-	delta *= delta;
-	//cout.precision(15);
-	//cout<<"vol: "<<fixed<<vol<<endl;
-	//cout<<"delta: "<<fixed<<delta<<endl;
+
+	//  OPTION 3. Suggested by Bardina, AIAA 1980 as:
+	//
+	//  delta = sqrt((dx^2+dy^2+dz^2)/3) 
+
 	// Implement anisotropy correction of Scotti et al?
+
+	//cout<<"vol: "<<setprecision(10)<<vol<<endl;
+	//cout<<"delta: "<<setprecision(10)<<delta<<endl;
 
 	// Filtered solution
 	rho = temp_u(0);
@@ -1762,31 +1768,47 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		{
 			S(i,j) = (du(i,j)+du(j,i))/2.0;
 		}
-		trace += S(i,i)/n_dims;
+		diag += S(i,i)/3.0;
 	}
 
-	// Subtract trace
+	// Subtract diag
 	for (int i=0;i<n_dims;i++)
 	{
-		S(i,i) -= trace;
+		S(i,i) -= diag;
 	}
+	//cout<<"strain: "<<setprecision(10)<<endl;
+	//S.print();
 
 	// Strain modulus
 	for (int i=0;i<n_dims;i++)
 	{
 		for (int j=0;j<n_dims;j++)
 		{
-			Smod += 2.0*pow(S(i,j),2);
+			Smod += 2.0*S(i,j)*S(i,j);
 		}
 	}
 	Smod = sqrt(Smod);
-
+	//cout<<"strain mod = "<<setprecision(10)<<Smod<<endl;
 	// Eddy viscosity
+
 	if(run_input.SGS_model==0) // Smagorinsky model
 	{
 		Cs=0.1;
-		nu_t = Cs*Cs*delta*Smod;
+		mu_t = rho*Cs*Cs*delta*delta*Smod;
 	}
+
+//  Wall-Adapting Local Eddy-viscosity (WALE) SGS Model
+//
+//  NICOUD F., DUCROS F.: "Subgrid-Scale Stress Modelling Based on the Square
+//                         of the Velocity Gradient Tensor"
+//  Flow, Turbulence and Combustion 62: 183-200, 1999.
+//
+//                                            (sqij*sqij)^3/2
+//  Output: mu_t = rho*Cs^2*delta^2 * -----------------------------
+//                                     (Sij*Sij)^5/2+(sqij*sqij)^5/4
+//
+//  Typically Cw = 0.5.
+
 	else if(run_input.SGS_model==1 || run_input.SGS_model==2) // WALE or WSM model
 	{
 		Cs=0.5;
@@ -1794,60 +1816,57 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		double denom=0.0;
 		double eps=1.e-12;
 		array<double> Sq(n_dims,n_dims);
-		trace = 0.0;
+		diag = 0.0;
 
 		// Square of gradient tensor
-		for (int i=0;i<n_dims;i++)
-			for (int j=0;j<n_dims;j++)
-				Sq(i,j) = 0.0;
-
+		// This needs optimising!
 		for (int i=0;i<n_dims;i++)
 		{
 			for (int j=0;j<n_dims;j++)
 			{
+				Sq(i,j) = 0.0;
 				for (int k=0;k<n_dims;++k)
 				{
 					Sq(i,j) += (du(i,k)*du(k,j)+du(j,k)*du(k,i))/2.0;
 				}
-				trace += du(i,j)*du(j,i)/n_dims;
+				diag += du(i,j)*du(j,i)/3.0;
 			}
 		}
-		// Subtract trace
+		// Subtract diag
 		for (int i=0;i<n_dims;i++)
 		{
-			Sq(i,i) -= trace;
+			Sq(i,i) -= diag;
 		}
 
 		// Numerator and denominator
-		for (int i=0;i<n_dims;i++)
-			for (int j=0;j<n_dims;j++)
+		for (int i=0;i<n_dims;i++) {
+			for (int j=0;j<n_dims;j++) {
+				num += Sq(i,j)*Sq(i,j);
 				denom += S(i,j)*S(i,j);
-
-		if(denom>eps)
-		{
-			for (int i=0;i<n_dims;i++)
-				for (int j=0;j<n_dims;j++)
-					num += Sq(i,j)*Sq(i,j);
-			num = pow(num,1.5);
-			denom = pow(denom,2.5) + pow(num,1.25);
-			nu_t = Cs*Cs*delta*num/denom;
+			}
 		}
-		else
-			nu_t = 0.0;
+
+		denom = pow(denom,2.5) + pow(num,1.25);
+		num = pow(num,1.5);
+		mu_t = rho*Cs*Cs*delta*delta*num/(denom+eps);
 	}
 
 	// Add eddy-viscosity term to SGS fluxes
-	for (int j=0;j<n_dims;j++)
+	if(eddy==1)
 	{
-		temp_sgsf(0,j) = 0.0; // Density flux
-		temp_sgsf(n_fields-1,j) = -1.0*run_input.gamma*rho*nu_t/Pr*de(j); // Energy flux
-		for (int i=1;i<n_fields-1;i++)
+		for (int j=0;j<n_dims;j++)
 		{
-			temp_sgsf(i,j) = -2.0*rho*nu_t*S(i-1,j); // Velocity flux
+			temp_sgsf(0,j) = 0.0; // Density flux
+
+			temp_sgsf(n_fields-1,j) = -1.0*run_input.gamma*mu_t/Pr*de(j); // Energy flux
+			for (int i=1;i<n_fields-1;i++)
+			{
+				temp_sgsf(i,j) = -2.0*mu_t*S(i-1,j); // Velocity flux
+			}
 		}
-	}
-	//cout<<"SGS flux:"<<endl;
-	//temp_sgsf.print();
+		//cout<<"SGS flux:"<<endl;
+		//temp_sgsf.print();
+		}
 	}
 
 	// Add similarity term to SGS fluxes if WSM or Similarity model
@@ -1856,10 +1875,10 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		for (int j=0;j<n_dims;j++)
 		{
 			temp_sgsf(0,j) += 0.0; // Density flux
-			temp_sgsf(n_fields-1,j) += run_input.gamma*rho*Hm(upt,j); // Energy flux
+			temp_sgsf(n_fields-1,j) += run_input.gamma*rho*Hm(ele,upt,j); // Energy flux
 			for (int i=1;i<n_fields-1;i++)
 			{
-				temp_sgsf(i,j) += rho*Lm(upt,i-1,j); // Momentum fluxes
+				temp_sgsf(i,j) += rho*Lm(ele,upt,i-1,j); // Momentum fluxes
 			}
 		}
 	//cout<<"WSM flux:"<<endl;
@@ -1868,12 +1887,12 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 }
 
 // Calculate filtered solution and Leonard terms
-void eles::calc_disuf_upts_ele(array<double>& in_u, array<double>& out_u)
+void eles::calc_disuf_upts_ele(int ele, array<double>& in_u, array<double>& out_u)
 {
 	int i,j,k,l,ii;
 	int npts = n_upts_per_ele;
 	int M = n_dims*n_dims;
-	double rho, coeff, trace, sum, rtemp, diag, maxl;
+	double rho, coeff, diag, sum, rtemp, maxl;
 
 	array<double> r(npts);
 	array<double> ru(npts,n_dims);
@@ -1959,32 +1978,34 @@ void eles::calc_disuf_upts_ele(array<double>& in_u, array<double>& out_u)
 					++ii;
 				}
 			}
+			cout<<"uuf = "<<setprecision(10)<<temp_uuf(i,0,0)<<", "<<temp_uuf(i,0,1)<<", "<<temp_uuf(i,1,0)<<", "<<temp_uuf(i,1,1)<<endl;
 		}
 
 		// Calculate Leonard tensors for similarity model
 		for (i=0;i<npts;++i)
 		{
 			rtemp=rf(i)*rf(i);
-			trace = 0.0;
+			diag = 0.0;
 			for (j=0;j<n_dims;++j)
 			{
 				for (k=0;k<n_dims;++k)
 				{
-					Lm(i,j,k) = (temp_uuf(i,j,k) - ruf(i,j)*ruf(i,k))/rtemp;
+					Lm(ele,i,j,k) = (temp_uuf(i,j,k) - ruf(i,j)*ruf(i,k))/rtemp;
 				}
 					//cout<<"uuf, ruf*ruf/r, Lm:"<<setprecision(15)<<temp_uuf(i,ii)<<", "<<ruf(i,j)*ruf(i,k)/rtemp<<", "<<Lm(i,j,k)<<endl;
-				trace += Lm(i,j,j);
+				diag += Lm(ele,i,j,j)/3.0;
 
 				// Energy terms
-				Hm(i,j) = (euf(i,j) - ref(i)*ruf(i,j))/rtemp;
+				Hm(ele,i,j) = (euf(i,j) - ref(i)*ruf(i,j))/rtemp;
 			}
 
-			// Subtract trace from Lm
+			// Subtract diag from Lm
 			for (j=0;j<n_dims;++j)
 			{
-				Lm(i,j,j) -= trace/n_dims;
-				maxl = max(Lm(i,j,k),maxl);
+				Lm(ele,i,j,j) -= diag;
+				maxl = max(Lm(ele,i,j,k),maxl);
 			}
+			cout<<"Leonard = "<<setprecision(10)<<Lm(ele,i,0,0)<<", "<<Lm(ele,i,0,1)<<", "<<Lm(ele,i,1,0)<<", "<<Lm(ele,i,1,1)<<endl;
 		}
 
 		//cout<<"Lm max: "<<setprecision(6)<<maxl<<endl;
@@ -4314,7 +4335,7 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
   double dudx, dudy, dudz;
   double dvdx, dvdy, dvdz;
   double dwdx, dwdy, dwdz;
-	double diagnostic, tke, pressure, trace, irho, detjac;
+	double diagnostic, tke, pressure, diag, irho, detjac;
 
 	// Sum over elements
   for (int i=0;i<n_eles;i++)
@@ -4411,7 +4432,7 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
 					S(0,1) = (dudy+dvdx)/2.0;
 					S(1,0) = S(0,1);
 					S(1,1) = dvdy;
-					trace = (S(0,0)+S(1,1))/3.;
+					diag = (S(0,0)+S(1,1))/3.0;
 
 					if (n_dims==3)
 					{
@@ -4421,13 +4442,13 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
 						S(2,0) = S(0,2);
 						S(2,1) = S(1,2);
 						S(2,2) = dwdz;
-						trace += S(2,2)/3.;
+						diag += S(2,2)/3.0;
 					}
 
-					// Subtract trace if deviatoric strain
+					// Subtract diag if deviatoric strain
 					if (run_input.diagnostics(m)=="devstraincolonproduct") {
 						for (int i=0;i<n_dims;i++)
-							S(i,i) -= trace;
+							S(i,i) -= diag;
 					}
 
 					for (int i=0;i<n_dims;i++)

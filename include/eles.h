@@ -342,10 +342,10 @@ class eles
   virtual void eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)=0;
 
 	/*! Calculate SGS flux */
-	void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int upt, array<double>& temp_sgsf);
+	void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf);
 
 	/*! Filter state variables and calculate Leonard tensor in an element */
-	void calc_disuf_upts_ele(array<double>& in_u, array<double>& out_u);
+	void calc_disuf_upts_ele(int ele, array<double>& in_u, array<double>& out_u);
 
 	/*! Calculate element volume */
 	virtual double calc_ele_vol(double& detjac)=0;
