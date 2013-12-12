@@ -625,7 +625,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 #ifdef _GPU
   if (in_run_type==0)
   {
-	  for(int i=0;i<n_mpi_inter_types;i++)
+	  for(int i=0;i<FlowSol->n_mpi_inter_types;i++)
 	  	FlowSol->mesh_mpi_inters(i).mv_all_cpu_gpu();
   }
 #endif
