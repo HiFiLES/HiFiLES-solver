@@ -92,6 +92,7 @@ endif
 
 ifeq ($(BLAS),ACCELERATE_BLAS)
 	LIBS	+= -framework Accelerate
+	OPTS	+= -flax-vector-conversions 
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
