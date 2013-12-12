@@ -11,7 +11,7 @@
 
 # Settings
 
-include makefiles/makefile_enrico.in
+include makefiles/makefile.cluster.in
 
 # Compiler
 
@@ -58,6 +58,7 @@ endif
 ifeq ($(PARALLEL),MPI)
 	OPTS	+= -I /usr/include/mpich2-x86_64/
 	OPTS	+= -I /usr/lib64/openmpi/bin/
+	OPTS	+= -I /opt/openmpi/bin
 
 	OPTS += -I $(PARMETIS_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/metis/include
