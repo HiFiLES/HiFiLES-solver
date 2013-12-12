@@ -25,3 +25,5 @@ PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/build/Linux-x86_64
 TECIO_DIR = lib/tecio-2008
 
 CUDA_DIR = /usr/local/cuda-5.0
+
+MPI_DIR = /usr/mpi/gcc/mvapich-1.2.0

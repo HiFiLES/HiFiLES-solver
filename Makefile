@@ -11,7 +11,10 @@
 
 # Settings
 
-include makefile.in
+# TODO: add config script to build parmetis and look for BLAS, parmetis, CUDA, MPI and TECIO libraries
+
+# TODO: include makefile.machine.in by looking for current machine name
+include makefiles/makefile.cluster.in
 
 # Compiler
 
@@ -41,7 +44,7 @@ endif
 
 # Includes
 
-OPTS    += -I /include 
+OPTS    += -I include 
 
 ifeq ($(NODE),GPU)
 	OPTS	+= -I $(CUDA_DIR)/include 
@@ -56,9 +59,7 @@ ifeq ($(TECIO),YES)
 endif
 
 ifeq ($(PARALLEL),MPI)
-	OPTS	+= -I /usr/include/mpich2-x86_64/
-	OPTS	+= -I /usr/lib64/openmpi/bin/
-
+	OPTS	+= -I $(MPI_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/metis/include
 endif
@@ -96,8 +97,7 @@ ifeq ($(BLAS),ACCELERATE_BLAS)
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
-        LIBS    += -L $(BLAS_DIR)/lib -lcblas
-#	LIBS	+= -latlas
+  LIBS    += -L $(BLAS_DIR)/lib -lcblas -latlas
 endif
 
 ifeq ($(NODE),GPU)
