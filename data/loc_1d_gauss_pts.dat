@@ -1,6 +1,10 @@
 // gauss legendre points
 
-if(get_order==1)
+if (get_order==0)
+{
+	loc_1d_gauss_pts(0)=0.0;
+}
+else if(get_order==1)
 {
 	loc_1d_gauss_pts(0)=-0.577350269189626;
 	loc_1d_gauss_pts(1)=0.577350269189626;

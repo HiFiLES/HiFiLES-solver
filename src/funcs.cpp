@@ -207,11 +207,31 @@ double eval_d_vcjh_1d(double in_r, int in_mode, int in_order, double in_eta)
 
 	if(in_mode==0) // left correction function
 	{
+            if(in_order == 0)
+            {
+               // if (in_eta != 0)
+               //     FatalError("P=0 only compatible with DG. Set VCJH scheme to 1 OR eta to 0.0")
+
+		dtemp_0=0.5*pow(-1.0,in_order)*(eval_d_legendre(in_r,in_order)-((eval_d_legendre(in_r,in_order+1))/(1.0+in_eta)));
+            }
+            else
+            {
 		dtemp_0=0.5*pow(-1.0,in_order)*(eval_d_legendre(in_r,in_order)-(((in_eta*eval_d_legendre(in_r,in_order-1))+eval_d_legendre(in_r,in_order+1))/(1.0+in_eta)));
+            }
 	}
 	else if(in_mode==1) // right correction function
 	{
+            if (in_order == 0)
+            {
+                //if (in_eta != 0)
+                //    FatalError("P=0 only compatible with DG. Set VCJH scheme to 1 OR eta to 0.0")
+                
+		dtemp_0=0.5*(eval_d_legendre(in_r,in_order)+((eval_d_legendre(in_r,in_order+1))/(1.0+in_eta)));
+            }
+            else
+            {
 		dtemp_0=0.5*(eval_d_legendre(in_r,in_order)+(((in_eta*eval_d_legendre(in_r,in_order-1))+eval_d_legendre(in_r,in_order+1))/(1.0+in_eta)));
+            }
 	}
 
 	return dtemp_0;
@@ -1233,6 +1253,9 @@ bool is_perfect_cube(int in_a)
 double compute_eta(int vcjh_scheme, double order)
 {
   double eta;
+        // Check for P=0 compatibility
+        if(order == 0 && vcjh_scheme != 1)
+            FatalError("ERROR: P=0 only compatible with DG. Set VCJH scheme type to 1!")
 
 	if(vcjh_scheme==1) // dg
 	{
