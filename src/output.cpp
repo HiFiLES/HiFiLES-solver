@@ -15,6 +15,11 @@
 #include <sstream>
 #include <cmath>
 
+// Used for making sub-directories
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "../include/global.h"
 #include "../include/array.h"
 #include "../include/input.h"
@@ -24,6 +29,11 @@
 #include "../include/funcs.h"
 #include "../include/error.h"
 #include "../include/solution.h"
+
+// Use VTK routines to write out to paraview
+//#ifdef _VTK
+//#include "../include/vtk.h"
+//#endif
 
 #ifdef _TECIO
 #include "TECIO.h"
@@ -132,10 +142,10 @@ void plot_continuous(struct solution* FlowSol)
     }
   }
   
-  if(FlowSol->write_type==0)
-    write_vtu_bin(FlowSol->ini_iter, FlowSol);
-  else if(FlowSol->write_type==1)
-    write_tec_bin(FlowSol->ini_iter, FlowSol);
+  //if(FlowSol->write_type==0)
+    //write_vtu_bin(FlowSol->ini_iter, FlowSol);
+  //else if(FlowSol->write_type==1)
+    //write_tec_bin(FlowSol->ini_iter, FlowSol);
   
 }
 
@@ -212,7 +222,7 @@ void plotter_setup(struct solution* FlowSol)
     int temp_ele_type=FlowSol->ele_type(i);
     for (int j=0;j<n_vert_per_type(temp_ele_type);j++)
     {
-      get_vert_loc(FlowSol->ele_type(i),FlowSol->ele2n_vert(i),j,j_spt);
+      get_vert_loc(temp_ele_type,FlowSol->ele2n_vert(i),j,j_spt);
       vert = FlowSol->ele2vert(i,j_spt);
       if (vert2pnode(vert)==-1) // Haven't counted that vertex
       {
@@ -440,7 +450,7 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 	if (FlowSol->rank==0) cout << "Writing Tecplot file number " << in_file_num << " ...." << endl;
 #else
 	sprintf(file_name_s,"Mesh_%.09d_p%.04d.plt",in_file_num,0);
-	cout << "Writing Tecplot file number " << in_file_num << " ...." << endl;
+	cout << "Writing Tecplot file number " << in_file_num << " on rank " << FlowSol->rank << endl;
 #endif
   
   file_name = &file_name_s[0];
@@ -985,408 +995,325 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
  }
 
 
-// method to write out a paraview file
+/*! Method to write out a Paraview .vtu file.
+Used in run mode.
+input: in_file_num																						current timestep
+input: FlowSol																								solution structure
+output: Mesh_<in_file_num>.vtu																(serial) data file
+output: Mesh_<in_file_num>/Mesh_<in_file_num>_<rank>.vtu			(parallel) data file containing portion of domain owned by current node. Files contained in directory Mesh_<in_file_num>.
+output: Mesh_<in_file_num>.pvtu																(parallel) file stitching together all .vtu files (written by master node)
+*/
 
 void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 {
-	int i,j,k,l,m;
-  
-	// copy solution to cpu
-#ifdef _GPU
-	for(i=0;i<FlowSol->n_ele_types;i++)
-  {
-		FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-  }
-#endif
-	
-	int vertex_0, vertex_1, vertex_2, vertex_3, vertex_4, vertex_5, vertex_6, vertex_7;
-	
-	int p_res=run_input.p_res; // HACK
-	
+	int i,j,k,l,m,count;
+	/*! Current rank */
+	int my_rank = 0;
+	/*! No. of processes */
+	int n_proc = 1;
+	/*! No. of output fields */
+	int n_fields;
+	/*! No. of dimensions */
+	int n_dims;
+	/*! No. of elements */
+	int n_eles;
+	/*! Number of plot points in element */
+	int n_points;
+	/*! Number of plot sub-elements in element */
+  int n_cells;
+	/*! No. of vertices per element */
+	int n_verts;
+	/*! Element type */
+	int ele_type;
+
+	/*! Plot point coordinates */
 	array<double> pos_ppts_temp;
+	/*! Solution data at plot points */
 	array<double> disu_ppts_temp;
-	
-	char  file_name_s[50] ;
-	char *file_name;
-  
+
+	/*! Plot sub-element connectivity array (node IDs) */
+	array<int> con;
+
+	/*! VTK element types (different to HiFiLES element type) */
+	/*! tri, quad, tet, prism (undefined), hex */
+	/*! See vtkCellType.h for full list */
+	array<int> vtktypes(5);
+	vtktypes(0) = 5;
+	vtktypes(1) = 9;
+	vtktypes(2) = 10;
+	vtktypes(3) = 0;
+	vtktypes(4) = 12;
+
+	/*! File names */
+	char vtu_s[50];
+	char dumpnum_s[50];
+	char pvtu_s[50];
+	/*! File name pointers needed for opening files */
+	char *vtu;
+	char *pvtu;
+	char *dumpnum;
+
+	/*! Output files */
 	ofstream write_vtu;
 	write_vtu.precision(15);
-	
-  
-#ifdef _MPI
-  MPI_Barrier(MPI_COMM_WORLD);
-	sprintf(file_name_s,"Mesh_%.09d.vtu",in_file_num,FlowSol->rank);
-	if (FlowSol->rank==0) cout << "Writing Paraview file number " << in_file_num << " ...." << endl;
-#else
-	sprintf(file_name_s,"Mesh_%.09d.vtu",in_file_num,0);
-	cout << "Writing Paraview file number " << in_file_num << " ...." << endl;
-#endif
-	
-  file_name = &file_name_s[0];
-  write_vtu.open(file_name);
-  
-  int n_points; // HACK
-  int n_cells; // HACK
-  
-	
-	
-	write_vtu << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">" << endl;
-	write_vtu << "<UnstructuredGrid>" << endl;
-  
-	for(i=0;i<FlowSol->n_ele_types;i++)
-	{
-		//if(mesh_eles(i)->get_n_eles()!=0) {
-		pos_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),FlowSol->mesh_eles(i)->get_n_dims());
-		disu_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),FlowSol->mesh_eles(i)->get_n_fields());
-		// Initialise pointer
-		int etype = FlowSol->mesh_eles(i)->get_ele_type();
-		int neles = FlowSol->mesh_eles(i)->get_n_eles();
-    
-		if(etype==0) // tri
-		{
-			n_points=(p_res+1)*p_res/2;
-			n_cells=(p_res-1)*(p_res-1);
-		}
-		else if(etype==1) // quad
-		{
-			n_points=(p_res*p_res);
-			n_cells=(p_res-1)*(p_res-1);
-		}
-		else if(etype==2) // tet
-		{
-			n_points=(p_res+2)*(p_res+1)*p_res/6;
-			n_cells=(p_res-1)*(p_res)*(p_res+1)/6 + 4*(p_res-2)*(p_res-1)*(p_res)/6 +(p_res-3)*(p_res-2)*(p_res-1)/6;
-		}
-		else if(etype==3) // prism
-		{
-			//n_points=;
-			//n_cells=;
-		}
-		else if(etype==4) // hexa
-		{
-			n_points=(p_res*p_res*p_res);
-			n_cells=(p_res-1)*(p_res-1)*(p_res-1);
-		}
-		else
-		{
-			cout << "ERROR 1: Invalid element type ... " << endl;
-		}
-		
-		for(j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
-		{
-			write_vtu << "<Piece NumberOfPoints=\"" << n_points << "\" NumberOfCells=\"" << n_cells << "\">" << endl;
-			
-			// write out point data
-			
-			FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
-			
-			write_vtu << "<PointData>" << endl;
-			
-			// density
-			
-			write_vtu << "<DataArray type= \"Float32\" Name=\"Density\" format=\"ascii\">" << endl;
-			
-			for(k=0;k<FlowSol->mesh_eles(i)->get_n_ppts_per_ele();k++)
-			{
-				write_vtu << disu_ppts_temp(k,0) << " ";
-			}
-			
-			write_vtu << endl;
-			write_vtu << "</DataArray>" << endl;
-      
-			// velocity
-			
-			write_vtu << "<DataArray type= \"Float32\" NumberOfComponents=\"3\" Name=\"Velocity\" format=\"ascii\">" << endl;
-			
-			for(k=0;k<FlowSol->mesh_eles(i)->get_n_ppts_per_ele();k++)
-			{
-				// HACK
-				
-				write_vtu << disu_ppts_temp(k,1)/disu_ppts_temp(k,0) << " " << disu_ppts_temp(k,2)/disu_ppts_temp(k,0) << " ";
-				
-				if(FlowSol->mesh_eles(i)->get_n_fields()==4)
-				{
-					write_vtu << 0.0 << " ";
-				}
-				else
-				{
-					write_vtu << disu_ppts_temp(k,3)/disu_ppts_temp(k,0) << " ";
-				}
-			}
-			
-			write_vtu << endl;
-			write_vtu << "</DataArray>" << endl;
-			
-			// energy
-			
-			write_vtu << "<DataArray type= \"Float32\" Name=\"Energy\" format=\"ascii\">" << endl;
-			
-			for(k=0;k<FlowSol->mesh_eles(i)->get_n_ppts_per_ele();k++)
-			{
-				// HACK
-				
-				if(FlowSol->mesh_eles(i)->get_n_fields()==4)
-				{
-					write_vtu << disu_ppts_temp(k,3) << " ";
-				}
-				else
-				{
-					write_vtu << disu_ppts_temp(k,4) << " ";
-				}
-			}
-			
-			write_vtu << endl;
-			write_vtu << "</DataArray>" << endl;
-			write_vtu << "</PointData>" << endl;
-      
-			// write out the points
-			
-			FlowSol->mesh_eles(i)->calc_pos_ppts(j,pos_ppts_temp);
-			
-			write_vtu << "<Points>" << endl;
-			
-			write_vtu << "<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">" << endl;
-			
-			for(k=0;k<FlowSol->mesh_eles(i)->get_n_ppts_per_ele();k++)
-			{
-				for(l=0;l<FlowSol->mesh_eles(i)->get_n_dims();l++)
-				{
-					write_vtu << pos_ppts_temp(k,l) << " ";
-				}
-				
-				if(FlowSol->mesh_eles(i)->get_n_dims()==2) // HACK for 2D cases
-				{
-					write_vtu << "0 ";
-				}
-			}
-			
-			write_vtu << endl;
-			write_vtu << "</DataArray>" << endl;
-			write_vtu << "</Points>" << endl;
-      
-			// write out connectivity
-			
-			write_vtu << "<Cells>" << endl;
-			
-			write_vtu << "<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << endl;
-			
-			if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
-			{
-				for(k=0;k<p_res-1;k++)
-				{
-					for(l=0;l<p_res-k-1;l++)
-					{
-						vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
-						vertex_1=vertex_0+1;
-						vertex_2=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
-            
-						write_vtu << vertex_0 << " " << vertex_1 << " " << vertex_2 << endl;
-					}
-				}
-        
-				// And now the 'upside-down' triangles
-				// total extra triangles=(p_res-1)*(p_res-2)/2
-				for(k=0;k<p_res-2;k++)
-				{
-					for(l=0;l<p_res-k-2;l++)
-					{
-						vertex_0=l+1+k*p_res-((k*(k-1))/2);
-						vertex_1=vertex_0+p_res-k;
-						vertex_2=vertex_1-1;
-            
-						write_vtu << vertex_0 << " " << vertex_1 << " " << vertex_2 << endl;
-					}
-				}
-        
-				write_vtu << endl;
-				write_vtu << "</DataArray>" << endl;
-				write_vtu << "<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << endl;
-        
-				for(k=0;k<n_cells;k++)
-				{
-					write_vtu << (k+1)*3 << " ";
-				}
-        
-				write_vtu << "</DataArray>" << endl;
-				write_vtu << "<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << endl;
-				
-				for(k=0;k<n_cells;k++)
-				{
-					write_vtu << 5 << " "; // See vtkCellType.h for full list
-				}
-			}
-			else if(FlowSol->mesh_eles(i)->get_ele_type()==1) // quad
-			{
-				for(k=0;k<p_res-1;k++)
-				{
-					for(l=0;l<p_res-1;l++)
-					{
-						vertex_0=l+(p_res*k);
-						vertex_1=vertex_0+1;
-						vertex_2=vertex_0+p_res+1;
-						vertex_3=vertex_0+p_res;
-            
-						write_vtu << vertex_0 << " " << vertex_1 << " " << vertex_2 << " " <<  vertex_3 << endl;
-					}
-				}
-        
-				write_vtu << endl;
-				write_vtu << "</DataArray>" << endl;
-				write_vtu << "<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << endl;
-        
-				for(k=0;k<n_cells;k++)
-				{
-					write_vtu << (k+1)*4 << " ";
-				}
-				
-				write_vtu << "</DataArray>" << endl;
-				write_vtu << "<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << endl;
-				
-				for(k=0;k<n_cells;k++)
-				{
-					write_vtu << 9 << " ";
-				}
-			}
-			else if(FlowSol->mesh_eles(i)->get_ele_type()==2) // tet
-			{
-				for(k=0;k<p_res-1;++k)
-				{
-					for(l=0;l<p_res-1-k;++l)
-					{
-						for(m=0;m<p_res-1-k-l;++m)
-						{
-							vertex_0 = n_points - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + l*(p_res-k) - (l-1)*l/2 + m;
-							vertex_1 = n_points - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + l*(p_res-k) - (l-1)*l/2 + m + 1;
-							vertex_2 = n_points - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (l+1)*(p_res-k) - (l)*(l+1)/2 + m;
-							vertex_3 = n_points - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + l*(p_res-(k+1)) - (l-1)*l/2 + m;
-							write_vtu << vertex_0 << " " << vertex_1 << " " << vertex_2 << " " <<  vertex_3 << endl;
-						}
-					}
-				}
-				for(k=0;k<p_res-2;++k)
-				{
-					for(l=0;l<p_res-2-k;++l)
-					{
-						for(m=0;m<p_res-2-k-l;++m)
-						{
-							vertex_0 = n_points - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + l*(p_res-k) - (l-1)*l/2 + m + 1;
-							vertex_1 = n_points - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (l+1)*(p_res-k) - (l)*(l+1)/2 + m + 1;
-							vertex_2 = n_points - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + l*(p_res-(k+1)) - (l-1)*l/2 + m + 1;
-							vertex_3 = n_points - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (l+1)*(p_res-(k+1)) - (l)*(l+1)/2 + (m-1) + 1;
-							vertex_4 = n_points - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (l)*(p_res-(k+1)) - (l-1)*(l)/2 + (m-1) + 1;
-							vertex_5 = n_points - (p_res-(k))*(p_res+1-(k))*(p_res+2-(k))/6 + (l+1)*(p_res-(k)) - (l)*(l+1)/2 + (m-1) + 1;
-							write_vtu << vertex_0 << " " << vertex_2 << " " << vertex_1 << " " <<  vertex_4 << endl;
-							write_vtu << vertex_2 << " " << vertex_3 << " " << vertex_1 << " " <<  vertex_4 << endl;
-							write_vtu << vertex_5 << " " << vertex_1 << " " << vertex_3 << " " <<  vertex_4 << endl;
-							write_vtu << vertex_0 << " " << vertex_4 << " " << vertex_1 << " " <<  vertex_5 << endl;
-						}
-					}
-				}
-				for(k=0;k<p_res-3;++k)
-				{
-					for(l=0;l<p_res-3-k;++l)
-					{
-						for(i=0;i<p_res-3-k-l;++i)
-						{
-							vertex_0 = n_points - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (l+1)*(p_res-k) - (l)*(l+1)/2 + m + 1;
-							vertex_1 = n_points - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (l)*(p_res-(k+1)) - (l-1)*(l)/2 + m + 1;
-							vertex_2 = n_points - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (l+1)*(p_res-(k+1)) - (l)*(l+1)/2 + m ;
-							vertex_3 = n_points - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (l+1)*(p_res-(k+1)) - (l)*(l+1)/2 + m + 1;
-							write_vtu << vertex_0 << " " << vertex_1 << " " << vertex_2 << " " <<  vertex_3 << endl;
-						}
-					}
-				}
-        
-				write_vtu << endl;
-				write_vtu << "</DataArray>" << endl;
-				write_vtu << "<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << endl;
-        
-				for(k=0;k<n_cells;k++)
-				{
-					write_vtu << (k+1)*4 << " ";
-				}
-        
-				write_vtu << "</DataArray>" << endl;
-				write_vtu << "<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << endl;
-				
-				for(k=0;k<n_cells;k++)
-				{
-					write_vtu << 10 << " ";
-				}
-        
-			}
-			else if(FlowSol->mesh_eles(i)->get_ele_type()==3) // prism
-			{
-				// Not sure that this is supported by Paraview
-			}
-			else if(FlowSol->mesh_eles(i)->get_ele_type()==4) // hexa
-			{
-				for(k=0;k<p_res-1;k++)
-				{
-					for(l=0;l<p_res-1;l++)
-					{
-						for(m=0;m<p_res-1;m++)
-						{
-							vertex_0=m+(p_res*l)+(p_res*p_res*k);
-							vertex_1=vertex_0+1;
-							vertex_2=vertex_0+p_res+1;
-							vertex_3=vertex_0+p_res;
-              
-							vertex_4=vertex_0+p_res*p_res;
-							vertex_5=vertex_4+1;
-							vertex_6=vertex_4+p_res+1;
-							vertex_7=vertex_4+p_res;
-              
-							write_vtu << vertex_0  << " " <<  vertex_1  << " " <<  vertex_2 << " " <<  vertex_3  << " " << vertex_4 << " " << vertex_5 << " " << vertex_6 << " " << vertex_7 << endl;
-						}
-					}
-				}
-        
-				write_vtu << endl;
-				write_vtu << "</DataArray>" << endl;
-        
-				write_vtu << "<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << endl;
-        
-				for(k=0;k<n_cells;k++)
-				{
-					write_vtu << (k+1)*8 << " ";
-				}
-				
-				write_vtu << "</DataArray>" << endl;
-				write_vtu << "<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << endl;
-        
-				for(k=0;k<n_cells;k++)
-				{
-					write_vtu << 12 << " ";
-				}
-			}
-			else
-			{
-				cout << "ERROR 2: Invalid element type ... " << endl;
-			}
-			
-      write_vtu << "</DataArray>" << endl;
-			write_vtu << "</Cells>" << endl;
-			write_vtu << "</Piece>" << endl;
-		}
-	}
-  
-	write_vtu << "</UnstructuredGrid>" << endl;
-  write_vtu << "</VTKFile>" << endl;
-	
+	ofstream write_pvtu;
+	write_pvtu.precision(15);
+
+	/*! copy solution to cpu before beginning */
 #ifdef _GPU
-  
+	for(i=0;i<FlowSol->n_ele_types;i++)
+		FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+#endif
+
+#ifdef _MPI
+	/*! Get rank of each process */
+	my_rank = FlowSol->rank;
+	n_proc   = FlowSol->nproc;
+	/*! Dump number */
+	sprintf(dumpnum_s,"Mesh_%.09d",in_file_num,my_rank);
+	/*! Each rank writes a .vtu file in a subdirectory named 'dumpnum_s' created by master process */
+	sprintf(vtu_s,"Mesh_%.09d/Mesh_%.09d_%d.vtu",in_file_num,in_file_num,my_rank,my_rank);
+	/*! On rank 0, write a .pvtu file to gather data from all .vtu files */
+	sprintf(pvtu_s,"Mesh_%.09d.pvtu",in_file_num,0);
+#else
+	/*! Only write a vtu file in serial */
+	sprintf(vtu_s,"Mesh_%.09d.vtu",in_file_num,0);
+#endif
+
+	/*! Point to names */
+  vtu = &vtu_s[0];
+  pvtu = &pvtu_s[0];
+  dumpnum = &dumpnum_s[0];
+
+#ifdef _MPI
+	/*! Master node creates a subdirectory to store .vtu files */
+	if (my_rank == 0) {
+		struct stat st = {0};
+		if (stat(dumpnum, &st) == -1) {
+	    mkdir(dumpnum, 0755);
+		}
+		/*! Delete old .vtu files from directory */
+		//remove(strcat(dumpnum,"/*.vtu"));
+	}
+
+	/*! Master node writes the .pvtu file */
+	if (my_rank == 0) {
+		cout << "Writing Paraview dump number " << dumpnum << " ...." << endl;
+
+	  write_pvtu.open(pvtu);
+  	write_pvtu << "<?xml version=\"1.0\" ?>" << endl;
+		write_pvtu << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">" << endl;
+		write_pvtu << "	<PUnstructuredGrid GhostLevel=\"1\">" << endl;
+
+		/*! Write point data */
+		write_pvtu << "		<PPointData Scalars=\"Density\" Vectors=\"Velocity\">" << endl;
+		write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Density\" />" << endl;
+		write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
+		write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
+		write_pvtu << "		</PPointData>" << endl;
+
+		/*! Write points */
+		write_pvtu << "		<PPoints>" << endl;
+		write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" />" << endl;
+		write_pvtu << "		</PPoints>" << endl;
+
+		/*! Write names of source .vtu files to include */
+		for (i=0;i<n_proc;++i) {
+			write_pvtu << "		<Piece Source=\"" << dumpnum << "/" << dumpnum <<"_" << i << ".vtu" << "\" />" << endl;
+		}
+
+		/*! Write footer */
+		write_pvtu << "	</PUnstructuredGrid>" << endl;
+		write_pvtu << "</VTKFile>" << endl;
+		write_pvtu.close();
+	}
+#else
+	/*! In serial, don't write a .pvtu file. */
+	cout << "Writing Paraview dump number " << dumpnum << " ...." << endl;
+#endif
+
+#ifdef _MPI
+	/*! Wait for all processes to get to this point, otherwise there won't be a directory to put .vtus into */
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+	/*! Each process writes its own .vtu file */
+	write_vtu.open(vtu);
+	/*! File header */
+ 	write_vtu << "<?xml version=\"1.0\" ?>" << endl;
+	write_vtu << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">" << endl;
+	write_vtu << "	<UnstructuredGrid>" << endl;
+
+  /*! Loop over element types */
 	for(i=0;i<FlowSol->n_ele_types;i++)
 	{
-		//mesh_eles(i)->rm_tdisu_upts_cpu();
-		//mesh_eles(i)->rm_detjac_upts_cpu();
+		/*! no. of elements of type i */
+		n_eles = FlowSol->mesh_eles(i)->get_n_eles();
+		/*! Only proceed if there any elements of type i */
+		if (n_eles!=0) {
+			/*! element type */
+			ele_type = FlowSol->mesh_eles(i)->get_ele_type();
+
+			/*! no. of plot points per ele */
+			n_points = FlowSol->mesh_eles(i)->get_n_ppts_per_ele();
+
+			/*! no. of plot sub-elements per ele */
+			n_cells  = FlowSol->mesh_eles(i)->get_n_peles_per_ele();
+
+			/*! no. of vertices per ele */
+			n_verts  = FlowSol->mesh_eles(i)->get_n_verts_per_ele();
+
+			/*! no. of fields */
+			n_fields = FlowSol->mesh_eles(i)->get_n_fields();
+
+			/*! no. of dimensions */
+			n_dims = FlowSol->mesh_eles(i)->get_n_dims();
+
+			/*! Temporary array of plot point coordinates */
+			pos_ppts_temp.setup(n_points,n_dims);
+
+			/*! Temporary solution array at plot points */
+			disu_ppts_temp.setup(n_points,n_fields);
+
+			con.setup(n_verts,n_cells);
+			con = FlowSol->mesh_eles(i)->get_connectivity_plot();
+
+			/*! Loop over individual elements and write their data as a separate VTK DataArray */
+			for(j=0;j<n_eles;j++)
+			{
+				write_vtu << "		<Piece NumberOfPoints=\"" << n_points << "\" NumberOfCells=\"" << n_cells << "\">" << endl;
+
+				/*! Calculate the solution at the plot points */
+				FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
+
+				/*! write out solution to file */
+				write_vtu << "			<PointData>" << endl;
+
+				/*! density */
+				write_vtu << "				<DataArray type= \"Float32\" Name=\"Density\" format=\"ascii\">" << endl;
+				for(k=0;k<n_points;k++)
+				{
+					write_vtu << disu_ppts_temp(k,0) << " ";
+				}
+				write_vtu << endl;
+				write_vtu << "				</DataArray>" << endl;
+      
+				/*! velocity */
+				write_vtu << "				<DataArray type= \"Float32\" NumberOfComponents=\"3\" Name=\"Velocity\" format=\"ascii\">" << endl;
+				for(k=0;k<n_points;k++)
+				{
+					/*! Divide momentum components by density to obtain velocity components */
+					write_vtu << disu_ppts_temp(k,1)/disu_ppts_temp(k,0) << " " << disu_ppts_temp(k,2)/disu_ppts_temp(k,0) << " ";
+
+					/*! In 2D the z-component of velocity is not stored, but Paraview needs it so write a 0. */
+					if(n_fields==4)
+					{
+						write_vtu << 0.0 << " ";
+					}
+					/*! In 3D just write the z-component of velocity */
+					else
+					{
+						write_vtu << disu_ppts_temp(k,3)/disu_ppts_temp(k,0) << " ";
+					}
+				}
+				write_vtu << endl;
+				write_vtu << "				</DataArray>" << endl;
+			
+				/*! energy */
+				write_vtu << "				<DataArray type= \"Float32\" Name=\"Energy\" format=\"ascii\">" << endl;
+				for(k=0;k<n_points;k++)
+				{
+					/*! In 2D energy is the 4th solution component */
+					if(n_fields==4)
+					{
+						write_vtu << disu_ppts_temp(k,3)/disu_ppts_temp(k,0) << " ";
+					}
+					/*! In 3D energy is the 5th solution component */
+					else
+					{
+						write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
+					}
+				}
+				/*! End the line and finish writing DataArray and PointData objects */
+				write_vtu << endl;
+				write_vtu << "				</DataArray>" << endl;
+				write_vtu << "			</PointData>" << endl;
+      
+				/*! Calculate the plot coordinates */
+				FlowSol->mesh_eles(i)->calc_pos_ppts(j,pos_ppts_temp);
+			
+				/*! write out the plot coordinates */
+				write_vtu << "			<Points>" << endl;
+				write_vtu << "				<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">" << endl;
+
+				/*! Loop over plot points in element */
+				for(k=0;k<n_points;k++)
+				{
+					for(l=0;l<n_dims;l++)
+					{
+						write_vtu << pos_ppts_temp(k,l) << " ";
+					}
+
+					/*! If 2D, write a 0 as the z-component */
+					if(n_dims==2)
+					{
+						write_vtu << "0 ";
+					}
+				}
+			
+				write_vtu << endl;
+				write_vtu << "				</DataArray>" << endl;
+				write_vtu << "			</Points>" << endl;
+      
+				/*! write out Cell data: connectivity, offsets, element types */
+				write_vtu << "			<Cells>" << endl;
+
+				/*! Write connectivity array */
+				write_vtu << "				<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << endl;
+
+				for(k=0;k<n_cells;k++)
+				{
+					for(l=0;l<n_verts;l++)
+					{
+						write_vtu << con(l,k) << " ";
+					}
+					write_vtu << endl;
+				}
+				write_vtu << "				</DataArray>" << endl;
+
+				/*! Write cell numbers */
+				write_vtu << "				<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << endl;
+				for(k=0;k<n_cells;k++)
+				{
+					write_vtu << (k+1)*n_verts << " ";
+				}
+				write_vtu << endl;
+				write_vtu << "				</DataArray>" << endl;
+
+				/*! Write VTK element type */
+				write_vtu << "				<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << endl;
+				for(k=0;k<n_cells;k++)
+				{
+					write_vtu << vtktypes(i) << " ";
+				}
+				write_vtu << endl;
+  	    write_vtu << "				</DataArray>" << endl;
+
+				/*! Write cell and piece footers */
+				write_vtu << "			</Cells>" << endl;
+				write_vtu << "		</Piece>" << endl;
+			}
+		}
 	}
-	
-#endif
-  
+
+  /*! Write footer of file */
+	write_vtu << "	</UnstructuredGrid>" << endl;
+  write_vtu << "</VTKFile>" << endl;
+
+	/*! Close the .vtu file */
 	write_vtu.close();
-	//}
 }
+
 
 //CGL adding binary output for Paraview ************************************ BEGIN
 void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixed elements

@@ -169,7 +169,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
   array<int> icvsta, icvert;
   
   // Compute connectivity
-	CompConectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, rot_tag, unmatched_inters, n_unmatched_inters, icvsta, icvert, FlowSol->num_inters, FlowSol->num_edges, FlowSol);
+	CompConnectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, rot_tag, unmatched_inters, n_unmatched_inters, icvsta, icvert, FlowSol->num_inters, FlowSol->num_edges, FlowSol);
   
   // Reading boundaries
   ReadBound(run_input.mesh_file,c2v,c2n_v,ctype,bctype_c,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts, FlowSol);
@@ -2045,7 +2045,7 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
 #endif
 
 /*! method to create list of faces from the mesh */
-void CompConectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e, array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv, array<int>& out_rot_tag, array<int>& out_unmatched_faces, int& out_n_unmatched_faces, array<int>& out_icvsta, array<int>& out_icvert, int& out_n_faces, int& out_n_edges, struct solution* FlowSol)
+void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e, array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv, array<int>& out_rot_tag, array<int>& out_unmatched_faces, int& out_n_unmatched_faces, array<int>& out_icvsta, array<int>& out_icvert, int& out_n_faces, int& out_n_edges, struct solution* FlowSol)
 {
   
 	// inputs: 	in_c2v (clls to vertex) , in_ctype (type of cell)

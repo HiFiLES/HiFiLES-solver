@@ -124,9 +124,9 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
 	  
 	  temp_u.setup(n_fields);
 	  temp_f.setup(n_fields,n_dims);
-  }
-  else
-  {
+  //}
+  //else
+  //{
 
     if (viscous==1)
     {
@@ -248,54 +248,21 @@ void eles_quads::set_connectivity_plot()
   int vertex_0,vertex_1,vertex_2,vertex_3;
   int count=0;
 
-  for (int j=0;j<n_eles;++j){
-    for(int k=0;k<p_res-1;++k){
-      for(int l=0;l<p_res-1;++l){
+  for(int k=0;k<p_res-1;++k){
+    for(int l=0;l<p_res-1;++l){
 
-        vertex_0=l+(p_res*k);
-        vertex_1=vertex_0+1;
-        vertex_2=vertex_0+p_res+1;
-        vertex_3=vertex_0+p_res;
+      vertex_0=l+(p_res*k);
+      vertex_1=vertex_0+1;
+      vertex_2=vertex_0+p_res+1;
+      vertex_3=vertex_0+p_res;
   
-        connectivity_plot(0,count) = ppt_to_pnode(j,vertex_0);
-        connectivity_plot(1,count) = ppt_to_pnode(j,vertex_1);
-        connectivity_plot(2,count) = ppt_to_pnode(j,vertex_2);
-        connectivity_plot(3,count) = ppt_to_pnode(j,vertex_3);
-        count++;
-        //cout << ppt_to_pnode(j,l+(p_res*k)) << " " ;
-        //cout << ppt_to_pnode(j,l+(p_res*k)+1) << " " ;
-        //cout << ppt_to_pnode(j,l+(p_res*k)+p_res+1) << " " ;
-        //cout << ppt_to_pnode(j,l+(p_res*k)+p_res) << endl;
-      }
+      connectivity_plot(0) = vertex_0;
+      connectivity_plot(1) = vertex_1;
+      connectivity_plot(2) = vertex_2;
+      connectivity_plot(3) = vertex_3;
+      count++;
     }
   }
-
-/* CGL050412: setting connectivity without redundant nodes 
-  for (int j=0;j<n_eles;j++)
-  {
-    for(int k=0;k<p_res-1;k++)
-		{
-			for(int l=0;l<p_res-1;l++)
-			{
-				vertex_0=l+(p_res*k);
-				vertex_1=vertex_0+1;
-				vertex_2=vertex_0+p_res+1;
-				vertex_3=vertex_0+p_res;
-		
-				vertex_0 += j*p_res*p_res;
-				vertex_1 += j*p_res*p_res;
-				vertex_2 += j*p_res*p_res;
-				vertex_3 += j*p_res*p_res;
-		
-        connectivity_plot(0,count) = vertex_0+1;
-        connectivity_plot(1,count) = vertex_1+1;
-        connectivity_plot(2,count) = vertex_2+1;
-        connectivity_plot(3,count) = vertex_3+1;
-        count++;
-			}
-		}
-
-  } */
 }
 
 

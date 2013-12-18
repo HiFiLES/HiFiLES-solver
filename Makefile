@@ -11,7 +11,10 @@
 
 # Settings
 
-include makefile.in
+# TODO: add config script to build parmetis and look for BLAS, parmetis, CUDA, MPI and TECIO libraries
+
+# TODO: include makefile.machine.in by looking for current machine name
+include makefiles/makefile.cluster.in
 
 # Compiler
 
@@ -33,7 +36,7 @@ endif
 
 # Pre-processing macros
 
-OPTS    = -D_$(NODE)  -D_$(BLAS) 
+OPTS    = -D_$(NODE)  -D_$(BLAS)
 
 ifeq ($(PARALLEL),MPI)
 	OPTS    += -D_$(PARALLEL) 
@@ -41,7 +44,7 @@ endif
 
 # Includes
 
-OPTS    += -I /include 
+OPTS    += -I include 
 
 ifeq ($(NODE),GPU)
 	OPTS	+= -I $(CUDA_DIR)/include 
@@ -56,9 +59,7 @@ ifeq ($(TECIO),YES)
 endif
 
 ifeq ($(PARALLEL),MPI)
-	OPTS	+= -I /usr/include/mpich2-x86_64/
-	OPTS	+= -I /usr/lib64/openmpi/bin/
-
+	OPTS	+= -I $(MPI_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/metis/include
 endif
@@ -78,7 +79,7 @@ endif
 
 ifeq ($(CODE),RELEASE)
 	ifeq ($(NODE),GPU)
-		OPTS += -w
+		OPTS	+= -w
 	endif
 endif
 
@@ -92,17 +93,16 @@ endif
 
 ifeq ($(BLAS),ACCELERATE_BLAS)
 	LIBS	+= -framework Accelerate
+	OPTS	+= -flax-vector-conversions 
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
-        LIBS    += -L $(BLAS_DIR)/lib -lcblas
-#	LIBS	+= -latlas
+  LIBS    += -L $(BLAS_DIR)/lib -lcblas -latlas
 endif
 
 ifeq ($(NODE),GPU)
 	LIBS	+= -L $(CUDA_DIR)/lib64 -lcudart -lcublas -lcusparse -lm
 endif
-
 
 # Source
 
@@ -145,7 +145,7 @@ help:
 	@echo ' '
 
 HiFiLES: $(OBJS)
-	$(CC) $(OPTS) -o $(BIN)HiFiLES $(OBJS) $(LIBS) 
+	$(CC) $(OPTS) -o $(BIN)HiFiLES $(OBJS) ${LIBS}
 
 $(OBJ)HiFiLES.o: HiFiLES.cpp geometry.h input.h flux.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
@@ -156,10 +156,10 @@ $(OBJ)geometry.o: geometry.cpp geometry.h input.h  error.h
 $(OBJ)solver.o: solver.cpp solver.h input.h  error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
-$(OBJ)output.o: output.cpp output.h input.h  error.h
+$(OBJ)output.o: output.cpp output.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
-	
-$(OBJ)eles.o: eles.cpp eles.h array.h error.h input.h array.h error.h
+
+$(OBJ)eles.o: eles.cpp eles.h array.h error.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
 $(OBJ)eles_tris.o: eles_tris.cpp eles_tris.h eles.h funcs.h input.h array.h array.h cubature_1d.h error.h

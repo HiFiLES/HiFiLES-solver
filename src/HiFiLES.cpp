@@ -82,7 +82,15 @@ int main(int argc, char *argv[]) {
   init = clock();
   
   /*! Just output. */
-  if (run_input.run_type == 1) { plot_continuous(&FlowSol); return(0); }
+  if (run_input.run_type == 1) {
+		plot_continuous(&FlowSol);
+	  /*! Finalize MPI. */
+#ifdef _MPI
+	  MPI_Finalize();
+#endif
+		/*! Exit. */
+		return(0);
+	}
   
   /////////////////////////////////////////////////
   /// Pre-processing

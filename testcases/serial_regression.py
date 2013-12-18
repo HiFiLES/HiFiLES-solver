@@ -191,7 +191,17 @@ if __name__=="__main__":
   cylinder.tol          = 0.00001
   passed1               = cylinder.run_test()
   
-  
+  # Taylor-Green vortex
+  tgv              = testcase('tgv')
+  tgv.cfg_dir      = cylinder.HiFiLES_dir+"/testcases/navier-stokes/Taylor_Green_vortex"
+  tgv.cfg_file     = "input_TGV_SD_hex"
+  tgv.test_iter    = 30
+  tgv.test_vals    = [0.00017975,0.05079293,0.05079307,0.06456811,0.05711717]
+  tgv.HiFiLES_exec = "HiFiLES"
+  tgv.timeout      = 1600
+  tgv.tol          = 0.00001
+  passed1          = tgv.run_test()
+
   if (passed1):
     sys.exit(0)
   else:

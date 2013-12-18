@@ -1,4 +1,4 @@
-# Install script for directory: /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis
+# Install script for directory: /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -33,6 +33,6 @@ IF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 ENDIF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 
 IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
-  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "/home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis/libparmetis.a")
+  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis/libparmetis.a")
 ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
 

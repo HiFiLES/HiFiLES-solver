@@ -8,7 +8,7 @@ default_target: all
 #=============================================================================
 # Special targets provided by cmake.
 
-# Disable implicit rules so canoncical targets will work.
+# Disable implicit rules so canonical targets will work.
 .SUFFIXES:
 
 # Remove some rules from gmake that .SUFFIXES does not remove.
@@ -42,10 +42,10 @@ RM = /usr/bin/cmake -E remove -f
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2
+CMAKE_SOURCE_DIR = /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64
+CMAKE_BINARY_DIR = /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -113,14 +113,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -E cmake_progress_start /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/include/CMakeFiles/progress.marks
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 && $(MAKE) -f CMakeFiles/Makefile2 include/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles 0
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -E cmake_progress_start /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/include/CMakeFiles/progress.marks
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 && $(MAKE) -f CMakeFiles/Makefile2 include/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 && $(MAKE) -f CMakeFiles/Makefile2 include/clean
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 && $(MAKE) -f CMakeFiles/Makefile2 include/clean
 .PHONY : clean
 
 # The main clean target
@@ -129,17 +129,17 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 && $(MAKE) -f CMakeFiles/Makefile2 include/preinstall
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 && $(MAKE) -f CMakeFiles/Makefile2 include/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 && $(MAKE) -f CMakeFiles/Makefile2 include/preinstall
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 && $(MAKE) -f CMakeFiles/Makefile2 include/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Help Target
@@ -165,6 +165,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

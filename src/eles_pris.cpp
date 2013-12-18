@@ -108,9 +108,9 @@ void eles_pris::setup_ele_type_specific(int in_run_type)
 	  
 	  temp_u.setup(n_fields);
 	  temp_f.setup(n_fields,n_dims);
-  }  
-  else
-  {
+  //}  
+  //else
+  //{
     if (viscous==1)
     {
 	  	set_opp_4(run_input.sparse_pri);
@@ -305,10 +305,6 @@ void eles_pris::create_map_ppt(void)
   }
 	}
 	}
-
-
-
-
 }
 
 void eles_pris::set_connectivity_plot()
@@ -317,142 +313,54 @@ void eles_pris::set_connectivity_plot()
   int count=0;
   int temp = (p_res)*(p_res+1)/2;
 
-  for (int m=0;m<n_eles;++m){
-    for (int l=0;l<p_res-1;++l){
-      for(int j=0;j<p_res-1;++j){ // look to right from each point
-        for(int k=0;k<p_res-j-1;++k){
+  for (int l=0;l<p_res-1;++l){
+    for(int j=0;j<p_res-1;++j){ // look to right from each point
+      for(int k=0;k<p_res-j-1;++k){
 
-          vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
-          vertex_1=vertex_0+1;
-          vertex_2=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
+        vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
+        vertex_1=vertex_0+1;
+        vertex_2=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
 
-          vertex_3 = vertex_0 + temp;
-          vertex_4 = vertex_1 + temp;
-          vertex_5 = vertex_2 + temp;
+        vertex_3 = vertex_0 + temp;
+        vertex_4 = vertex_1 + temp;
+        vertex_5 = vertex_2 + temp;
 
-          /*connectivity_plot(0,count) = ppt_to_pnode(m,vertex_0);
-          connectivity_plot(1,count) = ppt_to_pnode(m,vertex_1);
-          connectivity_plot(2,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(3,count) = ppt_to_pnode(m,vertex_3);
-          connectivity_plot(4,count) = ppt_to_pnode(m,vertex_4);
-          connectivity_plot(5,count) = ppt_to_pnode(m,vertex_5);*/
-          connectivity_plot(0,count) = ppt_to_pnode(m,vertex_0);
-          connectivity_plot(1,count) = ppt_to_pnode(m,vertex_1);
-          connectivity_plot(2,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(3,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(4,count) = ppt_to_pnode(m,vertex_3);
-          connectivity_plot(5,count) = ppt_to_pnode(m,vertex_4);
-          connectivity_plot(6,count) = ppt_to_pnode(m,vertex_5);
-          connectivity_plot(7,count) = ppt_to_pnode(m,vertex_5);
-          count++;
-        }
+        connectivity_plot(0) = vertex_0;
+        connectivity_plot(1) = vertex_1;
+        connectivity_plot(2) = vertex_2;
+        connectivity_plot(3) = vertex_2;
+        connectivity_plot(4) = vertex_3;
+        connectivity_plot(5) = vertex_4;
+        connectivity_plot(6) = vertex_5;
+        connectivity_plot(7) = vertex_5;
+        count++;
       }
     }
-
-    for (int l=0;l<p_res-1;++l){
-      for(int j=0;j<p_res-2;++j){ //  look to left from each point
-        for(int k=1;k<p_res-j-1;++k){
-
-          vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
-          vertex_1=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
-          vertex_2=k-1+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
-
-          vertex_3 = vertex_0 + temp;
-          vertex_4 = vertex_1 + temp;
-          vertex_5 = vertex_2 + temp;
-
-          /*connectivity_plot(0,count) = ppt_to_pnode(m,vertex_0);
-          connectivity_plot(1,count) = ppt_to_pnode(m,vertex_1);
-          connectivity_plot(2,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(3,count) = ppt_to_pnode(m,vertex_3);
-          connectivity_plot(4,count) = ppt_to_pnode(m,vertex_4);
-          connectivity_plot(5,count) = ppt_to_pnode(m,vertex_5);*/
-          connectivity_plot(0,count) = ppt_to_pnode(m,vertex_0);
-          connectivity_plot(1,count) = ppt_to_pnode(m,vertex_1);
-          connectivity_plot(2,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(3,count) = ppt_to_pnode(m,vertex_2);
-          connectivity_plot(4,count) = ppt_to_pnode(m,vertex_3);
-          connectivity_plot(5,count) = ppt_to_pnode(m,vertex_4);
-          connectivity_plot(6,count) = ppt_to_pnode(m,vertex_5);
-          connectivity_plot(7,count) = ppt_to_pnode(m,vertex_5);
-          count++;
-        }
-      }	
-    }
   }
-/* CGL050412: setting connectivity without redundant nodes
-  for (int m=0;m<n_eles;m++)
-  {
-	 for (int l=0;l<p_res-1;l++)
-	 {	
-	   for(int j=0;j<p_res-1;j++) // look to right from each point
-	   {
-	   	for(int k=0;k<p_res-j-1;k++)
-	   	{
-	   		vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
-	   		vertex_1=vertex_0+1;
-	   		vertex_2=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
+  for (int l=0;l<p_res-1;++l){
+    for(int j=0;j<p_res-2;++j){ //  look to left from each point
+      for(int k=1;k<p_res-j-1;++k){
 
-	   		vertex_3 = vertex_0 + temp;
-	   		vertex_4 = vertex_1 + temp;
-	   		vertex_5 = vertex_2 + temp;
+        vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
+        vertex_1=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
+        vertex_2=k-1+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
 
-	   		vertex_0+=m*(p_res*(p_res+1)/2*p_res);
-	   		vertex_1+=m*(p_res*(p_res+1)/2*p_res);
-	   		vertex_2+=m*(p_res*(p_res+1)/2*p_res);
-	   		vertex_3+=m*(p_res*(p_res+1)/2*p_res);
-	   		vertex_4+=m*(p_res*(p_res+1)/2*p_res);
-	   		vertex_5+=m*(p_res*(p_res+1)/2*p_res);
+        vertex_3 = vertex_0 + temp;
+        vertex_4 = vertex_1 + temp;
+        vertex_5 = vertex_2 + temp;
 
-        connectivity_plot(0,count) = vertex_0+1;
-        connectivity_plot(1,count) = vertex_1+1;
-        connectivity_plot(2,count) = vertex_2+1;
-        connectivity_plot(3,count) = vertex_2+1;
-        connectivity_plot(4,count) = vertex_3+1;
-        connectivity_plot(5,count) = vertex_4+1;
-        connectivity_plot(6,count) = vertex_5+1;
-        connectivity_plot(7,count) = vertex_5+1;
+        connectivity_plot(0) = vertex_0;
+        connectivity_plot(1) = vertex_1;
+        connectivity_plot(2) = vertex_2;
+        connectivity_plot(3) = vertex_2;
+        connectivity_plot(4) = vertex_3;
+        connectivity_plot(5) = vertex_4;
+        connectivity_plot(6) = vertex_5;
+        connectivity_plot(7) = vertex_5;
         count++;
-	   	}
-	   }
-	 }
-
-	 for (int l=0;l<p_res-1;l++)
-	 {	
-	   for(int j=0;j<p_res-2;j++) //  look to left from each point
-	   {
-	   	for(int k=1;k<p_res-j-1;k++)
-	   	{
-	   		vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
-	   		vertex_1=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
-	   		vertex_2=k-1+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
-
-	   		vertex_3 = vertex_0 + temp;
-	   		vertex_4 = vertex_1 + temp;
-	   		vertex_5 = vertex_2 + temp;
-
-	   		vertex_0+=m*(p_res*(p_res+1)/2*p_res);
-	   		vertex_1+=m*(p_res*(p_res+1)/2*p_res);
-	   		vertex_2+=m*(p_res*(p_res+1)/2*p_res);
-	   		vertex_3+=m*(p_res*(p_res+1)/2*p_res);
-	   		vertex_4+=m*(p_res*(p_res+1)/2*p_res);
-	   		vertex_5+=m*(p_res*(p_res+1)/2*p_res);
-
-        connectivity_plot(0,count) = vertex_0+1;
-        connectivity_plot(1,count) = vertex_1+1;
-        connectivity_plot(2,count) = vertex_2+1;
-        connectivity_plot(3,count) = vertex_2+1;
-        connectivity_plot(4,count) = vertex_3+1;
-        connectivity_plot(5,count) = vertex_4+1;
-        connectivity_plot(6,count) = vertex_5+1;
-        connectivity_plot(7,count) = vertex_5+1;
-        count++;
-	   	}
-	   }	
-	 }
-
-
-  }*/
+      }
+    }	
+  }
 }
 
 

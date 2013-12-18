@@ -37,16 +37,16 @@ void plot_continuous(struct solution* FlowSol);
 
 void plotter_setup(struct solution* FlowSol);
 
-/*! write a tecplot file */
+/*! write an output file in Tecplot ASCII format.  Used in run mode. */
 void write_tec(int in_file_num, struct solution* FlowSol);
 
-/*! write a tecplot file in binary format*/
+/*! write an output file in Tecplot binary format.  Used in plot mode.*/
 void write_tec_bin(int in_file_num, struct solution* FlowSol);
 
-/*! write a Paraview file */
+/*! write an output file in VTK ASCII format. Used in run mode. */
 void write_vtu(int in_file_num, struct solution* FlowSol);
 
-/*! write a Paraview file in binary format*/
+/*! write an output file in VTK binary format. Used in plot mode. */
 void write_vtu_bin(int in_file_num, struct solution* FlowSol);
 
 /*! writing a restart file */

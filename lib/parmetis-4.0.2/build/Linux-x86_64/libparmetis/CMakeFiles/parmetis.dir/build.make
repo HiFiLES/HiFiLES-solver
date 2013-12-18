@@ -4,7 +4,7 @@
 #=============================================================================
 # Special targets provided by cmake.
 
-# Disable implicit rules so canoncical targets will work.
+# Disable implicit rules so canonical targets will work.
 .SUFFIXES:
 
 # Remove some rules from gmake that .SUFFIXES does not remove.
@@ -38,10 +38,10 @@ RM = /usr/bin/cmake -E remove -f
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2
+CMAKE_SOURCE_DIR = /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64
+CMAKE_BINARY_DIR = /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64
 
 # Include any dependencies generated for this target.
 include libparmetis/CMakeFiles/parmetis.dir/depend.make
@@ -52,307 +52,19 @@ include libparmetis/CMakeFiles/parmetis.dir/progress.make
 # Include the compile flags for this target's objects.
 include libparmetis/CMakeFiles/parmetis.dir/flags.make
 
-libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o: ../../libparmetis/diffutil.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_1)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/diffutil.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/diffutil.c
-
-libparmetis/CMakeFiles/parmetis.dir/diffutil.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/diffutil.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/diffutil.c > CMakeFiles/parmetis.dir/diffutil.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/diffutil.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/diffutil.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/diffutil.c -o CMakeFiles/parmetis.dir/diffutil.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/weird.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/weird.c.o: ../../libparmetis/weird.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_2)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/weird.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/weird.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/weird.c
-
-libparmetis/CMakeFiles/parmetis.dir/weird.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/weird.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/weird.c > CMakeFiles/parmetis.dir/weird.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/weird.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/weird.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/weird.c -o CMakeFiles/parmetis.dir/weird.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/weird.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/weird.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/weird.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/weird.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/weird.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/weird.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/weird.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/weird.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/weird.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o: ../../libparmetis/mmetis.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_3)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/mmetis.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/mmetis.c
-
-libparmetis/CMakeFiles/parmetis.dir/mmetis.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/mmetis.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/mmetis.c > CMakeFiles/parmetis.dir/mmetis.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/mmetis.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/mmetis.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/mmetis.c -o CMakeFiles/parmetis.dir/mmetis.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o: ../../libparmetis/kwayrefine.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_4)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/kwayrefine.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/kwayrefine.c
-
-libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/kwayrefine.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/kwayrefine.c > CMakeFiles/parmetis.dir/kwayrefine.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/kwayrefine.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/kwayrefine.c -o CMakeFiles/parmetis.dir/kwayrefine.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o: ../../libparmetis/akwayfm.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_5)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/akwayfm.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/akwayfm.c
-
-libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/akwayfm.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/akwayfm.c > CMakeFiles/parmetis.dir/akwayfm.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/akwayfm.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/akwayfm.c -o CMakeFiles/parmetis.dir/akwayfm.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/ametis.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/ametis.c.o: ../../libparmetis/ametis.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_6)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/ametis.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/ametis.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/ametis.c
-
-libparmetis/CMakeFiles/parmetis.dir/ametis.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/ametis.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/ametis.c > CMakeFiles/parmetis.dir/ametis.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/ametis.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/ametis.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/ametis.c -o CMakeFiles/parmetis.dir/ametis.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/ametis.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o: ../../libparmetis/balancemylink.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_7)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/balancemylink.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/balancemylink.c
-
-libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/balancemylink.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/balancemylink.c > CMakeFiles/parmetis.dir/balancemylink.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/balancemylink.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/balancemylink.c -o CMakeFiles/parmetis.dir/balancemylink.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o: ../../libparmetis/initmsection.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_8)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/initmsection.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/initmsection.c
-
-libparmetis/CMakeFiles/parmetis.dir/initmsection.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/initmsection.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/initmsection.c > CMakeFiles/parmetis.dir/initmsection.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/initmsection.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/initmsection.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/initmsection.c -o CMakeFiles/parmetis.dir/initmsection.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/selectq.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/selectq.c.o: ../../libparmetis/selectq.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_9)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/selectq.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/selectq.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/selectq.c
-
-libparmetis/CMakeFiles/parmetis.dir/selectq.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/selectq.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/selectq.c > CMakeFiles/parmetis.dir/selectq.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/selectq.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/selectq.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/selectq.c -o CMakeFiles/parmetis.dir/selectq.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/selectq.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o: ../../libparmetis/mdiffusion.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_10)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/mdiffusion.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/mdiffusion.c
-
-libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/mdiffusion.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/mdiffusion.c > CMakeFiles/parmetis.dir/mdiffusion.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/mdiffusion.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/mdiffusion.c -o CMakeFiles/parmetis.dir/mdiffusion.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/move.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/move.c.o: ../../libparmetis/move.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_11)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/move.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/move.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/move.c
-
-libparmetis/CMakeFiles/parmetis.dir/move.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/move.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/move.c > CMakeFiles/parmetis.dir/move.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/move.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/move.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/move.c -o CMakeFiles/parmetis.dir/move.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/move.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/move.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/move.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/move.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/move.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/move.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/move.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/move.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/move.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/graph.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/graph.c.o: ../../libparmetis/graph.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_12)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/graph.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/graph.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/graph.c
-
-libparmetis/CMakeFiles/parmetis.dir/graph.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/graph.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/graph.c > CMakeFiles/parmetis.dir/graph.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/graph.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/graph.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/graph.c -o CMakeFiles/parmetis.dir/graph.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/graph.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/graph.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/graph.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/graph.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/graph.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/graph.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/graph.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/graph.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/graph.c.o.provides.build
-
 libparmetis/CMakeFiles/parmetis.dir/ometis.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
 libparmetis/CMakeFiles/parmetis.dir/ometis.c.o: ../../libparmetis/ometis.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_13)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/ometis.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/ometis.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/ometis.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/ometis.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/ometis.c
 
 libparmetis/CMakeFiles/parmetis.dir/ometis.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/ometis.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/ometis.c > CMakeFiles/parmetis.dir/ometis.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/ometis.c > CMakeFiles/parmetis.dir/ometis.c.i
 
 libparmetis/CMakeFiles/parmetis.dir/ometis.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/ometis.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/ometis.c -o CMakeFiles/parmetis.dir/ometis.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/ometis.c -o CMakeFiles/parmetis.dir/ometis.c.s
 
 libparmetis/CMakeFiles/parmetis.dir/ometis.c.o.requires:
 .PHONY : libparmetis/CMakeFiles/parmetis.dir/ometis.c.o.requires
@@ -362,573 +74,20 @@ libparmetis/CMakeFiles/parmetis.dir/ometis.c.o.provides: libparmetis/CMakeFiles/
 .PHONY : libparmetis/CMakeFiles/parmetis.dir/ometis.c.o.provides
 
 libparmetis/CMakeFiles/parmetis.dir/ometis.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/ometis.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/ometis.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o: ../../libparmetis/csrmatch.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_14)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/csrmatch.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/csrmatch.c
-
-libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/csrmatch.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/csrmatch.c > CMakeFiles/parmetis.dir/csrmatch.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/csrmatch.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/csrmatch.c -o CMakeFiles/parmetis.dir/csrmatch.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o: ../../libparmetis/node_refine.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_15)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/node_refine.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/node_refine.c
-
-libparmetis/CMakeFiles/parmetis.dir/node_refine.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/node_refine.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/node_refine.c > CMakeFiles/parmetis.dir/node_refine.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/node_refine.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/node_refine.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/node_refine.c -o CMakeFiles/parmetis.dir/node_refine.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o: ../../libparmetis/gkmpi.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_16)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/gkmpi.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/gkmpi.c
-
-libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/gkmpi.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/gkmpi.c > CMakeFiles/parmetis.dir/gkmpi.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/gkmpi.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/gkmpi.c -o CMakeFiles/parmetis.dir/gkmpi.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/renumber.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/renumber.c.o: ../../libparmetis/renumber.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_17)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/renumber.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/renumber.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/renumber.c
-
-libparmetis/CMakeFiles/parmetis.dir/renumber.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/renumber.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/renumber.c > CMakeFiles/parmetis.dir/renumber.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/renumber.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/renumber.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/renumber.c -o CMakeFiles/parmetis.dir/renumber.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/renumber.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/serial.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/serial.c.o: ../../libparmetis/serial.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_18)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/serial.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/serial.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/serial.c
-
-libparmetis/CMakeFiles/parmetis.dir/serial.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/serial.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/serial.c > CMakeFiles/parmetis.dir/serial.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/serial.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/serial.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/serial.c -o CMakeFiles/parmetis.dir/serial.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/serial.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/serial.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/serial.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/serial.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/serial.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/serial.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/serial.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/serial.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/serial.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/stat.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/stat.c.o: ../../libparmetis/stat.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_19)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/stat.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/stat.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/stat.c
-
-libparmetis/CMakeFiles/parmetis.dir/stat.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/stat.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/stat.c > CMakeFiles/parmetis.dir/stat.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/stat.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/stat.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/stat.c -o CMakeFiles/parmetis.dir/stat.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/stat.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/stat.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/stat.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/stat.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/stat.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/stat.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/stat.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/stat.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/stat.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o: ../../libparmetis/ctrl.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_20)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/ctrl.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/ctrl.c
-
-libparmetis/CMakeFiles/parmetis.dir/ctrl.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/ctrl.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/ctrl.c > CMakeFiles/parmetis.dir/ctrl.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/ctrl.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/ctrl.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/ctrl.c -o CMakeFiles/parmetis.dir/ctrl.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/timer.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/timer.c.o: ../../libparmetis/timer.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_21)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/timer.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/timer.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/timer.c
-
-libparmetis/CMakeFiles/parmetis.dir/timer.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/timer.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/timer.c > CMakeFiles/parmetis.dir/timer.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/timer.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/timer.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/timer.c -o CMakeFiles/parmetis.dir/timer.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/timer.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/timer.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/timer.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/timer.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/timer.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/timer.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/timer.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/timer.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/timer.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/util.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/util.c.o: ../../libparmetis/util.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_22)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/util.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/util.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/util.c
-
-libparmetis/CMakeFiles/parmetis.dir/util.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/util.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/util.c > CMakeFiles/parmetis.dir/util.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/util.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/util.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/util.c -o CMakeFiles/parmetis.dir/util.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/util.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/util.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/util.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/util.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/util.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/util.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/util.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/util.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/util.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/remap.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/remap.c.o: ../../libparmetis/remap.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_23)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/remap.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/remap.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/remap.c
-
-libparmetis/CMakeFiles/parmetis.dir/remap.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/remap.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/remap.c > CMakeFiles/parmetis.dir/remap.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/remap.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/remap.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/remap.c -o CMakeFiles/parmetis.dir/remap.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/remap.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/remap.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/remap.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/remap.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/remap.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/remap.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/remap.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/remap.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/remap.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/match.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/match.c.o: ../../libparmetis/match.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_24)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/match.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/match.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/match.c
-
-libparmetis/CMakeFiles/parmetis.dir/match.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/match.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/match.c > CMakeFiles/parmetis.dir/match.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/match.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/match.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/match.c -o CMakeFiles/parmetis.dir/match.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/match.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/match.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/match.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/match.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/match.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/match.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/match.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/match.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/match.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/pspases.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/pspases.c.o: ../../libparmetis/pspases.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_25)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/pspases.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/pspases.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/pspases.c
-
-libparmetis/CMakeFiles/parmetis.dir/pspases.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/pspases.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/pspases.c > CMakeFiles/parmetis.dir/pspases.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/pspases.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/pspases.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/pspases.c -o CMakeFiles/parmetis.dir/pspases.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/pspases.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/mesh.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/mesh.c.o: ../../libparmetis/mesh.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_26)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/mesh.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/mesh.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/mesh.c
-
-libparmetis/CMakeFiles/parmetis.dir/mesh.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/mesh.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/mesh.c > CMakeFiles/parmetis.dir/mesh.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/mesh.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/mesh.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/mesh.c -o CMakeFiles/parmetis.dir/mesh.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/mesh.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/wave.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/wave.c.o: ../../libparmetis/wave.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_27)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/wave.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/wave.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/wave.c
-
-libparmetis/CMakeFiles/parmetis.dir/wave.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/wave.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/wave.c > CMakeFiles/parmetis.dir/wave.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/wave.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/wave.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/wave.c -o CMakeFiles/parmetis.dir/wave.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/wave.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/wave.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/wave.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/wave.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/wave.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/wave.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/wave.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/wave.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/wave.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o: ../../libparmetis/xyzpart.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_28)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/xyzpart.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/xyzpart.c
-
-libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/xyzpart.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/xyzpart.c > CMakeFiles/parmetis.dir/xyzpart.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/xyzpart.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/xyzpart.c -o CMakeFiles/parmetis.dir/xyzpart.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/debug.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/debug.c.o: ../../libparmetis/debug.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_29)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/debug.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/debug.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/debug.c
-
-libparmetis/CMakeFiles/parmetis.dir/debug.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/debug.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/debug.c > CMakeFiles/parmetis.dir/debug.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/debug.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/debug.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/debug.c -o CMakeFiles/parmetis.dir/debug.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/debug.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/debug.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/debug.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/debug.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/debug.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/debug.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/debug.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/debug.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/debug.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o: ../../libparmetis/redomylink.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_30)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/redomylink.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/redomylink.c
-
-libparmetis/CMakeFiles/parmetis.dir/redomylink.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/redomylink.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/redomylink.c > CMakeFiles/parmetis.dir/redomylink.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/redomylink.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/redomylink.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/redomylink.c -o CMakeFiles/parmetis.dir/redomylink.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o: ../../libparmetis/gkmetis.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_31)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/gkmetis.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/gkmetis.c
-
-libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/gkmetis.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/gkmetis.c > CMakeFiles/parmetis.dir/gkmetis.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/gkmetis.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/gkmetis.c -o CMakeFiles/parmetis.dir/gkmetis.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o: ../../libparmetis/rmetis.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_32)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/rmetis.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/rmetis.c
-
-libparmetis/CMakeFiles/parmetis.dir/rmetis.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/rmetis.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/rmetis.c > CMakeFiles/parmetis.dir/rmetis.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/rmetis.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/rmetis.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/rmetis.c -o CMakeFiles/parmetis.dir/rmetis.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o: ../../libparmetis/initbalance.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_33)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/initbalance.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/initbalance.c
-
-libparmetis/CMakeFiles/parmetis.dir/initbalance.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/initbalance.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/initbalance.c > CMakeFiles/parmetis.dir/initbalance.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/initbalance.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/initbalance.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/initbalance.c -o CMakeFiles/parmetis.dir/initbalance.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/msetup.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/msetup.c.o: ../../libparmetis/msetup.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_34)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/msetup.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/msetup.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/msetup.c
-
-libparmetis/CMakeFiles/parmetis.dir/msetup.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/msetup.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/msetup.c > CMakeFiles/parmetis.dir/msetup.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/msetup.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/msetup.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/msetup.c -o CMakeFiles/parmetis.dir/msetup.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/msetup.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/comm.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/comm.c.o: ../../libparmetis/comm.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_35)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/comm.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/comm.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/comm.c
-
-libparmetis/CMakeFiles/parmetis.dir/comm.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/comm.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/comm.c > CMakeFiles/parmetis.dir/comm.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/comm.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/comm.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/comm.c -o CMakeFiles/parmetis.dir/comm.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/comm.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/comm.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/comm.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/comm.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/comm.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/comm.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/comm.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/comm.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/comm.c.o.provides.build
-
-libparmetis/CMakeFiles/parmetis.dir/frename.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/frename.c.o: ../../libparmetis/frename.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_36)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/frename.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/frename.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/frename.c
-
-libparmetis/CMakeFiles/parmetis.dir/frename.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/frename.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/frename.c > CMakeFiles/parmetis.dir/frename.c.i
-
-libparmetis/CMakeFiles/parmetis.dir/frename.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/frename.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/frename.c -o CMakeFiles/parmetis.dir/frename.c.s
-
-libparmetis/CMakeFiles/parmetis.dir/frename.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/frename.c.o.requires
-
-libparmetis/CMakeFiles/parmetis.dir/frename.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/frename.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/frename.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/frename.c.o.provides
-
-libparmetis/CMakeFiles/parmetis.dir/frename.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/frename.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/frename.c.o.provides.build
 
 libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
 libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o: ../../libparmetis/kmetis.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_37)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_2)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/kmetis.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/kmetis.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/kmetis.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/kmetis.c
 
 libparmetis/CMakeFiles/parmetis.dir/kmetis.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/kmetis.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/kmetis.c > CMakeFiles/parmetis.dir/kmetis.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/kmetis.c > CMakeFiles/parmetis.dir/kmetis.c.i
 
 libparmetis/CMakeFiles/parmetis.dir/kmetis.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/kmetis.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/kmetis.c -o CMakeFiles/parmetis.dir/kmetis.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/kmetis.c -o CMakeFiles/parmetis.dir/kmetis.c.s
 
 libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o.requires:
 .PHONY : libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o.requires
@@ -938,45 +97,480 @@ libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o.provides: libparmetis/CMakeFiles/
 .PHONY : libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o.provides
 
 libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o.provides.build
 
-libparmetis/CMakeFiles/parmetis.dir/initpart.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
-libparmetis/CMakeFiles/parmetis.dir/initpart.c.o: ../../libparmetis/initpart.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_38)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/initpart.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/initpart.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/initpart.c
+libparmetis/CMakeFiles/parmetis.dir/remap.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/remap.c.o: ../../libparmetis/remap.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_3)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/remap.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/remap.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/remap.c
 
-libparmetis/CMakeFiles/parmetis.dir/initpart.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/initpart.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/initpart.c > CMakeFiles/parmetis.dir/initpart.c.i
+libparmetis/CMakeFiles/parmetis.dir/remap.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/remap.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/remap.c > CMakeFiles/parmetis.dir/remap.c.i
 
-libparmetis/CMakeFiles/parmetis.dir/initpart.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/initpart.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/initpart.c -o CMakeFiles/parmetis.dir/initpart.c.s
+libparmetis/CMakeFiles/parmetis.dir/remap.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/remap.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/remap.c -o CMakeFiles/parmetis.dir/remap.c.s
 
-libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.requires:
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/remap.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/remap.c.o.requires
 
-libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.requires
-	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.provides.build
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.provides
+libparmetis/CMakeFiles/parmetis.dir/remap.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/remap.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/remap.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/remap.c.o.provides
 
-libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/initpart.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.provides.build
+libparmetis/CMakeFiles/parmetis.dir/remap.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/remap.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/msetup.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/msetup.c.o: ../../libparmetis/msetup.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_4)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/msetup.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/msetup.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/msetup.c
+
+libparmetis/CMakeFiles/parmetis.dir/msetup.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/msetup.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/msetup.c > CMakeFiles/parmetis.dir/msetup.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/msetup.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/msetup.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/msetup.c -o CMakeFiles/parmetis.dir/msetup.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/msetup.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o: ../../libparmetis/gkmetis.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_5)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/gkmetis.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/gkmetis.c
+
+libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/gkmetis.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/gkmetis.c > CMakeFiles/parmetis.dir/gkmetis.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/gkmetis.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/gkmetis.c -o CMakeFiles/parmetis.dir/gkmetis.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/weird.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/weird.c.o: ../../libparmetis/weird.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_6)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/weird.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/weird.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/weird.c
+
+libparmetis/CMakeFiles/parmetis.dir/weird.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/weird.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/weird.c > CMakeFiles/parmetis.dir/weird.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/weird.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/weird.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/weird.c -o CMakeFiles/parmetis.dir/weird.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/weird.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/weird.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/weird.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/weird.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/weird.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/weird.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/weird.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/weird.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/selectq.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/selectq.c.o: ../../libparmetis/selectq.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_7)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/selectq.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/selectq.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/selectq.c
+
+libparmetis/CMakeFiles/parmetis.dir/selectq.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/selectq.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/selectq.c > CMakeFiles/parmetis.dir/selectq.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/selectq.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/selectq.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/selectq.c -o CMakeFiles/parmetis.dir/selectq.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/selectq.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/debug.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/debug.c.o: ../../libparmetis/debug.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_8)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/debug.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/debug.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/debug.c
+
+libparmetis/CMakeFiles/parmetis.dir/debug.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/debug.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/debug.c > CMakeFiles/parmetis.dir/debug.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/debug.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/debug.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/debug.c -o CMakeFiles/parmetis.dir/debug.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/debug.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/debug.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/debug.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/debug.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/debug.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/debug.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/debug.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/debug.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o: ../../libparmetis/gkmpi.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_9)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/gkmpi.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/gkmpi.c
+
+libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/gkmpi.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/gkmpi.c > CMakeFiles/parmetis.dir/gkmpi.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/gkmpi.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/gkmpi.c -o CMakeFiles/parmetis.dir/gkmpi.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/renumber.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/renumber.c.o: ../../libparmetis/renumber.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_10)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/renumber.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/renumber.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/renumber.c
+
+libparmetis/CMakeFiles/parmetis.dir/renumber.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/renumber.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/renumber.c > CMakeFiles/parmetis.dir/renumber.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/renumber.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/renumber.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/renumber.c -o CMakeFiles/parmetis.dir/renumber.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/renumber.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/serial.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/serial.c.o: ../../libparmetis/serial.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_11)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/serial.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/serial.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/serial.c
+
+libparmetis/CMakeFiles/parmetis.dir/serial.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/serial.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/serial.c > CMakeFiles/parmetis.dir/serial.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/serial.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/serial.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/serial.c -o CMakeFiles/parmetis.dir/serial.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/serial.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/serial.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/serial.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/serial.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/serial.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/serial.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/serial.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/serial.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o: ../../libparmetis/rmetis.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_12)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/rmetis.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/rmetis.c
+
+libparmetis/CMakeFiles/parmetis.dir/rmetis.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/rmetis.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/rmetis.c > CMakeFiles/parmetis.dir/rmetis.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/rmetis.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/rmetis.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/rmetis.c -o CMakeFiles/parmetis.dir/rmetis.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o: ../../libparmetis/mmetis.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_13)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/mmetis.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/mmetis.c
+
+libparmetis/CMakeFiles/parmetis.dir/mmetis.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/mmetis.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/mmetis.c > CMakeFiles/parmetis.dir/mmetis.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/mmetis.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/mmetis.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/mmetis.c -o CMakeFiles/parmetis.dir/mmetis.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/mesh.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/mesh.c.o: ../../libparmetis/mesh.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_14)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/mesh.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/mesh.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/mesh.c
+
+libparmetis/CMakeFiles/parmetis.dir/mesh.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/mesh.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/mesh.c > CMakeFiles/parmetis.dir/mesh.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/mesh.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/mesh.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/mesh.c -o CMakeFiles/parmetis.dir/mesh.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/mesh.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o: ../../libparmetis/redomylink.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_15)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/redomylink.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/redomylink.c
+
+libparmetis/CMakeFiles/parmetis.dir/redomylink.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/redomylink.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/redomylink.c > CMakeFiles/parmetis.dir/redomylink.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/redomylink.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/redomylink.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/redomylink.c -o CMakeFiles/parmetis.dir/redomylink.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/wave.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/wave.c.o: ../../libparmetis/wave.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_16)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/wave.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/wave.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/wave.c
+
+libparmetis/CMakeFiles/parmetis.dir/wave.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/wave.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/wave.c > CMakeFiles/parmetis.dir/wave.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/wave.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/wave.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/wave.c -o CMakeFiles/parmetis.dir/wave.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/wave.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/wave.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/wave.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/wave.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/wave.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/wave.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/wave.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/wave.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/pspases.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/pspases.c.o: ../../libparmetis/pspases.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_17)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/pspases.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/pspases.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/pspases.c
+
+libparmetis/CMakeFiles/parmetis.dir/pspases.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/pspases.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/pspases.c > CMakeFiles/parmetis.dir/pspases.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/pspases.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/pspases.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/pspases.c -o CMakeFiles/parmetis.dir/pspases.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/pspases.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o: ../../libparmetis/initbalance.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_18)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/initbalance.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/initbalance.c
+
+libparmetis/CMakeFiles/parmetis.dir/initbalance.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/initbalance.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/initbalance.c > CMakeFiles/parmetis.dir/initbalance.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/initbalance.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/initbalance.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/initbalance.c -o CMakeFiles/parmetis.dir/initbalance.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o: ../../libparmetis/akwayfm.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_19)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/akwayfm.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/akwayfm.c
+
+libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/akwayfm.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/akwayfm.c > CMakeFiles/parmetis.dir/akwayfm.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/akwayfm.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/akwayfm.c -o CMakeFiles/parmetis.dir/akwayfm.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/util.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/util.c.o: ../../libparmetis/util.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_20)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/util.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/util.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/util.c
+
+libparmetis/CMakeFiles/parmetis.dir/util.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/util.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/util.c > CMakeFiles/parmetis.dir/util.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/util.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/util.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/util.c -o CMakeFiles/parmetis.dir/util.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/util.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/util.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/util.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/util.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/util.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/util.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/util.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/util.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o: ../../libparmetis/ctrl.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_21)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/ctrl.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/ctrl.c
+
+libparmetis/CMakeFiles/parmetis.dir/ctrl.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/ctrl.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/ctrl.c > CMakeFiles/parmetis.dir/ctrl.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/ctrl.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/ctrl.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/ctrl.c -o CMakeFiles/parmetis.dir/ctrl.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/match.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/match.c.o: ../../libparmetis/match.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_22)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/match.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/match.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/match.c
+
+libparmetis/CMakeFiles/parmetis.dir/match.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/match.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/match.c > CMakeFiles/parmetis.dir/match.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/match.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/match.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/match.c -o CMakeFiles/parmetis.dir/match.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/match.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/match.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/match.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/match.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/match.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/match.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/match.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/match.c.o
 
 libparmetis/CMakeFiles/parmetis.dir/wspace.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
 libparmetis/CMakeFiles/parmetis.dir/wspace.c.o: ../../libparmetis/wspace.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_39)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_23)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/wspace.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/wspace.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/wspace.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/wspace.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/wspace.c
 
 libparmetis/CMakeFiles/parmetis.dir/wspace.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/wspace.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/wspace.c > CMakeFiles/parmetis.dir/wspace.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/wspace.c > CMakeFiles/parmetis.dir/wspace.c.i
 
 libparmetis/CMakeFiles/parmetis.dir/wspace.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/wspace.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis/wspace.c -o CMakeFiles/parmetis.dir/wspace.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/wspace.c -o CMakeFiles/parmetis.dir/wspace.c.s
 
 libparmetis/CMakeFiles/parmetis.dir/wspace.c.o.requires:
 .PHONY : libparmetis/CMakeFiles/parmetis.dir/wspace.c.o.requires
@@ -986,148 +580,515 @@ libparmetis/CMakeFiles/parmetis.dir/wspace.c.o.provides: libparmetis/CMakeFiles/
 .PHONY : libparmetis/CMakeFiles/parmetis.dir/wspace.c.o.provides
 
 libparmetis/CMakeFiles/parmetis.dir/wspace.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/wspace.c.o
-.PHONY : libparmetis/CMakeFiles/parmetis.dir/wspace.c.o.provides.build
+
+libparmetis/CMakeFiles/parmetis.dir/frename.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/frename.c.o: ../../libparmetis/frename.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_24)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/frename.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/frename.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/frename.c
+
+libparmetis/CMakeFiles/parmetis.dir/frename.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/frename.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/frename.c > CMakeFiles/parmetis.dir/frename.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/frename.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/frename.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/frename.c -o CMakeFiles/parmetis.dir/frename.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/frename.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/frename.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/frename.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/frename.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/frename.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/frename.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/frename.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/frename.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o: ../../libparmetis/mdiffusion.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_25)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/mdiffusion.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/mdiffusion.c
+
+libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/mdiffusion.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/mdiffusion.c > CMakeFiles/parmetis.dir/mdiffusion.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/mdiffusion.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/mdiffusion.c -o CMakeFiles/parmetis.dir/mdiffusion.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o: ../../libparmetis/balancemylink.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_26)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/balancemylink.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/balancemylink.c
+
+libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/balancemylink.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/balancemylink.c > CMakeFiles/parmetis.dir/balancemylink.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/balancemylink.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/balancemylink.c -o CMakeFiles/parmetis.dir/balancemylink.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o: ../../libparmetis/kwayrefine.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_27)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/kwayrefine.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/kwayrefine.c
+
+libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/kwayrefine.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/kwayrefine.c > CMakeFiles/parmetis.dir/kwayrefine.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/kwayrefine.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/kwayrefine.c -o CMakeFiles/parmetis.dir/kwayrefine.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/initpart.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/initpart.c.o: ../../libparmetis/initpart.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_28)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/initpart.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/initpart.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/initpart.c
+
+libparmetis/CMakeFiles/parmetis.dir/initpart.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/initpart.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/initpart.c > CMakeFiles/parmetis.dir/initpart.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/initpart.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/initpart.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/initpart.c -o CMakeFiles/parmetis.dir/initpart.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/initpart.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o: ../../libparmetis/node_refine.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_29)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/node_refine.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/node_refine.c
+
+libparmetis/CMakeFiles/parmetis.dir/node_refine.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/node_refine.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/node_refine.c > CMakeFiles/parmetis.dir/node_refine.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/node_refine.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/node_refine.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/node_refine.c -o CMakeFiles/parmetis.dir/node_refine.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/move.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/move.c.o: ../../libparmetis/move.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_30)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/move.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/move.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/move.c
+
+libparmetis/CMakeFiles/parmetis.dir/move.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/move.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/move.c > CMakeFiles/parmetis.dir/move.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/move.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/move.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/move.c -o CMakeFiles/parmetis.dir/move.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/move.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/move.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/move.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/move.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/move.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/move.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/move.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/move.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/stat.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/stat.c.o: ../../libparmetis/stat.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_31)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/stat.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/stat.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/stat.c
+
+libparmetis/CMakeFiles/parmetis.dir/stat.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/stat.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/stat.c > CMakeFiles/parmetis.dir/stat.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/stat.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/stat.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/stat.c -o CMakeFiles/parmetis.dir/stat.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/stat.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/stat.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/stat.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/stat.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/stat.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/stat.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/stat.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/stat.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o: ../../libparmetis/xyzpart.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_32)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/xyzpart.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/xyzpart.c
+
+libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/xyzpart.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/xyzpart.c > CMakeFiles/parmetis.dir/xyzpart.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/xyzpart.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/xyzpart.c -o CMakeFiles/parmetis.dir/xyzpart.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/graph.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/graph.c.o: ../../libparmetis/graph.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_33)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/graph.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/graph.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/graph.c
+
+libparmetis/CMakeFiles/parmetis.dir/graph.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/graph.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/graph.c > CMakeFiles/parmetis.dir/graph.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/graph.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/graph.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/graph.c -o CMakeFiles/parmetis.dir/graph.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/graph.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/graph.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/graph.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/graph.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/graph.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/graph.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/graph.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/graph.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o: ../../libparmetis/initmsection.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_34)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/initmsection.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/initmsection.c
+
+libparmetis/CMakeFiles/parmetis.dir/initmsection.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/initmsection.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/initmsection.c > CMakeFiles/parmetis.dir/initmsection.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/initmsection.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/initmsection.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/initmsection.c -o CMakeFiles/parmetis.dir/initmsection.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/ametis.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/ametis.c.o: ../../libparmetis/ametis.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_35)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/ametis.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/ametis.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/ametis.c
+
+libparmetis/CMakeFiles/parmetis.dir/ametis.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/ametis.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/ametis.c > CMakeFiles/parmetis.dir/ametis.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/ametis.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/ametis.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/ametis.c -o CMakeFiles/parmetis.dir/ametis.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/ametis.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o: ../../libparmetis/diffutil.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_36)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/diffutil.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/diffutil.c
+
+libparmetis/CMakeFiles/parmetis.dir/diffutil.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/diffutil.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/diffutil.c > CMakeFiles/parmetis.dir/diffutil.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/diffutil.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/diffutil.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/diffutil.c -o CMakeFiles/parmetis.dir/diffutil.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o: ../../libparmetis/csrmatch.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_37)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/csrmatch.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/csrmatch.c
+
+libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/csrmatch.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/csrmatch.c > CMakeFiles/parmetis.dir/csrmatch.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/csrmatch.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/csrmatch.c -o CMakeFiles/parmetis.dir/csrmatch.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/timer.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/timer.c.o: ../../libparmetis/timer.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_38)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/timer.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/timer.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/timer.c
+
+libparmetis/CMakeFiles/parmetis.dir/timer.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/timer.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/timer.c > CMakeFiles/parmetis.dir/timer.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/timer.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/timer.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/timer.c -o CMakeFiles/parmetis.dir/timer.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/timer.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/timer.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/timer.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/timer.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/timer.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/timer.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/timer.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/timer.c.o
+
+libparmetis/CMakeFiles/parmetis.dir/comm.c.o: libparmetis/CMakeFiles/parmetis.dir/flags.make
+libparmetis/CMakeFiles/parmetis.dir/comm.c.o: ../../libparmetis/comm.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_39)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libparmetis/CMakeFiles/parmetis.dir/comm.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/parmetis.dir/comm.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/comm.c
+
+libparmetis/CMakeFiles/parmetis.dir/comm.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/parmetis.dir/comm.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/comm.c > CMakeFiles/parmetis.dir/comm.c.i
+
+libparmetis/CMakeFiles/parmetis.dir/comm.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/parmetis.dir/comm.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis/comm.c -o CMakeFiles/parmetis.dir/comm.c.s
+
+libparmetis/CMakeFiles/parmetis.dir/comm.c.o.requires:
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/comm.c.o.requires
+
+libparmetis/CMakeFiles/parmetis.dir/comm.c.o.provides: libparmetis/CMakeFiles/parmetis.dir/comm.c.o.requires
+	$(MAKE) -f libparmetis/CMakeFiles/parmetis.dir/build.make libparmetis/CMakeFiles/parmetis.dir/comm.c.o.provides.build
+.PHONY : libparmetis/CMakeFiles/parmetis.dir/comm.c.o.provides
+
+libparmetis/CMakeFiles/parmetis.dir/comm.c.o.provides.build: libparmetis/CMakeFiles/parmetis.dir/comm.c.o
 
 # Object files for target parmetis
 parmetis_OBJECTS = \
-"CMakeFiles/parmetis.dir/diffutil.c.o" \
-"CMakeFiles/parmetis.dir/weird.c.o" \
-"CMakeFiles/parmetis.dir/mmetis.c.o" \
-"CMakeFiles/parmetis.dir/kwayrefine.c.o" \
-"CMakeFiles/parmetis.dir/akwayfm.c.o" \
-"CMakeFiles/parmetis.dir/ametis.c.o" \
-"CMakeFiles/parmetis.dir/balancemylink.c.o" \
-"CMakeFiles/parmetis.dir/initmsection.c.o" \
-"CMakeFiles/parmetis.dir/selectq.c.o" \
-"CMakeFiles/parmetis.dir/mdiffusion.c.o" \
-"CMakeFiles/parmetis.dir/move.c.o" \
-"CMakeFiles/parmetis.dir/graph.c.o" \
 "CMakeFiles/parmetis.dir/ometis.c.o" \
-"CMakeFiles/parmetis.dir/csrmatch.c.o" \
-"CMakeFiles/parmetis.dir/node_refine.c.o" \
+"CMakeFiles/parmetis.dir/kmetis.c.o" \
+"CMakeFiles/parmetis.dir/remap.c.o" \
+"CMakeFiles/parmetis.dir/msetup.c.o" \
+"CMakeFiles/parmetis.dir/gkmetis.c.o" \
+"CMakeFiles/parmetis.dir/weird.c.o" \
+"CMakeFiles/parmetis.dir/selectq.c.o" \
+"CMakeFiles/parmetis.dir/debug.c.o" \
 "CMakeFiles/parmetis.dir/gkmpi.c.o" \
 "CMakeFiles/parmetis.dir/renumber.c.o" \
 "CMakeFiles/parmetis.dir/serial.c.o" \
-"CMakeFiles/parmetis.dir/stat.c.o" \
-"CMakeFiles/parmetis.dir/ctrl.c.o" \
-"CMakeFiles/parmetis.dir/timer.c.o" \
-"CMakeFiles/parmetis.dir/util.c.o" \
-"CMakeFiles/parmetis.dir/remap.c.o" \
-"CMakeFiles/parmetis.dir/match.c.o" \
-"CMakeFiles/parmetis.dir/pspases.c.o" \
-"CMakeFiles/parmetis.dir/mesh.c.o" \
-"CMakeFiles/parmetis.dir/wave.c.o" \
-"CMakeFiles/parmetis.dir/xyzpart.c.o" \
-"CMakeFiles/parmetis.dir/debug.c.o" \
-"CMakeFiles/parmetis.dir/redomylink.c.o" \
-"CMakeFiles/parmetis.dir/gkmetis.c.o" \
 "CMakeFiles/parmetis.dir/rmetis.c.o" \
+"CMakeFiles/parmetis.dir/mmetis.c.o" \
+"CMakeFiles/parmetis.dir/mesh.c.o" \
+"CMakeFiles/parmetis.dir/redomylink.c.o" \
+"CMakeFiles/parmetis.dir/wave.c.o" \
+"CMakeFiles/parmetis.dir/pspases.c.o" \
 "CMakeFiles/parmetis.dir/initbalance.c.o" \
-"CMakeFiles/parmetis.dir/msetup.c.o" \
-"CMakeFiles/parmetis.dir/comm.c.o" \
+"CMakeFiles/parmetis.dir/akwayfm.c.o" \
+"CMakeFiles/parmetis.dir/util.c.o" \
+"CMakeFiles/parmetis.dir/ctrl.c.o" \
+"CMakeFiles/parmetis.dir/match.c.o" \
+"CMakeFiles/parmetis.dir/wspace.c.o" \
 "CMakeFiles/parmetis.dir/frename.c.o" \
-"CMakeFiles/parmetis.dir/kmetis.c.o" \
+"CMakeFiles/parmetis.dir/mdiffusion.c.o" \
+"CMakeFiles/parmetis.dir/balancemylink.c.o" \
+"CMakeFiles/parmetis.dir/kwayrefine.c.o" \
 "CMakeFiles/parmetis.dir/initpart.c.o" \
-"CMakeFiles/parmetis.dir/wspace.c.o"
+"CMakeFiles/parmetis.dir/node_refine.c.o" \
+"CMakeFiles/parmetis.dir/move.c.o" \
+"CMakeFiles/parmetis.dir/stat.c.o" \
+"CMakeFiles/parmetis.dir/xyzpart.c.o" \
+"CMakeFiles/parmetis.dir/graph.c.o" \
+"CMakeFiles/parmetis.dir/initmsection.c.o" \
+"CMakeFiles/parmetis.dir/ametis.c.o" \
+"CMakeFiles/parmetis.dir/diffutil.c.o" \
+"CMakeFiles/parmetis.dir/csrmatch.c.o" \
+"CMakeFiles/parmetis.dir/timer.c.o" \
+"CMakeFiles/parmetis.dir/comm.c.o"
 
 # External object files for target parmetis
 parmetis_EXTERNAL_OBJECTS =
 
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/weird.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/ametis.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/selectq.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/move.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/graph.c.o
 libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/ometis.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/remap.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/msetup.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/weird.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/selectq.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/debug.c.o
 libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o
 libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/renumber.c.o
 libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/serial.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/stat.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/timer.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/util.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/remap.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/match.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/pspases.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/mesh.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/wave.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/debug.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o
 libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/mesh.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/wave.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/pspases.c.o
 libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/msetup.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/comm.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/frename.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o
-libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/initpart.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/util.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/match.c.o
 libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/wspace.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/frename.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/initpart.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/move.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/stat.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/graph.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/ametis.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/timer.c.o
+libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/comm.c.o
 libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/build.make
 libparmetis/libparmetis.a: libparmetis/CMakeFiles/parmetis.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --red --bold "Linking C static library libparmetis.a"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && $(CMAKE_COMMAND) -P CMakeFiles/parmetis.dir/cmake_clean_target.cmake
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/parmetis.dir/link.txt --verbose=$(VERBOSE)
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && $(CMAKE_COMMAND) -P CMakeFiles/parmetis.dir/cmake_clean_target.cmake
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/parmetis.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 libparmetis/CMakeFiles/parmetis.dir/build: libparmetis/libparmetis.a
 .PHONY : libparmetis/CMakeFiles/parmetis.dir/build
 
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/weird.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/move.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/graph.c.o.requires
 libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/ometis.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/remap.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/weird.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/selectq.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/debug.c.o.requires
 libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/gkmpi.c.o.requires
 libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/renumber.c.o.requires
 libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/serial.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/stat.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/timer.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/util.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/remap.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/match.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/wave.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/debug.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/gkmetis.c.o.requires
 libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/rmetis.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/mmetis.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/mesh.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/redomylink.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/wave.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/pspases.c.o.requires
 libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/initbalance.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/msetup.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/comm.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/frename.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/kmetis.c.o.requires
-libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/akwayfm.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/util.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/ctrl.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/match.c.o.requires
 libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/wspace.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/frename.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/mdiffusion.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/balancemylink.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/kwayrefine.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/initpart.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/node_refine.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/move.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/stat.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/xyzpart.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/graph.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/initmsection.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/ametis.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/diffutil.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/csrmatch.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/timer.c.o.requires
+libparmetis/CMakeFiles/parmetis.dir/requires: libparmetis/CMakeFiles/parmetis.dir/comm.c.o.requires
 .PHONY : libparmetis/CMakeFiles/parmetis.dir/requires
 
 libparmetis/CMakeFiles/parmetis.dir/clean:
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && $(CMAKE_COMMAND) -P CMakeFiles/parmetis.dir/cmake_clean.cmake
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis && $(CMAKE_COMMAND) -P CMakeFiles/parmetis.dir/cmake_clean.cmake
 .PHONY : libparmetis/CMakeFiles/parmetis.dir/clean
 
 libparmetis/CMakeFiles/parmetis.dir/depend:
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2 /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/libparmetis /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis/CMakeFiles/parmetis.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2 /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/libparmetis /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis/CMakeFiles/parmetis.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : libparmetis/CMakeFiles/parmetis.dir/depend
 

@@ -28,7 +28,7 @@
 #include "mpi.h"
 #endif
 
-#ifdef _GPU
+#if defined _GPU
 #include "../include/cuda_kernels.h" 
 #endif
 

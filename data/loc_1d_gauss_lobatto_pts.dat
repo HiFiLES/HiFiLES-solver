@@ -1,6 +1,10 @@
 // gauss lobatto legendre points
 
-if(get_order==1)
+if (get_order == 0)
+{
+    loc_1d_gauss_lobatto_pts(0) = 0.0;
+}
+else if(get_order==1)
 {
 	loc_1d_gauss_lobatto_pts(0)=-1.000000000000000;
 	loc_1d_gauss_lobatto_pts(1)=1.000000000000000;

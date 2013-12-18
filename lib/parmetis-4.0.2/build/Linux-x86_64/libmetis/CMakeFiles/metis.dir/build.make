@@ -4,7 +4,7 @@
 #=============================================================================
 # Special targets provided by cmake.
 
-# Disable implicit rules so canoncical targets will work.
+# Disable implicit rules so canonical targets will work.
 .SUFFIXES:
 
 # Remove some rules from gmake that .SUFFIXES does not remove.
@@ -38,10 +38,10 @@ RM = /usr/bin/cmake -E remove -f
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2
+CMAKE_SOURCE_DIR = /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64
+CMAKE_BINARY_DIR = /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64
 
 # Include any dependencies generated for this target.
 include libmetis/CMakeFiles/metis.dir/depend.make
@@ -52,547 +52,19 @@ include libmetis/CMakeFiles/metis.dir/progress.make
 # Include the compile flags for this target's objects.
 include libmetis/CMakeFiles/metis.dir/flags.make
 
-libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o: ../../metis/GKlib/blas.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_1)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/blas.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/blas.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/blas.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/blas.c > CMakeFiles/metis.dir/__/GKlib/blas.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/blas.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/blas.c -o CMakeFiles/metis.dir/__/GKlib/blas.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o: ../../metis/GKlib/itemsets.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_2)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/itemsets.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/itemsets.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/itemsets.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/itemsets.c > CMakeFiles/metis.dir/__/GKlib/itemsets.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/itemsets.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/itemsets.c -o CMakeFiles/metis.dir/__/GKlib/itemsets.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o: ../../metis/GKlib/evaluate.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_3)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/evaluate.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/evaluate.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/evaluate.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/evaluate.c > CMakeFiles/metis.dir/__/GKlib/evaluate.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/evaluate.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/evaluate.c -o CMakeFiles/metis.dir/__/GKlib/evaluate.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o: ../../metis/GKlib/sort.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_4)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/sort.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/sort.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/sort.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/sort.c > CMakeFiles/metis.dir/__/GKlib/sort.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/sort.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/sort.c -o CMakeFiles/metis.dir/__/GKlib/sort.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o: ../../metis/GKlib/random.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_5)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/random.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/random.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/random.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/random.c > CMakeFiles/metis.dir/__/GKlib/random.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/random.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/random.c -o CMakeFiles/metis.dir/__/GKlib/random.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o: ../../metis/GKlib/fkvkselect.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_6)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/fkvkselect.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/fkvkselect.c > CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/fkvkselect.c -o CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o: ../../metis/GKlib/string.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_7)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/string.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/string.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/string.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/string.c > CMakeFiles/metis.dir/__/GKlib/string.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/string.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/string.c -o CMakeFiles/metis.dir/__/GKlib/string.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o: ../../metis/GKlib/fs.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_8)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/fs.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/fs.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/fs.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/fs.c > CMakeFiles/metis.dir/__/GKlib/fs.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/fs.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/fs.c -o CMakeFiles/metis.dir/__/GKlib/fs.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o: ../../metis/GKlib/memory.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_9)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/memory.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/memory.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/memory.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/memory.c > CMakeFiles/metis.dir/__/GKlib/memory.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/memory.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/memory.c -o CMakeFiles/metis.dir/__/GKlib/memory.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o: ../../metis/GKlib/tokenizer.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_10)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/tokenizer.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/tokenizer.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/tokenizer.c > CMakeFiles/metis.dir/__/GKlib/tokenizer.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/tokenizer.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/tokenizer.c -o CMakeFiles/metis.dir/__/GKlib/tokenizer.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o: ../../metis/GKlib/pdb.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_11)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/pdb.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/pdb.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/pdb.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/pdb.c > CMakeFiles/metis.dir/__/GKlib/pdb.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/pdb.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/pdb.c -o CMakeFiles/metis.dir/__/GKlib/pdb.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o: ../../metis/GKlib/b64.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_12)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/b64.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/b64.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/b64.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/b64.c > CMakeFiles/metis.dir/__/GKlib/b64.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/b64.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/b64.c -o CMakeFiles/metis.dir/__/GKlib/b64.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o: ../../metis/GKlib/csr.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_13)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/csr.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/csr.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/csr.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/csr.c > CMakeFiles/metis.dir/__/GKlib/csr.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/csr.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/csr.c -o CMakeFiles/metis.dir/__/GKlib/csr.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o: ../../metis/GKlib/util.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_14)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/util.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/util.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/util.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/util.c > CMakeFiles/metis.dir/__/GKlib/util.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/util.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/util.c -o CMakeFiles/metis.dir/__/GKlib/util.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o: ../../metis/GKlib/pqueue.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_15)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/pqueue.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/pqueue.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/pqueue.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/pqueue.c > CMakeFiles/metis.dir/__/GKlib/pqueue.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/pqueue.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/pqueue.c -o CMakeFiles/metis.dir/__/GKlib/pqueue.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o: ../../metis/GKlib/gkregex.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_16)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/gkregex.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/gkregex.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/gkregex.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/gkregex.c > CMakeFiles/metis.dir/__/GKlib/gkregex.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/gkregex.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/gkregex.c -o CMakeFiles/metis.dir/__/GKlib/gkregex.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o: ../../metis/GKlib/error.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_17)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/error.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/error.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/error.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/error.c > CMakeFiles/metis.dir/__/GKlib/error.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/error.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/error.c -o CMakeFiles/metis.dir/__/GKlib/error.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o: ../../metis/GKlib/seq.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_18)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/seq.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/seq.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/seq.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/seq.c > CMakeFiles/metis.dir/__/GKlib/seq.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/seq.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/seq.c -o CMakeFiles/metis.dir/__/GKlib/seq.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o: ../../metis/GKlib/timers.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_19)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/timers.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/timers.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/timers.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/timers.c > CMakeFiles/metis.dir/__/GKlib/timers.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/timers.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/timers.c -o CMakeFiles/metis.dir/__/GKlib/timers.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o: ../../metis/GKlib/mcore.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_20)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/mcore.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/mcore.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/mcore.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/mcore.c > CMakeFiles/metis.dir/__/GKlib/mcore.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/mcore.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/mcore.c -o CMakeFiles/metis.dir/__/GKlib/mcore.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o: ../../metis/GKlib/omp.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_21)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/omp.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/omp.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/omp.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/omp.c > CMakeFiles/metis.dir/__/GKlib/omp.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/omp.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/omp.c -o CMakeFiles/metis.dir/__/GKlib/omp.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o: ../../metis/GKlib/io.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_22)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/io.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/io.c
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/io.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/io.c > CMakeFiles/metis.dir/__/GKlib/io.c.i
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/io.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/io.c -o CMakeFiles/metis.dir/__/GKlib/io.c.s
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.provides.build
-
 libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o: libmetis/CMakeFiles/metis.dir/flags.make
 libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o: ../../metis/GKlib/getopt.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_23)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/getopt.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/getopt.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/getopt.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/getopt.c
 
 libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/getopt.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/getopt.c > CMakeFiles/metis.dir/__/GKlib/getopt.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/getopt.c > CMakeFiles/metis.dir/__/GKlib/getopt.c.i
 
 libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/getopt.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/getopt.c -o CMakeFiles/metis.dir/__/GKlib/getopt.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/getopt.c -o CMakeFiles/metis.dir/__/GKlib/getopt.c.s
 
 libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o.requires:
 .PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o.requires
@@ -602,21 +74,388 @@ libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o.provides: libmetis/CMakeFiles/
 .PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o.provides
 
 libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o.provides.build
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o: ../../metis/GKlib/itemsets.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_2)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/itemsets.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/itemsets.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/itemsets.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/itemsets.c > CMakeFiles/metis.dir/__/GKlib/itemsets.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/itemsets.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/itemsets.c -o CMakeFiles/metis.dir/__/GKlib/itemsets.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o: ../../metis/GKlib/b64.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_3)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/b64.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/b64.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/b64.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/b64.c > CMakeFiles/metis.dir/__/GKlib/b64.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/b64.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/b64.c -o CMakeFiles/metis.dir/__/GKlib/b64.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o: ../../metis/GKlib/sort.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_4)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/sort.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/sort.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/sort.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/sort.c > CMakeFiles/metis.dir/__/GKlib/sort.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/sort.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/sort.c -o CMakeFiles/metis.dir/__/GKlib/sort.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o: ../../metis/GKlib/fkvkselect.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_5)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/fkvkselect.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/fkvkselect.c > CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/fkvkselect.c -o CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o: ../../metis/GKlib/memory.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_6)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/memory.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/memory.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/memory.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/memory.c > CMakeFiles/metis.dir/__/GKlib/memory.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/memory.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/memory.c -o CMakeFiles/metis.dir/__/GKlib/memory.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o: ../../metis/GKlib/pdb.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_7)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/pdb.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/pdb.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/pdb.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/pdb.c > CMakeFiles/metis.dir/__/GKlib/pdb.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/pdb.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/pdb.c -o CMakeFiles/metis.dir/__/GKlib/pdb.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o: ../../metis/GKlib/timers.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_8)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/timers.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/timers.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/timers.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/timers.c > CMakeFiles/metis.dir/__/GKlib/timers.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/timers.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/timers.c -o CMakeFiles/metis.dir/__/GKlib/timers.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o: ../../metis/GKlib/evaluate.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_9)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/evaluate.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/evaluate.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/evaluate.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/evaluate.c > CMakeFiles/metis.dir/__/GKlib/evaluate.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/evaluate.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/evaluate.c -o CMakeFiles/metis.dir/__/GKlib/evaluate.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o: ../../metis/GKlib/blas.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_10)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/blas.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/blas.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/blas.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/blas.c > CMakeFiles/metis.dir/__/GKlib/blas.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/blas.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/blas.c -o CMakeFiles/metis.dir/__/GKlib/blas.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o: ../../metis/GKlib/gkregex.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_11)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/gkregex.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/gkregex.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/gkregex.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/gkregex.c > CMakeFiles/metis.dir/__/GKlib/gkregex.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/gkregex.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/gkregex.c -o CMakeFiles/metis.dir/__/GKlib/gkregex.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o: ../../metis/GKlib/pqueue.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_12)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/pqueue.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/pqueue.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/pqueue.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/pqueue.c > CMakeFiles/metis.dir/__/GKlib/pqueue.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/pqueue.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/pqueue.c -o CMakeFiles/metis.dir/__/GKlib/pqueue.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o: ../../metis/GKlib/error.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_13)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/error.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/error.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/error.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/error.c > CMakeFiles/metis.dir/__/GKlib/error.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/error.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/error.c -o CMakeFiles/metis.dir/__/GKlib/error.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o: ../../metis/GKlib/fs.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_14)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/fs.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/fs.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/fs.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/fs.c > CMakeFiles/metis.dir/__/GKlib/fs.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/fs.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/fs.c -o CMakeFiles/metis.dir/__/GKlib/fs.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o: ../../metis/GKlib/csr.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_15)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/csr.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/csr.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/csr.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/csr.c > CMakeFiles/metis.dir/__/GKlib/csr.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/csr.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/csr.c -o CMakeFiles/metis.dir/__/GKlib/csr.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o: ../../metis/GKlib/util.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_16)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/util.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/util.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/util.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/util.c > CMakeFiles/metis.dir/__/GKlib/util.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/util.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/util.c -o CMakeFiles/metis.dir/__/GKlib/util.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o: ../../metis/GKlib/string.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_17)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/string.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/string.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/string.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/string.c > CMakeFiles/metis.dir/__/GKlib/string.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/string.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/string.c -o CMakeFiles/metis.dir/__/GKlib/string.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o
 
 libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o: libmetis/CMakeFiles/metis.dir/flags.make
 libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o: ../../metis/GKlib/htable.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_24)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_18)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/htable.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/htable.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/htable.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/htable.c
 
 libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/htable.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/htable.c > CMakeFiles/metis.dir/__/GKlib/htable.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/htable.c > CMakeFiles/metis.dir/__/GKlib/htable.c.i
 
 libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/htable.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/GKlib/htable.c -o CMakeFiles/metis.dir/__/GKlib/htable.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/htable.c -o CMakeFiles/metis.dir/__/GKlib/htable.c.s
 
 libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o.requires:
 .PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o.requires
@@ -626,477 +465,158 @@ libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o.provides: libmetis/CMakeFiles/
 .PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o.provides
 
 libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/compress.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/compress.c.o: ../../metis/libmetis/compress.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_25)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/compress.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/compress.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/compress.c
-
-libmetis/CMakeFiles/metis.dir/compress.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/compress.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/compress.c > CMakeFiles/metis.dir/compress.c.i
-
-libmetis/CMakeFiles/metis.dir/compress.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/compress.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/compress.c -o CMakeFiles/metis.dir/compress.c.s
 
-libmetis/CMakeFiles/metis.dir/compress.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/compress.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/compress.c.o.provides: libmetis/CMakeFiles/metis.dir/compress.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/compress.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/compress.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o: ../../metis/GKlib/io.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_19)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/io.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/io.c
 
-libmetis/CMakeFiles/metis.dir/compress.c.o.provides.build: libmetis/CMakeFiles/metis.dir/compress.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/compress.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/kwayrefine.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/kwayrefine.c.o: ../../metis/libmetis/kwayrefine.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_26)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/kwayrefine.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/kwayrefine.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/kwayrefine.c
-
-libmetis/CMakeFiles/metis.dir/kwayrefine.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/kwayrefine.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/kwayrefine.c > CMakeFiles/metis.dir/kwayrefine.c.i
-
-libmetis/CMakeFiles/metis.dir/kwayrefine.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/kwayrefine.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/kwayrefine.c -o CMakeFiles/metis.dir/kwayrefine.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/io.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/io.c > CMakeFiles/metis.dir/__/GKlib/io.c.i
 
-libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.provides: libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/io.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/io.c -o CMakeFiles/metis.dir/__/GKlib/io.c.s
 
-libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.provides.build: libmetis/CMakeFiles/metis.dir/kwayrefine.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/auxapi.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/auxapi.c.o: ../../metis/libmetis/auxapi.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_27)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/auxapi.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/auxapi.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/auxapi.c
-
-libmetis/CMakeFiles/metis.dir/auxapi.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/auxapi.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/auxapi.c > CMakeFiles/metis.dir/auxapi.c.i
-
-libmetis/CMakeFiles/metis.dir/auxapi.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/auxapi.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/auxapi.c -o CMakeFiles/metis.dir/auxapi.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.requires
 
-libmetis/CMakeFiles/metis.dir/auxapi.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/auxapi.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/auxapi.c.o.provides: libmetis/CMakeFiles/metis.dir/auxapi.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/auxapi.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/auxapi.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.provides
 
-libmetis/CMakeFiles/metis.dir/auxapi.c.o.provides.build: libmetis/CMakeFiles/metis.dir/auxapi.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/auxapi.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/srefine.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/srefine.c.o: ../../metis/libmetis/srefine.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_28)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/srefine.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/srefine.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/srefine.c
-
-libmetis/CMakeFiles/metis.dir/srefine.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/srefine.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/srefine.c > CMakeFiles/metis.dir/srefine.c.i
-
-libmetis/CMakeFiles/metis.dir/srefine.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/srefine.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/srefine.c -o CMakeFiles/metis.dir/srefine.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o
 
-libmetis/CMakeFiles/metis.dir/srefine.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/srefine.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/srefine.c.o.provides: libmetis/CMakeFiles/metis.dir/srefine.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/srefine.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/srefine.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o: ../../metis/GKlib/omp.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_20)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/omp.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/omp.c
 
-libmetis/CMakeFiles/metis.dir/srefine.c.o.provides.build: libmetis/CMakeFiles/metis.dir/srefine.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/srefine.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/graph.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/graph.c.o: ../../metis/libmetis/graph.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_29)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/graph.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/graph.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/graph.c
-
-libmetis/CMakeFiles/metis.dir/graph.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/graph.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/graph.c > CMakeFiles/metis.dir/graph.c.i
-
-libmetis/CMakeFiles/metis.dir/graph.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/graph.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/graph.c -o CMakeFiles/metis.dir/graph.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/omp.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/omp.c > CMakeFiles/metis.dir/__/GKlib/omp.c.i
 
-libmetis/CMakeFiles/metis.dir/graph.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/graph.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/graph.c.o.provides: libmetis/CMakeFiles/metis.dir/graph.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/graph.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/graph.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/omp.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/omp.c -o CMakeFiles/metis.dir/__/GKlib/omp.c.s
 
-libmetis/CMakeFiles/metis.dir/graph.c.o.provides.build: libmetis/CMakeFiles/metis.dir/graph.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/graph.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/refine.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/refine.c.o: ../../metis/libmetis/refine.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_30)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/refine.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/refine.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/refine.c
-
-libmetis/CMakeFiles/metis.dir/refine.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/refine.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/refine.c > CMakeFiles/metis.dir/refine.c.i
-
-libmetis/CMakeFiles/metis.dir/refine.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/refine.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/refine.c -o CMakeFiles/metis.dir/refine.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.requires
 
-libmetis/CMakeFiles/metis.dir/refine.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/refine.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/refine.c.o.provides: libmetis/CMakeFiles/metis.dir/refine.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/refine.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/refine.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.provides
 
-libmetis/CMakeFiles/metis.dir/refine.c.o.provides.build: libmetis/CMakeFiles/metis.dir/refine.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/refine.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/timing.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/timing.c.o: ../../metis/libmetis/timing.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_31)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/timing.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/timing.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/timing.c
-
-libmetis/CMakeFiles/metis.dir/timing.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/timing.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/timing.c > CMakeFiles/metis.dir/timing.c.i
-
-libmetis/CMakeFiles/metis.dir/timing.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/timing.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/timing.c -o CMakeFiles/metis.dir/timing.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o
 
-libmetis/CMakeFiles/metis.dir/timing.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/timing.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/timing.c.o.provides: libmetis/CMakeFiles/metis.dir/timing.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/timing.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/timing.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o: ../../metis/GKlib/seq.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_21)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/seq.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/seq.c
 
-libmetis/CMakeFiles/metis.dir/timing.c.o.provides.build: libmetis/CMakeFiles/metis.dir/timing.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/timing.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/sfm.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/sfm.c.o: ../../metis/libmetis/sfm.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_32)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/sfm.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/sfm.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/sfm.c
-
-libmetis/CMakeFiles/metis.dir/sfm.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/sfm.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/sfm.c > CMakeFiles/metis.dir/sfm.c.i
-
-libmetis/CMakeFiles/metis.dir/sfm.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/sfm.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/sfm.c -o CMakeFiles/metis.dir/sfm.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/seq.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/seq.c > CMakeFiles/metis.dir/__/GKlib/seq.c.i
 
-libmetis/CMakeFiles/metis.dir/sfm.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/sfm.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/sfm.c.o.provides: libmetis/CMakeFiles/metis.dir/sfm.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/sfm.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/sfm.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/seq.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/seq.c -o CMakeFiles/metis.dir/__/GKlib/seq.c.s
 
-libmetis/CMakeFiles/metis.dir/sfm.c.o.provides.build: libmetis/CMakeFiles/metis.dir/sfm.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/sfm.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/ometis.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/ometis.c.o: ../../metis/libmetis/ometis.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_33)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/ometis.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/ometis.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/ometis.c
-
-libmetis/CMakeFiles/metis.dir/ometis.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/ometis.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/ometis.c > CMakeFiles/metis.dir/ometis.c.i
-
-libmetis/CMakeFiles/metis.dir/ometis.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/ometis.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/ometis.c -o CMakeFiles/metis.dir/ometis.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.requires
 
-libmetis/CMakeFiles/metis.dir/ometis.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/ometis.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/ometis.c.o.provides: libmetis/CMakeFiles/metis.dir/ometis.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/ometis.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/ometis.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.provides
 
-libmetis/CMakeFiles/metis.dir/ometis.c.o.provides.build: libmetis/CMakeFiles/metis.dir/ometis.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/ometis.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/contig.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/contig.c.o: ../../metis/libmetis/contig.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_34)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/contig.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/contig.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/contig.c
-
-libmetis/CMakeFiles/metis.dir/contig.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/contig.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/contig.c > CMakeFiles/metis.dir/contig.c.i
-
-libmetis/CMakeFiles/metis.dir/contig.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/contig.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/contig.c -o CMakeFiles/metis.dir/contig.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o
 
-libmetis/CMakeFiles/metis.dir/contig.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/contig.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/contig.c.o.provides: libmetis/CMakeFiles/metis.dir/contig.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/contig.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/contig.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o: ../../metis/GKlib/random.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_22)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/random.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/random.c
 
-libmetis/CMakeFiles/metis.dir/contig.c.o.provides.build: libmetis/CMakeFiles/metis.dir/contig.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/contig.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/checkgraph.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/checkgraph.c.o: ../../metis/libmetis/checkgraph.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_35)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/checkgraph.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/checkgraph.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/checkgraph.c
-
-libmetis/CMakeFiles/metis.dir/checkgraph.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/checkgraph.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/checkgraph.c > CMakeFiles/metis.dir/checkgraph.c.i
-
-libmetis/CMakeFiles/metis.dir/checkgraph.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/checkgraph.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/checkgraph.c -o CMakeFiles/metis.dir/checkgraph.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/random.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/random.c > CMakeFiles/metis.dir/__/GKlib/random.c.i
 
-libmetis/CMakeFiles/metis.dir/checkgraph.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/checkgraph.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/checkgraph.c.o.provides: libmetis/CMakeFiles/metis.dir/checkgraph.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/checkgraph.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/checkgraph.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/random.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/random.c -o CMakeFiles/metis.dir/__/GKlib/random.c.s
 
-libmetis/CMakeFiles/metis.dir/checkgraph.c.o.provides.build: libmetis/CMakeFiles/metis.dir/checkgraph.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/checkgraph.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/fm.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/fm.c.o: ../../metis/libmetis/fm.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_36)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/fm.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/fm.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/fm.c
-
-libmetis/CMakeFiles/metis.dir/fm.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/fm.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/fm.c > CMakeFiles/metis.dir/fm.c.i
-
-libmetis/CMakeFiles/metis.dir/fm.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/fm.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/fm.c -o CMakeFiles/metis.dir/fm.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.requires
 
-libmetis/CMakeFiles/metis.dir/fm.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/fm.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/fm.c.o.provides: libmetis/CMakeFiles/metis.dir/fm.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/fm.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/fm.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.provides
 
-libmetis/CMakeFiles/metis.dir/fm.c.o.provides.build: libmetis/CMakeFiles/metis.dir/fm.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/fm.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/pmetis.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/pmetis.c.o: ../../metis/libmetis/pmetis.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_37)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/pmetis.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/pmetis.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/pmetis.c
-
-libmetis/CMakeFiles/metis.dir/pmetis.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/pmetis.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/pmetis.c > CMakeFiles/metis.dir/pmetis.c.i
-
-libmetis/CMakeFiles/metis.dir/pmetis.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/pmetis.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/pmetis.c -o CMakeFiles/metis.dir/pmetis.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o
 
-libmetis/CMakeFiles/metis.dir/pmetis.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/pmetis.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/pmetis.c.o.provides: libmetis/CMakeFiles/metis.dir/pmetis.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/pmetis.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/pmetis.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o: ../../metis/GKlib/mcore.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_23)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/mcore.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/mcore.c
 
-libmetis/CMakeFiles/metis.dir/pmetis.c.o.provides.build: libmetis/CMakeFiles/metis.dir/pmetis.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/pmetis.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/stat.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/stat.c.o: ../../metis/libmetis/stat.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_38)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/stat.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/stat.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/stat.c
-
-libmetis/CMakeFiles/metis.dir/stat.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/stat.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/stat.c > CMakeFiles/metis.dir/stat.c.i
-
-libmetis/CMakeFiles/metis.dir/stat.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/stat.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/stat.c -o CMakeFiles/metis.dir/stat.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/mcore.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/mcore.c > CMakeFiles/metis.dir/__/GKlib/mcore.c.i
 
-libmetis/CMakeFiles/metis.dir/stat.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/stat.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/stat.c.o.provides: libmetis/CMakeFiles/metis.dir/stat.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/stat.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/stat.c.o.provides
+libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/mcore.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/mcore.c -o CMakeFiles/metis.dir/__/GKlib/mcore.c.s
 
-libmetis/CMakeFiles/metis.dir/stat.c.o.provides.build: libmetis/CMakeFiles/metis.dir/stat.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/stat.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/bucketsort.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/bucketsort.c.o: ../../metis/libmetis/bucketsort.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_39)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/bucketsort.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/bucketsort.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/bucketsort.c
-
-libmetis/CMakeFiles/metis.dir/bucketsort.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/bucketsort.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/bucketsort.c > CMakeFiles/metis.dir/bucketsort.c.i
-
-libmetis/CMakeFiles/metis.dir/bucketsort.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/bucketsort.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/bucketsort.c -o CMakeFiles/metis.dir/bucketsort.c.s
+libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.requires
 
-libmetis/CMakeFiles/metis.dir/bucketsort.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/bucketsort.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/bucketsort.c.o.provides: libmetis/CMakeFiles/metis.dir/bucketsort.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/bucketsort.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/bucketsort.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/bucketsort.c.o.provides.build: libmetis/CMakeFiles/metis.dir/bucketsort.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/bucketsort.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/mcutil.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/mcutil.c.o: ../../metis/libmetis/mcutil.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_40)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/mcutil.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/mcutil.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mcutil.c
-
-libmetis/CMakeFiles/metis.dir/mcutil.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/mcutil.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mcutil.c > CMakeFiles/metis.dir/mcutil.c.i
-
-libmetis/CMakeFiles/metis.dir/mcutil.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/mcutil.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mcutil.c -o CMakeFiles/metis.dir/mcutil.c.s
-
-libmetis/CMakeFiles/metis.dir/mcutil.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/mcutil.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/mcutil.c.o.provides: libmetis/CMakeFiles/metis.dir/mcutil.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/mcutil.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/mcutil.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/mcutil.c.o.provides.build: libmetis/CMakeFiles/metis.dir/mcutil.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/mcutil.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/util.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/util.c.o: ../../metis/libmetis/util.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_41)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/util.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/util.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/util.c
-
-libmetis/CMakeFiles/metis.dir/util.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/util.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/util.c > CMakeFiles/metis.dir/util.c.i
-
-libmetis/CMakeFiles/metis.dir/util.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/util.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/util.c -o CMakeFiles/metis.dir/util.c.s
-
-libmetis/CMakeFiles/metis.dir/util.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/util.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/util.c.o.provides: libmetis/CMakeFiles/metis.dir/util.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/util.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/util.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/util.c.o.provides.build: libmetis/CMakeFiles/metis.dir/util.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/util.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/options.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/options.c.o: ../../metis/libmetis/options.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_42)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/options.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/options.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/options.c
-
-libmetis/CMakeFiles/metis.dir/options.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/options.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/options.c > CMakeFiles/metis.dir/options.c.i
-
-libmetis/CMakeFiles/metis.dir/options.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/options.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/options.c -o CMakeFiles/metis.dir/options.c.s
-
-libmetis/CMakeFiles/metis.dir/options.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/options.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/options.c.o.provides: libmetis/CMakeFiles/metis.dir/options.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/options.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/options.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/options.c.o.provides.build: libmetis/CMakeFiles/metis.dir/options.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/options.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/parmetis.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/parmetis.c.o: ../../metis/libmetis/parmetis.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_43)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/parmetis.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/parmetis.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/parmetis.c
-
-libmetis/CMakeFiles/metis.dir/parmetis.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/parmetis.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/parmetis.c > CMakeFiles/metis.dir/parmetis.c.i
-
-libmetis/CMakeFiles/metis.dir/parmetis.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/parmetis.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/parmetis.c -o CMakeFiles/metis.dir/parmetis.c.s
-
-libmetis/CMakeFiles/metis.dir/parmetis.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/parmetis.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/parmetis.c.o.provides: libmetis/CMakeFiles/metis.dir/parmetis.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/parmetis.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/parmetis.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/parmetis.c.o.provides.build: libmetis/CMakeFiles/metis.dir/parmetis.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/parmetis.c.o.provides.build
+libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o: ../../metis/GKlib/tokenizer.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_24)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/tokenizer.c
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/__/GKlib/tokenizer.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/tokenizer.c > CMakeFiles/metis.dir/__/GKlib/tokenizer.c.i
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/__/GKlib/tokenizer.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/GKlib/tokenizer.c -o CMakeFiles/metis.dir/__/GKlib/tokenizer.c.s
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.provides: libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.provides.build: libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o
 
 libmetis/CMakeFiles/metis.dir/meshpart.c.o: libmetis/CMakeFiles/metis.dir/flags.make
 libmetis/CMakeFiles/metis.dir/meshpart.c.o: ../../metis/libmetis/meshpart.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_44)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_25)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/meshpart.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/meshpart.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/meshpart.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/meshpart.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/meshpart.c
 
 libmetis/CMakeFiles/metis.dir/meshpart.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/meshpart.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/meshpart.c > CMakeFiles/metis.dir/meshpart.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/meshpart.c > CMakeFiles/metis.dir/meshpart.c.i
 
 libmetis/CMakeFiles/metis.dir/meshpart.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/meshpart.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/meshpart.c -o CMakeFiles/metis.dir/meshpart.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/meshpart.c -o CMakeFiles/metis.dir/meshpart.c.s
 
 libmetis/CMakeFiles/metis.dir/meshpart.c.o.requires:
 .PHONY : libmetis/CMakeFiles/metis.dir/meshpart.c.o.requires
@@ -1106,285 +626,43 @@ libmetis/CMakeFiles/metis.dir/meshpart.c.o.provides: libmetis/CMakeFiles/metis.d
 .PHONY : libmetis/CMakeFiles/metis.dir/meshpart.c.o.provides
 
 libmetis/CMakeFiles/metis.dir/meshpart.c.o.provides.build: libmetis/CMakeFiles/metis.dir/meshpart.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/meshpart.c.o.provides.build
 
-libmetis/CMakeFiles/metis.dir/mmd.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/mmd.c.o: ../../metis/libmetis/mmd.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_45)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/mmd.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/mmd.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mmd.c
+libmetis/CMakeFiles/metis.dir/ometis.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/ometis.c.o: ../../metis/libmetis/ometis.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_26)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/ometis.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/ometis.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/ometis.c
 
-libmetis/CMakeFiles/metis.dir/mmd.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/mmd.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mmd.c > CMakeFiles/metis.dir/mmd.c.i
+libmetis/CMakeFiles/metis.dir/ometis.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/ometis.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/ometis.c > CMakeFiles/metis.dir/ometis.c.i
 
-libmetis/CMakeFiles/metis.dir/mmd.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/mmd.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mmd.c -o CMakeFiles/metis.dir/mmd.c.s
+libmetis/CMakeFiles/metis.dir/ometis.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/ometis.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/ometis.c -o CMakeFiles/metis.dir/ometis.c.s
 
-libmetis/CMakeFiles/metis.dir/mmd.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/mmd.c.o.requires
+libmetis/CMakeFiles/metis.dir/ometis.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/ometis.c.o.requires
 
-libmetis/CMakeFiles/metis.dir/mmd.c.o.provides: libmetis/CMakeFiles/metis.dir/mmd.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/mmd.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/mmd.c.o.provides
+libmetis/CMakeFiles/metis.dir/ometis.c.o.provides: libmetis/CMakeFiles/metis.dir/ometis.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/ometis.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/ometis.c.o.provides
 
-libmetis/CMakeFiles/metis.dir/mmd.c.o.provides.build: libmetis/CMakeFiles/metis.dir/mmd.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/mmd.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/coarsen.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/coarsen.c.o: ../../metis/libmetis/coarsen.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_46)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/coarsen.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/coarsen.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/coarsen.c
-
-libmetis/CMakeFiles/metis.dir/coarsen.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/coarsen.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/coarsen.c > CMakeFiles/metis.dir/coarsen.c.i
-
-libmetis/CMakeFiles/metis.dir/coarsen.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/coarsen.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/coarsen.c -o CMakeFiles/metis.dir/coarsen.c.s
-
-libmetis/CMakeFiles/metis.dir/coarsen.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/coarsen.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/coarsen.c.o.provides: libmetis/CMakeFiles/metis.dir/coarsen.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/coarsen.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/coarsen.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/coarsen.c.o.provides.build: libmetis/CMakeFiles/metis.dir/coarsen.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/coarsen.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/balance.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/balance.c.o: ../../metis/libmetis/balance.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_47)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/balance.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/balance.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/balance.c
-
-libmetis/CMakeFiles/metis.dir/balance.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/balance.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/balance.c > CMakeFiles/metis.dir/balance.c.i
-
-libmetis/CMakeFiles/metis.dir/balance.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/balance.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/balance.c -o CMakeFiles/metis.dir/balance.c.s
-
-libmetis/CMakeFiles/metis.dir/balance.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/balance.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/balance.c.o.provides: libmetis/CMakeFiles/metis.dir/balance.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/balance.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/balance.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/balance.c.o.provides.build: libmetis/CMakeFiles/metis.dir/balance.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/balance.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/mincover.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/mincover.c.o: ../../metis/libmetis/mincover.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_48)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/mincover.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/mincover.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mincover.c
-
-libmetis/CMakeFiles/metis.dir/mincover.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/mincover.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mincover.c > CMakeFiles/metis.dir/mincover.c.i
-
-libmetis/CMakeFiles/metis.dir/mincover.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/mincover.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mincover.c -o CMakeFiles/metis.dir/mincover.c.s
-
-libmetis/CMakeFiles/metis.dir/mincover.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/mincover.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/mincover.c.o.provides: libmetis/CMakeFiles/metis.dir/mincover.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/mincover.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/mincover.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/mincover.c.o.provides.build: libmetis/CMakeFiles/metis.dir/mincover.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/mincover.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/mesh.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/mesh.c.o: ../../metis/libmetis/mesh.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_49)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/mesh.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/mesh.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mesh.c
-
-libmetis/CMakeFiles/metis.dir/mesh.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/mesh.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mesh.c > CMakeFiles/metis.dir/mesh.c.i
-
-libmetis/CMakeFiles/metis.dir/mesh.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/mesh.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/mesh.c -o CMakeFiles/metis.dir/mesh.c.s
-
-libmetis/CMakeFiles/metis.dir/mesh.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/mesh.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/mesh.c.o.provides: libmetis/CMakeFiles/metis.dir/mesh.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/mesh.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/mesh.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/mesh.c.o.provides.build: libmetis/CMakeFiles/metis.dir/mesh.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/mesh.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/fortran.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/fortran.c.o: ../../metis/libmetis/fortran.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_50)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/fortran.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/fortran.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/fortran.c
-
-libmetis/CMakeFiles/metis.dir/fortran.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/fortran.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/fortran.c > CMakeFiles/metis.dir/fortran.c.i
-
-libmetis/CMakeFiles/metis.dir/fortran.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/fortran.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/fortran.c -o CMakeFiles/metis.dir/fortran.c.s
-
-libmetis/CMakeFiles/metis.dir/fortran.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/fortran.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/fortran.c.o.provides: libmetis/CMakeFiles/metis.dir/fortran.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/fortran.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/fortran.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/fortran.c.o.provides.build: libmetis/CMakeFiles/metis.dir/fortran.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/fortran.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/debug.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/debug.c.o: ../../metis/libmetis/debug.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_51)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/debug.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/debug.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/debug.c
-
-libmetis/CMakeFiles/metis.dir/debug.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/debug.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/debug.c > CMakeFiles/metis.dir/debug.c.i
-
-libmetis/CMakeFiles/metis.dir/debug.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/debug.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/debug.c -o CMakeFiles/metis.dir/debug.c.s
-
-libmetis/CMakeFiles/metis.dir/debug.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/debug.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/debug.c.o.provides: libmetis/CMakeFiles/metis.dir/debug.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/debug.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/debug.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/debug.c.o.provides.build: libmetis/CMakeFiles/metis.dir/debug.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/debug.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/separator.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/separator.c.o: ../../metis/libmetis/separator.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_52)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/separator.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/separator.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/separator.c
-
-libmetis/CMakeFiles/metis.dir/separator.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/separator.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/separator.c > CMakeFiles/metis.dir/separator.c.i
-
-libmetis/CMakeFiles/metis.dir/separator.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/separator.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/separator.c -o CMakeFiles/metis.dir/separator.c.s
-
-libmetis/CMakeFiles/metis.dir/separator.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/separator.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/separator.c.o.provides: libmetis/CMakeFiles/metis.dir/separator.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/separator.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/separator.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/separator.c.o.provides.build: libmetis/CMakeFiles/metis.dir/separator.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/separator.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/gklib.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/gklib.c.o: ../../metis/libmetis/gklib.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_53)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/gklib.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/gklib.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/gklib.c
-
-libmetis/CMakeFiles/metis.dir/gklib.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/gklib.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/gklib.c > CMakeFiles/metis.dir/gklib.c.i
-
-libmetis/CMakeFiles/metis.dir/gklib.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/gklib.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/gklib.c -o CMakeFiles/metis.dir/gklib.c.s
-
-libmetis/CMakeFiles/metis.dir/gklib.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/gklib.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/gklib.c.o.provides: libmetis/CMakeFiles/metis.dir/gklib.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/gklib.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/gklib.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/gklib.c.o.provides.build: libmetis/CMakeFiles/metis.dir/gklib.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/gklib.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/kwayfm.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/kwayfm.c.o: ../../metis/libmetis/kwayfm.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_54)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/kwayfm.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/kwayfm.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/kwayfm.c
-
-libmetis/CMakeFiles/metis.dir/kwayfm.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/kwayfm.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/kwayfm.c > CMakeFiles/metis.dir/kwayfm.c.i
-
-libmetis/CMakeFiles/metis.dir/kwayfm.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/kwayfm.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/kwayfm.c -o CMakeFiles/metis.dir/kwayfm.c.s
-
-libmetis/CMakeFiles/metis.dir/kwayfm.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/kwayfm.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/kwayfm.c.o.provides: libmetis/CMakeFiles/metis.dir/kwayfm.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/kwayfm.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/kwayfm.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/kwayfm.c.o.provides.build: libmetis/CMakeFiles/metis.dir/kwayfm.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/kwayfm.c.o.provides.build
-
-libmetis/CMakeFiles/metis.dir/frename.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/frename.c.o: ../../metis/libmetis/frename.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_55)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/frename.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/frename.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/frename.c
-
-libmetis/CMakeFiles/metis.dir/frename.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/frename.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/frename.c > CMakeFiles/metis.dir/frename.c.i
-
-libmetis/CMakeFiles/metis.dir/frename.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/frename.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/frename.c -o CMakeFiles/metis.dir/frename.c.s
-
-libmetis/CMakeFiles/metis.dir/frename.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/frename.c.o.requires
-
-libmetis/CMakeFiles/metis.dir/frename.c.o.provides: libmetis/CMakeFiles/metis.dir/frename.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/frename.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/frename.c.o.provides
-
-libmetis/CMakeFiles/metis.dir/frename.c.o.provides.build: libmetis/CMakeFiles/metis.dir/frename.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/frename.c.o.provides.build
+libmetis/CMakeFiles/metis.dir/ometis.c.o.provides.build: libmetis/CMakeFiles/metis.dir/ometis.c.o
 
 libmetis/CMakeFiles/metis.dir/kmetis.c.o: libmetis/CMakeFiles/metis.dir/flags.make
 libmetis/CMakeFiles/metis.dir/kmetis.c.o: ../../metis/libmetis/kmetis.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_56)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_27)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/kmetis.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/kmetis.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/kmetis.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/kmetis.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/kmetis.c
 
 libmetis/CMakeFiles/metis.dir/kmetis.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/kmetis.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/kmetis.c > CMakeFiles/metis.dir/kmetis.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/kmetis.c > CMakeFiles/metis.dir/kmetis.c.i
 
 libmetis/CMakeFiles/metis.dir/kmetis.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/kmetis.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/kmetis.c -o CMakeFiles/metis.dir/kmetis.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/kmetis.c -o CMakeFiles/metis.dir/kmetis.c.s
 
 libmetis/CMakeFiles/metis.dir/kmetis.c.o.requires:
 .PHONY : libmetis/CMakeFiles/metis.dir/kmetis.c.o.requires
@@ -1394,45 +672,503 @@ libmetis/CMakeFiles/metis.dir/kmetis.c.o.provides: libmetis/CMakeFiles/metis.dir
 .PHONY : libmetis/CMakeFiles/metis.dir/kmetis.c.o.provides
 
 libmetis/CMakeFiles/metis.dir/kmetis.c.o.provides.build: libmetis/CMakeFiles/metis.dir/kmetis.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/kmetis.c.o.provides.build
 
-libmetis/CMakeFiles/metis.dir/initpart.c.o: libmetis/CMakeFiles/metis.dir/flags.make
-libmetis/CMakeFiles/metis.dir/initpart.c.o: ../../metis/libmetis/initpart.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_57)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/initpart.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/initpart.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/initpart.c
+libmetis/CMakeFiles/metis.dir/refine.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/refine.c.o: ../../metis/libmetis/refine.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_28)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/refine.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/refine.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/refine.c
 
-libmetis/CMakeFiles/metis.dir/initpart.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/initpart.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/initpart.c > CMakeFiles/metis.dir/initpart.c.i
+libmetis/CMakeFiles/metis.dir/refine.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/refine.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/refine.c > CMakeFiles/metis.dir/refine.c.i
 
-libmetis/CMakeFiles/metis.dir/initpart.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/initpart.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/initpart.c -o CMakeFiles/metis.dir/initpart.c.s
+libmetis/CMakeFiles/metis.dir/refine.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/refine.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/refine.c -o CMakeFiles/metis.dir/refine.c.s
 
-libmetis/CMakeFiles/metis.dir/initpart.c.o.requires:
-.PHONY : libmetis/CMakeFiles/metis.dir/initpart.c.o.requires
+libmetis/CMakeFiles/metis.dir/refine.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/refine.c.o.requires
 
-libmetis/CMakeFiles/metis.dir/initpart.c.o.provides: libmetis/CMakeFiles/metis.dir/initpart.c.o.requires
-	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/initpart.c.o.provides.build
-.PHONY : libmetis/CMakeFiles/metis.dir/initpart.c.o.provides
+libmetis/CMakeFiles/metis.dir/refine.c.o.provides: libmetis/CMakeFiles/metis.dir/refine.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/refine.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/refine.c.o.provides
 
-libmetis/CMakeFiles/metis.dir/initpart.c.o.provides.build: libmetis/CMakeFiles/metis.dir/initpart.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/initpart.c.o.provides.build
+libmetis/CMakeFiles/metis.dir/refine.c.o.provides.build: libmetis/CMakeFiles/metis.dir/refine.c.o
+
+libmetis/CMakeFiles/metis.dir/contig.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/contig.c.o: ../../metis/libmetis/contig.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_29)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/contig.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/contig.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/contig.c
+
+libmetis/CMakeFiles/metis.dir/contig.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/contig.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/contig.c > CMakeFiles/metis.dir/contig.c.i
+
+libmetis/CMakeFiles/metis.dir/contig.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/contig.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/contig.c -o CMakeFiles/metis.dir/contig.c.s
+
+libmetis/CMakeFiles/metis.dir/contig.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/contig.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/contig.c.o.provides: libmetis/CMakeFiles/metis.dir/contig.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/contig.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/contig.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/contig.c.o.provides.build: libmetis/CMakeFiles/metis.dir/contig.c.o
+
+libmetis/CMakeFiles/metis.dir/mcutil.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/mcutil.c.o: ../../metis/libmetis/mcutil.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_30)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/mcutil.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/mcutil.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mcutil.c
+
+libmetis/CMakeFiles/metis.dir/mcutil.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/mcutil.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mcutil.c > CMakeFiles/metis.dir/mcutil.c.i
+
+libmetis/CMakeFiles/metis.dir/mcutil.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/mcutil.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mcutil.c -o CMakeFiles/metis.dir/mcutil.c.s
+
+libmetis/CMakeFiles/metis.dir/mcutil.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/mcutil.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/mcutil.c.o.provides: libmetis/CMakeFiles/metis.dir/mcutil.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/mcutil.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/mcutil.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/mcutil.c.o.provides.build: libmetis/CMakeFiles/metis.dir/mcutil.c.o
+
+libmetis/CMakeFiles/metis.dir/srefine.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/srefine.c.o: ../../metis/libmetis/srefine.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_31)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/srefine.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/srefine.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/srefine.c
+
+libmetis/CMakeFiles/metis.dir/srefine.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/srefine.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/srefine.c > CMakeFiles/metis.dir/srefine.c.i
+
+libmetis/CMakeFiles/metis.dir/srefine.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/srefine.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/srefine.c -o CMakeFiles/metis.dir/srefine.c.s
+
+libmetis/CMakeFiles/metis.dir/srefine.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/srefine.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/srefine.c.o.provides: libmetis/CMakeFiles/metis.dir/srefine.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/srefine.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/srefine.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/srefine.c.o.provides.build: libmetis/CMakeFiles/metis.dir/srefine.c.o
+
+libmetis/CMakeFiles/metis.dir/mmd.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/mmd.c.o: ../../metis/libmetis/mmd.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_32)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/mmd.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/mmd.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mmd.c
+
+libmetis/CMakeFiles/metis.dir/mmd.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/mmd.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mmd.c > CMakeFiles/metis.dir/mmd.c.i
+
+libmetis/CMakeFiles/metis.dir/mmd.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/mmd.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mmd.c -o CMakeFiles/metis.dir/mmd.c.s
+
+libmetis/CMakeFiles/metis.dir/mmd.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/mmd.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/mmd.c.o.provides: libmetis/CMakeFiles/metis.dir/mmd.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/mmd.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/mmd.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/mmd.c.o.provides.build: libmetis/CMakeFiles/metis.dir/mmd.c.o
+
+libmetis/CMakeFiles/metis.dir/debug.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/debug.c.o: ../../metis/libmetis/debug.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_33)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/debug.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/debug.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/debug.c
+
+libmetis/CMakeFiles/metis.dir/debug.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/debug.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/debug.c > CMakeFiles/metis.dir/debug.c.i
+
+libmetis/CMakeFiles/metis.dir/debug.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/debug.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/debug.c -o CMakeFiles/metis.dir/debug.c.s
+
+libmetis/CMakeFiles/metis.dir/debug.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/debug.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/debug.c.o.provides: libmetis/CMakeFiles/metis.dir/debug.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/debug.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/debug.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/debug.c.o.provides.build: libmetis/CMakeFiles/metis.dir/debug.c.o
+
+libmetis/CMakeFiles/metis.dir/options.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/options.c.o: ../../metis/libmetis/options.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_34)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/options.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/options.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/options.c
+
+libmetis/CMakeFiles/metis.dir/options.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/options.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/options.c > CMakeFiles/metis.dir/options.c.i
+
+libmetis/CMakeFiles/metis.dir/options.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/options.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/options.c -o CMakeFiles/metis.dir/options.c.s
+
+libmetis/CMakeFiles/metis.dir/options.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/options.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/options.c.o.provides: libmetis/CMakeFiles/metis.dir/options.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/options.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/options.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/options.c.o.provides.build: libmetis/CMakeFiles/metis.dir/options.c.o
+
+libmetis/CMakeFiles/metis.dir/coarsen.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/coarsen.c.o: ../../metis/libmetis/coarsen.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_35)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/coarsen.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/coarsen.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/coarsen.c
+
+libmetis/CMakeFiles/metis.dir/coarsen.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/coarsen.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/coarsen.c > CMakeFiles/metis.dir/coarsen.c.i
+
+libmetis/CMakeFiles/metis.dir/coarsen.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/coarsen.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/coarsen.c -o CMakeFiles/metis.dir/coarsen.c.s
+
+libmetis/CMakeFiles/metis.dir/coarsen.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/coarsen.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/coarsen.c.o.provides: libmetis/CMakeFiles/metis.dir/coarsen.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/coarsen.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/coarsen.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/coarsen.c.o.provides.build: libmetis/CMakeFiles/metis.dir/coarsen.c.o
+
+libmetis/CMakeFiles/metis.dir/separator.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/separator.c.o: ../../metis/libmetis/separator.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_36)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/separator.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/separator.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/separator.c
+
+libmetis/CMakeFiles/metis.dir/separator.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/separator.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/separator.c > CMakeFiles/metis.dir/separator.c.i
+
+libmetis/CMakeFiles/metis.dir/separator.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/separator.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/separator.c -o CMakeFiles/metis.dir/separator.c.s
+
+libmetis/CMakeFiles/metis.dir/separator.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/separator.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/separator.c.o.provides: libmetis/CMakeFiles/metis.dir/separator.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/separator.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/separator.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/separator.c.o.provides.build: libmetis/CMakeFiles/metis.dir/separator.c.o
+
+libmetis/CMakeFiles/metis.dir/gklib.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/gklib.c.o: ../../metis/libmetis/gklib.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_37)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/gklib.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/gklib.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/gklib.c
+
+libmetis/CMakeFiles/metis.dir/gklib.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/gklib.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/gklib.c > CMakeFiles/metis.dir/gklib.c.i
+
+libmetis/CMakeFiles/metis.dir/gklib.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/gklib.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/gklib.c -o CMakeFiles/metis.dir/gklib.c.s
+
+libmetis/CMakeFiles/metis.dir/gklib.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/gklib.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/gklib.c.o.provides: libmetis/CMakeFiles/metis.dir/gklib.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/gklib.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/gklib.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/gklib.c.o.provides.build: libmetis/CMakeFiles/metis.dir/gklib.c.o
+
+libmetis/CMakeFiles/metis.dir/mesh.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/mesh.c.o: ../../metis/libmetis/mesh.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_38)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/mesh.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/mesh.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mesh.c
+
+libmetis/CMakeFiles/metis.dir/mesh.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/mesh.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mesh.c > CMakeFiles/metis.dir/mesh.c.i
+
+libmetis/CMakeFiles/metis.dir/mesh.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/mesh.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mesh.c -o CMakeFiles/metis.dir/mesh.c.s
+
+libmetis/CMakeFiles/metis.dir/mesh.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/mesh.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/mesh.c.o.provides: libmetis/CMakeFiles/metis.dir/mesh.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/mesh.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/mesh.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/mesh.c.o.provides.build: libmetis/CMakeFiles/metis.dir/mesh.c.o
+
+libmetis/CMakeFiles/metis.dir/checkgraph.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/checkgraph.c.o: ../../metis/libmetis/checkgraph.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_39)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/checkgraph.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/checkgraph.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/checkgraph.c
+
+libmetis/CMakeFiles/metis.dir/checkgraph.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/checkgraph.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/checkgraph.c > CMakeFiles/metis.dir/checkgraph.c.i
+
+libmetis/CMakeFiles/metis.dir/checkgraph.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/checkgraph.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/checkgraph.c -o CMakeFiles/metis.dir/checkgraph.c.s
+
+libmetis/CMakeFiles/metis.dir/checkgraph.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/checkgraph.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/checkgraph.c.o.provides: libmetis/CMakeFiles/metis.dir/checkgraph.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/checkgraph.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/checkgraph.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/checkgraph.c.o.provides.build: libmetis/CMakeFiles/metis.dir/checkgraph.c.o
+
+libmetis/CMakeFiles/metis.dir/fm.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/fm.c.o: ../../metis/libmetis/fm.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_40)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/fm.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/fm.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/fm.c
+
+libmetis/CMakeFiles/metis.dir/fm.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/fm.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/fm.c > CMakeFiles/metis.dir/fm.c.i
+
+libmetis/CMakeFiles/metis.dir/fm.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/fm.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/fm.c -o CMakeFiles/metis.dir/fm.c.s
+
+libmetis/CMakeFiles/metis.dir/fm.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/fm.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/fm.c.o.provides: libmetis/CMakeFiles/metis.dir/fm.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/fm.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/fm.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/fm.c.o.provides.build: libmetis/CMakeFiles/metis.dir/fm.c.o
+
+libmetis/CMakeFiles/metis.dir/auxapi.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/auxapi.c.o: ../../metis/libmetis/auxapi.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_41)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/auxapi.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/auxapi.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/auxapi.c
+
+libmetis/CMakeFiles/metis.dir/auxapi.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/auxapi.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/auxapi.c > CMakeFiles/metis.dir/auxapi.c.i
+
+libmetis/CMakeFiles/metis.dir/auxapi.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/auxapi.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/auxapi.c -o CMakeFiles/metis.dir/auxapi.c.s
+
+libmetis/CMakeFiles/metis.dir/auxapi.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/auxapi.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/auxapi.c.o.provides: libmetis/CMakeFiles/metis.dir/auxapi.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/auxapi.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/auxapi.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/auxapi.c.o.provides.build: libmetis/CMakeFiles/metis.dir/auxapi.c.o
+
+libmetis/CMakeFiles/metis.dir/compress.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/compress.c.o: ../../metis/libmetis/compress.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_42)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/compress.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/compress.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/compress.c
+
+libmetis/CMakeFiles/metis.dir/compress.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/compress.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/compress.c > CMakeFiles/metis.dir/compress.c.i
+
+libmetis/CMakeFiles/metis.dir/compress.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/compress.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/compress.c -o CMakeFiles/metis.dir/compress.c.s
+
+libmetis/CMakeFiles/metis.dir/compress.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/compress.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/compress.c.o.provides: libmetis/CMakeFiles/metis.dir/compress.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/compress.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/compress.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/compress.c.o.provides.build: libmetis/CMakeFiles/metis.dir/compress.c.o
+
+libmetis/CMakeFiles/metis.dir/kwayfm.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/kwayfm.c.o: ../../metis/libmetis/kwayfm.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_43)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/kwayfm.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/kwayfm.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/kwayfm.c
+
+libmetis/CMakeFiles/metis.dir/kwayfm.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/kwayfm.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/kwayfm.c > CMakeFiles/metis.dir/kwayfm.c.i
+
+libmetis/CMakeFiles/metis.dir/kwayfm.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/kwayfm.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/kwayfm.c -o CMakeFiles/metis.dir/kwayfm.c.s
+
+libmetis/CMakeFiles/metis.dir/kwayfm.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/kwayfm.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/kwayfm.c.o.provides: libmetis/CMakeFiles/metis.dir/kwayfm.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/kwayfm.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/kwayfm.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/kwayfm.c.o.provides.build: libmetis/CMakeFiles/metis.dir/kwayfm.c.o
+
+libmetis/CMakeFiles/metis.dir/balance.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/balance.c.o: ../../metis/libmetis/balance.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_44)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/balance.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/balance.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/balance.c
+
+libmetis/CMakeFiles/metis.dir/balance.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/balance.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/balance.c > CMakeFiles/metis.dir/balance.c.i
+
+libmetis/CMakeFiles/metis.dir/balance.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/balance.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/balance.c -o CMakeFiles/metis.dir/balance.c.s
+
+libmetis/CMakeFiles/metis.dir/balance.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/balance.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/balance.c.o.provides: libmetis/CMakeFiles/metis.dir/balance.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/balance.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/balance.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/balance.c.o.provides.build: libmetis/CMakeFiles/metis.dir/balance.c.o
+
+libmetis/CMakeFiles/metis.dir/pmetis.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/pmetis.c.o: ../../metis/libmetis/pmetis.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_45)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/pmetis.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/pmetis.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/pmetis.c
+
+libmetis/CMakeFiles/metis.dir/pmetis.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/pmetis.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/pmetis.c > CMakeFiles/metis.dir/pmetis.c.i
+
+libmetis/CMakeFiles/metis.dir/pmetis.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/pmetis.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/pmetis.c -o CMakeFiles/metis.dir/pmetis.c.s
+
+libmetis/CMakeFiles/metis.dir/pmetis.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/pmetis.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/pmetis.c.o.provides: libmetis/CMakeFiles/metis.dir/pmetis.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/pmetis.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/pmetis.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/pmetis.c.o.provides.build: libmetis/CMakeFiles/metis.dir/pmetis.c.o
+
+libmetis/CMakeFiles/metis.dir/sfm.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/sfm.c.o: ../../metis/libmetis/sfm.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_46)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/sfm.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/sfm.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/sfm.c
+
+libmetis/CMakeFiles/metis.dir/sfm.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/sfm.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/sfm.c > CMakeFiles/metis.dir/sfm.c.i
+
+libmetis/CMakeFiles/metis.dir/sfm.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/sfm.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/sfm.c -o CMakeFiles/metis.dir/sfm.c.s
+
+libmetis/CMakeFiles/metis.dir/sfm.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/sfm.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/sfm.c.o.provides: libmetis/CMakeFiles/metis.dir/sfm.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/sfm.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/sfm.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/sfm.c.o.provides.build: libmetis/CMakeFiles/metis.dir/sfm.c.o
+
+libmetis/CMakeFiles/metis.dir/util.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/util.c.o: ../../metis/libmetis/util.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_47)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/util.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/util.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/util.c
+
+libmetis/CMakeFiles/metis.dir/util.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/util.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/util.c > CMakeFiles/metis.dir/util.c.i
+
+libmetis/CMakeFiles/metis.dir/util.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/util.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/util.c -o CMakeFiles/metis.dir/util.c.s
+
+libmetis/CMakeFiles/metis.dir/util.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/util.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/util.c.o.provides: libmetis/CMakeFiles/metis.dir/util.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/util.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/util.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/util.c.o.provides.build: libmetis/CMakeFiles/metis.dir/util.c.o
+
+libmetis/CMakeFiles/metis.dir/parmetis.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/parmetis.c.o: ../../metis/libmetis/parmetis.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_48)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/parmetis.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/parmetis.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/parmetis.c
+
+libmetis/CMakeFiles/metis.dir/parmetis.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/parmetis.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/parmetis.c > CMakeFiles/metis.dir/parmetis.c.i
+
+libmetis/CMakeFiles/metis.dir/parmetis.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/parmetis.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/parmetis.c -o CMakeFiles/metis.dir/parmetis.c.s
+
+libmetis/CMakeFiles/metis.dir/parmetis.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/parmetis.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/parmetis.c.o.provides: libmetis/CMakeFiles/metis.dir/parmetis.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/parmetis.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/parmetis.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/parmetis.c.o.provides.build: libmetis/CMakeFiles/metis.dir/parmetis.c.o
 
 libmetis/CMakeFiles/metis.dir/wspace.c.o: libmetis/CMakeFiles/metis.dir/flags.make
 libmetis/CMakeFiles/metis.dir/wspace.c.o: ../../metis/libmetis/wspace.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_58)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_49)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/wspace.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/wspace.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/wspace.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/wspace.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/wspace.c
 
 libmetis/CMakeFiles/metis.dir/wspace.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/wspace.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/wspace.c > CMakeFiles/metis.dir/wspace.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/wspace.c > CMakeFiles/metis.dir/wspace.c.i
 
 libmetis/CMakeFiles/metis.dir/wspace.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/wspace.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/wspace.c -o CMakeFiles/metis.dir/wspace.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/wspace.c -o CMakeFiles/metis.dir/wspace.c.s
 
 libmetis/CMakeFiles/metis.dir/wspace.c.o.requires:
 .PHONY : libmetis/CMakeFiles/metis.dir/wspace.c.o.requires
@@ -1442,21 +1178,20 @@ libmetis/CMakeFiles/metis.dir/wspace.c.o.provides: libmetis/CMakeFiles/metis.dir
 .PHONY : libmetis/CMakeFiles/metis.dir/wspace.c.o.provides
 
 libmetis/CMakeFiles/metis.dir/wspace.c.o.provides.build: libmetis/CMakeFiles/metis.dir/wspace.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/wspace.c.o.provides.build
 
 libmetis/CMakeFiles/metis.dir/minconn.c.o: libmetis/CMakeFiles/metis.dir/flags.make
 libmetis/CMakeFiles/metis.dir/minconn.c.o: ../../metis/libmetis/minconn.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_59)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_50)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/minconn.c.o"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/minconn.c.o   -c /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/minconn.c
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/minconn.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/minconn.c
 
 libmetis/CMakeFiles/metis.dir/minconn.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/minconn.c.i"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/minconn.c > CMakeFiles/metis.dir/minconn.c.i
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/minconn.c > CMakeFiles/metis.dir/minconn.c.i
 
 libmetis/CMakeFiles/metis.dir/minconn.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/minconn.c.s"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/mpich2/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis/minconn.c -o CMakeFiles/metis.dir/minconn.c.s
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/minconn.c -o CMakeFiles/metis.dir/minconn.c.s
 
 libmetis/CMakeFiles/metis.dir/minconn.c.o.requires:
 .PHONY : libmetis/CMakeFiles/metis.dir/minconn.c.o.requires
@@ -1466,208 +1201,414 @@ libmetis/CMakeFiles/metis.dir/minconn.c.o.provides: libmetis/CMakeFiles/metis.di
 .PHONY : libmetis/CMakeFiles/metis.dir/minconn.c.o.provides
 
 libmetis/CMakeFiles/metis.dir/minconn.c.o.provides.build: libmetis/CMakeFiles/metis.dir/minconn.c.o
-.PHONY : libmetis/CMakeFiles/metis.dir/minconn.c.o.provides.build
+
+libmetis/CMakeFiles/metis.dir/frename.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/frename.c.o: ../../metis/libmetis/frename.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_51)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/frename.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/frename.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/frename.c
+
+libmetis/CMakeFiles/metis.dir/frename.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/frename.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/frename.c > CMakeFiles/metis.dir/frename.c.i
+
+libmetis/CMakeFiles/metis.dir/frename.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/frename.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/frename.c -o CMakeFiles/metis.dir/frename.c.s
+
+libmetis/CMakeFiles/metis.dir/frename.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/frename.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/frename.c.o.provides: libmetis/CMakeFiles/metis.dir/frename.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/frename.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/frename.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/frename.c.o.provides.build: libmetis/CMakeFiles/metis.dir/frename.c.o
+
+libmetis/CMakeFiles/metis.dir/mincover.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/mincover.c.o: ../../metis/libmetis/mincover.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_52)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/mincover.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/mincover.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mincover.c
+
+libmetis/CMakeFiles/metis.dir/mincover.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/mincover.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mincover.c > CMakeFiles/metis.dir/mincover.c.i
+
+libmetis/CMakeFiles/metis.dir/mincover.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/mincover.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/mincover.c -o CMakeFiles/metis.dir/mincover.c.s
+
+libmetis/CMakeFiles/metis.dir/mincover.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/mincover.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/mincover.c.o.provides: libmetis/CMakeFiles/metis.dir/mincover.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/mincover.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/mincover.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/mincover.c.o.provides.build: libmetis/CMakeFiles/metis.dir/mincover.c.o
+
+libmetis/CMakeFiles/metis.dir/kwayrefine.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/kwayrefine.c.o: ../../metis/libmetis/kwayrefine.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_53)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/kwayrefine.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/kwayrefine.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/kwayrefine.c
+
+libmetis/CMakeFiles/metis.dir/kwayrefine.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/kwayrefine.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/kwayrefine.c > CMakeFiles/metis.dir/kwayrefine.c.i
+
+libmetis/CMakeFiles/metis.dir/kwayrefine.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/kwayrefine.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/kwayrefine.c -o CMakeFiles/metis.dir/kwayrefine.c.s
+
+libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.provides: libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.provides.build: libmetis/CMakeFiles/metis.dir/kwayrefine.c.o
+
+libmetis/CMakeFiles/metis.dir/initpart.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/initpart.c.o: ../../metis/libmetis/initpart.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_54)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/initpart.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/initpart.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/initpart.c
+
+libmetis/CMakeFiles/metis.dir/initpart.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/initpart.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/initpart.c > CMakeFiles/metis.dir/initpart.c.i
+
+libmetis/CMakeFiles/metis.dir/initpart.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/initpart.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/initpart.c -o CMakeFiles/metis.dir/initpart.c.s
+
+libmetis/CMakeFiles/metis.dir/initpart.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/initpart.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/initpart.c.o.provides: libmetis/CMakeFiles/metis.dir/initpart.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/initpart.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/initpart.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/initpart.c.o.provides.build: libmetis/CMakeFiles/metis.dir/initpart.c.o
+
+libmetis/CMakeFiles/metis.dir/stat.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/stat.c.o: ../../metis/libmetis/stat.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_55)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/stat.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/stat.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/stat.c
+
+libmetis/CMakeFiles/metis.dir/stat.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/stat.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/stat.c > CMakeFiles/metis.dir/stat.c.i
+
+libmetis/CMakeFiles/metis.dir/stat.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/stat.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/stat.c -o CMakeFiles/metis.dir/stat.c.s
+
+libmetis/CMakeFiles/metis.dir/stat.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/stat.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/stat.c.o.provides: libmetis/CMakeFiles/metis.dir/stat.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/stat.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/stat.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/stat.c.o.provides.build: libmetis/CMakeFiles/metis.dir/stat.c.o
+
+libmetis/CMakeFiles/metis.dir/graph.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/graph.c.o: ../../metis/libmetis/graph.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_56)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/graph.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/graph.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/graph.c
+
+libmetis/CMakeFiles/metis.dir/graph.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/graph.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/graph.c > CMakeFiles/metis.dir/graph.c.i
+
+libmetis/CMakeFiles/metis.dir/graph.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/graph.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/graph.c -o CMakeFiles/metis.dir/graph.c.s
+
+libmetis/CMakeFiles/metis.dir/graph.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/graph.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/graph.c.o.provides: libmetis/CMakeFiles/metis.dir/graph.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/graph.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/graph.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/graph.c.o.provides.build: libmetis/CMakeFiles/metis.dir/graph.c.o
+
+libmetis/CMakeFiles/metis.dir/timing.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/timing.c.o: ../../metis/libmetis/timing.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_57)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/timing.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/timing.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/timing.c
+
+libmetis/CMakeFiles/metis.dir/timing.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/timing.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/timing.c > CMakeFiles/metis.dir/timing.c.i
+
+libmetis/CMakeFiles/metis.dir/timing.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/timing.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/timing.c -o CMakeFiles/metis.dir/timing.c.s
+
+libmetis/CMakeFiles/metis.dir/timing.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/timing.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/timing.c.o.provides: libmetis/CMakeFiles/metis.dir/timing.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/timing.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/timing.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/timing.c.o.provides.build: libmetis/CMakeFiles/metis.dir/timing.c.o
+
+libmetis/CMakeFiles/metis.dir/fortran.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/fortran.c.o: ../../metis/libmetis/fortran.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_58)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/fortran.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/fortran.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/fortran.c
+
+libmetis/CMakeFiles/metis.dir/fortran.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/fortran.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/fortran.c > CMakeFiles/metis.dir/fortran.c.i
+
+libmetis/CMakeFiles/metis.dir/fortran.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/fortran.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/fortran.c -o CMakeFiles/metis.dir/fortran.c.s
+
+libmetis/CMakeFiles/metis.dir/fortran.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/fortran.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/fortran.c.o.provides: libmetis/CMakeFiles/metis.dir/fortran.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/fortran.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/fortran.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/fortran.c.o.provides.build: libmetis/CMakeFiles/metis.dir/fortran.c.o
+
+libmetis/CMakeFiles/metis.dir/bucketsort.c.o: libmetis/CMakeFiles/metis.dir/flags.make
+libmetis/CMakeFiles/metis.dir/bucketsort.c.o: ../../metis/libmetis/bucketsort.c
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/CMakeFiles $(CMAKE_PROGRESS_59)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object libmetis/CMakeFiles/metis.dir/bucketsort.c.o"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/metis.dir/bucketsort.c.o   -c /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/bucketsort.c
+
+libmetis/CMakeFiles/metis.dir/bucketsort.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/metis.dir/bucketsort.c.i"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -E /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/bucketsort.c > CMakeFiles/metis.dir/bucketsort.c.i
+
+libmetis/CMakeFiles/metis.dir/bucketsort.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/metis.dir/bucketsort.c.s"
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && /usr/lib64/openmpi/bin/mpicc  $(C_DEFINES) $(C_FLAGS) -S /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis/bucketsort.c -o CMakeFiles/metis.dir/bucketsort.c.s
+
+libmetis/CMakeFiles/metis.dir/bucketsort.c.o.requires:
+.PHONY : libmetis/CMakeFiles/metis.dir/bucketsort.c.o.requires
+
+libmetis/CMakeFiles/metis.dir/bucketsort.c.o.provides: libmetis/CMakeFiles/metis.dir/bucketsort.c.o.requires
+	$(MAKE) -f libmetis/CMakeFiles/metis.dir/build.make libmetis/CMakeFiles/metis.dir/bucketsort.c.o.provides.build
+.PHONY : libmetis/CMakeFiles/metis.dir/bucketsort.c.o.provides
+
+libmetis/CMakeFiles/metis.dir/bucketsort.c.o.provides.build: libmetis/CMakeFiles/metis.dir/bucketsort.c.o
 
 # Object files for target metis
 metis_OBJECTS = \
-"CMakeFiles/metis.dir/__/GKlib/blas.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/getopt.c.o" \
 "CMakeFiles/metis.dir/__/GKlib/itemsets.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/evaluate.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/sort.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/random.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/string.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/fs.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/memory.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/pdb.c.o" \
 "CMakeFiles/metis.dir/__/GKlib/b64.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/sort.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/memory.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/pdb.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/timers.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/evaluate.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/blas.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/gkregex.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/pqueue.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/error.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/fs.c.o" \
 "CMakeFiles/metis.dir/__/GKlib/csr.c.o" \
 "CMakeFiles/metis.dir/__/GKlib/util.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/pqueue.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/gkregex.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/error.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/seq.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/timers.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/mcore.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/omp.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/io.c.o" \
-"CMakeFiles/metis.dir/__/GKlib/getopt.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/string.c.o" \
 "CMakeFiles/metis.dir/__/GKlib/htable.c.o" \
-"CMakeFiles/metis.dir/compress.c.o" \
-"CMakeFiles/metis.dir/kwayrefine.c.o" \
-"CMakeFiles/metis.dir/auxapi.c.o" \
-"CMakeFiles/metis.dir/srefine.c.o" \
-"CMakeFiles/metis.dir/graph.c.o" \
-"CMakeFiles/metis.dir/refine.c.o" \
-"CMakeFiles/metis.dir/timing.c.o" \
-"CMakeFiles/metis.dir/sfm.c.o" \
-"CMakeFiles/metis.dir/ometis.c.o" \
-"CMakeFiles/metis.dir/contig.c.o" \
-"CMakeFiles/metis.dir/checkgraph.c.o" \
-"CMakeFiles/metis.dir/fm.c.o" \
-"CMakeFiles/metis.dir/pmetis.c.o" \
-"CMakeFiles/metis.dir/stat.c.o" \
-"CMakeFiles/metis.dir/bucketsort.c.o" \
-"CMakeFiles/metis.dir/mcutil.c.o" \
-"CMakeFiles/metis.dir/util.c.o" \
-"CMakeFiles/metis.dir/options.c.o" \
-"CMakeFiles/metis.dir/parmetis.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/io.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/omp.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/seq.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/random.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/mcore.c.o" \
+"CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o" \
 "CMakeFiles/metis.dir/meshpart.c.o" \
+"CMakeFiles/metis.dir/ometis.c.o" \
+"CMakeFiles/metis.dir/kmetis.c.o" \
+"CMakeFiles/metis.dir/refine.c.o" \
+"CMakeFiles/metis.dir/contig.c.o" \
+"CMakeFiles/metis.dir/mcutil.c.o" \
+"CMakeFiles/metis.dir/srefine.c.o" \
 "CMakeFiles/metis.dir/mmd.c.o" \
-"CMakeFiles/metis.dir/coarsen.c.o" \
-"CMakeFiles/metis.dir/balance.c.o" \
-"CMakeFiles/metis.dir/mincover.c.o" \
-"CMakeFiles/metis.dir/mesh.c.o" \
-"CMakeFiles/metis.dir/fortran.c.o" \
 "CMakeFiles/metis.dir/debug.c.o" \
+"CMakeFiles/metis.dir/options.c.o" \
+"CMakeFiles/metis.dir/coarsen.c.o" \
 "CMakeFiles/metis.dir/separator.c.o" \
 "CMakeFiles/metis.dir/gklib.c.o" \
+"CMakeFiles/metis.dir/mesh.c.o" \
+"CMakeFiles/metis.dir/checkgraph.c.o" \
+"CMakeFiles/metis.dir/fm.c.o" \
+"CMakeFiles/metis.dir/auxapi.c.o" \
+"CMakeFiles/metis.dir/compress.c.o" \
 "CMakeFiles/metis.dir/kwayfm.c.o" \
-"CMakeFiles/metis.dir/frename.c.o" \
-"CMakeFiles/metis.dir/kmetis.c.o" \
-"CMakeFiles/metis.dir/initpart.c.o" \
+"CMakeFiles/metis.dir/balance.c.o" \
+"CMakeFiles/metis.dir/pmetis.c.o" \
+"CMakeFiles/metis.dir/sfm.c.o" \
+"CMakeFiles/metis.dir/util.c.o" \
+"CMakeFiles/metis.dir/parmetis.c.o" \
 "CMakeFiles/metis.dir/wspace.c.o" \
-"CMakeFiles/metis.dir/minconn.c.o"
+"CMakeFiles/metis.dir/minconn.c.o" \
+"CMakeFiles/metis.dir/frename.c.o" \
+"CMakeFiles/metis.dir/mincover.c.o" \
+"CMakeFiles/metis.dir/kwayrefine.c.o" \
+"CMakeFiles/metis.dir/initpart.c.o" \
+"CMakeFiles/metis.dir/stat.c.o" \
+"CMakeFiles/metis.dir/graph.c.o" \
+"CMakeFiles/metis.dir/timing.c.o" \
+"CMakeFiles/metis.dir/fortran.c.o" \
+"CMakeFiles/metis.dir/bucketsort.c.o"
 
 # External object files for target metis
 metis_EXTERNAL_OBJECTS =
 
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/compress.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/kwayrefine.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/auxapi.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/srefine.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/graph.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/refine.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/timing.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/sfm.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/ometis.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/contig.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/checkgraph.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/fm.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/pmetis.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/stat.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/bucketsort.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/mcutil.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/util.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/options.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/parmetis.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/meshpart.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/ometis.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/kmetis.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/refine.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/contig.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/mcutil.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/srefine.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/mmd.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/coarsen.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/balance.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/mincover.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/mesh.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/fortran.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/debug.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/options.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/coarsen.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/separator.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/gklib.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/mesh.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/checkgraph.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/fm.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/auxapi.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/compress.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/kwayfm.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/frename.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/kmetis.c.o
-libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/initpart.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/balance.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/pmetis.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/sfm.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/util.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/parmetis.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/wspace.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/minconn.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/frename.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/mincover.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/kwayrefine.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/initpart.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/stat.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/graph.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/timing.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/fortran.c.o
+libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/bucketsort.c.o
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/build.make
 libmetis/libmetis.a: libmetis/CMakeFiles/metis.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --red --bold "Linking C static library libmetis.a"
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && $(CMAKE_COMMAND) -P CMakeFiles/metis.dir/cmake_clean_target.cmake
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/metis.dir/link.txt --verbose=$(VERBOSE)
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && $(CMAKE_COMMAND) -P CMakeFiles/metis.dir/cmake_clean_target.cmake
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/metis.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 libmetis/CMakeFiles/metis.dir/build: libmetis/libmetis.a
 .PHONY : libmetis/CMakeFiles/metis.dir/build
 
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/itemsets.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/b64.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/sort.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/fkvkselect.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/memory.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/pdb.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/evaluate.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/blas.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/fs.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/csr.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/util.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/pqueue.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/gkregex.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/error.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/timers.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/getopt.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/string.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/htable.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/compress.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/auxapi.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/srefine.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/graph.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/refine.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/timing.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/sfm.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/ometis.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/contig.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/checkgraph.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/fm.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/pmetis.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/stat.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/bucketsort.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/mcutil.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/util.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/options.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/parmetis.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/io.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/omp.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/seq.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/random.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/mcore.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/__/GKlib/tokenizer.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/meshpart.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/ometis.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/kmetis.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/refine.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/contig.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/mcutil.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/srefine.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/mmd.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/coarsen.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/balance.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/mincover.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/mesh.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/fortran.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/debug.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/options.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/coarsen.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/separator.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/gklib.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/mesh.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/checkgraph.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/fm.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/auxapi.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/compress.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/kwayfm.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/frename.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/kmetis.c.o.requires
-libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/initpart.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/balance.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/pmetis.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/sfm.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/util.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/parmetis.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/wspace.c.o.requires
 libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/minconn.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/frename.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/mincover.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/kwayrefine.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/initpart.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/stat.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/graph.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/timing.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/fortran.c.o.requires
+libmetis/CMakeFiles/metis.dir/requires: libmetis/CMakeFiles/metis.dir/bucketsort.c.o.requires
 .PHONY : libmetis/CMakeFiles/metis.dir/requires
 
 libmetis/CMakeFiles/metis.dir/clean:
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && $(CMAKE_COMMAND) -P CMakeFiles/metis.dir/cmake_clean.cmake
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis && $(CMAKE_COMMAND) -P CMakeFiles/metis.dir/cmake_clean.cmake
 .PHONY : libmetis/CMakeFiles/metis.dir/clean
 
 libmetis/CMakeFiles/metis.dir/depend:
-	cd /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2 /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/metis/libmetis /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64 /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis /home/pcasto/thesis/sd_b_new_data_layout/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis/CMakeFiles/metis.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2 /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64 /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis/CMakeFiles/metis.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : libmetis/CMakeFiles/metis.dir/depend
 
