@@ -1,0 +1,220 @@
+----------------------------
+ Solver parameters
+----------------------------
+equation                          // 0: Euler/Navier-Stokes, 1:Advection/Adv-Diffusion
+0
+viscous
+1
+riemann_solve_type                // 0: Rusanov, 1: Lax-Friedrich, 2: Roe
+0
+vis_riemann_solve_type
+0
+ic_form                           // 0: Isentropic Vortex, 1: Uniform flow, 2: Sine Wave
+1
+test_case                         // 0: Normal (doesn't have an analytical solution), 1:Isentropic Vortex, 2: Advection-Equation
+0
+run_type                          // 0: Normal run mode, 1: Plot mode (solution is read from restart file, plotted continuously)
+0
+order                             // Order of basis polynomials
+3
+dt 
+0.000002
+n_steps
+5000000
+adv_type                          // 0: Forward Euler, 3: RK45
+3
+tau 
+1.0
+pen_fact 
+0.5
+-----------------------
+Restart options
+-----------------------
+restart_flag
+0
+restart_iter
+2000000
+n_restart_files
+3
+-----------------------
+Mesh options
+-----------------------
+mesh_file
+flatplate_a2-125-2s.neu
+dx_cyclic
+200000000.0
+dy_cyclic
+200000000.0
+dz_cyclic
+200000000.0
+-----------------------------------
+Monitoring, plotting parameters
+-----------------------------------
+p_res                             // Plotting resolution, number of nodes per direction
+6
+write_type                        // 0: Paraview, 1: Tecplot
+1
+n_plot_quantities
+7 rho u v w energy pressure mach
+inters_cub_order                  // Order of cubature rule for integrating over element interfaces
+12
+volume_cub_order                  // Order of cubature rule for integrating over element volumes
+12
+plot_freq
+100000
+restart_dump_freq
+200000
+diagnostics_freq
+100000
+monitor_res_freq
+100
+monitor_force_freq
+100000
+res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
+2
+error_norm_type                   // 0:infinity norm, 1:L1 norm, 2:L2 norm
+2
+res_norm_field                    // Density
+0
+---------------------------
+Wave Equation parameters
+---------------------------
+wave_speed_x
+1.
+wave_speed_y
+0.
+wave_speed_z
+0.
+lambda                            // 1: upwind
+1
+---------------------------
+Element parameters
+---------------------------
+upts_type_tri
+0
+fpts_type_tri
+0
+vcjh_scheme_tri
+1
+c_tri
+0.0
+sparse_tri
+0
+upts_type_quad
+0
+vcjh_scheme_quad
+1
+eta_quad
+0.0
+sparse_quad
+0
+upts_type_hexa
+0
+vcjh_scheme_hexa
+0
+eta_hexa
+0.
+sparse_hexa
+0
+upts_type_tet
+1
+fpts_type_tet
+0
+vcjh_scheme_tet
+0
+eta_tet
+0.0
+sparse_tet
+0
+upts_type_pri_tri
+0
+upts_type_pri_1d
+0
+vcjh_scheme_pri_1d
+0
+eta_pri
+0.0
+sparse_pri
+0
+------------------------------------
+Fluid Parameters
+------------------------------------
+gamma
+1.4
+prandtl 
+0.72
+S_gas
+120.
+T_gas
+291.15
+R_gas
+286.9
+mu_gas
+1.827E-05
+-----------------------------------
+Boundary conditions
+-----------------------------------
+---------
+Viscous
+---------
+fix_vis                               // 0: Sutherland's law, 1: Constant viscosity
+1
+Mach_free_stream 
+0.5
+nx_free_stream 
+1.
+ny_free_stream 
+0.
+nz_free_stream
+0.
+Re_free_stream 
+1000000.
+L_free_stream 
+1.
+T_free_stream 
+300 
+Mach_wall 
+0.0
+nx_wall
+1.
+ny_wall
+0.
+nz_wall 
+0.
+T_wall    
+300
+Mach_c_ic
+0.5
+nx_c_ic
+1.
+ny_c_ic 
+0.
+nz_c_ic
+0.
+Re_c_ic
+1000000.
+T_c_ic
+300
+-----------
+Inviscid
+-----------
+rho_c_ic
+1.0
+u_c_ic
+1.0
+v_c_ic
+1.0
+w_c_ic
+0.0
+p_c_ic
+17.857142857142854098
+rho_bound 
+1.
+u_bound  
+1.0
+v_bound 
+1.0
+w_bound 
+0.0
+p_bound 
+17.857142857142854098

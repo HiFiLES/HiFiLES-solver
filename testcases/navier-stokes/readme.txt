@@ -36,3 +36,35 @@ If you wish to obtain a much better fit to the data, try running the test using 
 but this will require 8 times more computational time, so run it in parallel (at least 4 processors recommended).
 
 TODO: If Python is not installed on your system, write an equivalent Matlab script.
+
+-----------------------------------------------------
+
+3. High Order Workshop Problem C1.4. Laminar Boundary Layer on a Flat Plate
+(see http://www.as.dlr.de/hiocfd/case_c1.4.html)
+
+Flow Conditions:
+  Mach Number: 0.5
+  Angle of Attack: 0.0
+  Reynolds Number: 1000000
+  Dynamic Viscosity: Constant
+  
+Initial Condition:
+  Uniform Flow
+  
+Meshes:
+Mesh    Elements        dy_min    Growth rate
+  a0         140        7.5E-4          2.251
+  a1         560       3.75E-4          1.481
+  a2        2240      1.875E-4          1.213
+  a3        8960      9.375E-5          1.101
+  a4       35840     4.6875E-5          1.049
+  a5      143360    2.34375E-5          1.024
+  
+List of working cases (using Discontinous Galerkin):
+Mesh    Polynomial Order        dt
+  a2                   3    2.0E-6
+  a2                   4    1.0E-6
+  a4                   3    2.0E-7
+  
+Notes:
+  Use provided input file: input_flatplate_a
