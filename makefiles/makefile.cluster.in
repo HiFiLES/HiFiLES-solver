@@ -1,0 +1,29 @@
+# \file makefile.in
+# \brief _____________________________
+# \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
+#                          Peter Vincent, David Williams (alphabetical by surname).
+#         - Current development: Aerospace Computing Laboratory (ACL) directed
+#                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
+# \version 1.0.0
+#
+# HiFiLES (High Fidelity Large Eddy Simulation).
+# Copyright (C) 2013 Aerospace Computing Laboratory.
+
+NODE=     GPU
+CODE=     DEBUG
+BLAS=     STANDARD_BLAS
+COMP=     GCC
+PARALLEL= MPI
+TECIO=    YES
+
+BLAS_DIR= /usr/local/atlas
+
+PARMETIS_DIR = lib/parmetis-4.0.2
+
+PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/build/Linux-x86_64
+
+TECIO_DIR = lib/tecio-2008
+
+CUDA_DIR = /usr/local/cuda-5.0
+
+MPI_DIR = /usr/mpi/gcc/mvapich-1.2.0
