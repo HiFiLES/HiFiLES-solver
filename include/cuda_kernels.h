@@ -20,8 +20,8 @@ void RK11_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fie
 /*! wrapper for gpu kernel to calculate transformed discontinuous inviscid flux at solution points */
 void calc_tdisinvf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisinvf_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr,double in_gamma, int equation, double wave_speed_x, double wave_speed_y, double wave_speed_z);
 
-/*! wrapper for gpu kernel to calculate filtered discontinuous solution at solution points */
-void calc_disuf_upts_kernel_wrapper(int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, int in_ele_type, int in_order, int in_SGS_model, double* in_disu_upts_ptr, double* in_Leonard_NS_ptr, double* in_Leonard_energy_ptr, double* in_filter_upts_ptr);
+/*! wrapper for gpu kernel to calculate Leonard tensors for similarity model */
+void calc_similarity_model_kernel_wrapper(int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, double* in_disu_upts_ptr, double* in_disuf_upts_ptr, double* in_uu_ptr, double* in_ue_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr, double* in_filter_upts_ptr, int flag);
 
 /*! wrapper for gpu kernel to calculate normal transformed continuous inviscid flux at the flux points */
 

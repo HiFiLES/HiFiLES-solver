@@ -129,13 +129,38 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
       for (int k=0;k<n_fields;k++)
         disu_upts(m)(i,j,k) = 0.;
 
-	// Allocate Leonard tensors if WSM model
-	if(run_input.LES==1)
-	{
-		if(run_input.SGS_model==2 || run_input.SGS_model==4)
-		{
-			Lm.setup(n_eles,n_upts_per_ele,n_dims,n_dims);
-			Hm.setup(n_eles,n_upts_per_ele,n_dims);
+	// Allocate extra arrays for LES models
+	if(run_input.LES) {
+
+		// SVV model requires filtered solution
+		if(run_input.SGS_model==3 || run_input.SGS_model==2 || run_input.SGS_model==4) {
+			disuf_upts.setup(n_upts_per_ele,n_eles,n_fields);
+		}
+		else {
+			disuf_upts.setup(1);
+		}
+
+		// Similarity model requires filtered solution, product terms and Leonard tensors
+		if(run_input.SGS_model==2 || run_input.SGS_model==4) {
+			// Leonard tensor and velocity-velocity product for momentum SGS term
+			if(n_dims==2) {
+				Lu.setup(n_upts_per_ele,n_eles,3);
+				uu.setup(n_upts_per_ele,n_eles,3);
+			}
+			else if(n_dims==3) {
+				Lu.setup(n_upts_per_ele,n_eles,6);
+				uu.setup(n_upts_per_ele,n_eles,6);
+			}
+
+			// Leonard tensor and velocity-energy product for energy SGS term
+			Le.setup(n_upts_per_ele,n_eles,n_dims);
+			ue.setup(n_upts_per_ele,n_eles,n_dims);
+		}
+		else {
+			Lu.setup(1);
+			uu.setup(1);
+			Le.setup(1);
+			ue.setup(1);
 		}
 	}
 
@@ -608,6 +633,13 @@ void eles::mv_all_cpu_gpu(void)
 	  	//tdisvisf_upts.mv_cpu_gpu();
 	  	//norm_tdisvisf_fpts.mv_cpu_gpu();
 	  	//norm_tconvisf_fpts.mv_cpu_gpu();
+
+			// LES arrays
+			disuf_upts.mv_cpu_gpu();
+			uu.mv_cpu_gpu();
+			ue.mv_cpu_gpu();
+			Lu.mv_cpu_gpu();
+			Le.mv_cpu_gpu();
 	  }
   }	
 	#endif
@@ -1517,69 +1549,275 @@ void eles::calc_cor_grad_disu_fpts(void)
   */
 }
 
-// calculate filtered discontinuous solution at solution points
+/*! calculate filtered discontinuous solution at solution points for LES modeling */
 
 void eles::calc_disuf_upts(int in_disu_upts_from)
 {
   if (n_eles!=0) {
-	#ifdef _CPU
-	int i,j,k;
-	double uprev;
-	array<double> temp_u_upts(n_fields,n_upts_per_ele);
-	array<double> temp_uf_upts(n_fields,n_upts_per_ele);
 
- 	//physical solution at all solution pts in ele
-	for(i=0;i<n_eles;i++)
-	{
-		for(j=0;j<n_upts_per_ele;j++)
-		{
-	  	for(k=0;k<n_fields;k++)
-			{
-	  		temp_u_upts(k,j)=disu_upts(in_disu_upts_from)(j,i,k);
-	  		temp_uf_upts(k,j)=0.0;
-			}
-		}
+		int i,j,k,l;
+		int dim3;
+		double diag, rsq;
+		array <double> utemp(n_fields);
 
-		// Filter the solution and calculate Leonard tensors for similarity model
-		calc_disuf_upts_ele(i, temp_u_upts, temp_uf_upts);
+		/*! Filter solution */
 
-		// Check for NaNs
-		for(j=0;j<n_upts_per_ele;j++)
-		{
-	  	for(k=0;k<n_fields;k++)
-	  	{
-				if(isnan(temp_uf_upts(k,j)))
-				{
-					cout << "\nWARNING 1: NAN SOLUTION UF" << endl;
-					cout << "ele, pt, field: " <<i<<", "<<j<<", "<<k<< endl;
-					temp_uf_upts.print();
-					exit(1);
-				}
-	   	}
-		}
+  	Arows =	n_upts_per_ele;
+  	Acols = n_upts_per_ele;
+  	Brows = Acols;
+  	Bcols = n_fields*n_eles;
+	
+  	Astride = Arows;
+  	Bstride = Brows;
+  	Cstride = Arows;
 
-		// Explicit SVV filtering: copy filtered solution back
-		if(run_input.SGS_model==3)
-		{
-			for(j=0;j<n_upts_per_ele;j++)
-			{
-		  	for(k=0;k<n_fields;k++)
-		  	{
-					disu_upts(in_disu_upts_from)(j,i,k) = temp_uf_upts(k,j);
+#ifdef _CPU
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+		cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,disuf_upts.get_ptr_cpu(),Cstride);
+
+#else
+
+		/*! slow matrix multiplication */
+		for(i=0;i<n_upts_per_ele;i++) {
+			for(j=0;j<n_eles;j++) {
+		  	for(k=0;k<n_fields;k++) {
+		  		disuf_upts(i,j,k) = 0.0;
+					for(l=0;l<n_upts_per_ele;l++) {
+						disuf_upts(i,j,k) += filter_upts(i,l)*disu_upts(in_disu_upts_from)(l,j,k);
+					}
 				}
 			}
 		}
-	}
-	#endif
 
-	#ifdef _GPU
-	// Define n_upts*n_fields solution arrays here, then pass to GPU kernel.
+#endif
 
-	Lm.cp_cpu_gpu();
-	Hm.cp_cpu_gpu();
+		/*! Check for NaNs */
+		for(i=0;i<n_upts_per_ele;i++) {
+			for(j=0;j<n_eles;j++) {
+		  	for(k=0;k<n_fields;k++) {
+					if(isnan(disuf_upts(i,j,k))) {
+						FatalError("nan in filtered solution");
+					}
+				}
+			}
+		}
 
-	calc_disuf_upts_kernel_wrapper(n_fields, n_upts_per_ele, n_eles, n_dims, order, ele_type, run_input.SGS_model, disu_upts(in_disu_upts_from).get_ptr_gpu(), Lm.get_ptr_gpu(), Hm.get_ptr_gpu(), filter_upts.get_ptr_gpu());
-	#endif
+		/*! If SVV model, copy filtered solution back to solution */
+		if(run_input.SGS_model==3) {
+			for(i=0;i<n_upts_per_ele;i++) {
+				for(j=0;j<n_eles;j++) {
+			  	for(k=0;k<n_fields;k++) {
+						disu_upts(in_disu_upts_from)(i,j,k) = disuf_upts(i,j,k);
+					}
+				}
+			}
+		}
+
+		/*! If Similarity model, compute product terms and Leonard tensors */
+		else if(run_input.SGS_model==2 || run_input.SGS_model==4) {
+
+			/*! third dimension of Lu, uu arrays */
+			if(n_dims==2)
+				dim3 = 3;
+			else if(n_dims==2)
+				dim3 = 6;
+
+			/*! Calculate velocity and energy product arrays uu, ue */
+			for(i=0;i<n_upts_per_ele;i++) {
+				for(j=0;j<n_eles;j++) {
+			  	for(k=0;k<n_fields;k++) {
+						utemp(k) = disu_upts(in_disu_upts_from)(i,j,k);
+					}
+
+					rsq = utemp(0)*utemp(0);
+
+					/*! note that product arrays are symmetric */
+					if(n_dims==2) {
+						/*! velocity-velocity product */
+						uu(i,j,0) = utemp(1)*utemp(1)/rsq;
+						uu(i,j,1) = utemp(2)*utemp(2)/rsq;
+						uu(i,j,2) = utemp(1)*utemp(2)/rsq;
+
+						/*! velocity-energy product */
+						utemp(3) -= 0.5*(utemp(1)*utemp(1)+utemp(2)*utemp(2))/utemp(0); // internal energy*rho
+
+						ue(i,j,0) = utemp(1)*utemp(3)/rsq;
+						ue(i,j,1) = utemp(2)*utemp(3)/rsq;
+					}
+					else if(n_dims==3) {
+						/*! velocity-velocity product */
+						uu(i,j,0) = utemp(1)*utemp(1)/rsq;
+						uu(i,j,1) = utemp(2)*utemp(2)/rsq;
+						uu(i,j,2) = utemp(3)*utemp(3)/rsq;
+						uu(i,j,3) = utemp(1)*utemp(2)/rsq;
+						uu(i,j,4) = utemp(1)*utemp(3)/rsq;
+						uu(i,j,5) = utemp(2)*utemp(3)/rsq;
+
+						/*! velocity-energy product */
+						utemp(4) -= 0.5*(utemp(1)*utemp(1)+utemp(2)*utemp(2)+utemp(3)*utemp(3))/utemp(0); // internal energy*rho
+
+						ue(i,j,0) = utemp(1)*utemp(4)/rsq;
+						ue(i,j,1) = utemp(2)*utemp(4)/rsq;
+						ue(i,j,2) = utemp(3)*utemp(4)/rsq;
+					}
+				}
+			}
+
+			/*! Filter products uu and ue */
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+  		Bcols = dim3*n_eles;
+
+			cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,uu.get_ptr_cpu(),Bstride,0.0,Lu.get_ptr_cpu(),Cstride);
+
+  		Bcols = n_dims*n_eles;
+
+			cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,ue.get_ptr_cpu(),Bstride,0.0,Le.get_ptr_cpu(),Cstride);
+
+#else
+
+			/*! slow matrix multiplication */
+			for(i=0;i<n_upts_per_ele;i++) {
+				for(j=0;j<n_eles;j++) {
+			  	for(k=0;k<dim3;k++) {
+			  		Lu(i,j,k) = 0.0;
+						for(l=0;l<n_upts_per_ele;l++) {
+							Lu(i,j,k) += filter_upts(i,l)*uu(l,j,k);
+						}
+					}
+
+			  	for(k=0;k<n_dims;k++) {
+			  		Le(i,j,k) = 0.0;
+						for(l=0;l<n_upts_per_ele;l++) {
+							Le(i,j,k) += filter_upts(i,l)*ue(l,j,k);
+						}
+					}
+				}
+			}
+
+#endif
+
+			/*! Subtract product of unfiltered quantities from Leonard tensors */
+			for(i=0;i<n_upts_per_ele;i++) {
+				for(j=0;j<n_eles;j++) {
+			  	for(k=0;k<n_fields;k++) {
+						utemp(k) = disuf_upts(i,j,k);
+					}
+
+					rsq = utemp(0)*utemp(0);
+
+					if(n_dims==2) {
+						Lu(i,j,0) = (Lu(i,j,0) - utemp(1)*utemp(1))/rsq;
+						Lu(i,j,1) = (Lu(i,j,1) - utemp(2)*utemp(2))/rsq;
+						Lu(i,j,2) = (Lu(i,j,2) - utemp(1)*utemp(2))/rsq;
+
+						diag = (Lu(i,j,0)+Lu(i,j,1))/3.0;
+
+						utemp(3) -= 0.5*(utemp(1)*utemp(1)+utemp(2)*utemp(2))/utemp(0); // internal energy*rho
+
+						Le(i,j,0) = (Le(i,j,0) - utemp(1)*utemp(3))/rsq;
+						Le(i,j,1) = (Le(i,j,1) - utemp(2)*utemp(3))/rsq;
+					}
+					else if(n_dims==3) {
+						Lu(i,j,0) = (Lu(i,j,0) - utemp(1)*utemp(1))/rsq;
+						Lu(i,j,1) = (Lu(i,j,1) - utemp(2)*utemp(2))/rsq;
+						Lu(i,j,2) = (Lu(i,j,2) - utemp(3)*utemp(3))/rsq;
+						Lu(i,j,3) = (Lu(i,j,3) - utemp(1)*utemp(2))/rsq;
+						Lu(i,j,4) = (Lu(i,j,4) - utemp(1)*utemp(3))/rsq;
+						Lu(i,j,5) = (Lu(i,j,5) - utemp(2)*utemp(3))/rsq;
+
+						diag = (Lu(i,j,0)+Lu(i,j,1)+Lu(i,j,2))/3.0;
+
+						utemp(4) -= 0.5*(utemp(1)*utemp(1)+utemp(2)*utemp(2)+utemp(3)*utemp(3))/utemp(0); // internal energy*rho
+
+						Le(i,j,0) = (Le(i,j,0) - utemp(1)*utemp(4))/rsq;
+						Le(i,j,1) = (Le(i,j,1) - utemp(2)*utemp(4))/rsq;
+						Le(i,j,2) = (Le(i,j,2) - utemp(3)*utemp(4))/rsq;
+					}
+
+					/*! subtract diagonal from Lu */
+					for (k=0;k<n_dims;++k) {
+						Lu(i,j,k) -= diag;
+					}
+					//cout << "uf*uf = " << setprecision(10) << disuf_upts(i,j,1)*disuf_upts(i,j,1) <<", "<< disuf_upts(i,j,2)*disuf_upts(i,j,2) <<", "<< disuf_upts(i,j,1)*disuf_upts(i,j,2) << endl;
+					//cout<<"uu = "<<setprecision(10)<<uu(i,j,0)<<", "<<uu(i,j,1)<<", "<<uu(i,j,2)<<endl;
+					//cout<<"Leonard = "<<setprecision(10)<<Lu(i,j,0)<<", "<<Lu(i,j,1)<<", "<<Lu(i,j,2)<<endl;
+				}
+			}
+		}
+
+		/*! GPU version of the above */
+#elif defined _GPU
+
+		/*! Filter solution (CUDA BLAS library) */
+		cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_gpu(),Bstride,0.0,disuf_upts.get_ptr_gpu(),Cstride);
+
+		disuf_upts.cp_gpu_cpu();
+
+		/*! Check for NaNs */
+		for(i=0;i<n_upts_per_ele;i++) {
+			for(j=0;j<n_eles;j++) {
+		  	for(k=0;k<n_fields;k++) {
+					if(isnan(disuf_upts(i,j,k))) {
+						FatalError("nan in filtered solution");
+					}
+				}
+			}
+		}
+
+		/*! If Similarity model */
+		if(run_input.SGS_model==2 || run_input.SGS_model==4) {
+
+			/*! compute product terms uu, ue (pass flag=0 to wrapper function) */
+			calc_similarity_model_kernel_wrapper(n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), filter_upts.get_ptr_cpu(), 0);
+
+			/*! third dimension of Lu, uu arrays */
+			if(n_dims==2)
+				dim3 = 3;
+			else if(n_dims==2)
+				dim3 = 6;
+
+  		Bcols = dim3*n_eles;
+
+			/*! Filter product terms uu and ue */
+			cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,uu.get_ptr_gpu(),Bstride,0.0,Lu.get_ptr_gpu(),Cstride);
+
+			Bcols = n_dims*n_eles;
+
+			cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,ue.get_ptr_gpu(),Bstride,0.0,Le.get_ptr_gpu(),Cstride);
+
+		/*! compute Leonard tensors Lu, Le (pass flag=1 to wrapper function) */
+			calc_similarity_model_kernel_wrapper(n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), filter_upts.get_ptr_cpu(), 1);
+
+			//uu.cp_gpu_cpu();
+			Lu.cp_gpu_cpu();
+			for(i=0;i<n_upts_per_ele;i++) {
+				for(j=0;j<n_eles;j++) {
+					//cout<<"GPU uf*uf = "<<setprecision(10)<<disuf_upts(i,j,1)*disuf_upts(i,j,1)<<", "<<disuf_upts(i,j,2)*disuf_upts(i,j,2)<<", "<<disuf_upts(i,j,1)*disuf_upts(i,j,2)<<endl;
+					//cout<<"GPU uu = "<<setprecision(10)<<uu(i,j,0)<<", "<<uu(i,j,1)<<", "<<uu(i,j,2)<<endl;
+					//cout<<"GPU Leonard = "<<setprecision(10)<<Lu(i,j,0)<<", "<<Lu(i,j,1)<<", "<<Lu(i,j,2)<<endl;
+				}
+			}
+		}
+
+		/*! If SVV model, copy filtered solution back to original solution */
+		else if(run_input.SGS_model==3) {
+			for(i=0;i<n_upts_per_ele;i++) {
+				for(j=0;j<n_eles;j++) {
+			  	for(k=0;k<n_fields;k++) {
+						disu_upts(in_disu_upts_from)(i,j,k) = disuf_upts(i,j,k);
+					}
+				}
+			}
+			/*! copy back to GPU */
+			disu_upts(in_disu_upts_from).cp_cpu_gpu();
+		}
+
+#endif
+
   }
 }
 
@@ -1652,7 +1890,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 		#endif
 
 		#ifdef _GPU
-		calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, run_input.filter_ratio, run_input.LES, run_input.SGS_model, Lm.get_ptr_gpu(), Hm.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+		calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, run_input.filter_ratio, run_input.LES, run_input.SGS_model, Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
 		#endif	
 
 	}
@@ -1673,40 +1911,34 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 	array<double> drho(n_dims), dene(n_dims), dke(n_dims), de(n_dims);
 	array<double> dmom(n_dims,n_dims), du(n_dims,n_dims), S(n_dims,n_dims);
 
-	for (int i=0;i<n_dims;i++)
+	// Initialize SGS flux array to zero
+	for (int i=0;i<n_fields;i++)
 		for (int j=0;j<n_dims;j++)
 			temp_sgsf(i,j) = 0.0;
 
 	// 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
-	if(run_input.SGS_model==0)
-	{
+	if(run_input.SGS_model==0) {
 		eddy = 1;
 		sim = 0;
 	}
-	else if(run_input.SGS_model==1)
-	{
+	else if(run_input.SGS_model==1) {
 		eddy = 1;
 		sim = 0;
 	}
-	else if(run_input.SGS_model==2)
-	{
+	else if(run_input.SGS_model==2) {
 		eddy = 1;
 		sim = 1;
 	}
-	else if(run_input.SGS_model==3)
-	{
+	else if(run_input.SGS_model==3) {
 		eddy = 0;
 		sim = 0;
 	}
-	else if(run_input.SGS_model==4)
-	{
+	else if(run_input.SGS_model==4) {
 		eddy = 0;
 		sim = 1;
 	}
-	else
-	{
-		cout<<"Warning: SGS model not implemented"<<endl;
-		exit(1);
+	else {
+		FatalError("SGS model not implemented");
 	}
 
 	// Delta is the cutoff length-scale representing local grid resolution.
@@ -1875,146 +2107,33 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		for (int j=0;j<n_dims;j++)
 		{
 			temp_sgsf(0,j) += 0.0; // Density flux
-			temp_sgsf(n_fields-1,j) += run_input.gamma*rho*Hm(ele,upt,j); // Energy flux
-			for (int i=1;i<n_fields-1;i++)
-			{
-				temp_sgsf(i,j) += rho*Lm(ele,upt,i-1,j); // Momentum fluxes
-			}
+			temp_sgsf(n_fields-1,j) += run_input.gamma*rho*Le(upt,ele,j); // Energy flux
 		}
-	//cout<<"WSM flux:"<<endl;
-	//temp_sgsf.print();
+
+		// Momentum fluxes
+		if(n_dims==2) {
+			temp_sgsf(1,0) += rho*Lu(upt,ele,0);
+			temp_sgsf(1,1) += rho*Lu(upt,ele,2);
+			temp_sgsf(2,0) += temp_sgsf(1,1);
+			temp_sgsf(2,1) += rho*Lu(upt,ele,1);
+		}
+		else if(n_dims==3) {
+			temp_sgsf(1,0) += rho*Lu(upt,ele,0);
+			temp_sgsf(1,1) += rho*Lu(upt,ele,3);
+			temp_sgsf(1,2) += rho*Lu(upt,ele,4);
+			temp_sgsf(2,0) += temp_sgsf(1,1);
+			temp_sgsf(2,1) += rho*Lu(upt,ele,1);
+			temp_sgsf(2,2) += rho*Lu(upt,ele,5);
+			temp_sgsf(3,0) += temp_sgsf(1,2);
+			temp_sgsf(3,1) += temp_sgsf(2,2);
+			temp_sgsf(3,2) += rho*Lu(upt,ele,2);
+		}
+
+		//cout<<"Leonard = "<<setprecision(10)<<Lu(upt,ele,0)<<", "<<Lu(upt,ele,1)<<", "<<Lu(upt,ele,2)<<endl;
+
+		//cout<<"sim flux:"<<endl;
+		//temp_sgsf.print();
 	}
-}
-
-// Calculate filtered solution and Leonard terms
-void eles::calc_disuf_upts_ele(int ele, array<double>& in_u, array<double>& out_u)
-{
-	int i,j,k,l,ii;
-	int npts = n_upts_per_ele;
-	int M = n_dims*n_dims;
-	double rho, coeff, diag, sum, rtemp, maxl;
-
-	array<double> r(npts);
-	array<double> ru(npts,n_dims);
-	array<double> re(npts);
- 	array<double> rf(npts);
-	array<double> ruf(npts,n_dims);
-	array<double> ref(npts);
- 	array<double> rff(npts);
-	array<double> ruff(npts,n_dims);
-	array<double> reff(npts);
-	array<double> eu(npts,n_dims);
-	array<double> uu(npts,M);
-	array<double> euf(npts,n_dims);
-	array<double> uuf(npts,M);
-	array<double> temp_uuf(npts,n_dims,n_dims);
-
-	for (i=0;i<npts;i++)
-	{
-		r(i)   = in_u(0,i);
-		re(i) = in_u(n_fields-1,i);
-		rf(i) = 0.0;
-		ref(i) = 0.0;
-		for (j=0;j<n_dims;++j)
-		{
-			ru(i,j) = in_u(j+1,i);
-			re(i) -= 0.5*pow(ru(i,j),2)/r(i);
-			ruf(i,j) = 0.0;
-		}
-	}
-
-	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
- // Filter r, ru and re
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,npts,1,npts,1.0,filter_upts.get_ptr_cpu(),npts,r.get_ptr_cpu(),npts,0.0,rf.get_ptr_cpu(),npts);
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,npts,n_dims,npts,1.0,filter_upts.get_ptr_cpu(),npts,ru.get_ptr_cpu(),npts,0.0,ruf.get_ptr_cpu(),npts);
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,npts,1,npts,1.0,filter_upts.get_ptr_cpu(),npts,re.get_ptr_cpu(),npts,0.0,ref.get_ptr_cpu(),npts);
-
-	// Write to output array if using explicit SVV filtering 'model'
-	if(run_input.SGS_model==3)
-	{
-		for (i=0;i<npts;i++)
-		{
-			out_u(0,i) = rf(i);
-			out_u(n_fields-1,i) = ref(i);
-			for (j=0;j<n_dims;++j)
-			{
-				out_u(j+1,i) = ruf(i,j);
-				out_u(n_fields-1,i) += 0.5*pow(ruf(i,j),2)/rf(i);
-			}
-		}
-	}
-
-	// Tensor products uu and eu needed for similarity model
-	if(run_input.SGS_model==2 || run_input.SGS_model==4)
-	{
-		for (i=0;i<npts;i++)
-		{
-			ii=0;
-			for (j=0;j<n_dims;++j)
-			{
-				for (k=0;k<n_dims;++k)
-				{
-					uu(i,ii) = ru(i,j)*ru(i,k);
-					++ii;
-				}
-				eu(i,j) = re(i)*ru(i,j);
-			}
-		}
-
-		// Filter tensor products uu and eu
-		cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,npts,M,npts,1.0,filter_upts.get_ptr_cpu(),npts,uu.get_ptr_cpu(),npts,0.0,uuf.get_ptr_cpu(),npts);
-		cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,npts,n_dims,npts,1.0,filter_upts.get_ptr_cpu(),npts,eu.get_ptr_cpu(),npts,0.0,euf.get_ptr_cpu(),npts);
-
-		// Reshape arrays
-		for (i=0;i<npts;i++)
-		{
-			ii=0;
-			for (j=0;j<n_dims;++j)
-			{
-				for (k=0;k<n_dims;++k)
-				{
-					temp_uuf(i,j,k) = uuf(i,ii);
-					++ii;
-				}
-			}
-			cout<<"uuf = "<<setprecision(10)<<temp_uuf(i,0,0)<<", "<<temp_uuf(i,0,1)<<", "<<temp_uuf(i,1,0)<<", "<<temp_uuf(i,1,1)<<endl;
-		}
-
-		// Calculate Leonard tensors for similarity model
-		for (i=0;i<npts;++i)
-		{
-			rtemp=rf(i)*rf(i);
-			diag = 0.0;
-			for (j=0;j<n_dims;++j)
-			{
-				for (k=0;k<n_dims;++k)
-				{
-					Lm(ele,i,j,k) = (temp_uuf(i,j,k) - ruf(i,j)*ruf(i,k))/rtemp;
-				}
-					//cout<<"uuf, ruf*ruf/r, Lm:"<<setprecision(15)<<temp_uuf(i,ii)<<", "<<ruf(i,j)*ruf(i,k)/rtemp<<", "<<Lm(i,j,k)<<endl;
-				diag += Lm(ele,i,j,j)/3.0;
-
-				// Energy terms
-				Hm(ele,i,j) = (euf(i,j) - ref(i)*ruf(i,j))/rtemp;
-			}
-
-			// Subtract diag from Lm
-			for (j=0;j<n_dims;++j)
-			{
-				Lm(ele,i,j,j) -= diag;
-				maxl = max(Lm(ele,i,j,k),maxl);
-			}
-			cout<<"Leonard = "<<setprecision(10)<<Lm(ele,i,0,0)<<", "<<Lm(ele,i,0,1)<<", "<<Lm(ele,i,1,0)<<", "<<Lm(ele,i,1,1)<<endl;
-		}
-
-		//cout<<"Lm max: "<<setprecision(6)<<maxl<<endl;
-	}
-
-	#else
-	// slow matrix multiplication
-	#endif
-
 }
 
 // get the type of element
@@ -4437,7 +4556,6 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
 					if (n_dims==3)
 					{
 						S(0,2) = (dudz+dwdx)/2.0;
-						S(1,1) = dvdy;
 						S(1,2) = (dvdz+dwdy)/2.0;
 						S(2,0) = S(0,2);
 						S(2,1) = S(1,2);

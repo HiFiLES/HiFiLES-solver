@@ -56,9 +56,8 @@ void CalcResidual(struct solution* FlowSol) {
   int in_div_tconf_upts_to = 0;     /*!< Define... */
 	int i;                            /*!< Loop iterator */
   
-  /*! If using LES, filter the solution prior to everything else. If using Similarity
-   LES model or explicit SVV filtering as a 'model'. */
-  if(run_input.LES==1) {
+  /*! If using certain LES models, filter the solution prior to everything else. */
+  if(run_input.LES==1 and in_disu_upts_from==0) {
     if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
 		  for(i=0; i<FlowSol->n_ele_types; i++)
 			  FlowSol->mesh_eles(i)->calc_disuf_upts(in_disu_upts_from);
@@ -126,7 +125,11 @@ void CalcResidual(struct solution* FlowSol) {
 	  	  FlowSol->mesh_mpi_inters(i).send_cor_grad_disu_fpts();
     }
 #endif
-    
+
+    // Calculate Leonard tensors before this point if using similarity LES model
+
+		// Create separate function to calculate SGS flux?
+
     /*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
 		for(i=0; i<FlowSol->n_ele_types; i++)
 			FlowSol->mesh_eles(i)->calc_tdisvisf_upts(in_disu_upts_from);

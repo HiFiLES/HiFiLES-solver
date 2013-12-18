@@ -344,9 +344,6 @@ class eles
 	/*! Calculate SGS flux */
 	void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf);
 
-	/*! Filter state variables and calculate Leonard tensor in an element */
-	void calc_disuf_upts_ele(int ele, array<double>& in_u, array<double>& out_u);
-
 	/*! Calculate element volume */
 	virtual double calc_ele_vol(double& detjac)=0;
 
@@ -519,11 +516,13 @@ class eles
 	/*! Matrix of filter weights at solution points */
 	array<double> filter_upts;
 
-	/* Leonard tensors for WSM model */
-	array<double> Lm, Hm;
+	/* extra arrays for similarity model: Leonard tensors, velocity/energy products */
+	array<double> Lu, Le, uu, ue;
 
 	/*! temporary flux storage */
 	array<double> temp_f;
+
+	/*! temporary subgrid-scale flux storage */
 	array<double> temp_sgsf;
 	
 	/*! number of storage levels for time-integration scheme */
@@ -567,6 +566,11 @@ class eles
 	matrix mapping:
 	*/
 	array< array<double> > disu_upts;
+
+	/*!
+	filtered solution at solution points for similarity and SVV LES models
+	*/
+	array<double> disuf_upts;
 
 	/*!
 	plot data at plot points

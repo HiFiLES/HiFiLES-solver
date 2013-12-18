@@ -107,11 +107,13 @@ int main(int argc, char *argv[]) {
     write_force << "new run" << endl;
     write_force.close();
     
-    write_stats.open("statfile.dat");
-    write_stats << "time ";
-    for(j=0; j<run_input.n_diagnostics; ++j) { write_stats << run_input.diagnostics(j) << " "; }
-    write_stats << endl;
-    write_stats.close();
+	  if(run_input.diagnostics_freq!=0 and run_input.n_diagnostics != 0) {
+	    write_stats.open("statfile.dat");
+  	  write_stats << "time ";
+  	  for(j=0; j<run_input.n_diagnostics; ++j) { write_stats << run_input.diagnostics(j) << " "; }
+  	  write_stats << endl;
+  	  write_stats.close();
+		}
   }
   
   /*! Dump initial Paraview or tecplot file. */
@@ -120,7 +122,7 @@ int main(int argc, char *argv[]) {
   else FatalError("ERROR: Trying to write unrecognized file format ... ");
   
   /*! Compute diagnostics at t=0. */
-  if(run_input.diagnostics_freq) {
+  if(run_input.diagnostics_freq!=0 and run_input.n_diagnostics != 0) {
     CalcDiagnostics(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
   }
   
@@ -188,12 +190,11 @@ int main(int argc, char *argv[]) {
       if (FlowSol.rank == 0) cout << endl;
     
     /*! Dump diagnostics. */
-    if (i_steps%run_input.diagnostics_freq == 0) {
-      CalcDiagnostics(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
-    }
-    
-    if (i_steps%run_input.diagnostics_freq == 0)
-      if (FlowSol.rank == 0) cout << endl;
+	  if(run_input.diagnostics_freq!=0) {
+	    if (i_steps%run_input.diagnostics_freq == 0) {
+  	    CalcDiagnostics(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
+  	  }
+  	}
     
     /*! Dump Paraview or Tecplot file. */
     if(i_steps%FlowSol.plot_freq == 0) {
