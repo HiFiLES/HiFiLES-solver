@@ -1004,7 +1004,7 @@ output: Mesh_<in_file_num>/Mesh_<in_file_num>_<rank>.vtu			(parallel) data file 
 output: Mesh_<in_file_num>.pvtu																(parallel) file stitching together all .vtu files (written by master node)
 */
 
-void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
+void write_vtu(int in_file_num, struct solution* FlowSol)
 {
 	int i,j,k,l,m,count;
 	/*! Current rank */

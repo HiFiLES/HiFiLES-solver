@@ -59,8 +59,9 @@ void CalcResidual(struct solution* FlowSol) {
   /*! If using certain LES models, filter the solution prior to everything else. */
   if(run_input.LES==1 and in_disu_upts_from==0) {
     if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
-		  for(i=0; i<FlowSol->n_ele_types; i++)
-			  FlowSol->mesh_eles(i)->calc_disuf_upts(in_disu_upts_from);
+		  for(i=0; i<FlowSol->n_ele_types; i++) {
+				FlowSol->mesh_eles(i)->calc_disuf_upts(in_disu_upts_from);
+			}
 		}
   }
   

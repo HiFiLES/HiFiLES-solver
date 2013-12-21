@@ -20,9 +20,9 @@ using namespace std;
 #include "../include/error.h"
 #include "../include/util.h"
 
-#include "cuda.h"
-#include "cuda_runtime_api.h"
-#include "cublas.h"
+#ifdef _MPI
+#include "mpi.h"
+#endif
 
 //Key
 
@@ -3334,10 +3334,8 @@ void calc_norm_tconvisf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int
 
 void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_ptr, int* opp_ell_indices_ptr, int nnz_per_row, double* b_ptr, double *c_ptr, int cell_type, int order, int add_flag)
 {
-	// function call:
-	//bespoke_SPMV(n_fpts_per_ele, n_upts_per_ele, n_fields, n_eles, opp_0_ell_data.get_ptr_gpu(), opp_0_ell_indices.get_ptr_gpu(), opp_0_nnz_per_row, disu_upts(in_disu_upts_from).get_ptr_gpu(), disu_fpts.get_ptr_gpu(), ele_type, order, 0);
 
-  int eles_per_block=2; // allows up to 128 DOFs per element?
+  int eles_per_block=2; // allows up to 128 DOFs per element
   int grid_size = (n_eles-1)/(eles_per_block)+1; 
   int block_size = eles_per_block*m;
   int shared_mem = n*eles_per_block*n_fields;
