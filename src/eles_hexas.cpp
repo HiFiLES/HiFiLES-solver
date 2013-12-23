@@ -347,34 +347,33 @@ void eles_hexas::create_map_ppt(void)
 void eles_hexas::set_connectivity_plot()
 {
   int vertex_0,vertex_1,vertex_2,vertex_3,vertex_4,vertex_5,vertex_6,vertex_7;
-  int count=0;
-	int j,k,l,m;
+	int count=0;
+	int k,l,m;
+
   for(k=0;k<p_res-1;++k){
     for(l=0;l<p_res-1;++l){
       for(m=0;m<p_res-1;++m){
-
         vertex_0=m+(p_res*l)+(p_res*p_res*k);
         vertex_1=vertex_0+1;
         vertex_2=vertex_0+p_res+1;
         vertex_3=vertex_0+p_res;
-
         vertex_4=vertex_0+p_res*p_res;
         vertex_5=vertex_4+1;
         vertex_6=vertex_4+p_res+1;
         vertex_7=vertex_4+p_res;
 
-        connectivity_plot(0) = vertex_0;
-        connectivity_plot(1) = vertex_1;
-        connectivity_plot(2) = vertex_2;
-        connectivity_plot(3) = vertex_3;
-        connectivity_plot(4) = vertex_4;
-        connectivity_plot(5) = vertex_5;
-        connectivity_plot(6) = vertex_6;
-        connectivity_plot(7) = vertex_7;
-        count++;
+        connectivity_plot(0,count) = vertex_0;
+        connectivity_plot(1,count) = vertex_1;
+        connectivity_plot(2,count) = vertex_2;
+        connectivity_plot(3,count) = vertex_3;
+        connectivity_plot(4,count) = vertex_4;
+        connectivity_plot(5,count) = vertex_5;
+        connectivity_plot(6,count) = vertex_6;
+        connectivity_plot(7,count) = vertex_7;
+				count++;
       }
     }
-  }	
+  }
 }
 
 
