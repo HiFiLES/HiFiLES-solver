@@ -1077,6 +1077,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 	sprintf(pvtu_s,"Mesh_%.09d.pvtu",in_file_num,0);
 #else
 	/*! Only write a vtu file in serial */
+	sprintf(dumpnum_s,"Mesh_%.09d",in_file_num,0);
 	sprintf(vtu_s,"Mesh_%.09d.vtu",in_file_num,0);
 #endif
 
