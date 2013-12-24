@@ -256,10 +256,10 @@ void eles_quads::set_connectivity_plot()
       vertex_2=vertex_0+p_res+1;
       vertex_3=vertex_0+p_res;
   
-      connectivity_plot(0) = vertex_0;
-      connectivity_plot(1) = vertex_1;
-      connectivity_plot(2) = vertex_2;
-      connectivity_plot(3) = vertex_3;
+      connectivity_plot(0,count) = vertex_0;
+      connectivity_plot(1,count) = vertex_1;
+      connectivity_plot(2,count) = vertex_2;
+      connectivity_plot(3,count) = vertex_3;
       count++;
     }
   }
