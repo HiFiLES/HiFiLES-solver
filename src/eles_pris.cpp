@@ -325,14 +325,14 @@ void eles_pris::set_connectivity_plot()
         vertex_4 = vertex_1 + temp;
         vertex_5 = vertex_2 + temp;
 
-        connectivity_plot(0) = vertex_0;
-        connectivity_plot(1) = vertex_1;
-        connectivity_plot(2) = vertex_2;
-        connectivity_plot(3) = vertex_2;
-        connectivity_plot(4) = vertex_3;
-        connectivity_plot(5) = vertex_4;
-        connectivity_plot(6) = vertex_5;
-        connectivity_plot(7) = vertex_5;
+        connectivity_plot(0,count) = vertex_0;
+        connectivity_plot(1,count) = vertex_1;
+        connectivity_plot(2,count) = vertex_2;
+        connectivity_plot(3,count) = vertex_2;
+        connectivity_plot(4,count) = vertex_3;
+        connectivity_plot(5,count) = vertex_4;
+        connectivity_plot(6,count) = vertex_5;
+        connectivity_plot(7,count) = vertex_5;
         count++;
       }
     }
@@ -349,14 +349,14 @@ void eles_pris::set_connectivity_plot()
         vertex_4 = vertex_1 + temp;
         vertex_5 = vertex_2 + temp;
 
-        connectivity_plot(0) = vertex_0;
-        connectivity_plot(1) = vertex_1;
-        connectivity_plot(2) = vertex_2;
-        connectivity_plot(3) = vertex_2;
-        connectivity_plot(4) = vertex_3;
-        connectivity_plot(5) = vertex_4;
-        connectivity_plot(6) = vertex_5;
-        connectivity_plot(7) = vertex_5;
+        connectivity_plot(0,count) = vertex_0;
+        connectivity_plot(1,count) = vertex_1;
+        connectivity_plot(2,count) = vertex_2;
+        connectivity_plot(3,count) = vertex_2;
+        connectivity_plot(4,count) = vertex_3;
+        connectivity_plot(5,count) = vertex_4;
+        connectivity_plot(6,count) = vertex_5;
+        connectivity_plot(7,count) = vertex_5;
         count++;
       }
     }	
