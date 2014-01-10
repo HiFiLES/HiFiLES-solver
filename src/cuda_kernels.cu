@@ -116,394 +116,342 @@ __global__ void bespoke_SPMV_kernel(double *g_c, double *g_b, double *g_cont_mat
 template<int n_dims, int n_fields> 
 __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, double* u_r, double* norm, double* loc, double *bdy_params, double gamma, double R_ref, double time_bound, int equation)
 {
+  double rho_l, rho_r;
+  double v_l[3], v_r[3];
+  double e_l, e_r;
   double p_l, p_r;
-  double T_l, T_r;
-  double v_sq,vn_l;
+  double T_r;
+  double vn_l;
+  double v_sq;
   double rho_bound = bdy_params[0];
   double* v_bound = &bdy_params[1];
   double p_bound = bdy_params[4];
   double* v_wall = &bdy_params[5];
   double T_wall = bdy_params[8];
 
-  double x,y,z;
-
-  x = loc[0];
-  y = loc[1];
-
-  if(n_dims==3)
-    z = loc[2];
-
-  //printf("x = %6.10f\n",x);
-  //printf("y = %6.10f\n",y);
-
-  if(equation==0) //Navier-Stokes BC's
+  // Navier-Stokes Boundary Conditions
+  if(equation==0)
   {
+    // Store primitive variables for clarity
+    rho_l = u_l[0];
+    for (int i=0; i<n_dims; i++)
+      v_l[i] = u_l[i+1]/u_l[0];
+    e_l = u_l[n_dims+1];
+
     // Compute pressure on left side
     v_sq = 0.;
-    for (int i=0;i<n_dims;i++)
-      v_sq += (u_l[i+1]*u_l[i+1]);
-	  p_l   = (gamma-1.0)*( u_l[n_dims+1] - 0.5*v_sq/u_l[0]);
+    for (int i=0; i<n_dims; i++)
+      v_sq += (v_l[i]*v_l[i]);
+    p_l = (gamma-1.0)*(e_l - 0.5*rho_l*v_sq);
 
-    // Compute normal velocity on left side
-    vn_l = 0.;
-    for (int i=0;i<n_dims;i++)
-      vn_l += u_l[i+1]*norm[i];
-    vn_l /= u_l[0];
-
-	  if(bdy_type == 1)
-	  // subsonic inflow simple (free pressure)
-	  {
-	  	// fix density and velocity
-	  	u_r[0] =  rho_bound;
-      for (int i=0;i<n_dims;i++)
-        u_r[i+1] = v_bound[i];
-
-	  	// extrapolate pressure
-	  	p_r   = p_l; 
-
-	  	// compute energy
-      v_sq = 0.;
-      for (int i=0;i<n_dims;i++)
-        v_sq += (u_r[i+1]*u_r[i+1]);
-	    u_r[n_dims+1] = (p_r/(gamma-1.0)) + 0.5*v_sq/u_r[0];
-	  } 
-
-	  // subsonic outflow simple (fixed pressure)
-	  else if(bdy_type == 2)
-	  {
-	  	// extrapolate density and velocity
-	  	u_r[0]    = u_l[0];
-      for (int i=0;i<n_dims;i++)
-        u_r[i+1] = u_l[i+1];
-
-	  	// fix pressure
-	  	p_r = p_bound;
-
-	  	// compute energy
-      v_sq = 0.;
-      for (int i=0;i<n_dims;i++)
-        v_sq += (u_r[i+1]*u_r[i+1]);
-	    u_r[n_dims+1] = (p_r/(gamma-1.0)) + 0.5*v_sq/u_r[0];
-	  
-	  }
-
-	  // subsonic inflow characteristic
-	  else if(bdy_type == 3)
-	  {
-	  	// TODO: Implement characteristic subsonic inflow BC
-	  	printf("subsonic inflow char not implemented in 3d");
-	  }
-	  //subsonic outflow characteristic
-	  else if(bdy_type == 4)
-	  {
-	  	printf("subsonic outflow char not implemented in 3d");
-	  }
-
-	  // supersonic inflow
-	  else if(bdy_type == 5)
-	  {
-	  	// fix density and velocity
-	  	u_r[0] =  rho_bound;
-      for (int i=0;i<n_dims;i++)
-        u_r[i+1] = v_bound[i];
-
-	  	// fix pressure
-	  	p_r = p_bound;	
-
-	  	// compute energy
-      v_sq = 0.;
-      for (int i=0;i<n_dims;i++)
-        v_sq += (u_r[i+1]*u_r[i+1]);
-	    u_r[n_dims+1] = (p_r/(gamma-1.0)) + 0.5*v_sq/u_r[0];
-
-
-	  }
-
-	  // supersonic outflow
-	  else if(bdy_type == 6)
-	  {
-	  	// extrapolate density, velocity
-	  	u_r[0] = u_l[0];
-      for (int i=0;i<n_dims;i++)
-        u_r[i+1] = u_l[i+1];
-
-	  	// pressure and energy
-      u_r[n_dims+1]=u_l[n_dims+1];
-	  }
-
-	  // slip wall
-	  else if(bdy_type == 7)
-	  {
-	  	// extrapolate density
-	  	u_r[0] = u_l[0];
-
-	  	// reflect normal momentum
-      for (int i=0;i<n_dims;i++)
-	  	  u_r[i+1] = u_l[i+1]-2.0*vn_l*u_l[0]*norm[i];
-
-	  	// extrapolate energy
-	  	u_r[n_dims+1] = u_l[n_dims+1];
-	  }
-	  
-    // isothermal, no-slip wall (fixed)
-    else if(bdy_type == 11)
-	  {
-	  	// extrapolate pressure
-	  	p_r = p_l; 
-      //p_r = p_bound; //HACK
-
-      // isothermal temperature
-      T_r = T_wall;
-      //T_l = p_l/(u_l[0]*R_ref);
-
-      // density
-      u_r[0] = p_r/(R_ref*T_r);
-      
-      // no-slip
-      for (int i=0;i<n_dims;i++)
-        u_r[i+1] = 0.;
-
-	  	// energy
-      v_sq = 0.;
-      for (int i=0;i<n_dims;i++)
-        v_sq += (u_r[i+1]*u_r[i+1]);
-	    u_r[n_dims+1] = (p_r/(gamma-1.0)) + 0.5*v_sq/u_r[0];
-	  } 
-
-    // adiabatic, no-slip wall (fixed)
-    else if(bdy_type == 12)
+    // Subsonic inflow simple (free pressure)
+    if(bdy_type == 1)
     {
-      // extrapolate density    
-      u_r[0] = u_l[0];
-
-      // extrapolate pressure
-	  	p_r = p_l; 
+      // fix density and velocity
+      rho_r = rho_bound;
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = v_bound[i];
       
-      // no-slip
-      for (int i=0;i<n_dims;i++)
-        u_r[i+1] = 0.;
-	  	
-      // energy
+      // extrapolate pressure
+      p_r = p_l;
+
+      // compute energy
       v_sq = 0.;
-      for (int i=0;i<n_dims;i++)
-        v_sq += (u_r[i+1]*u_r[i+1]);
-	    u_r[n_dims+1] = (p_r/(gamma-1.0)) + 0.5*v_sq/u_r[0];
+      for (int i=0; i<n_dims; i++)
+        v_sq += (v_r[i]*v_r[i]);
+      e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+    }
+    
+    // Subsonic outflow simple (fixed pressure)
+    else if(bdy_type == 2)
+    {
+      // extrapolate density and velocity
+      rho_r = rho_l;
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = v_l[i];
+      
+      // fix pressure
+      p_r = p_bound;
+      
+      // compute energy
+      v_sq = 0.;
+      for (int i=0; i<n_dims; i++)
+        v_sq += (v_r[i]*v_r[i]);
+      e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+    }
+    
+    // Subsonic inflow characteristic
+    else if(bdy_type == 3)
+    {
+      // TODO: Implement characteristic subsonic inflow BC
+      printf("subsonic inflow char not implemented in 3d");
+    }
+    // Subsonic outflow characteristic
+    else if(bdy_type == 4)
+    {
+      printf("subsonic outflow char not implemented in 3d");
+    }
+    
+    // Supersonic inflow
+    else if(bdy_type == 5)
+    {
+      // fix density and velocity
+      rho_r = rho_bound;
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = v_bound[i];
+
+      // fix pressure
+      p_r = p_bound;
+      
+      // compute energy
+      v_sq = 0.;
+      for (int i=0; i<n_dims; i++)
+        v_sq += (v_r[i]*v_r[i]);
+      e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
     }
 
-    // isothermal, no-slip wall (moving)
+    // Supersonic outflow
+    else if(bdy_type == 6)
+    {
+      // extrapolate density, velocity, energy
+      rho_r = rho_l;
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = v_l[i];
+      e_r = e_l;
+    }
+
+    // Slip wall
+    else if(bdy_type == 7)
+    {
+      // extrapolate density
+      rho_r = rho_l;
+
+      // Compute normal velocity on left side
+      vn_l = 0.;
+      for (int i=0; i<n_dims; i++)
+        vn_l += v_l[i]*norm[i];
+
+      // reflect normal velocity
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = v_l[i] - 2.0*vn_l*norm[i];
+      
+      // extrapolate energy
+      e_r = e_l;
+    }
+
+    // Isothermal, no-slip wall (fixed)
+    else if(bdy_type == 11)
+    {
+      // extrapolate pressure
+      p_r = p_l;
+      
+      // isothermal temperature
+      T_r = T_wall;
+      
+      // density
+      rho_r = p_r/(R_ref*T_r);
+      
+      // no-slip
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = 0.;
+      
+      // energy
+      v_sq = 0.;
+      for (int i=0; i<n_dims; i++)
+        v_sq += (v_r[i]*v_r[i]);
+      e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+    }
+    
+    // Adiabatic, no-slip wall (fixed)
+    else if(bdy_type == 12)
+    {
+      // extrapolate density
+      rho_r = rho_l;
+      
+      // extrapolate pressure
+      p_r = p_l;
+      
+      // no-slip
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = 0.;
+      
+      // energy
+      v_sq = 0.;
+      for (int i=0; i<n_dims; i++)
+        v_sq += (v_r[i]*v_r[i]);
+      e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+    }
+    
+    // Isothermal, no-slip wall (moving)
     else if(bdy_type == 13)
     {
       // extrapolate pressure
-	  	p_r = p_l; 
-      //p_r = p_bound; //HACK
+      p_r = p_l;
       
       // isothermal temperature
       T_r = T_wall;
-      //T_l = p_l/(u_l[0]*R_ref);
-
+      
       // density
-      u_r[0] = p_r/(R_ref*T_r);
+      rho_r = p_r/(R_ref*T_r);
       
       // no-slip
-      for (int i=0;i<n_dims;i++)
-        u_r[i+1] = u_r[0]*v_wall[i];
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = v_wall[i];
       
-	  	// energy
-      v_sq = 0.;
-      for (int i=0;i<n_dims;i++)
-        v_sq += (u_r[i+1]*u_r[i+1]);
-	    u_r[n_dims+1] = (p_r/(gamma-1.0)) + 0.5*v_sq/u_r[0];
-    }
-
-    // adiabatic, no-slip wall (moving)
-    else if(bdy_type == 14)
-    {
-      // extrapolate density    
-      u_r[0] = u_l[0];
-
-      // extrapolate pressure
-	  	p_r = p_l; 
-      
-      // no-slip
-      for (int i=0;i<n_dims;i++)
-        u_r[i+1] = u_r[0]*v_wall[i];
-	  	
       // energy
       v_sq = 0.;
-      for (int i=0;i<n_dims;i++)
-        v_sq += (u_r[i+1]*u_r[i+1]);
-	    u_r[n_dims+1] = (p_r/(gamma-1.0)) + 0.5*v_sq/u_r[0];
+      for (int i=0; i<n_dims; i++)
+        v_sq += (v_r[i]*v_r[i]);
+      e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+    }
+    
+    // Adiabatic, no-slip wall (moving)
+    else if(bdy_type == 14)
+    {
+      // extrapolate density
+      rho_r = rho_l;
+      
+      // extrapolate pressure
+      p_r = p_l;
+      
+      // no-slip
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = v_wall[i];
+      
+      // energy
+      v_sq = 0.;
+      for (int i=0; i<n_dims; i++)
+        v_sq += (v_r[i]*v_r[i]);
+      e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
     }
 
-	  else if (bdy_type == 15) // Characteristic
-	  {
-	  	double c_star;
-	  	double vn_star;
+    // Characteristic
+    else if (bdy_type == 15)
+    {
+      double c_star;
+      double vn_star;
       double vn_bound;
       double vt_star;
-	  	double r_plus,r_minus;
-	  	
-	  	double one_over_s;
-	  	double h_free_stream;
+      double r_plus,r_minus;
+      
+      double one_over_s;
+      double h_free_stream;
+      
+      // Compute normal velocity on left side
+      vn_l = 0.;
+      for (int i=0; i<n_dims; i++)
+        vn_l += v_l[i]*norm[i];
 
       vn_bound = 0;
-      for (int i=0;i<n_dims;i++)
+      for (int i=0; i<n_dims; i++)
         vn_bound += v_bound[i]*norm[i];
-
-	  	r_plus  = vn_l + 2./(gamma-1.)*sqrt(gamma*p_l/u_l[0]);
-	  	r_minus = vn_bound - 2./(gamma-1.)*sqrt(gamma*p_bound/rho_bound);
-
-	  	c_star = 0.25*(gamma-1.)*(r_plus-r_minus);
-	  	vn_star = 0.5*(r_plus+r_minus);
- 
-	  	//Works only for 2D and quasi-2D
-
-	  	if (vn_l<0) // Inflow
-	  	{
-	  		vt_star = (v_bound[0]*norm[1] - v_bound[1]*norm[0]); 
-	  		//assumes quasi-2D boundary i.e. norm[2] == 0;
-
+      
+      r_plus  = vn_l + 2./(gamma-1.)*sqrt(gamma*p_l/rho_l);
+      r_minus = vn_bound - 2./(gamma-1.)*sqrt(gamma*p_bound/rho_bound);
+      
+      c_star = 0.25*(gamma-1.)*(r_plus-r_minus);
+      vn_star = 0.5*(r_plus+r_minus);
+      
+      // Works only for 2D and quasi-2D
+      // Inflow
+      if (vn_l<0)
+      {
+        // assumes quasi-2D boundary i.e. norm[2] == 0;
+        vt_star = (v_bound[0]*norm[1] - v_bound[1]*norm[0]);
+        
         // HACK
-	  		one_over_s = pow(rho_bound,gamma)/p_bound;
-
-	  		// freestream total enthalpy
+        one_over_s = pow(rho_bound,gamma)/p_bound;
+        
+        // freestream total enthalpy
         v_sq = 0.;
         for (int i=0;i<n_dims;i++)
           v_sq += v_bound[i]*v_bound[i];
+        h_free_stream = gamma/(gamma-1.)*p_bound/rho_bound + 0.5*v_sq;
 
-	  		h_free_stream = gamma/(gamma-1.)*p_bound/rho_bound+ 0.5*v_sq;
-	  		u_r[0] = pow(1./gamma*(one_over_s*c_star*c_star),1./(gamma-1.));
+        rho_r = pow(1./gamma*(one_over_s*c_star*c_star),1./(gamma-1.));
+        v_r[0] = (norm[0]*vn_star + norm[1]*vt_star);
+        v_r[1] = (norm[1]*vn_star - norm[0]*vt_star);
+        
+        // no cross-flow
+        if(n_dims==3)
+        {
+          v_r[2] = 0.0;
+        }
+        
+        p_r = rho_r/gamma*c_star*c_star;
+        e_r = rho_r*h_free_stream - p_r;
+      }
 
-      	u_r[1] = u_r[0]*(norm[0]*vn_star + norm[1]*vt_star);
-        u_r[2] = u_r[0]*(norm[1]*vn_star - norm[0]*vt_star);
-	  		
-	  		if(n_dims==3)
-	  		{
-	  			u_r[3] = 0.0; //no cross-flow
-	  		}
-
-	  		p_r = u_r[0]/gamma*c_star*c_star;
-	  		u_r[n_dims+1] = u_r[0]*h_free_stream - p_r;
-	  	}
-	  	else  // Outflow
-	  	{
-	  		vt_star = (u_l[1]*norm[1] - u_l[2]*norm[0])/u_l[0];
-
-	  		one_over_s = pow( u_l[0], gamma)/p_l;				
-
-	  		// freestream total enthalpy
-	  		u_r[0] = pow( (1./gamma*(one_over_s*c_star*c_star)) , (1./(gamma-1.)));
-
-        u_r[1] = u_r[0]*(norm[0]*vn_star + norm[1]*vt_star);
-        u_r[2] = u_r[0]*(norm[1]*vn_star - norm[0]*vt_star);
-
-	  		// no cross-flow
-	  		if(n_dims==3)
-	  		{
-	  			u_r[3] = 0.0;	
-	  		}
-
-	  		p_r = u_r[0]/gamma*c_star*c_star;
+      // Outflow
+      else
+      {
+        vt_star = (v_l[0]*norm[1] - v_l[1]*norm[0]);
+        
+        one_over_s = pow(rho_l,gamma)/p_l;
+        
+        // freestream total enthalpy
+        rho_r = pow(1./gamma*(one_over_s*c_star*c_star), 1./(gamma-1.));
+        v_r[0] = (norm[0]*vn_star + norm[1]*vt_star);
+        v_r[1] = (norm[1]*vn_star - norm[0]*vt_star);
+        
+        // no cross-flow
+        if(n_dims==3)
+        {
+          v_r[2] = 0.0;
+        }
+        
+        p_r = rho_r/gamma*c_star*c_star;
         v_sq = 0.;
-        for (int i=0;i<n_dims;i++)
-          v_sq += u_r[i+1]*u_r[i+1];
-
-	  		u_r[n_dims+1] = (p_r/(gamma-1.0)) + 0.5*v_sq/u_r[0];;
-	  	}
-
-	  }
-    else if (bdy_type==16) // Dual consistent BC
-    {
-
-
-      // "DUAL-CONSISTENT" WALL BC
-
-      u_r[0]   = u_l[0];
-      u_r[1]  = (1-norm[0]*norm[0])*u_l[1] - norm[0]*norm[1]*u_l[2];
-      u_r[2]  = (1-norm[1]*norm[1])*u_l[2] - norm[0]*norm[1]*u_l[1];
-      u_r[3]  = u_l[3];
-
-
+        for (int i=0; i<n_dims; i++)
+          v_sq += (v_r[i]*v_r[i]);
+        e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+      }  
     }
-	  else if (bdy_type == 17) // Characteristic Lala
-	  {
 
-      if (n_dims==3)
-        printf("Char BDY does not work in 3D");
+    // Dual consistent BC (see SD++ for more comments)
+    else if (bdy_type==16)
+    {
+      // extrapolate density
+      rho_r = rho_l;
 
-      double RHOL,UL,VL,PL,VNL,VTL,CL,SL;
-      double VNI,VTI,CI,SI,RM,RP,VNB,VTB,SB,CB,RHOB,UB,VB,PB;
+      // Compute normal velocity on left side
+      vn_l = 0.;
+      for (int i=0; i<n_dims; i++)
+        vn_l += v_l[i]*norm[i];
 
-      RHOL  = u_l[0];
-      UL    = u_l[1]/RHOL;
-      VL    = u_l[2]/RHOL;
-      PL    = (gamma-1) * (u_l[3]-0.5*RHOL*(UL*UL+VL*VL));
-      VNL   = UL*norm[0] + VL*norm[1];
-      VTL   = VL*norm[0] - UL*norm[1];
-      CL    = sqrt(gamma*PL/RHOL);
-      SL    = PL/pow(RHOL,gamma);
+      // set u = u - (vn_l)nx
+      // set v = v - (vn_l)ny
+      // set w = w - (vn_l)nz
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = v_l[i] - vn_l*norm[i];
 
-      //printf("v_bound= %f %f, v_l = %f %f\n",v_bound[0],v_bound[1],UL,VL);
-      //printf("p_bound= %f,  p_l = %f\n",p_bound,PL);
-      //printf("rho_bound= %f,  rho_l = %f\n",rho_bound,RHOL);
+      // extrapolate energy
+      e_r = e_l;
+    }
 
-      // FLOW PROPERTIES IN THE FARFIELD
-      VNI   = v_bound[0]*norm[0] + v_bound[1]*norm[1];
-      VTI   = v_bound[1]*norm[0] - v_bound[0]*norm[1];
-      CI    = sqrt(gamma*p_bound/rho_bound);
-      SI    = p_bound/pow(rho_bound,gamma);
+    // Boundary condition not implemented yet
+    else
+    {
+      printf("bdy_type=%d\n",bdy_type);
+      printf("Boundary conditions yet to be implemented");
+    }
 
-      // CALCULATE THE RIEMANN INVARIANT
-      RM    = VNI - 2./(gamma-1.)*CI;
-      RP    = VNL + 2./(gamma-1.)*CL;
-      VNB   = (RP + RM)/2.;
-
-      //printf("norm= %f %f, vnb=%f \n",norm[0],norm[1],VNB);
-
-      if( VNB <0 ) { // INFLOW
-         VTB      = VTI;
-         SB       = SI;
-      }
-      else {// OUTFLOW
-         VTB      = VTL;
-         SB       = SL;
-      }
-
-      CB    = 0.25*(gamma-1.)*(RP - RM);
-
-      RHOB = pow(CB*CB/(gamma*SB),1./(gamma-1.));
-      PB    = SB*pow(RHOB,gamma);
-      UB    = norm[0]*VNB - norm[1]*VTB;
-      VB    = norm[1]*VNB + norm[0]*VTB;
-
-      u_r[0] = RHOB;
-      u_r[1] = RHOB*UB;
-      u_r[2] = RHOB*VB;
-      u_r[3] = PB/(gamma-1.) + 0.5*RHOB*(UB*UB + VB*VB);
-
-	  }  
-
-
-
-
-
-	  else
-	  {
-	  	// Boundary condition not implemented yet
-	  	printf("bdy_type=%d\n",bdy_type);
-	  	printf("Boundary conditions yet to be implemented");
-	  }
+    // Conservative variables on right side
+    u_r[0] = rho_r;
+    for (int i=0; i<n_dims; i++)
+      u_r[i+1] = rho_r*v_r[i];
+    u_r[n_dims+1] = e_r;
   }
 
-
-  if(equation==1) //Advection/Advection-Diffusion BC's
+  // Advection, Advection-Diffusion Boundary Conditions
+  if(equation==1)
   {
-    if(bdy_type==50) //Trivial dirichlet
+    // Trivial Dirichlet
+    if(bdy_type==50)
     {
       u_r[0]=0.0; 
     }
   }
-
 }
 
 
