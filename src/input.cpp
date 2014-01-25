@@ -643,6 +643,8 @@ void input::setup(ifstream& in_run_input_file, int rank)
       v_bound(1) = v_free_stream/uvw_ref;
       v_bound(2) = w_free_stream/uvw_ref;
       p_bound = p_free_stream/p_ref;
+      T_total_bound = (T_free_stream/T_ref)*(1.0 + 0.5*(gamma-1.0)*Mach_free_stream*Mach_free_stream);
+      p_total_bound = p_bound*pow(1.0 + 0.5*(gamma-1.0)*Mach_free_stream*Mach_free_stream, gamma/(gamma-1.0));
 
       uvw_wall  = Mach_wall*sqrt(gamma*R_gas*T_wall);
       v_wall(0) = (uvw_wall*nx_wall)/uvw_ref;

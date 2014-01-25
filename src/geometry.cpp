@@ -107,11 +107,7 @@ int get_bc_number(string& bcname) {
 	else if (!bcname.compare("Adiabat_Move")) bcflag = 14;
 	else if (!bcname.compare("Char")) bcflag = 15;
 	else if (!bcname.compare("Slip_Wall_Dual")) bcflag = 16;
-	else if (!bcname.compare("Char_lala")) bcflag = 17;
 	else if (!bcname.compare("AD_Wall")) bcflag = 50;
-	else if (!bcname.compare("Bdy1")) bcflag = 100;
-	else if (!bcname.compare("Bdy2")) bcflag = 200;
-	else if (!bcname.compare("Bdy3")) bcflag = 300;
 	else
   {
     cout << "Boundary=" << bcname << endl;

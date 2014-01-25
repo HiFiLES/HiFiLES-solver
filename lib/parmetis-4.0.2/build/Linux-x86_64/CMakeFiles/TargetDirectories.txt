@@ -1,6 +1,0 @@
-/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis/CMakeFiles/metis.dir
-/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs/CMakeFiles/mtest.dir
-/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis/CMakeFiles/parmetis.dir
-/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs/CMakeFiles/parmetis_prog.dir
-/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs/CMakeFiles/pometis.dir
-/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/build/Linux-x86_64/programs/CMakeFiles/ptest.dir

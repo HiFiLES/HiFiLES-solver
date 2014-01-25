@@ -102,6 +102,8 @@ class input
   double rho_bound;
   array<double> v_bound;
   double p_bound;
+  double p_total_bound;
+  double T_total_bound;
 
   int mesh_format;
   string mesh_file;

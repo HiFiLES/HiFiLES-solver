@@ -117,7 +117,7 @@ template<int n_dims, int n_fields>
 __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, double* u_r, double* norm, double* loc, double *bdy_params, double gamma, double R_ref, double time_bound, int equation)
 {
   double rho_l, rho_r;
-  double v_l[3], v_r[3];
+  double v_l[n_dims], v_r[n_dims];
   double e_l, e_r;
   double p_l, p_r;
   double T_r;
@@ -181,15 +181,135 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
     }
     
     // Subsonic inflow characteristic
+      // there is one outgoing characteristic (u-c), therefore we can specify 
+      // all but one state variable at the inlet. The outgoing Riemann invariant 
+      // provides the final piece of info. Adapted from an implementation in
+      // SU2.
     else if(bdy_type == 3)
     {
-      // TODO: Implement characteristic subsonic inflow BC
-      printf("subsonic inflow char not implemented in 3d");
+      double V_r;
+      double c_l, c_r_sq, c_total_sq;
+      double R_plus, h_total;
+      double aa, bb, cc, dd;
+      double Mach_sq, alpha;
+
+      // Specify Inlet conditions
+      double p_total_bound = bdy_params[9];
+      double T_total_bound = bdy_params[10];
+      double *n_free_stream = &bdy_params[11];
+
+      // Compute normal velocity on left side
+      vn_l = 0.;
+      for (int i=0; i<n_dims; i++)
+        vn_l += v_l[i]*norm[i];
+
+      // Compute speed of sound
+      c_l = sqrt(gamma*p_l/rho_l);
+
+      // Extrapolate Riemann invariant
+      R_plus = vn_l + 2.0*c_l/(gamma-1.0);
+      
+      // Specify total enthalpy
+      h_total = gamma*R_ref/(gamma-1.0)*T_total_bound;
+
+      // Compute total speed of sound squared
+      v_sq = 0.;
+      for (int i=0; i<n_dims; i++)
+        v_sq += v_l[i]*v_l[i];
+      c_total_sq = (gamma-1.0)*(h_total - (e_l/rho_l + p_l/rho_l) + 0.5*v_sq) + c_l*c_l;
+
+      // Dot product of normal flow velocity
+      alpha = 0.;
+      for (int i=0; i<n_dims; i++)
+        alpha += norm[i]*n_free_stream[i];
+
+      // Coefficients of quadratic equation
+      aa = 1.0 + 0.5*(gamma-1.0)*alpha*alpha;
+      bb = -(gamma-1.0)*alpha*R_plus;
+      cc = 0.5*(gamma-1.0)*R_plus*R_plus - 2.0*c_total_sq/(gamma-1.0);
+
+      // Solve quadratic equation for velocity on right side
+      // (Note: largest value will always be the positive root)
+      // (Note: Will be set to zero if NaN)
+      dd = bb*bb - 4.0*aa*cc;
+      dd = sqrt(max(dd, 0.0));
+      V_r = (-bb + dd)/(2.0*aa);
+      V_r = max(V_r, 0.0);
+      v_sq = V_r*V_r;
+
+      // Compute speed of sound
+      c_r_sq = c_total_sq - 0.5*(gamma-1.0)*v_sq;
+
+      // Compute Mach number (cutoff at Mach = 1.0)
+      Mach_sq = v_sq/(c_r_sq);
+      Mach_sq = min(Mach_sq, 1.0);
+      v_sq = Mach_sq*c_r_sq;
+      V_r = sqrt(v_sq);
+      c_r_sq = c_total_sq - 0.5*(gamma-1.0)*v_sq;
+
+      // Compute velocity (based on free stream direction)
+      for (int i=0; i<n_dims; i++)
+        v_r[i] = V_r*n_free_stream[i];
+      
+      // Compute temperature
+      T_r = c_r_sq/(gamma*R_ref);
+
+      // Compute pressure
+      p_r = p_total_bound*pow(T_r/T_total_bound, gamma/(gamma-1.0));
+      
+      // Compute density
+      rho_r = p_r/(R_ref*T_r);
+
+      // Compute energy
+      e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
     }
-    // Subsonic outflow characteristic
+
+    // Subsonic outflow characteristic 
+      // there is one incoming characteristic, therefore one variable can be 
+      // specified (back pressure) and is used to update the conservative 
+      // variables. Compute the entropy and the acoustic Riemann variable. 
+      // These invariants, as well as the tangential velocity components, 
+      // are extrapolated. Adapted from an implementation in SU2.
     else if(bdy_type == 4)
     {
-      printf("subsonic outflow char not implemented in 3d");
+      double c_l, c_r;
+      double R_plus, s;
+      double vn_r;
+
+      // Compute normal velocity on left side
+      vn_l = 0.;
+      for (int i=0; i<n_dims; i++)
+        vn_l += v_l[i]*norm[i];
+
+      // Compute speed of sound
+      c_l = sqrt(gamma*p_l/rho_l);
+
+      // Extrapolate Riemann invariant
+      R_plus = vn_l + 2.0*c_l/(gamma-1.0);
+
+      // Extrapolate entropy
+      s = p_l/pow(rho_l,gamma);
+
+      // fix pressure on the right side
+      p_r = p_bound;
+
+      // Compute density
+      rho_r = pow(p_r/s, 1.0/gamma);
+
+      // Compute speed of sound
+      c_r = sqrt(gamma*p_r/rho_r);
+
+      // Compute normal velocity
+      vn_r = R_plus - 2.0*c_r/(gamma-1.0);
+
+      // Compute velocity and energy
+      v_sq = 0.;
+      for (int i=0; i<n_dims; i++)
+      {
+        v_r[i] = v_l[i] + (vn_r - vn_l)*norm[i];
+        v_sq += (v_r[i]*v_r[i]);
+      }
+      e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
     }
     
     // Supersonic inflow
@@ -238,7 +358,7 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
       // extrapolate energy
       e_r = e_l;
     }
-
+    
     // Isothermal, no-slip wall (fixed)
     else if(bdy_type == 11)
     {
