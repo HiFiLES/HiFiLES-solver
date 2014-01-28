@@ -156,7 +156,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 			disuf_upts.setup(1);
 		}
 
-		// Similarity model requires filtered solution, product terms and Leonard tensors
+		// Similarity model requires product terms and Leonard tensors
 		if(run_input.SGS_model==2 || run_input.SGS_model==4) {
 			// Leonard tensor and velocity-velocity product for momentum SGS term
 			if(n_dims==2) {
@@ -179,6 +179,14 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 			Le.setup(1);
 			ue.setup(1);
 		}
+	}
+	// Dummy arrays
+	else {
+		disuf_upts.setup(1);
+		Lu.setup(1);
+		uu.setup(1);
+		Le.setup(1);
+		ue.setup(1);
 	}
 
 	// Allocate array for wall distance if using a RANS or LES near-wall model
@@ -1591,9 +1599,11 @@ void eles::calc_cor_grad_disu_fpts(void)
   */
 }
 
-/*! calculate filtered discontinuous solution at solution points for LES modeling */
+/*! If at first RK step and using certain LES models, compute some model-related quantities.
+If using similarity or WALE-similarity (WSM) models, compute filtered solution and Leonard tensors.
+If using spectral vanishing viscosity (SVV) model, compute filtered solution. */
 
-void eles::calc_disuf_upts(int in_disu_upts_from)
+void eles::calc_sgs_terms(int in_disu_upts_from)
 {
   if (n_eles!=0) {
 
@@ -1663,7 +1673,7 @@ void eles::calc_disuf_upts(int in_disu_upts_from)
 			/*! third dimension of Lu, uu arrays */
 			if(n_dims==2)
 				dim3 = 3;
-			else if(n_dims==2)
+			else if(n_dims==3)
 				dim3 = 6;
 
 			/*! Calculate velocity and energy product arrays uu, ue */
@@ -1797,9 +1807,9 @@ void eles::calc_disuf_upts(int in_disu_upts_from)
 		/*! Filter solution (CUDA BLAS library) */
 		cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_gpu(),Bstride,0.0,disuf_upts.get_ptr_gpu(),Cstride);
 
+		/*! Check for NaNs */
 		disuf_upts.cp_gpu_cpu();
 
-		/*! Check for NaNs */
 		for(i=0;i<n_upts_per_ele;i++) {
 			for(j=0;j<n_eles;j++) {
 		  	for(k=0;k<n_fields;k++) {
@@ -1814,12 +1824,12 @@ void eles::calc_disuf_upts(int in_disu_upts_from)
 		if(run_input.SGS_model==2 || run_input.SGS_model==4) {
 
 			/*! compute product terms uu, ue (pass flag=0 to wrapper function) */
-			calc_similarity_model_kernel_wrapper(n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), filter_upts.get_ptr_cpu(), 0);
+			calc_similarity_model_kernel_wrapper(0, n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu());
 
 			/*! third dimension of Lu, uu arrays */
 			if(n_dims==2)
 				dim3 = 3;
-			else if(n_dims==2)
+			else if(n_dims==3)
 				dim3 = 6;
 
   		Bcols = dim3*n_eles;
@@ -1832,17 +1842,8 @@ void eles::calc_disuf_upts(int in_disu_upts_from)
 			cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,ue.get_ptr_gpu(),Bstride,0.0,Le.get_ptr_gpu(),Cstride);
 
 		/*! compute Leonard tensors Lu, Le (pass flag=1 to wrapper function) */
-			calc_similarity_model_kernel_wrapper(n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), filter_upts.get_ptr_cpu(), 1);
+			calc_similarity_model_kernel_wrapper(1, n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu());
 
-			//uu.cp_gpu_cpu();
-			Lu.cp_gpu_cpu();
-			for(i=0;i<n_upts_per_ele;i++) {
-				for(j=0;j<n_eles;j++) {
-					//cout<<"GPU uf*uf = "<<setprecision(10)<<disuf_upts(i,j,1)*disuf_upts(i,j,1)<<", "<<disuf_upts(i,j,2)*disuf_upts(i,j,2)<<", "<<disuf_upts(i,j,1)*disuf_upts(i,j,2)<<endl;
-					//cout<<"GPU uu = "<<setprecision(10)<<uu(i,j,0)<<", "<<uu(i,j,1)<<", "<<uu(i,j,2)<<endl;
-					//cout<<"GPU Leonard = "<<setprecision(10)<<Lu(i,j,0)<<", "<<Lu(i,j,1)<<", "<<Lu(i,j,2)<<endl;
-				}
-			}
 		}
 
 		/*! If SVV model, copy filtered solution back to original solution */

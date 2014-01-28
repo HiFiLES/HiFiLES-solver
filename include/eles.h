@@ -102,8 +102,8 @@ class eles
   /*! calculate the discontinuous solution at the flux points */
 	void calc_disu_fpts(int in_disu_upts_from);
 	
-	/*! Calculate filtered solution globally */
-	void calc_disuf_upts(int in_disu_upts_from);
+	/*! Calculate terms for some LES models */
+	void calc_sgs_terms(int in_disu_upts_from);
 
 	/*! calculate transformed discontinuous inviscid flux at solution points */
   void calc_tdisinvf_upts(int in_disu_upts_from);
