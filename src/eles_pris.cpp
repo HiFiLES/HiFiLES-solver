@@ -68,6 +68,7 @@ void eles_pris::setup_ele_type_specific(int in_run_type)
 	set_loc_ppts();
 	set_opp_p();
 
+	/*! Run mode */
   if (in_run_type==0)
   {
 	  n_fpts_per_inter.setup(5);
@@ -172,7 +173,7 @@ void eles_pris::setup_ele_type_specific(int in_run_type)
     loc_ppts.print();
     */
 
-  }
+	}
 }
 
 // set shape

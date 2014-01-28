@@ -85,6 +85,7 @@ void eles_hexas::setup_ele_type_specific(int in_run_type)
 	set_loc_ppts();
 	set_opp_p();
 
+	/*! Run mode */
   if (in_run_type==0)
   {
 	  n_fpts_per_inter.setup(6);
@@ -109,13 +110,9 @@ void eles_hexas::setup_ele_type_specific(int in_run_type)
 	  
 	  if(viscous)
 	  {
-		if(run_input.LES)
-		{
-			temp_sgsf.setup(n_fields,n_dims);
-
 			// Compute hex filter matrix
-			compute_filter_upts();
-		}
+			if(filter) compute_filter_upts();
+
 	  	set_opp_4(run_input.sparse_hexa);
 	  	set_opp_5(run_input.sparse_hexa);
 	  	set_opp_6(run_input.sparse_hexa);
@@ -182,7 +179,7 @@ void eles_hexas::setup_ele_type_specific(int in_run_type)
     loc_ppts.print();
     */
 
-  }
+	}
 }
 
 // #### methods ####

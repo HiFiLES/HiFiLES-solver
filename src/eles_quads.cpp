@@ -86,6 +86,7 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
   set_volume_cubpts();
   set_opp_volume_cubpts();
 
+	/*! Run mode */
   if (in_run_type==0)
   {
 	  n_fpts_per_inter.setup(4);
@@ -113,13 +114,9 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
 	  	set_opp_6(run_input.sparse_quad);
 	  	
 	  	temp_grad_u.setup(n_fields,n_dims);
-		if(run_input.LES)
-		{
-			temp_sgsf.setup(n_fields,n_dims);
 
 			// Compute quad filter matrix
-			compute_filter_upts();
-		}
+			if(filter) compute_filter_upts();
 	  }
 	  
 	  temp_u.setup(n_fields);
@@ -164,10 +161,8 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
 
     interior_ppt_to_ppt.setup(n_interior_ppts);
 
-    create_map_ppt();  
-
-  }
-
+    create_map_ppt();
+	}
 }
 
 void eles_quads::create_map_ppt(void)
