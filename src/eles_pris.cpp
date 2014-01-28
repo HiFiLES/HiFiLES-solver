@@ -68,6 +68,7 @@ void eles_pris::setup_ele_type_specific(int in_run_type)
 	set_loc_ppts();
 	set_opp_p();
 
+	/*! Run mode */
   if (in_run_type==0)
   {
 	  n_fpts_per_inter.setup(5);
@@ -155,6 +156,55 @@ void eles_pris::setup_ele_type_specific(int in_run_type)
     interior_ppt_to_ppt.setup(n_interior_ppts);
 
     create_map_ppt();  
+	}
+
+	/*! Plot mode */
+	else {
+
+    if (viscous==1)
+    {
+	  	set_opp_4(run_input.sparse_pri);
+    }
+
+    n_verts_per_ele = 6;
+    n_edges_per_ele = 9; 
+
+    n_ppts_per_edge = p_res-2;
+
+    // Number of plot points per face, excluding points on vertices or edges
+    n_ppts_per_face.setup(n_inters_per_ele);
+    n_ppts_per_face(0) = (p_res-3)*(p_res-2)/2; 
+    n_ppts_per_face(1) = (p_res-3)*(p_res-2)/2; 
+    n_ppts_per_face(2) = (p_res-2)*(p_res-2);
+    n_ppts_per_face(3) = (p_res-2)*(p_res-2); 
+    n_ppts_per_face(4) = (p_res-2)*(p_res-2); 
+
+    n_ppts_per_face2.setup(n_inters_per_ele);
+    n_ppts_per_face2(0) = (p_res+1)*(p_res)/2; 
+    n_ppts_per_face2(1) = (p_res+1)*(p_res)/2; 
+    n_ppts_per_face2(2) = (p_res)*(p_res);
+    n_ppts_per_face2(3) = (p_res)*(p_res); 
+    n_ppts_per_face2(4) = (p_res)*(p_res); 
+
+    max_n_ppts_per_face = n_ppts_per_face(2);
+
+    // Number of plot points not on faces, edges or vertices
+    n_interior_ppts = n_ppts_per_ele-6-2*n_ppts_per_face(0)-3*n_ppts_per_face(2)
+                      -9*n_ppts_per_edge; 
+
+    vert_to_ppt.setup(n_verts_per_ele);
+    edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
+    face_ppt_to_ppt.setup(n_inters_per_ele);
+    for (int i=0;i<n_inters_per_ele;i++)
+      face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
+
+    face2_ppt_to_ppt.setup(n_inters_per_ele);
+    for (int i=0;i<n_inters_per_ele;i++)
+      face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
+
+    interior_ppt_to_ppt.setup(n_interior_ppts);
+
+    create_map_ppt();
 
     /*
     cout << "vert_ppt" << endl << endl;
