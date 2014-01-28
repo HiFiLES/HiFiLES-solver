@@ -42,6 +42,7 @@ bdy_inters::bdy_inters()
 {	
 	order=run_input.order;
 	viscous=run_input.viscous;
+	LES=run_input.LES;
 }
 
 bdy_inters::~bdy_inters() { }
@@ -111,6 +112,11 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
 	  			{
 	  				grad_disu_fpts_l(j,in_inter,i,k) =get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
 	  			}
+
+					// LES: get subgrid-scale flux
+					if(LES) {
+						sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+					}
 	  		}
 	  	}
 	  }
@@ -123,11 +129,9 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
 	  	{
 	  		norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
 	  		loc_fpts(i,in_inter,j)=get_loc_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-	  	}
-
-	  }	
-  }
-
+			}
+	  }
+	}
 }
 
 // move all from cpu to gpu
@@ -150,6 +154,10 @@ void bdy_inters::mv_all_cpu_gpu(void)
 		//norm_tconvisf_fpts_l.mv_cpu_gpu();
 	}
 	//detjac_fpts_l.mv_cpu_gpu();
+
+	if(LES) {
+		sgsf_fpts_l.mv_cpu_gpu();
+	}
 
   boundary_type.mv_cpu_gpu();
   bdy_params.mv_cpu_gpu();
@@ -806,42 +814,52 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
 
 // calculate normal transformed continuous viscous flux at the flux points on the boundaries
+
 void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
 {
 
   #ifdef _CPU
   int bdy_spec, flux_spec;
   array<double> norm(n_dims), fn(n_fields);
-	
-	for(int i=0;i<n_inters;i++)
+	int wallfn;
+	int i,j,k,l,m;
+
+	for(i=0;i<n_inters;i++)
 	{
     //boundary specification
     bdy_spec = boundary_type(i);
-		
-    if(bdy_spec == 12 || bdy_spec == 14)
+
+    if(bdy_spec == 12 || bdy_spec == 14) // adiabatic BCs
       flux_spec = 2;
     else
       flux_spec = 1;
 
+		// Flag interface if it uses an LES wall model
+		wallfn=0;
+		if(run_input.wall_model>0)
+			if(bdy_spec == 11 || bdy_spec == 12 || bdy_spec == 13 || bdy_spec == 14)
+				wallfn = 1;
+
     for(int j=0;j<n_fpts_per_inter;j++)
 		{
+
       // storing normal components
-      for (int m=0;m<n_dims;m++)
+      for (m=0;m<n_dims;m++)
         norm(m) = *norm_fpts(j,i,m);
 			
       // obtain discontinuous solution at flux points
-			for(int k=0;k<n_fields;k++)
+			for(k=0;k<n_fields;k++)
 				temp_u_l(k)=(*disu_fpts_l(j,i,k));
       
-      for (int m=0;m<n_dims;m++)
+      for (m=0;m<n_dims;m++)
         temp_loc(m) = *loc_fpts(j,i,m);
 
       set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 			
 			// obtain gradient of discontinuous solution at flux points
-			for(int k=0;k<n_dims;k++)
+			for(k=0;k<n_dims;k++)
 			{
-				for(int l=0;l<n_fields;l++)
+				for(l=0;l<n_fields;l++)
 				{
 					temp_grad_u_l(l,k) = *grad_disu_fpts_l(j,i,l,k);
 				}
@@ -851,9 +869,9 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
       if(flux_spec == 2)
       {
 			  // Extrapolate
-			  for(int k=0;k<n_dims;k++)
+			  for(k=0;k<n_dims;k++)
 			  {
-			  	for(int l=0;l<n_fields;l++)
+			  	for(l=0;l<n_fields;l++)
 			  	{
 			  		temp_grad_u_r(l,k) = temp_grad_u_l(l,k);
 			  	}
@@ -864,7 +882,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
 
 			// calculate flux from discontinuous solution at flux points
 			if(n_dims==2) {
-				
+        
         if(flux_spec == 1)
         {
           calc_visf_2d(temp_u_l,temp_grad_u_l,temp_f_l);
@@ -892,6 +910,18 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
 			else
   			FatalError("ERROR: Invalid number of dimensions ... ");
 
+			// If LES but no model used on this boundary, get SGS flux and add to viscous flux
+			if(LES==1 and wallfn==0) {
+				for(k=0;k<n_dims;k++) {
+					for(l=0;l<n_fields;l++) {
+						// pointer to subgrid-scale flux at flux point
+						temp_sgsf_l(l,k) = *sgsf_fpts_l(j,i,l,k);
+
+						// Add SGS flux to viscous flux
+						temp_f_l(l,k) += temp_sgsf_l(l,k);
+					}
+				}
+			}
 
       // Calling viscous riemann solver
       if (run_input.vis_riemann_solve_type==0)
@@ -900,8 +930,9 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
         FatalError("Viscous Riemann solver not implemented");
 
       // Transform back to reference space  
-  		for(int k=0;k<n_fields;k++) 
-					(*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+  		for(k=0;k<n_fields;k++) {
+				(*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+			}
 		}
 	}
 
@@ -984,4 +1015,5 @@ void bdy_inters::set_vis_boundary_conditions(int bdy_type, double* u_l, double* 
   }   
   
 }
+
 

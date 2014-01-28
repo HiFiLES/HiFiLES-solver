@@ -78,7 +78,15 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 
 	order=run_input.order;
 	p_res=run_input.p_res;
-	viscous =run_input.viscous;
+	viscous = run_input.viscous;
+	LES = run_input.LES;
+	filter = 0;
+	// SVV model requires filtered solution
+	if(LES)
+		if(run_input.SGS_model==3 || run_input.SGS_model==2 || run_input.SGS_model==4)
+			filter = 1;
+
+	wall_model = run_input.wall_model;
   inters_cub_order = run_input.inters_cub_order;
   volume_cub_order = run_input.volume_cub_order;
   n_bdy_eles=0;
@@ -130,12 +138,20 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
         disu_upts(m)(i,j,k) = 0.;
 
 	// Allocate extra arrays for LES models
-	if(run_input.LES) {
+	if(LES) {
+
+		sgsf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
+		sgsf_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
+		temp_sgsf.setup(n_fields,n_dims);
 
 		// SVV model requires filtered solution
 		if(run_input.SGS_model==3 || run_input.SGS_model==2 || run_input.SGS_model==4) {
+
+			filter = 1;
+
 			disuf_upts.setup(n_upts_per_ele,n_eles,n_fields);
 		}
+		// is this necessary?
 		else {
 			disuf_upts.setup(1);
 		}
@@ -156,12 +172,21 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 			Le.setup(n_upts_per_ele,n_eles,n_dims);
 			ue.setup(n_upts_per_ele,n_eles,n_dims);
 		}
+		// is this necessary?
 		else {
 			Lu.setup(1);
 			uu.setup(1);
 			Le.setup(1);
 			ue.setup(1);
 		}
+	}
+
+	// Allocate array for wall distance if using a RANS or LES near-wall model
+	if(wall_model) {
+		wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
+		twall.setup(n_upts_per_ele,n_eles,n_dims);
+		wall_distance.initialize_to_zero();
+		twall.initialize_to_zero();
 	}
 
 	set_shape(in_max_n_spts_per_ele);
@@ -204,6 +229,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	  	grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
 	  	grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims); 
 	  }
+
 	  // Set connectivity array. Needed for Paraview output.
     if (ele_type==3) // prism
       connectivity_plot.setup(8,n_peles_per_ele);
@@ -645,14 +671,18 @@ void eles::mv_all_cpu_gpu(void)
 	  	//tdisvisf_upts.mv_cpu_gpu();
 	  	//norm_tdisvisf_fpts.mv_cpu_gpu();
 	  	//norm_tconvisf_fpts.mv_cpu_gpu();
+	  }
 
-			// LES arrays
+		// LES arrays
+		if(LES) {
 			disuf_upts.mv_cpu_gpu();
+			sgsf_upts.mv_cpu_gpu();
+			sgsf_fpts.mv_cpu_gpu();
 			uu.mv_cpu_gpu();
 			ue.mv_cpu_gpu();
 			Lu.mv_cpu_gpu();
 			Le.mv_cpu_gpu();
-	  }
+		}
   }	
 	#endif
 }
@@ -1873,20 +1903,29 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 					cout << "ERROR: Invalid number of dimensions ... " << endl; 
 				}
 				// If LES, calculate SGS viscous flux
-				if(run_input.LES==1)
+				if(LES==1)
 				{
 					calc_sgsf_upts(temp_u,temp_grad_u,detjac,i,j,temp_sgsf);
 
 					// Add SGS flux to viscous flux
 					for(k=0;k<n_fields;k++)
 					{
-						for(m=0;m<n_dims;m++)
+						for(l=0;l<n_dims;l++)
 						{
-							temp_f(k,m) += temp_sgsf(k,m);
+							temp_f(k,l) += temp_sgsf(k,l);
+
+							sgsf_upts(j,i,k,l) = 0.0;
+
+							// Transform SGS flux
+							for(l=0;l<n_dims;l++)
+							{
+								sgsf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_sgsf(k,m);
+							}
 						}
 					}
 				}
-				// Transform flux
+
+				// Transform viscous flux
 				for(k=0;k<n_fields;k++)
 				{
 					for(l=0;l<n_dims;l++)
@@ -1900,251 +1939,814 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 			}
 		}
 		#endif
-
+		// TODO: modify GPU routine to account for new SGS flux arrays sgsf_upts, sgsf_fpts
 		#ifdef _GPU
-		calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, run_input.filter_ratio, run_input.LES, run_input.SGS_model, Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+		calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, run_input.filter_ratio, LES, run_input.SGS_model, Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
 		#endif	
 
 	}
 }
   
-// Calculate SGS flux
+// Calculate SGS flux at solution points
 void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf)
 {
-	int eddy, sim;
+	int i,j,k;
+	int eddy, sim, wall;
 	double Cs;
 	double diag=0.0;
 	double Smod=0.0;
 	double ke=0.0;
+	double mag=0.0;
 	double Pr=0.5; // turbulent Prandtl number
-	double dlt, delta, mu_t, vol;
-	double rho, inte;
+	double y, delta, mu, mu_t, vol;
+	double rho, inte, rt_ratio;
+	//double utau, yplus;
 	array<double> u(n_dims);
 	array<double> drho(n_dims), dene(n_dims), dke(n_dims), de(n_dims);
 	array<double> dmom(n_dims,n_dims), du(n_dims,n_dims), S(n_dims,n_dims);
 
-	// Initialize SGS flux array to zero
-	for (int i=0;i<n_fields;i++)
-		for (int j=0;j<n_dims;j++)
-			temp_sgsf(i,j) = 0.0;
-
-	// 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
-	if(run_input.SGS_model==0) {
-		eddy = 1;
-		sim = 0;
-	}
-	else if(run_input.SGS_model==1) {
-		eddy = 1;
-		sim = 0;
-	}
-	else if(run_input.SGS_model==2) {
-		eddy = 1;
-		sim = 1;
-	}
-	else if(run_input.SGS_model==3) {
-		eddy = 0;
-		sim = 0;
-	}
-	else if(run_input.SGS_model==4) {
-		eddy = 0;
-		sim = 1;
-	}
-	else {
-		FatalError("SGS model not implemented");
-	}
-
-	// Delta is the cutoff length-scale representing local grid resolution.
-	// OPTION 1. Approx resolution in 1D element. Interval is [-1:1]
-	// Appropriate for quads, hexes and tris. Not sure about tets.
-	//dlt = 2.0/order;
-
-	// OPTION 2. Deardorff definition (Deardorff, JFM 1970)
-	vol = (*this).calc_ele_vol(detjac);
-	delta = run_input.filter_ratio*pow(vol,1./n_dims);
-
-	//  OPTION 3. Suggested by Bardina, AIAA 1980 as:
-	//
-	//  delta = sqrt((dx^2+dy^2+dz^2)/3) 
-
-	// Implement anisotropy correction of Scotti et al?
-
-	//cout<<"vol: "<<setprecision(10)<<vol<<endl;
-	//cout<<"delta: "<<setprecision(10)<<delta<<endl;
-
-	// Filtered solution
+	// conservative variables
 	rho = temp_u(0);
-	for (int i=0;i<n_dims;i++)
-	{
+	for (i=0;i<n_dims;i++) {
 		u(i) = temp_u(i)/rho;
 		ke += 0.5*pow(u(i),2);
 	}
 	inte = temp_u(n_fields-1)/rho - ke;
 
-	if(eddy==1)
-	{
-	// Filtered solution gradient
-	for (int i=0;i<n_dims;i++)
-	{
-		drho(i) = temp_grad_u(0,i); // density gradient
-		dene(i) = temp_grad_u(n_fields-1,i); // energy gradient
-		for (int j=1;j<n_fields-1;j++)
-		{
-			dmom(i,j-1) = temp_grad_u(j,i); // momentum gradients
+	// fluid properties
+	rt_ratio = (run_input.gamma-1.0)*inte/(run_input.rt_inf);
+	mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
+	mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
+
+	// Initialize SGS flux array to zero
+	for (i=0;i<n_fields;i++)
+		for (j=0;j<n_dims;j++)
+			temp_sgsf(i,j) = 0.0;
+
+	// Magnitude of wall distance vector
+	y = 0.0;
+	for (i=0;i<n_dims;i++) {
+		y += wall_distance(upt,ele,i)*wall_distance(upt,ele,i);
+	}
+	y = sqrt(y);
+
+	// u_tau = velocity in wall units
+	//utau = sqrt(mag/rho);
+	// y+ = wall distance in wall units
+	//yplus = utau*delta/mu/rho;
+	//cout << "yplus " << setprecision(6) << yplus << endl;
+
+	// Compute SGS flux using wall model if sufficiently close to solid boundary (y+<50)
+	wall = 0;
+	//if(yplus < 50) wall = 1;
+	if(y < run_input.wall_layer_t) wall = 1;
+
+	//cout << setprecision(6) << y << ", " << mu << ", " << rho << ", " << wall << ", " << run_input.wall_layer_t << endl;
+
+	// calculate SGS flux from a wall model
+	if(wall) {
+
+		//array<double> pos(n_dims);
+	  array<double> norm(n_dims);
+	  array<double> tau(n_dims,n_dims);
+	  array<double> Mrot(n_dims,n_dims);
+	  array<double> temp(n_dims,n_dims);
+	  array<double> urot(n_dims-1);
+	  array<double> tw(n_dims-1);
+		double qw;
+
+		for (i=0;i<n_dims;i++) {
+
+			// Get approximate normal from wall distance vector
+			norm(i) = wall_distance(upt,ele,i)/y;
+
+			// get subgrid momentum flux at previous timestep
+			tw(i) = twall(upt,ele,i);
 		}
-	}
 
-	// Velocity and energy gradients
-	for (int i=0;i<n_dims;i++)
-	{
-		dke(i) = ke*drho(i);
-		for (int j=0;j<n_dims;j++)
-		{
-			du(i,j) = (dmom(i,j)-u(j)*drho(j))/rho;
-			dke(i) += rho*u(j)*du(i,j);
+		// subgrid energy flux from previous timestep
+		qw = twall(upt,ele,n_dims-1);
+
+		// Calculate local rotation matrix
+		Mrot = calc_rotation_matrix(norm);
+
+		// Rotate velocity to surface
+		if(n_dims==2)
+			urot(0) = u(0)*Mrot(0,1)+u(1)*Mrot(1,1);
+		else {
+			urot(0) = u(0)*Mrot(0,1)+u(1)*Mrot(1,1)+u(2)*Mrot(2,1);
+			urot(1) = u(0)*Mrot(0,2)+u(1)*Mrot(1,2)+u(2)*Mrot(2,2);
 		}
-		de(i) = (dene(i)-dke(i)-drho(i)*inte)/rho;
-	}
 
-	// Strain rate tensor
-	for (int i=0;i<n_dims;i++)
-	{
-		for (int j=0;j<n_dims;j++)
-		{
-			S(i,j) = (du(i,j)+du(j,i))/2.0;
+		//calc_pos_upt(upt,ele,pos);
+		//cout << "loc_upts " << pos(0) << ", " << pos(1) << endl;
+		//cout << "twprev " << setprecision(6) << endl;
+		//tw.print();
+		//cout << "qwprev " << setprecision(6) << qw << endl;
+		//cout << "Mrot " << endl;
+		//Mrot.print();
+		//cout << "urot "<< urot(0) << endl;
+
+		// Calculate wall shear stress
+		calc_wall_stress(rho,urot,inte,mu,run_input.prandtl,run_input.gamma,y,tw,qw);
+
+		//cout << "tw " << setprecision(6) << endl;
+		//tw.print();
+
+		// correct the sign of wall shear stress and wall heat flux? - see SD3D
+
+		// Set arrays for next timestep
+		for(i=0;i<n_dims-1;++i) twall(upt,ele,i) = tw(i);
+
+		twall(upt,ele,n_dims-1) = qw;
+
+		// populate ndims*ndims rotated stress array
+		tau.initialize_to_zero();
+
+		for(i=0;i<n_dims-1;i++) tau(i+1,0) = tau(0,i+1) = tw(i);
+
+		//cout << "tau " << setprecision(6) << endl;
+		//tau.print();
+
+		// rotate stress array back to Cartesian coordinates
+		temp.initialize_to_zero();
+		for(i=0;i<n_dims;++i)
+			for(j=0;j<n_dims;++j)
+				for(k=0;k<n_dims;++k)
+					temp(i,j) += tau(i,k)*Mrot(k,j);
+
+		tau.initialize_to_zero();
+		for(i=0;i<n_dims;++i)
+			for(j=0;j<n_dims;++j)
+				for(k=0;k<n_dims;++k)
+					tau(i,j) += Mrot(k,i)*temp(k,j);
+
+		//cout << "tau " << setprecision(6) << endl;
+		//tau.print();
+
+		// set SGS fluxes
+		for(i=0;i<n_dims;i++) {
+
+			// density
+			temp_sgsf(0,i) = 0.0;
+
+			// velocity
+			for(j=0;j<n_dims;j++) {
+				temp_sgsf(j+1,i) = 0.5*(tau(i,j)+tau(j,i));
+			}
+
+			// energy
+			temp_sgsf(n_fields-1,i) = qw*norm(i);
 		}
-		diag += S(i,i)/3.0;
+		//cout<<"sgs flux:"<<endl;
+		//temp_sgsf.print();
+		//cout << endl;
 	}
 
-	// Subtract diag
-	for (int i=0;i<n_dims;i++)
-	{
-		S(i,i) -= diag;
-	}
-	//cout<<"strain: "<<setprecision(10)<<endl;
-	//S.print();
+	// Free-stream SGS flux
+	else {
 
-	// Strain modulus
-	for (int i=0;i<n_dims;i++)
-	{
-		for (int j=0;j<n_dims;j++)
-		{
-			Smod += 2.0*S(i,j)*S(i,j);
+		// Set wall shear stress to 0 to prevent NaNs
+		//for(i=0;i<n_dims;++i)
+			//twall(upt,ele,i) = 0.0;
+
+		// 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
+		if(run_input.SGS_model==0) {
+			eddy = 1;
+			sim = 0;
 		}
-	}
-	Smod = sqrt(Smod);
-	//cout<<"strain mod = "<<setprecision(10)<<Smod<<endl;
-	// Eddy viscosity
+		else if(run_input.SGS_model==1) {
+			eddy = 1;
+			sim = 0;
+		}
+		else if(run_input.SGS_model==2) {
+			eddy = 1;
+			sim = 1;
+		}
+		else if(run_input.SGS_model==3) {
+			eddy = 0;
+			sim = 0;
+		}
+		else if(run_input.SGS_model==4) {
+			eddy = 0;
+			sim = 1;
+		}
+		else {
+			FatalError("SGS model not implemented");
+		}
 
-	if(run_input.SGS_model==0) // Smagorinsky model
-	{
-		Cs=0.1;
-		mu_t = rho*Cs*Cs*delta*delta*Smod;
-	}
+		// Delta is the cutoff length-scale representing local grid resolution.
+		// OPTION 1. Approx resolution in 1D element. Interval is [-1:1]
+		// Appropriate for quads, hexes and tris. Not sure about tets.
+		//dlt = 2.0/order;
 
-//  Wall-Adapting Local Eddy-viscosity (WALE) SGS Model
-//
-//  NICOUD F., DUCROS F.: "Subgrid-Scale Stress Modelling Based on the Square
-//                         of the Velocity Gradient Tensor"
-//  Flow, Turbulence and Combustion 62: 183-200, 1999.
-//
-//                                            (sqij*sqij)^3/2
-//  Output: mu_t = rho*Cs^2*delta^2 * -----------------------------
-//                                     (Sij*Sij)^5/2+(sqij*sqij)^5/4
-//
-//  Typically Cw = 0.5.
+		// OPTION 2. Deardorff definition (Deardorff, JFM 1970)
+		vol = (*this).calc_ele_vol(detjac);
+		delta = run_input.filter_ratio*pow(vol,1./n_dims);
 
-	else if(run_input.SGS_model==1 || run_input.SGS_model==2) // WALE or WSM model
-	{
-		Cs=0.5;
-		double num=0.0;
-		double denom=0.0;
-		double eps=1.e-12;
-		array<double> Sq(n_dims,n_dims);
-		diag = 0.0;
+		//  OPTION 3. Suggested by Bardina, AIAA 1980 as:
+		//
+		//  delta = sqrt((dx^2+dy^2+dz^2)/3) 
 
-		// Square of gradient tensor
-		// This needs optimising!
-		for (int i=0;i<n_dims;i++)
-		{
-			for (int j=0;j<n_dims;j++)
-			{
-				Sq(i,j) = 0.0;
-				for (int k=0;k<n_dims;++k)
-				{
-					Sq(i,j) += (du(i,k)*du(k,j)+du(j,k)*du(k,i))/2.0;
+		// Implement anisotropy correction of Scotti et al?
+
+		//cout<<"vol: "<<setprecision(10)<<vol<<endl;
+		//cout<<"delta: "<<setprecision(10)<<delta<<endl;
+
+		if(eddy==1) {
+
+			// Filtered solution gradient
+			for (i=0;i<n_dims;i++) {
+				drho(i) = temp_grad_u(0,i); // density gradient
+				dene(i) = temp_grad_u(n_fields-1,i); // energy gradient
+
+				for (j=1;j<n_fields-1;j++) {
+					dmom(i,j-1) = temp_grad_u(j,i); // momentum gradients
 				}
-				diag += du(i,j)*du(j,i)/3.0;
 			}
-		}
-		// Subtract diag
-		for (int i=0;i<n_dims;i++)
-		{
-			Sq(i,i) -= diag;
+
+			// Velocity and energy gradients
+			for (i=0;i<n_dims;i++) {
+				dke(i) = ke*drho(i);
+
+				for (j=0;j<n_dims;j++) {
+					du(i,j) = (dmom(i,j)-u(j)*drho(j))/rho;
+					dke(i) += rho*u(j)*du(i,j);
+				}
+
+				de(i) = (dene(i)-dke(i)-drho(i)*inte)/rho;
+			}
+
+			// Strain rate tensor
+			for (i=0;i<n_dims;i++) {
+				for (j=0;j<n_dims;j++) {
+					S(i,j) = (du(i,j)+du(j,i))/2.0;
+				}
+				diag += S(i,i)/3.0;
+			}
+
+			// Subtract diag
+			for (i=0;i<n_dims;i++) S(i,i) -= diag;
+
+			//cout<<"strain: "<<setprecision(10)<<endl;
+			//S.print();
+
+			// Strain modulus
+			for (i=0;i<n_dims;i++)
+				for (j=0;j<n_dims;j++)
+					Smod += 2.0*S(i,j)*S(i,j);
+
+			Smod = sqrt(Smod);
+			//cout<<"strain mod = "<<setprecision(10)<<Smod<<endl;
+			// Eddy viscosity
+
+			// Smagorinsky model
+			if(run_input.SGS_model==0) {
+
+				Cs=0.1;
+				mu_t = rho*Cs*Cs*delta*delta*Smod;
+
+			}
+
+			//  Wall-Adapting Local Eddy-viscosity (WALE) SGS Model
+			//
+			//  NICOUD F., DUCROS F.: "Subgrid-Scale Stress Modelling Based on the Square
+			//                         of the Velocity Gradient Tensor"
+			//  Flow, Turbulence and Combustion 62: 183-200, 1999.
+			//
+			//                                            (sqij*sqij)^3/2
+			//  Output: mu_t = rho*Cs^2*delta^2 * -----------------------------
+			//                                     (Sij*Sij)^5/2+(sqij*sqij)^5/4
+			//
+			//  Typically Cw = 0.5.
+
+			else if(run_input.SGS_model==1 || run_input.SGS_model==2) {
+
+				Cs=0.5;
+				double num=0.0;
+				double denom=0.0;
+				double eps=1.e-12;
+				array<double> Sq(n_dims,n_dims);
+				diag = 0.0;
+
+				// Square of gradient tensor
+				// This needs optimising!
+				for (i=0;i<n_dims;i++) {
+					for (j=0;j<n_dims;j++) {
+						Sq(i,j) = 0.0;
+						for (k=0;k<n_dims;++k) {
+							Sq(i,j) += (du(i,k)*du(k,j)+du(j,k)*du(k,i))/2.0;
+						}
+						diag += du(i,j)*du(j,i)/3.0;
+					}
+				}
+
+				// Subtract diag
+				for (i=0;i<n_dims;i++) Sq(i,i) -= diag;
+
+				// Numerator and denominator
+				for (i=0;i<n_dims;i++) {
+					for (j=0;j<n_dims;j++) {
+						num += Sq(i,j)*Sq(i,j);
+						denom += S(i,j)*S(i,j);
+					}
+				}
+
+				denom = pow(denom,2.5) + pow(num,1.25);
+				num = pow(num,1.5);
+				mu_t = rho*Cs*Cs*delta*delta*num/(denom+eps);
+			}
+
+			// Add eddy-viscosity term to SGS fluxes
+			for (j=0;j<n_dims;j++) {
+				temp_sgsf(0,j) = 0.0; // Density flux
+				temp_sgsf(n_fields-1,j) = -1.0*run_input.gamma*mu_t/Pr*de(j); // Energy flux
+
+				for (i=1;i<n_fields-1;i++) {
+					temp_sgsf(i,j) = -2.0*mu_t*S(i-1,j); // Velocity flux
+				}
+			}
+				//cout<<"SGS flux:"<<endl;
+				//temp_sgsf.print();
 		}
 
-		// Numerator and denominator
-		for (int i=0;i<n_dims;i++) {
-			for (int j=0;j<n_dims;j++) {
-				num += Sq(i,j)*Sq(i,j);
-				denom += S(i,j)*S(i,j);
+		// Add similarity term to SGS fluxes if WSM or Similarity model
+		if(sim==1) {
+			for (j=0;j<n_dims;j++) {
+				temp_sgsf(0,j) += 0.0; // Density flux
+				temp_sgsf(n_fields-1,j) += run_input.gamma*rho*Le(upt,ele,j); // Energy flux
+			}
+
+			// Momentum fluxes
+			if(n_dims==2) {
+				temp_sgsf(1,0) += rho*Lu(upt,ele,0);
+				temp_sgsf(1,1) += rho*Lu(upt,ele,2);
+				temp_sgsf(2,0) += temp_sgsf(1,1);
+				temp_sgsf(2,1) += rho*Lu(upt,ele,1);
+			}
+			else if(n_dims==3) {
+				temp_sgsf(1,0) += rho*Lu(upt,ele,0);
+				temp_sgsf(1,1) += rho*Lu(upt,ele,3);
+				temp_sgsf(1,2) += rho*Lu(upt,ele,4);
+				temp_sgsf(2,0) += temp_sgsf(1,1);
+				temp_sgsf(2,1) += rho*Lu(upt,ele,1);
+				temp_sgsf(2,2) += rho*Lu(upt,ele,5);
+				temp_sgsf(3,0) += temp_sgsf(1,2);
+				temp_sgsf(3,1) += temp_sgsf(2,2);
+				temp_sgsf(3,2) += rho*Lu(upt,ele,2);
+			}
+
+			//cout<<"Leonard = "<<setprecision(10)<<Lu(upt,ele,0)<<", "<<Lu(upt,ele,1)<<", "<<Lu(upt,ele,2)<<endl;
+
+		}
+	}
+	//cout<<"sgs flux:"<<endl;
+	//temp_sgsf.print();
+}
+
+/*! If using a RANS or LES near-wall model, calculate distance
+of each solution point to nearest no-slip wall by a brute-force method */
+void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy)
+{
+	if(n_eles!=0)
+	{
+		int i,j,k,m,n;
+		int n_fpts_per_inter_seg = order+1;
+		int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+		int n_fpts_per_inter_quad = (order+1)*(order+1);
+		double dist;
+		double distmin;
+	  array<double> pos(n_dims);
+	  array<double> pos_bdy(n_dims);
+	  array<double> vec(n_dims);
+	  array<double> vecmin(n_dims);
+
+#ifdef _MPI
+
+#endif
+
+#ifdef _CPU
+
+		// hold our breath and go round the brute-force loop...
+		for (i=0;i<n_eles;++i) {
+			for (j=0;j<n_upts_per_ele;++j) {
+
+				// get coords of current solution point
+				calc_pos_upt(j,i,pos);
+				//cout << "coords" << endl;
+				//pos.print();
+
+				// initialize wall distance
+				distmin = 1e6;
+
+				// line segment boundaries
+				for (k=0;k<n_seg_noslip_inters;++k) {
+
+					for (m=0;m<n_fpts_per_inter_seg;++m) {
+
+						dist = 0.0;
+						// get coords of boundary flux point
+						for (n=0;n<n_dims;++n) {
+							pos_bdy(n) = loc_noslip_bdy(0)(m,k,n);
+							vec(n) = pos(n) - pos_bdy(n);
+							dist += vec(n)*vec(n);
+						}
+						dist = sqrt(dist);
+
+						// update shortest vector
+						if (dist < distmin) {
+							for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+							distmin = dist;
+						}
+					}
+				}
+
+				// tri boundaries
+				for (k=0;k<n_tri_noslip_inters;++k) {
+
+					for (m=0;m<n_fpts_per_inter_tri;++m) {
+
+						dist = 0.0;
+						// get coords of boundary flux point
+						for (n=0;n<n_dims;++n) {
+							pos_bdy(n) = loc_noslip_bdy(1)(m,k,n);
+							vec(n) = pos(n) - pos_bdy(n);
+							dist += vec(n)*vec(n);
+						}
+						dist = sqrt(dist);
+
+						// update shortest vector
+						if (dist < distmin) {
+							for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+							distmin = dist;
+						}
+					}
+				}
+
+				// quad boundaries
+				for (k=0;k<n_quad_noslip_inters;++k) {
+
+					for (m=0;m<n_fpts_per_inter_quad;++m) {
+
+						dist = 0.0;
+						// get coords of boundary flux point
+						for (n=0;n<n_dims;++n) {
+							pos_bdy(n) = loc_noslip_bdy(2)(m,k,n);
+							vec(n) = pos(n) - pos_bdy(n);
+							dist += vec(n)*vec(n);
+						}
+						dist = sqrt(dist);
+
+						// update shortest vector
+						if (dist < distmin) {
+							for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+							distmin = dist;
+						}
+					}
+				}
+
+				for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+
+				//cout << "vec" << endl;
+				//vecmin.print();
+				//cout << "wall distance " << setprecision(6) << distmin << endl;
+				//cout << endl;
 			}
 		}
 
-		denom = pow(denom,2.5) + pow(num,1.25);
-		num = pow(num,1.5);
-		mu_t = rho*Cs*Cs*delta*delta*num/(denom+eps);
+#endif
+	}
+}
+
+array<double> eles::calc_rotation_matrix(array<double>& norm)
+{
+	array <double> mrot(n_dims,n_dims);
+	double nn;
+
+	//cout << "norm "<< norm(0) << ", " << norm(1) << endl;
+
+	// Create rotation matrix
+	if(n_dims==2) {
+		if(abs(norm(1)) > 0.7) {
+			mrot(0,0) = norm(0);
+			mrot(1,0) = norm(1);
+			mrot(0,1) = norm(1);
+			mrot(1,1) = -norm(0);
+		}
+		else {
+			mrot(0,0) = -norm(0);
+			mrot(1,0) = -norm(1);
+			mrot(0,1) = norm(1);
+			mrot(1,1) = -norm(0);
+		}
+	}
+	else if(n_dims==3) {
+		if(abs(norm(2)) > 0.7) {
+			nn = sqrt(norm(1)*norm(1)+norm(2)*norm(2));
+
+			mrot(0,0) = norm(0)/nn;
+			mrot(1,0) = norm(1)/nn;
+			mrot(2,0) = norm(2)/nn;
+			mrot(0,1) = 0.0;
+			mrot(1,1) = -norm(2)/nn;
+			mrot(2,1) = norm(1)/nn;
+			mrot(0,2) = nn;
+			mrot(1,2) = -norm(0)*norm(1)/nn;
+			mrot(2,2) = -norm(0)*norm(2)/nn;
+		}
+		else {
+			nn = sqrt(norm(0)*norm(0)+norm(1)*norm(1));
+
+			mrot(0,0) = norm(0)/nn;
+			mrot(1,0) = norm(1)/nn;
+			mrot(2,0) = norm(2)/nn;
+			mrot(0,1) = norm(1)/nn;
+			mrot(1,1) = -norm(0)/nn;
+			mrot(2,1) = 0.0;
+			mrot(0,2) = norm(0)*norm(2)/nn;
+			mrot(1,2) = norm(1)*norm(2)/nn;
+			mrot(2,2) = -nn;
+		}
 	}
 
-	// Add eddy-viscosity term to SGS fluxes
-	if(eddy==1)
-	{
-		for (int j=0;j<n_dims;j++)
-		{
-			temp_sgsf(0,j) = 0.0; // Density flux
+	return mrot;
+}
 
-			temp_sgsf(n_fields-1,j) = -1.0*run_input.gamma*mu_t/Pr*de(j); // Energy flux
-			for (int i=1;i<n_fields-1;i++)
-			{
-				temp_sgsf(i,j) = -2.0*mu_t*S(i-1,j); // Velocity flux
-			}
+void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double mu, double Pr, double gamma, double y, array<double>& tau_wall, double q_wall)
+{
+	// need wall distance, viscosity, model type, velocity, density, energy, gradient
+	double eps = 1.e-10;
+	double Rey, Rey_c, u, uplus, utau, tw, qw;
+	double Pr_t = 0.9;
+	double c0;
+	double ymatch = 11.8;
+	int i,j;
+
+	// Magnitude of surface velocity
+	u = 0.0;
+	for(i=0;i<n_dims-1;++i) u += urot(i)*urot(i);
+
+	u = sqrt(u);
+
+	if(u > eps) {
+
+		/*! Simple power-law wall model Werner and Wengle (1991)
+
+		          u+ = y+               for y+ < 11.8
+		          u+ = 8.3*(y+)^(1/7)   for y+ > 11.8
+		*/
+
+		if(run_input.wall_model == 1) {
+
+			Rey_c = ymatch*ymatch;
+			Rey = rho*u*y/mu;
+
+			//cout << "Rey "<< Rey << endl;
+
+			if(Rey < Rey_c) uplus = sqrt(Rey);
+			else            uplus = pow(8.3,0.875)*pow(Rey,0.125);
+
+			utau = u/uplus;
+			tw = rho*utau*utau;
+
+			//cout << "utau "<< utau << endl;
+
+			for (i=0;i<n_dims-1;i++) tau_wall(i) = tw*urot(i)/u;
+
+			// Wall heat flux
+			if(Rey < Rey_c) q_wall = ene*gamma*tw / (Pr * u);
+			else            q_wall = ene*gamma*tw / (Pr * (u + utau * sqrt(Rey_c) * (Pr/Pr_t-1.0)));
 		}
-		//cout<<"SGS flux:"<<endl;
-		//temp_sgsf.print();
+
+		/*! Breuer-Rodi 3-layer wall model (Breuer and Rodi, 1996)
+		
+		          u+ = y+               for y+ <= 5.0
+		          u+ = A*ln(y+)+B       for 5.0 < y+ <= 30.0
+		          u+ = ln(E*y+)/k       for y+ > 30.0
+		
+		          k=0.42, E=9.8
+		          A=(log(30.0*E)/k-5.0)/log(6.0)
+		          B=5.0-A*log(5.0)
+
+		Note: the law of wall is made algebraic by first guessing the friction
+		velocity with the wall shear at the previous timestep
+		
+	  N.B. using a two-layer law to compute the wall heat flux
+		*/
+
+		else if(run_input.wall_model == 2) {
+
+			double A, B, phi;
+			double E = 9.8;
+			double Rey0, ReyL, ReyH, ReyM;
+			double yplus, yplusL, yplusH, yplusM, yplusN;
+			double kappa = 0.42;
+			int maxit = 0;
+			int it, sign, s;
+
+			A = (log(30.0*E)/kappa - 5.0)/log(6.0);
+			B = 5.0 - A*log(5.0);
+
+			// compute wall distance in wall units
+			phi = rho*y/mu;
+			Rey0 = u*phi;
+			utau = 0.0;
+			for (i=0;i<n_dims-1;i++)
+				utau += tau_wall(i)*tau_wall(i);
+
+			utau /= pow( (rho*rho), 0.25);
+			yplus = utau*phi;
+
+			if(maxit > 0) {
+				Rey = wallfn_br(yplus,A,B,E,kappa);
+
+				// if in the 
+				if(Rey > Rey0) {
+					yplusH = yplus;
+					ReyH = Rey-Rey0;
+					yplusL = yplus*Rey0/Rey;
+
+					ReyL = wallfn_br(yplusL,A,B,E,kappa);
+					ReyL -= Rey0;
+
+					it = 0;
+					while(ReyL*ReyH >= 0.0 && it < maxit) {
+
+						yplusL -= 1.6*(yplusH-yplusL);
+						ReyL = wallfn_br(yplusL,A,B,E,kappa);
+						ReyL -= Rey0;
+						++it;
+
+					}
+				}
+				else {
+					yplusH = yplus;
+					ReyH = Rey-Rey0;
+
+					if(Rey > eps) yplusH = yplus*Rey0/Rey;
+					else yplusH = 2.0*yplusL;
+
+					ReyH = wallfn_br(yplusH,A,B,E,kappa);
+					ReyH -= Rey0;
+
+					it = 0;
+					while(ReyL*ReyH >= 0.0 && it < maxit) {
+
+						yplusH += 1.6*(yplusH - yplusL);
+						ReyH = wallfn_br(yplusH,A,B,E,kappa);
+						ReyH -= Rey0;
+						++it;
+
+					}
+				}
+
+				// iterative solution by Ridders' Method
+
+				yplus = 0.5*(yplusL+yplusH);
+
+				for(it=0;it<maxit;++it) {
+
+					yplusM = 0.5*(yplusL+yplusH);
+					ReyM = wallfn_br(yplusM,A,B,E,kappa);
+					ReyM -= Rey0;
+					s = sqrt(ReyM*ReyM - ReyL*ReyH);
+					if(s==0.0) break;
+
+					sign = (ReyL-ReyH)/abs(ReyL-ReyH);
+					yplusN = yplusM + (yplusM-yplusL)*(sign*ReyM/s);
+					if(abs(yplusN-yplus) < eps) break;
+
+					yplus = yplusN;
+					Rey = wallfn_br(yplus,A,B,E,kappa);
+					Rey -= Rey0;
+					if(abs(Rey) < eps) break;
+
+					if(Rey/abs(Rey)*ReyM != ReyM) {
+						yplusL = yplusM;
+						ReyL = ReyM;
+						yplusH = yplus;
+						ReyH = Rey;
+					}
+					else if(Rey/abs(Rey)*ReyL != ReyL) {
+						yplusH = yplus;
+						ReyH = Rey;
+					}
+					else if(Rey/abs(Rey)*ReyH != ReyH) {
+						yplusL = yplus;
+						ReyL = Rey;
+					}
+
+					if(abs(yplusH-yplusL) < eps) break;
+				} // end for loop
+
+				utau = u*yplus/Rey0;
+			}
+
+			// approximate solution using tw at previous timestep
+			// Wang, Moin (2002), Phys.Fluids 14(7)
+			else {
+				if(Rey > eps) utau = u*yplus/Rey;
+				else          utau = 0.0;
+				yplus = utau*phi;
+			}
+
+			tw = rho*utau*utau;
+
+			// why different to WW model?
+			for (i=0;i<n_dims-1;i++) tau_wall(i) = abs(tw*urot(i)/u);
+
+			// Wall heat flux
+			if(yplus <= ymatch) q_wall = ene*gamma*tw / (Pr * u);
+			else                q_wall = ene*gamma*tw / (Pr * (u + utau * ymatch * (Pr/Pr_t-1.0)));
 		}
 	}
 
-	// Add similarity term to SGS fluxes if WSM or Similarity model
-	if(sim==1)
-	{
-		for (int j=0;j<n_dims;j++)
+	// if velocity is 0
+	else {
+		for (i=0;i<n_dims-1;i++) tau_wall(i) = 0.0;
+		q_wall = 0.0;
+	}
+}
+
+double eles::wallfn_br(double yplus, double A, double B, double E, double kappa) {
+	double Rey;
+
+	if     (yplus < 0.5)  Rey = yplus*yplus;
+	else if(yplus > 30.0) Rey = yplus*log(E*yplus)/kappa;
+	else                  Rey = yplus*(A*log(yplus)+B);
+
+	return Rey;
+}
+
+/*! Calculate SGS flux at solution points */
+void eles::calc_sgsf_fpts(void)
+{
+	if (n_eles!=0) {
+
+		/*!
+		Performs C = (alpha*A*B) + (beta*C) where: \n
+		alpha = 1.0 \n
+		beta = 0.0 \n
+		A = opp_0 \n
+		B = sgsf_upts \n
+		C = sgsf_fpts
+		*/
+
+		Arows =	n_fpts_per_ele;
+		Acols = n_upts_per_ele;
+
+		Brows = Acols;
+		Bcols = n_fields*n_eles;
+
+		Astride = Arows;
+		Bstride = Brows;
+		Cstride = Arows;
+
+		#ifdef _CPU
+
+		if(opp_0_sparse==0) // dense
 		{
-			temp_sgsf(0,j) += 0.0; // Density flux
-			temp_sgsf(n_fields-1,j) += run_input.gamma*rho*Le(upt,ele,j); // Energy flux
-		}
+			#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-		// Momentum fluxes
-		if(n_dims==2) {
-			temp_sgsf(1,0) += rho*Lu(upt,ele,0);
-			temp_sgsf(1,1) += rho*Lu(upt,ele,2);
-			temp_sgsf(2,0) += temp_sgsf(1,1);
-			temp_sgsf(2,1) += rho*Lu(upt,ele,1);
-		}
-		else if(n_dims==3) {
-			temp_sgsf(1,0) += rho*Lu(upt,ele,0);
-			temp_sgsf(1,1) += rho*Lu(upt,ele,3);
-			temp_sgsf(1,2) += rho*Lu(upt,ele,4);
-			temp_sgsf(2,0) += temp_sgsf(1,1);
-			temp_sgsf(2,1) += rho*Lu(upt,ele,1);
-			temp_sgsf(2,2) += rho*Lu(upt,ele,5);
-			temp_sgsf(3,0) += temp_sgsf(1,2);
-			temp_sgsf(3,1) += temp_sgsf(2,2);
-			temp_sgsf(3,2) += rho*Lu(upt,ele,2);
-		}
+			for (int i=0;i<n_dims;i++) {
+				cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,sgsf_upts.get_ptr_cpu(0,0,0,i),Bstride,0.0,sgsf_fpts.get_ptr_cpu(0,0,0,i),Cstride);
+			}
 
-		//cout<<"Leonard = "<<setprecision(10)<<Lu(upt,ele,0)<<", "<<Lu(upt,ele,1)<<", "<<Lu(upt,ele,2)<<endl;
+			#endif
+	  }
+		else if(opp_0_sparse==1) // mkl blas four-array csr format
+		{
+			#if defined _MKL_BLAS
 
-		//cout<<"sim flux:"<<endl;
-		//temp_sgsf.print();
+			for (int i=0;i<n_dims;i++) {
+				mkl_dcsrmm(&transa, &n_fpts_per_ele, &n_fields_mul_n_eles, &n_upts_per_ele, &one, matdescra, opp_0_data.get_ptr_cpu(), opp_0_cols.get_ptr_cpu(), opp_0_b.get_ptr_cpu(), opp_0_e.get_ptr_cpu(), sgsf_upts.get_ptr_cpu(0,0,0,i), &n_upts_per_ele, &zero, sgsf_fpts.get_ptr_cpu(0,0,0,i), &n_fpts_per_ele);
+			}
+
+			#endif
+		}
+		else { cout << "ERROR: Unknown storage for opp_0 ... " << endl; }
+
+		#endif
+  
+		#ifdef _GPU
+
+		if(opp_0_sparse==0)
+    {
+			for (int i=0;i<n_dims;i++) {
+				cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_0.get_ptr_gpu(),Astride,sgsf_upts.get_ptr_gpu(0,0,0,i),Bstride,0.0,sgsf_fpts.get_ptr_gpu(0,0,0,i),Cstride);
+			}
+		}
+		else if (opp_0_sparse==1)
+		{
+			for (int i=0;i<n_dims;i++) {
+	      bespoke_SPMV(n_fpts_per_ele, n_upts_per_ele, n_fields, n_eles, opp_0_ell_data.get_ptr_gpu(), opp_0_ell_indices.get_ptr_gpu(), opp_0_nnz_per_row, sgsf_upts.get_ptr_gpu(0,0,0,i), sgsf_fpts.get_ptr_gpu(0,0,0,i), ele_type, order, 0);
+			}
+		}
+		else
+		{
+			cout << "ERROR: Unknown storage for opp_0 ... " << endl;
+		}
+		#endif 
 	}
 }
 
@@ -2896,6 +3498,11 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 			 disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
 		}
 	}
+
+	// HACK to show wall distance in Paraview
+	//for(i=1;i<n_fields-1;i++)
+		//for(j=0;j<n_upts_per_ele;j++)
+			//disu_upts_plot(j,i)=wall_distance(j,in_ele,i-1);
 
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 	
@@ -3900,7 +4507,7 @@ double* eles::get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter
 #endif
 }
 
-// get a pointer to the magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points
+// get a pointer to the magnitude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points
 
 double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
 {
@@ -3958,7 +4565,7 @@ double* eles::get_loc_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, i
 	{
 		fpt+=n_fpts_per_inter(i);
 	}
-	
+
 #ifdef _GPU  
 	return loc_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 #else
@@ -4039,6 +4646,27 @@ double* eles::get_norm_tconvisf_fpts_ptr(int in_inter_local_fpt, int in_ele_loca
 }
 */
 
+// get a pointer to the subgrid-scale flux at a flux point
+double* eles::get_sgsf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_dim, int in_ele)
+{
+	int i;
+	
+	int fpt;
+	
+	fpt=in_inter_local_fpt;
+	
+	for(i=0;i<in_ele_local_inter;i++)
+	{
+		fpt+=n_fpts_per_inter(i);
+	}
+
+#ifdef _GPU  
+	return sgsf_fpts.get_ptr_gpu(fpt,in_ele,in_field,in_dim);
+#else
+	return sgsf_fpts.get_ptr_cpu(fpt,in_ele,in_field,in_dim);
+#endif
+}
+
 //#### helper methods ####
 
 // calculate position
@@ -4109,6 +4737,7 @@ void eles::calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_p
 	}
 }
 
+/*! Calculate residual sum for monitoring purposes */
 double eles::compute_res_upts(int in_norm_type, int in_field) {
 
   int i, j;

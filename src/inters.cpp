@@ -41,6 +41,7 @@ inters::inters()
 {	
 	order=run_input.order;
 	viscous=run_input.viscous;
+	LES = run_input.LES;
 }
 
 inters::~inters() { }
@@ -99,19 +100,25 @@ void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
   {
 
 	  disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
+    delta_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
 	  norm_tconf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
 	  detjac_fpts_l.setup(n_fpts_per_inter,n_inters);
 	  mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.setup(n_fpts_per_inter,n_inters);
+
 	  norm_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
 	  loc_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
 
-    delta_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
 
 	  if(viscous)
 	  {
 	  	grad_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
 	  	//norm_tconvisf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
 	  }
+
+		if(LES) {
+			sgsf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+			temp_sgsf_l.setup(n_fields,n_dims);
+		}
 
 	  temp_u_l.setup(n_fields);
 	  temp_u_r.setup(n_fields);

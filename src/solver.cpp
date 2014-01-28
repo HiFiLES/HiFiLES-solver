@@ -127,15 +127,17 @@ void CalcResidual(struct solution* FlowSol) {
     }
 #endif
 
-    // Calculate Leonard tensors before this point if using similarity LES model
-
-		// Create separate function to calculate SGS flux?
-
     /*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
 		for(i=0; i<FlowSol->n_ele_types; i++)
 			FlowSol->mesh_eles(i)->calc_tdisvisf_upts(in_disu_upts_from);
   }
   
+  /*! If using LES, compute the SGS flux at flux points. */
+  if (run_input.LES) {
+	  for(i=0; i<FlowSol->n_ele_types; i++)
+			FlowSol->mesh_eles(i)->calc_sgsf_fpts();
+	}
+
   /*! For viscous or inviscid, compute the divergence of flux at solution points. */
 	for(i=0; i<FlowSol->n_ele_types; i++)
 		FlowSol->mesh_eles(i)->calc_div_tdisf_upts(in_div_tconf_upts_to);
@@ -151,7 +153,7 @@ void CalcResidual(struct solution* FlowSol) {
     
 	  for(i=0; i<FlowSol->n_bdy_inter_types; i++)
       FlowSol->mesh_bdy_inters(i).calc_norm_tconvisf_fpts_boundary(FlowSol->time);
-    
+   
 #if _MPI
     /*! Evaluate the MPI interfaces. */
     if (FlowSol->nproc>1) {
@@ -191,6 +193,13 @@ double* get_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_loca
 double* get_norm_tconf_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol)
 {
 	return FlowSol->mesh_eles(in_ele_type)->get_norm_tconf_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
+}
+
+// get pointer to subgrid-scale flux at a flux point
+
+double* get_sgsf_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol)
+{
+	return FlowSol->mesh_eles(in_ele_type)->get_sgsf_fpts_ptr(in_fpt,in_local_inter,in_field,in_dim,in_ele);
 }
 
 // get pointer to determinant of jacobian at a flux point

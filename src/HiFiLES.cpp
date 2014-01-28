@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
       if (FlowSol.rank == 0) cout << endl;
     
     /*! Dump diagnostics. */
-	  if(run_input.diagnostics_freq!=0) {
+	  if(run_input.diagnostics_freq!=0 and run_input.n_diagnostics != 0) {
 	    if (i_steps%run_input.diagnostics_freq == 0) {
   	    CalcDiagnostics(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
   	  }

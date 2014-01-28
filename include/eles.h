@@ -114,6 +114,9 @@ class eles
   /*! calculate normal transformed discontinuous flux at flux points */
   void calc_norm_tdisf_fpts(void);
   
+  /*! calculate subgrid-scale flux at flux points */
+  void calc_sgsf_fpts(void);
+
   /*! calculate divergence of transformed continuous flux at solution points */
   void calc_div_tconf_upts(int in_div_tconf_upts_to);
   
@@ -167,7 +170,7 @@ class eles
 
   /*! get number of solution points per element */
   int get_n_upts_per_ele(void);
-  
+
   /*! get element type */
   int get_ele_type(void);
       
@@ -200,11 +203,11 @@ class eles
   
   /*! get a pointer to the normal transformed continuous flux at a flux point */
   double* get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
-       
+
   /*! get a pointer to the determinant of the jacobian at a flux point */
   double* get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
        
-  /*! get a pointer to the magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points */
+  /*! get a pointer to the magnitude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points */
 	double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
         
   /*! get a pointer to the normal at a flux point */
@@ -221,7 +224,10 @@ class eles
 
 	/*! get a pointer to the normal transformed continuous viscous flux at a flux point */
 	//double* get_norm_tconvisf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
-  
+
+  /*! get a pointer to the subgrid-scale flux at a flux point */
+  double* get_sgsf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_dim, int in_ele);
+
   /*! set opp_0 */
   void set_opp_0(int in_sparse);
   
@@ -273,6 +279,7 @@ class eles
 
   void set_disu_upts_to_zero_other_levels(void);
 
+  /*! get a pointer to the plot point connectivity array */
   int* get_connectivity_plot_ptr();
 
   array<int> get_connectivity_plot();
@@ -297,11 +304,14 @@ class eles
   /*! set transforms */
   void set_transforms(int in_run_type);
        
-  /*! set transforms at the interface cubature points*/
+  /*! set transforms at the interface cubature points */
   void set_transforms_inters_cubpts(void);
 
-  /*! set transforms at the volume cubature points*/
+  /*! set transforms at the volume cubature points */
   void set_transforms_vol_cubpts(void);
+
+	/*! Calculate distance of solution points to no-slip wall */
+	void calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy);
 
   /*! calculate position */
   void calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos);
@@ -349,6 +359,15 @@ class eles
 	/*! Calculate SGS flux */
 	void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf);
 
+  /*! rotate velocity components to surface*/
+	array<double> calc_rotation_matrix(array<double>& norm);
+
+  /*! calculate wall shear stress using LES wall model*/
+	void calc_wall_stress(double rho, array<double>& urot, double ene, double mu, double Pr, double gamma, double y, array<double>& tau_wall, double q_wall);
+
+	/*! Wall function calculator for Breuer-Rodi wall model */
+	double wallfn_br(double yplus, double A, double B, double E, double kappa);
+
 	/*! Calculate element volume */
 	virtual double calc_ele_vol(double& detjac)=0;
 
@@ -377,6 +396,15 @@ class eles
 	/*! viscous flag */
 	int viscous;
 	
+	/*! LES flag */
+	int LES;
+
+	/*! LES filter flag */
+	int filter;
+
+	/*! near-wall model flag */
+	int wall_model;
+
 	/*! number of elements */
 	int n_eles;
 
@@ -530,6 +558,11 @@ class eles
 	/*! temporary subgrid-scale flux storage */
 	array<double> temp_sgsf;
 	
+	/*! storage for distance of solution points to nearest no-slip boundary */
+	array<double> wall_distance;
+
+	array<double> twall;
+
 	/*! number of storage levels for time-integration scheme */
 	int n_adv_levels;
 	
@@ -599,6 +632,20 @@ class eles
 	*/
 	array<double> tdisf_upts;
 	
+	/*!
+	description: subgrid-scale flux at the solution points \n
+	indexing: (in_upt, in_dim, in_field, in_ele) \n
+	matrix mapping: (in_upt, in_dim || in_field, in_ele)
+	*/
+	array<double> sgsf_upts;
+
+	/*!
+	description: subgrid-scale flux at the flux points \n
+	indexing: (in_fpt, in_dim, in_field, in_ele) \n
+	matrix mapping: (in_fpt, in_dim || in_field, in_ele)
+	*/
+	array<double> sgsf_fpts;
+
 	/*!
 	normal transformed discontinuous flux at the flux points
 	indexing: \n

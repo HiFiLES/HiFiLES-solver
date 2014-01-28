@@ -385,14 +385,16 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
     }
   }
   
-  // Set metrics at volume cubpts
-	if (FlowSol->rank==0) cout << "setting element transforms at volume cubpts ... " << endl;
-	for(int i=0;i<FlowSol->n_ele_types;i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-		  FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
-    }
-  }
-  
+  // Set metrics at volume cubpts. Only needed for computing error and diagnostics.
+	if (run_input.test_case != 0 || run_input.diagnostics_freq!=0) {
+		if (FlowSol->rank==0) cout << "setting element transforms at volume cubpts ... " << endl;
+		for(int i=0;i<FlowSol->n_ele_types;i++) {
+	    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+			  FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
+	    }
+	  }
+	}
+
 	// set on gpu (important - need to do this before we set connectivity, so that pointers point to GPU memory)
 #ifdef _GPU
   if (in_run_type==0)
@@ -742,7 +744,107 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 			}
 		}
 	}
-  
+
+	// Flag interfaces for calculating LES wall model
+	if(run_input.wall_model>0) {
+
+	  if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
+
+		int n_noslip_inters = 0;
+		int n_seg_noslip_inters = 0;
+		int n_tri_noslip_inters = 0;
+		int n_quad_noslip_inters = 0;
+		int order = run_input.order;
+		int n_fpts_per_inter_seg = order+1;
+		int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+		int n_fpts_per_inter_quad = (order+1)*(order+1);
+
+		for(int i=0;i<FlowSol->num_inters;i++) {
+
+			bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0) );
+
+			// All types of no-slip wall
+			if(bctype_f == 11 || bctype_f == 12 || bctype_f == 13 || bctype_f == 14) {
+
+				// segs
+        if (f2nv(i)==2) n_seg_noslip_inters++;
+
+				// tris
+        if (f2nv(i)==3) n_tri_noslip_inters++;
+
+				// quads
+        if (f2nv(i)==4) n_quad_noslip_inters++;
+			}
+		}
+
+		//cout << "no-slip inters: " << n_seg_noslip_inters << ", " << n_tri_noslip_inters << ", " << n_quad_noslip_inters << endl;
+
+  	// Allocate arrays for coordinates of points on no-slip boundaries
+		FlowSol->loc_noslip_bdy.setup(FlowSol->n_bdy_inter_types);
+		FlowSol->loc_noslip_bdy(0).setup(n_fpts_per_inter_seg,n_seg_noslip_inters,FlowSol->n_dims);
+		FlowSol->loc_noslip_bdy(1).setup(n_fpts_per_inter_tri,n_tri_noslip_inters,FlowSol->n_dims);
+		FlowSol->loc_noslip_bdy(2).setup(n_fpts_per_inter_quad,n_quad_noslip_inters,FlowSol->n_dims);
+
+		n_seg_noslip_inters = 0;
+		n_tri_noslip_inters = 0;
+		n_quad_noslip_inters = 0;
+
+		// Get coordinates
+		for(int i=0;i<FlowSol->num_inters;i++) {
+
+			ic_l = f2c(i,0);
+			bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0) );
+
+			// All types of no-slip wall
+			if(bctype_f == 11 || bctype_f == 12 || bctype_f == 13 || bctype_f == 14) {
+
+				// segs
+        if (f2nv(i)==2) {
+					for(int j=0;j<n_fpts_per_inter_seg;j++) {
+						for(int k=0;k<FlowSol->n_dims;k++) {
+
+							// roundabout route to find coordinates via solver and eles
+							FlowSol->loc_noslip_bdy(0)(j,n_seg_noslip_inters,k) = *get_loc_fpts_ptr(ctype(ic_l),local_c(ic_l),f2loc_f(i,0),j,k,FlowSol);
+
+							// alternatively, go directly to the function in class eles
+							FlowSol->loc_noslip_bdy(0)(j,n_seg_noslip_inters,k) = *FlowSol->mesh_eles(ctype(ic_l))->get_loc_fpts_ptr(j,f2loc_f(i,0),k,local_c(ic_l));
+						}
+					}
+					n_seg_noslip_inters++;
+				}
+				// tris
+        if (f2nv(i)==3) {
+					for(int j=0;j<n_fpts_per_inter_tri;j++) {
+						for(int k=0;k<FlowSol->n_dims;k++) {
+
+							FlowSol->loc_noslip_bdy(1)(j,n_tri_noslip_inters,k) = *get_loc_fpts_ptr(ctype(ic_l),local_c(ic_l),f2loc_f(i,0),j,k,FlowSol);
+						}
+					}
+					n_tri_noslip_inters++;
+				}
+				// quads
+        if (f2nv(i)==4) {
+					for(int j=0;j<n_fpts_per_inter_quad;j++) {
+						for(int k=0;k<FlowSol->n_dims;k++) {
+
+							FlowSol->loc_noslip_bdy(2)(j,n_quad_noslip_inters,k) = *get_loc_fpts_ptr(ctype(ic_l),local_c(ic_l),f2loc_f(i,0),j,k,FlowSol);
+						}
+					}
+					n_quad_noslip_inters++;
+				}
+			}
+		}
+
+		/*! Calculate distance of every solution point to nearest point on no-slip boundary */
+		for(int i=0;i<FlowSol->n_ele_types;i++) {
+	    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+
+			  FlowSol->mesh_eles(i)->calc_wall_distance(n_seg_noslip_inters,n_tri_noslip_inters,n_quad_noslip_inters,FlowSol->loc_noslip_bdy);
+	    }
+	  }
+	  if (FlowSol->rank==0) cout << "exiting wall distance calculation " << endl;
+	}
+
 	// set on GPU
 #ifdef _GPU
   if (in_run_type==0)
@@ -755,7 +857,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 	  	FlowSol->mesh_bdy_inters(i).mv_all_cpu_gpu();
   }
 #endif
-  
+
 }
 
 void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg, array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, struct solution* FlowSol) {

@@ -39,7 +39,6 @@ class inters
 	/*! setup inters */
 	void setup_inters(int in_n_inters, int in_inter_type, int in_run_type);
 
-
   /*! Set normal flux to be normal * f_r */
   void right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
@@ -69,6 +68,7 @@ class inters
 
 	int order;
 	int viscous;
+	int LES;
 	int n_inters;
 	int n_fpts_per_inter;
 	int n_fields;
@@ -99,7 +99,11 @@ class inters
 	array<double> temp_f;
 	
   array<double> temp_loc;
-	
+
+	// LES and wall model quantities
+	array<double*> sgsf_fpts_l;
+	array<double> temp_sgsf_l;
+
 	array<int> lut;
 
   array<double> v_l, v_r, um, du;

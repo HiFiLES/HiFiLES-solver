@@ -42,6 +42,7 @@ int_inters::int_inters()
 {	
 	order=run_input.order;
 	viscous=run_input.viscous;
+	LES=run_input.LES;
 }
 
 int_inters::~int_inters() { }
@@ -106,6 +107,13 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
           }
 
 	  		}
+
+				// Subgrid-scale flux
+				if(LES) {
+          for (int k=0;k<n_dims;k++) {
+						sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+					}
+				}
 	  	}
 	  }
 
@@ -153,6 +161,10 @@ void int_inters::mv_all_cpu_gpu(void)
 		grad_disu_fpts_r.mv_cpu_gpu();
 		//norm_tconvisf_fpts_r.mv_cpu_gpu();		
   }
+
+	if(LES) {
+		sgsf_fpts_l.mv_cpu_gpu();
+	}
 
 	#endif
 }
@@ -242,11 +254,6 @@ void int_inters::calc_norm_tconinvf_fpts(void)
   }
 
   #endif
-
-
-
-
-
 }
 
 
@@ -296,6 +303,18 @@ void int_inters::calc_norm_tconvisf_fpts(void)
 			else
   			FatalError("ERROR: Invalid number of dimensions ... ");
 
+			// If LES, get SGS flux and add to viscous flux
+			if(LES) {
+				// pointer to subgrid-scale flux at flux point
+				for(int k=0;k<n_dims;k++) {
+					for(int l=0;l<n_fields;l++) {
+						temp_sgsf_l(l,k) = *sgsf_fpts_l(j,i,l,k);
+
+						// Add SGS flux to viscous flux
+						temp_f_l(l,k) += temp_sgsf_l(l,k);
+					}
+				}
+			}
 
       // storing normal components
       for (int m=0;m<n_dims;m++)

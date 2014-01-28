@@ -101,7 +101,7 @@ void get_vlist_loc_edge(int& in_ctype, int& in_nspt, int& in_edge, array<int>& o
 /*! Method that return the shape point number associated with a vertex */
 void get_vert_loc(int& in_ctype, int& in_nspts, int& in_vert, int& out_v);
 
-/*!5Method to compute distance between two points */
+/*! Method to compute distance between two points */
 double compute_distance(array<double>& pos_0, array<double>& pos_1, int in_dims, struct solution* FlowSol);
 
 /*! Method that compares the vertices from two faces to check if they match */

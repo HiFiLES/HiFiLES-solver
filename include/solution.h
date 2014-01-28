@@ -74,6 +74,10 @@ struct solution {
   
   int rank;
   
+  /*! No-slip wall flux point coordinates for wall models. */
+
+	array< array<double> > loc_noslip_bdy;
+
   /*! Diagnostics. */
   
 	array<double> body_force;
