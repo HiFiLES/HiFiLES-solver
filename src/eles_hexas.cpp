@@ -63,6 +63,8 @@ void eles_hexas::setup_ele_type_specific(int in_run_type)
 
   if (run_input.equation==0)
 	  n_fields=5;
+  else if (run_input.equation==2)
+	  n_fields=6;
   else if (run_input.equation==1)
     n_fields=1;
   else 

@@ -92,6 +92,12 @@ void CalcResidual(struct solution* FlowSol) {
 	    FlowSol->mesh_eles(i)->add_body_force_upts(FlowSol->body_force);
 	}
   
+  /*! Calculate turbulence source term. */
+	if(run_input.equation==2) {
+		for(i=0; i<FlowSol->n_ele_types; i++)
+	    FlowSol->mesh_eles(i)->add_sa_source();
+	}
+  
   /*! Compute the inviscid numerical fluxes.
    Compute the common solution and solution corrections (viscous only). */
 	for(i=0; i<FlowSol->n_int_inter_types; i++)

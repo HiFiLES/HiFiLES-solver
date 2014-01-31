@@ -362,6 +362,9 @@ class eles
 
 	/*! add body forcing at solution points */
 	void add_body_force_upts(array <double>& body_force);
+  
+  /*! add source term sa model */
+	void add_sa_source(void);
 
 	/*! Compute volume integral of diagnostic quantities */
 	void CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array);

@@ -1207,7 +1207,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 					write_vtu << disu_ppts_temp(k,1)/disu_ppts_temp(k,0) << " " << disu_ppts_temp(k,2)/disu_ppts_temp(k,0) << " ";
 
 					/*! In 2D the z-component of velocity is not stored, but Paraview needs it so write a 0. */
-					if(n_fields==4)
+					if(n_dims==2)
 					{
 						write_vtu << 0.0 << " ";
 					}
@@ -1225,7 +1225,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 				for(k=0;k<n_points;k++)
 				{
 					/*! In 2D energy is the 4th solution component */
-					if(n_fields==4)
+					if(n_dims==2)
 					{
 						write_vtu << disu_ppts_temp(k,3)/disu_ppts_temp(k,0) << " ";
 					}
@@ -3110,10 +3110,6 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
   double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
   bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
   
-  
-  if (FlowSol->n_dims==2) n_fields = 4;
-  else n_fields = 5;
-  
 #ifdef _GPU
 	// copy residual to cpu
 	for(i=0; i<FlowSol->n_ele_types; i++) {
@@ -3124,6 +3120,7 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
 #endif
   
 	for(i=0; i<FlowSol->n_ele_types; i++) {
+    n_fields = FlowSol->mesh_eles(i)->get_n_fields();
     if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
       n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
       for(j=0; j<n_fields; j++)
@@ -3134,9 +3131,9 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
 #ifdef _MPI
   
   int n_upts_global = 0;
-  double sum_global[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(sum, sum_global, 6, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   
   n_upts = n_upts_global;
   for(i=0; i<n_fields; i++) sum[i] = sum_global[i];
@@ -3159,8 +3156,15 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
     
     // Write the header
     if (write_heads) {
-      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]" << endl;
-      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]" << endl;
+      if (FlowSol->n_dims==2) {
+        if (n_fields == 4) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]" << endl;
+        else cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]      Res[NuTilde]" << endl;
+      }
+      else {
+        if (n_fields == 5) cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]" << endl;
+        else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]      Res[NuTilde]" << endl;
+      }
+      
     }
     
     // Screen output

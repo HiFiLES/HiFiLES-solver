@@ -58,6 +58,8 @@ void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
 
     if (run_input.equation==0)
 	    n_fields=4;
+    else if (run_input.equation==2)
+      n_fields=5;
     else if (run_input.equation==1)
       n_fields=1;
     else 
@@ -71,6 +73,8 @@ void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
 
     if (run_input.equation==0)
 	    n_fields=5;
+    else if (run_input.equation==2)
+      n_fields=6;
     else if (run_input.equation==1)
       n_fields=1;
     else 
@@ -83,6 +87,8 @@ void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
 		n_dims=3;
     if (run_input.equation==0)
 	    n_fields=5;
+    else if (run_input.equation==2)
+      n_fields=6;
     else if (run_input.equation==1)
       n_fields=1;
     else 

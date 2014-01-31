@@ -23,7 +23,7 @@ using namespace std;
 
 void calc_invf_2d(array<double>& in_u, array<double>& out_f)
 {	
-  if (run_input.equation==0) // Euler equation
+  if ((run_input.equation==0) || (run_input.equation==2)) // Euler and NS equation
   {
 	  double vx;
 	  double vy;
@@ -37,11 +37,22 @@ void calc_invf_2d(array<double>& in_u, array<double>& out_f)
 	  out_f(1,0)=p+(in_u(1)*vx);
 	  out_f(2,0)=in_u(2)*vx;
 	  out_f(3,0)=vx*(in_u(3)+p);
-	  			
+	  	
 	  out_f(0,1)=in_u(2);
 	  out_f(1,1)=in_u(1)*vy;
 	  out_f(2,1)=p+(in_u(2)*vy);
 	  out_f(3,1)=vy*(in_u(3)+p);
+
+    if (run_input.equation==2)  // SA model
+    {
+      
+      double nu_tilde;
+      nu_tilde = in_u(4);
+      out_f(4,0)=vx*nu_tilde;
+      out_f(4,1)=vy*nu_tilde;
+      
+    }
+    
   }
   else if (run_input.equation==1) // Advection-diffusion equation
   {
@@ -59,7 +70,7 @@ void calc_invf_2d(array<double>& in_u, array<double>& out_f)
 void calc_invf_3d(array<double>& in_u, array<double>& out_f)
 {
 
-  if (run_input.equation==0) // Euler Equation
+  if ((run_input.equation==0) || (run_input.equation==2)) // Euler and NS equation
   {
     double vx;
 	  double vy;
@@ -88,6 +99,19 @@ void calc_invf_3d(array<double>& in_u, array<double>& out_f)
 	  out_f(2,2)=in_u(2)*vz;
 	  out_f(3,2)=p+(in_u(3)*vz);
 	  out_f(4,2)=vz*(in_u(4)+p);
+    
+   
+    if (run_input.equation==2) // SA model
+    {
+      double nu_tilde;
+      
+      nu_tilde = in_u(5);
+      out_f(5,0)=vx*nu_tilde;
+      out_f(5,1)=vy*nu_tilde;
+      out_f(5,2)=vz*nu_tilde;
+      
+    }
+    
   }
   else if (run_input.equation==1) // Advection-diffusion equation
   {

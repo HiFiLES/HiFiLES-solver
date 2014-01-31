@@ -4321,6 +4321,160 @@ void eles::add_body_force_upts(array <double>& body_force)
 	}
 }
 
+void eles::add_sa_source(void)
+{
+  
+  /*--- Spalart-Allmaras closure constants ---*/
+  
+  double cv1_3 = pow(7.1,3.0);
+  double k2 = pow(0.41,2.0);
+  double cb1 = 0.1355;
+  double cw2 = 0.3;
+  double cw3_6 = pow(2.0,6.0);
+  double sigma = 2./3.;
+  double cb2 = 0.622;
+  double cb2_sigma = cb2/sigma;
+  double cw1 = cb1/k2+(1+cb2)/sigma;
+
+  
+	if (n_eles!=0) {
+    
+		int i,j;
+    
+	  for (i=0;i<n_eles;i++)
+		  for (j=0;j<n_upts_per_ele;j++) {
+        
+        double rho = disu_upts(0)(j,i,0);
+        double mom_x = disu_upts(0)(j,i,1);
+        double mom_y = disu_upts(0)(j,i,2);
+        double mom_z = 0.0;
+        double ene = 0.0;
+        if (n_dims == 2) {
+          ene   = disu_upts(0)(j,i,3);
+        }
+        else {
+          mom_z = disu_upts(0)(j,i,3);
+          ene   = disu_upts(0)(j,i,4);
+        }
+        
+        double u = mom_x/rho;
+        double v = mom_y/rho;
+        double w = mom_z/rho;
+
+        double inte = ene/rho - 0.5*(u*u+v*v);
+        if (n_dims == 3) inte -= 0.5*(w*w);
+        
+        // viscosity
+        double rt_ratio = (run_input.gamma-1.0)*inte/(run_input.rt_inf);
+        double mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1.+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
+        mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
+        
+        // Nu tilde
+        double Nu_Tilde = 0.0;
+        if (n_dims == 2) Nu_Tilde = disu_upts(0)(j,i,4);
+        else Nu_Tilde = disu_upts(0)(j,i,5);
+          
+        // Distance
+        double Distance = 0.0;
+        
+        
+        /*--- Computation of vorticity ---*/
+        double irho = 1./rho;
+        double wx, wy, wz;
+        double norm2_Grad;
+        
+        if (n_dims == 2) {
+          
+          double dudx = irho*(grad_disu_upts(j,i,1,0) - u*grad_disu_upts(j,i,0,0));
+          double dudy = irho*(grad_disu_upts(j,i,1,1) - u*grad_disu_upts(j,i,0,1));
+          double dvdx = irho*(grad_disu_upts(j,i,2,0) - v*grad_disu_upts(j,i,0,0));
+          double dvdy = irho*(grad_disu_upts(j,i,2,1) - v*grad_disu_upts(j,i,0,1));
+          
+          wz = dvdx - dudy;
+          
+          double dnutildedx = grad_disu_upts(j,i,4,0);
+          double dnutildedy = grad_disu_upts(j,i,4,1);
+          
+          norm2_Grad = dnutildedx*dnutildedx + dnutildedy*dnutildedy;
+
+        }
+        
+        if (n_dims == 2) {
+          
+          double dudx = irho*(grad_disu_upts(j,i,1,0) - u*grad_disu_upts(j,i,0,0));
+          double dudy = irho*(grad_disu_upts(j,i,1,1) - u*grad_disu_upts(j,i,0,1));
+          double dudz = irho*(grad_disu_upts(j,i,1,2) - u*grad_disu_upts(j,i,0,2));
+          
+          double dvdx = irho*(grad_disu_upts(j,i,2,0) - v*grad_disu_upts(j,i,0,0));
+          double dvdy = irho*(grad_disu_upts(j,i,2,1) - v*grad_disu_upts(j,i,0,1));
+          double dvdz = irho*(grad_disu_upts(j,i,2,2) - v*grad_disu_upts(j,i,0,2));
+
+          double dwdx = irho*(grad_disu_upts(j,i,3,0) - w*grad_disu_upts(j,i,0,0));
+          double dwdy = irho*(grad_disu_upts(j,i,3,1) - w*grad_disu_upts(j,i,0,1));
+          double dwdz = irho*(grad_disu_upts(j,i,3,2) - w*grad_disu_upts(j,i,0,2));
+          
+          wx = dwdy - dvdz;
+          wy = dudz - dwdx;
+          wz = dvdx - dudy;
+          
+          double dnutildedx = grad_disu_upts(j,i,5,0);
+          double dnutildedy = grad_disu_upts(j,i,5,1);
+          double dnutildedz = grad_disu_upts(j,i,5,2);
+          
+          norm2_Grad = dnutildedx*dnutildedx + dnutildedy*dnutildedy + dnutildedz*dnutildedz;
+
+        }
+        
+        double Omega = 0.0;
+        if (n_dims == 2) Omega = abs(wz);
+        else Omega = sqrt(wx*wx+wy*wy+wz*wz);
+        
+        double Residual = 0.0, Production = 0.0, Destruction = 0.0, CrossProduction = 0.0;
+
+        if (Distance > 1e-10) {
+          
+          /*--- Production term ---*/
+          
+          double Distance_2 = Distance*Distance;
+          double nu = mu/rho;
+          double Ji = Nu_Tilde/nu;
+          double Ji_2 = Ji*Ji;
+          double Ji_3 = Ji_2*Ji;
+          double fv1 = Ji_3/(Ji_3+cv1_3);
+          double fv2 = 1.0 - Ji/(1.0+Ji*fv1);
+          double S = Omega;
+          double inv_k2_d2 = 1.0/(k2*Distance_2);
+          
+          double Shat = S + Nu_Tilde*fv2*inv_k2_d2;
+          double inv_Shat = 1.0/max(Shat, 1.0e-10);
+          
+          /*--- Production term ---*/;
+          
+          Production = cb1*Shat*Nu_Tilde;
+          
+          /*--- Destruction term ---*/
+          
+          double r = min(Nu_Tilde*inv_Shat*inv_k2_d2,10.0);
+          double g = r + cw2*(pow(r,6.0)-r);
+          double g_6 =	pow(g,6.0);
+          double glim = pow((1.0+cw3_6)/(g_6+cw3_6),1.0/6.0);
+          double fw = g*glim;
+          
+          Destruction = cw1*fw*Nu_Tilde*Nu_Tilde/Distance_2;
+          
+          /*--- Diffusion term ---*/
+          
+          CrossProduction = cb2_sigma*norm2_Grad;
+          
+          Residual = Production - Destruction + CrossProduction;
+          
+         }
+        
+      }
+	}
+}
+
+
 // Compute diagnostic quantities
 void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
 {
