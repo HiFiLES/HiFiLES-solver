@@ -313,6 +313,9 @@ class eles
 	/*! Calculate distance of solution points to no-slip wall */
 	void calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy);
 
+	/*! Calculate distance of solution points to no-slip wall in parallel */
+	void calc_wall_distance_parallel(array<int> n_seg_noslip_inters, array<int> n_tri_noslip_inters, array<int> n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy_global, int nproc);
+
   /*! calculate position */
   void calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos);
 

@@ -115,6 +115,8 @@ struct solution {
   array<double> out_buffer_plotq, in_buffer_plotq;
   array<int> out_buffer_pnode, in_buffer_pnode;
   
+	array< array<double> > loc_noslip_bdy_global;
+
 #endif
   
 };

@@ -1037,12 +1037,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 	/*! VTK element types (different to HiFiLES element type) */
 	/*! tri, quad, tet, prism (undefined), hex */
 	/*! See vtkCellType.h for full list */
-	array<int> vtktypes(5);
-	vtktypes(0) = 5;
-	vtktypes(1) = 9;
-	vtktypes(2) = 10;
-	vtktypes(3) = 0;
-	vtktypes(4) = 12;
+
+	int vtktypes[5] = {5,9,10,0,12};
 
 	/*! File names */
 	char vtu_s[50];
@@ -1295,7 +1291,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 				write_vtu << "				<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << endl;
 				for(k=0;k<n_cells;k++)
 				{
-					write_vtu << vtktypes(i) << " ";
+					write_vtu << vtktypes[i] << " ";
 				}
 				write_vtu << endl;
   	    write_vtu << "				</DataArray>" << endl;
@@ -3151,10 +3147,7 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
       else if (run_input.res_norm_type==2) { norm[i] = sqrt(sum[i]) / n_upts; } // L2 norm
       else FatalError("norm_type not recognized");
       
-      if (isnan(norm[i])) {
-        cout << "NaN residual at iteration " << in_file_num << ". Exiting" << endl;
-        return 1;
-      }
+      if (isnan(norm[i])) FatalError("ERROR: NaN residual");
     }
     
     // Write the header
