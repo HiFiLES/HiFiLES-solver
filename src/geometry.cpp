@@ -822,9 +822,9 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 		FlowSol->loc_noslip_bdy(1).setup(n_fpts_per_inter_tri,n_tri_noslip_inters,FlowSol->n_dims);
 		FlowSol->loc_noslip_bdy(2).setup(n_fpts_per_inter_quad,n_quad_noslip_inters,FlowSol->n_dims);
 
-		FlowSol->loc_noslip_bdy(0).initialize_to_zero();
-		FlowSol->loc_noslip_bdy(1).initialize_to_zero();
-		FlowSol->loc_noslip_bdy(2).initialize_to_zero();
+		zero_array(FlowSol->loc_noslip_bdy(0));
+		zero_array(FlowSol->loc_noslip_bdy(1));
+		zero_array(FlowSol->loc_noslip_bdy(2));
 
 		n_seg_noslip_inters = 0;
 		n_tri_noslip_inters = 0;
@@ -887,9 +887,9 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
 		FlowSol->loc_noslip_bdy_global(2).setup(n_fpts_per_inter_quad,FlowSol->nproc*max_quad_noslip_inters,FlowSol->n_dims);
 
-		FlowSol->loc_noslip_bdy_global(0).initialize_to_zero();
-		FlowSol->loc_noslip_bdy_global(1).initialize_to_zero();
-		FlowSol->loc_noslip_bdy_global(2).initialize_to_zero();
+		zero_array(FlowSol->loc_noslip_bdy_global(0));
+		zero_array(FlowSol->loc_noslip_bdy_global(1));
+		zero_array(FlowSol->loc_noslip_bdy_global(2));
 
 		// Broadcast coordinates of interface points to all partitions
 		buf = max_seg_noslip_inters*n_fpts_per_inter_seg*FlowSol->n_dims;

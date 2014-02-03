@@ -278,7 +278,6 @@ void get_opp_3_dg(array<double>& opp_3_dg, array<double>& loc_upts_tri, array<do
 // Compute a modal filter matrix, given Vandermonde matrix and inverse
 void compute_modal_filter(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N)
 {
-	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
 	int i,j;
 	array <double> modal(N,N), mtemp(N,N);
@@ -303,20 +302,15 @@ void compute_modal_filter(array <double>& filter_upts, array<double>& vandermond
 	cout<<"modal coeffs:"<<endl;
 	modal.print();
 
+	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
 
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
 	#else // inefficient matrix multiplication
 
-	// TODO: finish coding
-	int i,j;
-	array<double> mtemp(N,N);
-
-	for(i=0;i<N-1;i++)
-		filter_upts(i,i) = 1.0;
-
-	mtemp = mult_arrays(inv_vandermonde,filter_upts);
+	mtemp = mult_arrays(inv_vandermonde,modal);
 	filter_upts = mult_arrays(mtemp,vandermonde);
 
 	#endif
@@ -1634,7 +1628,7 @@ array<double> convol(array<double> & polynomial1, array<double> & polynomial2)
     // Allocate memory for result of multiplication of polynomials
     array<double> polynomial3;
     polynomial3.setup(1,sizep1 + sizep2 - 1);
-    polynomial3.initialize_to_zero();
+    zero_array(polynomial3);
 
     for (int i = 0; i < sizep1; i++)
     {
@@ -1777,7 +1771,7 @@ array<double> addPoly(array<double> & p1, array<double> & p2)
     int depthp3 = depthp1 + depthp2;
 
     p3.setup(heightp3,lengthp3,depthp3);
-    p3.initialize_to_zero();
+    zero_array(p3);
 
     // Copy values from p1
 
@@ -1834,7 +1828,13 @@ array<T> multPoly(array<T> & p1, array<T> & p2)
         int heightp3 = heightp1 + heightp2; // add heights to accomodate
 
         p3.setup(heightp3,lengthp3);
-        p3.initialize_to_zero();
+        for (int i = 0; i < heightp3; i++)
+        {
+            for (int j = 0; j < lengthp3; j++)
+            {
+                p3(i, j) = 0.0;
+            }
+        }
 
         for (int i = 0; i < heightp1; i++)
         {
@@ -2348,15 +2348,12 @@ void zero_array(array <double>& in_array)
   int dim_1_2 = in_array.get_dim(2);
   int dim_1_3 = in_array.get_dim(3);
 
-	for (int i=0;i<dim_1_0;++i) {
-		for (int j=0;j<dim_1_1;++j) {
-			for (int k=0;k<dim_1_2;++k) {
-				for (int l=0;l<dim_1_3;++l) {
+	for (int i=0;i<dim_1_0;++i)
+		for (int j=0;j<dim_1_1;++j)
+			for (int k=0;k<dim_1_2;++k)
+				for (int l=0;l<dim_1_3;++l)
 					in_array(i,j,k,l) = 0.0;
-				}
-			}
-		}
-	}
+
 }
 
 // Add arrays M1 and M2
@@ -2374,20 +2371,18 @@ array <double> add_arrays(array <double>& M1, array <double>& M2)
   int dim_2_3 = M2.get_dim(3);
 
 	if(dim_1_0==dim_2_0 and dim_1_1==dim_2_1 and dim_1_2==dim_2_2 and dim_1_3==dim_2_3) {
+
 		array <double> sum(dim_1_0,dim_1_1,dim_1_2,dim_1_3);
-		for (int i=0;i<dim_1_0;++i) {
-			for (int j=0;j<dim_1_1;++j) {
-				for (int k=0;k<dim_1_2;++k) {
-					for (int l=0;l<dim_1_3;++l) {
+
+		for (int i=0;i<dim_1_0;++i)
+			for (int j=0;j<dim_1_1;++j)
+				for (int k=0;k<dim_1_2;++k)
+					for (int l=0;l<dim_1_3;++l)
 						sum(i,j,k,l) = M1(i,j,k,l) + M2(i,j,k,l);
-					}
-				}
-			}
-		}
+
 	}
 	else {
-		cout << "ERROR: array dimensions are not compatible in sum function" << endl;
-		exit(1);
+		FatalError("ERROR: array dimensions are not compatible in sum function");
 	}
 }
 
@@ -2431,13 +2426,11 @@ array <double> mult_arrays(array <double>& M1, array <double>& M2)
 			return product;
 		}
 		else {
-			cout << "ERROR: array dimensions are not compatible in multiplication function" << endl;
-			exit(1);
+			FatalError("array dimensions are not compatible in multiplication function");
 		}
 	}
 	else {
-		cout << "ERROR: Array multiplication function can only multiply 2-dimensional arrays together" << endl;
-		exit(1);
+		FatalError("Array multiplication function can only multiply 2-dimensional arrays together");
 	}
 }
 
@@ -2455,16 +2448,14 @@ array <double> transpose_array(array <double>& in_array)
 		int i,j;
 		array <double> transpose(dim_1,dim_0);
 
-		for(i=0;i<dim_0;i++) {
-			for(j=0;j<dim_1;j++) {
+		for(i=0;i<dim_0;i++)
+			for(j=0;j<dim_1;j++)
 				transpose(j,i)=in_array(i,j);
-			}
-		}
+
 		return transpose;
 	}
 	else {
-		cout << "ERROR: Array transpose function only accepts a 2-dimensional square array" << endl;
-		exit(1);
+		FatalError("Array transpose function only accepts a 2-dimensional square array");
 	}
 }
 
@@ -2599,13 +2590,11 @@ array <double> inv_array(array <double>& in_array)
 			return inverse_out;
 		}
 		else {
-			cout << "ERROR: Can only obtain inverse of a square array" << endl;
-			exit(1);
+			FatalError("Can only obtain inverse of a square array");
 		}
 	}
 	else {
-		cout << "ERROR: Array you are trying to invert has > 2 dimensions" << endl;
-		exit(1);
+		FatalError("Array you are trying to invert has > 2 dimensions");
 	}
 }
 

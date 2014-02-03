@@ -193,8 +193,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	if(wall_model > 0) {
 		wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
 		twall.setup(n_upts_per_ele,n_eles,n_dims);
-		wall_distance.initialize_to_zero();
-		twall.initialize_to_zero();
+		zero_array(wall_distance);
+		zero_array(twall);
 	}
 
 	set_shape(in_max_n_spts_per_ele);
@@ -1632,9 +1632,9 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
   	Bstride = Brows;
   	Cstride = Arows;
 
-		disuf_upts.initialize_to_zero();
-		Lu.initialize_to_zero();
-		Le.initialize_to_zero();
+		zero_array(disuf_upts);
+		zero_array(Lu);
+		zero_array(Le);
 
 #ifdef _CPU
 
@@ -1975,7 +1975,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 	mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
 
 	// Initialize SGS flux array to zero
-	temp_sgsf.initialize_to_zero();
+	zero_array(temp_sgsf);
 
 	// Compute SGS flux using wall model if sufficiently close to solid boundary
 	wall = 0;
@@ -2041,7 +2041,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		twall(upt,ele,n_dims-1) = qw;
 
 		// populate ndims*ndims rotated stress array
-		tau.initialize_to_zero();
+		zero_array(tau);
 
 		for(i=0;i<n_dims-1;i++) tau(i+1,0) = tau(0,i+1) = tw(i);
 
@@ -2049,13 +2049,13 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		//tau.print();
 
 		// rotate stress array back to Cartesian coordinates
-		temp.initialize_to_zero();
+		zero_array(temp);
 		for(i=0;i<n_dims;++i)
 			for(j=0;j<n_dims;++j)
 				for(k=0;k<n_dims;++k)
 					temp(i,j) += tau(i,k)*Mrot(k,j);
 
-		tau.initialize_to_zero();
+		zero_array(tau);
 		for(i=0;i<n_dims;++i)
 			for(j=0;j<n_dims;++j)
 				for(k=0;k<n_dims;++k)

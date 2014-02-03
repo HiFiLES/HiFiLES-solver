@@ -758,7 +758,7 @@ double eles_tris::eval_nodal_s_basis(int in_index, array<double> in_loc, int in_
 {
 
   array<double> nodal_s_basis(in_n_spts,1);
-    //d_nodal_s_basis.initialize_to_zero();
+    //zero_array(d_nodal_s_basis);
     eval_dn_nodal_s_basis(nodal_s_basis, in_loc, in_n_spts, 0);
 
     return nodal_s_basis(in_index);
