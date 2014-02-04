@@ -22,18 +22,18 @@
 #endif
 
 class eles
-{	
+{
 	public:
-	
+
 	// #### constructors ####
-	
+
 	// default constructor
-	
+
 	eles();
 
   // default destructor
- 
-  ~eles(); 
+
+  ~eles();
 
 	// #### methods ####
 
@@ -101,82 +101,85 @@ class eles
 
   /*! calculate the discontinuous solution at the flux points */
 	void calc_disu_fpts(int in_disu_upts_from);
-	
+
 	/*! Calculate filtered solution globally */
 	void calc_disuf_upts(int in_disu_upts_from);
 
 	/*! calculate transformed discontinuous inviscid flux at solution points */
   void calc_tdisinvf_upts(int in_disu_upts_from);
-  
+
   /*! calculate divergence of transformed discontinuous flux at solution points */
   void calc_div_tdisf_upts(int in_div_tconf_upts_to);
-  
+
   /*! calculate normal transformed discontinuous flux at flux points */
   void calc_norm_tdisf_fpts(void);
-  
+
   /*! calculate divergence of transformed continuous flux at solution points */
   void calc_div_tconf_upts(int in_div_tconf_upts_to);
-  
+
 	/*! calculate uncorrected transformed gradient of the discontinuous solution at the solution points */
   void calc_uncor_tgrad_disu_upts(int in_disu_upts_from);
-	
+
   /*! calculate corrected gradient of the discontinuous solution at solution points */
 	void calc_cor_grad_disu_upts(void);
-		
+
   /*! calculate corrected gradient of the discontinuous solution at flux points */
 	void calc_cor_grad_disu_fpts(void);
 
 	/*! calculate corrected gradient of solution at flux points */
 	//void calc_cor_grad_disu_fpts(void);
-	
+
 	/*! calculate transformed discontinuous viscous flux at solution points */
   void calc_tdisvisf_upts(int in_disu_upts_from);
-    
+
   /*! calculate divergence of transformed discontinuous viscous flux at solution points */
   //void calc_div_tdisvisf_upts(int in_div_tconinvf_upts_to);
-    
+
   /*! calculate normal transformed discontinuous viscous flux at flux points */
   //void calc_norm_tdisvisf_fpts(void);
-    
+
   /*! calculate divergence of transformed continuous viscous flux at solution points */
   //void calc_div_tconvisf_upts(int in_div_tconinvf_upts_to);
-  
+
+  /*! calculate source term for SA turbulence model at solution points */
+  void calc_src_term_SA();
+
   /*! advance with rk11 (forwards euler) */
   void advance_rk11(void);
-  
+
   /*! advance with rk33 (three-stage third-order runge-kutta) */
   void advance_rk33(int in_step);
-  
+
   /*! advance with rk44 (four-stage forth-order runge-kutta) */
   void advance_rk44(int in_step);
-  
+
   /*! advance with rk45 (five-stage forth-order low-storage runge-kutta) */
   void advance_rk45(int in_step);
 
   /*! get number of elements */
   int get_n_eles(void);
-       
+
   // get number of ppts_per_ele
   int get_n_ppts_per_ele(void);
 
-  // get number of peles_per_ele 
+  // get number of peles_per_ele
   int get_n_peles_per_ele(void);
 
-  // get number of verts_per_ele 
+  // get number of verts_per_ele
   int get_n_verts_per_ele(void);
 
   /*! get number of solution points per element */
   int get_n_upts_per_ele(void);
-  
+
   /*! get element type */
   int get_ele_type(void);
-      
+
   /*! get number of dimensions */
   int get_n_dims(void);
 
   /*! get number of fields */
   int get_n_fields(void);
-  
+
   /*! set shape */
   void set_shape(int in_max_n_spts_per_ele);
 
@@ -197,22 +200,22 @@ class eles
 
   /*! get a pointer to the transformed discontinuous solution at a flux point */
 	double* get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
-  
+
   /*! get a pointer to the normal transformed continuous flux at a flux point */
   double* get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
-       
+
   /*! get a pointer to the determinant of the jacobian at a flux point */
   double* get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
-       
+
   /*! get a pointer to the magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points */
 	double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
-        
+
   /*! get a pointer to the normal at a flux point */
   double* get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
-        
+
   /*! get a pointer to the coordinates at a flux point */
   double* get_loc_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
-        
+
   /*! get a pointer to delta of the transformed discontinuous solution at a flux point */
 	double* get_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
 
@@ -221,28 +224,28 @@ class eles
 
 	/*! get a pointer to the normal transformed continuous viscous flux at a flux point */
 	//double* get_norm_tconvisf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
-  
+
   /*! set opp_0 */
   void set_opp_0(int in_sparse);
-  
+
   /*! set opp_1 */
 	void set_opp_1(int in_sparse);
 
-	/*! set opp_2 */	
+	/*! set opp_2 */
 	void set_opp_2(int in_sparse);
-	
+
 	/*! set opp_3 */
 	void set_opp_3(int in_sparse);
-	
+
 	/*! set opp_4 */
 	void set_opp_4(int in_sparse);
-	
+
 	/*! set opp_5 */
 	void set_opp_5(int in_sparse);
-	
+
 	/*! set opp_6 */
 	void set_opp_6(int in_sparse);
-	
+
 	/*! set opp_p */
 	void set_opp_p(void);
 
@@ -254,10 +257,10 @@ class eles
 
 	/*! set opp_r */
 	void set_opp_r(void);
-	
+
   /*! calculate position of the plot points */
   void calc_pos_ppts(int in_ele, array<double>& out_pos_ppts);
-      
+
   /*! get position of the plot points inside one cell*/
   void get_pos_ppts(int in_ele, array<double>& out_pos_ppts);
 
@@ -284,19 +287,19 @@ class eles
 
   /*! calculate solution at the plot points */
   void calc_disu_ppts(int in_ele, array<double>& out_disu_ppts);
-       
+
   /*! calculate solution at the plot points and store it*/
   void add_contribution_to_pnodes(array<double> &plotq_pnodes);
 
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
-       
+
   /*! returns position of a solution point */
   double get_loc_upt(int in_upt, int in_dim);
 
   /*! set transforms */
   void set_transforms(int in_run_type);
-       
+
   /*! set transforms at the interface cubature points*/
   void set_transforms_inters_cubpts(void);
 
@@ -308,17 +311,17 @@ class eles
 
   /*! calculate derivative of position */
   void calc_d_pos(array<double> in_loc, int in_ele, array<double>& out_d_pos);
-  
+
   /*! calculate second derivative of position */
   void calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_pos);
-  
+
   // #### virtual methods ####
 
   virtual void setup_ele_type_specific(int in_run_type)=0;
 
-  virtual int read_restart_info(ifstream& restart_file)=0;  
+  virtual int read_restart_info(ifstream& restart_file)=0;
 
-  virtual void write_restart_info(ofstream& restart_file)=0;  
+  virtual void write_restart_info(ofstream& restart_file)=0;
 
   /*! Compute interface jacobian determinant on face */
   virtual double compute_inter_detjac_inters_cubpts(int in_inter, array<double> d_pos)=0;
@@ -333,16 +336,16 @@ class eles
 	virtual double eval_d_nodal_basis(int in_index, int in_cpnt, array<double> in_loc)=0;
 
   virtual void fill_opp_3(array<double>& opp_3)=0;
-	
+
 	/*! evaluate divergence of vcjh basis */
 	//virtual double eval_div_vcjh_basis(int in_index, array<double>& loc)=0;
 
 	/*! evaluate nodal shape basis */
 	virtual double eval_nodal_s_basis(int in_index, array<double> in_loc, int in_n_spts)=0;
-	
+
 	/*! evaluate derivative of nodal shape basis */
   virtual void eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<double> in_loc, int in_n_spts)=0;
-	
+
 	/*! evaluate second derivative of nodal shape basis */
   virtual void eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)=0;
 
@@ -356,13 +359,13 @@ class eles
 	virtual double calc_ele_vol(double& detjac)=0;
 
   double compute_res_upts(int in_norm_type, int in_field);
-   
+
 	/*! calculate body forcing at solution points */
   void calc_body_force_upts(array <double>& vis_force, array <double>& body_force);
 
 	/*! add body forcing at solution points */
 	void add_body_force_upts(array <double>& body_force);
-  
+
   /*! add source term sa model */
 	void add_sa_source(void);
 
@@ -372,17 +375,17 @@ class eles
   void compute_wall_forces(array<double>& inv_force, array<double>& vis_force,ofstream& cp_file );
 
   array<double> compute_error(int in_norm_type, double& time);
-  
+
   array<double> get_pointwise_error(array<double>& sol, array<double>& grad_sol, array<double>& loc, double& time, int in_norm_type);
 
 
 	protected:
-		
+
 	// #### members ####
-	
+
 	/*! viscous flag */
 	int viscous;
-	
+
 	/*! number of elements */
 	int n_eles;
 
@@ -391,12 +394,12 @@ class eles
 
 	/*!  number of dimensions */
 	int n_dims;
-	
+
 	/*!  number of fields */
 	int n_fields;
-	
+
 	/*! order of solution polynomials */
-	int order; 
+	int order;
 
   /*! order of interface cubature rule */
   int inters_cub_order;
@@ -406,13 +409,13 @@ class eles
 
 	/*! order of solution polynomials in restart file*/
 	int order_rest;
-	
+
 	/*! number of solution points per element */
 	int n_upts_per_ele;
 
 	/*! number of solution points per element */
 	int n_upts_per_ele_rest;
-	
+
 	/*! number of flux points per element */
 	int n_fpts_per_ele;
 
@@ -436,13 +439,13 @@ class eles
 
 	/*! plotting resolution */
 	int p_res;
-	
+
 	/*! solution point type */
 	int upts_type;
-	
+
 	/*! flux point type */
 	int fpts_type;
-	
+
 	/*! number of plot points per element */
 	int n_ppts_per_ele;
 
@@ -450,17 +453,17 @@ class eles
 	int n_peles_per_ele;
 
   /*! Global cell number of element */
-  array<int> ele2global_ele;	
+  array<int> ele2global_ele;
 
   /*! Global cell number of element */
-  array<int> bdy_ele2ele;	
- 
-  /*! Boundary condition type of faces */ 
+  array<int> bdy_ele2ele;
+
+  /*! Boundary condition type of faces */
   array<int> bctype;
 
 	/*! number of shape points per element */
 	array<int> n_spts_per_ele;
-	
+
 	/*! transformed normal at flux points */
 	array<double> tnorm_fpts;
 
@@ -493,31 +496,31 @@ class eles
 
 	/*! location of plot points in standard element */
 	array<double> loc_ppts;
-	
+
 	/*! location of shape points in standard element (simplex elements only)*/
 	array<double> loc_spts;
-	
+
 	/*! number of interfaces per element */
 	int n_inters_per_ele;
-	
+
 	/*! number of flux points per interface */
-	array<int> n_fpts_per_inter; 
+	array<int> n_fpts_per_inter;
 
 	/*! number of cubature points per interface */
-	array<int> n_cubpts_per_inter; 
+	array<int> n_cubpts_per_inter;
 
 	/*! number of cubature points per interface */
-	int n_cubpts_per_ele; 
+	int n_cubpts_per_ele;
 
 	/*! element type (0=>quad,1=>tri,2=>tet,3=>pri,4=>hex) */
-	int ele_type; 
-	
+	int ele_type;
+
 	/*! order of polynomials defining shapes */
 	int s_order;
-	
+
 	/*! shape */
 	array<double> shape;
-	
+
 	/*! temporary solution storage at a single solution point */
 	array<double> temp_u;
 
@@ -533,13 +536,13 @@ class eles
 	/*! temporary flux storage */
 	array<double> temp_f;
 	array<double> temp_sgsf;
-	
+
 	/*! number of storage levels for time-integration scheme */
 	int n_adv_levels;
-	
+
 	/*! determinant of jacobian at solution points */
 	array<double> detjac_upts;
-	
+
 	/*! determinant of jacobian at flux points */
 	array<double> detjac_fpts;
 
@@ -551,9 +554,9 @@ class eles
 
 	/*! inverse of (determinant of jacobian multiplied by jacobian) at solution points */
 	array<double> inv_detjac_mul_jac_upts;
-	
+
 	array<double> inv_detjac_mul_jac_fpts;
-	
+
 	/*! magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points */
 	array<double> mag_tnorm_dot_inv_detjac_mul_jac_fpts;
 
@@ -562,7 +565,7 @@ class eles
 
 	/*! normal at flux points*/
 	array<double> norm_fpts;
-	
+
   /*! physical coordinates at flux points*/
 	array<double> loc_fpts;
 
@@ -597,51 +600,54 @@ class eles
 	matrix mapping: (in_upt, in_dim || in_field, in_ele)
 	*/
 	array<double> tdisf_upts;
-	
+
 	/*!
 	normal transformed discontinuous flux at the flux points
 	indexing: \n
 	matrix mapping:
 	*/
 	array<double> norm_tdisf_fpts;
-	
+
 	/*!
 	normal transformed continuous flux at the flux points
 	indexing: \n
 	matrix mapping:
 	*/
 	array<double> norm_tconf_fpts;
-	
+
 	/*!
 	divergence of transformed continuous flux at the solution points
 	indexing: \n
 	matrix mapping:
 	*/
 	array< array<double> > div_tconf_upts;
-	
+
 	/*! delta of the transformed discontinuous solution at the flux points   */
 	array<double> delta_disu_fpts;
 
 	/*! gradient of discontinuous solution at solution points */
 	array<double> grad_disu_upts;
-	
+
 	/*! gradient of discontinuous solution at flux points */
 	array<double> grad_disu_fpts;
 
 	/*! transformed discontinuous viscous flux at the solution points */
 	//array<double> tdisvisf_upts;
-	
+
 	/*! normal transformed discontinuous viscous flux at the flux points */
 	//array<double> norm_tdisvisf_fpts;
-	
+
 	/*! normal transformed continuous viscous flux at the flux points */
 	//array<double> norm_tconvisf_fpts;
-		
+
 	/*! transformed gradient of determinant of jacobian at solution points */
 	array<double> tgrad_detjac_upts;
-	
+
 	/*! transformed gradient of determinant of jacobian at flux points */
 	array<double> tgrad_detjac_fpts;
+
+    /*! source term for SA turbulence model at solution points */
+    array<double> src_term;
 
   array<double> d_nodal_s_basis;
   array<double> dd_nodal_s_basis;
@@ -649,7 +655,7 @@ class eles
 
   #ifdef _GPU
   cusparseHandle_t handle;
-  #endif 
+  #endif
 
 	/*! operator to go from transformed discontinuous solution at the solution points to transformed discontinuous solution at the flux points */
 	array<double> opp_0;
@@ -677,7 +683,7 @@ class eles
   array< array<int> > opp_1_ell_indices;
   array<int> opp_1_nnz_per_row;
   #endif
-	
+
 	/*! operator to go from transformed discontinuous inviscid flux at the solution points to normal transformed discontinuous inviscid flux at the flux points */
 	array< array<double> > opp_2;
 	array< array<double> > opp_2_data;
@@ -690,7 +696,7 @@ class eles
   array< array<int> > opp_2_ell_indices;
   array<int> opp_2_nnz_per_row;
   #endif
-	
+
 	/*! operator to go from normal correction inviscid flux at the flux points to divergence of correction inviscid flux at the solution points*/
 	array<double> opp_3;
 	array<double> opp_3_data;
@@ -703,7 +709,7 @@ class eles
   array<int> opp_3_ell_indices;
   int opp_3_nnz_per_row;
   #endif
-	
+
 	/*! operator to go from transformed solution at solution points to transformed gradient of transformed solution at solution points */
 	array< array<double> >  opp_4;
 	array< array<double> >  opp_4_data;
@@ -716,7 +722,7 @@ class eles
   array< array<int> > opp_4_ell_indices;
   array< int > opp_4_nnz_per_row;
   #endif
-	
+
 	/*! operator to go from transformed solution at flux points to transformed gradient of transformed solution at solution points */
 	array< array<double> > opp_5;
 	array< array<double> > opp_5_data;
@@ -729,7 +735,7 @@ class eles
   array< array<int> > opp_5_ell_indices;
   array<int> opp_5_nnz_per_row;
   #endif
-	
+
 	/*! operator to go from transformed solution at solution points to transformed gradient of transformed solution at flux points */
 	array<double> opp_6;
 	array<double> opp_6_data;
@@ -742,7 +748,7 @@ class eles
   array<int> opp_6_ell_indices;
   int opp_6_nnz_per_row;
   #endif
-	
+
 	/*! operator to go from discontinuous solution at the solution points to discontinuous solution at the plot points */
 	array<double> opp_p;
 
@@ -756,22 +762,22 @@ class eles
 	int Arows, Acols;
 	int Brows, Bcols;
 	int Astride, Bstride, Cstride;
-	
+
 	/*! general settings for mkl sparse blas */
 	char matdescra[6];
-	
+
 	/*! transpose setting for mkl sparse blas */
 	char transa;
-	
+
 	/*! zero for mkl sparse blas */
 	double zero;
-	
+
 	/*! one for mkl sparse blas */
 	double one;
-	
+
 	/*! number of fields multiplied by number of elements */
 	int n_fields_mul_n_eles;
-	
+
 	/*! number of dimensions multiplied by number of solution points per element */
 	int n_dims_mul_n_upts_per_ele;
 

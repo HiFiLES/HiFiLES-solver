@@ -30,7 +30,7 @@ using namespace std;
 // default constructor
 
 input::input()
-{	
+{
 }
 
 input::~input()
@@ -50,7 +50,7 @@ void input::set_dt(double in_dt)
 void input::set_c(double in_c_tri, double in_c_quad)
 {
   c_tri = in_c_tri;
-  c_quad = in_c_quad; 
+  c_quad = in_c_quad;
 
 	double a_k = eval_gamma(2.*order+1)/( pow(2.,order)*pow(eval_gamma(order+1),2) );
 	eta_quad=in_c_quad*0.5*(2.*order+1.)*a_k*eval_gamma(order+1)*a_k*eval_gamma(order+1);
@@ -89,8 +89,8 @@ void input::setup(ifstream& in_run_input_file, int rank)
         cout << buf << endl;
       }
       // Rewind
-      in_run_input_file.clear();             
-      in_run_input_file.seekg(0, ios::beg);  
+      in_run_input_file.clear();
+      in_run_input_file.seekg(0, ios::beg);
     }
 
   // Now read in parameters
@@ -546,11 +546,15 @@ void input::setup(ifstream& in_run_input_file, int rank)
       for (int i=0;i<13;i++)
         in_run_input_file >> z_coeffs(i) ;
     }
-		else if (!param_name.compare("perturb_ic"))
-		{
-			in_run_input_file >> perturb_ic;
+    else if (!param_name.compare("perturb_ic"))
+    {
+        in_run_input_file >> perturb_ic;
     }
-    else 
+    else if (!param_name.compare("turb_model"))
+    {
+        in_run_input_file >> turb_model;
+    }
+    else
     {
       cout << "input parameter =" << param_name << endl;
       FatalError("input parameter not recognized");
@@ -563,11 +567,11 @@ void input::setup(ifstream& in_run_input_file, int rank)
   // --------------------
   // ERROR CHECKING
   // --------------------
- 
+
   if (monitor_res_freq == 0) monitor_res_freq = 1000;
   if (monitor_force_freq == 0) monitor_force_freq = 1000;
   if (diagnostics_freq == 0) diagnostics_freq = 1000;
-  
+
   if (!mesh_file.compare(mesh_file.size()-3,3,"neu"))
     mesh_format=0;
   else if (!mesh_file.compare(mesh_file.size()-3,3,"msh"))
@@ -595,7 +599,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
   if(viscous)
   {
     if(ic_form == 0)  {
-      
+
       fix_vis  = 1.;
       R_ref     = 1.;
       c_sth     = 1.;
@@ -607,7 +611,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
       //Dimensional reference
       T_ref = T_free_stream;
       L_ref = L_free_stream;
-      
+
       uvw_ref = Mach_free_stream*sqrt(gamma*R_gas*T_free_stream);
       cout << "uvw_ref: " << uvw_ref << endl;
       u_free_stream   = uvw_ref*nx_free_stream;
@@ -616,10 +620,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
 
       if(fix_vis)
       {
-        mu_free_stream = mu_gas; 
+        mu_free_stream = mu_gas;
       }
       else
-      { 
+      {
         mu_free_stream = mu_gas*pow(T_free_stream/T_gas, 1.5)*( (T_gas + S_gas)/(T_free_stream + S_gas));
       }
 
@@ -653,10 +657,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
       T_wall    = T_wall/T_ref;
 
       uvw_c_ic  = Mach_c_ic*sqrt(gamma*R_gas*T_c_ic);
-      u_c_ic   = (uvw_c_ic*nx_c_ic)/uvw_ref; 
-      v_c_ic   = (uvw_c_ic*ny_c_ic)/uvw_ref; 
-      w_c_ic   = (uvw_c_ic*nz_c_ic)/uvw_ref; 
- 
+      u_c_ic   = (uvw_c_ic*nx_c_ic)/uvw_ref;
+      v_c_ic   = (uvw_c_ic*ny_c_ic)/uvw_ref;
+      w_c_ic   = (uvw_c_ic*nz_c_ic)/uvw_ref;
+
       if(fix_vis)
       {
         mu_c_ic = mu_gas;
@@ -674,6 +678,23 @@ void input::setup(ifstream& in_run_input_file, int rank)
       rho_c_ic = rho_c_ic/rho_ref;
       p_c_ic = p_c_ic/p_ref;
       T_c_ic = T_c_ic/T_ref;
+
+      // SA turblence model parameters
+      prandtl_t = 0.9;
+      if (turb_model == 1)
+      {
+          c_v1 = 7.1;
+          c_v2 = 0.7;
+          c_v3 = 0.9;
+          c_b1 = 0.1355;
+          c_b2 = 0.622;
+          c_w2 = 0.3;
+          c_w3 = 2.0;
+          omega = 2.0/3.0;
+          Kappa = 0.41;
+          mu_tilde_c_ic = 5.0*mu_c_ic;
+          mu_tilde_inf = 5.0*mu_inf;
+      }
 
       if (rank==0)
       {
@@ -734,7 +755,7 @@ void input::reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, 
 		if(d_flag == 2)
 		{
 			mesh_file = "tri_2_1.neu";
-		} 
+		}
 		if(d_flag == 3)
 		{
 			mesh_file = "sd7003_711K.neu";
@@ -778,10 +799,10 @@ void input::reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, 
     cout << "Invalid grid" << endl;
     exit(1);
   }
-    
+
   mesh_format = 0;
   //mesh_format = 1;
-  
+
 
   // Time
   //dt = 1.0e-5;
@@ -795,7 +816,7 @@ void input::reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, 
   	double tperiod = 1.0;
   	n_steps = (int) ceil(tperiod/dt);
   	dt = tperiod/n_steps;
-  
+
 		plot_freq = n_steps;
 		monitor_res_freq = n_steps;
 	}
@@ -803,7 +824,7 @@ void input::reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, 
 	{
   	n_steps = 50000000;
 		n_freq = 1000;
-  
+
 		plot_freq = 100000;
 		monitor_res_freq = n_freq;
   	monitor_force_freq = n_freq;

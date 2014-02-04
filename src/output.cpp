@@ -66,48 +66,48 @@ void plot_continuous(struct solution* FlowSol)
   // Compute and store position of plot points
 	for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
 		  FlowSol->mesh_eles(i)->set_pos_ppts();
-      
+
     }
   }
-  
+
   //CGL050412: need to do plotter_setup before connectivity
   plotter_setup(FlowSol);
-  
+
   // Compute the plotting connectivity
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
       FlowSol->mesh_eles(i)->set_connectivity_plot();
-      
+
     }
   }
-  
+
   //CGL050412  plotter_setup();
-  
+
   // First compute the fields at the plot points
   // Loop over all the eles and add their contribution to each plot node
-  
+
   FlowSol->plotq_pnodes.setup(FlowSol->num_pnodes,run_input.n_plot_quantities);
-  
+
   for (int i=0;i<FlowSol->num_pnodes;i++)
     for (int j=0;j<run_input.n_plot_quantities;j++)
       FlowSol->plotq_pnodes(i,j) = 0.;
-  
+
 	for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
 		  FlowSol->mesh_eles(i)->add_contribution_to_pnodes(FlowSol->plotq_pnodes);
-      
+
     }
   }
-  
+
 #ifdef _MPI
-  
+
   // Create a list of pnodes on mpi faces
   create_mpi_pnode2pnode(FlowSol->mpi_pnode2pnode,FlowSol->n_mpi_pnodes,FlowSol->inter_mpi2inter,FlowSol->inter2loc_inter,FlowSol->inter2ele,FlowSol->ele_type,FlowSol->n_mpi_inters,FlowSol);
-  
+
   // Match the mpi pnodes
   FlowSol->mpi_pnodes_part.setup(FlowSol->nproc);
   array<double> delta_cyclic(FlowSol->n_dims);
@@ -116,24 +116,24 @@ void plot_continuous(struct solution* FlowSol)
   if (FlowSol->n_dims==3) {
     delta_cyclic(2) = run_input.dz_cyclic;
   }
-  
+
   cout << "n_mpi_inters=" << FlowSol->n_mpi_inters << endl;
-  
+
   double tol = 1e-8;
   match_mpipnodes(FlowSol->mpi_pnode2pnode,FlowSol->n_mpi_pnodes,FlowSol->mpi_pnodes_part,delta_cyclic,tol,FlowSol);
-  
+
   // Update the factor of pnodes
   FlowSol->out_buffer_pnode.setup(FlowSol->n_mpi_pnodes);
   FlowSol->in_buffer_pnode.setup(FlowSol->n_mpi_pnodes);
   update_factor_pnodes(FlowSol);
-  
+
   // Exchange the plotq data
   FlowSol->out_buffer_plotq.setup(FlowSol->n_mpi_pnodes*run_input.n_plot_quantities);
   FlowSol->in_buffer_plotq.setup(FlowSol->n_mpi_pnodes*run_input.n_plot_quantities);
   exchange_plotq(FlowSol);
-  
+
 #endif
-  
+
   for(int i=0;i<FlowSol->num_pnodes;i++)
   {
     for (int j=0;j<run_input.n_plot_quantities;j++)
@@ -141,12 +141,12 @@ void plot_continuous(struct solution* FlowSol)
       FlowSol->plotq_pnodes(i,j) /= (1.0*FlowSol->factor_pnode(i));
     }
   }
-  
+
   //if(FlowSol->write_type==0)
     //write_vtu_bin(FlowSol->ini_iter, FlowSol);
   //else if(FlowSol->write_type==1)
     //write_tec_bin(FlowSol->ini_iter, FlowSol);
-  
+
 }
 
 void plotter_setup(struct solution* FlowSol)
@@ -157,34 +157,34 @@ void plotter_setup(struct solution* FlowSol)
   int max_num_pnodes;
   array<double> pos(FlowSol->n_dims);
   array<double> pos2(FlowSol->n_dims);
-  
+
   double tol = 1e-10;
-  
+
   // First count the maximum number of ppts
   max_num_pnodes=0;
 	for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
 		  max_num_pnodes += FlowSol->mesh_eles(i)->calc_num_ppts();
-      
+
     }
   }
-  
+
   FlowSol->pos_pnode.setup(max_num_pnodes);
   FlowSol->factor_pnode.setup(max_num_pnodes);
-  
+
   for (int i=0;i<max_num_pnodes;i++)
   {
     FlowSol->pos_pnode(i).setup(FlowSol->n_dims);
     FlowSol->factor_pnode(i)=0;
   }
-  
+
   int tris_count=0;
   int quads_count=0;
   int tets_count=0;
   int pris_count=0;
   int hexas_count=0;
-  
+
   FlowSol->c2ctype_c.setup(FlowSol->num_eles);
   for (int i=0;i<FlowSol->num_eles;i++)
   {
@@ -199,23 +199,23 @@ void plotter_setup(struct solution* FlowSol)
     if (FlowSol->ele_type(i)==4)
       FlowSol->c2ctype_c(i) = hexas_count++;
   }
-  
+
   // ---------------------------
   // Loop over mesh vertices
   // ---------------------------
   int vert;
   array<int> vert2pnode(FlowSol->num_verts);
-  
+
   for (int i=0;i<FlowSol->num_verts;i++)
     vert2pnode(i) = -1;
-  
+
   array<int> n_vert_per_type(5);
   n_vert_per_type(0)=3;
   n_vert_per_type(1)=4;
   n_vert_per_type(2)=4;
   n_vert_per_type(3)=6;
   n_vert_per_type(4)=8;
-  
+
   int j_spt;
   for (int i=0;i<FlowSol->num_eles;i++)
   {
@@ -227,41 +227,41 @@ void plotter_setup(struct solution* FlowSol)
       if (vert2pnode(vert)==-1) // Haven't counted that vertex
       {
         vert2pnode(vert)=FlowSol->num_pnodes;
-        
+
         // TODO
         pos = FlowSol->mesh_eles(temp_ele_type)->calc_pos_pnode_vert(FlowSol->c2ctype_c(i),j);
         FlowSol->pos_pnode(FlowSol->num_pnodes) = pos;
         FlowSol->num_pnodes++;
       }
-      
+
       gnid = vert2pnode(vert);
       FlowSol->factor_pnode(gnid)++;
       // TODO
       FlowSol->mesh_eles(temp_ele_type)->set_pnode_vert(FlowSol->c2ctype_c(i),j,gnid);
     }
   }
-  
+
   // ---------------------------
   // Then loop mesh edges
   // ---------------------------
-  
+
   if (FlowSol->n_dims==3)
   {
     int edge;
-    
+
     array<int> is_edge_node(FlowSol->num_edges);
     array<int> gedgenode(FlowSol->p_res-2,FlowSol->num_edges);
-    
+
     for (int i=0;i<FlowSol->num_edges;i++)
     {
       is_edge_node(i)=0;
     }
-    
+
     array<int> n_edge_per_type(5);
     n_edge_per_type(2)=6;
     n_edge_per_type(3)=9;
     n_edge_per_type(4)=12;
-    
+
     for (int i=0;i<FlowSol->num_eles;i++)
     {
       int temp_ele_type=FlowSol->ele_type(i);
@@ -272,7 +272,7 @@ void plotter_setup(struct solution* FlowSol)
         {
           // TODO
           pos = FlowSol->mesh_eles(temp_ele_type)->calc_pos_pnode_edge(FlowSol->c2ctype_c(i),j,k);
-          
+
           if (is_edge_node(edge)==1)
           {
             int check_match=0;
@@ -303,49 +303,49 @@ void plotter_setup(struct solution* FlowSol)
             FlowSol->factor_pnode(FlowSol->num_pnodes)++;
             FlowSol->num_pnodes++;
           }
-          
+
         }
         if (is_edge_node(edge)==0)
           is_edge_node(edge)=1;
       } // loop over edge
     } // loop over cells
   } // end if n_dims==3
-  
+
   // ----------------------
   // Loop over inters
   // ----------------------
   //
   int face;
-  
+
   array<int> is_face_node(FlowSol->num_inters);
-  
+
   // Get maximum number of ppts on face
-  
+
   int max_n_ppts_per_face = 0;
   for (int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
       int  temp = FlowSol->mesh_eles(i)->get_max_n_ppts_per_face();
       if (temp > max_n_ppts_per_face)
         max_n_ppts_per_face = temp;
-      
+
     }
   }
-  
+
   array<int> gfacenode(max_n_ppts_per_face,FlowSol->num_inters);
-  
+
   for (int i=0;i<FlowSol->num_inters;i++)
   {
     is_face_node(i)=0;
   }
-  
+
   array<int> n_face_per_type(5);
   n_face_per_type(0)=3;
   n_face_per_type(1)=4;
   n_face_per_type(2)=4;
   n_face_per_type(3)=5;
   n_face_per_type(4)=6;
-  
+
   for (int i=0;i<FlowSol->num_eles;i++)
   {
     int temp_ele_type=FlowSol->ele_type(i);
@@ -388,21 +388,21 @@ void plotter_setup(struct solution* FlowSol)
       }
       if (is_face_node(face)==0)
         is_face_node(face)=1;
-      
+
     } // Loop over faces
   } // Loop over cells
-  
+
   // ----------------------
   // Interior plot points
   // ---------------------
-  
+
   for (int i=0;i<FlowSol->num_eles;i++)
   {
     int temp_ele_type=FlowSol->ele_type(i);
     int n_interior_ppts;
-    
+
     n_interior_ppts = FlowSol->mesh_eles(temp_ele_type)->get_n_interior_ppts();
-    
+
     for (int j=0;j<n_interior_ppts; j++)
     {
       FlowSol->mesh_eles(temp_ele_type)->set_pnode_interior(FlowSol->c2ctype_c(i),j,FlowSol->num_pnodes);
@@ -412,38 +412,38 @@ void plotter_setup(struct solution* FlowSol)
       FlowSol->num_pnodes++;
     }
   }
-  
+
 }
 
 // method to write out a tecplot file
 void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 {
 	int i,j,k,l,m;
-  
+
 	// copy solution to cpu
 #ifdef _GPU
 	for(i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
 		  FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-      
+
     }
   }
 #endif
-	
+
 	int vertex_0, vertex_1, vertex_2, vertex_3, vertex_4, vertex_5, vertex_6, vertex_7;
-	
+
 	int p_res=run_input.p_res; // HACK
-	
+
 	array<double> pos_ppts_temp;
 	array<double> plotq_ppts_temp;
   int n_plot_data;
-  
+
   char  file_name_s[50] ;
   char *file_name;
   ofstream write_tec;
   write_tec.precision(15);
-  
+
 #ifdef _MPI
   MPI_Barrier(MPI_COMM_WORLD);
 	sprintf(file_name_s,"Mesh_%.09d_p%.04d.plt",in_file_num,FlowSol->rank);
@@ -452,13 +452,13 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 	sprintf(file_name_s,"Mesh_%.09d_p%.04d.plt",in_file_num,0);
 	cout << "Writing Tecplot file number " << in_file_num << " on rank " << FlowSol->rank << endl;
 #endif
-  
+
   file_name = &file_name_s[0];
   write_tec.open(file_name);
-  
+
 	// write header
 	write_tec << "Title = \"SD++ Solution\"" << endl;
-	
+
 	// write variable names
   if (run_input.equation==0)
   {
@@ -490,21 +490,43 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 	  	cout << "ERROR: Invalid number of dimensions ... " << endl;
 	  }
   }
-  
+  else if (run_input.equation == 2)
+  {
+      if (run_input.turb_model == 1)
+      {
+          if(n_dims==2)
+          {
+              write_tec << "Variables = \"x\", \"y\", \"rho\", \"mom_x\", \"mom_y\", \"ene\", \"mu_tilda\"" << endl;
+          }
+          else if(n_dims==3)
+          {
+              write_tec << "Variables = \"x\", \"y\", \"z\", \"rho\", \"mom_x\", \"mom_y\", \"mom_z\", \"ene\", \"mu_tilda\"" << endl;
+          }
+          else
+          {
+              cout << "ERROR: Invalid number of dimensions ... " << endl;
+          }
+      }
+      else
+      {
+          cout << "ERROR: Turbulent model not implemented ... " << endl;
+      }
+  }
+
 	int time_iter = 0;
-  
+
 	for(i=0;i<FlowSol->n_ele_types;i++)
 	{
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
       n_plot_data = FlowSol->mesh_eles(i)->get_n_fields();
-      
+
 		  pos_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),FlowSol->mesh_eles(i)->get_n_dims());
 		  plotq_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),n_plot_data);
-      
+
       int num_pts= (FlowSol->mesh_eles(i)->get_n_eles())*(FlowSol->mesh_eles(i)->get_n_ppts_per_ele());
       int num_elements = (FlowSol->mesh_eles(i)->get_n_eles())*(FlowSol->mesh_eles(i)->get_n_peles_per_ele());
-      
+
 		  // write element specific header
 		  if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
 		  {
@@ -530,27 +552,27 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 		  {
         FatalError("Invalid element type");
 		  }
-		  
+
 			if(time_iter == 0)
 			{
 				write_tec <<"SolutionTime=" << FlowSol->time << endl;
 				time_iter = 1;
 			}
-      
+
 		  // write element specific data
-		  
+
 		  for(j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
 		  {
 		  	FlowSol->mesh_eles(i)->calc_pos_ppts(j,pos_ppts_temp);
 		  	FlowSol->mesh_eles(i)->calc_disu_ppts(j,plotq_ppts_temp);
-		  	
+
 		  	for(k=0;k<FlowSol->mesh_eles(i)->get_n_ppts_per_ele();k++)
 		  	{
 		  		for(l=0;l<FlowSol->mesh_eles(i)->get_n_dims();l++)
 		  		{
 		  			write_tec << pos_ppts_temp(k,l) << " ";
 		  		}
-		  		
+
 		  		for(l=0;l<n_plot_data;l++)
 		  		{
             if ( isnan(plotq_ppts_temp(k,l))) {
@@ -560,13 +582,13 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
               write_tec << plotq_ppts_temp(k,l) << " ";
             }
 		  		}
-		  		
+
 		  		write_tec << endl;
 		  	}
 		  }
-		  
+
 		  // write element specific connectivity
-		  
+
 		  if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
 		  {
 		  	for (j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
@@ -581,11 +603,11 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 		      		vertex_0+=j*(p_res*(p_res+1)/2);
 		      		vertex_1+=j*(p_res*(p_res+1)/2);
 		      		vertex_2+=j*(p_res*(p_res+1)/2);
-              
+
 		      		write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << endl;
 		      	}
 		      }
-          
+
 		      for(k=0;k<p_res-2;k++) //  look to left from each point
 		      {
 		      	for(l=1;l<p_res-k-1;l++)
@@ -593,16 +615,16 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 		      		vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
 		      		vertex_1=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
 		      		vertex_2=l-1+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
-		      		
+
 		      		vertex_0+=j*(p_res*(p_res+1)/2);
 		      		vertex_1+=j*(p_res*(p_res+1)/2);
 		      		vertex_2+=j*(p_res*(p_res+1)/2);
-              
+
 		      		write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << endl;
 		      	}
 		      }
         }
-        
+
 		  }
 		  else if(FlowSol->mesh_eles(i)->get_ele_type()==1) // quad
 		  {
@@ -616,12 +638,12 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 		  				vertex_1=vertex_0+1;
 		  				vertex_2=vertex_0+p_res+1;
 		  				vertex_3=vertex_0+p_res;
-              
+
 		  				vertex_0 += j*p_res*p_res;
 		  				vertex_1 += j*p_res*p_res;
 		  				vertex_2 += j*p_res*p_res;
 		  				vertex_3 += j*p_res*p_res;
-              
+
 		  				write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1 << " " <<  vertex_3+1  << endl;
 		  			}
 		  		}
@@ -630,58 +652,58 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
       else if (FlowSol->mesh_eles(i)->get_ele_type()==2) // tet
       {
 	      int temp = (p_res)*(p_res+1)*(p_res+2)/6;
-	      
+
 	      for (int m=0;m<FlowSol->mesh_eles(i)->get_n_eles();m++)
 	      {
-          
+
 	      	for(int k=0;k<p_res-1;k++)
 	      	{
             for(int j=0;j<p_res-1-k;j++)
             {
               for(int i=0;i<p_res-1-k-j;i++)
               {
-                
+
                 vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i;
-                
+
                 vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
-                
+
                 vertex_2 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i;
-                
+
                 vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i;
-                
+
                 vertex_0+=m*temp;
                 vertex_1+=m*temp;
                 vertex_2+=m*temp;
                 vertex_3+=m*temp;
-                
+
                 write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_3+1 << endl;
-                
+
               }
             }
 	      	}
-	      	
+
 	      	for(int k=0;k<p_res-2;k++)
 	      	{
             for(int j=0;j<p_res-2-k;j++)
             {
               for(int i=0;i<p_res-2-k-j;i++)
               {
-                
+
                 vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
-                
+
                 vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
                 vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i + 1;
                 vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + (i-1) + 1;
                 vertex_4 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + (i-1) + 1;
                 vertex_5 = temp - (p_res-(k))*(p_res+1-(k))*(p_res+2-(k))/6 + (j+1)*(p_res-(k)) - (j)*(j+1)/2 + (i-1) + 1;
-                
+
                 vertex_0+=m*temp;
                 vertex_1+=m*temp;
                 vertex_2+=m*temp;
                 vertex_3+=m*temp;
                 vertex_4+=m*temp;
                 vertex_5+=m*temp;
-                
+
                 write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_5+1 << endl;
                 write_tec << vertex_0+1  << " " <<  vertex_2+1  << " " <<  vertex_4+1  << " " << vertex_5+1 << endl;
                 write_tec << vertex_2+1  << " " <<  vertex_3+1  << " " <<  vertex_4+1  << " " << vertex_5+1 << endl;
@@ -689,38 +711,38 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
               }
             }
 	      	}
-          
+
 	      	for(int k=0;k<p_res-3;k++)
 	      	{
             for(int j=0;j<p_res-3-k;j++)
             {
               for(int i=0;i<p_res-3-k-j;i++)
               {
-                
+
                 vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
                 vertex_1 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + i + 1;
                 vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i ;
                 vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i + 1;
-                
+
                 vertex_0+=m*temp;
                 vertex_1+=m*temp;
                 vertex_2+=m*temp;
                 vertex_3+=m*temp;
-                
+
                 write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_3+1 << endl;
               }
             }
 	      	}
 	      }
-        
+
       }
       else if (FlowSol->mesh_eles(i)->get_ele_type()==3) // prisms
       {
 	      int temp = (p_res)*(p_res+1)/2;
-        
+
 	      for (int m=0;m<FlowSol->mesh_eles(i)->get_n_eles();m++)
 	      {
-          
+
 	  	    for (int l=0;l<p_res-1;l++)
 	  	    {
 	  	      for(int j=0;j<p_res-1;j++) // look to right from each point
@@ -730,23 +752,23 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 	  	      		vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
 	  	      		vertex_1=vertex_0+1;
 	  	      		vertex_2=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
-                
+
 	  	      		vertex_3 = vertex_0 + temp;
 	  	      		vertex_4 = vertex_1 + temp;
 	  	      		vertex_5 = vertex_2 + temp;
-                
+
 	  	      		vertex_0+=m*(p_res*(p_res+1)/2*p_res);
 	  	      		vertex_1+=m*(p_res*(p_res+1)/2*p_res);
 	  	      		vertex_2+=m*(p_res*(p_res+1)/2*p_res);
 	  	      		vertex_3+=m*(p_res*(p_res+1)/2*p_res);
 	  	      		vertex_4+=m*(p_res*(p_res+1)/2*p_res);
 	  	      		vertex_5+=m*(p_res*(p_res+1)/2*p_res);
-                
+
 	  	      		write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_2+1 << " " << vertex_3+1 << " " << vertex_4+1 << " " << vertex_5+1 << " " << vertex_5+1 << endl;
 	  	      	}
 	  	      }
 	  	    }
-          
+
 	  	    for (int l=0;l<p_res-1;l++)
 	  	    {
 	  	      for(int j=0;j<p_res-2;j++) //  look to left from each point
@@ -756,18 +778,18 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 	  	      		vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
 	  	      		vertex_1=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
 	  	      		vertex_2=k-1+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
-                
+
 	  	      		vertex_3 = vertex_0 + temp;
 	  	      		vertex_4 = vertex_1 + temp;
 	  	      		vertex_5 = vertex_2 + temp;
-                
+
 	  	      		vertex_0+=m*(p_res*(p_res+1)/2*p_res);
 	  	      		vertex_1+=m*(p_res*(p_res+1)/2*p_res);
 	  	      		vertex_2+=m*(p_res*(p_res+1)/2*p_res);
 	  	      		vertex_3+=m*(p_res*(p_res+1)/2*p_res);
 	  	      		vertex_4+=m*(p_res*(p_res+1)/2*p_res);
 	  	      		vertex_5+=m*(p_res*(p_res+1)/2*p_res);
-                
+
 	  	      		write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_2+1 << " " << vertex_3+1 << " " << vertex_4+1 << " " << vertex_5+1 << " " << vertex_5+1 << endl;
 	  	      	}
 	  	      }
@@ -788,12 +810,12 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 		  					vertex_1=vertex_0+1;
 		  					vertex_2=vertex_0+p_res+1;
 		  					vertex_3=vertex_0+p_res;
-                
+
 		  					vertex_4=vertex_0+p_res*p_res;
 		  					vertex_5=vertex_4+1;
 		  					vertex_6=vertex_4+p_res+1;
 		  					vertex_7=vertex_4+p_res;
-                
+
 		  					vertex_0 += j*p_res*p_res*p_res;
 		  					vertex_1 += j*p_res*p_res*p_res;
 		  					vertex_2 += j*p_res*p_res*p_res;
@@ -802,7 +824,7 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 		  					vertex_5 += j*p_res*p_res*p_res;
 		  					vertex_6 += j*p_res*p_res*p_res;
 		  					vertex_7 += j*p_res*p_res*p_res;
-                
+
 		  					write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1 << " " <<  vertex_3+1  << " " << vertex_4+1 << " " << vertex_5+1 << " " << vertex_6+1 << " " << vertex_7+1 <<endl;
 		  				}
 		  			}
@@ -815,16 +837,16 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 		  }
     }
 	}
-	
+
 	write_tec.close();
-	
+
 #ifdef _MPI
   MPI_Barrier(MPI_COMM_WORLD);
 	if (FlowSol->rank==0) cout << "Done writing Tecplot file number " << in_file_num << " ...." << endl;
 #else
 	cout << "Done writing Tecplot file number " << in_file_num << " ...." << endl;
 #endif
-	
+
 }
 
 // method to write out a tecplot file
@@ -832,18 +854,18 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
  {
 #ifdef _TECIO
  int i,j,k,l,m;
- 
+
  int vertex_0, vertex_1, vertex_2, vertex_3, vertex_4, vertex_5, vertex_6, vertex_7;
- 
+
  int p_res=run_input.p_res; // HACK
- 
+
  array<double> pos_ppts_temp;
  array<double> plotq_ppts_temp;
  int n_plot_data;
- 
+
  char  file_name_s[50] ;
  char *file_name;
- 
+
  #ifdef _MPI
  MPI_Barrier(MPI_COMM_WORLD);
  sprintf(file_name_s,"Mesh_%.09d_p%.04d.plt",in_file_num,FlowSol->rank);
@@ -852,67 +874,67 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
  sprintf(file_name_s,"Mesh_%.09d_p%.04d.plt",in_file_num,0);
  cout << "Writing Tecplot file number " << in_file_num << " ...." << endl;
  #endif
- 
+
  // File name
  file_name = &file_name_s[0];
- 
+
  // write header
  string title;
  string variable_names;
  string scratch_dir;
- 
+
  title= "SD++ Solution";
- 
+
  // write variable names
  if(FlowSol->n_dims==2)
  variable_names = "x, y, ";
  else if(FlowSol->n_dims==3)
  variable_names = "x, y, z, ";
- 
+
  for (int i=0;i<run_input.n_plot_quantities;i++)
  {
  variable_names += run_input.plot_quantities(i);
  if (i!= run_input.n_plot_quantities-1)
  variable_names += ", ";
  }
- 
+
  scratch_dir = "./";
  int zero=0;
  int one=1;
  int two=2;
- 
+
  int success;
  success = TECINI111(&title[0],&variable_names[0],file_name,&scratch_dir[0],&zero,&zero,&one);
- 
+
  string zone_title;
  int zone_type;
  int num_pts;
  int num_elements;
  int n_data_per_ppt;
- 
+
  n_data_per_ppt = n_dims+run_input.n_plot_quantities;
- 
+
  array<double> plot_data;
  plot_data.setup(n_data_per_ppt);
- 
+
  array<int> act_pas_var;
  act_pas_var.setup(n_data_per_ppt);
  for (int i=0;i<n_data_per_ppt;i++)
  act_pas_var(i) = 1;
- 
+
  for(i=0;i<n_ele_types;i++)
  {
  n_plot_data = run_input.n_plot_quantities;
- 
+
  if (mesh_eles(i)->get_n_eles()!=0) {
- 
+
  pos_ppts_temp.setup(mesh_eles(i)->get_n_ppts_per_ele(),mesh_eles(i)->get_n_dims());
  plotq_ppts_temp.setup(mesh_eles(i)->get_n_ppts_per_ele(),n_plot_data);
- 
+
  // write element specific header
  num_pts= (mesh_eles(i)->get_n_eles())*(mesh_eles(i)->get_n_ppts_per_ele());
  num_elements = (mesh_eles(i)->get_n_eles())*(mesh_eles(i)->get_n_peles_per_ele());
- 
+
  if(mesh_eles(i)->get_ele_type()==0) // tri
  {
  zone_title= "triangles";
@@ -942,17 +964,17 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
  {
  FatalError("Invalid element type");
  }
- 
+
  //success = TECZNE111(&zone_title[0],&zone_type,&num_pts,&num_elements,&zero,&zero,&zero,&zero,&time,&zero,&zero,&zero,&zero,&zero,NULL,NULL,NULL,act_pas_var.get_ptr_cpu(),NULL,NULL,&zero);
  success = TECZNE111(&zone_title[0],&zone_type,&num_pts,&num_elements,&zero,&zero,&zero,&zero,&time,&zero,&zero,&zero,&zero,&zero,NULL,NULL,NULL,NULL,NULL,NULL,&zero);
- 
+
  // write element specific data
- 
+
  for(j=0;j<mesh_eles(i)->get_n_eles();j++)
  {
  mesh_eles(i)->get_pos_ppts(j,pos_ppts_temp);
  mesh_eles(i)->get_plotq_ppts(j,plotq_ppts_temp,FlowSol->plotq_pnodes);
- 
+
  for(k=0;k<mesh_eles(i)->get_n_ppts_per_ele();k++)
  {
  int count=0;
@@ -960,7 +982,7 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
  {
  plot_data(count++) = pos_ppts_temp(k,l);
  }
- 
+
  for(l=0;l<n_plot_data;l++)
  {
  if ( isnan(plotq_ppts_temp(k,l))) {
@@ -970,27 +992,27 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
  plot_data(count++) = plotq_ppts_temp(k,l);
  }
  }
- 
+
  //write_tec << pos_ppts_temp(k,l) << " ";
  TECDAT111(&n_data_per_ppt,plot_data.get_ptr_cpu(),&one);
  }
  }
- 
+
  // write element specific connectivity
  success = TECNOD111(mesh_eles(i)->get_connectivity_plot_ptr());
- 
+
  } // if n_eles!=0
  } // loop over ele types
- 
+
  TECEND111();
- 
+
  #ifdef _MPI
  MPI_Barrier(MPI_COMM_WORLD);
  if (FlowSol->rank==0) cout << "Done writing Tecplot file number " << in_file_num << " ...." << endl;
  #else
  cout << "Done writing Tecplot file number " << in_file_num << " ...." << endl;
  #endif
- 
+
 #endif
  }
 
@@ -1198,7 +1220,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 				}
 				write_vtu << endl;
 				write_vtu << "				</DataArray>" << endl;
-      
+
 				/*! velocity */
 				write_vtu << "				<DataArray type= \"Float32\" NumberOfComponents=\"3\" Name=\"Velocity\" format=\"ascii\">" << endl;
 				for(k=0;k<n_points;k++)
@@ -1219,7 +1241,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 				}
 				write_vtu << endl;
 				write_vtu << "				</DataArray>" << endl;
-			
+
 				/*! energy */
 				write_vtu << "				<DataArray type= \"Float32\" Name=\"Energy\" format=\"ascii\">" << endl;
 				for(k=0;k<n_points;k++)
@@ -1239,10 +1261,10 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 				write_vtu << endl;
 				write_vtu << "				</DataArray>" << endl;
 				write_vtu << "			</PointData>" << endl;
-      
+
 				/*! Calculate the plot coordinates */
 				FlowSol->mesh_eles(i)->calc_pos_ppts(j,pos_ppts_temp);
-			
+
 				/*! write out the plot coordinates */
 				write_vtu << "			<Points>" << endl;
 				write_vtu << "				<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">" << endl;
@@ -1261,11 +1283,11 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 						write_vtu << "0 ";
 					}
 				}
-			
+
 				write_vtu << endl;
 				write_vtu << "				</DataArray>" << endl;
 				write_vtu << "			</Points>" << endl;
-      
+
 				/*! write out Cell data: connectivity, offsets, element types */
 				write_vtu << "			<Cells>" << endl;
 
@@ -1318,14 +1340,14 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 
 //CGL adding binary output for Paraview ************************************ BEGIN
 void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixed elements
-  
+
   // a sequential Paraview file writing...
-  
+
   char  file_name_s[50] ;
   char *file_name;
   sprintf(file_name_s,"Mesh_%.09d.vtu",in_file_num);
   file_name = &file_name_s[0];
-  
+
 #ifdef _MPI
   int dummy_in = 0, dummy_out = 0;
   MPI_Request request_in, request_out;
@@ -1334,9 +1356,9 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
 #else
   cout << "Writing Paraview file number " << in_file_num << endl;
 #endif
-  
+
   // step 1: count the elements (total and by type)
-  
+
   int my_buf[7];
   my_buf[0] = FlowSol->num_pnodes; // local node count
   my_buf[1] = 0; // local eles count
@@ -1345,13 +1367,13 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
   my_buf[4] = 0; // local tet count
   my_buf[5] = 0; // local quad count 2D
   my_buf[6] = 0; // local tri count  2D
-  
+
   for(int i=0;i<FlowSol->n_ele_types;++i){
     if(FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
       int num_eles = (FlowSol->mesh_eles(i)->get_n_eles())*(FlowSol->mesh_eles(i)->get_n_peles_per_ele());
       my_buf[1] += num_eles;
-      
+
       // element specific counters
       if(FlowSol->mesh_eles(i)->get_ele_type()==0)      my_buf[6] += num_eles; // tri
       else if(FlowSol->mesh_eles(i)->get_ele_type()==1) my_buf[5] += num_eles; // quad
@@ -1363,14 +1385,14 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       }
     }
   }
-  
+
   // figure out our nodal displacement for connectivities
   int displ=0;
 #ifdef _MPI
   MPI_Scan(&(my_buf[0]),&displ,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
   displ -= my_buf[0];
 #endif
-  
+
   // send our counts to rank 0...
 #ifdef _MPI
   int buf[7];
@@ -1379,26 +1401,26 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
   int buf[7];
   for(int i=0;i<7;++i) buf[i] = my_buf[i];
 #endif
-  
+
   // Let's start writing...
   int my_rank = 0;
 #ifdef _MPI
   my_rank = FlowSol->rank;
 #endif
   if (my_rank == 0) {
-    
+
     // rank 0 writes the header...
-    
+
     // Checking Endian-ness of the machine
     const char *Endian[] = { "BigEndian", "LittleEndian" };
     unsigned char EndianTest[2] = {1,0};
     short tmp = *(short *)EndianTest;
     if( tmp != 1 ) tmp = 0;
-    
+
     FILE * fp;
     if ( (fp=fopen(file_name,"w"))==NULL )
       FatalError("ERROR: cannot open output file");
-    
+
     fprintf(fp, "<?xml version=\"1.0\"?>\n");
     fprintf(fp, "<VTKFile type=\"UnstructuredGrid\" ");
     fprintf(fp, "version=\"0.1\" ");
@@ -1406,7 +1428,7 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     fprintf(fp, "<UnstructuredGrid>\n");
     fprintf(fp, "<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n",
             buf[0],              buf[1]);
-    
+
     int offset = 0;
     fprintf(fp, "<Points>\n");
     fprintf(fp, "<DataArray type=\"Float64\" "
@@ -1415,22 +1437,22 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     offset += sizeof(int)+3*buf[0]*sizeof(double);
     fprintf(fp, "</DataArray>\n");
     fprintf(fp, "</Points>\n");
-    
+
     // add header for data... PointData only for now
     fprintf(fp, "<PointData>\n");
-    
+
     //fprintf(fp, "<DataArray type=\"Float64\" "
     //            "Name=\"%s\" NumberOfComponents=\"%d\" "
     //            "format=\"appended\" "
     //            "offset=\"%d\">\n",run_input.plot_quantities(i).c_str(),n_cmp,offset);
-    
+
     for (int i=0;i<run_input.n_plot_quantities;++i){
       int n_cmp=1, dims=1;
       if(run_input.plot_quantities(i)=="u"){
         n_cmp = 3;
         if(run_input.plot_quantities(i+1)=="v") ++dims;
         if(run_input.plot_quantities(i+2)=="w") ++dims;
-        
+
         fprintf(fp, "<DataArray type=\"Float64\" "
                 "Name=\"%s\" NumberOfComponents=\"3\" "
                 "format=\"appended\" "
@@ -1446,7 +1468,7 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       i += dims-1;
     }
     fprintf(fp, "</PointData>\n");
-    
+
     // Writing Cells section declaration
     // buf[2]: global hex count     VTK_HEXAHEDRON (=12)
     // buf[3]: global prism count   VTK_WEDGE      (=13)
@@ -1470,18 +1492,18 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     offset += sizeof(int)+buf[1]*sizeof(int);
     fprintf(fp, "</DataArray>\n");
     fprintf(fp, "</Cells>\n");
-    
+
     fprintf(fp, "</Piece>\n");
     fprintf(fp, "</UnstructuredGrid>\n");
     fclose(fp);
-    
+
   }
-  
+
   // Writing raw binary AppendedData section
   // ------------------------------------------------------
   // x,y,z...
   // ------------------------------------------------------
-  
+
 #ifdef _MPI
   if (my_rank > 0) {
     // rank 0 writes right away, other processes wait for previous to finish
@@ -1489,17 +1511,17 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     MPI_Recv(&dummy_in,1,MPI_INT,my_rank-1,2222,MPI_COMM_WORLD,&status);
   }
 #endif
-  
+
   FILE * fp;
   if ( (fp=fopen(file_name,"a"))==NULL )
     FatalError("ERROR: cannot open output file");
-  
+
   if (my_rank == 0) {
     fprintf(fp, "<AppendedData encoding=\"raw\">\n_");
     int bytes = sizeof(int)+3*buf[0]*sizeof(double);
     fwrite(&bytes, sizeof(int), 1, fp);
   }
-  
+
   // writing mesh point coordinates
   double x_ppt[3] = {0.0,0.0,0.0};
   for(int i=0;i<FlowSol->num_pnodes;++i){
@@ -1509,7 +1531,7 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     fwrite(x_ppt, sizeof(double), 3, fp);
     //fwrite(pos.get_ptr_cpu(), sizeof(double), 3, fp);
   }
-  
+
 #ifdef _MPI
   if (my_rank < FlowSol->nproc-1) {
     // for ranks that are not last, just close and send a message on...
@@ -1525,11 +1547,11 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
 #else
   fclose(fp);
 #endif
-  
+
   // ------------------------------------------------------
   // scalar and vector data...
   // ------------------------------------------------------
-  
+
   for (int i=0;i<run_input.n_plot_quantities;++i){
 #ifdef _MPI
     if (my_rank == 0) {
@@ -1544,11 +1566,11 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       MPI_Recv(&dummy_in,1,MPI_INT,my_rank-1,2222,MPI_COMM_WORLD,&status);
     }
 #endif
-    
+
     FILE * fp;
     if ( (fp=fopen(file_name,"a"))==NULL )
       FatalError("ERROR: cannot open output file");
-    
+
     int n_cmp=1, dims=1;
     if(run_input.plot_quantities(i)=="u"){
       n_cmp = 3;
@@ -1556,12 +1578,12 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       if(run_input.plot_quantities(i+2)=="w") ++dims;
       //dims = n_dims;
     }
-    
+
     if(my_rank == 0){
       int bytes = sizeof(int)+n_cmp*buf[0]*sizeof(double);
       fwrite(&bytes, sizeof(int), 1, fp);
     }
-    
+
     for(int j=0;j<FlowSol->num_pnodes;++j){
       double phi[3] = {0.0,0.0,0.0};
       for(int k=0;k<dims;++k) phi[k] = FlowSol->plotq_pnodes(j,i+k);
@@ -1571,9 +1593,9 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     //  double phi = FlowSol->plotq_pnodes(j,0);
     //  fwrite(&phi, sizeof(double), 1, fp);
     //}
-    
+
     i += dims-1;
-    
+
 #ifdef _MPI
     if (my_rank < FlowSol->nproc-1) {
       // for ranks that are not last, just close and send a message on...
@@ -1590,11 +1612,11 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     fclose(fp);
 #endif
   }
-  
+
   // ------------------------------------------------------
   // connectivity...
   // ------------------------------------------------------
-  
+
 #ifdef _MPI
   if (my_rank == 0) {
     MPI_Status status;
@@ -1608,11 +1630,11 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     MPI_Recv(&dummy_in,1,MPI_INT,my_rank-1,2222,MPI_COMM_WORLD,&status);
   }
 #endif
-  
+
   //FILE * fp;
   if ( (fp=fopen(file_name,"a"))==NULL )
     FatalError("ERROR: cannot open output file");
-  
+
   if (my_rank == 0) {
     // buf[2]: global hex count     VTK_HEXAHEDRON (=12)
     // buf[3]: global prism count   VTK_WEDGE      (=13)
@@ -1622,13 +1644,13 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     int bytes = sizeof(int)+(8*buf[2]+6*buf[3]+4*buf[4]+4*buf[5]+3*buf[6])*sizeof(int);
     fwrite(&bytes, sizeof(int), 1, fp);
   }
-  
+
   for(int i=0;i<FlowSol->n_ele_types;++i) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       int cbuf[8];
       int count=0,npt;
       int ele_type=FlowSol->mesh_eles(i)->get_ele_type();
-      
+
       switch (ele_type) {
         case 4:
           npt=8;  // hex...
@@ -1692,7 +1714,7 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       }
     }
   }
-  
+
 #ifdef _MPI
   if (my_rank < FlowSol->nproc-1) {
     // for ranks that are not last, just close and send a message on...
@@ -1708,13 +1730,13 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
 #else
   fclose(fp);
 #endif
-  
+
   // ------------------------------------------------------
   // offsets...
   // ------------------------------------------------------
-  
+
   int cls_offset = 0;
-  
+
 #ifdef _MPI
   if (my_rank == 0) {
     MPI_Status status;
@@ -1728,21 +1750,21 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     MPI_Recv(&cls_offset,1,MPI_INT,my_rank-1,2222,MPI_COMM_WORLD,&status);
   }
 #endif
-  
+
   //FILE * fp;
   if ( (fp=fopen(file_name,"a"))==NULL )
     FatalError("ERROR: cannot open output file");
-  
+
   if (my_rank == 0) {
     int bytes = sizeof(int)+buf[1]*sizeof(int);
     fwrite(&bytes, sizeof(int), 1, fp);
   }
-  
+
   for(int i=0;i<FlowSol->n_ele_types;++i) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       int npt;
       int ele_type=FlowSol->mesh_eles(i)->get_ele_type();
-      
+
       switch (ele_type) {
         case 4:
           npt=8;  // hex...
@@ -1784,7 +1806,7 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       }
     }
   }
-  
+
 #ifdef _MPI
   if (my_rank < FlowSol->nproc-1) {
     // for ranks that are not last, just close and send a cls_offset on...
@@ -1800,11 +1822,11 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
 #else
   fclose(fp);
 #endif
-  
+
   // ------------------------------------------------------
   // types...
   // ------------------------------------------------------
-  
+
 #ifdef _MPI
   if (my_rank == 0) {
     MPI_Status status;
@@ -1818,15 +1840,15 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     MPI_Recv(&dummy_in,1,MPI_INT,my_rank-1,2222,MPI_COMM_WORLD,&status);
   }
 #endif
-  
+
   if ( (fp=fopen(file_name,"a"))==NULL )
     FatalError("ERROR: cannot open output file");
-  
+
   if (my_rank == 0) {
     int bytes = sizeof(int)+buf[1]*sizeof(int);
     fwrite(&bytes, sizeof(int), 1, fp);
   }
-  
+
   // buf[2]: global hex count     VTK_HEXAHEDRON (=12)
   // buf[3]: global prism count   VTK_WEDGE      (=13)
   // buf[4]: global tet count     VTK_TETRA      (=10)
@@ -1836,7 +1858,7 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       int ctype;
       int ele_type=FlowSol->mesh_eles(i)->get_ele_type();
-      
+
       switch (ele_type) {
         case 4:
           ctype=12;  // hex...
@@ -1868,37 +1890,37 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       }
     }
   }
-  
+
 #ifdef _MPI
   if ( my_rank == FlowSol->nproc-1 ) {
     fprintf(fp, "</AppendedData>\n");
     fprintf(fp, "</VTKFile>\n");
   }
   fclose(fp);
-  
+
   if ( my_rank < FlowSol->nproc-1 ) {
     MPI_Send(&dummy_out,1,MPI_INT,FlowSol->rank+1,2222,MPI_COMM_WORLD);
   }
-  
+
   MPI_Barrier(MPI_COMM_WORLD);
 #else
   fprintf(fp, "</AppendedData>\n");
   fprintf(fp, "</VTKFile>\n");
   fclose(fp);
 #endif
-  
+
 }
 
 #ifdef SINGLE_ZONE
 void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixed elements
-  
+
   // a sequential Tecplot file writing...
-  
+
   char  file_name_s[50] ;
   char *file_name;
   sprintf(file_name_s,"Mesh_%.09d.plt",in_file_num);
   file_name = &file_name_s[0];
-  
+
 #ifdef _MPI
   int dummy_in = 0, dummy_out = 0;
   MPI_Request request_in, request_out;
@@ -1907,9 +1929,9 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
 #else
   cout << "Writing Tecplot file number " << in_file_num << endl;
 #endif
-  
+
   // step 1: count the elements (total and by type)
-  
+
   int my_buf[7];
   my_buf[0] = num_pnodes; // local node count
   my_buf[1] = 0; // local eles count
@@ -1918,13 +1940,13 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
   my_buf[4] = 0; // local tet count
   my_buf[5] = 0; // local quad count 2D
   my_buf[6] = 0; // local tri count  2D
-  
+
   for(int i=0;i<n_ele_types;++i){
     if(mesh_eles(i)->get_n_eles()!=0) {
-      
+
       int num_eles = (mesh_eles(i)->get_n_eles())*(mesh_eles(i)->get_n_peles_per_ele());
       my_buf[1] += num_eles;
-      
+
       // element specific counters
       if(mesh_eles(i)->get_ele_type()==0)      my_buf[6] += num_eles; // tri
       else if(mesh_eles(i)->get_ele_type()==1) my_buf[5] += num_eles; // quad
@@ -1936,14 +1958,14 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       }
     }
   }
-  
+
   // figure out our nodal displacement for connectivities
   int displ=0;
 #ifdef _MPI
   MPI_Scan(&(my_buf[0]),&displ,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
   displ -= my_buf[0];
 #endif
-  
+
   // send our counts to rank 0...
 #ifdef _MPI
   int buf[7];
@@ -1952,11 +1974,11 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
   int buf[7];
   for(int i=0;i<7;++i) buf[i] = my_buf[i];
 #endif
-  
+
   // ------------------------------------------------------
   // find min/max pairs for each variable
   // ------------------------------------------------------
-  
+
   int NumVar = n_dims + run_input.n_plot_quantities;
   array<double> my_MinVal(NumVar);
   array<double> my_MaxVal(NumVar);
@@ -1978,7 +2000,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       my_MaxVal(k+n_dims) = max(phi,my_MaxVal(k+n_dims));
     }
   }
-  
+
 #ifdef _MPI
   array<double> MinVal(NumVar);
   array<double> MaxVal(NumVar);
@@ -1994,43 +2016,43 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     MaxVal(k) = my_MaxVal(k);
   }
 #endif
-  
+
   // Let's start writing...
   int zero = 0;
   int one  = 1;
   int value;
   int VarType;
-  
+
   int my_rank = 0;
 #ifdef _MPI
   my_rank = FlowSol->rank;
 #endif
-  
+
   // ------------------------------------------------------
   // rank 0 writes the header...
   // ------------------------------------------------------
-  
+
   if (my_rank == 0) {
-    
+
     FILE * fp;
     if ( (fp=fopen(file_name,"w"))==NULL )
       FatalError("ERROR: cannot open output file");
-    
+
     fprintf(fp, "#!TDV111");           // Magic number, Version number
-    
+
     fwrite(&one,  sizeof(int), 1, fp); // used to determine Endian-ness of the machine
     fwrite(&zero, sizeof(int), 1, fp); // 0 = FULL, 1 = GRID, 2 = SOLUTION
-    
+
     // writing title
     string title = "SD++ Solution";
     for(int c=0;c<=title.size();++c){
       int chr =  int(title[c]);
       fwrite(&chr, sizeof(int), 1, fp);
     }
-    
+
     // write number of variables and variable names
     fwrite(&NumVar, sizeof(int), 1, fp);
-    
+
     string VarName;
     VarName = "x";
     for(int c=0;c<=VarName.size();++c){
@@ -2056,18 +2078,18 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
         fwrite(&chr, sizeof(int), 1, fp);
       }
     }
-    
+
     // write zone
     float marker = 299.0;
     fwrite(&marker, sizeof(float), 1, fp);
-    
+
     string ZoneName = "2D_mesh";
     if(FlowSol->n_dims==3) ZoneName = "3D_mesh";
     for(int c=0;c<=ZoneName.size();++c){
       int chr =  int(ZoneName[c]);
       fwrite(&chr, sizeof(int), 1, fp);
     }
-    
+
     value = -1;
     fwrite(&value, sizeof(int), 1, fp);     // ParentZone
     value = -1;
@@ -2075,7 +2097,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     fwrite(&time, sizeof(double), 1, fp);   // solution time
     value = -1;
     fwrite(&value, sizeof(int), 1, fp);     // Zone Color
-    
+
     if(FlowSol->n_dims==2)
       value = 3;  //FEQUADRILATERAL
     else if(FlowSol->n_dims==3)
@@ -2085,21 +2107,21 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     fwrite(&zero, sizeof(int), 1, fp);      // Var Location (not specified => nodes)
     fwrite(&zero, sizeof(int), 1, fp);      // No face neighbors supplied
     fwrite(&zero, sizeof(int), 1, fp);      // # misc. user-defined face connections
-    
+
     fwrite(&buf[0], sizeof(int), 1, fp);    // NumPts
     fwrite(&buf[1], sizeof(int), 1, fp);    // NumElements
-    
+
     fwrite(&zero, sizeof(int), 1, fp);      // ICellDim (unused)
     fwrite(&zero, sizeof(int), 1, fp);      // JCellDim (unused)
     fwrite(&zero, sizeof(int), 1, fp);      // KCellDim (unused)
     fwrite(&zero, sizeof(int), 1, fp);      // No more Auxiliary name/value pairs
-    
+
     marker = 357.0;
     fwrite(&marker, sizeof(float), 1, fp);  // EOHMARKER
-    
+
     marker = 299.0;
     fwrite(&marker, sizeof(float), 1, fp);  // Zone marker
-    
+
     for(int i=0;i<NumVar;++i){              // Variable data format
       //VarType = 1;  //Float
       VarType = 2;  //Double
@@ -2109,12 +2131,12 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       //VarType = 6;  //Bit
       fwrite(&VarType, sizeof(int), 1, fp);
     }
-    
+
     fwrite(&zero, sizeof(int), 1, fp);      // Passive variables
     fwrite(&zero, sizeof(int), 1, fp);      // Variables sharing
     value = -1;
     fwrite(&value, sizeof(int), 1, fp);     // No share connectivity
-    
+
     for(int k=0;k<NumVar;++k){
       double MinMax[2];
       MinMax[0] = MinVal(k);
@@ -2122,16 +2144,16 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       fwrite(MinMax, sizeof(double), 2, fp);
       //fwrite(MinVal.get_ptr_cpu(k), sizeof(double), 1, fp);
     }
-    
+
     fclose(fp);
-    
+
   }
-  
+
   // Writing zone's data section
   // ------------------------------------------------------
   // x,y,z...
   // ------------------------------------------------------
-  
+
   for(int k=0;k<FlowSol->n_dims;++k){
 #ifdef _MPI
     if (my_rank > 0) {
@@ -2140,11 +2162,11 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       MPI_Recv(&dummy_in,1,MPI_INT,my_rank-1,2222,MPI_COMM_WORLD,&status);
     }
 #endif
-    
+
     FILE * fp;
     if ( (fp=fopen(file_name,"a"))==NULL )
       FatalError("ERROR: cannot open output file");
-    
+
     for(int i=0;i<num_pnodes;++i){
       if(VarType == 1){
         float x_ppt = (float)(*(pos_pnode(i).get_ptr_cpu() + k));
@@ -2155,7 +2177,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
         fwrite(&x_ppt, sizeof(double), 1, fp);
       }
     }
-    
+
 #ifdef _MPI
     if (my_rank < FlowSol->nproc-1) {
       // for ranks that are not last, just close and send a message on...
@@ -2171,7 +2193,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     fclose(fp);
 #endif
   }
-  
+
   // ------------------------------------------------------
   // scalar and vector data...
   // ------------------------------------------------------
@@ -2188,11 +2210,11 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       MPI_Recv(&dummy_in,1,MPI_INT,my_rank-1,2222,MPI_COMM_WORLD,&status);
     }
 #endif
-    
+
     FILE * fp;
     if ( (fp=fopen(file_name,"a"))==NULL )
       FatalError("ERROR: cannot open output file");
-    
+
     for(int j=0;j<num_pnodes;++j){
       if(VarType == 1){
         float phi = (float)(FlowSol->plotq_pnodes(j,i));
@@ -2203,7 +2225,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
         fwrite(&phi, sizeof(double), 1, fp);
       }
     }
-    
+
 #ifdef _MPI
     if (my_rank < FlowSol->nproc-1) {
       // for ranks that are not last, just close and send a message on...
@@ -2219,7 +2241,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     fclose(fp);
 #endif
   }
-  
+
   // ------------------------------------------------------
   // connectivity...
   // ------------------------------------------------------
@@ -2235,23 +2257,23 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     MPI_Recv(&dummy_in,1,MPI_INT,my_rank-1,2222,MPI_COMM_WORLD,&status);
   }
 #endif
-  
+
   FILE * fp;
   if ( (fp=fopen(file_name,"a"))==NULL )
     FatalError("ERROR: cannot open output file");
-  
+
   // buf[2]: global hex count
   // buf[3]: global prism count
   // buf[4]: global tet count
   // buf[5]: global quad count
   // buf[6]: global tri count
-  
+
   for(int i=0;i<n_ele_types;++i) {
     if (mesh_eles(i)->get_n_eles()!=0) {
       int cbuf[8];
       int count=0;
       int ele_type=mesh_eles(i)->get_ele_type();
-      
+
       switch (ele_type) {
         case 4:   // hex...
           for(int j=0; j<my_buf[2]; ++j){
@@ -2311,31 +2333,31 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       }
     }
   }
-  
+
 #ifdef _MPI
   fclose(fp);
-  
+
   if ( my_rank < FlowSol->nproc-1 ) {
     MPI_Send(&dummy_out,1,MPI_INT,FlowSol->rank+1,2222,MPI_COMM_WORLD);
   }
-  
+
   MPI_Barrier(MPI_COMM_WORLD);
 #else
   fclose(fp);
 #endif
-  
+
 }
 
 #else  //SINGLE_ZONE
 void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixed elements
-  
+
   // a sequential Tecplot file writing...
-  
+
   char  file_name_s[50] ;
   char *file_name;
   sprintf(file_name_s,"Mesh_%.09d.plt",in_file_num);
   file_name = &file_name_s[0];
-  
+
 #ifdef _MPI
   int dummy_in = 0, dummy_out = 0;
   MPI_Request request_in, request_out;
@@ -2344,9 +2366,9 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
 #else
   cout << "Writing Tecplot file number " << in_file_num << endl;
 #endif
-  
+
   // step 1: count the elements (total and by type)
-  
+
   int my_buf[7];
   my_buf[0] = FlowSol->num_pnodes; // local node count
   my_buf[1] = 0; // local eles count
@@ -2355,13 +2377,13 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
   my_buf[4] = 0; // local tet count
   my_buf[5] = 0; // local quad count 2D
   my_buf[6] = 0; // local tri count  2D
-  
+
   for(int i=0;i<FlowSol->n_ele_types;++i){
     if(FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
       int num_eles = (FlowSol->mesh_eles(i)->get_n_eles())*(FlowSol->mesh_eles(i)->get_n_peles_per_ele());
       my_buf[1] += num_eles;
-      
+
       // element specific counters
       if(FlowSol->mesh_eles(i)->get_ele_type()==0)      my_buf[6] += num_eles; // tri
       else if(FlowSol->mesh_eles(i)->get_ele_type()==1) my_buf[5] += num_eles; // quad
@@ -2373,44 +2395,44 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       }
     }
   }
-  
+
   // Let's start writing...
   int zero = 0;
   int one  = 1;
   int value;
   int VarType;
   int NumVar = FlowSol->n_dims + run_input.n_plot_quantities;
-  
+
   int my_rank = 0;
 #ifdef _MPI
   my_rank = FlowSol->rank;
 #endif
-  
+
   // ------------------------------------------------------
   // rank 0 writes the header...
   // ------------------------------------------------------
-  
+
   if (my_rank == 0) {
-    
+
     FILE * fp;
     if ( (fp=fopen(file_name,"w"))==NULL )
       FatalError("ERROR: cannot open output file");
-    
+
     fprintf(fp, "#!TDV111");           // Magic number, Version number
-    
+
     fwrite(&one,  sizeof(int), 1, fp); // used to determine Endian-ness of the machine
     fwrite(&zero, sizeof(int), 1, fp); // 0 = FULL, 1 = GRID, 2 = SOLUTION
-    
+
     // writing title
     string title = "SD++ Solution";
     for(int c=0;c<=title.size();++c){
       int chr =  int(title[c]);
       fwrite(&chr, sizeof(int), 1, fp);
     }
-    
+
     // write number of variables and variable names
     fwrite(&NumVar, sizeof(int), 1, fp);
-    
+
     string VarName;
     VarName = "x";
     for(int c=0;c<=VarName.size();++c){
@@ -2436,12 +2458,12 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
         fwrite(&chr, sizeof(int), 1, fp);
       }
     }
-    
-    
+
+
     fclose(fp);
-    
+
   }
-  
+
   // ------------------------------------------------------
   // zone header
   // ------------------------------------------------------
@@ -2452,14 +2474,14 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     MPI_Recv(&dummy_in,1,MPI_INT,my_rank-1,2222,MPI_COMM_WORLD,&status);
   }
 #endif
-  
+
   FILE * fp;
   if ( (fp=fopen(file_name,"a"))==NULL )
     FatalError("ERROR: cannot open output file");
-  
+
   float marker = 299.0;
   fwrite(&marker, sizeof(float), 1, fp);
-  
+
   ostringstream tmpStr;
   tmpStr << my_rank;
   string ZoneName = "rank_" + tmpStr.str();
@@ -2467,7 +2489,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     int chr =  int(ZoneName[c]);
     fwrite(&chr, sizeof(int), 1, fp);
   }
-  
+
   value = -1;
   fwrite(&value, sizeof(int), 1, fp);     // ParentZone
   value = -1;
@@ -2475,7 +2497,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
   fwrite(&FlowSol->time, sizeof(double), 1, fp);   // solution time
   value = -1;
   fwrite(&value, sizeof(int), 1, fp);     // Zone Color
-  
+
   if(FlowSol->n_dims==2)
     value = 3;  //FEQUADRILATERAL
   else if(FlowSol->n_dims==3)
@@ -2485,15 +2507,15 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
   fwrite(&zero, sizeof(int), 1, fp);      // Var Location (not specified => nodes)
   fwrite(&zero, sizeof(int), 1, fp);      // No face neighbors supplied
   fwrite(&zero, sizeof(int), 1, fp);      // # misc. user-defined face connections
-  
+
   fwrite(&my_buf[0], sizeof(int), 1, fp); // NumPts
   fwrite(&my_buf[1], sizeof(int), 1, fp); // NumElements
-  
+
   fwrite(&zero, sizeof(int), 1, fp);      // ICellDim (unused)
   fwrite(&zero, sizeof(int), 1, fp);      // JCellDim (unused)
   fwrite(&zero, sizeof(int), 1, fp);      // KCellDim (unused)
   fwrite(&zero, sizeof(int), 1, fp);      // No more Auxiliary name/value pairs
-  
+
 #ifdef _MPI
   if (my_rank < FlowSol->nproc-1) {
     // for ranks that are not last, just close and send a message on...
@@ -2508,7 +2530,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
 #else
   fclose(fp);
 #endif
-  
+
   // ------------------------------------------------------
   // Writing zone's data section
   // ------------------------------------------------------
@@ -2524,19 +2546,19 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     MPI_Recv(&dummy_in,1,MPI_INT,my_rank-1,2222,MPI_COMM_WORLD,&status);
   }
 #endif
-  
+
   //FILE * fp;
   if ( (fp=fopen(file_name,"a"))==NULL )
     FatalError("ERROR: cannot open output file");
-  
+
   if(my_rank == 0) {
     marker = 357.0;
     fwrite(&marker, sizeof(float), 1, fp);  // EOHMARKER
   }
-  
+
   marker = 299.0;
   fwrite(&marker, sizeof(float), 1, fp);  // Zone marker
-  
+
   for(int i=0;i<NumVar;++i){              // Variable data format
     //VarType = 1;  //Float
     VarType = 2;  //Double
@@ -2546,16 +2568,16 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     //VarType = 6;  //Bit
     fwrite(&VarType, sizeof(int), 1, fp);
   }
-  
+
   fwrite(&zero, sizeof(int), 1, fp);      // Passive variables
   fwrite(&zero, sizeof(int), 1, fp);      // Variables sharing
   value = -1;
   fwrite(&value, sizeof(int), 1, fp);     // No share connectivity
-  
+
   // ------------------------------------------------------
   // min/max pairs for each variable
   // ------------------------------------------------------
-  
+
   for(int k=0;k<FlowSol->n_dims;++k){
     double MinVal =  1.7e+308;
     double MaxVal = -1.7e+308;
@@ -2567,7 +2589,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     fwrite(&MinVal, sizeof(double), 1, fp);
     fwrite(&MaxVal, sizeof(double), 1, fp);
   }
-  
+
   for (int i=0;i<run_input.n_plot_quantities;++i){
     double MinVal =  1.7e+308;
     double MaxVal = -1.7e+308;
@@ -2579,11 +2601,11 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
     fwrite(&MinVal, sizeof(double), 1, fp);
     fwrite(&MaxVal, sizeof(double), 1, fp);
   }
-  
+
   // ------------------------------------------------------
   // x,y,z...
   // ------------------------------------------------------
-  
+
   for(int k=0;k<FlowSol->n_dims;++k){
     for(int i=0;i<FlowSol->num_pnodes;++i){
       if(VarType == 1){
@@ -2596,7 +2618,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       }
     }
   }
-  
+
   // ------------------------------------------------------
   // scalar and vector data...
   // ------------------------------------------------------
@@ -2612,7 +2634,7 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       }
     }
   }
-  
+
   // ------------------------------------------------------
   // connectivity...
   // ------------------------------------------------------
@@ -2621,13 +2643,13 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
   // buf[4]: global tet count
   // buf[5]: global quad count
   // buf[6]: global tri count
-  
+
   for(int i=0;i<FlowSol->n_ele_types;++i) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       int cbuf[8];
       int count=0;
       int ele_type=FlowSol->mesh_eles(i)->get_ele_type();
-      
+
       switch (ele_type) {
         case 4:   // hex...
           for(int j=0; j<my_buf[2]; ++j){
@@ -2687,19 +2709,19 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
       }
     }
   }
-  
+
 #ifdef _MPI
   fclose(fp);
-  
+
   if ( my_rank < FlowSol->nproc-1 ) {
     MPI_Send(&dummy_out,1,MPI_INT,FlowSol->rank+1,2222,MPI_COMM_WORLD);
   }
-  
+
   MPI_Barrier(MPI_COMM_WORLD);
 #else
   fclose(fp);
 #endif
-  
+
 }
 #endif //SINGLE_ZONE
 //CGL adding binary output for Paraview ************************************** END
@@ -2707,24 +2729,24 @@ void write_tec_bin(int in_file_num, struct solution* FlowSol) { // 3D (MPI) mixe
 
 void write_restart(int in_file_num, struct solution* FlowSol)
 {
-  
+
 	// copy solution to cpu
 #ifdef _GPU
 	for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
 		  FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-      
+
     }
   }
 #endif
-  
+
 	char file_name_s[50];
 	char *file_name;
 	ofstream restart_file;
 	restart_file.precision(15);
-  
-  
+
+
 #ifdef _MPI
 	sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
 	if (FlowSol->rank==0) cout << "Writing Restart file number " << in_file_num << " ...." << endl;
@@ -2732,47 +2754,47 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 	sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,0);
 	cout << "Writing Restart file number " << in_file_num << " ...." << endl;
 #endif
-  
-  
+
+
 	file_name = &file_name_s[0];
 	restart_file.open(file_name);
-  
+
   restart_file << time << endl;
 	//header
   for (int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
       FlowSol->mesh_eles(i)->write_restart_info(restart_file);
       FlowSol->mesh_eles(i)->write_restart_data(restart_file);
-      
+
     }
   }
-  
+
 	restart_file.close();
-  
+
 }
 
 void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
 {
-  
+
 	char file_name_s[50];
 	char *file_name;
   ofstream cp_file;
-  
+
 #ifdef _MPI
 	sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
 #else
 	sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,0);
 #endif
-  
+
 	file_name = &file_name_s[0];
   cp_file.open(file_name);
-  
+
 	// copy solution to cpu
 #ifdef _GPU
 	for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
   		FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
       if (FlowSol->viscous==1)
       {
@@ -2781,89 +2803,89 @@ void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
     }
   }
 #endif
-  
+
   array<double> inv_force(FlowSol->n_dims),temp_inv_force(FlowSol->n_dims);
   array<double> vis_force(FlowSol->n_dims),temp_vis_force(FlowSol->n_dims);
-  
+
   for (int m=0;m<FlowSol->n_dims;m++)
   {
     inv_force(m) = 0.;
     vis_force(m) = 0.;
   }
-  
+
 	for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
 		  FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force,temp_vis_force,cp_file);
-      
+
       for (int m=0;m<FlowSol->n_dims;m++) {
         inv_force(m) += temp_inv_force(m);
         vis_force(m) += temp_vis_force(m);
       }
     }
   }
-  
+
 #ifdef _MPI
-  
+
   array<double> inv_force_global(FlowSol->n_dims);
   array<double> vis_force_global(FlowSol->n_dims);
-  
+
   for (int m=0;m<FlowSol->n_dims;m++) {
     inv_force_global(m) = 0.;
     vis_force_global(m) = 0.;
     MPI_Reduce(&inv_force(m),&inv_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
     MPI_Reduce(&vis_force(m),&vis_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
   }
-  
+
   for (int m=0;m<FlowSol->n_dims;m++)
   {
     inv_force(m) = inv_force_global(m);
     vis_force(m) = vis_force_global(m);
   }
 #endif
-  
+
   // Calculate body forcing, if running periodic channel, and add to viscous flux
 	if(run_input.equation==0 and run_input.run_type==0 and run_input.forcing==1 and FlowSol->n_dims==3)
 	{
 		for(int i=0;i<FlowSol->n_ele_types;i++)
 			FlowSol->mesh_eles(i)->calc_body_force_upts(vis_force, FlowSol->body_force);
 	}
-  
+
   if (FlowSol->rank==0)
   {
     sprintf(file_name_s,"force000.dat",FlowSol->rank);
     file_name = &file_name_s[0];
     ofstream write_force;
 	  write_force.open(file_name,ios::app);
-    
+
     write_force << scientific << setprecision(7) <<  in_time << " , ";
     write_force << setw(10) << scientific << setprecision(7) << inv_force(0)+vis_force(0) << " , " << scientific << setprecision(7) << setw(10) << inv_force(1)+vis_force(1);
     if (FlowSol->n_dims==3)
       write_force << " , " << scientific << setprecision(7) << setw(10) << inv_force(2)+vis_force(2) ;
     write_force << endl;
     write_force.close();
-    
+
     //cout <<scientific << "    fx= " << setprecision(13) << inv_force(0)+vis_force(0) << "    fy=" << inv_force(1)+vis_force(1);
     cout <<scientific << "    fx_i= " << setprecision(7) << inv_force(0) << "    fx_v= " << setprecision(7) << vis_force(0);
     cout <<scientific << "    fy_i= " << setprecision(7) << inv_force(1) << "    fy_v= " << setprecision(7) << vis_force(1);
     if (FlowSol->n_dims==3)
       cout <<scientific << "    fz_i= " << setprecision(7) << inv_force(2) << "    fz_v= " << setprecision(7) << vis_force(2) << "    time= " << setprecision(7) << in_time;
   }
-  
+
   cp_file.close();
-  
+
 }
 
 // Calculate global diagnostic quantities
 void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
 {
-  
+
 	char file_name_s[50];
 	char *file_name;
-  
+
 	// copy solution to cpu
 #ifdef _GPU
-  
+
 	for(int i=0;i<FlowSol->n_ele_types;i++)
 	{
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
@@ -2875,14 +2897,14 @@ void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
       }
     }
   }
-  
+
 #endif
-  
+
   int ndiags = run_input.n_diagnostics;
   array <double> diagnostics(ndiags);
 	for(int j=0;j<ndiags;++j)
 		diagnostics(j) = 0.;
-  
+
 	// Loop over element types
 	for(int i=0;i<FlowSol->n_ele_types;i++)
 	{
@@ -2891,9 +2913,9 @@ void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
 		  FlowSol->mesh_eles(i)->CalcDiagnostics(ndiags, diagnostics);
     }
   }
-  
+
 #ifdef _MPI
-  
+
   array<double> diagnostics_global(ndiags);
 	for(int j=0;j<ndiags;++j)
 	{
@@ -2902,14 +2924,14 @@ void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
 		diagnostics(j) = diagnostics_global(j);
 	}
 #endif
-  
+
   if (FlowSol->rank==0)
   {
     sprintf(file_name_s,"statfile.dat",FlowSol->rank);
     file_name = &file_name_s[0];
     ofstream write_diagnostics;
 	  write_diagnostics.open(file_name,ios::app);
-    
+
     write_diagnostics << scientific << setprecision(7) <<  in_time << " ";
 		for(int j=0;j<ndiags;++j)
 		{
@@ -2923,28 +2945,28 @@ void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
 void compute_error(int in_file_num, struct solution* FlowSol)
 {
   int n_fields;
-	
+
   //HACK (assume same number of fields for all elements)
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       n_fields = FlowSol->mesh_eles(i)->get_n_fields();
     }
   }
-  
+
   array<double> error(2,n_fields);
   array<double> temp_error(2,n_fields);
-  
+
   for (int i=0; i<n_fields; i++)
   {
     error(0,i) = 0.;
     error(1,i) = 0.;
   }
-	
+
   // copy solution to cpu
 #ifdef _GPU
 	for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
 		  FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
       if (FlowSol->viscous==1)
       {
@@ -2953,13 +2975,13 @@ void compute_error(int in_file_num, struct solution* FlowSol)
     }
   }
 #endif
-  
-  
+
+
   //Compute the error
 	for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 		  temp_error = FlowSol->mesh_eles(i)->compute_error(run_input.error_norm_type,FlowSol->time);
-      
+
       for(int j=0;j<n_fields; j++) {
         error(0,j) += temp_error(0,j);
         if(FlowSol->viscous) {
@@ -2968,23 +2990,23 @@ void compute_error(int in_file_num, struct solution* FlowSol)
       }
     }
   }
-  
+
 #ifdef _MPI
 	int n_err_vals = 2*n_fields;
-  
+
 	array<double> error_global(2,n_fields);
   for (int i=0; i<n_fields; i++)
   {
     error_global(0,i) = 0.;
     error_global(1,i) = 0.;
   }
-  
+
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Reduce(error.get_ptr_cpu(),error_global.get_ptr_cpu(),n_err_vals,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-  
+
   error = error_global;
 #endif
-  
+
   if (FlowSol->rank==0)
   {
     if (run_input.error_norm_type==1) // L1 norm
@@ -3000,9 +3022,9 @@ void compute_error(int in_file_num, struct solution* FlowSol)
         }
       }
     }
-    
+
     //cout << scientific << "    error= " << setprecision(13) << error << endl;
-    
+
     for(int j=0;j<n_fields; j++) {
       cout << scientific << " sol error, field " << j << " = " << setprecision(13) << error(0,j) << endl;
     }
@@ -3012,21 +3034,21 @@ void compute_error(int in_file_num, struct solution* FlowSol)
         cout << scientific << " grad error, field " << j << " = " << setprecision(13) << error(1,j) << endl;
       }
     }
-    
+
   }
-  
+
   // Writing error to file
-  
+
   char  file_name_s[50] ;
   char *file_name;
   int r_flag;
-  
+
 	if (FlowSol->rank==0)
   {
     sprintf(file_name_s,"error000.dat",FlowSol->rank);
     file_name = &file_name_s[0];
     ofstream write_error;
-    
+
 	  write_error.open(file_name,ios::app);
 	  write_error << in_file_num << ", ";
 	  write_error <<  run_input.order << ", ";
@@ -3038,7 +3060,7 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 	  write_error << run_input.adv_type << ", ";
 	  write_error << run_input.riemann_solve_type << ", ";
 	  write_error << scientific << run_input.error_norm_type  << ", " ;
-	  
+
     for(int j=0;j<n_fields; j++) {
       write_error << scientific << error(0,j);
       if((j == (n_fields-1)) && FlowSol->viscous==0)
@@ -3050,7 +3072,7 @@ void compute_error(int in_file_num, struct solution* FlowSol)
         write_error <<", ";
       }
     }
-    
+
     if(FlowSol->viscous) {
       for(int j=0;j<n_fields; j++) {
         write_error << scientific << error(1,j);
@@ -3064,13 +3086,13 @@ void compute_error(int in_file_num, struct solution* FlowSol)
         }
       }
     }
-    
+
 	  write_error.close();
-		
+
     double etol = 1.0e-5;
-    
+
     r_flag = 0;
-    
+
     //HACK
     /*
      if( ((abs(ene_hist - error(0,n_fields-1))/ene_hist) < etol && (abs(grad_ene_hist - error(1,n_fields-1))/grad_ene_hist) < etol) || (abs(error(0,n_fields-1)) > abs(ene_hist)) )
@@ -3078,38 +3100,38 @@ void compute_error(int in_file_num, struct solution* FlowSol)
      r_flag = 1;
      }
      */
-    
+
     FlowSol->ene_hist = error(0,n_fields-1);
     FlowSol->grad_ene_hist = error(1,n_fields-1);
   }
-	
+
 	//communicate exit_state across processors
 #ifdef _MPI
   MPI_Bcast(&r_flag,1,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
-  
+
 #ifdef _MPI
 	if(r_flag)
 	{
 		MPI_Finalize();
 	}
 #endif
-  
+
 	if(r_flag)
 	{
 		cout << "Tolerance achieved " << endl;
 		exit(0);
 	}
-  
+
 }
 
 int monitor_residual(int in_file_num, struct solution* FlowSol) {
-  
+
   int i, j, n_upts = 0, n_fields;
   double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
   bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
-  
+
 #ifdef _GPU
 	// copy residual to cpu
 	for(i=0; i<FlowSol->n_ele_types; i++) {
@@ -3118,7 +3140,7 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
     }
   }
 #endif
-  
+
 	for(i=0; i<FlowSol->n_ele_types; i++) {
     n_fields = FlowSol->mesh_eles(i)->get_n_fields();
     if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
@@ -3127,33 +3149,33 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
         sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
     }
   }
-  
+
 #ifdef _MPI
-  
+
   int n_upts_global = 0;
   double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(sum, sum_global, 6, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  
+
   n_upts = n_upts_global;
   for(i=0; i<n_fields; i++) sum[i] = sum_global[i];
-  
+
 #endif
-  
+
   if (FlowSol->rank == 0) {
-    
+
     // Compute the norm
     for(i=0; i<n_fields; i++) {
       if (run_input.res_norm_type==1) { norm[i] = sum[i] / n_upts; } // L1 norm
       else if (run_input.res_norm_type==2) { norm[i] = sqrt(sum[i]) / n_upts; } // L2 norm
       else FatalError("norm_type not recognized");
-      
+
       if (isnan(norm[i])) {
         cout << "NaN residual at iteration " << in_file_num << ". Exiting" << endl;
         return 1;
       }
     }
-    
+
     // Write the header
     if (write_heads) {
       if (FlowSol->n_dims==2) {
@@ -3164,17 +3186,17 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
         if (n_fields == 5) cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]" << endl;
         else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]      Res[NuTilde]" << endl;
       }
-      
+
     }
-    
+
     // Screen output
     cout.precision(8);
     cout.setf(ios::fixed, ios::floatfield);
     cout.width(6); cout << in_file_num;
     for(i=0; i<n_fields; i++) { cout.width(15); cout << norm[i]; }
-    
+
   }
-  
+
   return 0;
 }
 
@@ -3183,44 +3205,44 @@ void check_stability(struct solution* FlowSol)
 {
   int n_plot_data;
   int bisect_ind, file_lines;
-  
+
   double c_now, dt_now;
   double a_temp, b_temp;
   double c_file, a_file, b_file;
-	
+
   array<double> plotq_ppts_temp;
-  
+
   int r_flag = 0;
   double i_tol    = 1.0e-4;
   double e_thresh = 1.5;
-  
+
   bisect_ind = run_input.bis_ind;
   file_lines = run_input.file_lines;
-  
+
 	// copy solution to cpu
 #ifdef _GPU
 	for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
 		  FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-      
+
     }
   }
 #endif
-  
+
   // check element specific data
-  
+
 	for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      
+
       n_plot_data = FlowSol->mesh_eles(i)->get_n_fields();
-      
+
 		  plotq_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),n_plot_data);
-      
+
       for(int j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
 	    {
 		    FlowSol->mesh_eles(i)->calc_disu_ppts(j,plotq_ppts_temp);
-        
+
 		    for(int k=0;k<FlowSol->mesh_eles(i)->get_n_ppts_per_ele();k++)
 		    {
 			    for(int l=0;l<n_plot_data;l++)
@@ -3233,12 +3255,12 @@ void check_stability(struct solution* FlowSol)
 	    }
     }
   }
-  
+
   //HACK
   c_now   = run_input.c_tet;
   dt_now  = run_input.dt;
-  
-  
+
+
   if( r_flag==0 )
   {
     a_temp = dt_now;
@@ -3249,34 +3271,34 @@ void check_stability(struct solution* FlowSol)
     a_temp = run_input.a_init;
     b_temp = dt_now;
   }
-  
-  
+
+
   //file input
   ifstream read_time;
   read_time.open("time_step.dat",ios::in);
   read_time.precision(12);
-  
+
   //file output
   ofstream write_time;
   write_time.open("temp.dat",ios::out);
   write_time.precision(12);
-  
+
   if(bisect_ind > 0)
   {
     for(int i=0; i<file_lines; i++)
     {
       read_time >> c_file >> a_file >> b_file;
-      
+
       cout << c_file << " " << a_file << " " << b_file << endl;
-      
+
       if(i == (file_lines-1))
       {
         cout << "Writing to time step file ..." << endl;
         write_time << c_now << " " << a_temp << " " << b_temp << endl;
-        
+
         read_time.close();
         write_time.close();
-        
+
         remove("time_step.dat");
         rename("temp.dat","time_step.dat");
       }
@@ -3286,8 +3308,8 @@ void check_stability(struct solution* FlowSol)
       }
     }
   }
-  
-  
+
+
   if(bisect_ind==0)
   {
     for(int i=0; i<file_lines; i++)
@@ -3295,22 +3317,22 @@ void check_stability(struct solution* FlowSol)
       read_time >> c_file >> a_file >> b_file;
       write_time << c_file << " " << a_file << " " << b_file << endl;
     }
-    
+
     cout << "Writing to time step file ..." << endl;
     write_time << c_now << " " << a_temp << " " << b_temp << endl;
-    
+
     read_time.close();
     write_time.close();
-    
+
     remove("time_step.dat");
     rename("temp.dat","time_step.dat");
   }
-  
+
   if( (abs(b_temp - a_temp)/(0.5*(b_temp + a_temp))) < i_tol )
     exit(1);
-  
+
   if(r_flag>0)
     exit(0);
-  
+
 }
 

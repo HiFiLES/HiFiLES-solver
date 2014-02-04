@@ -47,6 +47,7 @@ extern "C"
 #include "../include/global.h"
 #include "../include/array.h"
 #include "../include/flux.h"
+#include "source.h"
 #include "../include/eles.h"
 #include "../include/funcs.h"
 
@@ -57,7 +58,7 @@ using namespace std;
 // default constructor
 
 eles::eles()
-{	
+{
 }
 
 // default destructor
@@ -69,7 +70,7 @@ eles::~eles() {}
 // set number of elements
 
 void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
-{	
+{
 
 	n_eles=in_n_eles;
 
@@ -86,11 +87,11 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
   // Initialize the element specific static members
   (*this).setup_ele_type_specific(in_run_type);
 
-  if (in_run_type==0) 
+  if (in_run_type==0)
   {
 	  if(run_input.adv_type==0)
 	  {
-	  	n_adv_levels=1;	
+	  	n_adv_levels=1;
 	  }
 	  else if(run_input.adv_type==1)
 	  {
@@ -110,7 +111,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	  }
   }
   // For plotting, we just need 0 adv_level
-  else if (in_run_type==1) 
+  else if (in_run_type==1)
   {
       n_adv_levels=1;
   }
@@ -154,7 +155,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	n_dims_mul_n_upts_per_ele=n_dims*n_upts_per_ele;
 
   if (in_run_type==0) {
-	 
+
 	  div_tconf_upts.setup(n_adv_levels);
 	  for(int i=0;i<n_adv_levels;i++)
 	  {
@@ -169,27 +170,31 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
           div_tconf_upts(m)(i,j,k) = 0.;
 
 	  disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-	  tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims); 
+	  tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
 	  norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
 	  norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-	  
+
 	  if(viscous)
 	  {
 	  	delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
 	  	grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
-	  	grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims); 
+	  	grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
 	  }
+
+	  // Initialize source term
+	  src_term.setup(n_upts_per_ele, n_eles, n_fields);
+
 	  // Set connectivity array. Needed for Paraview output.
     if (ele_type==3) // prism
       connectivity_plot.setup(8,n_peles_per_ele);
-    else 
+    else
       connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
 
 		set_connectivity_plot();
   }
   else if (in_run_type==1)
   {
-    ppt_to_pnode.setup(n_eles,n_ppts_per_ele); 
+    ppt_to_pnode.setup(n_eles,n_ppts_per_ele);
     pos_ppts.setup(n_eles,n_ppts_per_ele);
     for (int i=0;i<n_eles;i++)
       for (int j=0;j<n_ppts_per_ele;j++)
@@ -197,7 +202,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 
     if (ele_type==3) // prism
       connectivity_plot.setup(8,n_peles_per_ele);
-    else 
+    else
       connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
   }
 
@@ -337,20 +342,20 @@ void eles::set_ics(double& time)
 	array<double> loc(n_dims);
 	array<double> pos(n_dims);
 	array<double> ics(n_fields);
-	
-  array<double> grad_rho(n_dims);  
+
+  array<double> grad_rho(n_dims);
 
 	for(i=0;i<n_eles;i++)
 	{
 		for(j=0;j<n_upts_per_ele;j++)
-		{	
+		{
 			for(k=0;k<n_dims;k++)
 			{
 				loc(k)=loc_upts(k,j);
 			}
-			
+
 			// calculate position of solution point
-			
+
 			calc_pos(loc,i,pos);
 
 			// evaluate solution at solution point
@@ -364,11 +369,21 @@ void eles::set_ics(double& time)
 			  if(n_dims==2)
 			  {
 			  	ics(3)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)));
+
+			  	if(run_input.turb_model==1)
+			  	{
+			  	    ics(4) = rho*run_input.mu_tilde_c_ic;
+			  	}
 			  }
 			  else if(n_dims==3)
 			  {
-			  	ics(3)=rho*vz;	
-			  	ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));	
+			  	ics(3)=rho*vz;
+			  	ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));
+
+			  	if(run_input.turb_model==1)
+			  	{
+			  	    ics(5) = rho*run_input.mu_tilde_c_ic;
+			  	}
 			  }
 			  else
 			  {
@@ -376,13 +391,13 @@ void eles::set_ics(double& time)
 			  }
 			}
 			else if(run_input.ic_form==1)
-			{	
+			{
 				rho=run_input.rho_c_ic;
 				vx=run_input.u_c_ic;
 				vy=run_input.v_c_ic;
 				vz=run_input.w_c_ic;
 				p=run_input.p_c_ic;
-	
+
 			  ics(0)=rho;
 			  ics(1)=rho*vx;
 			  ics(2)=rho*vy;
@@ -392,8 +407,8 @@ void eles::set_ics(double& time)
 			  }
 			  else if(n_dims==3)
 			  {
-			  	ics(3)=rho*vz;	
-			  	ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));	
+			  	ics(3)=rho*vz;
+			  	ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));
 			  }
 			  else
 			  {
@@ -459,7 +474,7 @@ void eles::set_ics(double& time)
 				cout << "ERROR: Invalid form of initial condition ... (File: " << __FILE__ << ", Line: " << __LINE__ << ")" << endl;
 				exit (1);
 			}
-				
+
 			// Add perturbation to channel
 			if(run_input.perturb_ic==1 and n_dims==3)
 			{
@@ -504,14 +519,14 @@ void eles::read_restart_data(ifstream& restart_file)
   // Move cursor to correct element type
   while(1) {
     getline(restart_file,str);
-    if (str==ele_name) break;  
+    if (str==ele_name) break;
     if (restart_file.eof()) return; // Restart file doesn't contain my elements
   }
 
   // Move cursor to n_eles
   while(1) {
     getline(restart_file,str);
-    if (str=="n_eles") break;  
+    if (str=="n_eles") break;
   }
 
   // Read number of elements to read
@@ -548,7 +563,7 @@ void eles::read_restart_data(ifstream& restart_file)
             value += opp_r(j,k)*disu_upts_rest(k,m);
 
           disu_upts(0)(j,index,m) = value;
-        } 
+        }
       }
 
     }
@@ -573,7 +588,7 @@ void eles::write_restart_data(ofstream& restart_file)
   restart_file << endl;
 
   restart_file << "data" << endl;
- 
+
   for (int i=0;i<n_eles;i++)
   {
     restart_file << ele2global_ele(i) << endl;
@@ -593,7 +608,7 @@ void eles::write_restart_data(ofstream& restart_file)
 
 void eles::mv_all_cpu_gpu(void)
 {
-	#ifdef _GPU	
+	#ifdef _GPU
   if (n_eles!=0)
   {
     disu_upts(0).cp_cpu_gpu();
@@ -604,7 +619,7 @@ void eles::mv_all_cpu_gpu(void)
 	  	disu_upts(i).cp_cpu_gpu();
 	  	div_tconf_upts(i).mv_cpu_gpu();
 	  }
-	  
+
 	  disu_fpts.mv_cpu_gpu();
 	  tdisf_upts.mv_cpu_gpu();
 	  norm_tdisf_fpts.mv_cpu_gpu();
@@ -616,12 +631,12 @@ void eles::mv_all_cpu_gpu(void)
       delta_disu_fpts.mv_cpu_gpu();
 	  	grad_disu_upts.cp_cpu_gpu();
 	  	grad_disu_fpts.mv_cpu_gpu();
-	  
+
 	  	//tdisvisf_upts.mv_cpu_gpu();
 	  	//norm_tdisvisf_fpts.mv_cpu_gpu();
 	  	//norm_tconvisf_fpts.mv_cpu_gpu();
 	  }
-  }	
+  }
 	#endif
 }
 
@@ -665,7 +680,7 @@ void eles::cp_grad_disu_upts_gpu_cpu(void)
 void eles::cp_detjac_upts_gpu_cpu(void)
 {
 	#ifdef _GPU
-	
+
 	detjac_upts.cp_gpu_cpu();
 
 	#endif
@@ -678,7 +693,7 @@ void eles::cp_div_tconf_upts_gpu_cpu(void)
   if (n_eles!=0)
   {
 	#ifdef _GPU
-	
+
 	div_tconf_upts(0).cp_gpu_cpu();
 
 	#endif
@@ -691,7 +706,7 @@ void eles::cp_div_tconf_upts_gpu_cpu(void)
 void eles::rm_disu_upts_cpu(void)
 {
 	#ifdef _GPU
-	
+
 	disu_upts(0).rm_cpu();
 
 	#endif
@@ -702,7 +717,7 @@ void eles::rm_disu_upts_cpu(void)
 void eles::rm_detjac_upts_cpu(void)
 {
 	#ifdef _GPU
-	
+
 	detjac_upts.rm_cpu();
 
 	#endif
@@ -726,31 +741,31 @@ void eles::advance_rk11(void)
 	for (int i=0;i<n_fields;i++)
 	{
 	  for (int ic=0;ic<n_eles;ic++)
-	  {		
+	  {
 			for (int inp=0;inp<n_upts_per_ele;inp++)
 			{
-        disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+        disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term - src_term(inp,ic,i));
 			}
 		}
 	}
 	#endif
 
 	#ifdef _GPU
-    RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term); 
+    RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
   #endif
 
   /*
-	
+
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-	
+
 	cblas_daxpy(n_eles*n_fields*n_upts_per_ele,-run_input.dt,div_tconf_upts(0).get_ptr_cpu(),1,disu_upts(0).get_ptr_cpu(),1);
-	
-	
+
+
 	#endif
 
-	
+
 	cublasDaxpy(n_eles*n_fields*n_upts_per_ele,-run_input.dt,div_tconf_upts(0).get_ptr_gpu(),1,disu_upts(0).get_ptr_gpu(),1);
-	
+
 	#endif
   */
   }
@@ -760,20 +775,20 @@ void eles::advance_rk11(void)
 
 void eles::advance_rk33(int in_step)
 {
-  FatalError("Advance_rk33 not implemented");	
+  FatalError("Advance_rk33 not implemented");
 }
 
 // advance with rk44 (four-stage forth-order runge-kutta)
 
 void eles::advance_rk44(int in_step)
 {
-  FatalError("Advance_rk44 not implemented");	
+  FatalError("Advance_rk44 not implemented");
 }
 
 // advance with rk45 (five-stage forth-order low-storage runge-kutta)
 
 void eles::advance_rk45(int in_step)
-{	
+{
   if (n_eles!=0)
   {
 
@@ -803,12 +818,12 @@ void eles::advance_rk45(int in_step)
 
   double res, rhs;
 	for (int ic=0;ic<n_eles;ic++)
-	{		
+	{
 		for (int i=0;i<n_fields;i++)
 		{
 			for (int inp=0;inp<n_upts_per_ele;inp++)
 			{
-				rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
+				rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term + src_term(inp,ic,i);
 	  		res = disu_upts(1)(inp,ic,i);
         res = rk4a*res + run_input.dt*rhs;
 
@@ -821,7 +836,7 @@ void eles::advance_rk45(int in_step)
 
 	#ifdef _GPU
 
-  RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term); 
+  RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
 
   #endif
 
@@ -829,12 +844,12 @@ void eles::advance_rk45(int in_step)
 }
 
 
-// calculate the discontinuous solution at the flux points 
+// calculate the discontinuous solution at the flux points
 
 void eles::calc_disu_fpts(int in_disu_upts_from)
 {
   if (n_eles!=0) {
-	
+
     /*!
 	  Performs C = (alpha*A*B) + (beta*C) where: \n
 	  alpha = 1.0 \n
@@ -855,12 +870,12 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
 	  Cstride = Arows;
 
 	  #ifdef _CPU
-	  
+
 	  if(opp_0_sparse==0) // dense
 	  {
 	  	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
       cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,disu_fpts.get_ptr_cpu(),Cstride);
-	  	
+
 	  	#endif
 	  }
 	  else if(opp_0_sparse==1) // mkl blas four-array csr format
@@ -873,10 +888,10 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
 	  else { cout << "ERROR: Unknown storage for opp_0 ... " << endl; }
 
 	  #endif
-	  
+
 	  #ifdef _GPU
     if(opp_0_sparse==0)
-    { 
+    {
       cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_0.get_ptr_gpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_gpu(),Bstride,0.0,disu_fpts.get_ptr_gpu(),Cstride);
     }
     else if (opp_0_sparse==1)
@@ -888,9 +903,9 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
 	  	cout << "ERROR: Unknown storage for opp_0 ... " << endl;
 	  }
 	  #endif
-    
+
   }
- 
+
 }
 
 // calculate the transformed discontinuous inviscid flux at the solution points
@@ -903,7 +918,7 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 	#ifdef _CPU
 
 	int i,j,k,l,m;
-	
+
 	for(i=0;i<n_eles;i++)
 	{
 		for(j=0;j<n_upts_per_ele;j++)
@@ -912,7 +927,7 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 			{
 				temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
 			}
-			
+
 			if(n_dims==2)
 			{
 				calc_invf_2d(temp_u,temp_f);
@@ -923,7 +938,7 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 			}
 			else
 			{
-					cout << "ERROR: Invalid number of dimensions ... " << endl; 
+					cout << "ERROR: Invalid number of dimensions ... " << endl;
 			}
 
 			for(k=0;k<n_fields;k++)
@@ -931,7 +946,7 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 				for(l=0;l<n_dims;l++)
 				{
 					tdisf_upts(j,i,k,l)=0.;
-					for(m=0;m<n_dims;m++) 
+					for(m=0;m<n_dims;m++)
 					{
 					  tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_f(k,m);
 					}
@@ -939,15 +954,15 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 			}
 		}
 	}
-			
+
 	#endif
-	
+
 	#ifdef _GPU
 	calc_tdisinvf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
 
 
   //tdisinvf_upts.cp_gpu_cpu();
-	#endif	
+	#endif
 /*
   for (int i=0;i<n_upts_per_ele;i++)
     for (int j=0;j<n_eles;j++)
@@ -966,23 +981,23 @@ void eles::calc_norm_tdisf_fpts()
   if (n_eles!=0)
   {
 	  #ifdef _CPU
-	  
+
 	  if(opp_1_sparse==0) // dense
 	  {
 	  	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-	  
+
 	  	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
       for (int i=1;i<n_dims;i++)
       {
 	  	  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
       }
-	  	
+
 	  	#endif
 	  }
 	  else if(opp_1_sparse==1) // mkl blas four-array csr format
 	  {
 	  	#if defined _MKL_BLAS
-	  
+
 	  	mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_1_data(0).get_ptr_cpu(),opp_1_cols(0).get_ptr_cpu(),opp_1_b(0).get_ptr_cpu(),opp_1_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,norm_tdisf_fpts.get_ptr_cpu,&n_fpts_per_ele);
 
       for (int i=1;i<n_dims;i++) {
@@ -995,13 +1010,13 @@ void eles::calc_norm_tdisf_fpts()
 	  {
 	  	cout << "ERROR: Unknown storage for opp_1 ... " << endl;
 	  }
-	  		
+
 	  #endif
-	  
+
 	  #ifdef _GPU
 
     if (opp_1_sparse==0)
-    {  
+    {
 	    cublasDgemm('N','N',n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
       for (int i=1;i<n_dims;i++)
       {
@@ -1016,10 +1031,10 @@ void eles::calc_norm_tdisf_fpts()
         bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_1_ell_data(i).get_ptr_gpu(),opp_1_ell_indices(i).get_ptr_gpu(),opp_1_nnz_per_row(i),tdisf_upts.get_ptr_gpu(0,0,0,i),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,1);
       }
     }
-	  #endif	
-  
+	  #endif
+
   }
-  
+
   /*
 #ifdef _GPU
     tdisinvf_upts.cp_gpu_cpu();
@@ -1054,23 +1069,23 @@ void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
   if (n_eles!=0)
   {
 	  #ifdef _CPU
-	  
+
 	  if(opp_2_sparse==0) // dense
 	  {
 	  	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-	  	
+
 	  	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
       for (int i=1;i<n_dims;i++)
       {
 	  	  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
       }
-	  	
+
 	  	#endif
 	  }
 	  else if(opp_2_sparse==1) // mkl blas four-array csr format
 	  {
 	  	#if defined _MKL_BLAS
-	  	
+
 	  	mkl_dcsrmm(&transa,&n_upts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_2_data(0).get_ptr_cpu(),opp_2_cols(0).get_ptr_cpu(),opp_2_b(0).get_ptr_cpu(),opp_2_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
       for (int i=1;i<n_dims;i++)
       {
@@ -1083,23 +1098,23 @@ void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
 	  {
 	  	cout << "ERROR: Unknown storage for opp_2 ... " << endl;
 	  }
-	  		
+
 	  #endif
 
 
 	  #ifdef _GPU
 
     if (opp_2_sparse==0)
-    {  
-	    cublasDgemm('N','N',n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_gpu(),n_upts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);	
+    {
+	    cublasDgemm('N','N',n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_gpu(),n_upts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
       for (int i=1;i<n_dims;i++) {
-	      cublasDgemm('N','N',n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_gpu(),n_upts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);	
+	      cublasDgemm('N','N',n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_gpu(),n_upts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
       }
     }
     else if (opp_2_sparse==1)
     {
       bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_2_ell_data(0).get_ptr_gpu(),opp_2_ell_indices(0).get_ptr_gpu(),opp_2_nnz_per_row(0),tdisf_upts.get_ptr_gpu(0,0,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,0);
-      for (int i=1;i<n_dims;i++) { 
+      for (int i=1;i<n_dims;i++) {
         bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_2_ell_data(i).get_ptr_gpu(),opp_2_ell_indices(i).get_ptr_gpu(),opp_2_nnz_per_row(i),tdisf_upts.get_ptr_gpu(0,0,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
       }
 
@@ -1107,7 +1122,7 @@ void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
 	  #endif
 
   }
-    
+
   /*
   for (int j=0;j<n_eles;j++)
   for (int i=0;i<n_upts_per_ele;i++)
@@ -1121,28 +1136,28 @@ void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
 
 void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 {
-  if (n_eles!=0) 
+  if (n_eles!=0)
   {
 	  #ifdef _CPU
 
 	  #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-	  
+
 	  cblas_daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
-	  
+
 	  #endif
-	  
+
 	  if(opp_3_sparse==0) // dense
 	  {
 	  	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-	  	
+
 	  	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_cpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_cpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
-	  	
+
 	  	#endif
 	  }
 	  else if(opp_3_sparse==1) // mkl blas four-array csr format
 	  {
 	  	#if defined _MKL_BLAS
-	  	
+
 	  	mkl_dcsrmm(&transa,&n_upts_per_ele,&n_fields_mul_n_eles,&n_fpts_per_ele,&one,matdescra,opp_3_data.get_ptr_cpu(),opp_3_cols.get_ptr_cpu(),opp_3_b.get_ptr_cpu(),opp_3_e.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),&n_fpts_per_ele,&one,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
 
 	  	#endif
@@ -1151,7 +1166,7 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 	  {
 	  	cout << "ERROR: Unknown storage for opp_3 ... " << endl;
 	  }
-	  	
+
 	  #endif
 
 	  #ifdef _GPU
@@ -1173,7 +1188,7 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 	  #endif
 
   }
-    
+
   /*
 #ifdef _GPU
     norm_tconinvf_fpts.cp_gpu_cpu();
@@ -1190,7 +1205,7 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
       }
     }
   */
-  
+
   /*
   for (int j=0;j<n_eles;j++)
   for (int i=0;i<n_upts_per_ele;i++)
@@ -1219,7 +1234,7 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 }
 
 
-// calculate uncorrected transformed gradient of the discontinuous solution at the solution points 
+// calculate uncorrected transformed gradient of the discontinuous solution at the solution points
 // (mixed derivative)
 
 void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
@@ -1235,9 +1250,9 @@ void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
 	  Astride = Arows;
 	  Bstride = Brows;
 	  Cstride = Arows;
-	  
+
     #ifdef _CPU
-	  
+
 	  if(opp_4_sparse==0) // dense
 	  {
 	  	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
@@ -1245,13 +1260,13 @@ void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
       for (int i=0;i<n_dims;i++) {
 	  	  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_4(i).get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,grad_disu_upts.get_ptr_cpu(0,0,0,i),Cstride);
       }
-	  	
+
 	  	#endif
 	  }
 	  else if(opp_4_sparse==1) // mkl blas four-array csr format
 	  {
 	  	#if defined _MKL_BLAS
-	  	
+
 	  	// implement
 
 	  	#endif
@@ -1262,7 +1277,7 @@ void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
 	  }
 
 	  #endif
-	  
+
 	  #ifdef _GPU
 
     if (opp_4_sparse==0)
@@ -1281,7 +1296,7 @@ void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
     }
 	  #endif
   }
-  
+
   /*
   cout << "OUTPUT" << endl;
   #ifdef _GPU
@@ -1314,24 +1329,24 @@ void eles::calc_cor_grad_disu_upts(void)
 	  Astride = Arows;
 	  Bstride = Brows;
 	  Cstride = Arows;
-	  
+
     #ifdef _CPU
 
 	  if(opp_5_sparse==0) // dense
 	  {
 	  	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-	  	
+
       for (int i=0;i<n_dims;i++)
       {
 	  	  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_5(i).get_ptr_cpu(),Astride,delta_disu_fpts.get_ptr_cpu(),Bstride,1.0,grad_disu_upts.get_ptr_cpu(0,0,0,i),Cstride);
       }
-	  	
+
 	  	#endif
 	  }
 	  else if(opp_5_sparse==1) // mkl blas four-array csr format
 	  {
 	  	#if defined _MKL_BLAS
-	  	
+
 	  	// impelement
 
 	  	#endif
@@ -1353,8 +1368,8 @@ void eles::calc_cor_grad_disu_upts(void)
       {
 	      detjac = detjac_upts(j,i);
 	      inv_detjac = 1.0/detjac;
-	      
-	      rx = inv_detjac_mul_jac_upts(j,i,0,0); 
+
+	      rx = inv_detjac_mul_jac_upts(j,i,0,0);
 	      ry = inv_detjac_mul_jac_upts(j,i,0,1);
 	      sx = inv_detjac_mul_jac_upts(j,i,1,0);
 	      sy = inv_detjac_mul_jac_upts(j,i,1,1);
@@ -1366,7 +1381,7 @@ void eles::calc_cor_grad_disu_upts(void)
 	      	{
 	      		ur = grad_disu_upts(j,i,k,0);
 	      		us = grad_disu_upts(j,i,k,1);
-	      
+
 	      		grad_disu_upts(j,i,k,0) = (1.0/detjac)*(ur*rx + us*sx) ;
 	      		grad_disu_upts(j,i,k,1) = (1.0/detjac)*(ur*ry + us*sy) ;
 	      	}
@@ -1379,14 +1394,14 @@ void eles::calc_cor_grad_disu_upts(void)
 	    		tx = inv_detjac_mul_jac_upts(j,i,2,0);
 	    		ty = inv_detjac_mul_jac_upts(j,i,2,1);
 	    		tz = inv_detjac_mul_jac_upts(j,i,2,2);
-          
+
           for (int k=0;k<n_fields;k++)
           {
 	    		  ur = grad_disu_upts(j,i,k,0);
 	    		  us = grad_disu_upts(j,i,k,1);
 	    		  ut = grad_disu_upts(j,i,k,2);
 
-	    		  grad_disu_upts(j,i,k,0) = (1.0/detjac)*(ur*rx + us*sx + ut*tx); 
+	    		  grad_disu_upts(j,i,k,0) = (1.0/detjac)*(ur*rx + us*sx + ut*tx);
 	    		  grad_disu_upts(j,i,k,1) = (1.0/detjac)*(ur*ry + us*sy + ut*ty);
 	    		  grad_disu_upts(j,i,k,2) = (1.0/detjac)*(ur*rz + us*sz + ut*tz);
           }
@@ -1395,11 +1410,11 @@ void eles::calc_cor_grad_disu_upts(void)
     }
 
 	  #endif
-	  
+
 	  #ifdef _GPU
 
     if (opp_5_sparse==0)
-    {  
+    {
       for (int i=0;i<n_dims;i++)
       {
 	      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_5(i).get_ptr_gpu(),Astride,delta_disu_fpts.get_ptr_gpu(),Bstride,1.0,grad_disu_upts.get_ptr_gpu(0,0,0,i),Cstride);
@@ -1412,11 +1427,11 @@ void eles::calc_cor_grad_disu_upts(void)
         bespoke_SPMV(Arows,Acols,n_fields,n_eles,opp_5_ell_data(i).get_ptr_gpu(),opp_5_ell_indices(i).get_ptr_gpu(),opp_5_nnz_per_row(i),delta_disu_fpts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(0,0,0,i),ele_type,order,1);
       }
     }
-	  
+
 	  transform_grad_disu_upts_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.equation);
 
-	  #endif	
-  
+	  #endif
+
   }
 
   /*
@@ -1449,9 +1464,9 @@ void eles::calc_cor_grad_disu_upts(void)
         }
   */
 }
-	
 
-// calculate corrected gradient of the discontinuous solution at flux points 
+
+// calculate corrected gradient of the discontinuous solution at flux points
 
 void eles::calc_cor_grad_disu_fpts(void)
 {
@@ -1468,7 +1483,7 @@ void eles::calc_cor_grad_disu_fpts(void)
 	  Cstride = Arows;
 
     #ifdef _CPU
-	  
+
 	  if(opp_6_sparse==0) // dense
 	  {
 	  	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
@@ -1482,7 +1497,7 @@ void eles::calc_cor_grad_disu_fpts(void)
 	  else if(opp_6_sparse==1) // mkl blas four-array csr format
 	  {
 	  	#if defined _MKL_BLAS
-	  	
+
 	  	// implement
 
 	  	#endif
@@ -1491,30 +1506,30 @@ void eles::calc_cor_grad_disu_fpts(void)
 	  {
 	  	cout << "ERROR: Unknown storage for opp_6 ... " << endl;
 	  }
-	  
+
 	  #endif
-	  
+
 	  #ifdef _GPU
 
     if (opp_6_sparse==0)
     {
       for (int i=0;i<n_dims;i++)
-      {  
+      {
 	      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_6.get_ptr_gpu(),Astride,grad_disu_upts.get_ptr_gpu(0,0,0,i),Bstride,0.0,grad_disu_fpts.get_ptr_gpu(0,0,0,i),Cstride);
       }
     }
     else if (opp_6_sparse==1)
     {
       for (int i=0;i<n_dims;i++)
-      {  
+      {
         bespoke_SPMV(Arows,Acols,n_fields,n_eles,opp_6_ell_data.get_ptr_gpu(),opp_6_ell_indices.get_ptr_gpu(),opp_6_nnz_per_row,grad_disu_upts.get_ptr_gpu(0,0,0,i),grad_disu_fpts.get_ptr_gpu(0,0,0,i),ele_type,order,0);
       }
     }
-	  	
+
 	  #endif
 
   }
-  
+
   /*
   cout << "OUTPUT" << endl;
 #ifdef _GPU
@@ -1610,7 +1625,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 				for(k=0;k<n_fields;k++)
 				{
 					temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
-			
+
 					//physical gradient
 					for (m=0;m<n_dims;m++)
 					{
@@ -1627,7 +1642,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 				}
 				else
 				{
-					cout << "ERROR: Invalid number of dimensions ... " << endl; 
+					cout << "ERROR: Invalid number of dimensions ... " << endl;
 				}
 				// If LES, calculate SGS viscous flux
 				if(run_input.LES==1)
@@ -1660,11 +1675,60 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 
 		#ifdef _GPU
 			calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
-		#endif	
+		#endif
 
 	}
 }
-  
+
+
+// calculate source term for SA turbulence model at solution points
+void eles::calc_src_term_SA()
+{
+    if (n_eles!=0)
+    {
+#ifdef _CPU
+
+        int i,j,k,l,m;
+
+        for(i=0; i<n_eles; i++)
+        {
+            for(j=0; j<n_upts_per_ele; j++)
+            {
+                // physical solution
+                for(k=0; k<n_fields; k++)
+                {
+                    temp_u(k)=disu_upts(0)(j,i,k);
+                }
+
+                // physical gradient
+                for(k=0; k<n_fields; k++)
+                {
+                    for (m=0; m<n_dims; m++)
+                    {
+                        temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
+                    }
+                }
+
+                // source term
+                if(n_dims==2)
+                    calc_source_SA_2d(temp_u, temp_grad_u, wall_distances(j,i), src_term(j,i,n_fields-1));
+                else if(n_dims==3)
+                    calc_source_SA_3d(temp_u, temp_grad_u, wall_distances(j,i), src_term(j,i,n_fields-1));
+                else
+                    cout << "ERROR: Invalid number of dimensions ... " << endl;
+            }
+        }
+
+#endif
+
+//#ifdef _GPU
+//        calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
+//#endif
+
+    }
+}
+
+
 // Calculate SGS flux
 void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int upt, array<double>& temp_sgsf)
 {
@@ -2012,7 +2076,7 @@ void eles::calc_disuf_upts_ele(array<double>& in_u, array<double>& out_u)
 
 int eles::get_ele_type(void)
 {
-	return ele_type;	
+	return ele_type;
 }
 
 // get number of elements
@@ -2028,13 +2092,13 @@ int eles::get_n_ppts_per_ele(void)
 	return n_ppts_per_ele;
 }
 
-// get number of peles_per_ele 
+// get number of peles_per_ele
 int eles::get_n_peles_per_ele(void)
 {
 	return n_peles_per_ele;
 }
 
-// get number of verts_per_ele 
+// get number of verts_per_ele
 int eles::get_n_verts_per_ele(void)
 {
 	return n_verts_per_ele;
@@ -2058,7 +2122,7 @@ int eles::get_n_fields(void)
 
 int eles::get_n_upts_per_ele(void)
 {
-	return n_upts_per_ele;	
+	return n_upts_per_ele;
 }
 
 // set the shape array
@@ -2083,21 +2147,21 @@ void eles::set_rank(int in_rank)
     rank = in_rank;
 }
 
-// set bc type 
+// set bc type
 void eles::set_bctype(int in_ele,int in_inter, int in_bctype)
 {
   bctype(in_ele, in_inter) = in_bctype;
 }
 
-// set number of shape points 
+// set number of shape points
 
 void eles::set_n_spts(int in_ele, int in_n_spts)
 {
   n_spts_per_ele(in_ele) = in_n_spts;
- 
-  // Allocate storage for the s_nodal_basis 
- 
-  d_nodal_s_basis.setup(in_n_spts,n_dims); 
+
+  // Allocate storage for the s_nodal_basis
+
+  d_nodal_s_basis.setup(in_n_spts,n_dims);
 
   int n_comp;
 	if(n_dims == 2)
@@ -2105,7 +2169,7 @@ void eles::set_n_spts(int in_ele, int in_n_spts)
   else if(n_dims == 3)
 		n_comp = 6;
 
-  dd_nodal_s_basis.setup(in_n_spts,n_comp); 
+  dd_nodal_s_basis.setup(in_n_spts,n_comp);
 
 }
 
@@ -2122,9 +2186,9 @@ void eles::set_ele2global_ele(int in_ele, int in_global_ele)
 void eles::set_opp_0(int in_sparse)
 {
 	int i,j,k;
-	
+
 	array<double> loc(n_dims);
-	
+
 	opp_0.setup(n_fpts_per_ele,n_upts_per_ele);
 
 	for(i=0;i<n_upts_per_ele;i++)
@@ -2133,9 +2197,9 @@ void eles::set_opp_0(int in_sparse)
 		{
 			for(k=0;k<n_dims;k++)
 			{
-				loc(k)=tloc_fpts(k,j);	
+				loc(k)=tloc_fpts(k,j);
 			}
-			
+
 			opp_0(j,i)=eval_nodal_basis(i,loc);
 		}
 	}
@@ -2156,7 +2220,7 @@ void eles::set_opp_0(int in_sparse)
 	else if(in_sparse==1)
 	{
 		opp_0_sparse=1;
-		
+
 #ifdef _CPU
 		array_to_mklcsr(opp_0,opp_0_data,opp_0_cols,opp_0_b,opp_0_e);
 #endif
@@ -2173,7 +2237,7 @@ void eles::set_opp_0(int in_sparse)
 		cout << "ERROR: Invalid sparse matrix form ... " << endl;
 	}
 
-   
+
 
 }
 
@@ -2187,9 +2251,9 @@ void eles::set_opp_1(int in_sparse)
   opp_1.setup(n_dims);
   for (int i=0;i<n_dims;i++)
 	  opp_1(i).setup(n_fpts_per_ele,n_upts_per_ele);
-	
-	for(i=0;i<n_dims;i++)		
-	{		
+
+	for(i=0;i<n_dims;i++)
+	{
 		for(j=0;j<n_upts_per_ele;j++)
 		{
 			for(k=0;k<n_fpts_per_ele;k++)
@@ -2198,10 +2262,10 @@ void eles::set_opp_1(int in_sparse)
 				{
 					loc(l)=tloc_fpts(l,k);
 				}
-				
+
 				opp_1(i)(k,j)=eval_nodal_basis(j,loc)*tnorm_fpts(i,k);
 			}
-		}	
+		}
     //cout << "opp_1,i =" << i << endl;
     //cout << "ele_type=" << ele_type << endl;
     //opp_1(i).print();
@@ -2221,18 +2285,18 @@ void eles::set_opp_1(int in_sparse)
 	else if(in_sparse==1)
 	{
 		opp_1_sparse=1;
-	
+
 #ifdef _CPU
-    for (int i=0;i<n_dims;i++) {  
+    for (int i=0;i<n_dims;i++) {
 		  array_to_mklcsr(opp_1(i),opp_1_data(i),opp_1_cols(i),opp_1_b(i),opp_1_e(i));
     }
-#endif 
+#endif
 
 #ifdef _GPU
     opp_1_ell_data.setup(n_dims);
     opp_1_ell_indices.setup(n_dims);
     opp_1_nnz_per_row.setup(n_dims);
-    for (int i=0;i<n_dims;i++) {  
+    for (int i=0;i<n_dims;i++) {
       array_to_ellpack(opp_1(i), opp_1_ell_data(i), opp_1_ell_indices(i), opp_1_nnz_per_row(i));
       opp_1_ell_data(i).cp_cpu_gpu();
       opp_1_ell_indices(i).cp_cpu_gpu();
@@ -2252,15 +2316,15 @@ void eles::set_opp_2(int in_sparse)
 {
 
 	int i,j,k,l;
-	
+
 	array<double> loc(n_dims);
 
   opp_2.setup(n_dims);
   for (int i=0;i<n_dims;i++)
 	  opp_2(i).setup(n_upts_per_ele,n_upts_per_ele);
-	
+
 	for(i=0;i<n_dims;i++)
-	{		
+	{
 		for(j=0;j<n_upts_per_ele;j++)
 		{
 			for(k=0;k<n_upts_per_ele;k++)
@@ -2269,10 +2333,10 @@ void eles::set_opp_2(int in_sparse)
 				{
 					loc(l)=loc_upts(l,k);
 				}
-				
+
 				opp_2(i)(k,j)=eval_d_nodal_basis(j,i,loc);
 			}
-		}	
+		}
 
     //cout << "opp_2,i =" << i << endl;
     //cout << "ele_type=" << ele_type << endl;
@@ -2299,9 +2363,9 @@ void eles::set_opp_2(int in_sparse)
 	else if(in_sparse==1)
 	{
 		opp_2_sparse=1;
-	
+
 #ifdef _CPU
-    for (int i=0;i<n_dims;i++) {  
+    for (int i=0;i<n_dims;i++) {
 		  array_to_mklcsr(opp_2(i),opp_2_data(i),opp_2_cols(i),opp_2_b(i),opp_2_e(i));
     }
 #endif
@@ -2310,7 +2374,7 @@ void eles::set_opp_2(int in_sparse)
     opp_2_ell_data.setup(n_dims);
     opp_2_ell_indices.setup(n_dims);
     opp_2_nnz_per_row.setup(n_dims);
-    for (int i=0;i<n_dims;i++) {  
+    for (int i=0;i<n_dims;i++) {
       array_to_ellpack(opp_2(i), opp_2_ell_data(i), opp_2_ell_indices(i), opp_2_nnz_per_row(i));
       opp_2_ell_data(i).cp_cpu_gpu();
       opp_2_ell_indices(i).cp_cpu_gpu();
@@ -2327,7 +2391,7 @@ void eles::set_opp_2(int in_sparse)
 
 void eles::set_opp_3(int in_sparse)
 {
-	
+
 	opp_3.setup(n_upts_per_ele,n_fpts_per_ele);
   (*this).fill_opp_3(opp_3);
 
@@ -2338,7 +2402,7 @@ void eles::set_opp_3(int in_sparse)
 
 #ifdef _GPU
 	opp_3.cp_cpu_gpu();
-#endif 
+#endif
 
 	if(in_sparse==0)
 	{
@@ -2350,7 +2414,7 @@ void eles::set_opp_3(int in_sparse)
 
 #ifdef _CPU
 		array_to_mklcsr(opp_3,opp_3_data,opp_3_cols,opp_3_b,opp_3_e);
-#endif 
+#endif
 
 #ifdef _GPU
     array_to_ellpack(opp_3, opp_3_ell_data, opp_3_ell_indices, opp_3_nnz_per_row);
@@ -2361,7 +2425,7 @@ void eles::set_opp_3(int in_sparse)
   else
 	{
 		cout << "ERROR: Invalid sparse matrix form ... " << endl;
-	}	
+	}
 }
 
 // set opp_4 (transformed solution at solution points to transformed gradient of transformed solution at solution points)
@@ -2369,7 +2433,7 @@ void eles::set_opp_3(int in_sparse)
 void eles::set_opp_4(int in_sparse)
 {
 	int i,j,k,l;
-	
+
 	array<double> loc(n_dims);
 
   opp_4.setup(n_dims);
@@ -2386,7 +2450,7 @@ void eles::set_opp_4(int in_sparse)
 				{
 					loc(l)=loc_upts(l,k);
 				}
-		
+
 				opp_4(i)(k,j) = eval_d_nodal_basis(j,i,loc);
 			}
 		}
@@ -2404,9 +2468,9 @@ void eles::set_opp_4(int in_sparse)
 	else if(in_sparse==1)
 	{
 		opp_4_sparse=1;
-	  
+
 #ifdef _CPU
-    for (int i=0;i<n_dims;i++)  
+    for (int i=0;i<n_dims;i++)
     {
 		  array_to_mklcsr(opp_4(i),opp_4_data(i),opp_4_cols(i),opp_4_b(i),opp_4_e(i));
     }
@@ -2416,7 +2480,7 @@ void eles::set_opp_4(int in_sparse)
     opp_4_ell_data.setup(n_dims);
     opp_4_ell_indices.setup(n_dims);
     opp_4_nnz_per_row.setup(n_dims);
-    for (int i=0;i<n_dims;i++) {  
+    for (int i=0;i<n_dims;i++) {
       array_to_ellpack(opp_4(i), opp_4_ell_data(i), opp_4_ell_indices(i), opp_4_nnz_per_row(i));
       opp_4_ell_data(i).cp_cpu_gpu();
       opp_4_ell_indices(i).cp_cpu_gpu();
@@ -2426,7 +2490,7 @@ void eles::set_opp_4(int in_sparse)
 	else
 	{
 		cout << "ERROR: Invalid sparse matrix form ... " << endl;
-	}	
+	}
 }
 
 // transformed solution correction at flux points to transformed gradient correction at solution points
@@ -2434,15 +2498,15 @@ void eles::set_opp_4(int in_sparse)
 void eles::set_opp_5(int in_sparse)
 {
 	int i,j,k,l;
-	
+
 	array<double> loc(n_dims);
 
-  opp_5.setup(n_dims);  
+  opp_5.setup(n_dims);
   for (int i=0;i<n_dims;i++)
 	  opp_5(i).setup(n_upts_per_ele, n_fpts_per_ele);
-	
-	for(i=0;i<n_dims;i++)		
-	{		
+
+	for(i=0;i<n_dims;i++)
+	{
 		for(j=0;j<n_fpts_per_ele;j++)
 		{
 			for(k=0;k<n_upts_per_ele;k++)
@@ -2453,7 +2517,7 @@ void eles::set_opp_5(int in_sparse)
 					loc(l)=loc_upts(l,k);
 				}
         */
-				
+
 				//opp_5(i)(k,j) = eval_div_vcjh_basis(j,loc)*tnorm_fpts(i,j);
 				opp_5(i)(k,j) = opp_3(k,j)*tnorm_fpts(i,j);
 			}
@@ -2475,7 +2539,7 @@ void eles::set_opp_5(int in_sparse)
 	else if(in_sparse==1)
 	{
 		opp_5_sparse=1;
-	
+
 #ifdef _CPU
     for (int i=0;i<n_dims;i++) {
 		  array_to_mklcsr(opp_5(i),opp_5_data(i),opp_5_cols(i),opp_5_b(i),opp_5_e(i));
@@ -2486,7 +2550,7 @@ void eles::set_opp_5(int in_sparse)
     opp_5_ell_data.setup(n_dims);
     opp_5_ell_indices.setup(n_dims);
     opp_5_nnz_per_row.setup(n_dims);
-    for (int i=0;i<n_dims;i++) {  
+    for (int i=0;i<n_dims;i++) {
       array_to_ellpack(opp_5(i), opp_5_ell_data(i), opp_5_ell_indices(i), opp_5_nnz_per_row(i));
       opp_5_ell_data(i).cp_cpu_gpu();
       opp_5_ell_indices(i).cp_cpu_gpu();
@@ -2504,9 +2568,9 @@ void eles::set_opp_5(int in_sparse)
 void eles::set_opp_6(int in_sparse)
 {
 	int i,j,k,l,m;
-	
+
 	array<double> loc(n_dims);
-	
+
 	opp_6.setup(n_fpts_per_ele, n_upts_per_ele);
 
 	for(j=0; j<n_upts_per_ele; j++)
@@ -2520,13 +2584,13 @@ void eles::set_opp_6(int in_sparse)
 		  opp_6(l,j) = eval_nodal_basis(j,loc);
 		}
 	}
-  
+
   //cout << "opp_6" << endl;
   //opp_6.print();
 
 #ifdef _GPU
 	opp_6.cp_cpu_gpu();
-#endif 
+#endif
 
 	if(in_sparse==0)
 	{
@@ -2535,8 +2599,8 @@ void eles::set_opp_6(int in_sparse)
 	else if(in_sparse==1)
 	{
 		opp_6_sparse=1;
-	
-#ifdef _CPU  
+
+#ifdef _CPU
 		array_to_mklcsr(opp_6,opp_6_data,opp_6_cols,opp_6_b,opp_6_e);
 #endif
 
@@ -2558,9 +2622,9 @@ void eles::set_opp_6(int in_sparse)
 void eles::set_opp_p(void)
 {
 	int i,j,k;
-	
+
 	array<double> loc(n_dims);
-	
+
 	opp_p.setup(n_ppts_per_ele,n_upts_per_ele);
 
 	for(i=0;i<n_upts_per_ele;i++)
@@ -2569,10 +2633,10 @@ void eles::set_opp_p(void)
 		{
 			for(k=0;k<n_dims;k++)
 			{
-				loc(k)=loc_ppts(k,j);	
+				loc(k)=loc_ppts(k,j);
 			}
-			
-			opp_p(j,i)=eval_nodal_basis(i,loc);			
+
+			opp_p(j,i)=eval_nodal_basis(i,loc);
 		}
 	}
 
@@ -2584,7 +2648,7 @@ void eles::set_opp_inters_cubpts(void)
 {
 
 	int i,j,k,l;
-	
+
 	array<double> loc(n_dims);
 
   opp_inters_cubpts.setup(n_inters_per_ele);
@@ -2602,9 +2666,9 @@ void eles::set_opp_inters_cubpts(void)
 	  	{
 	  		for(k=0;k<n_dims;k++)
 	  		{
-	  			loc(k)=loc_inters_cubpts(l)(k,j);	
+	  			loc(k)=loc_inters_cubpts(l)(k,j);
 	  		}
-	  		
+
 	  		opp_inters_cubpts(l)(j,i)=eval_nodal_basis(i,loc);
 	  	}
 	  }
@@ -2625,9 +2689,9 @@ void eles::set_opp_volume_cubpts(void)
 	  	{
 	  		for(k=0;k<n_dims;k++)
 	  		{
-	  			loc(k)=loc_volume_cubpts(k,j);	
+	  			loc(k)=loc_volume_cubpts(k,j);
 	  		}
-	  		
+
 	  		opp_volume_cubpts(j,i)=eval_nodal_basis(i,loc);
 	  	}
 	  }
@@ -2639,9 +2703,9 @@ void eles::set_opp_volume_cubpts(void)
 void eles::set_opp_r(void)
 {
 	int i,j,k;
-	
+
 	array<double> loc(n_dims);
-	
+
 	opp_r.setup(n_upts_per_ele,n_upts_per_ele_rest);
 
 	for(i=0;i<n_upts_per_ele_rest;i++)
@@ -2649,9 +2713,9 @@ void eles::set_opp_r(void)
 		for(j=0;j<n_upts_per_ele;j++)
 		{
 			for(k=0;k<n_dims;k++)
-				loc(k)=loc_upts(k,j);	
-			
-			opp_r(j,i)=eval_nodal_basis_restart(i,loc);			
+				loc(k)=loc_upts(k,j);
+
+			opp_r(j,i)=eval_nodal_basis_restart(i,loc);
 		}
 	}
 }
@@ -2690,10 +2754,10 @@ void eles::get_pos_ppts(int in_ele, array<double>& out_pos_ppts)
 void eles::calc_pos_ppts(int in_ele, array<double>& out_pos_ppts)
 {
 	int i,j;
-	
+
 	array<double> loc(n_dims);
 	array<double> pos(n_dims);
-    
+
 	for(i=0;i<n_ppts_per_ele;i++)
 	{
 		for(j=0;j<n_dims;j++)
@@ -2702,7 +2766,7 @@ void eles::calc_pos_ppts(int in_ele, array<double>& out_pos_ppts)
 		}
 
 		calc_pos(loc,in_ele,pos);
-		
+
 		for(j=0;j<n_dims;j++)  // TODO: can this be made more efficient/simpler?
 		{
 			out_pos_ppts(i,j)=pos(j);
@@ -2746,7 +2810,7 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
   {
 
 	int i,j,k;
-	
+
 	array<double> disu_upts_plot(n_upts_per_ele,n_fields);
 
 	for(i=0;i<n_fields;i++)
@@ -2758,9 +2822,9 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 	}
 
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-	
+
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,disu_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_ppts.get_ptr_cpu(),n_ppts_per_ele);
-	
+
 	#else
 
 	//HACK (inefficient, but useful if cblas is unavailible)
@@ -2777,7 +2841,7 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 			}
 		}
 	}
-	
+
 	#endif
 
   }
@@ -2788,14 +2852,14 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 void eles::calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos)
 {
 	int i;
-	
+
 	array<double> loc(n_dims);
-	
+
 	for(i=0;i<n_dims;i++)
 	{
 		loc(i)=loc_upts(i,in_upt);
 	}
-		
+
 	calc_pos(loc,in_ele,out_pos);
 }
 
@@ -2812,8 +2876,8 @@ void eles::set_transforms(int in_run_type)
   {
 
 	int i,j,k;
-	
-	int n_comp;	
+
+	int n_comp;
 
 	if(n_dims == 2)
 	{
@@ -2829,7 +2893,7 @@ void eles::set_transforms(int in_run_type)
 	array<double> d_pos(n_dims,n_dims);
 	array<double> dd_pos(n_dims,n_comp);
 	array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
-	
+
 	double xr, xs, xt;
 	double yr, ys, yt;
 	double zr, zs, zt;
@@ -2854,35 +2918,35 @@ void eles::set_transforms(int in_run_type)
 
 	for(i=0;i<n_eles;i++)
 	{
-    if ((i%1000)==0 && rank==0) 
+    if ((i%1000)==0 && rank==0)
       cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
 	  for(j=0;j<n_upts_per_ele;j++)
 	  {
 			// get coordinates of the solution point
-			
+
 			for(k=0;k<n_dims;k++)
 			{
 				loc(k)=loc_upts(k,j);
 			}
-			
+
 			// calculate first derivatives of shape functions at the solution point
 			calc_d_pos(loc,i,d_pos);
-			
+
 			// calculate second derivatives of shape functions at the solution point
-		  if (viscous && in_run_type==0) 
+		  if (viscous && in_run_type==0)
 			  calc_dd_pos(loc,i,dd_pos);
 
 			// store quantities at the solution point
-			
+
 			if(n_dims==2)
 			{
 				xr = d_pos(0,0);
 				xs = d_pos(0,1);
-				
+
 				yr = d_pos(1,0);
 				ys = d_pos(1,1);
-				
+
 				// store determinant of jacobian at solution point
 				detjac_upts(j,i)= xr*ys - xs*yr;
 
@@ -2896,10 +2960,10 @@ void eles::set_transforms(int in_run_type)
 				inv_detjac_mul_jac_upts(j,i,0,1)= -xs;
 				inv_detjac_mul_jac_upts(j,i,1,0)= -yr;
 				inv_detjac_mul_jac_upts(j,i,1,1)= xr;
-		
-        if (in_run_type==0) 
+
+        if (in_run_type==0)
         {
-				  
+
 				  // gradient of detjac at solution point
 
 				  if(viscous)
@@ -2907,7 +2971,7 @@ void eles::set_transforms(int in_run_type)
 				  	xrr = dd_pos(0,0);
 				  	xss = dd_pos(0,1);
 				  	xrs = dd_pos(0,2);
-			
+
 				  	yrr = dd_pos(1,0);
 				  	yss = dd_pos(1,1);
 				  	yrs = dd_pos(1,2);
@@ -2922,22 +2986,22 @@ void eles::set_transforms(int in_run_type)
 			{
 				xr = d_pos(0,0);
 				xs = d_pos(0,1);
-				xt = d_pos(0,2);			
-	
+				xt = d_pos(0,2);
+
 				yr = d_pos(1,0);
 				ys = d_pos(1,1);
-				yt = d_pos(1,2);				
-				
+				yt = d_pos(1,2);
+
 				zr = d_pos(2,0);
 				zs = d_pos(2,1);
-				zt = d_pos(2,2);				
+				zt = d_pos(2,2);
 
 				// store determinant of jacobian at solution point
-				
+
 				detjac_upts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
 
         //cout << "jac=" << detjac_upts(j,i) << endl;
-		
+
 				inv_detjac_mul_jac_upts(j,i,0,0) = ys*zt - yt*zs;
 				inv_detjac_mul_jac_upts(j,i,0,1) = xt*zs - xs*zt;
 				inv_detjac_mul_jac_upts(j,i,0,2) = xs*yt - xt*ys;
@@ -2946,13 +3010,13 @@ void eles::set_transforms(int in_run_type)
 				inv_detjac_mul_jac_upts(j,i,1,2) = xt*yr - xr*yt;
 				inv_detjac_mul_jac_upts(j,i,2,0) = yr*zs - ys*zr;
 				inv_detjac_mul_jac_upts(j,i,2,1) = xs*zr - xr*zs;
-				inv_detjac_mul_jac_upts(j,i,2,2) = xr*ys - xs*yr;	
+				inv_detjac_mul_jac_upts(j,i,2,2) = xr*ys - xs*yr;
 
         if (in_run_type==0)
-        {  
+        {
 				  // store inverse of determinant of jacobian multiplied by jacobian at the solution point
-				  
-				  
+
+
 				  // gradient of detjac at solution point
 
 				  if(viscous)
@@ -2963,14 +3027,14 @@ void eles::set_transforms(int in_run_type)
 				  	xrs = dd_pos(0,3);
 				  	xrt = dd_pos(0,4);
 				  	xst = dd_pos(0,5);
-			
+
 				  	yrr = dd_pos(1,0);
 				  	yss = dd_pos(1,1);
 				  	ytt = dd_pos(1,2);
 				  	yrs = dd_pos(1,3);
 				  	yrt = dd_pos(1,4);
 				  	yst = dd_pos(1,5);
-				  	
+
 				  	zrr = dd_pos(2,0);
 				  	zss = dd_pos(2,1);
 				  	ztt = dd_pos(2,2);
@@ -3025,60 +3089,60 @@ void eles::set_transforms(int in_run_type)
 
 	  for(i=0;i<n_eles;i++)
 	  {
-      if ((i%1000)==0 && rank==0) 
+      if ((i%1000)==0 && rank==0)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
 	    for(j=0;j<n_fpts_per_ele;j++)
 	    {
 	  		// get coordinates of the flux point
-	  		
+
 	  		for(k=0;k<n_dims;k++)
 	  		{
 	  			loc(k)=tloc_fpts(k,j);
 	  		}
-        
+
         calc_pos(loc,i,pos);
-	  		
+
         for(k=0;k<n_dims;k++)
 	  		{
 	  			loc_fpts(j,i,k)=pos(k);
 	  		}
-	  		
+
 	  		// calculate first derivatives of shape functions at the flux points
-	  		
+
 	  		calc_d_pos(loc,i,d_pos);
-	  		
+
 	  		// calculate second derivatives of shape functions at the flux point
-	  		
+
 	  		if(viscous)
 	  		  calc_dd_pos(loc,i,dd_pos);
-	  		
+
 	  		// store quantities at the flux point
-	  		
+
 	  		if(n_dims==2)
 	  		{
 	  			xr = d_pos(0,0);
 	  			xs = d_pos(0,1);
-	  			
+
 	  			yr = d_pos(1,0);
 	  			ys = d_pos(1,1);
-	  			
+
 	  			// store determinant of jacobian at flux point
-	  			
+
 	  			detjac_fpts(j,i)= xr*ys - xs*yr;
-	  		
+
         if (detjac_fpts(j,i) < 0)
         {
           FatalError("Negative Jacobian at flux points");
         }
 
 	  			// store inverse of determinant of jacobian multiplied by jacobian at the flux point
-	  			
+
 	  			inv_detjac_mul_jac_fpts(j,i,0,0)= ys;
 	  			inv_detjac_mul_jac_fpts(j,i,0,1)= -xs;
 	  			inv_detjac_mul_jac_fpts(j,i,1,0)= -yr;
 	  			inv_detjac_mul_jac_fpts(j,i,1,1)= xr;
-	  			
+
 	  			// gradient of detjac at the flux point
 
 	  			if(viscous)
@@ -3086,7 +3150,7 @@ void eles::set_transforms(int in_run_type)
 	  				xrr = dd_pos(0,0);
 	  				xss = dd_pos(0,1);
 	  				xrs = dd_pos(0,2);
-	  		
+
 	  				yrr = dd_pos(1,0);
 	  				yss = dd_pos(1,1);
 	  				yrs = dd_pos(1,2);
@@ -3096,41 +3160,41 @@ void eles::set_transforms(int in_run_type)
 	  			}
 
 	  			// temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
-	  			
+
 	  			tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_fpts(0,j)*d_pos(1,1))-(tnorm_fpts(1,j)*d_pos(1,0));
 	  			tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_fpts(0,j)*d_pos(0,1))+(tnorm_fpts(1,j)*d_pos(0,0));
-	  			
+
 	  			// store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
-	  			
+
 	  			mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
                                                           tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
 
 
 	  			// store normal at flux point
-	  			
+
 	  			norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
-	  			norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);	
+	  			norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
 	  		}
 	  		else if(n_dims==3)
 	  		{
 	  			xr = d_pos(0,0);
 	  			xs = d_pos(0,1);
-	  			xt = d_pos(0,2);			
-	  
+	  			xt = d_pos(0,2);
+
 	  			yr = d_pos(1,0);
 	  			ys = d_pos(1,1);
-	  			yt = d_pos(1,2);				
-	  			
+	  			yt = d_pos(1,2);
+
 	  			zr = d_pos(2,0);
 	  			zs = d_pos(2,1);
-	  			zt = d_pos(2,2);				
+	  			zt = d_pos(2,2);
 
 	  			// store determinant of jacobian at flux point
-	  			
+
 	  			detjac_fpts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
-	  			
+
 	  			// store inverse of determinant of jacobian multiplied by jacobian at the flux point
-	  			
+
 	  			inv_detjac_mul_jac_fpts(j,i,0,0) = ys*zt - yt*zs;
 	  			inv_detjac_mul_jac_fpts(j,i,0,1) = xt*zs - xs*zt;
 	  			inv_detjac_mul_jac_fpts(j,i,0,2) = xs*yt - xt*ys;
@@ -3139,8 +3203,8 @@ void eles::set_transforms(int in_run_type)
 	  			inv_detjac_mul_jac_fpts(j,i,1,2) = xt*yr - xr*yt;
 	  			inv_detjac_mul_jac_fpts(j,i,2,0) = yr*zs - ys*zr;
 	  			inv_detjac_mul_jac_fpts(j,i,2,1) = xs*zr - xr*zs;
-	  			inv_detjac_mul_jac_fpts(j,i,2,2) = xr*ys - xs*yr;	
-	  			
+	  			inv_detjac_mul_jac_fpts(j,i,2,2) = xr*ys - xs*yr;
+
 	  			// gradient of detjac at the flux point
 
 	  			if(viscous)
@@ -3151,14 +3215,14 @@ void eles::set_transforms(int in_run_type)
 	  				xrs = dd_pos(0,3);
 	  				xrt = dd_pos(0,4);
 	  				xst = dd_pos(0,5);
-	  		
+
 	  				yrr = dd_pos(1,0);
 	  				yss = dd_pos(1,1);
 	  				ytt = dd_pos(1,2);
 	  				yrs = dd_pos(1,3);
 	  				yrt = dd_pos(1,4);
 	  				yst = dd_pos(1,5);
-	  				
+
 	  				zrr = dd_pos(2,0);
 	  				zss = dd_pos(2,1);
 	  				ztt = dd_pos(2,2);
@@ -3173,21 +3237,21 @@ void eles::set_transforms(int in_run_type)
 	  				tgrad_detjac_fpts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
 	  											xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
 	  			}
-	  			
+
 	  			// temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
-	  			
+
 	  			tnorm_dot_inv_detjac_mul_jac(0)=((tnorm_fpts(0,j)*(d_pos(1,1)*d_pos(2,2)-d_pos(1,2)*d_pos(2,1)))+(tnorm_fpts(1,j)*(d_pos(1,2)*d_pos(2,0)-d_pos(1,0)*d_pos(2,2)))+(tnorm_fpts(2,j)*(d_pos(1,0)*d_pos(2,1)-d_pos(1,1)*d_pos(2,0))));
 	  			tnorm_dot_inv_detjac_mul_jac(1)=((tnorm_fpts(0,j)*(d_pos(0,2)*d_pos(2,1)-d_pos(0,1)*d_pos(2,2)))+(tnorm_fpts(1,j)*(d_pos(0,0)*d_pos(2,2)-d_pos(0,2)*d_pos(2,0)))+(tnorm_fpts(2,j)*(d_pos(0,1)*d_pos(2,0)-d_pos(0,0)*d_pos(2,1))));
 	  			tnorm_dot_inv_detjac_mul_jac(2)=((tnorm_fpts(0,j)*(d_pos(0,1)*d_pos(1,2)-d_pos(0,2)*d_pos(1,1)))+(tnorm_fpts(1,j)*(d_pos(0,2)*d_pos(1,0)-d_pos(0,0)*d_pos(1,2)))+(tnorm_fpts(2,j)*(d_pos(0,0)*d_pos(1,1)-d_pos(0,1)*d_pos(1,0))));
-	  			
+
 	  			// store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
-	  			
+
 	  			mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
                                                      tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
                                                      tnorm_dot_inv_detjac_mul_jac(2)*tnorm_dot_inv_detjac_mul_jac(2));
 
 	  			// store normal at flux point
-	  			
+
 	  			norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
 	  			norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
 	  			norm_fpts(j,i,2)=tnorm_dot_inv_detjac_mul_jac(2)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
@@ -3197,7 +3261,7 @@ void eles::set_transforms(int in_run_type)
 	  			cout << "ERROR: Invalid number of dimensions ... " << endl;
 	  		}
 	  	}
-	  }		
+	  }
 
 #ifdef _GPU
 	  mag_tnorm_dot_inv_detjac_mul_jac_fpts.mv_cpu_gpu();
@@ -3275,7 +3339,7 @@ void eles::add_contribution_to_pnodes(array<double> &plotq_pnodes)
             grad_disu_upts_temp(j,k,k2) = value;
           }
         }
-      } 
+      }
 
       // Now transform to physical space
       double detjac;
@@ -3287,8 +3351,8 @@ void eles::add_contribution_to_pnodes(array<double> &plotq_pnodes)
       {
 	      detjac = detjac_upts(j,i);
 	      inv_detjac = 1.0/detjac;
-	      
-	      rx = inv_detjac_mul_jac_upts(j,i,0,0); 
+
+	      rx = inv_detjac_mul_jac_upts(j,i,0,0);
 	      ry = inv_detjac_mul_jac_upts(j,i,0,1);
 	      sx = inv_detjac_mul_jac_upts(j,i,1,0);
 	      sy = inv_detjac_mul_jac_upts(j,i,1,1);
@@ -3300,7 +3364,7 @@ void eles::add_contribution_to_pnodes(array<double> &plotq_pnodes)
 	      	{
 	      		ur = grad_disu_upts_temp(j,k,0);
 	      		us = grad_disu_upts_temp(j,k,1);
-	      
+
 	      		grad_disu_upts_temp(j,k,0) = (1.0/detjac)*(ur*rx + us*sx) ;
 	      		grad_disu_upts_temp(j,k,1) = (1.0/detjac)*(ur*ry + us*sy) ;
 	      	}
@@ -3313,14 +3377,14 @@ void eles::add_contribution_to_pnodes(array<double> &plotq_pnodes)
 	    		tx = inv_detjac_mul_jac_upts(j,i,2,0);
 	    		ty = inv_detjac_mul_jac_upts(j,i,2,1);
 	    		tz = inv_detjac_mul_jac_upts(j,i,2,2);
-          
+
           for (int k=0;k<n_fields;k++)
           {
 	    		  ur = grad_disu_upts_temp(j,k,0);
 	    		  us = grad_disu_upts_temp(j,k,1);
 	    		  ut = grad_disu_upts_temp(j,k,2);
 
-	    		  grad_disu_upts_temp(j,k,0) = (1.0/detjac)*(ur*rx + us*sx + ut*tx); 
+	    		  grad_disu_upts_temp(j,k,0) = (1.0/detjac)*(ur*rx + us*sx + ut*tx);
 	    		  grad_disu_upts_temp(j,k,1) = (1.0/detjac)*(ur*ry + us*sy + ut*ty);
 	    		  grad_disu_upts_temp(j,k,2) = (1.0/detjac)*(ur*rz + us*sz + ut*tz);
           }
@@ -3520,7 +3584,7 @@ void eles::set_transforms_inters_cubpts(void)
   if (n_eles!=0)
   {
 	int i,j,k;
-	int n_comp;	
+	int n_comp;
 
 	double xr, xs, xt;
 	double yr, ys, yt;
@@ -3565,35 +3629,35 @@ void eles::set_transforms_inters_cubpts(void)
 	    for(j=0;j<n_cubpts_per_inter(l);j++)
 	    {
 		  	// get coordinates of the flux point
-		  	
+
 		  	for(k=0;k<n_dims;k++)
 		  	{
 		  		loc(k)=loc_inters_cubpts(l)(k,j);
 		  	}
-		  	
+
 		  	// calculate first derivatives of shape functions at the flux points
-		  
+
         // TODO: Need mapping between bdy_interfaces and ele
 		  	calc_d_pos(loc,bdy_ele2ele(i),d_pos);
-		  	
+
 		  	// store quantities at the flux point
-		  	
+
 		  	if(n_dims==2)
 		  	{
 
    				xr = d_pos(0,0);
    				xs = d_pos(0,1);
-   				
+
    				yr = d_pos(1,0);
    				ys = d_pos(1,1);
-   		
+
    				// store determinant of jacobian at flux point
    				vol_detjac_inters_cubpts(l)(j,i)= xr*ys - xs*yr;
 
 		  		// temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
 		  		tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_inters_cubpts(l)(0,j)*d_pos(1,1))-(tnorm_inters_cubpts(l)(1,j)*d_pos(1,0));
 		  		tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_inters_cubpts(l)(0,j)*d_pos(0,1))+(tnorm_inters_cubpts(l)(1,j)*d_pos(0,0));
-		  		
+
 		  		// store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
 		  		mag_tnorm = sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
                                                           tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
@@ -3611,16 +3675,16 @@ void eles::set_transforms_inters_cubpts(void)
 
   				xr = d_pos(0,0);
   				xs = d_pos(0,1);
-  				xt = d_pos(0,2);			
-  	
+  				xt = d_pos(0,2);
+
   				yr = d_pos(1,0);
   				ys = d_pos(1,1);
-  				yt = d_pos(1,2);				
-  				
+  				yt = d_pos(1,2);
+
   				zr = d_pos(2,0);
   				zs = d_pos(2,1);
-  				zt = d_pos(2,2);				
-  
+  				zt = d_pos(2,2);
+
   				// store determinant of jacobian at flux point
   				vol_detjac_inters_cubpts(l)(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
 
@@ -3628,7 +3692,7 @@ void eles::set_transforms_inters_cubpts(void)
 		  		tnorm_dot_inv_detjac_mul_jac(0)=((tnorm_inters_cubpts(l)(0,j)*(d_pos(1,1)*d_pos(2,2)-d_pos(1,2)*d_pos(2,1)))+(tnorm_inters_cubpts(l)(1,j)*(d_pos(1,2)*d_pos(2,0)-d_pos(1,0)*d_pos(2,2)))+(tnorm_inters_cubpts(l)(2,j)*(d_pos(1,0)*d_pos(2,1)-d_pos(1,1)*d_pos(2,0))));
 		  		tnorm_dot_inv_detjac_mul_jac(1)=((tnorm_inters_cubpts(l)(0,j)*(d_pos(0,2)*d_pos(2,1)-d_pos(0,1)*d_pos(2,2)))+(tnorm_inters_cubpts(l)(1,j)*(d_pos(0,0)*d_pos(2,2)-d_pos(0,2)*d_pos(2,0)))+(tnorm_inters_cubpts(l)(2,j)*(d_pos(0,1)*d_pos(2,0)-d_pos(0,0)*d_pos(2,1))));
 		  		tnorm_dot_inv_detjac_mul_jac(2)=((tnorm_inters_cubpts(l)(0,j)*(d_pos(0,1)*d_pos(1,2)-d_pos(0,2)*d_pos(1,1)))+(tnorm_inters_cubpts(l)(1,j)*(d_pos(0,2)*d_pos(1,0)-d_pos(0,0)*d_pos(1,2)))+(tnorm_inters_cubpts(l)(2,j)*(d_pos(0,0)*d_pos(1,1)-d_pos(0,1)*d_pos(1,0))));
-		  		
+
 		  		// store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
 		  		mag_tnorm=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
                                                      tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
@@ -3647,7 +3711,7 @@ void eles::set_transforms_inters_cubpts(void)
 		  	}
 		  }
     }
-	}		
+	}
 
   } // if n_eles!=0
 }
@@ -3684,8 +3748,8 @@ void eles::set_transforms_vol_cubpts(void)
   	    }
   	    else if (n_dims==3)
   	    {
-					vol_detjac_vol_cubpts(j)(i) = d_pos(0,0)*(d_pos(1,1)*d_pos(2,2) - d_pos(1,2)*d_pos(2,1)) 
-																		 - d_pos(0,1)*(d_pos(1,0)*d_pos(2,2) - d_pos(1,2)*d_pos(2,0)) 
+					vol_detjac_vol_cubpts(j)(i) = d_pos(0,0)*(d_pos(1,1)*d_pos(2,2) - d_pos(1,2)*d_pos(2,1))
+																		 - d_pos(0,1)*(d_pos(1,0)*d_pos(2,2) - d_pos(1,2)*d_pos(2,0))
 																		 + d_pos(0,2)*(d_pos(1,0)*d_pos(2,1) - d_pos(1,1)*d_pos(2,0));
 				}
 			}
@@ -3698,17 +3762,17 @@ void eles::set_transforms_vol_cubpts(void)
 double* eles::get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele)
 {
 	int i;
-	
+
 	int fpt;
-	
+
 	fpt=in_inter_local_fpt;
-	
+
 	for(i=0;i<in_ele_local_inter;i++)
 	{
 		fpt+=n_fpts_per_inter(i);
 	}
 
-#ifdef _GPU  
+#ifdef _GPU
 	return disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
 	return disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -3720,17 +3784,17 @@ double* eles::get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
 double* eles::get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele)
 {
 	int i;
-	
+
 	int fpt;
-	
+
 	fpt=in_inter_local_fpt;
-	
+
 	for(i=0;i<in_ele_local_inter;i++)
 	{
 		fpt+=n_fpts_per_inter(i);
 	}
 
-#ifdef _GPU  
+#ifdef _GPU
 	return norm_tconf_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
 	return norm_tconf_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -3743,17 +3807,17 @@ double* eles::get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
 double* eles::get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
 {
 	int i;
-	
+
 	int fpt;
-	
+
 	fpt=in_inter_local_fpt;
-	
+
 	for(i=0;i<in_ele_local_inter;i++)
 	{
 		fpt+=n_fpts_per_inter(i);
 	}
-	
-#ifdef _GPU  
+
+#ifdef _GPU
 	return detjac_fpts.get_ptr_gpu(fpt,in_ele);
 #else
 	return detjac_fpts.get_ptr_cpu(fpt,in_ele);
@@ -3765,17 +3829,17 @@ double* eles::get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter
 double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
 {
 	int i;
-	
+
 	int fpt;
-	
+
 	fpt=in_inter_local_fpt;
-	
+
 	for(i=0;i<in_ele_local_inter;i++)
 	{
 		fpt+=n_fpts_per_inter(i);
 	}
-	
-#ifdef _GPU  
+
+#ifdef _GPU
 	return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_gpu(fpt,in_ele);
 #else
 	return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_cpu(fpt,in_ele);
@@ -3787,17 +3851,17 @@ double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_f
 double* eles::get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele)
 {
 	int i;
-	
+
 	int fpt;
-	
+
 	fpt=in_inter_local_fpt;
-	
+
 	for(i=0;i<in_ele_local_inter;i++)
 	{
 		fpt+=n_fpts_per_inter(i);
 	}
-	
-#ifdef _GPU  
+
+#ifdef _GPU
 	return norm_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 #else
 	return norm_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
@@ -3809,17 +3873,17 @@ double* eles::get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
 double* eles::get_loc_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele)
 {
 	int i;
-	
+
 	int fpt;
-	
+
 	fpt=in_inter_local_fpt;
-	
+
 	for(i=0;i<in_ele_local_inter;i++)
 	{
 		fpt+=n_fpts_per_inter(i);
 	}
-	
-#ifdef _GPU  
+
+#ifdef _GPU
 	return loc_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 #else
 	return loc_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
@@ -3831,9 +3895,9 @@ double* eles::get_loc_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, i
 double* eles::get_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele)
 {
 	int i;
-	
+
 	int fpt;
-	
+
 	fpt=in_inter_local_fpt;
 
   //if (ele2global_ele(in_ele)==53)
@@ -3846,8 +3910,8 @@ double* eles::get_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
 	{
 		fpt+=n_fpts_per_inter(i);
 	}
-	
-#ifdef _GPU  
+
+#ifdef _GPU
 	return delta_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
 	return delta_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -3859,17 +3923,17 @@ double* eles::get_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
 double* eles::get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_field, int in_ele)
 {
 	int i;
-	
+
 	int fpt;
-	
+
 	fpt=in_inter_local_fpt;
-	
+
 	for(i=0;i<in_ele_local_inter;i++)
 	{
 		fpt+=n_fpts_per_inter(i);
 	}
-	
-#ifdef _GPU  
+
+#ifdef _GPU
 	return grad_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field,in_dim);
 #else
 	return grad_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field,in_dim);
@@ -3881,17 +3945,17 @@ double* eles::get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_in
 double* eles::get_norm_tconvisf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele)
 {
 	int i;
-	
+
 	int fpt;
-	
+
 	fpt=in_inter_local_fpt;
-	
+
 	for(i=0;i<in_ele_local_inter;i++)
 	{
 		fpt+=n_fpts_per_inter(i);
 	}
-	
-#ifdef _GPU  
+
+#ifdef _GPU
 	return norm_tconvisf_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
 	return norm_tconvisf_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -3915,7 +3979,7 @@ void eles::calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos)
     {
 			out_pos(i)+=eval_nodal_s_basis(j,in_loc,n_spts_per_ele(in_ele))*shape(i,j,in_ele);
 		}
-	}	
+	}
 
 }
 
@@ -3960,7 +4024,7 @@ void eles::calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_p
 		for(k=0;k<n_comp;k++)
 		{
 			out_dd_pos(j,k)=0.0;
-			
+
 			for(i=0;i<n_spts_per_ele(in_ele);i++)
 			{
 				out_dd_pos(j,k)+=dd_nodal_s_basis(i,k)*shape(j,i,in_ele);
@@ -3974,24 +4038,24 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
   int i, j;
   double sum = 0.;
   double cell_sum = 0.;
-  
+
   // NOTE: div_tconf_upts must be on CPU
-  
+
   for (i=0; i<n_eles; i++) {
     cell_sum=0;
     for (j=0; j<n_upts_per_ele; j++) {
         if (in_norm_type == 1) {
-          cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i));
+          cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src_term-src_term(j,i,in_field));
         }
         else if (in_norm_type == 2) {
-          cell_sum += div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)*div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i);
+          cell_sum += (div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)-run_input.const_src_term-src_term(j,i,in_field))*(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src_term-src_term(j,i,in_field));
         }
     }
     sum += cell_sum;
   }
-  
+
   return sum;
-  
+
 }
 
 
@@ -4001,10 +4065,10 @@ array<double> eles::compute_error(int in_norm_type, double& time)
   array<double> grad_disu_cubpt(n_fields,n_dims);
   double detjac;
   array<double> pos(n_dims);
-  
+
   array<double> error(2,n_fields);  //storage
   array<double> error_sum(2,n_fields);  //output
-  
+
   for (int i=0; i<n_fields; i++)
   {
     error_sum(0,i) = 0.;
@@ -4025,7 +4089,7 @@ array<double> eles::compute_error(int in_norm_type, double& time)
         for (int k=0;k<n_upts_per_ele;k++)
         {
           disu_cubpt(m) += opp_volume_cubpts(j,k)*disu_upts(0)(k,i,m);
-        } 
+        }
       }
 
       // Get the gradient at cubature point
@@ -4053,7 +4117,7 @@ array<double> eles::compute_error(int in_norm_type, double& time)
   }
 
   cout << "time   " << time << endl;
-  
+
   return error_sum;
 }
 
@@ -4061,8 +4125,8 @@ array<double> eles::compute_error(int in_norm_type, double& time)
 array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_sol, array<double>& loc, double& time, int in_norm_type)
 {
   array<double> error(2,n_fields);  //output
-  
-  array<double> error_sol(n_fields);        
+
+  array<double> error_sol(n_fields);
   array<double> error_grad_sol(n_fields,n_dims);
 
   for (int i=0; i<n_fields; i++) {
@@ -4081,7 +4145,7 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
     // Computing error in x-momentum
     double rho,vx,vy,vz,p;
     eval_isentropic_vortex(loc,time,rho,vx,vy,vz,p,n_dims);
-   
+
     error_sol(1) = sol(1) - rho*vx;
   }
   else if (run_input.test_case==2) // Sine Wave (single)
@@ -4095,9 +4159,9 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
     else {
       eval_sine_wave_single(loc,run_input.wave_speed,0.,time,rho,grad_rho,n_dims);
     }
-    
+
     error_sol(0) = sol(0) - rho;
-    
+
     for (int j=0; j<n_dims; j++) {
        error_grad_sol(0,j) = grad_sol(0,j) - grad_rho(j);
     }
@@ -4107,7 +4171,7 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
   {
     double rho;
     array<double> grad_rho(n_dims);
-    
+
     if(viscous) {
       eval_sine_wave_group(loc,run_input.wave_speed,run_input.diff_coeff,time,rho,grad_rho,n_dims);
     }
@@ -4116,7 +4180,7 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
     }
 
     error_sol(0) = sol(0) - rho;
-    
+
     for (int j=0; j<n_dims; j++) {
        error_grad_sol(0,j) = grad_sol(0,j) - grad_rho(j);
     }
@@ -4132,15 +4196,15 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
 		int ind;
     double ene, u_wall;
     array<double> grad_ene(n_dims);
-    
+
     u_wall = run_input.v_wall(0);
 
     eval_couette_flow(loc,run_input.gamma, run_input.R_ref, u_wall, run_input.T_wall, run_input.p_bound, run_input.prandtl, time, ene, grad_ene, n_dims);
 
-		ind = n_dims+1;	
+		ind = n_dims+1;
 
     error_sol(ind) = sol(ind) - ene;
-    
+
     for (int j=0; j<n_dims; j++) {
        error_grad_sol(ind,j) = grad_sol(ind,j) - grad_ene(j);
     }
@@ -4148,12 +4212,12 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
   else {
     FatalError("Test case not recognized in compute error, exiting");
   }
-     
+
   if (in_norm_type==1)
   {
     for (int m=0;m<n_fields;m++) {
       error(0,m) += abs(error_sol(m));
-      
+
       for(int n=0;n<n_dims;n++) {
         error(1,m) += abs(error_grad_sol(m,n)); //might be incorrect
       }
@@ -4164,7 +4228,7 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
   {
     for (int m=0;m<n_fields;m++) {
       error(0,m) += error_sol(m)*error_sol(m);
-      
+
       for(int n=0;n<n_dims;n++) {
         error(1,m) += error_grad_sol(m,n)*error_grad_sol(m,n);
       }
@@ -4218,7 +4282,7 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
 		          // Get the normal
 		          for (m=0;m<n_dims;m++)
 								norm(m) = norm_inters_cubpts(l)(0,i,m);
-	
+
 							if(norm(0)==-1)
 							{
 								inflowinters(i,l)=1; // Flag this interface
@@ -4320,160 +4384,6 @@ void eles::add_body_force_upts(array <double>& body_force)
 		 					tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*body_force(k);
 	}
 }
-
-void eles::add_sa_source(void)
-{
-  
-  /*--- Spalart-Allmaras closure constants ---*/
-  
-  double cv1_3 = pow(7.1,3.0);
-  double k2 = pow(0.41,2.0);
-  double cb1 = 0.1355;
-  double cw2 = 0.3;
-  double cw3_6 = pow(2.0,6.0);
-  double sigma = 2./3.;
-  double cb2 = 0.622;
-  double cb2_sigma = cb2/sigma;
-  double cw1 = cb1/k2+(1+cb2)/sigma;
-
-  
-	if (n_eles!=0) {
-    
-		int i,j;
-    
-	  for (i=0;i<n_eles;i++)
-		  for (j=0;j<n_upts_per_ele;j++) {
-        
-        double rho = disu_upts(0)(j,i,0);
-        double mom_x = disu_upts(0)(j,i,1);
-        double mom_y = disu_upts(0)(j,i,2);
-        double mom_z = 0.0;
-        double ene = 0.0;
-        if (n_dims == 2) {
-          ene   = disu_upts(0)(j,i,3);
-        }
-        else {
-          mom_z = disu_upts(0)(j,i,3);
-          ene   = disu_upts(0)(j,i,4);
-        }
-        
-        double u = mom_x/rho;
-        double v = mom_y/rho;
-        double w = mom_z/rho;
-
-        double inte = ene/rho - 0.5*(u*u+v*v);
-        if (n_dims == 3) inte -= 0.5*(w*w);
-        
-        // viscosity
-        double rt_ratio = (run_input.gamma-1.0)*inte/(run_input.rt_inf);
-        double mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1.+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
-        mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
-        
-        // Nu tilde
-        double Nu_Tilde = 0.0;
-        if (n_dims == 2) Nu_Tilde = disu_upts(0)(j,i,4);
-        else Nu_Tilde = disu_upts(0)(j,i,5);
-          
-        // Distance
-        double Distance = 0.0;
-        
-        
-        /*--- Computation of vorticity ---*/
-        double irho = 1./rho;
-        double wx, wy, wz;
-        double norm2_Grad;
-        
-        if (n_dims == 2) {
-          
-          double dudx = irho*(grad_disu_upts(j,i,1,0) - u*grad_disu_upts(j,i,0,0));
-          double dudy = irho*(grad_disu_upts(j,i,1,1) - u*grad_disu_upts(j,i,0,1));
-          double dvdx = irho*(grad_disu_upts(j,i,2,0) - v*grad_disu_upts(j,i,0,0));
-          double dvdy = irho*(grad_disu_upts(j,i,2,1) - v*grad_disu_upts(j,i,0,1));
-          
-          wz = dvdx - dudy;
-          
-          double dnutildedx = grad_disu_upts(j,i,4,0);
-          double dnutildedy = grad_disu_upts(j,i,4,1);
-          
-          norm2_Grad = dnutildedx*dnutildedx + dnutildedy*dnutildedy;
-
-        }
-        
-        if (n_dims == 2) {
-          
-          double dudx = irho*(grad_disu_upts(j,i,1,0) - u*grad_disu_upts(j,i,0,0));
-          double dudy = irho*(grad_disu_upts(j,i,1,1) - u*grad_disu_upts(j,i,0,1));
-          double dudz = irho*(grad_disu_upts(j,i,1,2) - u*grad_disu_upts(j,i,0,2));
-          
-          double dvdx = irho*(grad_disu_upts(j,i,2,0) - v*grad_disu_upts(j,i,0,0));
-          double dvdy = irho*(grad_disu_upts(j,i,2,1) - v*grad_disu_upts(j,i,0,1));
-          double dvdz = irho*(grad_disu_upts(j,i,2,2) - v*grad_disu_upts(j,i,0,2));
-
-          double dwdx = irho*(grad_disu_upts(j,i,3,0) - w*grad_disu_upts(j,i,0,0));
-          double dwdy = irho*(grad_disu_upts(j,i,3,1) - w*grad_disu_upts(j,i,0,1));
-          double dwdz = irho*(grad_disu_upts(j,i,3,2) - w*grad_disu_upts(j,i,0,2));
-          
-          wx = dwdy - dvdz;
-          wy = dudz - dwdx;
-          wz = dvdx - dudy;
-          
-          double dnutildedx = grad_disu_upts(j,i,5,0);
-          double dnutildedy = grad_disu_upts(j,i,5,1);
-          double dnutildedz = grad_disu_upts(j,i,5,2);
-          
-          norm2_Grad = dnutildedx*dnutildedx + dnutildedy*dnutildedy + dnutildedz*dnutildedz;
-
-        }
-        
-        double Omega = 0.0;
-        if (n_dims == 2) Omega = abs(wz);
-        else Omega = sqrt(wx*wx+wy*wy+wz*wz);
-        
-        double Residual = 0.0, Production = 0.0, Destruction = 0.0, CrossProduction = 0.0;
-
-        if (Distance > 1e-10) {
-          
-          /*--- Production term ---*/
-          
-          double Distance_2 = Distance*Distance;
-          double nu = mu/rho;
-          double Ji = Nu_Tilde/nu;
-          double Ji_2 = Ji*Ji;
-          double Ji_3 = Ji_2*Ji;
-          double fv1 = Ji_3/(Ji_3+cv1_3);
-          double fv2 = 1.0 - Ji/(1.0+Ji*fv1);
-          double S = Omega;
-          double inv_k2_d2 = 1.0/(k2*Distance_2);
-          
-          double Shat = S + Nu_Tilde*fv2*inv_k2_d2;
-          double inv_Shat = 1.0/max(Shat, 1.0e-10);
-          
-          /*--- Production term ---*/;
-          
-          Production = cb1*Shat*Nu_Tilde;
-          
-          /*--- Destruction term ---*/
-          
-          double r = min(Nu_Tilde*inv_Shat*inv_k2_d2,10.0);
-          double g = r + cw2*(pow(r,6.0)-r);
-          double g_6 =	pow(g,6.0);
-          double glim = pow((1.0+cw3_6)/(g_6+cw3_6),1.0/6.0);
-          double fw = g*glim;
-          
-          Destruction = cw1*fw*Nu_Tilde*Nu_Tilde/Distance_2;
-          
-          /*--- Diffusion term ---*/
-          
-          CrossProduction = cb2_sigma*norm2_Grad;
-          
-          Residual = Production - Destruction + CrossProduction;
-          
-         }
-        
-      }
-	}
-}
-
 
 // Compute diagnostic quantities
 void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
@@ -4678,7 +4588,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
               value += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,m);
             }
             u_l(m) = value;
-          } 
+          }
 
           // If viscous, extrapolate the gradient at the cubature points
           if (viscous==1)
@@ -4702,7 +4612,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
 
           // Add contribution from current cubature point
           // Get pressure
-       
+
           // Not dual consistent
           if (bctype(ele,l)!=16) {
             v_sq = 0.;
@@ -4730,7 +4640,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
           cp_file << scientific << setw(18) << setprecision(12) << pos(0) << " " << setw(18) << setprecision(12) << (p_l-run_input.p_c_ic)/(0.5*run_input.rho_c_ic*(run_input.u_c_ic*run_input.u_c_ic+run_input.v_c_ic*run_input.v_c_ic+run_input.w_c_ic*run_input.w_c_ic));
 
           if (viscous==1)
-          {  
+          {
             // TODO: Have a function that returns tau given u and grad_u
             // Computing the n_dims derivatives of rho,u,v,w and ene
             for (int m=0;m<n_dims;m++)
@@ -4750,7 +4660,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
 	          inte = u_l(n_dims+1)/u_l(0);
             for (int m=0;m<n_dims;m++)
             {
-              inte -= 0.5*u_l(m+1)*u_l(m+1);  
+              inte -= 0.5*u_l(m+1)*u_l(m+1);
             }
 
 	          rt_ratio = (run_input.gamma-1.0)*inte/(run_input.rt_inf);
@@ -4758,7 +4668,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
             mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
 
             // Compute the resulting shear stress
-           
+
             if (n_dims==2)
             {
               taun(0) = 2.0*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1);
