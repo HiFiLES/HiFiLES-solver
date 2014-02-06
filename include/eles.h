@@ -306,6 +306,12 @@ class eles
   /*! set transforms at the volume cubature points*/
   void set_transforms_vol_cubpts(void);
 
+	/*! Calculate distance of solution points to no-slip wall */
+	void calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy);
+
+	/*! Calculate distance of solution points to no-slip wall in parallel */
+	void calc_wall_distance_parallel(array<int> n_seg_noslip_inters, array<int> n_tri_noslip_inters, array<int> n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy_global, int nproc);
+
   /*! calculate position */
   void calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos);
 
@@ -536,6 +542,10 @@ class eles
 	/*! temporary flux storage */
 	array<double> temp_f;
 	array<double> temp_sgsf;
+
+	/*! storage for distance of solution points to nearest no-slip boundary */
+	array<double> wall_distance;
+	array<double> wall_distance_mag;
 
 	/*! number of storage levels for time-integration scheme */
 	int n_adv_levels;

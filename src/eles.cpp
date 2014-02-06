@@ -140,6 +140,12 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 		}
 	}
 
+	if (run_input.turb_model == 1)
+	{
+	  wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
+	  wall_distance_mag.setup(n_upts_per_ele,n_eles);
+	}
+
 	set_shape(in_max_n_spts_per_ele);
   ele2global_ele.setup(n_eles);
   bctype.setup(n_eles,n_inters_per_ele);
@@ -1711,9 +1717,9 @@ void eles::calc_src_term_SA()
 
                 // source term
                 if(n_dims==2)
-                    calc_source_SA_2d(temp_u, temp_grad_u, wall_distances(j,i), src_term(j,i,n_fields-1));
+                    calc_source_SA_2d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_term(j,i,n_fields-1));
                 else if(n_dims==3)
-                    calc_source_SA_3d(temp_u, temp_grad_u, wall_distances(j,i), src_term(j,i,n_fields-1));
+                    calc_source_SA_3d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_term(j,i,n_fields-1));
                 else
                     cout << "ERROR: Invalid number of dimensions ... " << endl;
             }
@@ -1942,6 +1948,240 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 	//temp_sgsf.print();
 	}
 }
+
+
+/*! If using a RANS or LES near-wall model, calculate distance
+of each solution point to nearest no-slip wall by a brute-force method */
+
+void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy)
+{
+	if(n_eles!=0)
+	{
+		int i,j,k,m,n,p;
+		int n_fpts_per_inter_seg = order+1;
+		int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+		int n_fpts_per_inter_quad = (order+1)*(order+1);
+		double dist;
+		double distmin;
+	  array<double> pos(n_dims);
+	  array<double> pos_bdy(n_dims);
+	  array<double> vec(n_dims);
+	  array<double> vecmin(n_dims);
+
+		// hold our breath and go round the brute-force loop...
+		for (i=0;i<n_eles;++i) {
+			for (j=0;j<n_upts_per_ele;++j) {
+
+				// get coords of current solution point
+				calc_pos_upt(j,i,pos);
+				//cout << "rank, coords " << rank << endl;
+				//pos.print();
+
+				// initialize wall distance
+				distmin = 1e20;
+
+				// line segment boundaries
+				for (k=0;k<n_seg_noslip_inters;++k) {
+
+					for (m=0;m<n_fpts_per_inter_seg;++m) {
+
+						dist = 0.0;
+						// get coords of boundary flux point
+						for (n=0;n<n_dims;++n) {
+							pos_bdy(n) = loc_noslip_bdy(0)(m,k,n);
+							vec(n) = pos(n) - pos_bdy(n);
+							dist += vec(n)*vec(n);
+						}
+						dist = sqrt(dist);
+
+						//cout << "rank, coords_bdy " << rank << endl;
+						//pos_bdy.print();
+
+						// update shortest vector
+						if (dist < distmin) {
+							for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+							distmin = dist;
+						}
+					}
+				}
+
+				// tri boundaries
+				for (k=0;k<n_tri_noslip_inters;++k) {
+
+					for (m=0;m<n_fpts_per_inter_tri;++m) {
+
+						dist = 0.0;
+						// get coords of boundary flux point
+						for (n=0;n<n_dims;++n) {
+							pos_bdy(n) = loc_noslip_bdy(1)(m,k,n);
+							vec(n) = pos(n) - pos_bdy(n);
+							dist += vec(n)*vec(n);
+						}
+						dist = sqrt(dist);
+
+						// update shortest vector
+						if (dist < distmin) {
+							for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+							distmin = dist;
+						}
+					}
+				}
+
+				// quad boundaries
+				for (k=0;k<n_quad_noslip_inters;++k) {
+
+					for (m=0;m<n_fpts_per_inter_quad;++m) {
+
+						dist = 0.0;
+						// get coords of boundary flux point
+						for (n=0;n<n_dims;++n) {
+							pos_bdy(n) = loc_noslip_bdy(2)(m,k,n);
+							vec(n) = pos(n) - pos_bdy(n);
+							dist += vec(n)*vec(n);
+						}
+						dist = sqrt(dist);
+
+						// update shortest vector
+						if (dist < distmin) {
+							for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+							distmin = dist;
+						}
+					}
+				}
+			}
+
+			for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+			wall_distance_mag(j,i) = distmin;
+
+			//cout << "vec" << endl;
+			//vecmin.print();
+			//if(rank==0) cout << "rank, wall distance " << rank << ", " << distmin << endl;
+			//if(rank==0) cout << endl;
+		}
+	}
+}
+
+#ifdef _MPI
+
+void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int> n_tri_inters_array, array<int> n_quad_inters_array, array< array<double> >& loc_noslip_bdy_global, int nproc)
+{
+	if(n_eles!=0)
+	{
+		int i,j,k,m,n,p;
+		int n_fpts_per_inter_seg = order+1;
+		int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+		int n_fpts_per_inter_quad = (order+1)*(order+1);
+		double dist;
+		double distmin;
+	  array<double> pos(n_dims);
+	  array<double> pos_bdy(n_dims);
+	  array<double> vec(n_dims);
+	  array<double> vecmin(n_dims);
+
+		//if (rank==0) cout << "rank, nproc " << rank << endl;
+
+
+		// hold our breath and go round the brute-force loop...
+		for (i=0;i<n_eles;++i) {
+			for (j=0;j<n_upts_per_ele;++j) {
+
+				// get coords of current solution point
+				calc_pos_upt(j,i,pos);
+				//if (rank==0) cout << "rank, coords " << rank << endl;
+				//if (rank==0) pos.print();
+
+				// initialize wall distance
+				distmin = 1e20;
+
+				// loop over all partitions
+				for (p=0;p<nproc;++p) {
+
+					//if (rank==0) cout << "p, n_seg_inters(p) " << p << ", " << n_seg_inters_array(p) << endl;
+
+					// line segment boundaries
+					for (k=0;k<n_seg_inters_array(p);++k) {
+
+						for (m=0;m<n_fpts_per_inter_seg;++m) {
+
+							dist = 0.0;
+							// get coords of boundary flux point
+							for (n=0;n<n_dims;++n) {
+								pos_bdy(n) = loc_noslip_bdy_global(0)(m,k,p*n_dims+n);
+								vec(n) = pos(n) - pos_bdy(n);
+								dist += vec(n)*vec(n);
+							}
+							dist = sqrt(dist);
+
+							//if (rank==0) cout << "pos_bdy" << endl;
+							//if (rank==0) pos_bdy.print();
+
+							// update shortest vector
+							if (dist < distmin) {
+								for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+								distmin = dist;
+							}
+						}
+					}
+
+					// tri boundaries
+					for (k=0;k<n_tri_inters_array(p);++k) {
+
+						for (m=0;m<n_fpts_per_inter_tri;++m) {
+
+							dist = 0.0;
+							// get coords of boundary flux point
+							for (n=0;n<n_dims;++n) {
+								pos_bdy(n) = loc_noslip_bdy_global(1)(m,k,p*n_dims+n);
+								vec(n) = pos(n) - pos_bdy(n);
+								dist += vec(n)*vec(n);
+							}
+							dist = sqrt(dist);
+
+							// update shortest vector
+							if (dist < distmin) {
+								for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+								distmin = dist;
+							}
+						}
+					}
+
+					// quad boundaries
+					for (k=0;k<n_quad_inters_array(p);++k) {
+
+						for (m=0;m<n_fpts_per_inter_quad;++m) {
+
+							dist = 0.0;
+							// get coords of boundary flux point
+							for (n=0;n<n_dims;++n) {
+								pos_bdy(n) = loc_noslip_bdy_global(2)(m,k,p*n_dims+n);
+								vec(n) = pos(n) - pos_bdy(n);
+								dist += vec(n)*vec(n);
+							}
+							dist = sqrt(dist);
+
+							// update shortest vector
+							if (dist < distmin) {
+								for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+								distmin = dist;
+							}
+						}
+					}
+				}
+
+				for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+				wall_distance_mag(j,i) = distmin;
+
+				//if (rank==0) cout << "vecmin" << endl;
+				//if (rank==0) vecmin.print();
+				//if (rank==0) cout << "rank, wall distance " << rank << ", " << distmin << endl;
+				//if (rank==0) cout << endl;
+			}
+		}
+	}
+}
+
+#endif
+
 
 // Calculate filtered solution and Leonard terms
 void eles::calc_disuf_upts_ele(array<double>& in_u, array<double>& out_u)
