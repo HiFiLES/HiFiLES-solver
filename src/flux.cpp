@@ -119,7 +119,7 @@ void calc_invf_3d(array<double>& in_u, array<double>& out_f)
 
 void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& out_f)
 {
-  if (run_input.equation==0) // Navier-Stokes equations
+  if (run_input.equation==0 || run_input.equation==2) // Navier-Stokes equations
   {
     double rho, mom_x, mom_y, ene;
 
@@ -132,7 +132,7 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  double diag,tauxx,tauxy,tauyy;
 	  double rt_ratio;
 
-	  double mu, mu_t;
+	  double mu, mu_t, nu_tilde;
 	  double p,T,R;
 	  double inv_Re_c, Mach_c;
 	  double T_gas_non, S_gas_non;
@@ -170,7 +170,6 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  // turbulent eddy viscosity
 	  if (run_input.turb_model==1)
 	  {
-        double nu_tilde;
 	      nu_tilde = in_u(4)/rho;
 
 	      if (nu_tilde >= 0.0)
@@ -254,7 +253,7 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 
 void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& out_f)
 {
-  if (run_input.equation==0) // Navier-Stokes equations
+  if (run_input.equation==0 || run_input.equation==2) // Navier-Stokes equations
   {
 	  double rho, mom_x, mom_y, mom_z, ene;
 
@@ -275,7 +274,7 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  double tauxy, tauxz, tauyz;
 	  double rt_ratio;
 
-	  double mu, mu_t;
+	  double mu, mu_t, nu_tilde;
 	  double p,T,R;
 	  double inv_Re_c, Mach_c;
 	  double T_gas_non, S_gas_non;
@@ -324,7 +323,6 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
     // turbulent eddy viscosity
     if (run_input.turb_model==1)
     {
-        double nu_tilde;
         nu_tilde = in_u(5)/rho;
 
         if (nu_tilde >= 0.0)

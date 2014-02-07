@@ -494,13 +494,13 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   {
       if (run_input.turb_model == 1)
       {
-          if(n_dims==2)
+          if(FlowSol->n_dims==2)
           {
-              write_tec << "Variables = \"x\", \"y\", \"rho\", \"mom_x\", \"mom_y\", \"ene\", \"mu_tilda\"" << endl;
+              write_tec << "Variables = \"x\", \"y\", \"rho\", \"mom_x\", \"mom_y\", \"ene\", \"mu_tilde\"" << endl;
           }
-          else if(n_dims==3)
+          else if(FlowSol->n_dims==3)
           {
-              write_tec << "Variables = \"x\", \"y\", \"z\", \"rho\", \"mom_x\", \"mom_y\", \"mom_z\", \"ene\", \"mu_tilda\"" << endl;
+              write_tec << "Variables = \"x\", \"y\", \"z\", \"rho\", \"mom_x\", \"mom_y\", \"mom_z\", \"ene\", \"mu_tilde\"" << endl;
           }
           else
           {
@@ -2845,7 +2845,7 @@ void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
 #endif
 
   // Calculate body forcing, if running periodic channel, and add to viscous flux
-	if(run_input.equation==0 and run_input.run_type==0 and run_input.forcing==1 and FlowSol->n_dims==3)
+	if((run_input.equation==0 || run_input.equation==2) and run_input.run_type==0 and run_input.forcing==1 and FlowSol->n_dims==3)
 	{
 		for(int i=0;i<FlowSol->n_ele_types;i++)
 			FlowSol->mesh_eles(i)->calc_body_force_upts(vis_force, FlowSol->body_force);
@@ -3141,9 +3141,10 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
   }
 #endif
 
-	for(i=0; i<FlowSol->n_ele_types; i++) {
-    n_fields = FlowSol->mesh_eles(i)->get_n_fields();
+  //HACK (assume same number of fields for all elements)
+  for(i=0; i<FlowSol->n_ele_types; i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+      n_fields = FlowSol->mesh_eles(i)->get_n_fields();
       n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
       for(j=0; j<n_fields; j++)
         sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
@@ -3180,11 +3181,11 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
     if (write_heads) {
       if (FlowSol->n_dims==2) {
         if (n_fields == 4) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]" << endl;
-        else cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]      Res[NuTilde]" << endl;
+        else cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]      Res[MuTilde]" << endl;
       }
       else {
         if (n_fields == 5) cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]" << endl;
-        else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]      Res[NuTilde]" << endl;
+        else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]      Res[MuTilde]" << endl;
       }
 
     }

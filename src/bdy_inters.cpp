@@ -286,7 +286,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
   double T_wall = bdy_params[8];
 
   // Navier-Stokes Boundary Conditions
-  if(equation==0)
+  if(equation==0 || equation==2)
   {
     // Store primitive variables for clarity
     rho_l = u_l[0];

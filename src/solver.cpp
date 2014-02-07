@@ -87,7 +87,7 @@ void CalcResidual(struct solution* FlowSol) {
 		FlowSol->mesh_eles(i)->calc_tdisinvf_upts(in_disu_upts_from);
 
   /*! Calculate body forcing, if switched on, and add to flux. */
-	if(run_input.equation==0 && run_input.run_type==0 && run_input.forcing==1) {
+	if((run_input.equation==0 || run_input.equation==2) && run_input.run_type==0 && run_input.forcing==1) {
 		for(i=0; i<FlowSol->n_ele_types; i++)
 	    FlowSol->mesh_eles(i)->add_body_force_upts(FlowSol->body_force);
 	}
@@ -166,8 +166,8 @@ void CalcResidual(struct solution* FlowSol) {
 
   /*! Compute source term */
   if (run_input.turb_model==1)
-      for (i = 0; i < n_ele_types; i++)
-          mesh_eles(i) -> calc_src_term_SA();
+      for (i = 0; i < FlowSol->n_ele_types; i++)
+          FlowSol->mesh_eles(i)->calc_src_term_SA();
 }
 
 #ifdef _MPI
