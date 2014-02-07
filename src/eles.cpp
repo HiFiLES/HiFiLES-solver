@@ -80,10 +80,11 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	p_res=run_input.p_res;
 	viscous = run_input.viscous;
 	LES = run_input.LES;
+	sgs_model = run_input.SGS_model;
 	filter = 0;
 	// SVV model requires filtered solution
 	if(LES)
-		if(run_input.SGS_model==3 || run_input.SGS_model==2 || run_input.SGS_model==4)
+		if(sgs_model==3 || sgs_model==2 || sgs_model==4)
 			filter = 1;
 
 	wall_model = run_input.wall_model;
@@ -142,10 +143,9 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 
 		sgsf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
 		sgsf_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
-		temp_sgsf.setup(n_fields,n_dims);
 
 		// SVV model requires filtered solution
-		if(run_input.SGS_model==3 || run_input.SGS_model==2 || run_input.SGS_model==4) {
+		if(sgs_model==3 || sgs_model==2 || sgs_model==4) {
 
 			filter = 1;
 
@@ -157,7 +157,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 		}
 
 		// Similarity model requires product terms and Leonard tensors
-		if(run_input.SGS_model==2 || run_input.SGS_model==4) {
+		if(sgs_model==2 || sgs_model==4) {
 			// Leonard tensor and velocity-velocity product for momentum SGS term
 			if(n_dims==2) {
 				Lu.setup(n_upts_per_ele,n_eles,3);
@@ -180,7 +180,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 			ue.setup(1);
 		}
 	}
-	// Dummy arrays
+	// Dummy arrays to pass to GPU kernel wrapper. is this necessary?
 	else {
 		disuf_upts.setup(1);
 		Lu.setup(1);
@@ -189,12 +189,17 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 		ue.setup(1);
 	}
 
-	// Allocate array for wall distance if using a RANS or LES near-wall model
+	// Allocate array for wall distance if using a wall model
 	if(wall_model > 0) {
 		wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
-		twall.setup(n_upts_per_ele,n_eles,n_dims);
+		twall.setup(n_upts_per_ele,n_eles,n_fields);
 		zero_array(wall_distance);
 		zero_array(twall);
+	}
+
+	// Allocate small SGS flux array if using LES or wall model
+	if(LES || wall_model > 0) {
+		temp_sgsf.setup(n_fields,n_dims);
 	}
 
 	set_shape(in_max_n_spts_per_ele);
@@ -700,11 +705,9 @@ void eles::mv_all_cpu_gpu(void)
 			Lu.mv_cpu_gpu();
 			Le.mv_cpu_gpu();
 		}
-
-		// Wall model array
-		if(wall_model>0) {
-      wall_distance.mv_cpu_gpu();
-      twall.mv_cpu_gpu();
+		// wall model array
+		if(wall_model > 0) {
+			twall.mv_cpu_gpu();
 		}
   }
 	#endif
@@ -1667,14 +1670,14 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
 						FatalError("nan in filtered solution");
 
 		/*! If SVV model, copy filtered solution back to solution */
-		if(run_input.SGS_model==3)
+		if(sgs_model==3)
 			for(i=0;i<n_upts_per_ele;i++)
 				for(j=0;j<n_eles;j++)
 			  	for(k=0;k<n_fields;k++)
 						disu_upts(in_disu_upts_from)(i,j,k) = disuf_upts(i,j,k);
 
 		/*! If Similarity model, compute product terms and Leonard tensors */
-		else if(run_input.SGS_model==2 || run_input.SGS_model==4) {
+		else if(sgs_model==2 || sgs_model==4) {
 
 			/*! third dimension of Lu, uu arrays */
 			if(n_dims==2)      dim3 = 3;
@@ -1823,7 +1826,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
 						FatalError("nan in filtered solution");
 
 		/*! If Similarity model */
-		if(run_input.SGS_model==2 || run_input.SGS_model==4) {
+		if(sgs_model==2 || sgs_model==4) {
 
 			/*! compute product terms uu, ue (pass flag=0 to wrapper function) */
 			calc_similarity_model_kernel_wrapper(0, n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu());
@@ -1849,7 +1852,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
 		}
 
 		/*! If SVV model, copy filtered solution back to original solution */
-		else if(run_input.SGS_model==3) {
+		else if(sgs_model==3) {
 			for(i=0;i<n_upts_per_ele;i++) {
 				for(j=0;j<n_eles;j++) {
 			  	for(k=0;k<n_fields;k++) {
@@ -1905,23 +1908,26 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 				{
 					cout << "ERROR: Invalid number of dimensions ... " << endl;
 				}
-				// If LES, calculate SGS viscous flux
-				if(LES || (wall_model > 0))
-				{
+
+				// If LES or wall model, calculate SGS viscous flux
+				if(LES || (wall_model > 0)) {
+
 					calc_sgsf_upts(temp_u,temp_grad_u,detjac,i,j,temp_sgsf);
 
-					// Add SGS flux to viscous flux
+					// Add SGS or wall flux to viscous flux
 					for(k=0;k<n_fields;k++)
-					{
 						for(l=0;l<n_dims;l++)
-						{
 							temp_f(k,l) += temp_sgsf(k,l);
 
-							sgsf_upts(j,i,k,l) = 0.0;
+				}
 
-							// Transform SGS flux
-							for(m=0;m<n_dims;m++)
-							{
+				// If LES, add SGS flux to global array (needed for interface flux calc)
+				if(LES) {
+
+					for(k=0;k<n_fields;k++) {
+						for(l=0;l<n_dims;l++) {
+							sgsf_upts(j,i,k,l) = 0.0;
+							for(m=0;m<n_dims;m++) {
 								sgsf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_sgsf(k,m);
 							}
 						}
@@ -1945,7 +1951,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 
 		// TODO: modify GPU routine to account for new SGS flux array sgsf_upts
 		#ifdef _GPU
-		calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, run_input.filter_ratio, LES, run_input.SGS_model, Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+		calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
 		#endif
 
 	}
@@ -2005,8 +2011,8 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 	  array<double> tau(n_dims,n_dims);
 	  array<double> Mrot(n_dims,n_dims);
 	  array<double> temp(n_dims,n_dims);
-	  array<double> urot(n_dims-1);
-	  array<double> tw(n_dims-1);
+	  array<double> urot(n_dims);
+	  array<double> tw(n_dims);
 		double qw;
 
 		for (i=0;i<n_dims;i++) {
@@ -2015,21 +2021,24 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 			norm(i) = wall_distance(upt,ele,i)/y;
 
 			// get subgrid momentum flux at previous timestep
-			tw(i) = twall(upt,ele,i);
+			tw(i) = twall(upt,ele,i+1);
 		}
 
 		// subgrid energy flux from previous timestep
-		qw = twall(upt,ele,n_dims-1);
+		qw = twall(upt,ele,n_fields-1);
 
 		// Calculate local rotation matrix
 		Mrot = calc_rotation_matrix(norm);
 
 		// Rotate velocity to surface
-		if(n_dims==2)
+		if(n_dims==2) {
 			urot(0) = u(0)*Mrot(0,1)+u(1)*Mrot(1,1);
+			urot(1) = 0.0;
+		}
 		else {
 			urot(0) = u(0)*Mrot(0,1)+u(1)*Mrot(1,1)+u(2)*Mrot(2,1);
 			urot(1) = u(0)*Mrot(0,2)+u(1)*Mrot(1,2)+u(2)*Mrot(2,2);
+			urot(2) = 0.0;
 		}
 
 		//cout << "Mrot " << endl;
@@ -2042,9 +2051,10 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		// correct the sign of wall shear stress and wall heat flux? - see SD3D
 
 		// Set arrays for next timestep
-		for(i=0;i<n_dims-1;++i) twall(upt,ele,i) = tw(i);
+		for(i=0;i<n_dims;++i) twall(upt,ele,i+1) = tw(i); // momentum
 
-		twall(upt,ele,n_dims-1) = qw;
+		twall(upt,ele,0)          = 0.0; // density
+		twall(upt,ele,n_fields-1) = qw;  // energy
 
 		// populate ndims*ndims rotated stress array
 		zero_array(tau);
@@ -2097,23 +2107,23 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 			//twall(upt,ele,i) = 0.0;
 
 		// 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
-		if(run_input.SGS_model==0) {
+		if(sgs_model==0) {
 			eddy = 1;
 			sim = 0;
 		}
-		else if(run_input.SGS_model==1) {
+		else if(sgs_model==1) {
 			eddy = 1;
 			sim = 0;
 		}
-		else if(run_input.SGS_model==2) {
+		else if(sgs_model==2) {
 			eddy = 1;
 			sim = 1;
 		}
-		else if(run_input.SGS_model==3) {
+		else if(sgs_model==3) {
 			eddy = 0;
 			sim = 0;
 		}
-		else if(run_input.SGS_model==4) {
+		else if(sgs_model==4) {
 			eddy = 0;
 			sim = 1;
 		}
@@ -2180,7 +2190,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 			// Eddy viscosity
 
 			// Smagorinsky model
-			if(run_input.SGS_model==0) {
+			if(sgs_model==0) {
 
 				Cs=0.1;
 				mu_t = rho*Cs*Cs*delta*delta*Smod;
@@ -2199,7 +2209,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 			//
 			//  Typically Cw = 0.5.
 
-			else if(run_input.SGS_model==1 || run_input.SGS_model==2) {
+			else if(sgs_model==1 || sgs_model==2) {
 
 				Cs=0.5;
 				double num=0.0;
@@ -2389,6 +2399,12 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
 			//if(rank==0) cout << "rank, wall distance " << rank << ", " << distmin << endl;
 			//if(rank==0) cout << endl;
 		}
+
+		// set on GPU
+#ifdef _GPU
+		wall_distance.mv_cpu_gpu();
+#endif
+
 	}
 }
 
@@ -2507,6 +2523,11 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
 				//if (rank==0) cout << endl;
 			}
 		}
+
+		// set on GPU
+#ifdef _GPU
+		wall_distance.mv_cpu_gpu();
+#endif
 	}
 }
 
@@ -2568,7 +2589,6 @@ array<double> eles::calc_rotation_matrix(array<double>& norm)
 
 void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double mu, double Pr, double gamma, double y, array<double>& tau_wall, double q_wall)
 {
-	// need wall distance, viscosity, model type, velocity, density, energy, gradient
 	double eps = 1.e-10;
 	double Rey, Rey_c, u, uplus, utau, tw, qw;
 	double Pr_t = 0.9;
@@ -2578,7 +2598,7 @@ void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double 
 
 	// Magnitude of surface velocity
 	u = 0.0;
-	for(i=0;i<n_dims-1;++i) u += urot(i)*urot(i);
+	for(i=0;i<n_dims;++i) u += urot(i)*urot(i);
 
 	u = sqrt(u);
 
@@ -2605,7 +2625,7 @@ void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double 
 
 			//cout << "utau "<< utau << endl;
 
-			for (i=0;i<n_dims-1;i++) tau_wall(i) = tw*urot(i)/u;
+			for (i=0;i<n_dims;i++) tau_wall(i) = tw*urot(i)/u;
 
 			// Wall heat flux
 			if(Rey < Rey_c) q_wall = ene*gamma*tw / (Pr * u);
@@ -2635,8 +2655,9 @@ void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double 
 			double Rey0, ReyL, ReyH, ReyM;
 			double yplus, yplusL, yplusH, yplusM, yplusN;
 			double kappa = 0.42;
+			double sign, s;
 			int maxit = 0;
-			int it, sign, s;
+			int it;
 
 			A = (log(30.0*E)/kappa - 5.0)/log(6.0);
 			B = 5.0 - A*log(5.0);
@@ -2645,7 +2666,7 @@ void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double 
 			phi = rho*y/mu;
 			Rey0 = u*phi;
 			utau = 0.0;
-			for (i=0;i<n_dims-1;i++)
+			for (i=0;i<n_dims;i++)
 				utau += tau_wall(i)*tau_wall(i);
 
 			utau /= pow( (rho*rho), 0.25);
@@ -2747,7 +2768,7 @@ void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double 
 			tw = rho*utau*utau;
 
 			// why different to WW model?
-			for (i=0;i<n_dims-1;i++) tau_wall(i) = abs(tw*urot(i)/u);
+			for (i=0;i<n_dims;i++) tau_wall(i) = abs(tw*urot(i)/u);
 
 			// Wall heat flux
 			if(yplus <= ymatch) q_wall = ene*gamma*tw / (Pr * u);
@@ -2757,7 +2778,7 @@ void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double 
 
 	// if velocity is 0
 	else {
-		for (i=0;i<n_dims-1;i++) tau_wall(i) = 0.0;
+		for (i=0;i<n_dims;i++) tau_wall(i) = 0.0;
 		q_wall = 0.0;
 	}
 }

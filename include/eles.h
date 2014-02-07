@@ -402,10 +402,13 @@ class eles
 	/*! LES flag */
 	int LES;
 
+	/*! SGS model */
+	int sgs_model;
+
 	/*! LES filter flag */
 	int filter;
 
-	/*! near-wall model flag */
+	/*! near-wall model */
 	int wall_model;
 
 	/*! number of elements */
