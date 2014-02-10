@@ -134,7 +134,7 @@ array<double> LagrangeP(int order, int node, array<double> & subs);
 % following node ordering from Hughes, pp 169
 % nNodesSide: number of nodes in each side
 */
-array<double> shapePoly4Tri(int I, int nNodesSide);
+array<double> shapePoly4Tri(int in_index, int nNodesSide);
 
 
 // multPoly function: multiplies polynomials symbolically by stacking them (puts them in different rows)

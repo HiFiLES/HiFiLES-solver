@@ -1697,12 +1697,12 @@ array<double> LagrangeP(int order, int node, array<double> & subs)
 }
 
 
-array<double> shapePoly4Tri(int I, int nNodesSide)
+array<double> shapePoly4Tri(int in_index, int nNodesSide)
 {
     /*
     % returns the polynomial function T_I(r) in the polynomial format
     % Array values are coefficients of monomials of increasing order
-    % I : index of node in triangle
+    % in_index : index of node in triangle
     % nNodesSide: number of nodes in side
     For specifics, refer to Hughes, pp 166
     */
@@ -1710,21 +1710,21 @@ array<double> shapePoly4Tri(int I, int nNodesSide)
     array<double> T_I;// special lagrange polynomial corresponding to a node in the triangle
     // this is the result
 
-    if(I == 1)
+    if(in_index == 1)
     {
         T_I(0) = 1; // return constant 1
         return T_I;
     }
     else
     {
-        int order = I - 1; // as described in Hughes pp 167
+        int order = in_index - 1; // as described in Hughes pp 167
 
         double range[] = {-1.0,1.0}; // range over which nodes are located
 
 // xi: array with location of points where function is zero
         array<double> xi = createEquispacedArray(range[0], range[1], nNodesSide);
 
-        double r_I = xi(I-1); // get location of node I in the range
+        double r_I = xi(in_index-1); // get location of node in_index in the range
 
         // Create polynomial to substitute to create polynomial related to triangles
         array<double> subs(1,2);
@@ -1732,7 +1732,7 @@ array<double> shapePoly4Tri(int I, int nNodesSide)
         subs(0) = 2./(r_I + 1.);
         subs(1) = (1. - r_I)/(1. + r_I);
 
-        T_I = LagrangeP(order,I,subs); //note that order = I - 1
+        T_I = LagrangeP(order,in_index,subs); //note that order = in_index - 1
 
         return T_I;
 
@@ -1895,18 +1895,18 @@ array<double> nodeFunctionTri(int in_index, int in_n_spts, array<int> & index_lo
     nNodesSide =  calcNumSides(in_n_spts) ;
 
     // Get specific r,s,t index based on global index
-    int I = int(index_location_array(0,in_index));
-    int J = int(index_location_array(1,in_index));
-    int K = int(index_location_array(2,in_index));
+    int II = int(index_location_array(0,in_index));
+    int JJ = int(index_location_array(1,in_index));
+    int KK = int(index_location_array(2,in_index));
 
-    //cout<< " I = "<<I<<" ; J = "<<J<<" ; K = "<<K<<endl;
+    //cout<< " II = "<<II<<" ; JJ = "<<JJ<<" ; KK = "<<KK<<endl;
 
     // Create polynomial functions specific to r,s,t nodes
     array<double> T_Ir, T_Js, T_Kt, temp;
 
-    T_Ir = shapePoly4Tri(I, nNodesSide);
-    T_Js = shapePoly4Tri(J, nNodesSide);
-    T_Kt = shapePoly4Tri(K, nNodesSide);
+    T_Ir = shapePoly4Tri(II, nNodesSide);
+    T_Js = shapePoly4Tri(JJ, nNodesSide);
+    T_Kt = shapePoly4Tri(KK, nNodesSide);
 
     // Multiply polynomials (order of multiplication does matter in this case, as the differentiation
     // with respect to t --third row-- is different to that with respec to r or s)
