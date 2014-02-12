@@ -15,9 +15,9 @@
 
 using namespace std;
 
-#include "global.h"
-#include "array.h"
-#include "source.h"
+#include "../include/global.h"
+#include "../include/array.h"
+#include "../include/source.h"
 
 // calculate source term for Spalart-Allmaras turbulence model in 2D
 void calc_source_SA_2d(array<double>& in_u, array<double>& in_grad_u, double& d, double& out_source)
