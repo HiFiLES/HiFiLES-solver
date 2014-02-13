@@ -844,11 +844,6 @@ void eles_quads::compute_filter_upts(void)
 			}
 		}
 
-	// Copy filter to GPU for use in LES routines
-	#ifdef _GPU
-	filter_upts.cp_cpu_gpu();
-	#endif
-
 	printf("\n2D filter:\n");
 	filter_upts.print();
 	cout<<"2D coeff sum " << sum << endl;

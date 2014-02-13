@@ -918,11 +918,6 @@ void eles_tets::compute_filter_upts(void)
 		for(j=0;j<N;j++)
 			sum+=filter_upts(i,j);
 
-	// Copy filter to GPU for use in LES routines
-	#ifdef _GPU
-	filter_upts.cp_cpu_gpu();
-	#endif
-
 	printf("\nFilter after normalising:\n");
 	filter_upts.print();
 	cout<<"coeff sum " << sum << endl;
