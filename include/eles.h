@@ -79,6 +79,9 @@ class eles
 	/*! move all to from cpu to gpu */
 	void mv_all_cpu_gpu(void);
 
+	/*! move wall distance array to from cpu to gpu */
+	void mv_wall_distance_cpu_gpu(void);
+
 	/*! copy transformed discontinuous solution at solution points to cpu */
 	void cp_disu_upts_gpu_cpu(void);
 
@@ -311,10 +314,10 @@ class eles
   void set_transforms_vol_cubpts(void);
 
 	/*! Calculate distance of solution points to no-slip wall */
-	void calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy);
+	void calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> > loc_noslip_bdy);
 
 	/*! Calculate distance of solution points to no-slip wall in parallel */
-	void calc_wall_distance_parallel(array<int> n_seg_noslip_inters, array<int> n_tri_noslip_inters, array<int> n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy_global, int nproc);
+	void calc_wall_distance_parallel(array<int> n_seg_noslip_inters, array<int> n_tri_noslip_inters, array<int> n_quad_noslip_inters, array< array<double> > loc_noslip_bdy_global, int nproc);
 
   /*! calculate position */
   void calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos);

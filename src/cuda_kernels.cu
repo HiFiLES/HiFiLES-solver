@@ -2202,23 +2202,26 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
 
 // gpu kernel to calculate transformed discontinuous viscous flux at solution points
 template<int in_n_dims, int in_n_fields, int in_n_comp>
-__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, int in_ele_type, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_twall_ptr, double* in_wall_dist_ptr, double* Leonard_mom, double* Leonard_ene, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
+__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, int in_ele_type, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* Leonard_mom, double* Leonard_ene, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
 {
 	const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
-  double q[in_n_fields];
+ double q[in_n_fields];
   double f[in_n_dims];
-  double sgsf[in_n_fields*in_n_dims]; // SGS flux array
   double met[in_n_dims][in_n_dims]; // Jacobian
   double stensor[in_n_comp]; // viscous stress tensor
+  double grad_ene[in_n_dims];
+  double grad_vel[in_n_dims*in_n_dims];
+  double grad_q[in_n_fields*in_n_dims];
+  double inte, mu;
+
+	// LES model variables
+  double sgsf[in_n_fields*in_n_dims]; // SGS flux array
   double straintensor[in_n_comp]; // strain for SGS models
   double sdtensor[in_n_comp]; // for WALE SGS model
 	double lmtensor[in_n_comp]; // local Leonard tensor for momentum
 	double letensor[in_n_dims]; // local Leonard tensor for energy
-  double grad_ene[in_n_dims];
-  double grad_vel[in_n_dims*in_n_dims];
-  double grad_q[in_n_fields*in_n_dims];
-  double inte, mu, jac, delta, y;
+	double jac, delta;
 
 	// wall model variables
 	double norm[in_n_dims]; // wall normal
@@ -2228,9 +2231,10 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
   double urot[in_n_dims]; // rotated velocity components
   double tw[in_n_dims]; // wall shear stress components
 	double qw; // wall heat flux
+	double y; // wall distance
 	int wall; // flag
 
-	int i, j, index;
+	int i, j, k, index;
 	int stride = in_n_upts_per_ele*in_n_eles;
 
  	if(thread_id<(in_n_upts_per_ele*in_n_eles))
@@ -2332,13 +2336,64 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 			// calculate wall flux
 			wall_model_kernel<in_n_dims>( wall_model, q[0], urot, &inte, &mu, in_gamma, in_prandtl, y, tw, qw);
 
+			//printf("tw = %6.10f\n",tw[0]);
+			//printf("qw = %6.10f\n",qw);
+
 			// correct the sign of wall shear stress and wall heat flux? - see SD3D
 
 			// Set arrays for next timestep
+			#pragma unroll
+			for (j=0;j<in_n_dims;j++)
+				in_twall_ptr[thread_id + (j+1)*stride] = tw[j]; // momentum
 
-			// populate ndims*ndims rotated stress array
+			in_twall_ptr[thread_id] = 0.0; //density
+			in_twall_ptr[thread_id + (in_n_fields-1)*stride] = qw; //energy
 
-			// rotate stress array back to Cartesian coordinates
+			// populate ndims*ndims rotated stress array. Tedious but safer than populating n_comp array.
+			if(in_n_dims==2) {
+				tau[0] = 0.0;
+				tau[1] = tw[0];
+				tau[2] = tw[0];
+				tau[3] = 0.0;
+			}
+			else {
+				tau[0] = 0.0;
+				tau[1] = tw[0];
+				tau[2] = tw[1];
+				tau[3] = tw[0];
+				tau[4] = 0.0;
+				tau[5] = 0.0;
+				tau[6] = tw[1];
+				tau[7] = 0.0;
+				tau[8] = 0.0;
+			}
+
+			// rotate stress array back to Cartesian coordinates. Tedious but safe.
+			#pragma unroll
+			for(i=0;i<in_n_dims;i++) {
+				#pragma unroll
+				for(j=0;j<in_n_dims;j++) {
+					temp[i*in_n_dims + j] = 0.0;
+					#pragma unroll
+					for(k=0;k<in_n_dims;k++) {
+						temp[i*in_n_dims + j] += tau[i*in_n_dims + k]*mrot[k*in_n_dims + j];
+					}
+				}
+			}
+
+			#pragma unroll
+			for(i=0;i<in_n_dims;i++) {
+				#pragma unroll
+				for(j=0;j<in_n_dims;j++) {
+					tau[i*in_n_dims + j] = 0.0;
+					#pragma unroll
+					for(k=0;k<in_n_dims;k++) {
+						tau[i*in_n_dims + j] += mrot[k*in_n_dims + i]*temp[k*in_n_dims + j];
+					}
+				}
+			}
+
+			//printf("tau = %6.10f, %6.10f, %6.10f, %6.10f\n",tau[0],tau[1],tau[2],tau[3]);
 
 			// set SGS fluxes
 			#pragma unroll
@@ -2358,9 +2413,9 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 			}
 
 		}
-
-		// if not near a wall and using LES, compute SGS flux
-		if(LES and (wall==0)) {
+		else {
+			// if not near a wall and using LES, compute SGS flux
+			if(LES) {
 
 			// Calculate strain rate tensor from viscous stress tensor
 			#pragma unroll
@@ -2377,10 +2432,12 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 			for (j=0;j<in_n_comp;j++)
 				lmtensor[j] = Leonard_mom[thread_id + j*stride];
 
-			// energy Leonard tensor
+			// energy Leonard tensor - bugged?
 			#pragma unroll
 			for (j=0;j<in_n_dims;j++)
-				letensor[j] = Leonard_ene[thread_id + j*stride];
+				letensor[j] = 0.0;//Leonard_ene[thread_id + j*stride];
+
+			//printf("Lu = %6.10f\n",lmtensor[0]);
 
 	    #pragma unroll
  		  for (i=0;i<in_n_fields;i++) {
@@ -2393,6 +2450,7 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 					sgsf[i*in_n_dims + j] = f[j];
 
 			}
+		}
 		}
 
 		// add wall or SGS flux to output array

@@ -80,8 +80,13 @@ void SetInput(struct solution* FlowSol) {
 #ifdef _GPU
 
   /*! Associate a GPU to each rank. */
-	if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
-	if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+	// Cluster:
+	//if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
+	//if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+  // Enrico:
+	if (FlowSol->rank==0) { cudaSetDevice(2); }
+	else if (FlowSol->rank==1) { cudaSetDevice(0); }
+	else if (FlowSol->rank==2) { cudaSetDevice(3); }
 
 #endif
 
@@ -776,7 +781,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 			}
 		}
 
-		cout << "rank, local no-slip inters: " << FlowSol->rank << ", " << n_seg_noslip_inters << ", " << n_tri_noslip_inters << ", " << n_quad_noslip_inters << endl;
+		//cout << "rank, local no-slip inters: " << FlowSol->rank << ", " << n_seg_noslip_inters << ", " << n_tri_noslip_inters << ", " << n_quad_noslip_inters << endl;
 
 #ifdef _MPI
 
@@ -797,44 +802,17 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 		inters, the maximum number of no-slip boundary inters on any single
 		partition, and the number of no-slip inters on each partition. */
 
-		if (FlowSol->rank==3) cout << "rank, test 1: " << FlowSol->rank << ", " << n_global_quad_noslip_inters << endl;
-
 		MPI_Allreduce(&n_seg_noslip_inters, &n_global_seg_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 		MPI_Allreduce(&n_tri_noslip_inters, &n_global_tri_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 		MPI_Allreduce(&n_quad_noslip_inters, &n_global_quad_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
-		if (FlowSol->rank==3) cout << "rank, test 2: " << FlowSol->rank << ", " << n_global_quad_noslip_inters << endl;
 
 		MPI_Allreduce(&n_seg_noslip_inters, &max_seg_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 		MPI_Allreduce(&n_tri_noslip_inters, &max_tri_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 		MPI_Allreduce(&n_quad_noslip_inters, &max_quad_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
-		if (FlowSol->rank==3) cout << "rank, test 3: " << FlowSol->rank << ", " << max_quad_noslip_inters << endl;
-
-/*#ifdef _GPU
-
-		n_seg_inters_array.cp_cpu_gpu();
-		n_tri_inters_array.cp_cpu_gpu();
-		n_quad_inters_array.cp_cpu_gpu();
-
-		MPI_Allgather(&n_seg_noslip_inters, 1, MPI_INT, n_seg_inters_array.get_ptr_gpu(), 1, MPI_INT, MPI_COMM_WORLD);
-		MPI_Allgather(&n_tri_noslip_inters, 1, MPI_INT, n_tri_inters_array.get_ptr_gpu(), 1, MPI_INT, MPI_COMM_WORLD);
-		MPI_Allgather(&n_quad_noslip_inters, 1, MPI_INT, n_quad_inters_array.get_ptr_gpu(), 1, MPI_INT, MPI_COMM_WORLD);
-
-		n_seg_inters_array.cp_gpu_cpu();
-		n_tri_inters_array.cp_gpu_cpu();
-		n_quad_inters_array.cp_gpu_cpu();
-
-#else // CPU*/
-
 		MPI_Allgather(&n_seg_noslip_inters, 1, MPI_INT, n_seg_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
 		MPI_Allgather(&n_tri_noslip_inters, 1, MPI_INT, n_tri_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
 		MPI_Allgather(&n_quad_noslip_inters, 1, MPI_INT, n_quad_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
-
-//#endif
-
-		if (FlowSol->rank==3) cout << "rank, test 4: " << FlowSol->rank << endl;
-		if (FlowSol->rank==3) n_quad_inters_array.print();
 
 		// Set loop counters to max. inters on any partition
 		n_seg_noslip_inters = max_seg_noslip_inters;
@@ -849,15 +827,9 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 		FlowSol->loc_noslip_bdy(1).setup(n_fpts_per_inter_tri,n_tri_noslip_inters,FlowSol->n_dims);
 		FlowSol->loc_noslip_bdy(2).setup(n_fpts_per_inter_quad,n_quad_noslip_inters,FlowSol->n_dims);
 
-		zero_array(FlowSol->loc_noslip_bdy(0));
-		zero_array(FlowSol->loc_noslip_bdy(1));
-		zero_array(FlowSol->loc_noslip_bdy(2));
-
 		n_seg_noslip_inters = 0;
 		n_tri_noslip_inters = 0;
 		n_quad_noslip_inters = 0;
-
-		if (FlowSol->rank==3) cout << "rank, test 5: " << FlowSol->rank << ", " << n_quad_noslip_inters << endl;
 
 		// Get coordinates
 		for(int i=0;i<FlowSol->num_inters;i++) {
@@ -873,8 +845,8 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 					for(int j=0;j<n_fpts_per_inter_seg;j++) {
 						for(int k=0;k<FlowSol->n_dims;k++) {
 
-							// find coordinates using function in class eles
-							FlowSol->loc_noslip_bdy(0)(j,n_seg_noslip_inters,k) = *FlowSol->mesh_eles(ctype(ic_l))->get_loc_fpts_ptr(j,f2loc_f(i,0),k,local_c(ic_l));
+							// find coordinates
+							FlowSol->loc_noslip_bdy(0)(j,n_seg_noslip_inters,k) = *get_loc_fpts_ptr(ctype(ic_l), local_c(ic_l), f2loc_f(i,0), j, k, FlowSol);
 						}
 					}
 					n_seg_noslip_inters++;
@@ -884,7 +856,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 					for(int j=0;j<n_fpts_per_inter_tri;j++) {
 						for(int k=0;k<FlowSol->n_dims;k++) {
 
-							FlowSol->loc_noslip_bdy(1)(j,n_tri_noslip_inters,k) = *FlowSol->mesh_eles(ctype(ic_l))->get_loc_fpts_ptr(j,f2loc_f(i,0),k,local_c(ic_l));
+							FlowSol->loc_noslip_bdy(1)(j,n_tri_noslip_inters,k) = *get_loc_fpts_ptr(ctype(ic_l), local_c(ic_l), f2loc_f(i,0), j, k, FlowSol);
 
 						}
 					}
@@ -895,20 +867,17 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 					for(int j=0;j<n_fpts_per_inter_quad;j++) {
 						for(int k=0;k<FlowSol->n_dims;k++) {
 
-							FlowSol->loc_noslip_bdy(2)(j,n_quad_noslip_inters,k) = *FlowSol->mesh_eles(ctype(ic_l))->get_loc_fpts_ptr(j,f2loc_f(i,0),k,local_c(ic_l));
+							FlowSol->loc_noslip_bdy(2)(j,n_quad_noslip_inters,k) = *get_loc_fpts_ptr(ctype(ic_l), local_c(ic_l), f2loc_f(i,0), j, k, FlowSol);
+
 						}
 					}
+
 					n_quad_noslip_inters++;
 				}
 			}
 		}
 
-		if (FlowSol->rank==3) cout << "rank, test 6: " << FlowSol->rank << ", " << n_quad_noslip_inters << endl;
-		//if (FlowSol->rank==3) FlowSol->loc_noslip_bdy(2).print();
-
 #ifdef _MPI
-
-		MPI_Barrier(MPI_COMM_WORLD);
 
   	// Allocate global arrays for coordinates of points on no-slip boundaries
 		FlowSol->loc_noslip_bdy_global.setup(FlowSol->n_bdy_inter_types);
@@ -919,92 +888,19 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
 		FlowSol->loc_noslip_bdy_global(2).setup(n_fpts_per_inter_quad,max_quad_noslip_inters,FlowSol->nproc*FlowSol->n_dims);
 
-		zero_array(FlowSol->loc_noslip_bdy_global(0));
-		zero_array(FlowSol->loc_noslip_bdy_global(1));
-		zero_array(FlowSol->loc_noslip_bdy_global(2));
-
-		if (FlowSol->rank==3) cout << "rank, test 6b: " << FlowSol->rank << ", " << n_quad_noslip_inters << endl;
-		//if (FlowSol->rank==3) FlowSol->loc_noslip_bdy_global(2).print();
-
-		// wait for all processors to finish finding their noslip inters
-		//MPI_Barrier(MPI_COMM_WORLD);
-
 		// Broadcast coordinates of interface points to all partitions
 
-/*#ifdef _GPU
-
-		FlowSol->loc_noslip_bdy.cp_cpu_gpu();
-		FlowSol->loc_noslip_bdy_global.cp_cpu_gpu();
-
-	  for(int i=0;i<FlowSol->n_bdy_inter_types;i++) {
-	  	FlowSol->loc_noslip_bdy(i).cp_cpu_gpu();
-	  	FlowSol->loc_noslip_bdy_global(i).cp_cpu_gpu();
-		}
-
-		//wall_distance_kernel_wrapper();
-
 		buf = max_seg_noslip_inters*n_fpts_per_inter_seg*FlowSol->n_dims;
-
-		if (FlowSol->rank==3) cout << "rank, test 7: " << FlowSol->rank << ", " << buf << endl;
-
-		MPI_Allgather(FlowSol->loc_noslip_bdy(0).get_ptr_gpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(0).get_ptr_gpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
-
-		buf = max_tri_noslip_inters*n_fpts_per_inter_tri*FlowSol->n_dims;
-
-		if (FlowSol->rank==3) cout << "rank, test 8: " << FlowSol->rank << ", " << buf << endl;
-
-		MPI_Allgather(FlowSol->loc_noslip_bdy(1).get_ptr_gpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(1).get_ptr_gpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
-
-		buf = max_quad_noslip_inters*n_fpts_per_inter_quad*FlowSol->n_dims;
-
-		if (FlowSol->rank==3) cout << "rank, test 9: " << FlowSol->rank << ", " << buf << endl;
-
-		MPI_Allgather(FlowSol->loc_noslip_bdy(2).get_ptr_gpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(2).get_ptr_gpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
-
-		if (FlowSol->rank==3) cout << "rank, test 10: " << FlowSol->rank << endl;
-
-		FlowSol->loc_noslip_bdy_global.cp_gpu_cpu();
-
-	  for(int i=0;i<FlowSol->n_bdy_inter_types;i++) {
-	  	FlowSol->loc_noslip_bdy_global(i).cp_gpu_cpu();
-		}
-		if (FlowSol->rank==3) cout << "rank, test 11: " << FlowSol->rank << endl;
-
-#else // CPU*/
-
-		buf = max_seg_noslip_inters*n_fpts_per_inter_seg*FlowSol->n_dims;
-
-		if (FlowSol->rank==3) cout << "rank, test 7: " << FlowSol->rank << ", " << buf << endl;
 
 		MPI_Allgather(FlowSol->loc_noslip_bdy(0).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(0).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
 
 		buf = max_tri_noslip_inters*n_fpts_per_inter_tri*FlowSol->n_dims;
 
-		if (FlowSol->rank==3) cout << "rank, test 8: " << FlowSol->rank << ", " << buf << endl;
-
 		MPI_Allgather(FlowSol->loc_noslip_bdy(1).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(1).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
 
 		buf = max_quad_noslip_inters*n_fpts_per_inter_quad*FlowSol->n_dims;
 
-		if (FlowSol->rank==3) cout << "rank, test 9: " << FlowSol->rank << ", " << buf << endl;
-
-		MPI_Allgather(FlowSol->loc_noslip_bdy(1).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(1).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
-
-		if (FlowSol->rank==3) cout << "rank, test 10: " << FlowSol->rank << endl;
-
-//#endif
-
-		// wait for all processors to collate global noslip inters
-		MPI_Barrier(MPI_COMM_WORLD);
-
-		if (FlowSol->rank==3) {
-			//cout << "rank, global noslip seg coords " << FlowSol->rank << endl;
-			//FlowSol->loc_noslip_bdy_global(0).print();
-			//cout << "rank, global noslip tri coords " << FlowSol->rank << endl;
-			//FlowSol->loc_noslip_bdy_global(1).print();
-			cout << "rank, global noslip quad coords " << FlowSol->rank << endl;
-			FlowSol->loc_noslip_bdy_global(2).print();
-		}
+		MPI_Allgather(FlowSol->loc_noslip_bdy(2).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(2).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
 
 		// Calculate distance of every solution point to nearest point on no-slip boundary for every partition
 		for(int i=0;i<FlowSol->n_ele_types;i++)
@@ -1029,6 +925,10 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
 	  for(int i=0;i<FlowSol->n_bdy_inter_types;i++)
 	  	FlowSol->mesh_bdy_inters(i).mv_all_cpu_gpu();
+
+	  if (FlowSol->rank==0) cout << "Moving wall_distance to GPU ... " << endl;
+		for(int i=0;i<FlowSol->n_ele_types;i++)
+			FlowSol->mesh_eles(i)->mv_wall_distance_cpu_gpu();
   }
 #endif
 

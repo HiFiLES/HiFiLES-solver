@@ -196,6 +196,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 		zero_array(wall_distance);
 		zero_array(twall);
 	}
+	else {
+		wall_distance.setup(1);
+		twall.setup(1);
+	}
 
 	// Allocate small SGS flux array if using LES or wall model
 	if(LES || wall_model > 0) {
@@ -696,7 +700,8 @@ void eles::mv_all_cpu_gpu(void)
 	  }
 
 		// LES arrays
-		if(LES) {
+		//if(LES) {
+			filter_upts.mv_cpu_gpu();
 			disuf_upts.mv_cpu_gpu();
 			sgsf_upts.mv_cpu_gpu();
 			sgsf_fpts.mv_cpu_gpu();
@@ -704,12 +709,23 @@ void eles::mv_all_cpu_gpu(void)
 			ue.mv_cpu_gpu();
 			Lu.mv_cpu_gpu();
 			Le.mv_cpu_gpu();
-		}
+		//}
 		// wall model array
-		if(wall_model > 0) {
+		//if(wall_model > 0) {
 			twall.mv_cpu_gpu();
-		}
+		//}
   }
+	#endif
+}
+
+// move wall distance array to gpu
+
+void eles::mv_wall_distance_cpu_gpu(void)
+{
+	#ifdef _GPU
+
+	wall_distance.mv_cpu_gpu();
+
 	#endif
 }
 
@@ -1641,9 +1657,9 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
   	Bstride = Brows;
   	Cstride = Arows;
 
-		zero_array(disuf_upts);
-		zero_array(Lu);
-		zero_array(Le);
+		//zero_array(disuf_upts);
+		//zero_array(Lu);
+		//zero_array(Le);
 
 #ifdef _CPU
 
@@ -1654,11 +1670,16 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
 #else
 
 		/*! slow matrix multiplication */
-		for(i=0;i<n_upts_per_ele;i++)
-			for(j=0;j<n_eles;j++)
-		  	for(k=0;k<n_fields;k++)
-					for(l=0;l<n_upts_per_ele;l++)
+		for(i=0;i<n_upts_per_ele;i++) {
+			for(j=0;j<n_eles;j++) {
+		  	for(k=0;k<n_fields;k++) {
+					disuf_upts(i,j,k) = 0.0;
+					for(l=0;l<n_upts_per_ele;l++) {
 						disuf_upts(i,j,k) += filter_upts(i,l)*disu_upts(in_disu_upts_from)(l,j,k);
+					}
+				}
+			}
+		}
 
 #endif
 
@@ -1810,20 +1831,22 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
 			}
 		}
 
+#endif
+
 		/*! GPU version of the above */
-#elif defined _GPU
+#ifdef _GPU
 
 		/*! Filter solution (CUDA BLAS library) */
 		cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_gpu(),Bstride,0.0,disuf_upts.get_ptr_gpu(),Cstride);
 
 		/*! Check for NaNs */
-		disuf_upts.cp_gpu_cpu();
+		/*disuf_upts.cp_gpu_cpu();
 
 		for(i=0;i<n_upts_per_ele;i++)
 			for(j=0;j<n_eles;j++)
 		  	for(k=0;k<n_fields;k++)
 					if(isnan(disuf_upts(i,j,k)))
-						FatalError("nan in filtered solution");
+						FatalError("nan in filtered solution");*/
 
 		/*! If Similarity model */
 		if(sgs_model==2 || sgs_model==4) {
@@ -1951,7 +1974,9 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 
 		// TODO: modify GPU routine to account for new SGS flux array sgsf_upts
 		#ifdef _GPU
+
 		calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+
 		#endif
 
 	}
@@ -2295,7 +2320,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 /*! If using a RANS or LES near-wall model, calculate distance
 of each solution point to nearest no-slip wall by a brute-force method */
 
-void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy)
+void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> > loc_noslip_bdy)
 {
 	if(n_eles!=0)
 	{
@@ -2399,18 +2424,12 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
 			//if(rank==0) cout << "rank, wall distance " << rank << ", " << distmin << endl;
 			//if(rank==0) cout << endl;
 		}
-
-		// set on GPU
-#ifdef _GPU
-		wall_distance.mv_cpu_gpu();
-#endif
-
 	}
 }
 
 #ifdef _MPI
 
-void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int> n_tri_inters_array, array<int> n_quad_inters_array, array< array<double> >& loc_noslip_bdy_global, int nproc)
+void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int> n_tri_inters_array, array<int> n_quad_inters_array, array< array<double> > loc_noslip_bdy_global, int nproc)
 {
 	if(n_eles!=0)
 	{
@@ -2523,11 +2542,6 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
 				//if (rank==0) cout << endl;
 			}
 		}
-
-		// set on GPU
-#ifdef _GPU
-		wall_distance.mv_cpu_gpu();
-#endif
 	}
 }
 
@@ -4070,7 +4084,7 @@ void eles::set_transforms(int in_run_type)
 #ifdef _GPU
 	  mag_tnorm_dot_inv_detjac_mul_jac_fpts.mv_cpu_gpu();
 	  norm_fpts.mv_cpu_gpu();
-	  loc_fpts.mv_cpu_gpu();
+	  loc_fpts.cp_cpu_gpu();
 
     /*
 	  inv_detjac_mul_jac_fpts.mv_cpu_gpu();
@@ -4687,11 +4701,13 @@ double* eles::get_loc_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, i
 		fpt+=n_fpts_per_inter(i);
 	}
 
-#ifdef _GPU
-	return loc_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
-#else
+// WHY DOESN'T THE GPU POINTER WORK WHEN CALLED FROM GEOMETRY
+// BUT IT DOES WORK WHEN CALLED FROM BDY_INTERS???
+//#ifdef _GPU
+	//return loc_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
+//#else
 	return loc_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
-#endif
+//#endif
 }
 
 // get a pointer to delta of the transformed discontinuous solution at a flux point
