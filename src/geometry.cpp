@@ -751,7 +751,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 	}
 
 	// Flag interfaces for calculating LES wall model
-	if(run_input.wall_model>0) {
+	if(run_input.wall_model>0 and in_run_type==0) {
 
 	  if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
 

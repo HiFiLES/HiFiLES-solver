@@ -142,10 +142,10 @@ void plot_continuous(struct solution* FlowSol)
     }
   }
   
-  //if(FlowSol->write_type==0)
-    //write_vtu_bin(FlowSol->ini_iter, FlowSol);
-  //else if(FlowSol->write_type==1)
-    //write_tec_bin(FlowSol->ini_iter, FlowSol);
+  if(FlowSol->write_type==0)
+    write_vtu_bin(FlowSol->ini_iter, FlowSol);
+  else if(FlowSol->write_type==1)
+    write_tec_bin(FlowSol->ini_iter, FlowSol);
   
 }
 
