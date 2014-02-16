@@ -1133,6 +1133,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 		write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Density\" />" << endl;
 		write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
 		write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
+
+		/*! write out turbulent viscosity */
+		if (run_input.equation == 2) {
+			write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Nu_Tilde\" />" << endl;
+		}
+
 		write_pvtu << "		</PPointData>" << endl;
 
 		/*! Write points */
@@ -1260,6 +1266,28 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 				/*! End the line and finish writing DataArray and PointData objects */
 				write_vtu << endl;
 				write_vtu << "				</DataArray>" << endl;
+
+				/*! turbulent viscosity */
+				if (run_input.equation == 2) {
+					write_vtu << "				<DataArray type= \"Float32\" Name=\"Nu_Tilde\" format=\"ascii\">" << endl;
+					for(k=0;k<n_points;k++)
+					{
+						/*! In 2D nu_tilde is the 5th solution component */
+						if(n_dims==2)
+						{
+							write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
+						}
+						/*! In 3D nu_tilde is the 6th solution component */
+						else
+						{
+							write_vtu << disu_ppts_temp(k,5)/disu_ppts_temp(k,0) << " ";
+						}
+					}
+					/*! End the line and finish writing DataArray and PointData objects */
+					write_vtu << endl;
+					write_vtu << "				</DataArray>" << endl;
+				}
+
 				write_vtu << "			</PointData>" << endl;
 
 				/*! Calculate the plot coordinates */
