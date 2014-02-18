@@ -1992,11 +1992,20 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 	double Smod=0.0;
 	double ke=0.0;
 	double Pr=0.5; // turbulent Prandtl number
-	double y, delta, mu, mu_t, vol;
+	double delta, mu, mu_t, vol;
 	double rho, inte, rt_ratio;
 	array<double> u(n_dims);
 	array<double> drho(n_dims), dene(n_dims), dke(n_dims), de(n_dims);
 	array<double> dmom(n_dims,n_dims), du(n_dims,n_dims), S(n_dims,n_dims);
+
+	// quantities for wall model
+  array<double> norm(n_dims);
+  array<double> tau(n_dims,n_dims);
+  array<double> Mrot(n_dims,n_dims);
+  array<double> temp(n_dims,n_dims);
+  array<double> urot(n_dims);
+  array<double> tw(n_dims);
+	double y, qw, utau, yplus;
 
 	// primitive variables
 	rho = temp_u(0);
@@ -2026,27 +2035,29 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 
 		y = sqrt(y);
 
-		if(y < run_input.wall_layer_t) wall = 1;
+		// get subgrid momentum flux at previous timestep
+		utau = 0.0;
+		for (i=0;i<n_dims;i++) {
+			tw(i) = twall(upt,ele,i+1);
+			utau += tw(i)*tw(i);
+		}
+		// shear velocity
+		utau = pow((utau/rho/rho),0.25);
+		
+		// Wall distance in wall units
+		yplus = y*rho*utau/mu;
+
+		//if(yplus < run_input.wall_layer_t) wall = 1;
+		if(yplus < 100.0) wall = 1;
+		cout << "tw, y, y+ " << tw(0) << ", " << y << ", " << yplus << endl;
 	}
 
 	// calculate SGS flux from a wall model
 	if(wall) {
 
-	  array<double> norm(n_dims);
-	  array<double> tau(n_dims,n_dims);
-	  array<double> Mrot(n_dims,n_dims);
-	  array<double> temp(n_dims,n_dims);
-	  array<double> urot(n_dims);
-	  array<double> tw(n_dims);
-		double qw;
-
 		for (i=0;i<n_dims;i++) {
-
 			// Get approximate normal from wall distance vector
 			norm(i) = wall_distance(upt,ele,i)/y;
-
-			// get subgrid momentum flux at previous timestep
-			tw(i) = twall(upt,ele,i+1);
 		}
 
 		// subgrid energy flux from previous timestep
@@ -2066,20 +2077,16 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 			urot(2) = 0.0;
 		}
 
-		//cout << "Mrot " << endl;
-		//Mrot.print();
-		//cout << "urot "<< urot(0) << endl;
-
 		// Calculate wall shear stress
 		calc_wall_stress(rho,urot,inte,mu,run_input.prandtl,run_input.gamma,y,tw,qw);
 
 		// correct the sign of wall shear stress and wall heat flux? - see SD3D
 
 		// Set arrays for next timestep
-		for(i=0;i<n_dims;++i) twall(upt,ele,i+1) = tw(i); // momentum
+		for(i=0;i<n_dims;++i) twall(upt,ele,i+1) = tw(i); // momentum flux
 
-		twall(upt,ele,0)          = 0.0; // density
-		twall(upt,ele,n_fields-1) = qw;  // energy
+		twall(upt,ele,0)          = 0.0; // density flux
+		twall(upt,ele,n_fields-1) = qw;  // energy flux
 
 		// populate ndims*ndims rotated stress array
 		zero_array(tau);
@@ -2683,7 +2690,7 @@ void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double 
 			for (i=0;i<n_dims;i++)
 				utau += tau_wall(i)*tau_wall(i);
 
-			utau /= pow( (rho*rho), 0.25);
+			utau = pow((utau/rho/rho),0.25);
 			yplus = utau*phi;
 
 			if(maxit > 0) {
