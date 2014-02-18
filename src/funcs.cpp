@@ -237,6 +237,124 @@ double eval_d_vcjh_1d(double in_r, int in_mode, int in_order, double in_eta)
 	return dtemp_0;
 }
 
+double eval_d_ofr_1d(double in_r, int in_mode, int in_order)
+{
+	double dtemp_0;
+	double cVal, aP, eta;
+
+	array<double> loc_zeros_gL(in_order+2), loc_zeros_gR(in_order+2);
+
+	// Append end points
+	loc_zeros_gL(0) = -1.0;
+	loc_zeros_gL(in_order+1) = 1.0;
+	loc_zeros_gR(0) = -1.0;
+	loc_zeros_gR(in_order+1) = 1.0;
+
+	// zeros of correction function
+	if(in_order == 1) {
+		loc_zeros_gL(1) = -0.3249;
+
+		loc_zeros_gR(1) = +0.3249;
+	}
+	else if(in_order == 2) {
+		loc_zeros_gL(1) = -0.6830;
+		loc_zeros_gL(2) = 0.3022;
+
+		loc_zeros_gR(2) = 0.6830;
+		loc_zeros_gR(1) = -0.3022;
+	}
+	else if(in_order == 3) {
+		loc_zeros_gL(1) = -0.8399;
+		loc_zeros_gL(2) = -0.2022;
+		loc_zeros_gL(3) = 0.5186;
+
+		loc_zeros_gR(3) = 0.8399;
+		loc_zeros_gR(2) = 0.2022;
+		loc_zeros_gR(1) = -0.5186;
+	}
+	else if(in_order == 4) {
+		loc_zeros_gL(1) = -0.8570;
+		loc_zeros_gL(2) = -0.4477;
+		loc_zeros_gL(3) = 0.1800;
+		loc_zeros_gL(4) = 0.6381;
+
+		loc_zeros_gR(4) = 0.8570;
+		loc_zeros_gR(3) = 0.4477;
+		loc_zeros_gR(2) = -0.1800;
+		loc_zeros_gR(1) = -0.6381;
+	}
+	else if(in_order == 5) {
+		loc_zeros_gL(1) = -0.8979;
+		loc_zeros_gL(2) = -0.5778;
+		loc_zeros_gL(3) = -0.1012;
+		loc_zeros_gL(4) = 0.3541;
+		loc_zeros_gL(5) = 0.7604;
+
+		loc_zeros_gR(5) = 0.8979;
+		loc_zeros_gR(4) = 0.5778;
+		loc_zeros_gR(3) = 0.1012;
+		loc_zeros_gR(2) = -0.3541;
+		loc_zeros_gR(1) = -0.7604;
+	}
+	else if(in_order == 6) { // P=6 not verified
+		loc_zeros_gL(1) = -0.9326;
+		loc_zeros_gL(2) = -0.6279; 
+		loc_zeros_gL(3) = -0.1970;
+		loc_zeros_gL(4) = 0.3928;
+		loc_zeros_gL(5) = 0.4816;
+		loc_zeros_gL(6) = 0.6295;
+
+		loc_zeros_gR(6) = 0.9326;
+		loc_zeros_gR(5) = 0.6279; 
+		loc_zeros_gR(4) = 0.1970;
+		loc_zeros_gR(3) = -0.3928;
+		loc_zeros_gR(2) = -0.4816;
+		loc_zeros_gR(1) = -0.6295;
+	}
+	else
+		FatalError("OFR schemes have been obtained as yet for P = 1 to 6");
+
+	if(in_mode==0) // left correction function
+		dtemp_0 = eval_d_lagrange(in_r, 0, loc_zeros_gL);
+
+	else if(in_mode==1) // right correction function
+		dtemp_0 = eval_d_lagrange(in_r, in_order+1, loc_zeros_gR);
+
+	return dtemp_0;
+}
+
+double eval_d_oesfr_1d(double in_r, int in_mode, int in_order)
+{
+	double dtemp_0;
+	double cVal, aP, eta;
+
+	// optimal 'c' value
+	if (in_order == 1)
+		cVal = 8.40e-3;
+	else if (in_order == 2)
+		cVal = 5.83e-4;
+	else if (in_order == 3)
+		cVal = 3.17e-5;
+	else if (in_order == 4)
+		cVal = 9.68e-7;
+	else if (in_order == 5)
+		cVal = 1.02e-8;
+	else if (in_order == 6)
+		cVal = 9.76e-11;
+	else
+		FatalError("ESFR schemes have been obtained as yet for P = 1 to 6");
+
+	aP = (1.0/pow(2.0,in_order)) *factorial(2*in_order)/(factorial(in_order)*factorial(in_order));
+	eta = cVal * (0.5*(2*in_order+1)) * (aP*factorial(in_order))*(aP*factorial(in_order));
+        
+	if(in_mode==0) // left correction function
+		dtemp_0=0.5*pow(-1.0,in_order)*(eval_d_legendre(in_r,in_order)-(((eta*eval_d_legendre(in_r,in_order-1))+eval_d_legendre(in_r,in_order+1))/(1.0+eta)));
+
+	else if(in_mode==1) // right correction function
+		dtemp_0=0.5*(eval_d_legendre(in_r,in_order)+(((eta*eval_d_legendre(in_r,in_order-1))+eval_d_legendre(in_r,in_order+1))/(1.0+eta)));
+
+	return dtemp_0;
+}
 
 void get_opp_3_tri(array<double>& opp_3, array<double>& loc_upts_tri, array<double>& loc_1d_fpts, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_per_tri, int order, double c_tri, int vcjh_scheme_tri)
 {
