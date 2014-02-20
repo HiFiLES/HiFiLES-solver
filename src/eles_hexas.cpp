@@ -1543,7 +1543,7 @@ double eles_hexas::eval_div_vcjh_basis(int in_index, array<double>& loc)
 	int i,j,k;
 	double eta;
 	double div_vcjh_basis;
-	int scheme = run_input.vcjh_scheme_quad;
+	int scheme = run_input.vcjh_scheme_hexa;
 	
   if (scheme==0)
     eta = run_input.eta_quad;    
