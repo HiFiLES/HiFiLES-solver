@@ -1546,9 +1546,9 @@ double eles_hexas::eval_div_vcjh_basis(int in_index, array<double>& loc)
 	int scheme = run_input.vcjh_scheme_hexa;
 	
   if (scheme==0)
-    eta = run_input.eta_quad;    
+    eta = run_input.eta_hexa;    
   else if (scheme < 5)
-    eta = compute_eta(run_input.vcjh_scheme_quad,order);
+    eta = compute_eta(run_input.vcjh_scheme_hexa,order);
 
 	i=(in_index/n_fpts_per_inter(0));
 	j=(in_index-(n_fpts_per_inter(0)*i))/(order+1);
