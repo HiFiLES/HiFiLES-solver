@@ -86,6 +86,12 @@ void bdy_inters::set_bdy_params()
   bdy_params(11) = run_input.nx_free_stream;
   bdy_params(12) = run_input.ny_free_stream;
   bdy_params(13) = run_input.nz_free_stream;
+
+  // Boundary parameters for turbulence models
+  if (run_input.turb_model == 1)
+  {
+    bdy_params(14) = run_input.mu_tilde_inf;
+  }
 }
 
 void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int in_run_type, struct solution* FlowSol)
@@ -94,51 +100,53 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
 
   if (in_run_type==0)
   {
-	  for(int i=0;i<n_fields;i++)
-	  {
-	  	for(int j=0;j<n_fpts_per_inter;j++)
-	  	{
-	  		disu_fpts_l(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-	  	
-	  		norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-	  		
-	  		if(viscous)
-	  		{
-	  			delta_disu_fpts_l(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-	  		}
-	  	}
-	  }
-	  
-	  for(int i=0;i<n_fields;i++)
-	  {
-	  	for(int j=0;j<n_fpts_per_inter;j++)
-	  	{
-	  		for(int k=0; k<n_dims; k++)
-	  		{
-	  			if(viscous)
-	  			{
-	  				grad_disu_fpts_l(j,in_inter,i,k) =get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
-	  			}
+    for(int i=0;i<n_fields;i++)
+    {
+      for(int j=0;j<n_fpts_per_inter;j++)
+      {
+        disu_fpts_l(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
 
-					// LES: get subgrid-scale flux
-					if(LES) {
-						sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
-					}
-	  		}
-	  	}
-	  }
+        norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
 
-	  for(int i=0;i<n_fpts_per_inter;i++)
-	  {
-	  	mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
-	  	
-	  	for(int j=0;j<n_dims;j++)
-	  	{
-	  		norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-	  		loc_fpts(i,in_inter,j)=get_loc_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-			}
-	  }
-	}
+        if(viscous)
+        {
+          delta_disu_fpts_l(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+        }
+      }
+    }
+
+    for(int i=0;i<n_fields;i++)
+    {
+      for(int j=0;j<n_fpts_per_inter;j++)
+      {
+        for(int k=0; k<n_dims; k++)
+        {
+          if(viscous)
+          {
+            grad_disu_fpts_l(j,in_inter,i,k) =get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+          }
+
+          // LES: get subgrid-scale flux
+          if(LES) {
+            sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+          }
+        }
+      }
+    }
+
+    for(int i=0;i<n_fpts_per_inter;i++)
+    {
+      mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
+
+      for(int j=0;j<n_dims;j++)
+      {
+        norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
+        loc_fpts(i,in_inter,j)=get_loc_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
+      }
+
+    }
+  }
+
 }
 
 // move all from cpu to gpu
@@ -146,13 +154,13 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
 void bdy_inters::mv_all_cpu_gpu(void)
 {
   #ifdef _GPU
-  
+
   disu_fpts_l.mv_cpu_gpu();
   norm_tconf_fpts_l.mv_cpu_gpu();
   mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.mv_cpu_gpu();
   norm_fpts.mv_cpu_gpu();
   loc_fpts.mv_cpu_gpu();
-  
+
   delta_disu_fpts_l.mv_cpu_gpu();
 
   if(viscous)
@@ -179,7 +187,7 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
 
   #ifdef _CPU
   array<double> norm(n_dims), fn(n_fields);
-  
+
   //viscous
   int bdy_spec, flux_spec;
   array<double> u_c(n_fields);
@@ -195,9 +203,9 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
         norm(m) = *norm_fpts(j,i,m);
 
       // calculate discontinuous solution at flux points
-      for(int k=0;k<n_fields;k++) 
+      for(int k=0;k<n_fields;k++)
         temp_u_l(k)=(*disu_fpts_l(j,i,k));
-  
+
       for (int m=0;m<n_dims;m++)
         temp_loc(m) = *loc_fpts(j,i,m);
 
@@ -219,7 +227,7 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
       if (boundary_type(i)==16) // Dual consistent BC
       {
         // Set Normal flux to be right flux
-        right_flux(temp_f_l,norm,fn,n_dims,n_fields,run_input.gamma); 
+        right_flux(temp_f_l,norm,fn,n_dims,n_fields,run_input.gamma);
       }
       else // Call Riemann solver
       {
@@ -237,15 +245,15 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
           FatalError("Riemann solver not implemented");
       }
 
-      // Transform back to reference space  
-      for(int k=0;k<n_fields;k++) 
+      // Transform back to reference space
+      for(int k=0;k<n_fields;k++)
           (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
 
       if(viscous)
       {
         //boundary specification
         bdy_spec = boundary_type(i);
-    
+
         if(bdy_spec == 12 || bdy_spec == 14)
           flux_spec = 2;
         else
@@ -265,7 +273,7 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
   }
 
   #endif
-    
+
   #ifdef _GPU
   if (n_inters!=0)
     calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.R_ref,viscous,run_input.vis_riemann_solve_type, time_bound, run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda,run_input.equation);
@@ -288,7 +296,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
   double T_wall = bdy_params[8];
 
   // Navier-Stokes Boundary Conditions
-  if(equation==0)
+  if(equation==0 || equation==2)
   {
     // Store primitive variables for clarity
     rho_l = u_l[0];
@@ -309,7 +317,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       rho_r = rho_bound;
       for (int i=0; i<n_dims; i++)
         v_r[i] = v_bound[i];
-      
+
       // extrapolate pressure
       p_r = p_l;
 
@@ -318,8 +326,16 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       for (int i=0; i<n_dims; i++)
         v_sq += (v_r[i]*v_r[i]);
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+      // SA model
+      if (run_input.turb_model == 1)
+      {
+          // set turbulent eddy viscosity
+          double mu_tilde_inf = bdy_params[14];
+          u_r[n_dims+2] = mu_tilde_inf;
+      }
     }
-    
+
     // Subsonic outflow simple (fixed pressure)
     else if(bdy_type == 2)
     {
@@ -327,20 +343,27 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       rho_r = rho_l;
       for (int i=0; i<n_dims; i++)
         v_r[i] = v_l[i];
-      
+
       // fix pressure
       p_r = p_bound;
-      
+
       // compute energy
       v_sq = 0.;
       for (int i=0; i<n_dims; i++)
         v_sq += (v_r[i]*v_r[i]);
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+      // SA model
+      if (run_input.turb_model == 1)
+      {
+          // extrapolate turbulent eddy viscosity
+          u_r[n_dims+2] = u_l[n_dims+2];
+      }
     }
-    
+
     // Subsonic inflow characteristic
-      // there is one outgoing characteristic (u-c), therefore we can specify 
-      // all but one state variable at the inlet. The outgoing Riemann invariant 
+      // there is one outgoing characteristic (u-c), therefore we can specify
+      // all but one state variable at the inlet. The outgoing Riemann invariant
       // provides the final piece of info. Adapted from an implementation in
       // SU2.
     else if(bdy_type == 3)
@@ -366,7 +389,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
       // Extrapolate Riemann invariant
       R_plus = vn_l + 2.0*c_l/(gamma-1.0);
-      
+
       // Specify total enthalpy
       h_total = gamma*R_ref/(gamma-1.0)*T_total_bound;
 
@@ -408,25 +431,33 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       // Compute velocity (based on free stream direction)
       for (int i=0; i<n_dims; i++)
         v_r[i] = V_r*n_free_stream[i];
-      
+
       // Compute temperature
       T_r = c_r_sq/(gamma*R_ref);
 
       // Compute pressure
       p_r = p_total_bound*pow(T_r/T_total_bound, gamma/(gamma-1.0));
-      
+
       // Compute density
       rho_r = p_r/(R_ref*T_r);
 
       // Compute energy
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+      // SA model
+      if (run_input.turb_model == 1)
+      {
+          // set turbulent eddy viscosity
+          double mu_tilde_inf = bdy_params[14];
+          u_r[n_dims+2] = mu_tilde_inf;
+      }
     }
 
-    // Subsonic outflow characteristic 
-      // there is one incoming characteristic, therefore one variable can be 
-      // specified (back pressure) and is used to update the conservative 
-      // variables. Compute the entropy and the acoustic Riemann variable. 
-      // These invariants, as well as the tangential velocity components, 
+    // Subsonic outflow characteristic
+      // there is one incoming characteristic, therefore one variable can be
+      // specified (back pressure) and is used to update the conservative
+      // variables. Compute the entropy and the acoustic Riemann variable.
+      // These invariants, as well as the tangential velocity components,
       // are extrapolated. Adapted from an implementation in SU2.
     else if(bdy_type == 4)
     {
@@ -468,8 +499,15 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         v_sq += (v_r[i]*v_r[i]);
       }
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+      // SA model
+      if (run_input.turb_model == 1)
+      {
+          // extrapolate turbulent eddy viscosity
+          u_r[n_dims+2] = u_l[n_dims+2];
+      }
     }
-    
+
     // Supersonic inflow
     else if(bdy_type == 5)
     {
@@ -480,7 +518,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
       // fix pressure
       p_r = p_bound;
-      
+
       // compute energy
       v_sq = 0.;
       for (int i=0; i<n_dims; i++)
@@ -512,90 +550,104 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       // reflect normal velocity
       for (int i=0; i<n_dims; i++)
         v_r[i] = v_l[i] - 2.0*vn_l*norm[i];
-      
+
       // extrapolate energy
       e_r = e_l;
     }
-    
+
     // Isothermal, no-slip wall (fixed)
     else if(bdy_type == 11)
     {
       // extrapolate pressure
       p_r = p_l;
-      
+
       // isothermal temperature
       T_r = T_wall;
-      
+
       // density
       rho_r = p_r/(R_ref*T_r);
-      
+
       // no-slip
       for (int i=0; i<n_dims; i++)
         v_r[i] = 0.;
-      
+
       // energy
       v_sq = 0.;
       for (int i=0; i<n_dims; i++)
         v_sq += (v_r[i]*v_r[i]);
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+      // SA model
+      if (run_input.turb_model == 1)
+      {
+          // zero turbulent eddy viscosity at the wall
+          u_r[n_dims+2] = 0.0;
+      }
     }
-    
+
     // Adiabatic, no-slip wall (fixed)
     else if(bdy_type == 12)
     {
       // extrapolate density
       rho_r = rho_l;
-      
+
       // extrapolate pressure
       p_r = p_l;
-      
+
       // no-slip
       for (int i=0; i<n_dims; i++)
         v_r[i] = 0.;
-      
+
       // energy
       v_sq = 0.;
       for (int i=0; i<n_dims; i++)
         v_sq += (v_r[i]*v_r[i]);
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+      // SA model
+      if (run_input.turb_model == 1)
+      {
+          // zero turbulent eddy viscosity at the wall
+          u_r[n_dims+2] = 0.0;
+      }
     }
-    
+
     // Isothermal, no-slip wall (moving)
     else if(bdy_type == 13)
     {
       // extrapolate pressure
       p_r = p_l;
-      
+
       // isothermal temperature
       T_r = T_wall;
-      
+
       // density
       rho_r = p_r/(R_ref*T_r);
-      
+
       // no-slip
       for (int i=0; i<n_dims; i++)
         v_r[i] = v_wall[i];
-      
+
       // energy
       v_sq = 0.;
       for (int i=0; i<n_dims; i++)
         v_sq += (v_r[i]*v_r[i]);
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
     }
-    
+
     // Adiabatic, no-slip wall (moving)
     else if(bdy_type == 14)
     {
       // extrapolate density
       rho_r = rho_l;
-      
+
       // extrapolate pressure
       p_r = p_l;
-      
+
       // no-slip
       for (int i=0; i<n_dims; i++)
         v_r[i] = v_wall[i];
-      
+
       // energy
       v_sq = 0.;
       for (int i=0; i<n_dims; i++)
@@ -611,10 +663,10 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       double vn_bound;
       double vt_star;
       double r_plus,r_minus;
-      
+
       double one_over_s;
       double h_free_stream;
-      
+
       // Compute normal velocity on left side
       vn_l = 0.;
       for (int i=0; i<n_dims; i++)
@@ -623,23 +675,23 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       vn_bound = 0;
       for (int i=0; i<n_dims; i++)
         vn_bound += v_bound[i]*norm[i];
-      
+
       r_plus  = vn_l + 2./(gamma-1.)*sqrt(gamma*p_l/rho_l);
       r_minus = vn_bound - 2./(gamma-1.)*sqrt(gamma*p_bound/rho_bound);
-      
+
       c_star = 0.25*(gamma-1.)*(r_plus-r_minus);
       vn_star = 0.5*(r_plus+r_minus);
-      
+
       // Works only for 2D and quasi-2D
       // Inflow
       if (vn_l<0)
       {
         // assumes quasi-2D boundary i.e. norm[2] == 0;
         vt_star = (v_bound[0]*norm[1] - v_bound[1]*norm[0]);
-        
+
         // HACK
         one_over_s = pow(rho_bound,gamma)/p_bound;
-        
+
         // freestream total enthalpy
         v_sq = 0.;
         for (int i=0;i<n_dims;i++)
@@ -649,41 +701,56 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         rho_r = pow(1./gamma*(one_over_s*c_star*c_star),1./(gamma-1.));
         v_r[0] = (norm[0]*vn_star + norm[1]*vt_star);
         v_r[1] = (norm[1]*vn_star - norm[0]*vt_star);
-        
+
         // no cross-flow
         if(n_dims==3)
         {
           v_r[2] = 0.0;
         }
-        
+
         p_r = rho_r/gamma*c_star*c_star;
         e_r = rho_r*h_free_stream - p_r;
+
+        // SA model
+        if (run_input.turb_model == 1)
+        {
+            // set turbulent eddy viscosity
+            double mu_tilde_inf = bdy_params[14];
+            u_r[n_dims+2] = mu_tilde_inf;
+        }
       }
 
       // Outflow
       else
       {
         vt_star = (v_l[0]*norm[1] - v_l[1]*norm[0]);
-        
+
         one_over_s = pow(rho_l,gamma)/p_l;
-        
+
         // freestream total enthalpy
         rho_r = pow(1./gamma*(one_over_s*c_star*c_star), 1./(gamma-1.));
         v_r[0] = (norm[0]*vn_star + norm[1]*vt_star);
         v_r[1] = (norm[1]*vn_star - norm[0]*vt_star);
-        
+
         // no cross-flow
         if(n_dims==3)
         {
           v_r[2] = 0.0;
         }
-        
+
         p_r = rho_r/gamma*c_star*c_star;
         v_sq = 0.;
         for (int i=0; i<n_dims; i++)
           v_sq += (v_r[i]*v_r[i]);
         e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
-      }  
+
+        // SA model
+        if (run_input.turb_model == 1)
+        {
+            // extrapolate turbulent eddy viscosity
+            u_r[n_dims+2] = u_l[n_dims+2];
+        }
+      }
     }
 
     // Dual consistent BC (see SD++ for more comments)
@@ -727,7 +794,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
     // Trivial Dirichlet
     if(bdy_type==50)
     {
-      u_r[0]=0.0; 
+      u_r[0]=0.0;
     }
   }
 }
@@ -765,7 +832,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
       // storing normal components
       for (m=0;m<n_dims;m++)
         norm(m) = *norm_fpts(j,i,m);
-      
+
       // obtain discontinuous solution at flux points
 			for(k=0;k<n_fields;k++)
 				temp_u_l(k)=(*disu_fpts_l(j,i,k));
@@ -774,7 +841,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
         temp_loc(m) = *loc_fpts(j,i,m);
 
       set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
-      
+
       // obtain gradient of discontinuous solution at flux points
       for(int k=0;k<n_dims;k++)
       {
@@ -783,7 +850,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
           temp_grad_u_l(l,k) = *grad_disu_fpts_l(j,i,l,k);
         }
       }
-      
+
       //Right gradient
       if(flux_spec == 2)
       {
@@ -801,7 +868,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
 
       // calculate flux from discontinuous solution at flux points
       if(n_dims==2) {
-        
+
         if(flux_spec == 1)
         {
           calc_visf_2d(temp_u_l,temp_grad_u_l,temp_f_l);
@@ -814,7 +881,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
           FatalError("Invalid viscous flux specification");
       }
       else if(n_dims==3)  {
-        
+
         if(flux_spec == 1)
         {
           calc_visf_3d(temp_u_l,temp_grad_u_l,temp_f_l);
@@ -848,14 +915,14 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
       else
         FatalError("Viscous Riemann solver not implemented");
 
-      // Transform back to reference space  
-      for(int k=0;k<n_fields;k++) 
+      // Transform back to reference space
+      for(int k=0;k<n_fields;k++)
           (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
     }
   }
 
   #endif
-  
+
   #ifdef _GPU
   if (n_inters!=0)
     calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff);
@@ -867,15 +934,15 @@ void bdy_inters::set_vis_boundary_conditions(int bdy_type, double* u_l, double* 
 {
   int cpu_flag;
   cpu_flag = 1;
-  
-  
+
+
   double v_sq;
   double inte;
   double p_l, p_r;
-  
+
   double grad_vel[n_dims*n_dims];
-  
-  
+
+
   // Adiabatic wall
   if(bdy_type == 12 || bdy_type == 14)
   {
@@ -884,9 +951,9 @@ void bdy_inters::set_vis_boundary_conditions(int bdy_type, double* u_l, double* 
       v_sq += (u_l[i+1]*u_l[i+1]);
     p_l   = (gamma-1.0)*( u_l[n_dims+1] - 0.5*v_sq/u_l[0]);
     p_r = p_l;
-    
+
     inte = p_r/((gamma-1.0)*u_r[0]);
-    
+
     if(cpu_flag)
     {
       // Velocity gradients
@@ -895,7 +962,7 @@ void bdy_inters::set_vis_boundary_conditions(int bdy_type, double* u_l, double* 
         for (int i=0;i<n_dims;i++)
           grad_vel[j*n_dims + i] = (grad_u[i*n_fields + (j+1)] - grad_u[i*n_fields + 0]*u_r[j+1]/u_r[0])/u_r[0];
       }
-      
+
       // Energy gradients (grad T = 0)
       if(n_dims == 2)
       {
@@ -916,7 +983,7 @@ void bdy_inters::set_vis_boundary_conditions(int bdy_type, double* u_l, double* 
         for (int i=0;i<n_dims;i++)
           grad_vel[j*n_dims + i] = (grad_u[(j+1)*n_dims + i] - grad_u[0*n_dims + i]*u_r[j+1]/u_r[0])/u_r[0];
       }
-      
+
       if(n_dims == 2)
       {
         // Total energy gradient
@@ -929,9 +996,9 @@ void bdy_inters::set_vis_boundary_conditions(int bdy_type, double* u_l, double* 
           grad_u[4*n_dims + i] = inte*grad_u[0*n_dims + i] + 0.5*((u_r[1]*u_r[1]+u_r[2]*u_r[2]+u_r[3]*u_r[3])/(u_r[0]*u_r[0]))*grad_u[0*n_dims + i] + u_r[0]*((u_r[1]/u_r[0])*grad_vel[0*n_dims + i]+(u_r[2]/u_r[0])*grad_vel[1*n_dims + i]+(u_r[3]/u_r[0])*grad_vel[2*n_dims + i]);
       }
     }
-    
-  }   
-  
+
+  }
+
 }
 
 

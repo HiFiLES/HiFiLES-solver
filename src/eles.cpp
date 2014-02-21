@@ -47,6 +47,7 @@ extern "C"
 #include "../include/global.h"
 #include "../include/array.h"
 #include "../include/flux.h"
+#include "../include/source.h"
 #include "../include/eles.h"
 #include "../include/funcs.h"
 
@@ -206,6 +207,12 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 		temp_sgsf.setup(n_fields,n_dims);
 	}
 
+	if (run_input.turb_model == 1)
+	{
+	  wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
+	  wall_distance_mag.setup(n_upts_per_ele,n_eles);
+	}
+
 	set_shape(in_max_n_spts_per_ele);
   ele2global_ele.setup(n_eles);
   bctype.setup(n_eles,n_inters_per_ele);
@@ -247,14 +254,9 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	  	grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
 	  }
 
-    //ppt_to_pnode.setup(n_eles,n_ppts_per_ele);
-    //pos_ppts.setup(n_eles,n_ppts_per_ele);
-    //for (int i=0;i<n_eles;i++)
-      //for (int j=0;j<n_ppts_per_ele;j++)
-       // pos_ppts(i,j).setup(n_dims);
-
-  	// Compute and store position of plot points
-  	//set_pos_ppts();
+	  // Initialize source term
+	  src_term.setup(n_upts_per_ele, n_eles, n_fields);
+    src_term.initialize_to_zero();
 
 	  // Set connectivity array. Needed for Paraview output.
     if (ele_type==3) // prism
@@ -466,17 +468,26 @@ void eles::set_ics(double& time)
 			  if(n_dims==2)
 			  {
 			  	ics(3)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)));
+
+			  	if(run_input.turb_model==1)
+			  	{
+			  	    ics(4) = run_input.mu_tilde_c_ic;
+			  	}
 			  }
 			  else if(n_dims==3)
 			  {
 			  	ics(3)=rho*vz;
 			  	ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));
+
+			  	if(run_input.turb_model==1)
+			  	{
+			  	    ics(5) = run_input.mu_tilde_c_ic;
+			  	}
 			  }
 			  else
 			  {
 			  	cout << "ERROR: Invalid number of dimensions ... " << endl;
 			  }
-
 			}
       else if (run_input.ic_form==2) // Sine wave (single)
       {
@@ -833,7 +844,7 @@ void eles::advance_rk11(void)
 	  {
 			for (int inp=0;inp<n_upts_per_ele;inp++)
 			{
-        disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+        disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term - src_term(inp,ic,i));
 			}
 		}
 	}
@@ -912,7 +923,7 @@ void eles::advance_rk45(int in_step)
 		{
 			for (int inp=0;inp<n_upts_per_ele;inp++)
 			{
-				rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
+				rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term + src_term(inp,ic,i);
 	  		res = disu_upts(1)(inp,ic,i);
         res = rk4a*res + run_input.dt*rhs;
 
@@ -921,7 +932,7 @@ void eles::advance_rk45(int in_step)
 			}
 		}
 	}
-#endif
+  #endif
 
 	#ifdef _GPU
 
@@ -1982,8 +1993,57 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 	}
 }
 
-// Calculate SGS flux at solution points
-void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf)
+
+// calculate source term for SA turbulence model at solution points
+void eles::calc_src_term_SA()
+{
+    if (n_eles!=0)
+    {
+#ifdef _CPU
+
+        int i,j,k,l,m;
+
+        for(i=0; i<n_eles; i++)
+        {
+            for(j=0; j<n_upts_per_ele; j++)
+            {
+                // physical solution
+                for(k=0; k<n_fields; k++)
+                {
+                    temp_u(k)=disu_upts(0)(j,i,k);
+                }
+
+                // physical gradient
+                for(k=0; k<n_fields; k++)
+                {
+                    for (m=0; m<n_dims; m++)
+                    {
+                        temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
+                    }
+                }
+
+                // source term
+                if(n_dims==2)
+                    calc_source_SA_2d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_term(j,i,n_fields-1));
+                else if(n_dims==3)
+                    calc_source_SA_3d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_term(j,i,n_fields-1));
+                else
+                    cout << "ERROR: Invalid number of dimensions ... " << endl;
+            }
+        }
+
+#endif
+
+//#ifdef _GPU
+//        calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
+//#endif
+
+    }
+}
+
+
+// Calculate SGS flux
+void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int upt, array<double>& temp_sgsf)
 {
 	int i,j,k;
 	int eddy, sim, wall;
@@ -2425,6 +2485,7 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
 			}
 
 			for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+			wall_distance_mag(j,i) = distmin;
 
 			//cout << "vec" << endl;
 			//vecmin.print();
@@ -2542,6 +2603,7 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
 				}
 
 				for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+				wall_distance_mag(j,i) = distmin;
 
 				//if (rank==0) cout << "vecmin" << endl;
 				//if (rank==0) vecmin.print();
@@ -4894,10 +4956,10 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
     cell_sum=0;
     for (j=0; j<n_upts_per_ele; j++) {
         if (in_norm_type == 1) {
-          cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i));
+          cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src_term-src_term(j,i,in_field));
         }
         else if (in_norm_type == 2) {
-          cell_sum += div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)*div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i);
+          cell_sum += (div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)-run_input.const_src_term-src_term(j,i,in_field))*(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src_term-src_term(j,i,in_field));
         }
     }
     sum += cell_sum;

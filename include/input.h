@@ -18,17 +18,17 @@
 #include "array.h"
 
 class input
-{	
+{
 	public:
-	
+
 	// #### constructors ####
-	
+
 	// default constructor
-	
+
 	input();
 
 	~input();
-	
+
 	// #### methods ####
 
 
@@ -41,14 +41,14 @@ class input
   void set_dt(double in_dt);
 
 	void setup(ifstream& in_run_input_file, int rank);
-  
+
   void reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, int dev_ind, int dim_ind);
-	
+
 	// #### members ####
-		
+
 	double gamma;
 
-  int run_type;  
+  int run_type;
 	int viscous;
   int equation;
 
@@ -91,7 +91,7 @@ class input
   int diagnostics_freq;
   int res_norm_type; // 0:infinity norm, 1:L1 norm, 2:L2 norm
   int error_norm_type; // 0:infinity norm, 1:L1 norm, 2:L2 norm
-  int res_norm_field; 
+  int res_norm_field;
 
   int restart_flag;
   int restart_iter;
@@ -109,21 +109,21 @@ class input
 
   int mesh_format;
   string mesh_file;
-	
+
   double dx_cyclic;
   double dy_cyclic;
   double dz_cyclic;
 
-	
+
 	int p_res;
 	int write_type;
-	
+
 	int upts_type_tri;
 	int fpts_type_tri;
 	int vcjh_scheme_tri;
 	double c_tri;
 	int sparse_tri;
-	
+
 	int upts_type_quad;
 	int vcjh_scheme_quad;
 	double eta_quad;
@@ -134,28 +134,41 @@ class input
 	int vcjh_scheme_hexa;
 	double eta_hexa;
 	int sparse_hexa;
-	
+
 	int upts_type_tet;
 	int fpts_type_tet;
 	int vcjh_scheme_tet;
   double c_tet;
 	double eta_tet;
 	int sparse_tet;
-	
+
 	int upts_type_pri_tri;
 	int upts_type_pri_1d;
 	int vcjh_scheme_pri_1d;
 	double eta_pri;
 	int sparse_pri;
-	
-	int riemann_solve_type;	
-	int vis_riemann_solve_type;	
+
+	int riemann_solve_type;
+	int vis_riemann_solve_type;
 
   //new
   double S_gas;
   double T_gas;
   double R_gas;
   double mu_gas;
+
+  double c_v1;
+  double c_v2;
+  double c_v3;
+  double c_b1;
+  double c_b2;
+  double c_w2;
+  double c_w3;
+  double omega;
+  double prandtl_t;
+  double Kappa;
+  double mu_tilde_c_ic;
+  double mu_tilde_inf;
 
   double c_sth;
   double mu_inf;
@@ -183,7 +196,7 @@ class input
   double p_ref;
   double mu_ref;
   double time_ref;
-  
+
   double Mach_wall;
   double nx_wall;
   double ny_wall;
@@ -192,7 +205,7 @@ class input
   array<double> v_wall;
   double uvw_wall;
   double T_wall;
-  
+
   double Mach_c_ic;
   double nx_c_ic;
   double ny_c_ic;
@@ -215,5 +228,5 @@ class input
   array<double> y_coeffs;
   array<double> z_coeffs;
 	int perturb_ic;
-
+	int turb_model;
 };

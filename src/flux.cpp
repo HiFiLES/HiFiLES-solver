@@ -22,26 +22,32 @@ using namespace std;
 // calculate inviscid flux in 2D
 
 void calc_invf_2d(array<double>& in_u, array<double>& out_f)
-{	
-  if (run_input.equation==0) // Euler equation
+{
+  if ((run_input.equation==0) || (run_input.equation==2)) // Euler and NS equation
   {
 	  double vx;
 	  double vy;
 	  double p;
-	  
+
 	  vx=in_u(1)/in_u(0);
 	  vy=in_u(2)/in_u(0);
 	  p=(run_input.gamma-1.0)*(in_u(3)-(0.5*in_u(0)*((vx*vx)+(vy*vy))));
-	  		
+
 	  out_f(0,0)=in_u(1);
 	  out_f(1,0)=p+(in_u(1)*vx);
 	  out_f(2,0)=in_u(2)*vx;
 	  out_f(3,0)=vx*(in_u(3)+p);
-	  			
+
 	  out_f(0,1)=in_u(2);
 	  out_f(1,1)=in_u(1)*vy;
 	  out_f(2,1)=p+(in_u(2)*vy);
 	  out_f(3,1)=vy*(in_u(3)+p);
+
+    if(run_input.turb_model==1)   // SA model
+    {
+        out_f(4,0) = in_u(4)*vx;
+        out_f(4,1) = in_u(4)*vy;
+    }
   }
   else if (run_input.equation==1) // Advection-diffusion equation
   {
@@ -59,35 +65,42 @@ void calc_invf_2d(array<double>& in_u, array<double>& out_f)
 void calc_invf_3d(array<double>& in_u, array<double>& out_f)
 {
 
-  if (run_input.equation==0) // Euler Equation
+  if ((run_input.equation==0) || (run_input.equation==2)) // Euler and NS equation
   {
     double vx;
 	  double vy;
 	  double vz;
 	  double p;
-	  
+
 	  vx=in_u(1)/in_u(0);
 	  vy=in_u(2)/in_u(0);
 	  vz=in_u(3)/in_u(0);
 	  p=(run_input.gamma-1.0)*(in_u(4)-(0.5*in_u(0)*((vx*vx)+(vy*vy)+(vz*vz))));
-	  
+
 	  out_f(0,0)=in_u(1);
 	  out_f(1,0)=p+(in_u(1)*vx);
 	  out_f(2,0)=in_u(2)*vx;
 	  out_f(3,0)=in_u(3)*vx;
 	  out_f(4,0)=vx*(in_u(4)+p);
-	  			
+
 	  out_f(0,1)=in_u(2);
 	  out_f(1,1)=in_u(1)*vy;
 	  out_f(2,1)=p+(in_u(2)*vy);
 	  out_f(3,1)=in_u(3)*vy;
 	  out_f(4,1)=vy*(in_u(4)+p);
-	  
+
 	  out_f(0,2)=in_u(3);
 	  out_f(1,2)=in_u(1)*vz;
 	  out_f(2,2)=in_u(2)*vz;
 	  out_f(3,2)=p+(in_u(3)*vz);
 	  out_f(4,2)=vz*(in_u(4)+p);
+
+    if(run_input.turb_model==1)   // SA model
+    {
+        out_f(5,0) = in_u(5)*vx;
+        out_f(5,1) = in_u(5)*vy;
+        out_f(5,2) = in_u(5)*vz;
+    }
   }
   else if (run_input.equation==1) // Advection-diffusion equation
   {
@@ -106,7 +119,7 @@ void calc_invf_3d(array<double>& in_u, array<double>& out_f)
 
 void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& out_f)
 {
-  if (run_input.equation==0) // Navier-Stokes equations
+  if (run_input.equation==0 || run_input.equation==2) // Navier-Stokes equations
   {
     double rho, mom_x, mom_y, ene;
 
@@ -118,21 +131,21 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  double de_dx, de_dy;
 	  double diag,tauxx,tauxy,tauyy;
 	  double rt_ratio;
-	  
-	  double mu;
+
+	  double mu, mu_t, nu_tilde;
 	  double p,T,R;
 	  double inv_Re_c, Mach_c;
-	  double T_gas_non, S_gas_non;	
-	  
+	  double T_gas_non, S_gas_non;
+
 	  // states
-	  
+
 	  rho   = in_u(0);
 	  mom_x = in_u(1);
 	  mom_y = in_u(2);
 	  ene   = in_u(3);
 
 	  // gradients
-	  
+
 	  rho_dx	 = in_grad_u(0,0);
 	  mom_x_dx = in_grad_u(1,0);
 	  mom_y_dx = in_grad_u(2,0);
@@ -144,7 +157,7 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  ene_dy	 = in_grad_u(3,1);
 
 	  // states
-	  
+
 	  u = mom_x/rho;
 	  v = mom_y/rho;
 	  inte = ene/rho - 0.5*(u*u+v*v);
@@ -152,10 +165,30 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  // viscosity
 	  rt_ratio = (run_input.gamma-1.0)*inte/(run_input.rt_inf);
 	  mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1.+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
-    mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
+	  mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
+
+	  // turbulent eddy viscosity
+	  if (run_input.turb_model==1)
+	  {
+	      nu_tilde = in_u(4)/rho;
+
+	      if (nu_tilde >= 0.0)
+	      {
+	          double f_v1 = pow(in_u(4)/mu, 3.0)/(pow(in_u(4)/mu, 3.0) + pow(run_input.c_v1, 3.0));
+	          mu_t = in_u(4)*f_v1;
+	      }
+	      else
+	      {
+	          mu_t = 0.0;
+	      }
+	  }
+	  else
+	  {
+            mu_t = 0.0;
+	  }
 
 	  // gradients
-	  
+
 	  du_dx = (mom_x_dx-rho_dx*u)/rho;
 	  du_dy = (mom_x_dy-rho_dy*u)/rho;
 
@@ -170,21 +203,39 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 
 	  diag = (du_dx + dv_dy)/3.0;
 
-	  tauxx = 2.0*mu*(du_dx-diag);
-	  tauxy = mu*(du_dy + dv_dx);
-	  tauyy = 2.0*mu*(dv_dy-diag);	
+    tauxx = 2.0*(mu+mu_t)*(du_dx-diag);
+    tauxy = (mu+mu_t)*(du_dy + dv_dx);
+    tauyy = 2.0*(mu+mu_t)*(dv_dy-diag);
 
 	  // construct flux
-	  
+
 	  out_f(0,0) = 0.0;
 	  out_f(1,0) = -tauxx;
 	  out_f(2,0) = -tauxy;
-	  out_f(3,0) = -(u*tauxx+v*tauxy+mu*(run_input.gamma)*de_dx/(run_input.prandtl));
-	  
+	  out_f(3,0) = -(u*tauxx+v*tauxy+(mu/run_input.prandtl + mu_t/run_input.prandtl_t)*(run_input.gamma)*de_dx);
+
 	  out_f(0,1) = 0.0;
 	  out_f(1,1) = -tauxy;
 	  out_f(2,1) = -tauyy;
-	  out_f(3,1) = -(u*tauxy+v*tauyy+mu*(run_input.gamma)*de_dy/(run_input.prandtl));
+	  out_f(3,1) = -(u*tauxy+v*tauyy+(mu/run_input.prandtl + mu_t/run_input.prandtl_t)*(run_input.gamma)*de_dy);
+
+    if (run_input.turb_model==1)
+    {
+        double dnu_tilde_dx, dnu_tilde_dy;
+        double Chi, psi;
+
+        Chi = in_u(4)/mu;
+        if (Chi <= 10.0)
+            psi = 0.05*log(1.0 + exp(20.0*Chi));
+        else
+            psi = Chi;
+
+        dnu_tilde_dx = (in_grad_u(4,0)-rho_dx*nu_tilde)/rho;
+        dnu_tilde_dy = (in_grad_u(4,1)-rho_dy*nu_tilde)/rho;
+
+        out_f(4,0) = -(1.0/run_input.omega)*(mu + mu*psi)*dnu_tilde_dx;
+        out_f(4,1) = -(1.0/run_input.omega)*(mu + mu*psi)*dnu_tilde_dy;
+    }
   }
   else if (run_input.equation==1) // Advection-diffusion equation
   {
@@ -202,7 +253,7 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 
 void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& out_f)
 {
-  if (run_input.equation==0) // Navier-Stokes equations
+  if (run_input.equation==0 || run_input.equation==2) // Navier-Stokes equations
   {
 	  double rho, mom_x, mom_y, mom_z, ene;
 
@@ -222,14 +273,14 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  double tauxx, tauyy, tauzz;
 	  double tauxy, tauxz, tauyz;
 	  double rt_ratio;
-	  
-	  double mu;
+
+	  double mu, mu_t, nu_tilde;
 	  double p,T,R;
 	  double inv_Re_c, Mach_c;
-	  double T_gas_non, S_gas_non;	
-	  
+	  double T_gas_non, S_gas_non;
+
 	  // states
-	  
+
 	  rho   = in_u(0);
 	  mom_x = in_u(1);
 	  mom_y = in_u(2);
@@ -237,7 +288,7 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  ene   = in_u(4);
 
 	  // gradients
-	  
+
 	  rho_dx	 = in_grad_u(0,0);
 	  mom_x_dx = in_grad_u(1,0);
 	  mom_y_dx = in_grad_u(2,0);
@@ -257,7 +308,7 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  ene_dz	 = in_grad_u(4,2);
 
 	  // states
-	  
+
 	  u = mom_x/rho;
 	  v = mom_y/rho;
 	  w = mom_z/rho;
@@ -269,8 +320,28 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
     mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
     mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
 
+    // turbulent eddy viscosity
+    if (run_input.turb_model==1)
+    {
+        nu_tilde = in_u(5)/rho;
+
+        if (nu_tilde >= 0.0)
+        {
+            double f_v1 = pow(in_u(5)/mu, 3.0)/(pow(in_u(5)/mu, 3.0) + pow(run_input.c_v1, 3.0));
+            mu_t = in_u(5)*f_v1;
+        }
+        else
+        {
+            mu_t = 0.0;
+        }
+    }
+    else
+    {
+        mu_t = 0.0;
+    }
+
 	  //gradients
-	  
+
 	  du_dx = (mom_x_dx-rho_dx*u)/rho;
 	  du_dy = (mom_x_dy-rho_dy*u)/rho;
 	  du_dz = (mom_x_dz-rho_dz*u)/rho;
@@ -293,33 +364,53 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 
 	  diag = (du_dx + dv_dy + dw_dz)/3.0;
 
-	  tauxx = 2.0*mu*(du_dx-diag);
-	  tauyy = 2.0*mu*(dv_dy-diag);	
-	  tauzz = 2.0*mu*(dw_dz-diag);
-	  
-	  tauxy = mu*(du_dy + dv_dx);
-	  tauxz = mu*(du_dz + dw_dx);
-	  tauyz = mu*(dv_dz + dw_dy);
+        tauxx = 2.0*(mu+mu_t)*(du_dx-diag);
+        tauyy = 2.0*(mu+mu_t)*(dv_dy-diag);
+        tauzz = 2.0*(mu+mu_t)*(dw_dz-diag);
+
+        tauxy = (mu+mu_t)*(du_dy + dv_dx);
+        tauxz = (mu+mu_t)*(du_dz + dw_dx);
+        tauyz = (mu+mu_t)*(dv_dz + dw_dy);
 
 	  // construct flux
-	  
-	  out_f(0,0) = 0.0;
-	  out_f(1,0) = -tauxx;
-	  out_f(2,0) = -tauxy;
-	  out_f(3,0) = -tauxz;
-	  out_f(4,0) = -(u*tauxx+v*tauxy+w*tauxz+mu*(run_input.gamma)*de_dx/(run_input.prandtl));
-	  
-	  out_f(0,1) = 0.0;
-	  out_f(1,1) = -tauxy;
-	  out_f(2,1) = -tauyy;
-	  out_f(3,1) = -tauyz;
-	  out_f(4,1) = -(u*tauxy+v*tauyy+w*tauyz+mu*(run_input.gamma)*de_dy/(run_input.prandtl));
 
-	  out_f(0,2) = 0.0;
-	  out_f(1,2) = -tauxz;
-	  out_f(2,2) = -tauyz;
-	  out_f(3,2) = -tauzz;
-	  out_f(4,2) = -(u*tauxz+v*tauyz+w*tauzz+mu*(run_input.gamma)*de_dz/(run_input.prandtl));
+        out_f(0,0) = 0.0;
+        out_f(1,0) = -tauxx;
+        out_f(2,0) = -tauxy;
+        out_f(3,0) = -tauxz;
+        out_f(4,0) = -(u*tauxx+v*tauxy+w*tauxz+(mu/run_input.prandtl + mu_t/run_input.prandtl_t)*(run_input.gamma)*de_dx);
+
+        out_f(0,1) = 0.0;
+        out_f(1,1) = -tauxy;
+        out_f(2,1) = -tauyy;
+        out_f(3,1) = -tauyz;
+        out_f(4,1) = -(u*tauxy+v*tauyy+w*tauyz+(mu/run_input.prandtl + mu_t/run_input.prandtl_t)*(run_input.gamma)*de_dy);
+
+        out_f(0,2) = 0.0;
+        out_f(1,2) = -tauxz;
+        out_f(2,2) = -tauyz;
+        out_f(3,2) = -tauzz;
+        out_f(4,2) = -(u*tauxz+v*tauyz+w*tauzz+(mu/run_input.prandtl + mu_t/run_input.prandtl_t)*(run_input.gamma)*de_dz);
+
+        if (run_input.turb_model==1)
+        {
+            double dnu_tilde_dx, dnu_tilde_dy, dnu_tilde_dz;
+            double Chi, psi;
+
+            Chi = in_u(5)/mu;
+            if (Chi <= 10.0)
+                psi = 0.05*log(1.0 + exp(20.0*Chi));
+            else
+                psi = Chi;
+
+            dnu_tilde_dx = (in_grad_u(5,0)-rho_dx*nu_tilde)/rho;
+            dnu_tilde_dy = (in_grad_u(5,1)-rho_dy*nu_tilde)/rho;
+            dnu_tilde_dz = (in_grad_u(5,2)-rho_dz*nu_tilde)/rho;
+
+            out_f(5,0) = -(1.0/run_input.omega)*(mu + mu*psi)*dnu_tilde_dx;
+            out_f(5,1) = -(1.0/run_input.omega)*(mu + mu*psi)*dnu_tilde_dy;
+            out_f(5,2) = -(1.0/run_input.omega)*(mu + mu*psi)*dnu_tilde_dz;
+        }
   }
   else if (run_input.equation==1) // Advection-diffusion equation
   {

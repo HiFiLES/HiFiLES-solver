@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   FlowSol.grad_ene_hist = 1000.;
   
   /*! Warning about body forcing term for periodic channel. */
-  if (run_input.equation == 0 and run_input.run_type == 0 and run_input.forcing == 1) {
+  if ((run_input.equation == 0 || run_input.equation == 2) and run_input.run_type == 0 and run_input.forcing == 1) {
     if(run_input.monitor_force_freq>100)
       cout<<"WARNING: when running the periodic channel, it is necessary to add a body forcing term to prevent the flow decaying to zero. Make sure monitor_force_freq is set to a relatively small number, e.g. 100"<<endl;
     FlowSol.body_force.setup(5);
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
     }
     
     /*! Dump forces. */
-    if(i_steps%run_input.monitor_force_freq == 0 && run_input.equation == 0) {
+    if(i_steps%run_input.monitor_force_freq == 0 && (run_input.equation == 0 || run_input.equation == 2)) {
       compute_forces(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
     }
     

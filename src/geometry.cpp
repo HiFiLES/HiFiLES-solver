@@ -81,12 +81,12 @@ void SetInput(struct solution* FlowSol) {
 
   /*! Associate a GPU to each rank. */
 	// Cluster:
-	//if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
-	//if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+	if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
+	if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
   // Enrico:
-	if (FlowSol->rank==0) { cudaSetDevice(2); }
-	else if (FlowSol->rank==1) { cudaSetDevice(0); }
-	else if (FlowSol->rank==2) { cudaSetDevice(3); }
+	//if (FlowSol->rank==0) { cudaSetDevice(2); }
+	//else if (FlowSol->rank==1) { cudaSetDevice(0); }
+	//else if (FlowSol->rank==2) { cudaSetDevice(3); }
 
 #endif
 
@@ -747,7 +747,8 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 	}
 
 	// Flag interfaces for calculating LES wall model
-	if(run_input.wall_model>0 and in_run_type==0) {
+    if(in_run_type==0) {
+	if(run_input.wall_model>0 or run_input.turb_model == 1) {
 
 	  if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
 
@@ -910,6 +911,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
 #endif
 	}
+    }
 
 	// set on GPU
 #ifdef _GPU
