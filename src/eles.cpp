@@ -2036,20 +2036,20 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		y = sqrt(y);
 
 		// get subgrid momentum flux at previous timestep
-		utau = 0.0;
+		//utau = 0.0;
 		for (i=0;i<n_dims;i++) {
 			tw(i) = twall(upt,ele,i+1);
-			utau += tw(i)*tw(i);
+			//utau += tw(i)*tw(i);
 		}
 		// shear velocity
-		utau = pow((utau/rho/rho),0.25);
-		
-		// Wall distance in wall units
-		yplus = y*rho*utau/mu;
+		//utau = pow((utau/rho/rho),0.25);
 
-		//if(yplus < run_input.wall_layer_t) wall = 1;
-		if(yplus < 100.0) wall = 1;
-		cout << "tw, y, y+ " << tw(0) << ", " << y << ", " << yplus << endl;
+		// Wall distance in wall units
+		//yplus = y*rho*utau/mu;
+
+		if(y < run_input.wall_layer_t) wall = 1;
+		//if(yplus < 100.0) wall = 1;
+		//cout << "tw, y, y+ " << tw(0) << ", " << y << ", " << yplus << endl;
 	}
 
 	// calculate SGS flux from a wall model
