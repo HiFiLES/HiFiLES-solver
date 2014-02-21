@@ -141,6 +141,10 @@ void mpi_inters::mv_all_cpu_gpu(void)
 
 	}
 
+	if(LES) {
+		sgsf_fpts_l.mv_cpu_gpu();
+	}
+
 	#endif
 }
 
@@ -183,6 +187,13 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
 #endif
 	        }
 	  		}
+
+				// Subgrid-scale flux
+				if(LES) {
+          for (int k=0;k<n_dims;k++) {
+						sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+					}
+				}
 	  	}
 	  }
 
@@ -453,6 +464,8 @@ void mpi_inters::calc_norm_tconvisf_fpts_mpi(void)
 			
 			if(n_dims==2)
 			{
+				// calculate SGS wall model
+
 				calc_visf_2d(temp_u_l,temp_grad_u_l,temp_f_l);
 				calc_visf_2d(temp_u_r,temp_grad_u_r,temp_f_r);
 			}
@@ -464,6 +477,18 @@ void mpi_inters::calc_norm_tconvisf_fpts_mpi(void)
 			else
   			FatalError("ERROR: Invalid number of dimensions ... ");
 
+			// If LES, get SGS flux and add to viscous flux
+			if(LES) {
+				// pointer to subgrid-scale flux at flux point
+				for(int k=0;k<n_dims;k++) {
+					for(int l=0;l<n_fields;l++) {
+						temp_sgsf_l(l,k) = *sgsf_fpts_l(j,i,l,k);
+
+						// Add SGS flux to viscous flux
+						temp_f_l(l,k) += temp_sgsf_l(l,k);
+					}
+				}
+			}
 
       // storing normal components
       for (int m=0;m<n_dims;m++)

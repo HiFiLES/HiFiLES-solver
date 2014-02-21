@@ -86,6 +86,7 @@ void eles_tris::setup_ele_type_specific(int in_run_type)
   set_volume_cubpts();
   set_opp_volume_cubpts();
 
+	/*! Run mode */
   if (in_run_type==0)
   {
 	  n_fpts_per_inter.setup(3);
@@ -113,13 +114,9 @@ void eles_tris::setup_ele_type_specific(int in_run_type)
 	  	set_opp_6(run_input.sparse_tri);
 
 	  	temp_grad_u.setup(n_fields,n_dims);
-			if(run_input.LES)
-			{
-				temp_sgsf.setup(n_fields,n_dims);
 
-				// Compute tri filter matrix
-				compute_filter_upts();
-			}
+			// Compute tri filter matrix
+			if(filter) compute_filter_upts();
 	  }
 
 	  temp_u.setup(n_fields);
@@ -167,9 +164,51 @@ void eles_tris::setup_ele_type_specific(int in_run_type)
     interior_ppt_to_ppt.setup(n_interior_ppts);
 
     create_map_ppt();
+	}
 
+	/*! Plot mode */
+	else {
+
+    if (viscous==1)
+    {
+	  	set_opp_4(run_input.sparse_tri);
+    }
+    n_verts_per_ele = 3;
+    n_edges_per_ele = 0;
+    n_ppts_per_edge = 0;
+
+    // Number of plot points per face, excluding points on vertices or edges
+    n_ppts_per_face.setup(n_inters_per_ele);
+    n_ppts_per_face(0) = (p_res-2);
+    n_ppts_per_face(1) = (p_res-2);
+    n_ppts_per_face(2) = (p_res-2);
+
+    // Number of plot points per face, including points on vertices or edges
+    n_ppts_per_face2.setup(n_inters_per_ele);
+    n_ppts_per_face2(0) = (p_res);
+    n_ppts_per_face2(1) = (p_res);
+    n_ppts_per_face2(2) = (p_res);
+
+    max_n_ppts_per_face = n_ppts_per_face(0);
+
+    // Number of plot points not on faces, edges or vertices
+    n_interior_ppts = n_ppts_per_ele-3-3*n_ppts_per_face(0);
+
+    vert_to_ppt.setup(n_verts_per_ele);
+    edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
+
+    face_ppt_to_ppt.setup(n_inters_per_ele);
+    for (int i=0;i<n_inters_per_ele;i++)
+      face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
+
+    face2_ppt_to_ppt.setup(n_inters_per_ele);
+    for (int i=0;i<n_inters_per_ele;i++)
+      face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
+
+    interior_ppt_to_ppt.setup(n_interior_ppts);
+
+    create_map_ppt();
   }
-
 }
 
 void eles_tris::create_map_ppt(void)
@@ -719,7 +758,7 @@ double eles_tris::eval_nodal_s_basis(int in_index, array<double> in_loc, int in_
 {
 
   array<double> nodal_s_basis(in_n_spts,1);
-    //d_nodal_s_basis.initialize_to_zero();
+    //zero_array(d_nodal_s_basis);
     eval_dn_nodal_s_basis(nodal_s_basis, in_loc, in_n_spts, 0);
 
     return nodal_s_basis(in_index);
@@ -930,7 +969,6 @@ void eles_tris::compute_filter_upts(void)
 	printf("\nFilter after normalising:\n");
 	filter_upts.print();
 	cout<<"coeff sum " << sum << endl;
-
 	printf("\nLeaving filter computation function\n");
 }
 

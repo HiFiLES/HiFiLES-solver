@@ -177,6 +177,14 @@ void input::setup(ifstream& in_run_input_file, int rank)
 		{
 			in_run_input_file >> SGS_model;
 		}
+		else if (!param_name.compare("wall_model"))
+		{
+			in_run_input_file >> wall_model;
+		}
+		else if (!param_name.compare("wall_layer_thickness"))
+		{
+			in_run_input_file >> wall_layer_t;
+		}
 		else if (!param_name.compare("plot_freq"))
 		{
 			in_run_input_file >> plot_freq;

@@ -31,7 +31,7 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
 void transform_grad_disu_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, int equation);
 
 /*! wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points */
-void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisvisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double diff_coeff);
+void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, int in_ele_type, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr, double* in_disu_upts_ptr, double* out_tdisvisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double diff_coeff);
 
 /*! wrapper for gpu kernel to calculate corrected gradient of solution at flux points */
 /*
@@ -55,6 +55,9 @@ void calc_norm_tconinvf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int
 void calc_norm_tconvisf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconvisf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_diff_coeff);
 
 
-#endif 
+#endif
 
 void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_ptr, int* opp_ell_indices_ptr, int nnz_per_row, double* b_ptr, double *c_ptr, int cell_type, int order, int add_flag);
+
+/*! wrapper for gpu kernel to calculate Leonard tensors for similarity model */
+void calc_similarity_model_kernel_wrapper(int flag, int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, double* in_disu_upts_ptr, double* in_disuf_upts_ptr, double* in_uu_ptr, double* in_ue_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr);

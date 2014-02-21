@@ -225,7 +225,7 @@ double eval_d_vcjh_1d(double in_r, int in_mode, int in_order, double in_eta)
             {
                 //if (in_eta != 0)
                 //    FatalError("P=0 only compatible with DG. Set VCJH scheme to 1 OR eta to 0.0")
-                
+
 		dtemp_0=0.5*(eval_d_legendre(in_r,in_order)+((eval_d_legendre(in_r,in_order+1))/(1.0+in_eta)));
             }
             else
@@ -278,7 +278,6 @@ void get_opp_3_dg(array<double>& opp_3_dg, array<double>& loc_upts_tri, array<do
 // Compute a modal filter matrix, given Vandermonde matrix and inverse
 void compute_modal_filter(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N)
 {
-	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
 	int i,j;
 	array <double> modal(N,N), mtemp(N,N);
@@ -303,20 +302,15 @@ void compute_modal_filter(array <double>& filter_upts, array<double>& vandermond
 	cout<<"modal coeffs:"<<endl;
 	modal.print();
 
+	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
 
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
 	#else // inefficient matrix multiplication
 
-	// TODO: finish coding
-	int i,j;
-	array<double> mtemp(N,N);
-
-	for(i=0;i<N-1;i++)
-		filter_upts(i,i) = 1.0;
-
-	mtemp = mult_arrays(inv_vandermonde,filter_upts);
+	mtemp = mult_arrays(inv_vandermonde,modal);
 	filter_upts = mult_arrays(mtemp,vandermonde);
 
 	#endif
@@ -346,10 +340,10 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
 
   array<array <double> > D_high_order;
   array<array <double> > D_T_D;
-  
+
   // 1D prep
   ap = 1./pow(2.0,order)*factorial(2*order)/ (factorial(order)*factorial(order));
- 
+
   c_sd_1d = (2*order)/((2*order+1)*(order+1)*(factorial(order)*ap)*(factorial(order)*ap));
   c_hu_1d = (2*(order+1))/((2*order+1)*order*(factorial(order)*ap)*(factorial(order)*ap));
 
@@ -365,7 +359,7 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
       c_plus_1d = 4.28e-7;
     else
       FatalError("C_plus scheme not implemented for this order");
-    
+
     //2D
     if (order==2)
       c_plus = 3.13e-2;
@@ -400,9 +394,9 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
   }
   else
     FatalError("VCJH triangular scheme not recognized");
-  
+
   cout << "c_tri " << c_tri << endl;
-  
+
   run_input.c_tri = c_tri;
 
 	// Evaluate the derivative normalized of Dubiner basis at position in_loc
@@ -462,7 +456,7 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
     // Scale by c_coeff
     for (int i=0;i<n_upts_tri;i++) {
       for (int j=0;j<n_upts_tri;j++) {
-        D_T_D(k)(i,j) = c_tri*c_coeff(k)*D_T_D(k)(i,j); 
+        D_T_D(k)(i,j) = c_tri*c_coeff(k)*D_T_D(k)(i,j);
         K(i,j) += D_T_D(k)(i,j); //without jacobian scaling
       }
     }
@@ -1438,7 +1432,7 @@ void eval_sine_wave_single(array<double>& pos, array<double>& wave_speed, double
     angle = relative_pos(0)+relative_pos(1);
   else if (n_dims==3)
     angle = relative_pos(0)+relative_pos(1)+relative_pos(2);
-  
+
   rho = exp(-((double) n_dims)*diff_coeff*pi*pi*time)*sin(pi*angle);
 
   grad_rho(0) = pi*exp(-((double) n_dims)*diff_coeff*pi*pi*time)*cos(pi*angle);
@@ -1457,7 +1451,7 @@ void eval_sine_wave_group(array<double>& pos, array<double>& wave_speed, double 
   relative_pos(1) = pos(1) - wave_speed(1)*time;
   if (n_dims==3)
     relative_pos(2) = pos(2) - wave_speed(2)*time;
-  
+
   if (n_dims==2)
     rho = exp(-((double) n_dims)*diff_coeff*pi*pi*time)*sin(pi*relative_pos(0))*sin(pi*relative_pos(1));
   if (n_dims==3)
@@ -1522,7 +1516,7 @@ void eval_couette_flow(array<double>& pos, double in_gamma, double in_R_ref, dou
 	double mom_x_dx, mom_x_dy, mom_x_dz;
 	double mom_y_dx, mom_y_dy, mom_y_dz;
 	double mom_z_dx, mom_z_dy, mom_z_dz;
-	double ene_dx, ene_dy, ene_dz;	
+	double ene_dx, ene_dy, ene_dz;
 
   gam = in_gamma;
   R_ref = in_R_ref;
@@ -1540,18 +1534,18 @@ void eval_couette_flow(array<double>& pos, double in_gamma, double in_R_ref, dou
 		z = pos(2);
 
   cp = (gam*R_ref)/(gam-1.0);
-			
+
   vx = u_wall*(y/h_channel);
 	vy = 0.0;
 	if(n_dims==3)
 		vz = 0.0;
-			
+
   ka = (T_fact*T_wall - T_wall);
   kb = 0.5*(prandtl/cp)*(u_wall*u_wall);
-	
-	ps = p_bound; 
+
+	ps = p_bound;
 	Ts = T_wall + (y/h_channel)*ka + kb*(y/h_channel)*(1.0 - (y/h_channel));
-	
+
 	rho = ps/(R_ref*Ts);
 
 	mom_x 	= rho*vx;
@@ -1561,8 +1555,8 @@ void eval_couette_flow(array<double>& pos, double in_gamma, double in_R_ref, dou
 
 	if(n_dims==2)
 		ene 	= (ps/(gam-1.0))+0.5*rho*((vx*vx)+(vy*vy));
-	
-	if(n_dims==3)	
+
+	if(n_dims==3)
 		ene 	= (ps/(gam-1.0))+0.5*rho*((vx*vx)+(vy*vy)+(vz*vz));
 
   rho_dx = 0.0;
@@ -1575,7 +1569,7 @@ void eval_couette_flow(array<double>& pos, double in_gamma, double in_R_ref, dou
 	mom_x_dy = rho_dy*vx + rho*(u_wall/h_channel);
 	if(n_dims==3)
 		mom_x_dz = 0.0;
-	
+
 	mom_y_dx = 0.0;
 	mom_y_dy = 0.0;
 	if(n_dims==3)
@@ -1634,7 +1628,7 @@ array<double> convol(array<double> & polynomial1, array<double> & polynomial2)
     // Allocate memory for result of multiplication of polynomials
     array<double> polynomial3;
     polynomial3.setup(1,sizep1 + sizep2 - 1);
-    polynomial3.initialize_to_zero();
+    zero_array(polynomial3);
 
     for (int i = 0; i < sizep1; i++)
     {
@@ -1777,7 +1771,7 @@ array<double> addPoly(array<double> & p1, array<double> & p2)
     int depthp3 = depthp1 + depthp2;
 
     p3.setup(heightp3,lengthp3,depthp3);
-    p3.initialize_to_zero();
+    zero_array(p3);
 
     // Copy values from p1
 
@@ -1834,7 +1828,13 @@ array<T> multPoly(array<T> & p1, array<T> & p2)
         int heightp3 = heightp1 + heightp2; // add heights to accomodate
 
         p3.setup(heightp3,lengthp3);
-        p3.initialize_to_zero();
+        for (int i = 0; i < heightp3; i++)
+        {
+            for (int j = 0; j < lengthp3; j++)
+            {
+                p3(i, j) = 0.0;
+            }
+        }
 
         for (int i = 0; i < heightp1; i++)
         {
@@ -1899,7 +1899,7 @@ array<double> nodeFunctionTri(int in_index, int in_n_spts, array<int> & index_lo
     int JJ = int(index_location_array(1,in_index));
     int KK = int(index_location_array(2,in_index));
 
-    //cout<< " II = "<<II<<" ; JJ = "<<JJ<<" ; KK = "<<KK<<endl;
+    //cout<< " I = "<<II<<" ; J = "<<JJ<<" ; K = "<<KK<<endl;
 
     // Create polynomial functions specific to r,s,t nodes
     array<double> T_Ir, T_Js, T_Kt, temp;
@@ -2226,7 +2226,7 @@ void eval_dn_nodal_s_basis(array<double> &dd_nodal_s_basis,
 
 //----------------------------------------------------------------------------
 // Linear equation solution by Gauss-Jordan elimination.
-// a(1:n,1:n) is the coefficients input matrix. 
+// a(1:n,1:n) is the coefficients input matrix.
 // b(1:n) is the input matrix containing the right-hand side vector.
 // On output, a(1:n,1:n) is replaced by its matrix inverse,
 // and b(1:n) is replaced by the corresponding solution vector.
@@ -2348,15 +2348,12 @@ void zero_array(array <double>& in_array)
   int dim_1_2 = in_array.get_dim(2);
   int dim_1_3 = in_array.get_dim(3);
 
-	for (int i=0;i<dim_1_0;++i) {
-		for (int j=0;j<dim_1_1;++j) {
-			for (int k=0;k<dim_1_2;++k) {
-				for (int l=0;l<dim_1_3;++l) {
+	for (int i=0;i<dim_1_0;++i)
+		for (int j=0;j<dim_1_1;++j)
+			for (int k=0;k<dim_1_2;++k)
+				for (int l=0;l<dim_1_3;++l)
 					in_array(i,j,k,l) = 0.0;
-				}
-			}
-		}
-	}
+
 }
 
 // Add arrays M1 and M2
@@ -2374,20 +2371,18 @@ array <double> add_arrays(array <double>& M1, array <double>& M2)
   int dim_2_3 = M2.get_dim(3);
 
 	if(dim_1_0==dim_2_0 and dim_1_1==dim_2_1 and dim_1_2==dim_2_2 and dim_1_3==dim_2_3) {
+
 		array <double> sum(dim_1_0,dim_1_1,dim_1_2,dim_1_3);
-		for (int i=0;i<dim_1_0;++i) {
-			for (int j=0;j<dim_1_1;++j) {
-				for (int k=0;k<dim_1_2;++k) {
-					for (int l=0;l<dim_1_3;++l) {
+
+		for (int i=0;i<dim_1_0;++i)
+			for (int j=0;j<dim_1_1;++j)
+				for (int k=0;k<dim_1_2;++k)
+					for (int l=0;l<dim_1_3;++l)
 						sum(i,j,k,l) = M1(i,j,k,l) + M2(i,j,k,l);
-					}
-				}
-			}
-		}
+
 	}
 	else {
-		cout << "ERROR: array dimensions are not compatible in sum function" << endl;
-		exit(1);
+		FatalError("ERROR: array dimensions are not compatible in sum function");
 	}
 }
 
@@ -2412,7 +2407,7 @@ array <double> mult_arrays(array <double>& M1, array <double>& M2)
 			array <double> product(dim_1_0,dim_2_1);
 
 			#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-  	
+
 			cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,dim_1_0,dim_2_1,dim_1_1,1.0,M1.get_ptr_cpu(),dim_1_0,M2.get_ptr_cpu(),dim_2_0,0.0,product.get_ptr_cpu(),dim_1_0);
 
 			#else
@@ -2431,13 +2426,11 @@ array <double> mult_arrays(array <double>& M1, array <double>& M2)
 			return product;
 		}
 		else {
-			cout << "ERROR: array dimensions are not compatible in multiplication function" << endl;
-			exit(1);
+			FatalError("array dimensions are not compatible in multiplication function");
 		}
 	}
 	else {
-		cout << "ERROR: Array multiplication function can only multiply 2-dimensional arrays together" << endl;
-		exit(1);
+		FatalError("Array multiplication function can only multiply 2-dimensional arrays together");
 	}
 }
 
@@ -2455,16 +2448,14 @@ array <double> transpose_array(array <double>& in_array)
 		int i,j;
 		array <double> transpose(dim_1,dim_0);
 
-		for(i=0;i<dim_0;i++) {
-			for(j=0;j<dim_1;j++) {
+		for(i=0;i<dim_0;i++)
+			for(j=0;j<dim_1;j++)
 				transpose(j,i)=in_array(i,j);
-			}
-		}
+
 		return transpose;
 	}
 	else {
-		cout << "ERROR: Array transpose function only accepts a 2-dimensional square array" << endl;
-		exit(1);
+		FatalError("Array transpose function only accepts a 2-dimensional square array");
 	}
 }
 
@@ -2483,7 +2474,7 @@ array <double> inv_array(array <double>& in_array)
 		{
 			// Gaussian elimination with full pivoting
 			// not to be used where speed is paramount
-			
+
 			int i,j,k;
 			int pivot_i, pivot_j;
 			int itemp_0;
@@ -2510,18 +2501,18 @@ array <double> inv_array(array <double>& in_array)
 				swap_1(i)=i;
 			}
 
-			// setup identity array		
+			// setup identity array
 			for(i=0;i<dim_0;i++) {
 				for(j=0;j<dim_0;j++) {
 					identity(i,j)=0.0;
 				}
 				identity(i,i)=1.0;
 			}
-	
+
 			// make triangular
 			for(k=0;k<dim_0-1;k++) {
 				max=0;
-		
+
 				// find pivot
 				for(i=k;i<dim_0;i++) {
 					for(j=k;j<dim_0;j++) {
@@ -2533,7 +2524,7 @@ array <double> inv_array(array <double>& in_array)
 						}
 					}
 				}
-		
+
 				// swap the swap arrays
 				itemp_0=swap_0(k);
 				swap_0(k)=swap_0(pivot_i);
@@ -2541,24 +2532,24 @@ array <double> inv_array(array <double>& in_array)
 				itemp_0=swap_1(k);
 				swap_1(k)=swap_1(pivot_j);
 				swap_1(pivot_j)=itemp_0;
-		
+
 				// swap the columns
 				for(i=0;i<dim_0;i++) {
 					atemp_0(i)=input(i,pivot_j);
 					input(i,pivot_j)=input(i,k);
 					input(i,k)=atemp_0(i);
-				}	
-			
+				}
+
 				// swap the rows
 				for(j=0;j<dim_0;j++) {
 					atemp_0(j)=input(pivot_i,j);
 					input(pivot_i,j)=input(k,j);
 					input(k,j)=atemp_0(j);
-					atemp_0(j)=identity(pivot_i,j); 
-					identity(pivot_i,j)=identity(k,j); 
+					atemp_0(j)=identity(pivot_i,j);
+					identity(pivot_i,j)=identity(k,j);
 					identity(k,j)=atemp_0(j);
 				}
-		
+
 				// subtraction
 				for(i=k+1;i<dim_0;i++) {
 					first=input(i,k);
@@ -2585,13 +2576,13 @@ array <double> inv_array(array <double>& in_array)
 					for(k=i+1;k<dim_0;k++) {
 						dtemp_0=dtemp_0+(input(i,k)*inverse(k,j));
 					}
-					inverse(i,j)=(identity(i,j)-dtemp_0)/input(i,i);			
+					inverse(i,j)=(identity(i,j)-dtemp_0)/input(i,i);
 				}
 			}
-	
+
 			// swap solution rows
 			for(i=0;i<dim_0;i++) {
-				for(j=0;j<dim_0;j++) {	
+				for(j=0;j<dim_0;j++) {
 					inverse_out(swap_1(i),j)=inverse(i,j);
 				}
 			}
@@ -2599,13 +2590,11 @@ array <double> inv_array(array <double>& in_array)
 			return inverse_out;
 		}
 		else {
-			cout << "ERROR: Can only obtain inverse of a square array" << endl;
-			exit(1);
+			FatalError("Can only obtain inverse of a square array");
 		}
 	}
 	else {
-		cout << "ERROR: Array you are trying to invert has > 2 dimensions" << endl;
-		exit(1);
+		FatalError("Array you are trying to invert has > 2 dimensions");
 	}
 }
 
