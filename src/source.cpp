@@ -83,7 +83,7 @@ void calc_source_SA_2d(array<double>& in_u, array<double>& in_grad_u, double& d,
 
     // solve for destruction term for eddy viscosity
     c_w1 = run_input.c_b1/pow(run_input.Kappa, 2.0) + (1.0/run_input.omega)*(1.0 + run_input.c_b2);
-    r = (mu*psi/rho)/(S_tilde*pow(run_input.Kappa, 2.0)*pow(d, 2.0));
+    r = min((mu*psi/rho)/(S_tilde*pow(run_input.Kappa, 2.0)*pow(d, 2.0)), 10.0);
     g = r + run_input.c_w2*(pow(r, 6.0) - r);
     f_w = g*pow((1.0 + pow(run_input.c_w3, 6.0))/(pow(g, 6.0) + pow(run_input.c_w3, 6.0)), 1.0/6.0);
 
@@ -98,5 +98,5 @@ void calc_source_SA_2d(array<double>& in_u, array<double>& in_grad_u, double& d,
 // NOTE:: I STILL NEED TO WRITE THIS
 void calc_source_SA_3d(array<double>& in_u, array<double>& in_grad_u, double& d, double& out_source)
 {
-
+  cout << "3D source term not implemented yet" << endl;
 }

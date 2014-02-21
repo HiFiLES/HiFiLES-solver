@@ -581,6 +581,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
 
   if (equation==0 || equation==2)
   {
+    const_src_term = 0.0;
     if (riemann_solve_type==1)
       FatalError("Lax-Friedrich flux not supported with NS equation");
     if (ic_form==2 || ic_form==3 || ic_form==4)

@@ -189,6 +189,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 
 	  // Initialize source term
 	  src_term.setup(n_upts_per_ele, n_eles, n_fields);
+    src_term.initialize_to_zero();
 
 	  // Set connectivity array. Needed for Paraview output.
     if (ele_type==3) // prism
@@ -375,21 +376,11 @@ void eles::set_ics(double& time)
 			  if(n_dims==2)
 			  {
 			  	ics(3)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)));
-
-			  	if(run_input.turb_model==1)
-			  	{
-			  	    ics(4) = rho*run_input.mu_tilde_c_ic;
-			  	}
 			  }
 			  else if(n_dims==3)
 			  {
 			  	ics(3)=rho*vz;
 			  	ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));
-
-			  	if(run_input.turb_model==1)
-			  	{
-			  	    ics(5) = rho*run_input.mu_tilde_c_ic;
-			  	}
 			  }
 			  else
 			  {
@@ -410,17 +401,26 @@ void eles::set_ics(double& time)
 			  if(n_dims==2)
 			  {
 			  	ics(3)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)));
+
+			  	if(run_input.turb_model==1)
+			  	{
+			  	    ics(4) = run_input.mu_tilde_c_ic;
+			  	}
 			  }
 			  else if(n_dims==3)
 			  {
 			  	ics(3)=rho*vz;
 			  	ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));
+
+			  	if(run_input.turb_model==1)
+			  	{
+			  	    ics(5) = run_input.mu_tilde_c_ic;
+			  	}
 			  }
 			  else
 			  {
 			  	cout << "ERROR: Invalid number of dimensions ... " << endl;
 			  }
-
 			}
       else if (run_input.ic_form==2) // Sine wave (single)
       {
@@ -838,7 +838,7 @@ void eles::advance_rk45(int in_step)
 			}
 		}
 	}
-#endif
+  #endif
 
 	#ifdef _GPU
 
