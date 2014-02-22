@@ -778,7 +778,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 			}
 		}
 
-		//cout << "rank, local no-slip inters: " << FlowSol->rank << ", " << n_seg_noslip_inters << ", " << n_tri_noslip_inters << ", " << n_quad_noslip_inters << endl;
+		cout << "rank, local no-slip inters: " << FlowSol->rank << ", " << n_seg_noslip_inters << ", " << n_tri_noslip_inters << ", " << n_quad_noslip_inters << endl;
 
 #ifdef _MPI
 

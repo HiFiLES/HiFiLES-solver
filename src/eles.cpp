@@ -736,6 +736,7 @@ void eles::mv_wall_distance_cpu_gpu(void)
 	#ifdef _GPU
 
 	wall_distance.mv_cpu_gpu();
+	wall_distance_mag.mv_cpu_gpu();
 
 	#endif
 }
@@ -2043,7 +2044,7 @@ void eles::calc_src_term_SA()
 
 
 // Calculate SGS flux
-void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int upt, array<double>& temp_sgsf)
+void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf)
 {
 	int i,j,k;
 	int eddy, sim, wall;

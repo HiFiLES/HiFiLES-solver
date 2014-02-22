@@ -78,10 +78,6 @@ struct solution {
 
   array< array<double> > loc_noslip_bdy;
   
-  /*! No-slip wall flux point coordinates for wall models. */
-
-	array< array<double> > loc_noslip_bdy;
-
   /*! Diagnostics. */
   
 	array<double> body_force;
@@ -121,8 +117,6 @@ struct solution {
 
   array< array<double> > loc_noslip_bdy_global;
   
-	array< array<double> > loc_noslip_bdy_global;
-
 #endif
   
 };

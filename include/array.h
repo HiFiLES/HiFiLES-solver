@@ -124,6 +124,10 @@ public:
 
     void rm_cpu(void);
 
+    // NEW FUNCTION: used to initialize int, double and float types
+
+    void initialize_to_zero();
+
 protected:
 
     int dim_0;
@@ -550,3 +554,15 @@ void array<T>::rm_cpu(void)
 #endif
 }
 
+// Initialize values to zero
+// NEW FUNCTION: used to initialize int, double and float types
+template <typename T>
+void array<T>::initialize_to_zero()
+{
+
+        for(int i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
+        {
+            cpu_data[i]=0;
+        }
+
+}

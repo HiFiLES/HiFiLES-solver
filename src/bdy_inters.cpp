@@ -827,7 +827,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
 			if(bdy_spec == 11 || bdy_spec == 12 || bdy_spec == 13 || bdy_spec == 14)
 				wallfn = 1;
 
-    for(int j=0;j<n_fpts_per_inter;j++)
+    for(j=0;j<n_fpts_per_inter;j++)
     {
       // storing normal components
       for (m=0;m<n_dims;m++)
@@ -843,9 +843,9 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
       set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 
       // obtain gradient of discontinuous solution at flux points
-      for(int k=0;k<n_dims;k++)
+      for(k=0;k<n_dims;k++)
       {
-        for(int l=0;l<n_fields;l++)
+        for(l=0;l<n_fields;l++)
         {
           temp_grad_u_l(l,k) = *grad_disu_fpts_l(j,i,l,k);
         }
@@ -855,9 +855,9 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
       if(flux_spec == 2)
       {
         // Extrapolate
-        for(int k=0;k<n_dims;k++)
+        for(k=0;k<n_dims;k++)
         {
-          for(int l=0;l<n_fields;l++)
+          for(l=0;l<n_fields;l++)
           {
             temp_grad_u_r(l,k) = temp_grad_u_l(l,k);
           }
@@ -916,7 +916,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
         FatalError("Viscous Riemann solver not implemented");
 
       // Transform back to reference space
-      for(int k=0;k<n_fields;k++)
+      for(k=0;k<n_fields;k++)
           (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
     }
   }
