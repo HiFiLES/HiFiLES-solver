@@ -22,48 +22,48 @@ struct solution; // forwards declaration
 
 class int_inters: public inters
 {
-	public:
-	
-	// #### constructors ####
-	
-	// default constructor
-	
-	int_inters();
+public:
+
+  // #### constructors ####
+
+  // default constructor
+
+  int_inters();
 
   // default destructor
- 
-  ~int_inters(); 
 
-	// #### methods ####
-	
-	/*! setup inters */
-	void setup(int in_n_inters, int in_inter_type, int in_run_type);
+  ~int_inters();
 
-	/*! set interior interface */
-	void set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r, int in_ele_l, int in_ele_r, int in_local_inter_l, int in_local_inter_r, int rot_tag, int in_run_type, struct solution* FlowSol);
+  // #### methods ####
 
-	/*! move all from cpu to gpu */
-	void mv_all_cpu_gpu(void);
+  /*! setup inters */
+  void setup(int in_n_inters, int in_inter_type, int in_run_type);
 
-	/*! calculate normal transformed continuous inviscid flux at the flux points */
-	void calc_norm_tconinvf_fpts(void);
+  /*! set interior interface */
+  void set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r, int in_ele_l, int in_ele_r, int in_local_inter_l, int in_local_inter_r, int rot_tag, int in_run_type, struct solution* FlowSol);
 
-	/*! calculate normal transformed continuous viscous flux at the flux points */
-	void calc_norm_tconvisf_fpts(void);
-	
-	/*! calculate delta in transformed discontinuous solution at flux points */
-	void calc_delta_disu_fpts(void);
-	
-	protected:
+  /*! move all from cpu to gpu */
+  void mv_all_cpu_gpu(void);
 
-	// #### members ####
+  /*! calculate normal transformed continuous inviscid flux at the flux points */
+  void calc_norm_tconinvf_fpts(void);
+
+  /*! calculate normal transformed continuous viscous flux at the flux points */
+  void calc_norm_tconvisf_fpts(void);
+
+  /*! calculate delta in transformed discontinuous solution at flux points */
+  void calc_delta_disu_fpts(void);
+
+protected:
+
+  // #### members ####
   //
-	array<double*> disu_fpts_r;
-	array<double*> delta_disu_fpts_r;
-	array<double*> norm_tconf_fpts_r;
-	//array<double*> norm_tconvisf_fpts_r;
-	array<double*> detjac_fpts_r;
-	array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_r;
-	array<double*> grad_disu_fpts_r;
-	
+  array<double*> disu_fpts_r;
+  array<double*> delta_disu_fpts_r;
+  array<double*> norm_tconf_fpts_r;
+  //array<double*> norm_tconvisf_fpts_r;
+  array<double*> detjac_fpts_r;
+  array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_r;
+  array<double*> grad_disu_fpts_r;
+
 };

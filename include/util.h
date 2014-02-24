@@ -44,8 +44,8 @@ inline void check_cuda_error(const char *message, const char *filename, const in
   cudaThreadSynchronize();
   cudaError_t error = cudaGetLastError();
   if(error != cudaSuccess)
-  {
-    printf("CUDA error after %s at %s:%d: %s\n", message, filename, lineno, cudaGetErrorString(error));
-    exit(-1);
-  }
+    {
+      printf("CUDA error after %s at %s:%d: %s\n", message, filename, lineno, cudaGetErrorString(error));
+      exit(-1);
+    }
 }
