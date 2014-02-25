@@ -558,9 +558,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
         in_run_input_file >> perturb_ic;
     }
-    else if (!param_name.compare("turb_model"))
+    else if (!param_name.compare("rans_model"))
     {
-        in_run_input_file >> turb_model;
+        in_run_input_file >> rans_model;
     }
     else
     {
@@ -690,7 +690,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
 
       // SA turblence model parameters
       prandtl_t = 0.9;
-      if (turb_model == 1)
+      if (rans_model == 1)
       {
           c_v1 = 7.1;
           c_v2 = 0.7;
@@ -712,6 +712,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
         cout << "v_c_ic=" << v_c_ic << endl;
         cout << "w_c_ic=" << w_c_ic << endl;
         cout << "mu_c_ic=" << mu_c_ic << endl;
+	      if (rans_model == 1)
+	      {
+					cout << "mu_tilde_c_ic=" << mu_tilde_c_ic << endl;
+				}
       }
     }
   }

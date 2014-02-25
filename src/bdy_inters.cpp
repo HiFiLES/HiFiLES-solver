@@ -43,6 +43,7 @@ bdy_inters::bdy_inters()
 	order=run_input.order;
 	viscous=run_input.viscous;
 	LES=run_input.LES;
+	rans_model = run_input.rans_model;
 }
 
 bdy_inters::~bdy_inters() { }
@@ -88,7 +89,7 @@ void bdy_inters::set_bdy_params()
   bdy_params(13) = run_input.nz_free_stream;
 
   // Boundary parameters for turbulence models
-  if (run_input.turb_model == 1)
+  if (rans_model == 1)
   {
     bdy_params(14) = run_input.mu_tilde_inf;
   }
@@ -328,7 +329,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
 
       // SA model
-      if (run_input.turb_model == 1)
+      if (rans_model == 1)
       {
           // set turbulent eddy viscosity
           double mu_tilde_inf = bdy_params[14];
@@ -354,7 +355,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
 
       // SA model
-      if (run_input.turb_model == 1)
+      if (rans_model == 1)
       {
           // extrapolate turbulent eddy viscosity
           u_r[n_dims+2] = u_l[n_dims+2];
@@ -445,7 +446,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
 
       // SA model
-      if (run_input.turb_model == 1)
+      if (rans_model == 1)
       {
           // set turbulent eddy viscosity
           double mu_tilde_inf = bdy_params[14];
@@ -501,7 +502,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
 
       // SA model
-      if (run_input.turb_model == 1)
+      if (rans_model == 1)
       {
           // extrapolate turbulent eddy viscosity
           u_r[n_dims+2] = u_l[n_dims+2];
@@ -578,7 +579,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
 
       // SA model
-      if (run_input.turb_model == 1)
+      if (rans_model == 1)
       {
           // zero turbulent eddy viscosity at the wall
           u_r[n_dims+2] = 0.0;
@@ -605,7 +606,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
 
       // SA model
-      if (run_input.turb_model == 1)
+      if (rans_model == 1)
       {
           // zero turbulent eddy viscosity at the wall
           u_r[n_dims+2] = 0.0;
@@ -712,7 +713,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         e_r = rho_r*h_free_stream - p_r;
 
         // SA model
-        if (run_input.turb_model == 1)
+        if (rans_model == 1)
         {
             // set turbulent eddy viscosity
             double mu_tilde_inf = bdy_params[14];
@@ -745,7 +746,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
 
         // SA model
-        if (run_input.turb_model == 1)
+        if (rans_model == 1)
         {
             // extrapolate turbulent eddy viscosity
             u_r[n_dims+2] = u_l[n_dims+2];

@@ -492,7 +492,7 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   }
   else if (run_input.equation == 2)
   {
-      if (run_input.turb_model == 1)
+      if (run_input.rans_model == 1)
       {
           if(FlowSol->n_dims==2)
           {

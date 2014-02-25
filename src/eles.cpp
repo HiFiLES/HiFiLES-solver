@@ -82,6 +82,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	viscous = run_input.viscous;
 	LES = run_input.LES;
 	sgs_model = run_input.SGS_model;
+	rans_model = run_input.rans_model;
 	filter = 0;
 	// SVV model requires filtered solution
 	if(LES)
@@ -190,15 +191,12 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 		ue.setup(1);
 	}
 
-	// Allocate array for wall distance if using a wall model
+	// Allocate arrays for wall distance if using a wall model or SA model
 	if(wall_model > 0) {
-		wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
 		twall.setup(n_upts_per_ele,n_eles,n_fields);
-		zero_array(wall_distance);
 		zero_array(twall);
 	}
 	else {
-		wall_distance.setup(1);
 		twall.setup(1);
 	}
 
@@ -207,10 +205,14 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 		temp_sgsf.setup(n_fields,n_dims);
 	}
 
-	if (run_input.turb_model == 1)
+	if (wall_model > 0 or rans_model == 1)
 	{
 	  wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
 	  wall_distance_mag.setup(n_upts_per_ele,n_eles);
+	}
+	else {
+		wall_distance.setup(1);
+		wall_distance_mag.setup(1);
 	}
 
 	set_shape(in_max_n_spts_per_ele);
@@ -469,7 +471,7 @@ void eles::set_ics(double& time)
 			  {
 			  	ics(3)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)));
 
-			  	if(run_input.turb_model==1)
+			  	if(rans_model==1)
 			  	{
 			  	    ics(4) = run_input.mu_tilde_c_ic;
 			  	}
@@ -479,7 +481,7 @@ void eles::set_ics(double& time)
 			  	ics(3)=rho*vz;
 			  	ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));
 
-			  	if(run_input.turb_model==1)
+			  	if(rans_model==1)
 			  	{
 			  	    ics(5) = run_input.mu_tilde_c_ic;
 			  	}
@@ -2068,13 +2070,18 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   array<double> tw(n_dims);
 	double y, qw, utau, yplus;
 
+	// quantities for SA model
+	double nu_tilde;
+  array<double> dnu_tilde(n_dims);
+	double f_v1, Chi, psi;
+
 	// primitive variables
 	rho = temp_u(0);
 	for (i=0;i<n_dims;i++) {
 		u(i) = temp_u(i)/rho;
 		ke += 0.5*pow(u(i),2);
 	}
-	inte = temp_u(n_fields-1)/rho - ke;
+	inte = temp_u(n_dims+1)/rho - ke;
 
 	// fluid properties
 	rt_ratio = (run_input.gamma-1.0)*inte/(run_input.rt_inf);
@@ -2089,24 +2096,20 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 
 	if(wall_model > 0) {
 
-		// Magnitude of wall distance vector
-		y = 0.0;
-		for (i=0;i<n_dims;i++)
-			y += wall_distance(upt,ele,i)*wall_distance(upt,ele,i);
-
-		y = sqrt(y);
+		// wall distance
+		y = wall_distance_mag(upt,ele);
 
 		// get subgrid momentum flux at previous timestep
-		//utau = 0.0;
+		utau = 0.0;
 		for (i=0;i<n_dims;i++) {
 			tw(i) = twall(upt,ele,i+1);
-			//utau += tw(i)*tw(i);
+			utau += tw(i)*tw(i);
 		}
 		// shear velocity
-		//utau = pow((utau/rho/rho),0.25);
+		utau = pow((utau/rho/rho),0.25);
 
 		// Wall distance in wall units
-		//yplus = y*rho*utau/mu;
+		yplus = y*rho*utau/mu;
 
 		if(y < run_input.wall_layer_t) wall = 1;
 		//if(yplus < 100.0) wall = 1;
@@ -2116,13 +2119,15 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 	// calculate SGS flux from a wall model
 	if(wall) {
 
+	if(wall_model == 1 or wall_model == 2) {
+
 		for (i=0;i<n_dims;i++) {
 			// Get approximate normal from wall distance vector
 			norm(i) = wall_distance(upt,ele,i)/y;
 		}
 
 		// subgrid energy flux from previous timestep
-		qw = twall(upt,ele,n_fields-1);
+		qw = twall(upt,ele,n_dims+1);
 
 		// Calculate local rotation matrix
 		Mrot = calc_rotation_matrix(norm);
@@ -2146,8 +2151,8 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		// Set arrays for next timestep
 		for(i=0;i<n_dims;++i) twall(upt,ele,i+1) = tw(i); // momentum flux
 
-		twall(upt,ele,0)          = 0.0; // density flux
-		twall(upt,ele,n_fields-1) = qw;  // energy flux
+		twall(upt,ele,0)        = 0.0; // density flux
+		twall(upt,ele,n_dims+1) = qw;  // energy flux
 
 		// populate ndims*ndims rotated stress array
 		zero_array(tau);
@@ -2185,9 +2190,79 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 			}
 
 			// energy
-			temp_sgsf(n_fields-1,i) = qw*norm(i);
+			temp_sgsf(n_dims+1,i) = qw*norm(i);
 		}
-		//cout<<"rank, wall flux: "<<rank<<endl;
+	}
+
+	// Experimental hybrid RANS/LES implementation. Need rans_model!=0.
+	else if (wall_model == 3) {
+		//cout << "RANS near-wall model" << endl;
+
+		// nu_tilde gradient setup
+		nu_tilde = temp_u(n_fields-1)/rho;
+		Chi = nu_tilde*rho/mu;
+
+		if (Chi <= 10.0)
+			psi = 0.05*log(1.0 + exp(20.0*Chi));
+		else
+			psi = Chi;
+
+		// Solution gradients
+		for (i=0;i<n_dims;i++) {
+			drho(i) = temp_grad_u(0,i); // density gradient
+			dene(i) = temp_grad_u(n_dims+1,i); // energy gradient
+			dnu_tilde(i) = (temp_grad_u(n_fields-1,i) - drho(i)*nu_tilde)/rho; // nu_tilde gradient
+
+			for (j=1;j<n_dims+1;j++) {
+				dmom(i,j-1) = temp_grad_u(j,i); // momentum gradients
+			}
+		}
+
+		// Velocity and internal energy gradients
+		for (i=0;i<n_dims;i++) {
+			dke(i) = ke*drho(i);
+
+			for (j=0;j<n_dims;j++) {
+				du(i,j) = (dmom(i,j)-u(j)*drho(j))/rho;
+				dke(i) += rho*u(j)*du(i,j);
+			}
+
+			de(i) = (dene(i)-dke(i)-drho(i)*inte)/rho;
+		}
+
+		// Strain rate tensor
+		for (i=0;i<n_dims;i++) {
+			for (j=0;j<n_dims;j++) {
+				S(i,j) = (du(i,j)+du(j,i))/2.0;
+			}
+			diag += S(i,i)/3.0;
+		}
+
+		// Subtract diag
+		for (i=0;i<n_dims;i++) S(i,i) -= diag;
+
+		// Compute RANS SA eddy viscosity
+		if (nu_tilde >= 0.0) {
+			f_v1 = pow(nu_tilde*rho/mu, 3.0)/(pow(nu_tilde*rho/mu, 3.0) + pow(run_input.c_v1, 3.0));
+			mu_t = nu_tilde*rho*f_v1;
+		}
+		else
+			mu_t = 0.0;
+
+		//cout << "mu_t " << setprecision(7) << mu_t << endl;
+
+		// Compute turbulent fluxes
+		for (j=0;j<n_dims;j++) {
+			temp_sgsf(0,j) = 0.0; // Density flux
+			temp_sgsf(n_dims+1,j) = -1.0*run_input.gamma*mu_t/Pr*de(j); // Energy flux
+			temp_sgsf(n_fields-1,j) = -1.0*run_input.omega*(mu + mu*psi)*dnu_tilde(j); // nu_tilde flux
+
+			for (i=1;i<n_dims+1;i++) {
+				temp_sgsf(i,j) = -2.0*mu_t*S(i-1,j); // Velocity flux
+			}
+		}
+	}
+		//cout<<"wall flux: "<<endl;
 		//temp_sgsf.print();
 		//cout << endl;
 	}
@@ -2240,12 +2315,12 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 			// OPTION 3. Suggested by Bardina, AIAA 1980:
 			// delta = sqrt((dx^2+dy^2+dz^2)/3)
 
-			// Filtered solution gradient
+			// Solution gradient
 			for (i=0;i<n_dims;i++) {
 				drho(i) = temp_grad_u(0,i); // density gradient
-				dene(i) = temp_grad_u(n_fields-1,i); // energy gradient
+				dene(i) = temp_grad_u(n_dims+1,i); // energy gradient
 
-				for (j=1;j<n_fields-1;j++) {
+				for (j=1;j<n_dims+1;j++) {
 					dmom(i,j-1) = temp_grad_u(j,i); // momentum gradients
 				}
 			}
@@ -2342,9 +2417,9 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 			// Add eddy-viscosity term to SGS fluxes
 			for (j=0;j<n_dims;j++) {
 				temp_sgsf(0,j) = 0.0; // Density flux
-				temp_sgsf(n_fields-1,j) = -1.0*run_input.gamma*mu_t/Pr*de(j); // Energy flux
+				temp_sgsf(n_dims+1,j) = -1.0*run_input.gamma*mu_t/Pr*de(j); // Energy flux
 
-				for (i=1;i<n_fields-1;i++) {
+				for (i=1;i<n_dims+1;i++) {
 					temp_sgsf(i,j) = -2.0*mu_t*S(i-1,j); // Velocity flux
 				}
 			}
@@ -2354,7 +2429,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		if(sim==1) {
 			for (j=0;j<n_dims;j++) {
 				temp_sgsf(0,j) += 0.0; // Density flux
-				temp_sgsf(n_fields-1,j) += run_input.gamma*rho*Le(upt,ele,j); // Energy flux
+				temp_sgsf(n_dims+1,j) += run_input.gamma*rho*Le(upt,ele,j); // Energy flux
 			}
 
 			// Momentum fluxes
@@ -3700,13 +3775,13 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 
 
 	// HACK to show wall distance in Paraview
-	//for(i=1;i<n_fields-1;i++)
+	//for(i=1;i<n_dims+1;i++)
 		//for(j=0;j<n_upts_per_ele;j++)
 			//disu_upts_plot(j,i)=wall_distance(j,in_ele,i-1);
 
 	//for(j=0;j<n_upts_per_ele;j++) {
 		//disu_upts_plot(j,0)=1.0;
-		//disu_upts_plot(j,n_fields-1)=1.0;
+		//disu_upts_plot(j,n_dims+1)=1.0;
 	//}
 
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
@@ -5257,7 +5332,7 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
 			ubulk = solint(1)/solint(0);
 
 		body_force(1) = vis_force(0)/vol; // x-momentum forcing
-		body_force(n_fields-1) = body_force(1)*ubulk; // energy forcing
+		body_force(n_dims+1) = body_force(1)*ubulk; // energy forcing
 
 /*#ifdef _MPI
 	  array<double> bodyforce_global(n_fields);
@@ -5269,8 +5344,8 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
 		}
 #endif*/
 
-		cout<<"Channel body force: " << setprecision(10)<<body_force(1)<<", "<<body_force(n_fields-1)<<endl;
-		if(isnan(body_force(1)) or isnan(body_force(n_fields-1)))
+		cout<<"Channel body force: " << setprecision(10)<<body_force(1)<<", "<<body_force(n_dims+1)<<endl;
+		if(isnan(body_force(1)) or isnan(body_force(n_dims+1)))
 		{
 			cout<<"ERROR: NaN body force, exiting"<<endl;
 			cout<<"timestep, vol: "<< run_input.dt<<", "<<vol<<endl;
@@ -5361,7 +5436,7 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
 				{
 					// Compute kinetic energy
 					tke = 0.0;
-					for (int n=1;n<n_fields-1;n++)
+					for (int n=1;n<n_dims+1;n++)
 						tke += 0.5*disu_cubpt(n)*disu_cubpt(n);
 
 					diagnostic = irho*tke;
@@ -5383,11 +5458,11 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
 				{
 					// Kinetic energy
 					tke = 0.0;
-					for (int n=1;n<n_fields-1;n++)
+					for (int n=1;n<n_dims+1;n++)
 						tke += 0.5*disu_cubpt(n)*disu_cubpt(n);
 
 		      // Compute pressure
-			    pressure = (run_input.gamma-1.0)*(disu_cubpt(n_fields-1) - irho*tke);
+			    pressure = (run_input.gamma-1.0)*(disu_cubpt(n_dims+1) - irho*tke);
 
 					// Multiply pressure by divergence of velocity
 					if (n_dims==2) {

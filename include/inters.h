@@ -69,6 +69,7 @@ class inters
 	int order;
 	int viscous;
 	int LES;
+	int rans_model;
 	int n_inters;
 	int n_fpts_per_inter;
 	int n_fields;

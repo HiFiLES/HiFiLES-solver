@@ -43,7 +43,7 @@ void calc_invf_2d(array<double>& in_u, array<double>& out_f)
 	  out_f(2,1)=p+(in_u(2)*vy);
 	  out_f(3,1)=vy*(in_u(3)+p);
 
-    if(run_input.turb_model==1)   // SA model
+    if(run_input.rans_model==1)   // SA model
     {
         out_f(4,0) = in_u(4)*vx;
         out_f(4,1) = in_u(4)*vy;
@@ -95,7 +95,7 @@ void calc_invf_3d(array<double>& in_u, array<double>& out_f)
 	  out_f(3,2)=p+(in_u(3)*vz);
 	  out_f(4,2)=vz*(in_u(4)+p);
 
-    if(run_input.turb_model==1)   // SA model
+    if(run_input.rans_model==1)   // SA model
     {
         out_f(5,0) = in_u(5)*vx;
         out_f(5,1) = in_u(5)*vy;
@@ -168,8 +168,11 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
 
 	  // turbulent eddy viscosity
-	  if (run_input.turb_model==1)
+	  if (run_input.rans_model==1)
 	  {
+			// do not compute if using RANS as a wall model
+			if (run_input.wall_model != 3)
+			{
 	      nu_tilde = in_u(4)/rho;
 
 	      if (nu_tilde >= 0.0)
@@ -181,6 +184,11 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	      {
 	          mu_t = 0.0;
 	      }
+			}
+	    else
+	    {
+        mu_t = 0.0;
+      }
 	  }
 	  else
 	  {
@@ -219,8 +227,12 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	  out_f(2,1) = -tauyy;
 	  out_f(3,1) = -(u*tauxy+v*tauyy+(mu/run_input.prandtl + mu_t/run_input.prandtl_t)*(run_input.gamma)*de_dy);
 
-    if (run_input.turb_model==1)
+		// compute nu_tilde
+    if (run_input.rans_model==1)
     {
+			// do not compute if using RANS as a wall model
+			if (run_input.wall_model != 3)
+			{
         double dnu_tilde_dx, dnu_tilde_dy;
         double Chi, psi;
 
@@ -235,6 +247,12 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 
         out_f(4,0) = -(1.0/run_input.omega)*(mu + mu*psi)*dnu_tilde_dx;
         out_f(4,1) = -(1.0/run_input.omega)*(mu + mu*psi)*dnu_tilde_dy;
+			}
+			else
+			{
+        out_f(4,0) = 0.0;
+        out_f(4,1) = 0.0;
+			}
     }
   }
   else if (run_input.equation==1) // Advection-diffusion equation
@@ -321,7 +339,7 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
     mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
 
     // turbulent eddy viscosity
-    if (run_input.turb_model==1)
+    if (run_input.rans_model==1)
     {
         nu_tilde = in_u(5)/rho;
 
@@ -392,7 +410,7 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
         out_f(3,2) = -tauzz;
         out_f(4,2) = -(u*tauxz+v*tauyz+w*tauzz+(mu/run_input.prandtl + mu_t/run_input.prandtl_t)*(run_input.gamma)*de_dz);
 
-        if (run_input.turb_model==1)
+        if (run_input.rans_model==1)
         {
             double dnu_tilde_dx, dnu_tilde_dy, dnu_tilde_dz;
             double Chi, psi;

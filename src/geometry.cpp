@@ -747,8 +747,8 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 	}
 
 	// Flag interfaces for calculating LES wall model
-    if(in_run_type==0) {
-	if(run_input.wall_model>0 or run_input.turb_model == 1) {
+  if(in_run_type==0) {
+	if(run_input.wall_model > 0 or run_input.rans_model == 1) {
 
 	  if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
 
@@ -911,7 +911,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
 #endif
 	}
-    }
+  }
 
 	// set on GPU
 #ifdef _GPU

@@ -228,5 +228,5 @@ class input
   array<double> y_coeffs;
   array<double> z_coeffs;
 	int perturb_ic;
-	int turb_model;
+	int rans_model;
 };

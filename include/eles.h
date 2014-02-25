@@ -411,6 +411,9 @@ class eles
 	/*! SGS model */
 	int sgs_model;
 
+	/*! RANS model */
+	int rans_model;
+
 	/*! LES filter flag */
 	int filter;
 

@@ -171,7 +171,7 @@ void CalcResidual(struct solution* FlowSol) {
 		FlowSol->mesh_eles(i)->calc_div_tconf_upts(in_div_tconf_upts_to);
 
   /*! Compute source term */
-  if (run_input.turb_model==1) {
+  if (run_input.rans_model==1) {
       for (i=0; i<FlowSol->n_ele_types; i++)
           FlowSol->mesh_eles(i)->calc_src_term_SA();
   }
