@@ -185,6 +185,7 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 	          mu_t = 0.0;
 	      }
 			}
+			// if using RANS as a wall model, mu_t is calculated in eles::calc_sgsf_upts in wall region
 	    else
 	    {
         mu_t = 0.0;

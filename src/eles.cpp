@@ -2255,7 +2255,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		for (j=0;j<n_dims;j++) {
 			temp_sgsf(0,j) = 0.0; // Density flux
 			temp_sgsf(n_dims+1,j) = -1.0*run_input.gamma*mu_t/Pr*de(j); // Energy flux
-			temp_sgsf(n_fields-1,j) = -1.0*run_input.omega*(mu + mu*psi)*dnu_tilde(j); // nu_tilde flux
+			temp_sgsf(n_fields-1,j) = -1.0/run_input.omega*(mu + mu*psi)*dnu_tilde(j); // nu_tilde flux
 
 			for (i=1;i<n_dims+1;i++) {
 				temp_sgsf(i,j) = -2.0*mu_t*S(i-1,j); // Velocity flux
