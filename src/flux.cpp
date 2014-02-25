@@ -45,8 +45,17 @@ void calc_invf_2d(array<double>& in_u, array<double>& out_f)
 
     if(run_input.rans_model==1)   // SA model
     {
+			// do not compute if using RANS as a wall model
+			if (run_input.wall_model != 3)
+			{
         out_f(4,0) = in_u(4)*vx;
         out_f(4,1) = in_u(4)*vy;
+			}
+			else
+			{
+        out_f(4,0) = 0.0;
+        out_f(4,1) = 0.0;
+			}
     }
   }
   else if (run_input.equation==1) // Advection-diffusion equation
@@ -97,9 +106,19 @@ void calc_invf_3d(array<double>& in_u, array<double>& out_f)
 
     if(run_input.rans_model==1)   // SA model
     {
+			// do not compute if using RANS as a wall model
+			if (run_input.wall_model != 3)
+			{
         out_f(5,0) = in_u(5)*vx;
         out_f(5,1) = in_u(5)*vy;
         out_f(5,2) = in_u(5)*vz;
+			}
+			else
+			{
+        out_f(5,0) = 0.0;
+        out_f(5,1) = 0.0;
+        out_f(5,2) = 0.0;
+			}
     }
   }
   else if (run_input.equation==1) // Advection-diffusion equation
@@ -342,6 +361,9 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
     // turbulent eddy viscosity
     if (run_input.rans_model==1)
     {
+			// do not compute if using RANS as a wall model
+			if (run_input.wall_model != 3)
+			{
         nu_tilde = in_u(5)/rho;
 
         if (nu_tilde >= 0.0)
@@ -353,6 +375,11 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
         {
             mu_t = 0.0;
         }
+			}
+			else
+			{
+				mu_t = 0.0;
+			}
     }
     else
     {
@@ -413,6 +440,9 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 
         if (run_input.rans_model==1)
         {
+					// do not compute if using RANS as a wall model
+					if (run_input.wall_model != 3)
+					{
             double dnu_tilde_dx, dnu_tilde_dy, dnu_tilde_dz;
             double Chi, psi;
 
@@ -429,6 +459,13 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
             out_f(5,0) = -(1.0/run_input.omega)*(mu + mu*psi)*dnu_tilde_dx;
             out_f(5,1) = -(1.0/run_input.omega)*(mu + mu*psi)*dnu_tilde_dy;
             out_f(5,2) = -(1.0/run_input.omega)*(mu + mu*psi)*dnu_tilde_dz;
+					}
+					else
+					{
+            out_f(5,0) = 0.0;
+            out_f(5,1) = 0.0;
+            out_f(5,2) = 0.0;
+					}
         }
   }
   else if (run_input.equation==1) // Advection-diffusion equation

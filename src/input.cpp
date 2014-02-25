@@ -701,8 +701,16 @@ void input::setup(ifstream& in_run_input_file, int rank)
           c_w3 = 2.0;
           omega = 2.0/3.0;
           Kappa = 0.41;
+
+				// HACK: set to zero if using RANS as a wall model
+				if(wall_model != 3) {
           mu_tilde_c_ic = 5.0*mu_c_ic;
           mu_tilde_inf = 5.0*mu_inf;
+				}
+				else {
+          mu_tilde_c_ic = 0.0;
+          mu_tilde_inf = 0.0;
+				}
       }
 
       if (rank==0)

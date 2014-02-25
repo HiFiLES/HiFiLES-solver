@@ -84,6 +84,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	sgs_model = run_input.SGS_model;
 	rans_model = run_input.rans_model;
 	filter = 0;
+
 	// SVV model requires filtered solution
 	if(LES)
 		if(sgs_model==3 || sgs_model==2 || sgs_model==4)
@@ -473,7 +474,11 @@ void eles::set_ics(double& time)
 
 			  	if(rans_model==1)
 			  	{
+						// set to zero if using RANS as a wall model
+						if(wall_model != 3)
 			  	    ics(4) = run_input.mu_tilde_c_ic;
+						else
+			  	    ics(4) = 0.0;
 			  	}
 			  }
 			  else if(n_dims==3)
@@ -483,7 +488,11 @@ void eles::set_ics(double& time)
 
 			  	if(rans_model==1)
 			  	{
+						// set to zero if using RANS as a wall model
+						if(wall_model != 3)
 			  	    ics(5) = run_input.mu_tilde_c_ic;
+						else
+			  	    ics(5) = 0.0;
 			  	}
 			  }
 			  else
@@ -2055,11 +2064,14 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 	double Smod=0.0;
 	double ke=0.0;
 	double Pr=0.5; // turbulent Prandtl number
+	double num=0.0;
+	double denom=0.0;
+	double eps=1.e-12;
 	double delta, mu, mu_t, vol;
 	double rho, inte, rt_ratio;
 	array<double> u(n_dims);
 	array<double> drho(n_dims), dene(n_dims), dke(n_dims), de(n_dims);
-	array<double> dmom(n_dims,n_dims), du(n_dims,n_dims), S(n_dims,n_dims);
+	array<double> dmom(n_dims,n_dims), du(n_dims,n_dims), S(n_dims,n_dims), Sq(n_dims,n_dims);
 
 	// quantities for wall model
   array<double> norm(n_dims);
@@ -2068,12 +2080,16 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   array<double> temp(n_dims,n_dims);
   array<double> urot(n_dims);
   array<double> tw(n_dims);
-	double y, qw, utau, yplus;
+	double wall_layer_t, y, qw, utau, yplus;
 
 	// quantities for SA model
 	double nu_tilde;
   array<double> dnu_tilde(n_dims);
 	double f_v1, Chi, psi;
+
+	// quantities for hybrid RANS/LES
+	double f_blend;
+	double blend_layer_t;
 
 	// primitive variables
 	rho = temp_u(0);
@@ -2092,8 +2108,6 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 	zero_array(temp_sgsf);
 
 	// Compute SGS flux using wall model if sufficiently close to solid boundary
-	wall = 0;
-
 	if(wall_model > 0) {
 
 		// wall distance
@@ -2111,164 +2125,14 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		// Wall distance in wall units
 		yplus = y*rho*utau/mu;
 
-		if(y < run_input.wall_layer_t) wall = 1;
+		wall_layer_t = run_input.wall_layer_t;
+
 		//if(yplus < 100.0) wall = 1;
 		//cout << "tw, y, y+ " << tw(0) << ", " << y << ", " << yplus << endl;
 	}
 
-	// calculate SGS flux from a wall model
-	if(wall) {
-
-	if(wall_model == 1 or wall_model == 2) {
-
-		for (i=0;i<n_dims;i++) {
-			// Get approximate normal from wall distance vector
-			norm(i) = wall_distance(upt,ele,i)/y;
-		}
-
-		// subgrid energy flux from previous timestep
-		qw = twall(upt,ele,n_dims+1);
-
-		// Calculate local rotation matrix
-		Mrot = calc_rotation_matrix(norm);
-
-		// Rotate velocity to surface
-		if(n_dims==2) {
-			urot(0) = u(0)*Mrot(0,1)+u(1)*Mrot(1,1);
-			urot(1) = 0.0;
-		}
-		else {
-			urot(0) = u(0)*Mrot(0,1)+u(1)*Mrot(1,1)+u(2)*Mrot(2,1);
-			urot(1) = u(0)*Mrot(0,2)+u(1)*Mrot(1,2)+u(2)*Mrot(2,2);
-			urot(2) = 0.0;
-		}
-
-		// Calculate wall shear stress
-		calc_wall_stress(rho,urot,inte,mu,run_input.prandtl,run_input.gamma,y,tw,qw);
-
-		// correct the sign of wall shear stress and wall heat flux? - see SD3D
-
-		// Set arrays for next timestep
-		for(i=0;i<n_dims;++i) twall(upt,ele,i+1) = tw(i); // momentum flux
-
-		twall(upt,ele,0)        = 0.0; // density flux
-		twall(upt,ele,n_dims+1) = qw;  // energy flux
-
-		// populate ndims*ndims rotated stress array
-		zero_array(tau);
-
-		for(i=0;i<n_dims-1;i++) tau(i+1,0) = tau(0,i+1) = tw(i);
-
-		//cout << "tau " << setprecision(6) << endl;
-		//tau.print();
-
-		// rotate stress array back to Cartesian coordinates
-		zero_array(temp);
-		for(i=0;i<n_dims;++i)
-			for(j=0;j<n_dims;++j)
-				for(k=0;k<n_dims;++k)
-					temp(i,j) += tau(i,k)*Mrot(k,j);
-
-		zero_array(tau);
-		for(i=0;i<n_dims;++i)
-			for(j=0;j<n_dims;++j)
-				for(k=0;k<n_dims;++k)
-					tau(i,j) += Mrot(k,i)*temp(k,j);
-
-		//cout << "tau " << setprecision(6) << endl;
-		//tau.print();
-
-		// set SGS fluxes
-		for(i=0;i<n_dims;i++) {
-
-			// density
-			temp_sgsf(0,i) = 0.0;
-
-			// velocity
-			for(j=0;j<n_dims;j++) {
-				temp_sgsf(j+1,i) = 0.5*(tau(i,j)+tau(j,i));
-			}
-
-			// energy
-			temp_sgsf(n_dims+1,i) = qw*norm(i);
-		}
-	}
-
-	// Experimental hybrid RANS/LES implementation. Need rans_model!=0.
-	else if (wall_model == 3) {
-		//cout << "RANS near-wall model" << endl;
-
-		// nu_tilde gradient setup
-		nu_tilde = temp_u(n_fields-1)/rho;
-		Chi = nu_tilde*rho/mu;
-
-		if (Chi <= 10.0)
-			psi = 0.05*log(1.0 + exp(20.0*Chi));
-		else
-			psi = Chi;
-
-		// Solution gradients
-		for (i=0;i<n_dims;i++) {
-			drho(i) = temp_grad_u(0,i); // density gradient
-			dene(i) = temp_grad_u(n_dims+1,i); // energy gradient
-			dnu_tilde(i) = (temp_grad_u(n_fields-1,i) - drho(i)*nu_tilde)/rho; // nu_tilde gradient
-
-			for (j=1;j<n_dims+1;j++) {
-				dmom(i,j-1) = temp_grad_u(j,i); // momentum gradients
-			}
-		}
-
-		// Velocity and internal energy gradients
-		for (i=0;i<n_dims;i++) {
-			dke(i) = ke*drho(i);
-
-			for (j=0;j<n_dims;j++) {
-				du(i,j) = (dmom(i,j)-u(j)*drho(j))/rho;
-				dke(i) += rho*u(j)*du(i,j);
-			}
-
-			de(i) = (dene(i)-dke(i)-drho(i)*inte)/rho;
-		}
-
-		// Strain rate tensor
-		for (i=0;i<n_dims;i++) {
-			for (j=0;j<n_dims;j++) {
-				S(i,j) = (du(i,j)+du(j,i))/2.0;
-			}
-			diag += S(i,i)/3.0;
-		}
-
-		// Subtract diag
-		for (i=0;i<n_dims;i++) S(i,i) -= diag;
-
-		// Compute RANS SA eddy viscosity
-		if (nu_tilde >= 0.0) {
-			f_v1 = pow(nu_tilde*rho/mu, 3.0)/(pow(nu_tilde*rho/mu, 3.0) + pow(run_input.c_v1, 3.0));
-			mu_t = nu_tilde*rho*f_v1;
-		}
-		else
-			mu_t = 0.0;
-
-		//cout << "mu_t " << setprecision(7) << mu_t << endl;
-
-		// Compute turbulent fluxes
-		for (j=0;j<n_dims;j++) {
-			temp_sgsf(0,j) = 0.0; // Density flux
-			temp_sgsf(n_dims+1,j) = -1.0*run_input.gamma*mu_t/Pr*de(j); // Energy flux
-			temp_sgsf(n_fields-1,j) = -1.0/run_input.omega*(mu + mu*psi)*dnu_tilde(j); // nu_tilde flux
-
-			for (i=1;i<n_dims+1;i++) {
-				temp_sgsf(i,j) = -2.0*mu_t*S(i-1,j); // Velocity flux
-			}
-		}
-	}
-		//cout<<"wall flux: "<<endl;
-		//temp_sgsf.print();
-		//cout << endl;
-	}
-
 	// Free-stream SGS flux
-	else {
+	if (y >= wall_layer_t) {
 
 		// Set wall shear stress to 0 to prevent NaNs
 		//for(i=0;i<n_dims;++i)
@@ -2380,10 +2244,6 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 			else if(sgs_model==1 || sgs_model==2) {
 
 				Cs=0.5;
-				double num=0.0;
-				double denom=0.0;
-				double eps=1.e-12;
-				array<double> Sq(n_dims,n_dims);
 				diag = 0.0;
 
 				// Square of gradient tensor
@@ -2455,6 +2315,187 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 
 		}
 	}
+
+	// calculate SGS flux from an algebraic wall model
+	if(wall_model == 1 or wall_model == 2) {
+
+		if(y < wall_layer_t) {
+
+			for (i=0;i<n_dims;i++) {
+				// Get approximate normal from wall distance vector
+				norm(i) = wall_distance(upt,ele,i)/y;
+			}
+
+			// subgrid energy flux from previous timestep
+			qw = twall(upt,ele,n_dims+1);
+
+			// Calculate local rotation matrix
+			Mrot = calc_rotation_matrix(norm);
+
+			// Rotate velocity to surface
+			if(n_dims==2) {
+				urot(0) = u(0)*Mrot(0,1)+u(1)*Mrot(1,1);
+				urot(1) = 0.0;
+			}
+			else {
+				urot(0) = u(0)*Mrot(0,1)+u(1)*Mrot(1,1)+u(2)*Mrot(2,1);
+				urot(1) = u(0)*Mrot(0,2)+u(1)*Mrot(1,2)+u(2)*Mrot(2,2);
+				urot(2) = 0.0;
+			}
+
+			// Calculate wall shear stress
+			calc_wall_stress(rho,urot,inte,mu,run_input.prandtl,run_input.gamma,y,tw,qw);
+
+			// correct the sign of wall shear stress and wall heat flux? - see SD3D
+
+			// Set arrays for next timestep
+			for(i=0;i<n_dims;++i) twall(upt,ele,i+1) = tw(i); // momentum flux
+
+			twall(upt,ele,0)        = 0.0; // density flux
+			twall(upt,ele,n_dims+1) = qw;  // energy flux
+
+			// populate ndims*ndims rotated stress array
+			zero_array(tau);
+
+			for(i=0;i<n_dims-1;i++) tau(i+1,0) = tau(0,i+1) = tw(i);
+
+			//cout << "tau " << setprecision(6) << endl;
+			//tau.print();
+
+			// rotate stress array back to Cartesian coordinates
+			zero_array(temp);
+			for(i=0;i<n_dims;++i)
+				for(j=0;j<n_dims;++j)
+					for(k=0;k<n_dims;++k)
+						temp(i,j) += tau(i,k)*Mrot(k,j);
+
+			zero_array(tau);
+			for(i=0;i<n_dims;++i)
+				for(j=0;j<n_dims;++j)
+					for(k=0;k<n_dims;++k)
+						tau(i,j) += Mrot(k,i)*temp(k,j);
+
+			//cout << "tau " << setprecision(6) << endl;
+			//tau.print();
+
+			// set SGS fluxes
+			for(i=0;i<n_dims;i++) {
+
+				// density
+				temp_sgsf(0,i) = 0.0;
+
+				// velocity
+				for(j=0;j<n_dims;j++) {
+					temp_sgsf(j+1,i) = 0.5*(tau(i,j)+tau(j,i));
+				}
+
+				// energy
+				temp_sgsf(n_dims+1,i) = qw*norm(i);
+			}
+		}
+	} // end wall model 1,2
+
+	// Experimental hybrid RANS/LES implementation. Need rans_model!=0.
+	else if (wall_model == 3) {
+		//cout << "RANS near-wall model" << endl;
+
+		blend_layer_t = 1.2*wall_layer_t;
+
+		// compute RANS flux within RANS and blending regions
+		if (y < blend_layer_t) {
+
+			// nu_tilde gradient setup
+			nu_tilde = temp_u(n_fields-1)/rho;
+			Chi = nu_tilde*rho/mu;
+
+			if (Chi <= 10.0)
+				psi = 0.05*log(1.0 + exp(20.0*Chi));
+			else
+				psi = Chi;
+
+			// Solution gradients
+			for (i=0;i<n_dims;i++) {
+				drho(i) = temp_grad_u(0,i); // density gradient
+				dene(i) = temp_grad_u(n_dims+1,i); // energy gradient
+				dnu_tilde(i) = (temp_grad_u(n_fields-1,i) - drho(i)*nu_tilde)/rho; // nu_tilde gradient
+
+				for (j=1;j<n_dims+1;j++) {
+					dmom(i,j-1) = temp_grad_u(j,i); // momentum gradients
+				}
+			}
+
+			// Velocity and internal energy gradients
+			for (i=0;i<n_dims;i++) {
+				dke(i) = ke*drho(i);
+
+				for (j=0;j<n_dims;j++) {
+					du(i,j) = (dmom(i,j)-u(j)*drho(j))/rho;
+					dke(i) += rho*u(j)*du(i,j);
+				}
+
+				de(i) = (dene(i)-dke(i)-drho(i)*inte)/rho;
+			}
+
+			// Strain rate tensor
+			for (i=0;i<n_dims;i++) {
+				for (j=0;j<n_dims;j++) {
+					S(i,j) = (du(i,j)+du(j,i))/2.0;
+				}
+				diag += S(i,i)/3.0;
+			}
+
+			// Subtract diag
+			for (i=0;i<n_dims;i++) S(i,i) -= diag;
+
+			// Compute RANS SA eddy viscosity
+			if (nu_tilde >= 0.0) {
+				f_v1 = pow(nu_tilde*rho/mu, 3.0)/(pow(nu_tilde*rho/mu, 3.0) + pow(run_input.c_v1, 3.0));
+				mu_t = nu_tilde*rho*f_v1;
+			}
+			else
+				mu_t = 0.0;
+
+			//cout << "mu_t " << setprecision(7) << mu_t << endl;
+
+			// compute RANS flux in fully RANS region: y < wall_layer_t
+			if (y < wall_layer_t) {
+
+				for (j=0;j<n_dims;j++) {
+					temp_sgsf(0,j) = 0.0; // Density flux
+					temp_sgsf(n_dims+1,j) = -1.0*run_input.gamma*mu_t/Pr*de(j); // Energy flux
+					temp_sgsf(n_fields-1,j) = -1.0/run_input.omega*(mu + mu*psi)*dnu_tilde(j); // nu_tilde flux
+
+					for (i=1;i<n_dims+1;i++) {
+						temp_sgsf(i,j) = -2.0*mu_t*S(i-1,j); // Velocity flux
+					}
+				}
+			}
+
+			// compute RANS/LES blended fluxes in blending region: wall_layer_t <= y < blend_layer_t
+			else {
+
+				f_blend = (blend_layer_t - y)/(blend_layer_t - wall_layer_t);
+				//cout << "y, wall layer, blend layer, f_blend " << y << ", " << wall_layer_t << ", " << blend_layer_t << ", " << f_blend << endl;
+
+			for (j=0;j<n_dims;j++) {
+				temp_sgsf(0,j) = 0.0; // Density flux
+				temp_sgsf(n_dims+1,j) = (1-f_blend)*temp_sgsf(n_dims+1,j) + f_blend*(-1.0*run_input.gamma*mu_t/Pr*de(j)); // Energy flux
+				temp_sgsf(n_fields-1,j) = (1-f_blend)*temp_sgsf(n_fields-1,j) + f_blend*(-1.0/run_input.omega*(mu + mu*psi)*dnu_tilde(j)); // nu_tilde flux
+
+				for (i=1;i<n_dims+1;i++) {
+					temp_sgsf(i,j) = (1-f_blend)*temp_sgsf(i,j) + f_blend*(-2.0*mu_t*S(i-1,j)); // Velocity flux
+				}
+			}
+		}
+	}
+
+
+		//cout<<"wall flux: "<<endl;
+		//temp_sgsf.print();
+		//cout << endl;
+
+	} // end wall model 3
+
 	//cout<<"rank, sgs flux: "<<rank<<endl;
 	//temp_sgsf.print();
 	//cout << endl;

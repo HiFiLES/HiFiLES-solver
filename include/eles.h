@@ -576,6 +576,8 @@ class eles
 	/*! storage for distance of solution points to nearest no-slip boundary */
 	array<double> wall_distance;
 	array<double> wall_distance_mag;
+
+	/*! Wall model stress */
 	array<double> twall;
 
 	/*! number of storage levels for time-integration scheme */
