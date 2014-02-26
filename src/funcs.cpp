@@ -252,64 +252,64 @@ double eval_d_ofr_1d(double in_r, int in_mode, int in_order)
 
 	// zeros of correction function
 	if(in_order == 1) {
-		loc_zeros_gL(1) = -0.3249;
+		loc_zeros_gL(1) = -0.324936024976658;
 
-		loc_zeros_gR(1) = +0.3249;
+		loc_zeros_gR(1) = 0.324936024976658;
 	}
 	else if(in_order == 2) {
-		loc_zeros_gL(1) = -0.6830;
-		loc_zeros_gL(2) = 0.3022;
+		loc_zeros_gL(1) = -0.683006983995485;
+		loc_zeros_gL(2) = 0.302192635873585;
 
-		loc_zeros_gR(2) = 0.6830;
-		loc_zeros_gR(1) = -0.3022;
+		loc_zeros_gR(2) = 0.683006983995485;
+		loc_zeros_gR(1) = -0.302192635873585;
 	}
 	else if(in_order == 3) {
-		loc_zeros_gL(1) = -0.8399;
-		loc_zeros_gL(2) = -0.2022;
-		loc_zeros_gL(3) = 0.5186;
+                loc_zeros_gL(1) = -0.839877075575685;
+		loc_zeros_gL(2) = -0.202221671675099;
+		loc_zeros_gL(3) = 0.518569179742482;
 
-		loc_zeros_gR(3) = 0.8399;
-		loc_zeros_gR(2) = 0.2022;
-		loc_zeros_gR(1) = -0.5186;
+		loc_zeros_gR(3) = 0.839877075575685;
+		loc_zeros_gR(2) = 0.202221671675099;
+		loc_zeros_gR(1) = -0.518569179742482;
 	}
 	else if(in_order == 4) {
-		loc_zeros_gL(1) = -0.8570;
-		loc_zeros_gL(2) = -0.4477;
-		loc_zeros_gL(3) = 0.1800;
-		loc_zeros_gL(4) = 0.6381;
+		loc_zeros_gL(1) = -0.856985048185331;
+		loc_zeros_gL(2) = -0.447652424946130;
+		loc_zeros_gL(3) = 0.180019033571473;
+		loc_zeros_gL(4) = 0.638102911955799;
 
-		loc_zeros_gR(4) = 0.8570;
-		loc_zeros_gR(3) = 0.4477;
-		loc_zeros_gR(2) = -0.1800;
-		loc_zeros_gR(1) = -0.6381;
+		loc_zeros_gR(4) = 0.856985048185331;
+		loc_zeros_gR(3) = 0.447652424946130;
+		loc_zeros_gR(2) = -0.180019033571473;
+		loc_zeros_gR(1) = -0.638102911955799;
 	}
 	else if(in_order == 5) {
-		loc_zeros_gL(1) = -0.8979;
-		loc_zeros_gL(2) = -0.5778;
-		loc_zeros_gL(3) = -0.1012;
-		loc_zeros_gL(4) = 0.3541;
-		loc_zeros_gL(5) = 0.7604;
+		loc_zeros_gL(1) = -0.897887439354270;
+		loc_zeros_gL(2) = -0.577293821014237;
+		loc_zeros_gL(3) = -0.101190259640464;
+		loc_zeros_gL(4) = 0.354120543898467;
+		loc_zeros_gL(5) = 0.760380824360528;
 
-		loc_zeros_gR(5) = 0.8979;
-		loc_zeros_gR(4) = 0.5778;
-		loc_zeros_gR(3) = 0.1012;
-		loc_zeros_gR(2) = -0.3541;
-		loc_zeros_gR(1) = -0.7604;
+		loc_zeros_gR(5) = 0.897887439354270;
+		loc_zeros_gR(4) = 0.577293821014237;
+		loc_zeros_gR(3) = 0.101190259640464;
+		loc_zeros_gR(2) = -0.354120543898467;
+		loc_zeros_gR(1) = -0.760380824360528;
 	}
 	else if(in_order == 6) { // P=6 not verified
-		loc_zeros_gL(1) = -0.9326;
-		loc_zeros_gL(2) = -0.6279; 
-		loc_zeros_gL(3) = -0.1970;
-		loc_zeros_gL(4) = 0.3928;
-		loc_zeros_gL(5) = 0.4816;
-		loc_zeros_gL(6) = 0.6295;
+		loc_zeros_gL(1) = -0.932638621602718;
+		loc_zeros_gL(2) = -0.627949285295015; 
+		loc_zeros_gL(3) = -0.196972255400472;
+		loc_zeros_gL(4) = 0.392803242695776;
+		loc_zeros_gL(5) = 0.481615260763104;
+		loc_zeros_gL(6) = 0.629467212278235;
 
-		loc_zeros_gR(6) = 0.9326;
-		loc_zeros_gR(5) = 0.6279; 
-		loc_zeros_gR(4) = 0.1970;
-		loc_zeros_gR(3) = -0.3928;
-		loc_zeros_gR(2) = -0.4816;
-		loc_zeros_gR(1) = -0.6295;
+		loc_zeros_gR(6) = 0.932638621602718;
+		loc_zeros_gR(5) = 0.627949285295015; 
+		loc_zeros_gR(4) = 0.196972255400472;
+		loc_zeros_gR(3) = -0.392803242695776;
+		loc_zeros_gR(2) = -0.481615260763104;
+		loc_zeros_gR(1) = -0.629467212278235;
 	}
 	else
 		FatalError("OFR schemes have been obtained as yet for P = 1 to 6");
