@@ -2477,18 +2477,17 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 				f_blend = (blend_layer_t - y)/(blend_layer_t - wall_layer_t);
 				//cout << "y, wall layer, blend layer, f_blend " << y << ", " << wall_layer_t << ", " << blend_layer_t << ", " << f_blend << endl;
 
-			for (j=0;j<n_dims;j++) {
-				temp_sgsf(0,j) = 0.0; // Density flux
-				temp_sgsf(n_dims+1,j) = (1-f_blend)*temp_sgsf(n_dims+1,j) + f_blend*(-1.0*run_input.gamma*mu_t/Pr*de(j)); // Energy flux
-				temp_sgsf(n_fields-1,j) = (1-f_blend)*temp_sgsf(n_fields-1,j) + f_blend*(-1.0/run_input.omega*(mu + mu*psi)*dnu_tilde(j)); // nu_tilde flux
+				for (j=0;j<n_dims;j++) {
+					temp_sgsf(0,j) = 0.0; // Density flux
+					temp_sgsf(n_dims+1,j) = (1-f_blend)*temp_sgsf(n_dims+1,j) + f_blend*(-1.0*run_input.gamma*mu_t/Pr*de(j)); // Energy flux
+					temp_sgsf(n_fields-1,j) = (1-f_blend)*temp_sgsf(n_fields-1,j) + f_blend*(-1.0/run_input.omega*(mu + mu*psi)*dnu_tilde(j)); // nu_tilde flux
 
-				for (i=1;i<n_dims+1;i++) {
-					temp_sgsf(i,j) = (1-f_blend)*temp_sgsf(i,j) + f_blend*(-2.0*mu_t*S(i-1,j)); // Velocity flux
+					for (i=1;i<n_dims+1;i++) {
+						temp_sgsf(i,j) = (1-f_blend)*temp_sgsf(i,j) + f_blend*(-2.0*mu_t*S(i-1,j)); // Velocity flux
+					}
 				}
 			}
 		}
-	}
-
 
 		//cout<<"wall flux: "<<endl;
 		//temp_sgsf.print();
