@@ -145,7 +145,7 @@ help:
 	@echo ' '
 
 HiFiLES: $(OBJS)
-	$(CC) $(OPTS) -o $(BIN)HiFiLES $(OBJS) ${LIBS}
+	$(CC) $(OPTS) -o $(BIN)HiFiLES_OFR $(OBJS) ${LIBS}
 
 $(OBJ)HiFiLES.o: HiFiLES.cpp geometry.h input.h flux.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
@@ -224,4 +224,4 @@ $(OBJ)cuda_kernels.o: cuda_kernels.cu cuda_kernels.h error.h util.h
 endif
 
 clean: 
-	rm $(BIN)HiFiLES $(OBJ)*.o
+	rm $(BIN)HiFiLES_OFR $(OBJ)*.o
