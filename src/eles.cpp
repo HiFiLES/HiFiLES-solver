@@ -4358,10 +4358,10 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
       cell_sum=0;
       for (j=0; j<n_upts_per_ele; j++) {
           if (in_norm_type == 1) {
-              cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i));
+            cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src_term-src_term(j,i,in_field));
             }
           else if (in_norm_type == 2) {
-              cell_sum += div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)*div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i);
+            cell_sum += (div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)-run_input.const_src_term-src_term(j,i,in_field))*(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src_term-src_term(j,i,in_field));
             }
         }
       sum += cell_sum;

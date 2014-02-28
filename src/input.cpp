@@ -602,7 +602,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
   else
     FatalError("Mesh format not recognized");
 
-  if (equation==0)
+  if (equation==0 || equation==2)
     {
       if (riemann_solve_type==1)
         FatalError("Lax-Friedrich flux not supported with NS equation");

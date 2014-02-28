@@ -2872,7 +2872,7 @@ void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
 #endif
 
   // Calculate body forcing, if running periodic channel, and add to viscous flux
-  if(run_input.equation==0 and run_input.run_type==0 and run_input.forcing==1 and FlowSol->n_dims==3)
+  if((run_input.equation==0 || run_input.equation==2) and run_input.run_type==0 and run_input.forcing==1 and FlowSol->n_dims==3)
     {
       for(int i=0;i<FlowSol->n_ele_types;i++)
         FlowSol->mesh_eles(i)->calc_body_force_upts(vis_force, FlowSol->body_force);

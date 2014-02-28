@@ -364,13 +364,13 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 
       diag = (du_dx + dv_dy + dw_dz)/3.0;
 
-      tauxx = 2.0*mu*(du_dx-diag);
-      tauyy = 2.0*mu*(dv_dy-diag);
-      tauzz = 2.0*mu*(dw_dz-diag);
+      tauxx = 2.0*(mu+mu_t)*(du_dx-diag);
+      tauyy = 2.0*(mu+mu_t)*(dv_dy-diag);
+      tauzz = 2.0*(mu+mu_t)*(dw_dz-diag);
 
-      tauxy = mu*(du_dy + dv_dx);
-      tauxz = mu*(du_dz + dw_dx);
-      tauyz = mu*(dv_dz + dw_dy);
+      tauxy = (mu+mu_t)*(du_dy + dv_dx);
+      tauxz = (mu+mu_t)*(du_dz + dw_dx);
+      tauyz = (mu+mu_t)*(dv_dz + dw_dy);
 
       // construct flux
 

@@ -9,11 +9,11 @@
 # HiFiLES (High Fidelity Large Eddy Simulation).
 # Copyright (C) 2013 Aerospace Computing Laboratory.
 
-NODE=     GPU
-CODE=     RELEASE
+NODE=     CPU
+CODE=     DEBUG
 BLAS=     STANDARD_BLAS
 COMP=     GCC
-PARALLEL= NO
+PARALLEL= MPI
 TECIO=    YES
 
 BLAS_DIR= /usr/local/atlas
