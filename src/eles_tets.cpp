@@ -872,7 +872,7 @@ void eles_tets::compute_filter_upts(void)
 		printf("\nBuilding modal filter\n");
 
 		// Compute modal filter
-		compute_modal_filter(filter_upts, vandermonde, inv_vandermonde, N);
+		compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order);
 
 		printf("\nFilter:\n");
 		filter_upts.print();
@@ -907,7 +907,7 @@ void eles_tets::compute_filter_upts(void)
 	{
 		norm = 0.0;
 		for(j=0;j<N;j++)
-			norm += filter_upts(i,j); // or abs(filter_upts(i,j))?
+			norm += filter_upts(i,j);
 		for(j=0;j<N;j++)
 			filter_upts(i,j) /= norm;
 		for(j=0;j<N;j++)

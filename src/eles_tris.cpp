@@ -925,8 +925,12 @@ void eles_tris::compute_filter_upts(void)
 	{
 		printf("\nBuilding modal filter\n");
 
+		// Element size: Deardorff definition (Deardorff, JFM 1970)
+		//vol = (*this).calc_ele_vol(detjac);
+		//delta = pow(vol,1./n_dims);
+
 		// Compute modal filter
-		compute_modal_filter(filter_upts, vandermonde, inv_vandermonde, N);
+		compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order);
 
 		printf("\nFilter:\n");
 		filter_upts.print();
@@ -955,7 +959,7 @@ void eles_tris::compute_filter_upts(void)
 	{
 		norm = 0.0;
 		for(j=0;j<N;j++)
-			norm += filter_upts(i,j); // or abs(filter_upts(i,j))?
+			norm += filter_upts(i,j);
 		for(j=0;j<N;j++)
 			filter_upts(i,j) /= norm;
 		for(j=0;j<N;j++)

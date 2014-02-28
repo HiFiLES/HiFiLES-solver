@@ -82,7 +82,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 	LES = run_input.LES;
 	sgs_model = run_input.SGS_model;
 	filter = 0;
-	// SVV model requires filtered solution
+	// Set filter flag before calling setup_ele_type_specific
 	if(LES)
 		if(sgs_model==3 || sgs_model==2 || sgs_model==4)
 			filter = 1;
@@ -146,8 +146,6 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 
 		// SVV model requires filtered solution
 		if(sgs_model==3 || sgs_model==2 || sgs_model==4) {
-
-			filter = 1;
 
 			disuf_upts.setup(n_upts_per_ele,n_eles,n_fields);
 		}
