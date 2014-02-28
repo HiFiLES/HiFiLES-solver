@@ -128,7 +128,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
   FlowSol->ele2vert = c2v;
   FlowSol->ele2n_vert = c2n_v;
   FlowSol->ele_type = ctype;
-    
+
   /////////////////////////////////////////////////
   /// Set connectivity
   /////////////////////////////////////////////////
@@ -408,7 +408,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
       FlowSol->epsilon_verts.setup(FlowSol->num_verts);
       FlowSol->epsilon_global_eles.setup(FlowSol->num_eles);
 
-      //Move them to GPU 
+      //Move them to GPU
       FlowSol->ele2vert.cp_cpu_gpu();
       FlowSol->icvert.cp_cpu_gpu();
       FlowSol->icvsta.cp_cpu_gpu();
@@ -752,6 +752,188 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
                 }
             }
         }
+    }
+
+    // Flag interfaces for calculating LES wall model
+    if(run_input.turb_model == 1) {
+
+      if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
+
+      int n_seg_noslip_inters = 0;
+      int n_tri_noslip_inters = 0;
+      int n_quad_noslip_inters = 0;
+      int order = run_input.order;
+      int n_fpts_per_inter_seg = order+1;
+      int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+      int n_fpts_per_inter_quad = (order+1)*(order+1);
+
+      for(int i=0;i<FlowSol->num_inters;i++) {
+
+        bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0) );
+
+        // All types of no-slip wall
+        if(bctype_f == 11 || bctype_f == 12 || bctype_f == 13 || bctype_f == 14) {
+
+          // segs
+          if (f2nv(i)==2) n_seg_noslip_inters++;
+
+          // tris
+          if (f2nv(i)==3) n_tri_noslip_inters++;
+
+          // quads
+          if (f2nv(i)==4) n_quad_noslip_inters++;
+        }
+      }
+
+      cout << "rank, local no-slip inters: " << FlowSol->rank << ", " << n_seg_noslip_inters << ", " << n_tri_noslip_inters << ", " << n_quad_noslip_inters << endl;
+
+#ifdef _MPI
+
+      /*! Code paraphrased from SU2 */
+
+      array<int> n_seg_inters_array(FlowSol->nproc);
+      array<int> n_tri_inters_array(FlowSol->nproc);
+      array<int> n_quad_inters_array(FlowSol->nproc);
+      int n_global_seg_noslip_inters = 0;
+      int n_global_tri_noslip_inters = 0;
+      int n_global_quad_noslip_inters = 0;
+      int max_seg_noslip_inters = 0;
+      int max_tri_noslip_inters = 0;
+      int max_quad_noslip_inters = 0;
+      int buf;
+
+      /*! Communicate to all processors the total number of no-slip boundary
+      inters, the maximum number of no-slip boundary inters on any single
+      partition, and the number of no-slip inters on each partition. */
+
+      MPI_Allreduce(&n_seg_noslip_inters, &n_global_seg_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+      MPI_Allreduce(&n_tri_noslip_inters, &n_global_tri_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+      MPI_Allreduce(&n_quad_noslip_inters, &n_global_quad_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+      MPI_Allreduce(&n_seg_noslip_inters, &max_seg_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+      MPI_Allreduce(&n_tri_noslip_inters, &max_tri_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+      MPI_Allreduce(&n_quad_noslip_inters, &max_quad_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+      MPI_Allgather(&n_seg_noslip_inters, 1, MPI_INT, n_seg_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
+      MPI_Allgather(&n_tri_noslip_inters, 1, MPI_INT, n_tri_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
+      MPI_Allgather(&n_quad_noslip_inters, 1, MPI_INT, n_quad_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
+
+      // Set loop counters to max. inters on any partition
+      n_seg_noslip_inters = max_seg_noslip_inters;
+      n_tri_noslip_inters = max_tri_noslip_inters;
+      n_quad_noslip_inters = max_quad_noslip_inters;
+
+#endif
+
+      // Allocate arrays for coordinates of points on no-slip boundaries
+      FlowSol->loc_noslip_bdy.setup(FlowSol->n_bdy_inter_types);
+      FlowSol->loc_noslip_bdy(0).setup(n_fpts_per_inter_seg,n_seg_noslip_inters,FlowSol->n_dims);
+      FlowSol->loc_noslip_bdy(1).setup(n_fpts_per_inter_tri,n_tri_noslip_inters,FlowSol->n_dims);
+      FlowSol->loc_noslip_bdy(2).setup(n_fpts_per_inter_quad,n_quad_noslip_inters,FlowSol->n_dims);
+
+      zero_array(FlowSol->loc_noslip_bdy(0));
+      zero_array(FlowSol->loc_noslip_bdy(1));
+      zero_array(FlowSol->loc_noslip_bdy(2));
+
+      n_seg_noslip_inters = 0;
+      n_tri_noslip_inters = 0;
+      n_quad_noslip_inters = 0;
+
+      // Get coordinates
+      for(int i=0;i<FlowSol->num_inters;i++) {
+
+        ic_l = f2c(i,0);
+        bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0) );
+
+        // All types of no-slip wall
+        if(bctype_f == 11 || bctype_f == 12 || bctype_f == 13 || bctype_f == 14) {
+
+          // segs
+          if (f2nv(i)==2) {
+            for(int j=0;j<n_fpts_per_inter_seg;j++) {
+              for(int k=0;k<FlowSol->n_dims;k++) {
+
+                // find coordinates using function in class eles
+                FlowSol->loc_noslip_bdy(0)(j,n_seg_noslip_inters,k) = *FlowSol->mesh_eles(ctype(ic_l))->get_loc_fpts_ptr(j,f2loc_f(i,0),k,local_c(ic_l));
+              }
+            }
+            n_seg_noslip_inters++;
+          }
+          // tris
+          if (f2nv(i)==3) {
+            for(int j=0;j<n_fpts_per_inter_tri;j++) {
+              for(int k=0;k<FlowSol->n_dims;k++) {
+
+                FlowSol->loc_noslip_bdy(1)(j,n_tri_noslip_inters,k) = *FlowSol->mesh_eles(ctype(ic_l))->get_loc_fpts_ptr(j,f2loc_f(i,0),k,local_c(ic_l));
+
+              }
+            }
+            n_tri_noslip_inters++;
+          }
+          // quads
+          if (f2nv(i)==4) {
+            for(int j=0;j<n_fpts_per_inter_quad;j++) {
+              for(int k=0;k<FlowSol->n_dims;k++) {
+
+                FlowSol->loc_noslip_bdy(2)(j,n_quad_noslip_inters,k) = *FlowSol->mesh_eles(ctype(ic_l))->get_loc_fpts_ptr(j,f2loc_f(i,0),k,local_c(ic_l));
+              }
+            }
+            n_quad_noslip_inters++;
+          }
+        }
+      }
+
+#ifdef _MPI
+
+      // Allocate global arrays for coordinates of points on no-slip boundaries
+      FlowSol->loc_noslip_bdy_global.setup(FlowSol->n_bdy_inter_types);
+
+      FlowSol->loc_noslip_bdy_global(0).setup(n_fpts_per_inter_seg,max_seg_noslip_inters,FlowSol->nproc*FlowSol->n_dims);
+
+      FlowSol->loc_noslip_bdy_global(1).setup(n_fpts_per_inter_tri,max_tri_noslip_inters,FlowSol->nproc*FlowSol->n_dims);
+
+      FlowSol->loc_noslip_bdy_global(2).setup(n_fpts_per_inter_quad,max_quad_noslip_inters,FlowSol->nproc*FlowSol->n_dims);
+
+      zero_array(FlowSol->loc_noslip_bdy_global(0));
+      zero_array(FlowSol->loc_noslip_bdy_global(1));
+      zero_array(FlowSol->loc_noslip_bdy_global(2));
+
+      // Broadcast coordinates of interface points to all partitions
+      buf = max_seg_noslip_inters*n_fpts_per_inter_seg*FlowSol->n_dims;
+
+      MPI_Allgather(FlowSol->loc_noslip_bdy(0).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(0).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+      buf = max_tri_noslip_inters*n_fpts_per_inter_tri*FlowSol->n_dims;
+
+      MPI_Allgather(FlowSol->loc_noslip_bdy(1).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(1).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+      buf = max_quad_noslip_inters*n_fpts_per_inter_quad*FlowSol->n_dims;
+
+      MPI_Allgather(FlowSol->loc_noslip_bdy(2).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(2).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+      //if (FlowSol->rank==0) {
+        //cout << "rank, global noslip seg coords " << FlowSol->rank << endl;
+        //FlowSol->loc_noslip_bdy_global(0).print();
+        //cout << "rank, global noslip tri coords " << FlowSol->rank << endl;
+        //FlowSol->loc_noslip_bdy_global(1).print();
+        //cout << "rank, global noslip quad coords " << FlowSol->rank << endl;
+        //FlowSol->loc_noslip_bdy_global(2).print();
+      //}
+
+      // Calculate distance of every solution point to nearest point on no-slip boundary for every partition
+      for(int i=0;i<FlowSol->n_ele_types;i++)
+        if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
+          FlowSol->mesh_eles(i)->calc_wall_distance_parallel(n_seg_inters_array,n_tri_inters_array,n_quad_inters_array,FlowSol->loc_noslip_bdy_global,FlowSol->nproc);
+
+#else
+
+      // Calculate distance of every solution point to nearest point on no-slip boundary
+      for(int i=0;i<FlowSol->n_ele_types;i++)
+        if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
+          FlowSol->mesh_eles(i)->calc_wall_distance(n_seg_noslip_inters,n_tri_noslip_inters,n_quad_noslip_inters,FlowSol->loc_noslip_bdy);
+
+#endif
+
     }
 
   // set on GPU

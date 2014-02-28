@@ -115,7 +115,7 @@ vpath %.h include
 
 # Objects
 
-OBJS    = $(OBJ)HiFiLES.o $(OBJ)geometry.o $(OBJ)solver.o $(OBJ)output.o $(OBJ)eles.o $(OBJ)eles_tris.o $(OBJ)eles_quads.o $(OBJ)eles_hexas.o $(OBJ)eles_tets.o $(OBJ)eles_pris.o $(OBJ)inters.o $(OBJ)int_inters.o $(OBJ)bdy_inters.o $(OBJ)funcs.o $(OBJ)flux.o $(OBJ)global.o $(OBJ)input.o $(OBJ)cubature_1d.o $(OBJ)cubature_tri.o $(OBJ)cubature_quad.o $(OBJ)cubature_hexa.o $(OBJ)cubature_tet.o
+OBJS    = $(OBJ)HiFiLES.o $(OBJ)geometry.o $(OBJ)solver.o $(OBJ)output.o $(OBJ)eles.o $(OBJ)eles_tris.o $(OBJ)eles_quads.o $(OBJ)eles_hexas.o $(OBJ)eles_tets.o $(OBJ)eles_pris.o $(OBJ)inters.o $(OBJ)int_inters.o $(OBJ)bdy_inters.o $(OBJ)funcs.o $(OBJ)flux.o $(OBJ)source.o $(OBJ)global.o $(OBJ)input.o $(OBJ)cubature_1d.o $(OBJ)cubature_tri.o $(OBJ)cubature_quad.o $(OBJ)cubature_hexa.o $(OBJ)cubature_tet.o
 
 ifeq ($(NODE),GPU)
 	OBJS	+=  $(OBJ)cuda_kernels.o
@@ -147,7 +147,7 @@ help:
 HiFiLES: $(OBJS)
 	$(CC) $(OPTS) -o $(BIN)HiFiLES $(OBJS) ${LIBS}
 
-$(OBJ)HiFiLES.o: HiFiLES.cpp geometry.h input.h flux.h error.h
+$(OBJ)HiFiLES.o: HiFiLES.cpp geometry.h input.h flux.h source.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
 $(OBJ)geometry.o: geometry.cpp geometry.h input.h  error.h
@@ -210,6 +210,9 @@ $(OBJ)cubature_tet.o: cubature_tet.cpp cubature_tet.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
 $(OBJ)flux.o: flux.cpp flux.h array.h error.h input.h error.h
+	$(CC) $(OPTS)  -c -o $@ $<
+	
+$(OBJ)source.o: source.cpp source.h array.h error.h input.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
 $(OBJ)input.o: input.cpp input.h error.h

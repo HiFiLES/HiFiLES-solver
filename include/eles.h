@@ -22,7 +22,7 @@
 #endif
 
 class eles
-{	
+{
 public:
 
   // #### constructors ####
@@ -107,16 +107,16 @@ public:
 
   /*! calculate transformed discontinuous inviscid flux at solution points */
   void calc_tdisinvf_upts(int in_disu_upts_from);
-  
+
   /*! calculate divergence of transformed discontinuous flux at solution points */
   void calc_div_tdisf_upts(int in_div_tconf_upts_to);
-  
+
   /*! calculate normal transformed discontinuous flux at flux points */
   void calc_norm_tdisf_fpts(void);
-  
+
   /*! calculate divergence of transformed continuous flux at solution points */
   void calc_div_tconf_upts(int in_div_tconf_upts_to);
-  
+
   /*! calculate uncorrected transformed gradient of the discontinuous solution at the solution points */
   void calc_uncor_tgrad_disu_upts(int in_disu_upts_from);
 
@@ -146,16 +146,19 @@ public:
 
   /*! calculate divergence of transformed continuous viscous flux at solution points */
   //void calc_div_tconvisf_upts(int in_div_tconinvf_upts_to);
-  
+
+  /*! calculate source term for SA turbulence model at solution points */
+  void calc_src_term_SA();
+
   /*! advance with rk11 (forwards euler) */
   void advance_rk11(void);
-  
+
   /*! advance with rk33 (three-stage third-order runge-kutta) */
   void advance_rk33(int in_step);
-  
+
   /*! advance with rk44 (four-stage forth-order runge-kutta) */
   void advance_rk44(int in_step);
-  
+
   /*! advance with rk45 (five-stage forth-order low-storage runge-kutta) */
   void advance_rk45(int in_step);
 
@@ -173,7 +176,7 @@ public:
 
   /*! get number of solution points per element */
   int get_n_upts_per_ele(void);
-  
+
   /*! get element type */
   int get_ele_type(void);
 
@@ -182,7 +185,7 @@ public:
 
   /*! get number of fields */
   int get_n_fields(void);
-  
+
   /*! set shape */
   void set_shape(int in_max_n_spts_per_ele);
 
@@ -212,7 +215,7 @@ public:
 
   /*! get a pointer to the artificial viscosity co-efficient */
   double* get_epsilon_fpts_ptr(int in_ele, int in_ele_local_inter, int in_inter_local_fpt);
-  
+
   /*! get a pointer to the normal transformed continuous flux at a flux point */
   double* get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
 
@@ -236,10 +239,10 @@ public:
 
   /*! get a pointer to the normal transformed continuous viscous flux at a flux point */
   //double* get_norm_tconvisf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
-  
+
   /*! set opp_0 */
   void set_opp_0(int in_sparse);
-  
+
   /*! set opp_1 */
   void set_opp_1(int in_sparse);
 
@@ -318,15 +321,21 @@ public:
   /*! set transforms at the volume cubature points*/
   void set_transforms_vol_cubpts(void);
 
+	/*! Calculate distance of solution points to no-slip wall */
+	void calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy);
+
+	/*! Calculate distance of solution points to no-slip wall in parallel */
+	void calc_wall_distance_parallel(array<int> n_seg_noslip_inters, array<int> n_tri_noslip_inters, array<int> n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy_global, int nproc);
+
   /*! calculate position */
   void calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos);
 
   /*! calculate derivative of position */
   void calc_d_pos(array<double> in_loc, int in_ele, array<double>& out_d_pos);
-  
+
   /*! calculate second derivative of position */
   void calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_pos);
-  
+
   // #### virtual methods ####
 
   virtual void setup_ele_type_specific(int in_run_type)=0;
@@ -384,7 +393,7 @@ public:
   void compute_wall_forces(array<double>& inv_force, array<double>& vis_force,ofstream& cp_file );
 
   array<double> compute_error(int in_norm_type, double& time);
-  
+
   array<double> get_pointwise_error(array<double>& sol, array<double>& grad_sol, array<double>& loc, double& time, int in_norm_type);
 
 
@@ -549,6 +558,10 @@ protected:
   array<double> temp_f;
   array<double> temp_sgsf;
 
+	/*! storage for distance of solution points to nearest no-slip boundary */
+	array<double> wall_distance;
+	array<double> wall_distance_mag;
+
   /*! number of storage levels for time-integration scheme */
   int n_adv_levels;
 
@@ -657,6 +670,9 @@ protected:
 
   /*! transformed gradient of determinant of jacobian at flux points */
   array<double> tgrad_detjac_fpts;
+
+  /*! source term for SA turbulence model at solution points */
+  array<double> src_term;
 
   array<double> d_nodal_s_basis;
   array<double> dd_nodal_s_basis;

@@ -180,6 +180,11 @@ void CalcResidual(struct solution* FlowSol) {
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calc_div_tconf_upts(in_div_tconf_upts_to);
 
+  /*! Compute source term */
+  if (run_input.turb_model==1) {
+      for (i=0; i<FlowSol->n_ele_types; i++)
+          FlowSol->mesh_eles(i)->calc_src_term_SA();
+  }
 }
 
 #ifdef _MPI
@@ -370,9 +375,10 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
 
 }
 
+#ifdef _GPU
 // Uses elemental artificial viscosity co-efficients to compute viscosity co-efficients at vertices
 void calc_artivisc_coeff_verts(struct solution* FlowSol)
 {
   calc_artivisc_coeff_verts_gpu_kernel_wrapper(FlowSol->num_verts, FlowSol->icvert.get_ptr_gpu(), FlowSol->icvsta.get_ptr_gpu(), FlowSol->epsilon_global_eles.get_ptr_gpu(), FlowSol->epsilon_verts.get_ptr_gpu());
 }
-
+#endif

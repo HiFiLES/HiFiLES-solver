@@ -490,6 +490,28 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
           cout << "ERROR: Invalid number of dimensions ... " << endl;
         }
     }
+  else if (run_input.equation == 2)
+  {
+      if (run_input.turb_model == 1)
+      {
+          if(FlowSol->n_dims==2)
+          {
+              write_tec << "Variables = \"x\", \"y\", \"rho\", \"mom_x\", \"mom_y\", \"ene\", \"mu_tilde\"" << endl;
+          }
+          else if(FlowSol->n_dims==3)
+          {
+              write_tec << "Variables = \"x\", \"y\", \"z\", \"rho\", \"mom_x\", \"mom_y\", \"mom_z\", \"ene\", \"mu_tilde\"" << endl;
+          }
+          else
+          {
+              cout << "ERROR: Invalid number of dimensions ... " << endl;
+          }
+      }
+      else
+      {
+          cout << "ERROR: Turbulent model not implemented ... " << endl;
+      }
+  }
 
   int time_iter = 0;
 
@@ -1111,6 +1133,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Density\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
+
+      /*! write out turbulent viscosity */
+      if (run_input.equation == 2) {
+        write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Mu_Tilde\" />" << endl;
+      }
+
       write_pvtu << "		</PPointData>" << endl;
 
       /*! Write points */
@@ -1238,6 +1266,27 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
               /*! End the line and finish writing DataArray and PointData objects */
               write_vtu << endl;
               write_vtu << "				</DataArray>" << endl;
+
+              /*! turbulent viscosity */
+              if (run_input.equation == 2) {
+                write_vtu << "				<DataArray type= \"Float32\" Name=\"Mu_Tilde\" format=\"ascii\">" << endl;
+                for(k=0;k<n_points;k++)
+                {
+                  /*! In 2D nu_tilde is the 5th solution component */
+                  if(n_dims==2)
+                  {
+                    write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
+                  }
+                  /*! In 3D nu_tilde is the 6th solution component */
+                  else
+                  {
+                    write_vtu << disu_ppts_temp(k,5)/disu_ppts_temp(k,0) << " ";
+                  }
+                }
+                /*! End the line and finish writing DataArray and PointData objects */
+                write_vtu << endl;
+                write_vtu << "				</DataArray>" << endl;
+              }
               write_vtu << "			</PointData>" << endl;
 
               /*! Calculate the plot coordinates */
@@ -3107,12 +3156,8 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 int monitor_residual(int in_file_num, struct solution* FlowSol) {
 
   int i, j, n_upts = 0, n_fields;
-  double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  double sum[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, norm[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
-
-
-  if (FlowSol->n_dims==2) n_fields = 4;
-  else n_fields = 5;
 
 #ifdef _GPU
   // copy residual to cpu
@@ -3123,8 +3168,10 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
     }
 #endif
 
+  //HACK (assume same number of fields for all elements)
   for(i=0; i<FlowSol->n_ele_types; i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+          n_fields = FlowSol->mesh_eles(i)->get_n_fields();
           n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
           for(j=0; j<n_fields; j++)
             sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
@@ -3134,7 +3181,7 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
 #ifdef _MPI
 
   int n_upts_global = 0;
-  double sum_global[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
@@ -3157,11 +3204,17 @@ int monitor_residual(int in_file_num, struct solution* FlowSol) {
             }
         }
 
-      // Write the header
-      if (write_heads) {
-          if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]" << endl;
-          else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]" << endl;
-        }
+    // Write the header
+    if (write_heads) {
+      if (FlowSol->n_dims==2) {
+        if (n_fields == 4) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]" << endl;
+        else cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]      Res[MuTilde]" << endl;
+      }
+      else {
+        if (n_fields == 5) cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]" << endl;
+        else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]      Res[MuTilde]" << endl;
+      }
+    }
 
       // Screen output
       cout.precision(8);

@@ -30,7 +30,7 @@ using namespace std;
 // default constructor
 
 input::input()
-{	
+{
 }
 
 input::~input()
@@ -98,6 +98,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
   epsilon0 = 0;
   s0 = 0;
   kappa = 0;
+  turb_model = 0;
 
   // Now read in parameters
   while(!in_run_input_file.eof() )
@@ -572,6 +573,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> kappa;
         }
+      else if (!param_name.compare("turb_model"))
+        {
+          in_run_input_file >> turb_model;
+        }
       else
         {
           cout << "input parameter =" << param_name << endl;
@@ -696,6 +701,23 @@ void input::setup(ifstream& in_run_input_file, int rank)
           rho_c_ic = rho_c_ic/rho_ref;
           p_c_ic = p_c_ic/p_ref;
           T_c_ic = T_c_ic/T_ref;
+
+          // SA turblence model parameters
+          prandtl_t = 0.9;
+          if (turb_model == 1)
+          {
+              c_v1 = 7.1;
+              c_v2 = 0.7;
+              c_v3 = 0.9;
+              c_b1 = 0.1355;
+              c_b2 = 0.622;
+              c_w2 = 0.3;
+              c_w3 = 2.0;
+              omega = 2.0/3.0;
+              Kappa = 0.41;
+              mu_tilde_c_ic = 5.0*mu_c_ic;
+              mu_tilde_inf = 5.0*mu_inf;
+          }
 
           if (rank==0)
             {

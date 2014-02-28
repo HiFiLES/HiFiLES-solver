@@ -47,6 +47,7 @@ extern "C"
 #include "../include/global.h"
 #include "../include/array.h"
 #include "../include/flux.h"
+#include "../include/source.h"
 #include "../include/eles.h"
 #include "../include/funcs.h"
 
@@ -57,7 +58,7 @@ using namespace std;
 // default constructor
 
 eles::eles()
-{	
+{
 }
 
 // default destructor
@@ -69,7 +70,7 @@ eles::~eles() {}
 // set number of elements
 
 void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
-{	
+{
 
   n_eles=in_n_eles;
 
@@ -139,6 +140,12 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
             }
         }
 
+      if (run_input.turb_model == 1)
+      {
+        wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
+        wall_distance_mag.setup(n_upts_per_ele,n_eles);
+      }
+
       set_shape(in_max_n_spts_per_ele);
       ele2global_ele.setup(n_eles);
       ele2global_ele_code.setup(n_eles);
@@ -183,6 +190,11 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
               epsilon_upts.setup(n_upts_per_ele,n_eles);
               epsilon_fpts.setup(n_fpts_per_ele,n_eles);
             }
+
+          // Initialize source term
+          src_term.setup(n_upts_per_ele, n_eles, n_fields);
+          src_term.initialize_to_zero();
+
           // Set connectivity array. Needed for Paraview output.
           if (ele_type==3) // prism
             connectivity_plot.setup(8,n_peles_per_ele);
@@ -393,11 +405,21 @@ void eles::set_ics(double& time)
               if(n_dims==2)
                 {
                   ics(3)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)));
+
+                  if(run_input.turb_model==1)
+                  {
+                      ics(4) = run_input.mu_tilde_c_ic;
+                  }
                 }
               else if(n_dims==3)
                 {
                   ics(3)=rho*vz;
                   ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));
+
+                  if(run_input.turb_model==1)
+                  {
+                      ics(5) = run_input.mu_tilde_c_ic;
+                  }
                 }
               else
                 {
@@ -620,7 +642,7 @@ void eles::mv_all_cpu_gpu(void)
           delta_disu_fpts.mv_cpu_gpu();
           grad_disu_upts.cp_cpu_gpu();
           grad_disu_fpts.mv_cpu_gpu();
-          
+
           // Needed for artificial viscosity routines
           epsilon.mv_cpu_gpu();
           epsilon_upts.mv_cpu_gpu();
@@ -743,7 +765,7 @@ void eles::advance_rk11(void)
             {
               for (int inp=0;inp<n_upts_per_ele;inp++)
                 {
-                  disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                  disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term - src_term(inp,ic,i));
                 }
             }
         }
@@ -787,7 +809,7 @@ void eles::advance_rk44(int in_step)
 // advance with rk45 (five-stage forth-order low-storage runge-kutta)
 
 void eles::advance_rk45(int in_step)
-{	
+{
   if (n_eles!=0)
     {
 
@@ -822,7 +844,7 @@ void eles::advance_rk45(int in_step)
             {
               for (int inp=0;inp<n_upts_per_ele;inp++)
                 {
-                  rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
+                  rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term + src_term(inp,ic,i);
                   res = disu_upts(1)(inp,ic,i);
                   res = rk4a*res + run_input.dt*rhs;
 
@@ -843,7 +865,7 @@ void eles::advance_rk45(int in_step)
 }
 
 
-// calculate the discontinuous solution at the flux points 
+// calculate the discontinuous solution at the flux points
 
 void eles::calc_disu_fpts(int in_disu_upts_from)
 {
@@ -1233,7 +1255,7 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 }
 
 
-// calculate uncorrected transformed gradient of the discontinuous solution at the solution points 
+// calculate uncorrected transformed gradient of the discontinuous solution at the solution points
 // (mixed derivative)
 
 void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
@@ -1465,7 +1487,7 @@ void eles::calc_cor_grad_disu_upts(void)
 }
 
 
-// calculate corrected gradient of the discontinuous solution at flux points 
+// calculate corrected gradient of the discontinuous solution at flux points
 
 void eles::calc_cor_grad_disu_fpts(void)
 {
@@ -1675,6 +1697,53 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 #ifdef _GPU
       calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff,run_input.artif_only, epsilon.get_ptr_gpu(), epsilon_upts.get_ptr_gpu());
 #endif
+
+    }
+}
+
+// calculate source term for SA turbulence model at solution points
+void eles::calc_src_term_SA()
+{
+    if (n_eles!=0)
+    {
+#ifdef _CPU
+
+        int i,j,k,l,m;
+
+        for(i=0; i<n_eles; i++)
+        {
+            for(j=0; j<n_upts_per_ele; j++)
+            {
+                // physical solution
+                for(k=0; k<n_fields; k++)
+                {
+                    temp_u(k)=disu_upts(0)(j,i,k);
+                }
+
+                // physical gradient
+                for(k=0; k<n_fields; k++)
+                {
+                    for (m=0; m<n_dims; m++)
+                    {
+                        temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
+                    }
+                }
+
+                // source term
+                if(n_dims==2)
+                    calc_source_SA_2d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_term(j,i,n_fields-1));
+                else if(n_dims==3)
+                    calc_source_SA_3d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_term(j,i,n_fields-1));
+                else
+                    cout << "ERROR: Invalid number of dimensions ... " << endl;
+            }
+        }
+
+#endif
+
+//#ifdef _GPU
+//        calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
+//#endif
 
     }
 }
@@ -1893,6 +1962,238 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
     }
 }
 
+/*! If using a RANS or LES near-wall model, calculate distance
+of each solution point to nearest no-slip wall by a brute-force method */
+
+void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> >& loc_noslip_bdy)
+{
+	if(n_eles!=0)
+	{
+		int i,j,k,m,n,p;
+		int n_fpts_per_inter_seg = order+1;
+		int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+		int n_fpts_per_inter_quad = (order+1)*(order+1);
+		double dist;
+		double distmin;
+	  array<double> pos(n_dims);
+	  array<double> pos_bdy(n_dims);
+	  array<double> vec(n_dims);
+	  array<double> vecmin(n_dims);
+
+		// hold our breath and go round the brute-force loop...
+		for (i=0;i<n_eles;++i) {
+			for (j=0;j<n_upts_per_ele;++j) {
+
+				// get coords of current solution point
+				calc_pos_upt(j,i,pos);
+				//cout << "rank, coords " << rank << endl;
+				//pos.print();
+
+				// initialize wall distance
+				distmin = 1e20;
+
+				// line segment boundaries
+				for (k=0;k<n_seg_noslip_inters;++k) {
+
+					for (m=0;m<n_fpts_per_inter_seg;++m) {
+
+						dist = 0.0;
+						// get coords of boundary flux point
+						for (n=0;n<n_dims;++n) {
+							pos_bdy(n) = loc_noslip_bdy(0)(m,k,n);
+							vec(n) = pos(n) - pos_bdy(n);
+							dist += vec(n)*vec(n);
+						}
+						dist = sqrt(dist);
+
+						//cout << "rank, coords_bdy " << rank << endl;
+						//pos_bdy.print();
+
+						// update shortest vector
+						if (dist < distmin) {
+							for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+							distmin = dist;
+						}
+					}
+				}
+
+				// tri boundaries
+				for (k=0;k<n_tri_noslip_inters;++k) {
+
+					for (m=0;m<n_fpts_per_inter_tri;++m) {
+
+						dist = 0.0;
+						// get coords of boundary flux point
+						for (n=0;n<n_dims;++n) {
+							pos_bdy(n) = loc_noslip_bdy(1)(m,k,n);
+							vec(n) = pos(n) - pos_bdy(n);
+							dist += vec(n)*vec(n);
+						}
+						dist = sqrt(dist);
+
+						// update shortest vector
+						if (dist < distmin) {
+							for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+							distmin = dist;
+						}
+					}
+				}
+
+				// quad boundaries
+				for (k=0;k<n_quad_noslip_inters;++k) {
+
+					for (m=0;m<n_fpts_per_inter_quad;++m) {
+
+						dist = 0.0;
+						// get coords of boundary flux point
+						for (n=0;n<n_dims;++n) {
+							pos_bdy(n) = loc_noslip_bdy(2)(m,k,n);
+							vec(n) = pos(n) - pos_bdy(n);
+							dist += vec(n)*vec(n);
+						}
+						dist = sqrt(dist);
+
+						// update shortest vector
+						if (dist < distmin) {
+							for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+							distmin = dist;
+						}
+					}
+				}
+			}
+
+			for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+			wall_distance_mag(j,i) = distmin;
+
+			//cout << "vec" << endl;
+			//vecmin.print();
+			//if(rank==0) cout << "rank, wall distance " << rank << ", " << distmin << endl;
+			//if(rank==0) cout << endl;
+		}
+	}
+}
+
+#ifdef _MPI
+
+void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int> n_tri_inters_array, array<int> n_quad_inters_array, array< array<double> >& loc_noslip_bdy_global, int nproc)
+{
+	if(n_eles!=0)
+	{
+		int i,j,k,m,n,p;
+		int n_fpts_per_inter_seg = order+1;
+		int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+		int n_fpts_per_inter_quad = (order+1)*(order+1);
+		double dist;
+		double distmin;
+	  array<double> pos(n_dims);
+	  array<double> pos_bdy(n_dims);
+	  array<double> vec(n_dims);
+	  array<double> vecmin(n_dims);
+
+		//if (rank==0) cout << "rank, nproc " << rank << endl;
+
+
+		// hold our breath and go round the brute-force loop...
+		for (i=0;i<n_eles;++i) {
+			for (j=0;j<n_upts_per_ele;++j) {
+
+				// get coords of current solution point
+				calc_pos_upt(j,i,pos);
+				//if (rank==0) cout << "rank, coords " << rank << endl;
+				//if (rank==0) pos.print();
+
+				// initialize wall distance
+				distmin = 1e20;
+
+				// loop over all partitions
+				for (p=0;p<nproc;++p) {
+
+					//if (rank==0) cout << "p, n_seg_inters(p) " << p << ", " << n_seg_inters_array(p) << endl;
+
+					// line segment boundaries
+					for (k=0;k<n_seg_inters_array(p);++k) {
+
+						for (m=0;m<n_fpts_per_inter_seg;++m) {
+
+							dist = 0.0;
+							// get coords of boundary flux point
+							for (n=0;n<n_dims;++n) {
+								pos_bdy(n) = loc_noslip_bdy_global(0)(m,k,p*n_dims+n);
+								vec(n) = pos(n) - pos_bdy(n);
+								dist += vec(n)*vec(n);
+							}
+							dist = sqrt(dist);
+
+							//if (rank==0) cout << "pos_bdy" << endl;
+							//if (rank==0) pos_bdy.print();
+
+							// update shortest vector
+							if (dist < distmin) {
+								for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+								distmin = dist;
+							}
+						}
+					}
+
+					// tri boundaries
+					for (k=0;k<n_tri_inters_array(p);++k) {
+
+						for (m=0;m<n_fpts_per_inter_tri;++m) {
+
+							dist = 0.0;
+							// get coords of boundary flux point
+							for (n=0;n<n_dims;++n) {
+								pos_bdy(n) = loc_noslip_bdy_global(1)(m,k,p*n_dims+n);
+								vec(n) = pos(n) - pos_bdy(n);
+								dist += vec(n)*vec(n);
+							}
+							dist = sqrt(dist);
+
+							// update shortest vector
+							if (dist < distmin) {
+								for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+								distmin = dist;
+							}
+						}
+					}
+
+					// quad boundaries
+					for (k=0;k<n_quad_inters_array(p);++k) {
+
+						for (m=0;m<n_fpts_per_inter_quad;++m) {
+
+							dist = 0.0;
+							// get coords of boundary flux point
+							for (n=0;n<n_dims;++n) {
+								pos_bdy(n) = loc_noslip_bdy_global(2)(m,k,p*n_dims+n);
+								vec(n) = pos(n) - pos_bdy(n);
+								dist += vec(n)*vec(n);
+							}
+							dist = sqrt(dist);
+
+							// update shortest vector
+							if (dist < distmin) {
+								for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+								distmin = dist;
+							}
+						}
+					}
+				}
+
+				for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+				wall_distance_mag(j,i) = distmin;
+
+				//if (rank==0) cout << "vecmin" << endl;
+				//if (rank==0) vecmin.print();
+				//if (rank==0) cout << "rank, wall distance " << rank << ", " << distmin << endl;
+				//if (rank==0) cout << endl;
+			}
+		}
+	}
+}
+
+#endif
+
 // Calculate filtered solution and Leonard terms
 void eles::calc_disuf_upts_ele(array<double>& in_u, array<double>& out_u)
 {
@@ -2066,13 +2367,13 @@ int eles::get_n_ppts_per_ele(void)
   return n_ppts_per_ele;
 }
 
-// get number of peles_per_ele 
+// get number of peles_per_ele
 int eles::get_n_peles_per_ele(void)
 {
   return n_peles_per_ele;
 }
 
-// get number of verts_per_ele 
+// get number of verts_per_ele
 int eles::get_n_verts_per_ele(void)
 {
   return n_verts_per_ele;
@@ -2121,13 +2422,13 @@ void eles::set_rank(int in_rank)
   rank = in_rank;
 }
 
-// set bc type 
+// set bc type
 void eles::set_bctype(int in_ele,int in_inter, int in_bctype)
 {
   bctype(in_ele, in_inter) = in_bctype;
 }
 
-// set number of shape points 
+// set number of shape points
 
 void eles::set_n_spts(int in_ele, int in_n_spts)
 {
@@ -2269,7 +2570,7 @@ void eles::set_opp_1(int in_sparse)
       for (int i=0;i<n_dims;i++) {
           array_to_mklcsr(opp_1(i),opp_1_data(i),opp_1_cols(i),opp_1_b(i),opp_1_e(i));
         }
-#endif 
+#endif
 
 #ifdef _GPU
       opp_1_ell_data.setup(n_dims);
@@ -2381,7 +2682,7 @@ void eles::set_opp_3(int in_sparse)
 
 #ifdef _GPU
   opp_3.cp_cpu_gpu();
-#endif 
+#endif
 
   if(in_sparse==0)
     {
@@ -2393,7 +2694,7 @@ void eles::set_opp_3(int in_sparse)
 
 #ifdef _CPU
       array_to_mklcsr(opp_3,opp_3_data,opp_3_cols,opp_3_b,opp_3_e);
-#endif 
+#endif
 
 #ifdef _GPU
       array_to_ellpack(opp_3, opp_3_ell_data, opp_3_ell_indices, opp_3_nnz_per_row);
@@ -2569,7 +2870,7 @@ void eles::set_opp_6(int in_sparse)
 
 #ifdef _GPU
   opp_6.cp_cpu_gpu();
-#endif 
+#endif
 
   if(in_sparse==0)
     {
@@ -2579,7 +2880,7 @@ void eles::set_opp_6(int in_sparse)
     {
       opp_6_sparse=1;
 
-#ifdef _CPU  
+#ifdef _CPU
       array_to_mklcsr(opp_6,opp_6_data,opp_6_cols,opp_6_b,opp_6_e);
 #endif
 
@@ -3751,7 +4052,7 @@ double* eles::get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
   return disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -3763,7 +4064,7 @@ double* eles::get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
 double* eles::get_epsilon_ptr(int in_ele)
 {
 
-#ifdef _GPU  
+#ifdef _GPU
         return epsilon.get_ptr_gpu(in_ele);
 #else
         return epsilon.get_ptr_cpu(in_ele);
@@ -3784,7 +4085,7 @@ double* eles::get_epsilon_fpts_ptr(int in_ele, int in_ele_local_inter, int in_in
                 fpt+=n_fpts_per_inter(i);
         }
 
-#ifdef _GPU  
+#ifdef _GPU
         return epsilon_fpts.get_ptr_gpu(fpt,in_ele);
 #else
         return epsilon_fpts.get_ptr_cpu(fpt,in_ele);
@@ -3806,7 +4107,7 @@ double* eles::get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return norm_tconf_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
   return norm_tconf_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -3829,7 +4130,7 @@ double* eles::get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return detjac_fpts.get_ptr_gpu(fpt,in_ele);
 #else
   return detjac_fpts.get_ptr_cpu(fpt,in_ele);
@@ -3851,7 +4152,7 @@ double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_f
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_gpu(fpt,in_ele);
 #else
   return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_cpu(fpt,in_ele);
@@ -3873,7 +4174,7 @@ double* eles::get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return norm_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 #else
   return norm_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
@@ -3895,7 +4196,7 @@ double* eles::get_loc_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, i
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return loc_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 #else
   return loc_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
@@ -3923,7 +4224,7 @@ double* eles::get_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return delta_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
   return delta_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -3945,7 +4246,7 @@ double* eles::get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_in
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return grad_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field,in_dim);
 #else
   return grad_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field,in_dim);
@@ -3967,7 +4268,7 @@ double* eles::get_norm_tconvisf_fpts_ptr(int in_inter_local_fpt, int in_ele_loca
         fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
     return norm_tconvisf_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
     return norm_tconvisf_fpts.get_ptr_cpu(fpt,in_ele,in_field);

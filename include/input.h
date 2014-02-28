@@ -18,7 +18,7 @@
 #include "array.h"
 
 class input
-{	
+{
 public:
 
   // #### constructors ####
@@ -41,7 +41,7 @@ public:
   void set_dt(double in_dt);
 
   void setup(ifstream& in_run_input_file, int rank);
-  
+
   void reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, int dev_ind, int dim_ind);
 
   // #### members ####
@@ -158,6 +158,19 @@ public:
   double R_gas;
   double mu_gas;
 
+  // SA turblence model parameters
+  double c_v1;
+  double c_v2;
+  double c_v3;
+  double c_b1;
+  double c_b2;
+  double c_w2;
+  double c_w3;
+  double omega;
+  double prandtl_t;
+  double Kappa;
+  double mu_tilde_c_ic;
+  double mu_tilde_inf;
   double c_sth;
   double mu_inf;
   double rt_inf;
@@ -184,7 +197,7 @@ public:
   double p_ref;
   double mu_ref;
   double time_ref;
-  
+
   double Mach_wall;
   double nx_wall;
   double ny_wall;
@@ -193,7 +206,7 @@ public:
   array<double> v_wall;
   double uvw_wall;
   double T_wall;
-  
+
   double Mach_c_ic;
   double nx_c_ic;
   double ny_c_ic;
@@ -216,5 +229,5 @@ public:
   array<double> y_coeffs;
   array<double> z_coeffs;
   int perturb_ic;
-
+  int turb_model;
 };

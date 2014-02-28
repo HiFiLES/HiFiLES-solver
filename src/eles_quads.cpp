@@ -46,7 +46,7 @@ using namespace std;
 // default constructor
 
 eles_quads::eles_quads()
-{	
+{
 
 }
 
@@ -66,6 +66,8 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
     n_fields=4;
   else if (run_input.equation==1)
     n_fields=1;
+  else if (run_input.equation==2)
+	  n_fields=5;
   else
     FatalError("Equation not supported");
 
@@ -878,7 +880,7 @@ int eles_quads::read_restart_info(ifstream& restart_file)
 }
 
 //
-void eles_quads::write_restart_info(ofstream& restart_file)        
+void eles_quads::write_restart_info(ofstream& restart_file)
 {
   restart_file << "QUADS" << endl;
 

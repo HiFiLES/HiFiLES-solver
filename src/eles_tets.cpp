@@ -47,7 +47,7 @@ using namespace std;
 // default constructor
 
 eles_tets::eles_tets()
-{	
+{
 }
 
 // #### methods ####
@@ -66,6 +66,8 @@ void eles_tets::setup_ele_type_specific(int in_run_type)
     n_fields=5;
   else if (run_input.equation==1)
     n_fields=1;
+  else if (run_input.equation==2)
+	  n_fields=6;
   else
     FatalError("Equation not supported");
 
@@ -697,14 +699,14 @@ void eles_tets::set_loc_spts(void)
     // Node 2 at (-1,1,-1)
     // Node 3 at (-1,-1,1)
 
-// 	z	
+// 	z
 //	|      y
 // 	      /
 //  3
 //  |   2
-//  |  / 
-//	| /   
-//	|/        
+//  |  /
+//	| /
+//	|/
 //  0--------1    ----> x
 
 // Second order
@@ -720,14 +722,14 @@ void eles_tets::set_loc_spts(void)
 // Node 8 at (-1,0,0)
 // Node 9 at (0,-1,0)
 
-// 	z	
+// 	z
 //	|      y
 // 	      /
 //  3
 //  |   2
-//  6  / \ 
-//	| 5   7  
-//	|/     \    
+//  6  / \
+//	| 5   7
+//	|/     \
 //  0---4----1    ----> x
 
 }
@@ -947,7 +949,7 @@ int eles_tets::read_restart_info(ifstream& restart_file)
 }
 
 // write restart info
-void eles_tets::write_restart_info(ofstream& restart_file)        
+void eles_tets::write_restart_info(ofstream& restart_file)
 {
   restart_file << "TETS" << endl;
 

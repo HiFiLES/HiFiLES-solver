@@ -31,7 +31,7 @@ using namespace std;
 // default constructor
 
 eles_pris::eles_pris()
-{	
+{
 }
 
 // #### methods ####
@@ -50,6 +50,8 @@ void eles_pris::setup_ele_type_specific(int in_run_type)
     n_fields=5;
   else if (run_input.equation==1)
     n_fields=1;
+  else if (run_input.equation==2)
+	  n_fields=6;
   else
     FatalError("Equation not supported");
 
@@ -870,7 +872,7 @@ int eles_pris::read_restart_info(ifstream& restart_file)
 
 }
 
-void eles_pris::write_restart_info(ofstream& restart_file)        
+void eles_pris::write_restart_info(ofstream& restart_file)
 {
   restart_file << "PRIS" << endl;
 

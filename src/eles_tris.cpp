@@ -66,6 +66,8 @@ void eles_tris::setup_ele_type_specific(int in_run_type)
     n_fields=4;
   else if (run_input.equation==1)
     n_fields=1;
+  else if (run_input.equation==2)
+	  n_fields=5;
   else
     FatalError("Equation not supported");
 
@@ -371,7 +373,7 @@ void eles_tris::set_area_coord(void)
   area_coord_upts.setup(n_dims+1,n_upts_per_ele);
   area_coord_fpts.setup(n_dims+1,n_fpts_per_ele);
 
-//  cout<<" no. of flux points = "<<n_fpts_per_ele; 
+//  cout<<" no. of flux points = "<<n_fpts_per_ele;
 
   array<double> T, T_inv; // matrix for computation of area coord - refer to barycentric system on wiki
   T.setup(n_dims,n_dims);
@@ -392,7 +394,7 @@ void eles_tris::set_area_coord(void)
 
      T(0,0) = x(0,0) - x(2,0);  T(1,0) = x(0,1) - x(2,1);
      T(0,1) = x(1,0) - x(2,0);  T(1,1) = x(1,1) - x(2,1);
-     
+
      T_inv = inv_array(T);
 
      //T_inv.print();
@@ -407,7 +409,7 @@ void eles_tris::set_area_coord(void)
           for(int k=0;k<n_dims;k++){
             lambda_temp(j,0) +=  T_inv(j,k)*r_temp(k,0);
           }
-        }        
+        }
 
         for(int j=0;j<n_dims;j++)
                 area_coord_upts(j,i) = lambda_temp(j,0);
