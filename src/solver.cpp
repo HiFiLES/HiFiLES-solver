@@ -370,9 +370,10 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
 
 }
 
+#ifdef _GPU
 // Uses elemental artificial viscosity co-efficients to compute viscosity co-efficients at vertices
 void calc_artivisc_coeff_verts(struct solution* FlowSol)
 {
   calc_artivisc_coeff_verts_gpu_kernel_wrapper(FlowSol->num_verts, FlowSol->icvert.get_ptr_gpu(), FlowSol->icvsta.get_ptr_gpu(), FlowSol->epsilon_global_eles.get_ptr_gpu(), FlowSol->epsilon_verts.get_ptr_gpu());
 }
-
+#endif
