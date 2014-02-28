@@ -275,29 +275,35 @@ void get_opp_3_dg(array<double>& opp_3_dg, array<double>& loc_upts_tri, array<do
 	}
 }
 
-// Compute a modal filter matrix, given Vandermonde matrix and inverse
-void compute_modal_filter(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N)
+// Compute a 1D modal filter matrix, given Vandermonde matrix and inverse
+void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order)
 {
-
-	int i,j;
+	int i,j,ind=0;
+	double Cp=0.1;     // filter strength coeff.
+	double p=order;    // filter exponent
+	double alpha, eta;
 	array <double> modal(N,N), mtemp(N,N);
 
 	zero_array(modal);
 	zero_array(filter_upts);
 
-	// Modal coefficients
-	double eta,Cp;
-	Cp=-100.0; // Dubiner SVV filter strength coeff.
-	double alpha = Cp/N; // Full form: alpha = Cp*(N+!)*dt/delta
+	// Full form: alpha = Cp*N*dt
+	alpha = Cp*N;
 
-	for(i=0;i<N;i++)
-	{
-		//modal(i,i)=1.0;	// Sharp modal cutoff filter
-		eta = i/(N+1.0);
-		modal(i,i)=exp(alpha*pow(eta,2*(N-1))); // Dubiner SVV 2D exp filter. MUST be even power
+	for(i=0;i<order+1;i++) {
+		// Exponential filter (SVV method) (similar to Meister et al 2009)
+		eta = i/order;
+		modal(ind,ind) = exp(-alpha*pow(eta,2*p));
+
+		// Gaussian filter in modal space (from SD3D)
+		//modal(ind,ind) = exp(-pow(pi*eta,2.0)/24.0);
+
+		// Sharp cutoff filter
+		//if(i+j<order)
+			//modal(ind,ind) = 1.0;
+
+		ind++;
 	}
-	// Sharp modal cutoff filter
-	//modal(N-1,N-1)=0.0;
 
 	cout<<"modal coeffs:"<<endl;
 	modal.print();
@@ -320,7 +326,8 @@ void compute_modal_filter(array <double>& filter_upts, array<double>& vandermond
 void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order)
 {
 	int i,j,ind=0;
-	double Cp=0.0001;    // Dubiner SVV filter strength coeff.
+	double Cp=0.1;     // Dubiner SVV filter strength coeff.
+	double p=order;    // filter exponent
 	double alpha, eta;
 	array <double> modal(N,N), mtemp(N,N);
 
@@ -334,7 +341,7 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 		for(j=0;j<order-i+1;j++) {
 			// Exponential filter (SVV method) (similar to Meister et al 2009)
 			eta = (i+j)/(order+1.0);
-			modal(ind,ind) = exp(-alpha*pow(eta,2*(order-1)));
+			modal(ind,ind) = exp(-alpha*pow(eta,2*p));
 
 			// Gaussian filter in modal space (from SD3D)
 			//modal(ind,ind) = exp(-pow(pi*eta,2.0)/24.0);
@@ -371,7 +378,8 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order)
 {
 	int i,j,k,ind=0;
-	double Cp=0.01;    // Dubiner SVV filter strength coeff.
+	double Cp=0.1;     // Dubiner SVV filter strength coeff.
+	double p=order;    // filter exponent
 	double alpha, eta;
 	array <double> modal(N,N), mtemp(N,N);
 
@@ -386,7 +394,7 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
 			for(k=0;k<order-i-j+1;k++) {
 				// Exponential filter (SVV method) (similar to Meister et al 2009)
 				eta = (i+j+k)/(order+1.0);
-				modal(ind,ind) = exp(-alpha*pow(eta,2*(order-1)));
+				modal(ind,ind) = exp(-alpha*pow(eta,2*p));
 
 				// Gaussian filter in modal space (from SD3D)
 				//modal(ind,ind) = exp(-pow(pi*eta*delta,2.0)/24.0)

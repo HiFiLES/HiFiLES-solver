@@ -1034,7 +1034,7 @@ void eles_hexas::compute_filter_upts(void)
 		printf("\nBuilding modal filter\n");
 
 		// Compute restriction-prolongation filter
-		compute_modal_filter(filter_upts_1D, vandermonde, inv_vandermonde, N);
+		compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
 
 		sum = 0;
 		for(i=0;i<N;i++)
