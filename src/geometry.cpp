@@ -124,14 +124,11 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
   /*! Reading vertices and cells. */
   ReadMesh(run_input.mesh_file, xv, c2v, c2n_v, ctype, ic2icg, iv2ivg, FlowSol->num_eles, FlowSol->num_verts, FlowSol);
 
-  if (in_run_type==1) // Plotting mode
-    {
-      /*! Store c2v, c2n_v, ctype. */
-      FlowSol->ele2vert = c2v;
-      FlowSol->ele2n_vert = c2n_v;
-      FlowSol->ele_type = ctype;
-    }
-
+  /*! Store c2v, c2n_v, ctype. */
+  FlowSol->ele2vert = c2v;
+  FlowSol->ele2n_vert = c2n_v;
+  FlowSol->ele_type = ctype;
+    
   /////////////////////////////////////////////////
   /// Set connectivity
   /////////////////////////////////////////////////
@@ -166,6 +163,9 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
   // Compute connectivity
   CompConnectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, rot_tag, unmatched_inters, n_unmatched_inters, icvsta, icvert, FlowSol->num_inters, FlowSol->num_edges, FlowSol);
+
+  FlowSol->icvert = icvert;
+  FlowSol->icvsta = icvsta;
 
   // Reading boundaries
   ReadBound(run_input.mesh_file,c2v,c2n_v,ctype,bctype_c,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts, FlowSol);
@@ -273,6 +273,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
           local_c(i) = tris_count;
           FlowSol->mesh_eles_tris.set_n_spts(tris_count,c2n_v(i));
           FlowSol->mesh_eles_tris.set_ele2global_ele(tris_count,ic2icg(i));
+          FlowSol->mesh_eles_tris.set_ele2global_ele_code(tris_count,i);
 
           for (int j=0;j<c2n_v(i);j++)
             {
@@ -292,6 +293,8 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
           local_c(i) = quads_count;
           FlowSol->mesh_eles_quads.set_n_spts(quads_count,c2n_v(i));
           FlowSol->mesh_eles_quads.set_ele2global_ele(quads_count,ic2icg(i));
+          FlowSol->mesh_eles_quads.set_ele2global_ele_code(quads_count,i);
+
           for (int j=0;j<c2n_v(i);j++)
             {
               pos(0) = xv(c2v(i,j),0);
@@ -400,6 +403,18 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
               FlowSol->mesh_eles(i)->mv_all_cpu_gpu();
             }
         }
+
+      //Setup array needed for artificial viscosity
+      FlowSol->epsilon_verts.setup(FlowSol->num_verts);
+      FlowSol->epsilon_global_eles.setup(FlowSol->num_eles);
+
+      //Move them to GPU 
+      FlowSol->ele2vert.cp_cpu_gpu();
+      FlowSol->icvert.cp_cpu_gpu();
+      FlowSol->icvsta.cp_cpu_gpu();
+      FlowSol->epsilon_verts.mv_cpu_gpu();
+      FlowSol->epsilon_global_eles.mv_cpu_gpu();
+      cout<<"Done Moving to GPU" << endl;
     }
 #endif
 
@@ -749,6 +764,8 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
       for(int i=0;i<FlowSol->n_bdy_inter_types;i++)
         FlowSol->mesh_bdy_inters(i).mv_all_cpu_gpu();
+
+      cout<< "Done moving interfaces to GPU" << endl;
     }
 #endif
 

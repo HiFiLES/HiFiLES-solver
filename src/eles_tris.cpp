@@ -125,6 +125,9 @@ void eles_tris::setup_ele_type_specific(int in_run_type)
       temp_u.setup(n_fields);
       temp_f.setup(n_fields,n_dims);
 
+      //Needed for artificial viscosity routines
+      set_area_coord();
+
       //}
       //else
       //{
@@ -363,6 +366,80 @@ void eles_tris::set_tloc_fpts(void)
 
 }
 
+void eles_tris::set_area_coord(void)
+{
+  area_coord_upts.setup(n_dims+1,n_upts_per_ele);
+  area_coord_fpts.setup(n_dims+1,n_fpts_per_ele);
+
+//  cout<<" no. of flux points = "<<n_fpts_per_ele; 
+
+  array<double> T, T_inv; // matrix for computation of area coord - refer to barycentric system on wiki
+  T.setup(n_dims,n_dims);
+  T_inv.setup(n_dims,n_dims);
+
+  array<double> lambda_temp, r_temp;
+  r_temp.setup(n_dims,1);
+  lambda_temp.setup(n_dims,1);
+
+  array<double> x;
+  x.setup(3,2);
+
+  if(n_dims == 2)
+  {
+     // Assuming (-1,-1) as first node, (1,-1) as second and (-1,1) as third
+
+     x(0,0) = -1; x(0,1) = -1; x(1,0) = 1; x(1,1) = -1; x(2,0) = -1; x(2,1) = 1;
+
+     T(0,0) = x(0,0) - x(2,0);  T(1,0) = x(0,1) - x(2,1);
+     T(0,1) = x(1,0) - x(2,0);  T(1,1) = x(1,1) - x(2,1);
+     
+     T_inv = inv_array(T);
+
+     //T_inv.print();
+
+     for(int i=0;i<n_upts_per_ele;i++)
+     {
+        for(int j=0;j<n_dims;j++)
+                r_temp(j,0) = loc_upts(j,i) - x(2,j);
+
+        for(int j=0;j<n_dims;j++){
+          lambda_temp(j,0) = 0;
+          for(int k=0;k<n_dims;k++){
+            lambda_temp(j,0) +=  T_inv(j,k)*r_temp(k,0);
+          }
+        }        
+
+        for(int j=0;j<n_dims;j++)
+                area_coord_upts(j,i) = lambda_temp(j,0);
+
+        area_coord_upts(n_dims,i) = 1 - lambda_temp(0,0) - lambda_temp(1,0);
+        //cout<<"i = "<<i<<"; values = "<<area_coord_upts(0,i)<<"   "<<area_coord_upts(1,i)<<"   "<<area_coord_upts(2,i) << endl;
+
+     }
+
+     for(int i=0;i<n_fpts_per_ele;i++)
+     {
+        for(int j=0;j<n_dims;j++)
+                r_temp(j,0) = loc_fpts(j,i) - x(2,j);
+
+        for(int j=0;j<n_dims;j++){
+          lambda_temp(j,0) = 0;
+          for(int k=0;k<n_dims;k++)
+            lambda_temp =  T_inv(j,k)*r_temp(k,0);
+        }
+
+        for(int j=0;j<n_dims;j++)
+                area_coord_fpts(j,i) = lambda_temp(j,0);
+
+        area_coord_fpts(n_dims,i) = 1 - lambda_temp(0,0) - lambda_temp(1,0);
+
+//      cout<<"i = "<<i<<"; values = "<< area_coord_fpts(0,i)<<"   "<<area_coord_fpts(1,i)<<"   "<<area_coord_fpts(2,i)<< endl;
+     }
+  }
+
+  else
+        cout<<"Area coordinate calculation has not yet been implemented for this dimension" << endl;
+}
 
 void eles_tris::set_volume_cubpts(void)
 {
@@ -582,6 +659,7 @@ void eles_tris::set_vandermonde(void)
 
   // Store its inverse
   inv_vandermonde = inv_array(vandermonde);
+  inv_vandermonde2D = inv_vandermonde;
 }
 
 // initialize the vandermonde matrix for the restart file

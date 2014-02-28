@@ -106,6 +106,15 @@ public:
 
   /*! Calculate element volume */
   double calc_ele_vol(double& detjac);
+  
+  /*! set area coordinates of solution points and flux point */
+  void set_area_coord(void);
+
+  /*! set area coordinates of solution points and flux point */
+  void set_vandermonde2D(void);
+
+  /*! Evaluate 2D Legendre Basis */
+  double eval_legendre_basis_2D(int, array<double>);
 
 protected:
 

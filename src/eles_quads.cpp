@@ -76,6 +76,7 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
   set_loc_1d_upts();
   set_loc_upts();
   set_vandermonde();
+  set_vandermonde2D();
 
   n_ppts_per_ele=p_res*p_res;
   n_peles_per_ele=(p_res-1)*(p_res-1);
@@ -85,6 +86,8 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
   set_inters_cubpts();
   set_volume_cubpts();
   set_opp_volume_cubpts();
+
+  set_area_coord();
 
   if (in_run_type==0)
     {
@@ -394,6 +397,35 @@ void eles_quads::set_tloc_fpts(void)
             }
         }
     }
+}
+
+// Set area co-ordinates/shape functions for bilinear interpolation used in AV routines
+void eles_quads::set_area_coord(void)
+{
+  area_coord_upts.setup(n_dims+1,n_upts_per_ele);
+  area_coord_fpts.setup(n_dims+1,n_fpts_per_ele);
+
+  if(n_dims == 2)
+  {
+     for(int i=0;i<n_upts_per_ele;i++)
+     {
+        area_coord_upts(0,i) = 0.25*(1 - loc_upts(0,i))*(1 - loc_upts(1,i));
+        area_coord_upts(1,i) = 0.25*(1 - loc_upts(0,i))*(1 + loc_upts(1,i));
+        area_coord_upts(2,i) = 0.25*(1 + loc_upts(0,i))*(1 + loc_upts(1,i));
+        area_coord_upts(3,i) = 0.25*(1 + loc_upts(0,i))*(1 - loc_upts(1,i));
+     }
+
+     for(int i=0;i<n_fpts_per_ele;i++)
+     {
+        area_coord_fpts(0,i) = 0.25*(1 - loc_fpts(0,i))*(1 - loc_fpts(1,i));
+        area_coord_fpts(1,i) = 0.25*(1 - loc_fpts(0,i))*(1 + loc_fpts(1,i));
+        area_coord_fpts(2,i) = 0.25*(1 + loc_fpts(0,i))*(1 + loc_fpts(1,i));
+        area_coord_fpts(3,i) = 0.25*(1 + loc_fpts(0,i))*(1 - loc_fpts(1,i));
+     }
+  }
+
+  else
+        cout<<"Area coordinate calculation has not yet been implemented for this dimension" << endl;
 }
 
 // set location and weights of interface cubature points in standard element
@@ -877,6 +909,26 @@ void eles_quads::set_vandermonde(void)
   inv_vandermonde = inv_array(vandermonde);
 }
 
+// Set the 2D inverse Vandermonde array needed for shock capturing
+void eles_quads::set_vandermonde2D()
+{
+  vandermonde2D.setup(n_upts_per_ele,n_upts_per_ele);
+  inv_vandermonde2D.setup(n_upts_per_ele*n_upts_per_ele);
+  array <double> loc(n_dims);
+
+        // create the vandermonde matrix
+        for (int i=0;i<n_upts_per_ele;i++){
+                for (int j=0;j<n_upts_per_ele;j++){
+                        loc(0) = loc_upts(0,i);
+                        loc(1) = loc_upts(1,i);
+                        vandermonde2D(i,j) = eval_legendre_basis_2D(j,loc);
+                }
+        }
+
+        // Store its inverse
+        inv_vandermonde2D = inv_array(vandermonde2D);
+}
+
 // evaluate nodal basis
 
 double eles_quads::eval_nodal_basis(int in_index, array<double> in_loc)
@@ -1088,6 +1140,21 @@ void eles_quads::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<do
       cout << "Shape basis not implemented yet in dd_nodal_s_basis, exiting" << endl;
       exit(1);
     }
+}
+
+// Evaluate 2D legendre basis
+double eles_quads::eval_legendre_basis_2D(int in_index, array<double> in_loc)
+{
+        int i,j;
+
+        double leg_basis;
+
+        i=in_index/(order+1);
+        j=in_index-((order+1)*i);
+
+        leg_basis=eval_legendre(in_loc(0),j)*eval_legendre(in_loc(1),i);
+
+        return leg_basis;
 }
 
 void eles_quads::fill_opp_3(array<double>& opp_3)

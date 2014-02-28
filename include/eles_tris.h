@@ -98,6 +98,9 @@ public:
   /*! Calculate element volume */
   double calc_ele_vol(double& detjac);
 
+  /*! Calculate Area co-odinates at upts and fpts */
+  void set_area_coord(void);
+
 protected:
 
   // methods

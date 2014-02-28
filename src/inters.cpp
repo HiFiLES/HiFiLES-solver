@@ -111,6 +111,8 @@ void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
         {
           grad_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
           //norm_tconvisf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
+          epsilon_l.setup(n_inters);
+          epsilon_fpts_l.setup(n_fpts_per_inter, n_inters);
         }
 
       temp_u_l.setup(n_fields);

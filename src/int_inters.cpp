@@ -67,6 +67,8 @@ void int_inters::setup(int in_n_inters,int in_inter_type,int in_run_type)
       if(viscous)
         {
           grad_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+          epsilon_r.setup(n_inters);
+          epsilon_fpts_r.setup(n_fpts_per_inter,n_inters);
         }
     }
 
@@ -81,6 +83,8 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
   if (in_run_type==0)
     {
       get_lut(rot_tag);
+      epsilon_l(in_inter) = get_epsilon_ptr(in_ele_type_l,in_ele_l,FlowSol);
+      epsilon_r(in_inter) = get_epsilon_ptr(in_ele_type_r,in_ele_r,FlowSol);
 
       for(i=0;i<n_fields;i++)
         {
@@ -115,6 +119,9 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
 
           mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
           mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+
+          epsilon_fpts_l(i,in_inter) = get_epsilon_fpts_ptr(in_ele_type_l, in_ele_l, in_local_inter_l, i,FlowSol);
+          epsilon_fpts_r(i,in_inter) = get_epsilon_fpts_ptr(in_ele_type_r, in_ele_r, in_local_inter_r, i_rhs,FlowSol);
 
           for(j=0;j<n_dims;j++)
             {
@@ -152,6 +159,12 @@ void int_inters::mv_all_cpu_gpu(void)
 
       grad_disu_fpts_r.mv_cpu_gpu();
       //norm_tconvisf_fpts_r.mv_cpu_gpu();
+
+      epsilon_l.mv_cpu_gpu();
+      epsilon_r.mv_cpu_gpu();
+
+      epsilon_fpts_l.mv_cpu_gpu();
+      epsilon_fpts_r.mv_cpu_gpu();
     }
 
 #endif
@@ -320,7 +333,7 @@ void int_inters::calc_norm_tconvisf_fpts(void)
 
 #ifdef _GPU
   if (n_inters!=0)
-    calc_norm_tconvisf_fpts_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
+    calc_norm_tconvisf_fpts_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff,run_input.artif_only,epsilon_l.get_ptr_gpu(),epsilon_r.get_ptr_gpu(),epsilon_fpts_l.get_ptr_gpu(),epsilon_fpts_r.get_ptr_gpu());
 #endif
 }
 

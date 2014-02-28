@@ -132,6 +132,12 @@ public:
   /*! calculate transformed discontinuous viscous flux at solution points */
   void calc_tdisvisf_upts(int in_disu_upts_from);
 
+  /*! calculate element-wise artificial viscosity coefficients */
+  void calc_artivisc_coeff(int in_disu_upts_from, double* epsilon_global_eles_cpu);
+
+  /*! calculate AV co-effs at solution and flux points */
+  void calc_artivisc_coeff_upts_fpts(double* in_epsilon_verts, int* c2v, int num_eles);
+
   /*! calculate divergence of transformed discontinuous viscous flux at solution points */
   //void calc_div_tdisvisf_upts(int in_div_tconinvf_upts_to);
 
@@ -195,8 +201,17 @@ public:
   /*!  set global element number */
   void set_ele2global_ele(int in_ele, int in_global_ele);
 
+  /*!  set global element number */
+  void set_ele2global_ele_code(int in_ele, int in_global_ele);
+
   /*! get a pointer to the transformed discontinuous solution at a flux point */
   double* get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
+
+  /*! get a pointer to the artificial viscosity co-efficient */
+  double* get_epsilon_ptr(int in_ele);
+
+  /*! get a pointer to the artificial viscosity co-efficient */
+  double* get_epsilon_fpts_ptr(int in_ele, int in_ele_local_inter, int in_inter_local_fpt);
   
   /*! get a pointer to the normal transformed continuous flux at a flux point */
   double* get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
@@ -448,6 +463,9 @@ protected:
 
   /*! Global cell number of element */
   array<int> ele2global_ele;
+
+  /*! Global cell number of element as in the code */
+  array<int> ele2global_ele_code;
 
   /*! Global cell number of element */
   array<int> bdy_ele2ele;
@@ -774,4 +792,12 @@ protected:
 
   int rank;
 
+  /*! Artificial Viscosity variables */
+  array<double> vandermonde2D;
+  array<double> inv_vandermonde2D;
+  array<double> area_coord_upts;
+  array<double> area_coord_fpts;
+  array<double> epsilon;
+  array<double> epsilon_upts;
+  array<double> epsilon_fpts;
 };

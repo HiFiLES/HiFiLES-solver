@@ -707,7 +707,7 @@ __device__ void inv_NS_flux(double* q, double *p, double* f, double in_gamma, in
 
 
 template<int in_n_dims>
-__device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double* grad_ene, double* stensor, double* f, double* inte, double* mu, double in_prandtl, double in_gamma, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int in_field)
+__device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double* grad_ene, double* stensor, double* f, double* inte, double* mu, double in_prandtl, double in_gamma, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int in_field, double in_epsilon, int artif_only)
 {
   double diag;
   double rt_ratio;
@@ -722,7 +722,7 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
           // Viscosity
           rt_ratio = (in_gamma-1.)*(*inte)/(in_rt_inf);
           (*mu) = in_mu_inf*pow(rt_ratio,1.5)*(1.+in_c_sth)/(rt_ratio+in_c_sth);
-          (*mu) = (*mu) + in_fix_vis*(in_mu_inf - (*mu));
+          (*mu) = (1 - artif_only)*((*mu) + in_fix_vis*(in_mu_inf - (*mu)));
 
           // Velocity gradients
 #pragma unroll
@@ -786,6 +786,11 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
           f[0]  = -((q[1]/q[0])*stensor[0] + (q[2]/q[0])*stensor[2] + (*mu)*in_gamma*grad_ene[0]/in_prandtl);
           f[1]  = -((q[1]/q[0])*stensor[2] + (q[2]/q[0])*stensor[1] + (*mu)*in_gamma*grad_ene[1]/in_prandtl);
         }
+
+      if(in_field != -1){
+	f[0] = f[0] + in_epsilon*grad_q[in_field*in_n_dims + 0];
+	f[1] = f[1] + in_epsilon*grad_q[in_field*in_n_dims + 1];
+      }
     }
   else if(in_n_dims==3)
     {
@@ -1544,6 +1549,7 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
 
       // Set boundary condition
       bdy_spec = in_boundary_type[thread_id/in_n_fpts_per_inter];
+
       set_inv_boundary_conditions_kernel<in_n_dims,in_n_fields>(bdy_spec,q_l,q_r,norm,loc,in_bdy_params,in_gamma, in_R_ref, in_time_bound, in_equation);
 
       if (bdy_spec==16) // Dual consistent
@@ -1589,10 +1595,148 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
     }
 }
 
+__global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_ele, int in_order, int in_ele_type, double epsilon0, double s0, double kappa, double* in_disu_upts_ptr, double* out_epsilon_ptr, double* in_inv_vandermonde_ptr, double* epsilon_global_eles, int* ele2global_ele_code)
+{
+	const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if(thread_id < in_n_eles)
+  {
+	int stride = in_n_upts_per_ele*in_n_eles;
+	int global_ele_num = ele2global_ele_code[thread_id];
+
+  double nodal_rho[21];  // Array allocated so it can handle p=5 for tris
+  double modal_rho[21];
+  int n_local;
+
+  if(in_ele_type == 0) 	 // Tris
+  	n_local = in_order*(in_order + 1)/2 ;
+  else
+	n_local = in_order*in_order;
+ 
+  double sensor;
+  double numer,denom;
+  //double epsilon0 = -0.01;
+  //double epsilon0 = 0;
+  //double s0 = -2;
+  //double kappa = 1;
+
+	for(int i=0; i<in_n_upts_per_ele; i++)
+		nodal_rho[i] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + i];
+	
+	// Nodal to modal
+	for(int i=0; i<in_n_upts_per_ele; i++){
+	   modal_rho[i] = 0;
+	   for(int j=0; j<in_n_upts_per_ele; j++)
+		modal_rho[i] += in_inv_vandermonde_ptr[j + i*in_n_upts_per_ele]*nodal_rho[j];
+	}
+
+	// Compute the numerator of the sensor 
+	numer = 0;
+	for(int i = n_local; i<in_n_upts_per_ele; i++)
+		numer += modal_rho[i]*modal_rho[i];
+
+	// Compute the denominator of the sensor 
+	denom = 0;
+	for(int i=0; i<in_n_upts_per_ele; i++)
+		denom += modal_rho[i]*modal_rho[i];
+
+	sensor = log10(numer/denom);
+
+	if(sensor < s0 - kappa)
+		out_epsilon_ptr[thread_id] = 0;
+	else if(sensor > s0 + kappa)
+		out_epsilon_ptr[thread_id] = epsilon0;
+	else
+		out_epsilon_ptr[thread_id] = (epsilon0/2)*(1 + sin(3.141592*(sensor-s0)/(2*kappa)));
+
+	epsilon_global_eles[global_ele_num] = out_epsilon_ptr[thread_id];
+
+	//if(sensor >= -3)
+		//printf("Sensor at %d is: %f and epsilon is: %f \n", thread_id, sensor, out_epsilon_ptr[thread_id]);  
+
+  }
+
+}
+
+__global__ void calc_artivisc_coeff_verts_gpu_kernel(int in_n_verts, int* in_icvert, int* in_icvsta, double* in_epsilon_global_eles, double* out_epsilon_verts)
+{
+
+	const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
+	double eps_max = 100;
+	int ele_num;
+
+  if(thread_id < in_n_verts)
+  {
+	for(int i=in_icvsta[thread_id]; i<in_icvsta[thread_id+1]; i++)
+	{
+		ele_num = in_icvert[i];
+		if(in_epsilon_global_eles[ele_num] < eps_max)
+			eps_max = in_epsilon_global_eles[ele_num];
+	}
+
+	out_epsilon_verts[thread_id] = eps_max;
+	//if(eps_max <= -0.0001)
+		//printf(" Vertex id: %d, epsilon: %f \n", thread_id, eps_max);
+  }
+
+}
+
+
+__global__ void calc_artivisc_coeff_upts_gpu_kernel(int in_n_eles, int in_n_upts_per_ele, int in_num_eles_total, int in_num_area_coords, int* in_n_spts_per_ele, int* in_ele2global_ele_code, double* in_area_coord_upts, int* in_c2v, double* in_epsilon_verts, double* out_epsilon_upts)
+{
+	const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if(thread_id < in_n_eles*in_n_upts_per_ele)
+  {
+	int ele_num = thread_id/in_n_upts_per_ele;
+	int upt_num = thread_id - ele_num*in_n_upts_per_ele;
+	int global_ele_num = in_ele2global_ele_code[ele_num];
+	int vert_num;
+	double eps_upt = 0;
+
+	for(int k=0; k<in_n_spts_per_ele[ele_num]; k++)
+	{
+		vert_num = in_c2v[k*in_num_eles_total + global_ele_num];
+		eps_upt += in_area_coord_upts[upt_num*in_num_area_coords + k]*in_epsilon_verts[vert_num];
+	}
+
+	out_epsilon_upts[thread_id] = eps_upt;
+
+	//if(out_epsilon_upts[thread_id] <= -0.0001)
+		//printf(" Vertex id: %d, epsilon: %f \n", thread_id, out_epsilon_upts[thread_id]);
+  }
+}
+
+__global__ void calc_artivisc_coeff_fpts_gpu_kernel(int in_n_eles, int in_n_fpts_per_ele, int in_num_eles_total, int in_num_area_coords, int* in_n_spts_per_ele, int* in_ele2global_ele_code, double* in_area_coord_fpts, int* in_c2v, double* in_epsilon_verts, double* out_epsilon_fpts)
+{
+	const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if(thread_id < in_n_eles*in_n_fpts_per_ele)
+  {
+	int ele_num = thread_id/in_n_fpts_per_ele;
+	int fpt_num = thread_id - ele_num*in_n_fpts_per_ele;
+	int global_ele_num = in_ele2global_ele_code[ele_num];
+	int vert_num;
+	double eps_fpt = 0;
+
+	for(int k=0; k<in_n_spts_per_ele[ele_num]; k++)
+	{
+		vert_num = in_c2v[k*in_num_eles_total + global_ele_num];
+		eps_fpt += in_area_coord_fpts[fpt_num*in_num_area_coords + k]*in_epsilon_verts[vert_num];
+	}
+
+	out_epsilon_fpts[thread_id] = eps_fpt;
+
+	//if(eps_fpt > 0.0000001)
+	//	printf("Epsilon at thread id %d is %f \n", thread_id, eps_fpt);
+  }
+}
+
+
 
 // gpu kernel to calculate transformed discontinuous viscous flux at solution points
 template<int in_n_dims, int in_n_fields, int in_n_comp>
-__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
+__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int artif_only, double* in_epsilon_ptr, double* in_epsilon_upts_ptr)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
@@ -1610,9 +1754,11 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 
   int ind;
   int stride = in_n_upts_per_ele*in_n_eles;
-
+  int element_number = thread_id/in_n_upts_per_ele;
+  
   if(thread_id<(in_n_upts_per_ele*in_n_eles))
     {
+      double epsilon = in_epsilon_upts_ptr[thread_id];
       // Physical solution
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
@@ -1637,7 +1783,7 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
         }
 
       // Flux prep
-      vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1);
+      vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon, artif_only);
 
       int index;
 
@@ -1645,7 +1791,7 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         {
-          vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
+          vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon, artif_only);
 
           index = thread_id+i*stride;
 
@@ -1831,10 +1977,11 @@ __global__ void transform_grad_disu_upts_kernel(int in_n_upts_per_ele, int in_n_
 
 // gpu kernel to calculate normal transformed continuous viscous flux at the flux points
 template <int in_n_dims, int in_n_fields, int in_n_comp, int in_vis_riemann_solve_type>
-__global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_norm_tconf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
+__global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_norm_tconf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_r_ptr, double** in_epsilon_fpts_l_ptr, double** in_epsilon_fpts_r_ptr)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
+  int inter_number = thread_id/(in_n_fpts_per_inter);
 
   double q_l[in_n_fields];
   double q_r[in_n_fields];
@@ -1856,6 +2003,9 @@ __global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
 
   if(thread_id<stride)
     {
+      double epsilon_l = *(in_epsilon_fpts_l_ptr[thread_id]);
+      double epsilon_r = *(in_epsilon_fpts_r_ptr[thread_id]);
+
       // Left solution
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
@@ -1876,12 +2026,12 @@ __global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
         norm[i]=*(in_norm_fpts_ptr[thread_id + i*stride]);
 
       // Left flux prep
-      vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1);
+      vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_l, artif_only);
 
       // Left flux computation
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
-        vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f_l[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
+        vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f_l[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_l, artif_only);
 
 
       // Right solution
@@ -1899,12 +2049,12 @@ __global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
         }
 
       // Right flux prep
-      vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1);
+      vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_r, artif_only);
 
       // Right flux computation
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
-        vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f_r[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
+        vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f_r[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_r, artif_only);
 
       // Compute common flux
       if(in_vis_riemann_solve_type == 0)
@@ -2019,11 +2169,12 @@ __global__ void calc_norm_tconvisf_fpts_AD_gpu_kernel(int in_n_fpts_per_inter, i
 
 // kernel to calculate normal transformed continuous viscous flux at the flux points at boundaries
 template<int in_n_dims, int in_n_fields, int in_n_comp, int in_vis_riemann_solve_type>
-__global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double diff_coeff)
+__global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double diff_coeff, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_fpts_l_ptr)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
 
+  int inter_number = thread_id/(in_n_fpts_per_inter);
   int bdy_spec;
 
   double q_l[in_n_fields];
@@ -2047,6 +2198,9 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
 
   if(thread_id<stride)
     {
+      double epsilon_l = *(in_epsilon_fpts_l_ptr[thread_id]);
+      double epsilon_r = 0;
+    
       // Left solution
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
@@ -2085,12 +2239,12 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
           if(in_equation==0)
             {
               // Right flux prep
-              vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1);
+              vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_r, artif_only);
 
               // Right flux computation
 #pragma unroll
               for (int i=0;i<in_n_fields;i++)
-                vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
+                vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_r, artif_only);
             }
           if(in_equation==1)
             {
@@ -2113,12 +2267,12 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
           if(in_equation==0)
             {
               // Left flux prep
-              vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1);
+              vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_l, artif_only);
 
               // Left flux computation
 #pragma unroll
               for (int i=0;i<in_n_fields;i++)
-                vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
+                vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_l, artif_only);
             }
           if(in_equation==1)
             {
@@ -2267,12 +2421,12 @@ __global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
         norm[i]=*(in_norm_fpts_ptr[thread_id + i*stride]);
 
       // Left flux prep
-      vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1);
+      vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, 0, 0);
 
       // Left flux computation
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
-        vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f_l[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
+        vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f_l[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, 0, 0);
 
 
       // Right solution
@@ -2290,12 +2444,12 @@ __global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
         }
 
       // Right flux prep
-      vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1);
+      vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, 0, 0);
 
       // Right flux computation
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
-        vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f_r[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
+        vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f_r[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, 0, 0);
 
 
       // Compute common flux
@@ -2724,7 +2878,7 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
 }
 
 // wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points
-void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
+void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff, int artif_only, double* in_epsilon_ptr, double* in_epsilon_upts_ptr)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
@@ -2734,9 +2888,9 @@ void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims,
   if (equation==0)
     {
       if (in_n_dims==2)
-        calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis);
+        calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,artif_only,in_epsilon_ptr,in_epsilon_upts_ptr);
       else if (in_n_dims==3)
-        calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis);
+        calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,artif_only,in_epsilon_ptr,in_epsilon_upts_ptr);
       else
         FatalError("ERROR: Invalid number of dimensions ... ");
     }
@@ -2785,9 +2939,65 @@ void transform_grad_disu_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_dim
   check_cuda_error("After",__FILE__, __LINE__);
 }
 
+// Wrapper for gpu kernel to compute element-wise artificial viscosity co-efficients
+void calc_artivisc_coeff_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_order, int in_ele_type, double epsilon0, double s0, double kappa, double* in_disu_upts_ptr, double* out_epsilon_ptr, double* in_vandermonde_ptr, double* epsilon_global_eles, int* ele2global_ele_code)
+{
+	cudaError_t err;
+
+	// HACK: fix 256 threads per block
+	int n_blocks=((in_n_eles-1)/256)+1;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+	calc_artivisc_coeff_gpu_kernel <<<n_blocks,256>>>(in_n_eles, in_n_upts_per_ele, in_order, in_ele_type, epsilon0, s0, kappa, in_disu_upts_ptr, out_epsilon_ptr, in_vandermonde_ptr, epsilon_global_eles, ele2global_ele_code);
+
+	// This thread synchronize may not be necessary
+	err=cudaThreadSynchronize();
+	if( err != cudaSuccess)
+    		printf("cudaThreadSynchronize error: %s\n", cudaGetErrorString(err));
+  
+  check_cuda_error("After",__FILE__, __LINE__);
+}
+
+// wrapper for gpu kernel to compute the appropriate AV co-efficient at the vertices to enforce C0-continuity
+void calc_artivisc_coeff_verts_gpu_kernel_wrapper(int in_n_verts, int* in_icvert, int* in_icvsta, double* in_epsilon_global_eles, double* out_epsilon_verts)
+{
+	int n_blocks = (in_n_verts - 1)/256 + 1;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+	calc_artivisc_coeff_verts_gpu_kernel <<<n_blocks,256>>>(in_n_verts, in_icvert, in_icvsta, in_epsilon_global_eles, out_epsilon_verts);
+
+  check_cuda_error("After",__FILE__, __LINE__);
+}
+
+
+// wrapper for gpu kernel to compute the appropriate AV co-efficient at upts from vertex values
+void calc_artivisc_coeff_upts_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_num_eles_total, int in_num_area_coords, int* in_n_spts_per_ele, int* in_ele2global_ele_code, double* in_area_coord_upts, int* in_c2v, double* in_epsilon_verts, double* out_epsilon_upts)
+{
+	int n_blocks = (in_n_eles*in_n_upts_per_ele - 1)/256 + 1;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+	calc_artivisc_coeff_upts_gpu_kernel <<<n_blocks,256>>>(in_n_eles, in_n_upts_per_ele, in_num_eles_total, in_num_area_coords, in_n_spts_per_ele, in_ele2global_ele_code, in_area_coord_upts, in_c2v, in_epsilon_verts, out_epsilon_upts);
+
+  check_cuda_error("After",__FILE__, __LINE__);
+}
+
+// wrapper for gpu kernel to compute the appropriate AV co-efficient at fpts from vertex values
+void calc_artivisc_coeff_fpts_gpu_kernel_wrapper(int in_n_eles, int in_n_fpts_per_ele, int in_num_eles_total, int in_num_area_coords, int* in_n_spts_per_ele, int* in_ele2global_ele_code, double* in_area_coord_fpts, int* in_c2v, double* in_epsilon_verts, double* out_epsilon_fpts)
+{
+	int n_blocks = (in_n_eles*in_n_fpts_per_ele - 1)/256 + 1;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+	calc_artivisc_coeff_fpts_gpu_kernel <<<n_blocks,256>>>(in_n_eles, in_n_fpts_per_ele, in_num_eles_total, in_num_area_coords, in_n_spts_per_ele, in_ele2global_ele_code, in_area_coord_fpts, in_c2v, in_epsilon_verts, out_epsilon_fpts);
+
+  check_cuda_error("After",__FILE__, __LINE__);
+}
 
 // wrapper for gpu kernel to calculate normal transformed continuous viscous flux at the flux points
-void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_norm_tconf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
+void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_norm_tconf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_r_ptr, double** in_epsilon_fpts_l_ptr, double** in_epsilon_fpts_r_ptr)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_inters*in_n_fpts_per_inter-1)/256)+1;
@@ -2799,9 +3009,9 @@ void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_
       if (in_vis_riemann_solve_type==0) // LDG
         {
           if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_NS_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_norm_tconf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis);
+            calc_norm_tconvisf_fpts_NS_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_norm_tconf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis, artif_only, in_epsilon_l_ptr, in_epsilon_r_ptr, in_epsilon_fpts_l_ptr, in_epsilon_fpts_r_ptr);
           else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_NS_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_norm_tconf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis);
+            calc_norm_tconvisf_fpts_NS_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_norm_tconf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis, artif_only, in_epsilon_l_ptr, in_epsilon_r_ptr, in_epsilon_fpts_l_ptr, in_epsilon_fpts_r_ptr);
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized ... ");
@@ -2826,7 +3036,7 @@ void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_
 }
 
 // wrapper for gpu kernel to calculate normal transformed continuous viscous flux at the flux points at boundaries
-void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double in_diff_coeff)
+void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double in_diff_coeff, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_fpts_l_ptr)
 {
 
   // HACK: fix 256 threads per block
@@ -2839,16 +3049,16 @@ void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
       if(in_equation==0)
         {
           if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr);
           else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr);
         }
       else if(in_equation==1)
         {
           if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr);
           else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr);
         }
     }
   else

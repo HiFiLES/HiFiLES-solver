@@ -93,6 +93,12 @@ void input::setup(ifstream& in_run_input_file, int rank)
       in_run_input_file.seekg(0, ios::beg);
     }
 
+  // Set AV parameters to 0 in case they are not used
+  artif_only = 0;
+  epsilon0 = 0;
+  s0 = 0;
+  kappa = 0;
+
   // Now read in parameters
   while(!in_run_input_file.eof() )
     {
@@ -550,6 +556,22 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> perturb_ic;
         }
+      else if (!param_name.compare("artif_only"))
+        {
+          in_run_input_file >> artif_only;
+        }
+      else if (!param_name.compare("epsilon0"))
+        {
+          in_run_input_file >> epsilon0;
+        }
+      else if (!param_name.compare("s0"))
+        {
+          in_run_input_file >> s0;
+        }
+      else if (!param_name.compare("kappa"))
+        {
+          in_run_input_file >> kappa;
+        }
       else
         {
           cout << "input parameter =" << param_name << endl;
@@ -594,7 +616,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
 
   if(viscous)
     {
-      if(ic_form == 0)  {
+      if(ic_form == 0 || artif_only)  {
 
           fix_vis  = 1.;
           R_ref     = 1.;

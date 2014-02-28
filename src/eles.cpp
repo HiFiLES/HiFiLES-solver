@@ -141,6 +141,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 
       set_shape(in_max_n_spts_per_ele);
       ele2global_ele.setup(n_eles);
+      ele2global_ele_code.setup(n_eles);
       bctype.setup(n_eles,n_inters_per_ele);
 
       // for mkl sparse blas
@@ -178,6 +179,9 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
               delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
               grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
               grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
+              epsilon.setup(n_eles);
+              epsilon_upts.setup(n_upts_per_ele,n_eles);
+              epsilon_fpts.setup(n_fpts_per_ele,n_eles);
             }
           // Set connectivity array. Needed for Paraview output.
           if (ele_type==3) // prism
@@ -616,6 +620,16 @@ void eles::mv_all_cpu_gpu(void)
           delta_disu_fpts.mv_cpu_gpu();
           grad_disu_upts.cp_cpu_gpu();
           grad_disu_fpts.mv_cpu_gpu();
+          
+          // Needed for artificial viscosity routines
+          epsilon.mv_cpu_gpu();
+          epsilon_upts.mv_cpu_gpu();
+          epsilon_fpts.mv_cpu_gpu();
+          inv_vandermonde2D.cp_cpu_gpu();
+          ele2global_ele_code.cp_cpu_gpu();
+          area_coord_upts.mv_cpu_gpu();
+          area_coord_fpts.mv_cpu_gpu();
+          n_spts_per_ele.cp_cpu_gpu();
 
           //tdisvisf_upts.mv_cpu_gpu();
           //norm_tdisvisf_fpts.mv_cpu_gpu();
@@ -1659,7 +1673,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 #endif
 
 #ifdef _GPU
-      calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
+      calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff,run_input.artif_only, epsilon.get_ptr_gpu(), epsilon_upts.get_ptr_gpu());
 #endif
 
     }
@@ -2008,6 +2022,30 @@ void eles::calc_disuf_upts_ele(array<double>& in_u, array<double>& out_u)
 
 }
 
+// calculate element-wise artificial viscosity co-efficient
+
+void eles::calc_artivisc_coeff(int in_disu_upts_from, double* epsilon_global_eles)
+{
+  if (n_eles!=0){
+    #ifdef _GPU
+      calc_artivisc_coeff_gpu_kernel_wrapper(n_eles,n_upts_per_ele, order, ele_type, run_input.epsilon0, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), epsilon.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), epsilon_global_eles, ele2global_ele_code.get_ptr_gpu());
+    #endif
+  }
+}
+
+// calculate AV co-effs at the solution and flux points using vertex info
+void eles::calc_artivisc_coeff_upts_fpts(double* in_epsilon_verts, int* in_c2v, int num_eles_total)
+{
+  if(n_eles != 0){
+    #ifdef _GPU
+      calc_artivisc_coeff_upts_gpu_kernel_wrapper(n_eles, n_upts_per_ele, num_eles_total, area_coord_upts.get_dim(0), n_spts_per_ele.get_ptr_gpu(), ele2global_ele_code.get_ptr_gpu(), area_coord_upts.get_ptr_gpu(), in_c2v, in_epsilon_verts, epsilon_upts.get_ptr_gpu());
+
+      calc_artivisc_coeff_fpts_gpu_kernel_wrapper(n_eles, n_fpts_per_ele, num_eles_total, area_coord_fpts.get_dim(0), n_spts_per_ele.get_ptr_gpu(), ele2global_ele_code.get_ptr_gpu(), area_coord_fpts.get_ptr_gpu(), in_c2v, in_epsilon_verts, epsilon_fpts.get_ptr_gpu());
+    #endif
+  }
+}
+
+
 // get the type of element
 
 int eles::get_ele_type(void)
@@ -2116,6 +2154,11 @@ void eles::set_ele2global_ele(int in_ele, int in_global_ele)
   ele2global_ele(in_ele) = in_global_ele;
 }
 
+// set global element number according to the code
+void eles::set_ele2global_ele_code(int in_ele, int in_global_ele)
+{
+  ele2global_ele_code(in_ele) = in_global_ele;
+}
 
 // set opp_0 (transformed discontinuous solution at solution points to transformed discontinuous solution at flux points)
 
@@ -3712,6 +3755,39 @@ double* eles::get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
   return disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
   return disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
+#endif
+}
+
+// get a pointer to the transformed discontinuous solution at a flux point
+
+double* eles::get_epsilon_ptr(int in_ele)
+{
+
+#ifdef _GPU  
+        return epsilon.get_ptr_gpu(in_ele);
+#else
+        return epsilon.get_ptr_cpu(in_ele);
+#endif
+
+}
+
+double* eles::get_epsilon_fpts_ptr(int in_ele, int in_ele_local_inter, int in_inter_local_fpt)
+{
+        int i;
+
+        int fpt;
+
+        fpt=in_inter_local_fpt;
+
+        for(i=0;i<in_ele_local_inter;i++)
+        {
+                fpt+=n_fpts_per_inter(i);
+        }
+
+#ifdef _GPU  
+        return epsilon_fpts.get_ptr_gpu(fpt,in_ele);
+#else
+        return epsilon_fpts.get_ptr_cpu(fpt,in_ele);
 #endif
 }
 

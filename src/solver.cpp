@@ -24,6 +24,7 @@
 #include "../include/funcs.h"
 #include "../include/error.h"
 #include "../include/solution.h"
+#include "../include/cuda_kernels.h"
 
 #ifdef _TECIO
 #include "TECIO.h"
@@ -127,6 +128,21 @@ void CalcResidual(struct solution* FlowSol) {
         }
 #endif
 
+#ifdef _GPU
+
+      /*! Compute element-wise artificial viscosity co-efficients */
+      for(i=0;i<FlowSol->n_ele_types;i++)
+        FlowSol->mesh_eles(i)->calc_artivisc_coeff(in_disu_upts_from, FlowSol->epsilon_global_eles.get_ptr_gpu());
+
+      /*! Compute vertex-wise artificial viscosity co-efficients for enforcing C0-continuity */
+      calc_artivisc_coeff_verts(FlowSol);
+
+      /*! Compute artificial viscosity co-efficients at solution and flux points */
+      for(i=0;i<FlowSol->n_ele_types;i++)
+        FlowSol->mesh_eles(i)->calc_artivisc_coeff_upts_fpts(FlowSol->epsilon_verts.get_ptr_gpu(), FlowSol->ele2vert.get_ptr_gpu(), FlowSol->num_eles);
+
+#endif
+
       /*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
       for(i=0; i<FlowSol->n_ele_types; i++)
         FlowSol->mesh_eles(i)->calc_tdisvisf_upts(in_disu_upts_from);
@@ -180,6 +196,18 @@ void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol)
 double* get_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol)
 {
   return FlowSol->mesh_eles(in_ele_type)->get_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
+}
+
+// get pointer to AV co-efficients at solution points
+double* get_epsilon_ptr(int in_ele_type, int in_ele, struct solution* FlowSol)
+{
+        return FlowSol->mesh_eles(in_ele_type)->get_epsilon_ptr(in_ele);
+}
+
+// get pointer to AV co-efficient at flux points
+double* get_epsilon_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, struct solution* FlowSol)
+{
+        return FlowSol->mesh_eles(in_ele_type)->get_epsilon_fpts_ptr(in_ele, in_local_inter, in_fpt);
 }
 
 // get pointer to normal continuous transformed inviscid flux at a flux point
@@ -341,3 +369,10 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
 
 
 }
+
+// Uses elemental artificial viscosity co-efficients to compute viscosity co-efficients at vertices
+void calc_artivisc_coeff_verts(struct solution* FlowSol)
+{
+  calc_artivisc_coeff_verts_gpu_kernel_wrapper(FlowSol->num_verts, FlowSol->icvert.get_ptr_gpu(), FlowSol->icvsta.get_ptr_gpu(), FlowSol->epsilon_global_eles.get_ptr_gpu(), FlowSol->epsilon_verts.get_ptr_gpu());
+}
+

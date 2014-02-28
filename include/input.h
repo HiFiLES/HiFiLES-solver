@@ -84,6 +84,9 @@ public:
   double filter_ratio;
   int SGS_model;
 
+  int artif_only; // Required for artificial viscosityi
+  double epsilon0, s0, kappa;
+
   int monitor_res_freq;
   int monitor_force_freq;
   int diagnostics_freq;

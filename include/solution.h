@@ -92,7 +92,15 @@ struct solution {
   array<int> factor_pnode;
   
   array<int> c2ctype_c;
-  
+ 
+  /*! Artificial Viscosity related */
+  // c2v required here is already stored in ele2vert above.
+
+  array<int> icvert;
+  array<int> icvsta;
+  array<double> epsilon_verts;
+  array<double> epsilon_global_eles;
+
 #ifdef _MPI
   
   int nproc;

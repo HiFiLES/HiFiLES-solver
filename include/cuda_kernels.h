@@ -31,7 +31,7 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
 void transform_grad_disu_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, int equation);
 
 /*! wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points */
-void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisvisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double diff_coeff);
+void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisvisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double diff_coeff, int artif_only, double* in_epsilon_ptr, double* in_epsilon_upts_ptr);
 
 /*! wrapper for gpu kernel to calculate corrected gradient of solution at flux points */
 /*
@@ -39,10 +39,25 @@ void calc_cor_grad_disu_fpts_gpu_kernel_wrapper(int in_n_fpts_per_ele, int in_n_
 */
 
 /*! wrapper for gpu kernel to calculate normal transformed continuous viscous flux at the flux points */
-void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconvisf_fpts_l_ptr, double** in_norm_tconvisf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double diff_coeff);
+void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconvisf_fpts_l_ptr, double** in_norm_tconvisf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double diff_coeff, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_r_ptr, double** in_epsilon_fpts_l_ptr, double** in_epsilon_fpts_r_ptr);
 
 /*! wrapper for gpu kernel to calculate normal transformed continuous inviscid flux at the flux points at boundaries*/
-void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconvisf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double in_diff_coeff);
+void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconvisf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double in_diff_coeff,int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_fpts_l_ptr);
+
+/*! wrapper for gpu kernel to calculate artificial viscosity co-efficients */
+void calc_artivisc_coeff_gpu_kernel_wrapper(int, int, int, int, double, double, double, double*, double*, double*, double*, int*);
+
+/*! wrapper for gpu kernel to correct density */
+void correct_rho_gpu_kernel_wrapper(int, int, double*);
+
+/*! wrapper for gpu kernel to calculate artificial viscosity co-efficients at vertices -called from mesh */
+void calc_artivisc_coeff_verts_gpu_kernel_wrapper(int in_num_verts, int* in_icvert, int* icvsta, double* in_epsilon_global_eles, double* out_epsilon_verts);
+
+/*! wrapper for gpu kernel to calculate AV coeffs at solution points */
+void calc_artivisc_coeff_upts_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_num_eles_total, int in_num_area_coords, int* in_n_spts_per_ele, int* in_ele2global_ele_code, double* in_area_coord_upts, int* in_c2v, double* in_epsilon_verts, double* out_epsilon_upts);
+
+// wrapper for gpu kernel to compute the appropriate AV co-efficient at fpts from vertex values
+void calc_artivisc_coeff_fpts_gpu_kernel_wrapper(int in_n_eles, int in_n_fpts_per_ele, int in_num_eles_total, int in_num_area_coords, int* in_n_spts_per_ele, int* in_ele2global_ele_code, double* in_area_coord_fpts, int* in_c2v, double* in_epsilon_verts, double* out_epsilon_fpts);
 
 #ifdef _MPI
 

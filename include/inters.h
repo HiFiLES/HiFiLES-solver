@@ -83,6 +83,8 @@ protected:
   array<double*> norm_fpts;
   array<double*> loc_fpts;
   array<double*> grad_disu_fpts_l;
+  array<double*> epsilon_l;
+  array<double*> epsilon_fpts_l;
 
   array<double> temp_u_l;
   array<double> temp_u_r;

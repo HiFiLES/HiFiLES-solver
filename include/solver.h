@@ -42,6 +42,12 @@ void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol);
 /*! get pointer to transformed discontinuous solution at a flux point */
 double* get_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int n_local_inter, int in_fpt, struct solution* FlowSol);
 
+/*! get pointer to artificial viscosity (epsilon) */
+double* get_epsilon_ptr(int in_ele_type, int in_ele, struct solution* FlowSol);
+
+/*! get pointer to artificial viscosity (epsilon) at fpts */
+double* get_epsilon_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, struct solution* FlowSol);
+
 /*! get pointer to normal continuous transformed inviscid flux at a flux point */
 double* get_norm_tconf_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol);
 
@@ -69,7 +75,8 @@ void InitSolution(struct solution* FlowSol);
 /*! reading a restart file */
 void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol);
 
-
+/*! Calculate artificial viscosity co-efficients at vertices */
+void calc_artivisc_coeff_verts(struct solution* FlowSol);
 
 
 
