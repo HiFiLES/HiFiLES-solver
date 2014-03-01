@@ -59,6 +59,9 @@ void mpi_inters::setup(int in_n_inters, int in_inters_type, int in_run_type)
       if (viscous) {
           out_buffer_grad_disu.setup(in_n_inters*n_fpts_per_inter*n_fields*n_dims);
           in_buffer_grad_disu.setup(in_n_inters*n_fpts_per_inter*n_fields*n_dims);
+
+          out_buffer_epsilon_fpts.setup(in_n_inters*n_fpts_per_inter);
+          in_buffer_epsilon_fpts.setup(in_n_inters*n_fpts_per_inter);
         }
 
 #ifdef _GPU
@@ -69,6 +72,9 @@ void mpi_inters::setup(int in_n_inters, int in_inters_type, int in_run_type)
       if (viscous) {
           out_buffer_grad_disu.cp_cpu_gpu();
           in_buffer_grad_disu.cp_cpu_gpu();
+
+          out_buffer_epsilon_fpts.cp_cpu_gpu();
+          in_buffer_epsilon_fpts.cp_cpu_gpu();
         }
 #endif 
 
@@ -76,6 +82,7 @@ void mpi_inters::setup(int in_n_inters, int in_inters_type, int in_run_type)
       if(viscous)
         {
           grad_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+          epsilon_fpts_r.setup(n_fpts_per_inter,n_inters);
         }
     }
 }
@@ -133,12 +140,12 @@ void mpi_inters::mv_all_cpu_gpu(void)
 
   if(viscous)
     {
-
       grad_disu_fpts_l.mv_cpu_gpu();
       grad_disu_fpts_r.mv_cpu_gpu();
 
+      epsilon_fpts_l.mv_cpu_gpu();
+      epsilon_fpts_r.mv_cpu_gpu();
       //norm_tconvisf_fpts_l.mv_cpu_gpu();
-
     }
 
 #endif
@@ -192,6 +199,14 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
 
           mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
 
+          epsilon_fpts_l(i,in_inter) = get_epsilon_fpts_ptr(in_ele_type_l, in_ele_l, in_local_inter_l, i,FlowSol);
+
+#ifdef _GPU
+          epsilon_fpts_r(i,in_inter) = in_buffer_epsilon_fpts.get_ptr_gpu(in_inter*n_fpts_per_inter + j_rhs);
+#else
+          epsilon_fpts_r(i,in_inter) = in_buffer_epsilon_fpts.get_ptr_cpu(in_inter*n_fpts_per_inter + j_rhs);
+#endif
+
           for(j=0;j<n_dims;j++)
             {
               norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
@@ -201,7 +216,6 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
     }
 
 }
-
 
 void mpi_inters::send_disu_fpts()
 {
@@ -257,6 +271,65 @@ void mpi_inters::receive_disu_fpts()
 #endif
 #ifdef _GPU
       in_buffer_disu.cp_cpu_gpu();
+#endif
+
+    }
+
+}
+
+void mpi_inters::send_epsilon_fpts()
+{
+
+  if (n_inters!=0)
+    {
+      // Pack out_buffer
+#ifdef _CPU
+      int counter = 0;
+      for(int i=0;i<n_inters;i++)
+          for(int j=0;j<n_fpts_per_inter;j++)
+            out_buffer_epsilon_fpts(counter++) = (*epsilon_fpts_l(j,i));
+#endif 
+#ifdef _GPU
+      pack_out_buffer_epsilon_fpts_gpu_kernel_wrapper(n_fpts_per_inter,n_inters,epsilon_fpts_l.get_ptr_gpu(),out_buffer_epsilon_fpts.get_ptr_gpu());
+
+      // copy buffer from GPU to CPU
+      out_buffer_epsilon_fpts.cp_gpu_cpu();
+
+#endif
+
+      // Initiate mpi_send
+      Nmess = 0;
+      int sk = 0;
+      int Nout;
+      int request_count=0;
+      for (int p=0;p<nproc;p++) {
+          Nout = Nout_proc(p)*n_fpts_per_inter;
+          //cout << "rank=" << rank << "p=" << p << "inters_type=" << inters_type << "Nout = " << Nout << endl;
+          if (Nout) {
+#ifdef _MPI
+              MPI_Isend(out_buffer_epsilon_fpts.get_ptr_cpu(sk),Nout,MPI_DOUBLE,p,inters_type*10000+p,MPI_COMM_WORLD,&mpi_out_requests[request_count]);
+              MPI_Irecv(in_buffer_epsilon_fpts.get_ptr_cpu(sk),Nout,MPI_DOUBLE,p,inters_type*10000+rank,MPI_COMM_WORLD,&mpi_in_requests[request_count]);
+#endif
+              sk+=Nout;
+              Nmess++;
+              request_count++;
+            }
+        }
+
+    }
+}
+
+void mpi_inters::receive_epsilon_fpts()
+{
+
+  if (n_inters!=0) {
+      // Receive in_buffer
+#ifdef _MPI
+      MPI_Waitall(Nmess,mpi_in_requests,MPI_STATUSES_IGNORE);
+      MPI_Waitall(Nmess,mpi_out_requests,MPI_STATUSES_IGNORE);
+#endif
+#ifdef _GPU
+      in_buffer_epsilon_fpts.cp_cpu_gpu();
 #endif
 
     }
@@ -483,12 +556,11 @@ void mpi_inters::calc_norm_tconvisf_fpts_mpi(void)
         }
     }
 
-  //cout << "done viscous mpi" << endl;
 #endif
 
 #ifdef _GPU
   if (n_inters!=0)
-    calc_norm_tconvisf_fpts_mpi_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.diff_coeff);
+    calc_norm_tconvisf_fpts_mpi_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(), epsilon_fpts_l.get_ptr_gpu(), epsilon_fpts_r.get_ptr_gpu(),run_input.equation,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.diff_coeff);
 #endif
 }
 

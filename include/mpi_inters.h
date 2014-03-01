@@ -53,6 +53,10 @@ public:
 
   void receive_disu_fpts();
 
+  void send_epsilon_fpts();
+
+  void receive_epsilon_fpts();
+
   void send_cor_grad_disu_fpts();
 
   void receive_cor_grad_disu_fpts();
@@ -71,6 +75,7 @@ protected:
 
   array<double*> disu_fpts_r;
   array<double*> grad_disu_fpts_r;
+  array<double*> epsilon_fpts_r;
 
   int nproc;
   int rank;
@@ -81,6 +86,7 @@ protected:
 
   // Viscous
   array<double> out_buffer_grad_disu, in_buffer_grad_disu;
+  array<double> out_buffer_epsilon_fpts, in_buffer_epsilon_fpts;
 
 #ifdef _MPI
   MPI_Request *mpi_out_requests;

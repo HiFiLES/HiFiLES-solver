@@ -141,6 +141,17 @@ void CalcResidual(struct solution* FlowSol) {
       for(i=0;i<FlowSol->n_ele_types;i++)
         FlowSol->mesh_eles(i)->calc_artivisc_coeff_upts_fpts(FlowSol->epsilon_verts.get_ptr_gpu(), FlowSol->ele2vert.get_ptr_gpu(), FlowSol->num_eles);
 
+#ifdef _MPI
+  /*! Send the solution at the flux points across the MPI interfaces. */
+  if (FlowSol->nproc>1){
+    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+      FlowSol->mesh_mpi_inters(i).send_epsilon_fpts();
+
+    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+      FlowSol->mesh_mpi_inters(i).receive_epsilon_fpts();
+  }
+#endif
+
 #endif
 
       /*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
