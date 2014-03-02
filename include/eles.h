@@ -219,6 +219,9 @@ public:
   /*! get a pointer to gradient of discontinuous solution at a flux point */
   double* get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_field, int in_ele);
 
+  /*! get a pointer to gradient of discontinuous solution at a flux point */
+  double* get_normal_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele, array<double> temp_loc, double temp_pos[3]);
+  
   /*! get a pointer to the normal transformed continuous viscous flux at a flux point */
   //double* get_norm_tconvisf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
   

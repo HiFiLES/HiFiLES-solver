@@ -3876,6 +3876,43 @@ double* eles::get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_in
 #endif
 }
 
+double* eles::get_normal_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele, array<double> temp_loc, double temp_pos[3])
+{
+  
+  array<double> pos(n_dims);
+  double dist = 0.0, min_dist = 1E6;
+  int min_index = 0;
+
+  // find closest solution point
+  
+  for (int i=0; i<n_upts_per_ele; i++) {
+    
+    calc_pos_upt(i, in_ele, pos);
+    
+    dist = 0.0;
+    for(int j=0;j<n_dims;j++) {
+      dist += (pos(j)-temp_loc(j))*(pos(j)-temp_loc(j));
+    }
+    dist = sqrt(dist);
+    
+    if (dist < min_dist) {
+      min_dist = dist;
+      min_index = i;
+      for(int j=0;j<n_dims;j++) {
+        temp_pos[j] = pos(j);
+      }
+    }
+    
+  }
+  
+#ifdef _GPU
+  return disu_upts(0).get_ptr_gpu(min_index,in_ele,in_field);
+#else
+  return disu_upts(0).get_ptr_cpu(min_index,in_ele,in_field);
+#endif
+  
+}
+
 // get a pointer to the normal transformed continuous viscous flux at a flux point
 /*
 double* eles::get_norm_tconvisf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele)

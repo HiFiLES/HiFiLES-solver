@@ -82,13 +82,20 @@ protected:
   array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_l;
   array<double*> norm_fpts;
   array<double*> loc_fpts;
+
+  array<double> pos_disu_fpts_l;
   array<double*> grad_disu_fpts_l;
+  array<double*> normal_disu_fpts_l;
 
   array<double> temp_u_l;
   array<double> temp_u_r;
 
   array<double> temp_grad_u_l;
   array<double> temp_grad_u_r;
+
+  array<double> temp_normal_u_l;
+
+  array<double> temp_pos_u_l;
 
   array<double> temp_f_l;
   array<double> temp_f_r;

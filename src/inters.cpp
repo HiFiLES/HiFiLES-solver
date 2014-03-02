@@ -110,7 +110,8 @@ void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
       if(viscous)
         {
           grad_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
-          //norm_tconvisf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
+          normal_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
+          pos_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_dims);
         }
 
       temp_u_l.setup(n_fields);
@@ -118,6 +119,10 @@ void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
 
       temp_grad_u_l.setup(n_fields,n_dims);
       temp_grad_u_r.setup(n_fields,n_dims);
+
+      temp_normal_u_l.setup(n_fields);
+
+      temp_pos_u_l.setup(n_dims);
 
       temp_f_l.setup(n_fields,n_dims);
       temp_f_r.setup(n_fields,n_dims);

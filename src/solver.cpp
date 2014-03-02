@@ -237,6 +237,12 @@ double* get_grad_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, 
   return FlowSol->mesh_eles(in_ele_type)->get_grad_disu_fpts_ptr(in_fpt,in_local_inter,in_dim,in_field,in_ele);
 }
 
+// get pointer to the discontinuous solution (close normal) at a flux point
+double* get_normal_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_fpt, struct solution* FlowSol, array<double> temp_loc, double temp_pos[3])
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_normal_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele, temp_loc, temp_pos);
+}
+
 
 void InitSolution(struct solution* FlowSol)
 {
