@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
   ifstream run_input_file;            /*!< Config input file */
   clock_t init, final;                /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
-  ofstream write_force, write_stats;  /*!< Output files (forces and statistics) */
+  ofstream write_force, write_stats, write_hist;  /*!< Output files (forces, statistics, and history) */
 
   /*! Check the command line input. */
   if (argc < 2) { cout << "ERROR: No input file specified ... " << endl; return(0); }
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
       /*! Dump residual and error. */
       if(i_steps%run_input.monitor_res_freq==0 ) {
 
-          error_state = monitor_residual(FlowSol.ini_iter+i_steps, &FlowSol);
+          error_state = monitor_residual(FlowSol.ini_iter+i_steps, init, &write_hist, &FlowSol);
 
           if (error_state) cout << "error_state=" << error_state << "rank=" << FlowSol.rank << endl;
 
@@ -221,10 +221,14 @@ int main(int argc, char *argv[]) {
   /// End simulation
   /////////////////////////////////////////////////
 
+  /*! Close convergence history file. */
+  if (rank == 0)
+    write_hist.close();
+  
   /*! Compute execution time. */
   final = clock()-init;
   printf("Execution time= %f s\n", (double) final/((double) CLOCKS_PER_SEC));
-
+  
   /*! Finalize MPI. */
 #ifdef _MPI
   MPI_Finalize();

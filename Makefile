@@ -14,7 +14,7 @@
 # TODO: add config script to build parmetis and look for BLAS, parmetis, CUDA, MPI and TECIO libraries
 
 # TODO: include makefile.machine.in by looking for current machine name
-include makefiles/makefile.OSX.in
+include makefiles/makefile.fpalacios_OSX_MPI.in
 
 # Compiler
 
@@ -98,6 +98,10 @@ endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
   LIBS    += -L $(BLAS_DIR)/lib -lcblas
+endif
+
+ifneq ($(ATLAS),NO)
+  LIBS    += -latlas
 endif
 
 ifeq ($(NODE),GPU)
