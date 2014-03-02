@@ -230,31 +230,31 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound) {
         
         right_flux(temp_f_l,norm,fn,n_dims,n_fields,run_input.gamma);
       }
-//      else if ((boundary_type(i)==7) || (boundary_type(i)==11) || (boundary_type(i)==12)) { // Euler and N-S wall
-//
-//        double rho_l, e_l, v_sq, p_l;
-//        array<double> v_l(n_dims);
-//        
-//        /*! Store primitive variables for clarity. */
-//        rho_l = temp_u_l(0);
-//        for (int i=0; i<n_dims; i++)
-//          v_l(i) = temp_u_l(i+1)/temp_u_l(0);
-//        e_l = temp_u_l(n_dims+1);
-//        
-//        /*! Compute pressure on left side. */
-//        v_sq = 0.;
-//        for (int i=0; i<n_dims; i++)
-//          v_sq += (v_l(i)*v_l(i));
-//        p_l = (run_input.gamma-1.0)*(e_l - 0.5*rho_l*v_sq);
-//        
-//        /*! Evaluate analytical fluxes. */
-//        
-//        fn(0) = 0.0;
-//        for (int i=0; i<n_dims; i++)
-//          fn(i+1) = p_l*norm(i);
-//        fn(n_dims+1) = 0.0;
-//        
-//      }
+      else if ((boundary_type(i)==7) || (boundary_type(i)==11) || (boundary_type(i)==12)) { // Euler and N-S wall
+
+        double rho_l, e_l, v_sq, p_l;
+        array<double> v_l(n_dims);
+        
+        /*! Store primitive variables for clarity. */
+        rho_l = temp_u_l(0);
+        for (int i=0; i<n_dims; i++)
+          v_l(i) = temp_u_l(i+1)/temp_u_l(0);
+        e_l = temp_u_l(n_dims+1);
+        
+        /*! Compute pressure on left side. */
+        v_sq = 0.;
+        for (int i=0; i<n_dims; i++)
+          v_sq += (v_l(i)*v_l(i));
+        p_l = (run_input.gamma-1.0)*(e_l - 0.5*rho_l*v_sq);
+        
+        /*! Evaluate analytical fluxes. */
+        
+        fn(0) = 0.0;
+        for (int i=0; i<n_dims; i++)
+          fn(i+1) = p_l*norm(i);
+        fn(n_dims+1) = 0.0;
+        
+      }
       else { // Call Riemann solver
 
         if (run_input.riemann_solve_type==0) { //Rusanov
@@ -806,52 +806,52 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
         for(int l=0;l<n_fields;l++)
           temp_grad_u_l(l,k) = *grad_disu_fpts_l(j,i,l,k);
       
-//      if (boundary_type(i)==12) {
-//        
-//        double Dist;
-//        array<double> sVec(n_dims), temp_normal_grad_u_l(n_fields), temp_normal_bc_grad_u_l(n_fields);
-//        
-//        /*! Obtain coordinates of the closest solution point to the flux point. */
-//        
-//        for(int l=0;l<n_fields;l++)
-//          temp_normal_u_l(l) = *normal_disu_fpts_l(j,i,l);
-//        
-//        /*! Obtain the unitary vector conectng the flux point with the closest solution point. */
-//        
-//        Dist = 0.0;
-//        for(int l=0;l<n_dims;l++) {
-//          temp_pos_u_l(l) = pos_disu_fpts_l(j,i,l);
-//          temp_loc(l) = *loc_fpts(j,i,l);
-//          sVec(l) = temp_pos_u_l(l) - temp_loc(l);
-//          Dist += sVec(l)*sVec(l);
-//        }
-//        Dist = sqrt(Dist);
-//        
-//        for(int l=0;l<n_dims;l++) {
-//          sVec(l) /= Dist;
-//        }
-//        
-//        /*! Evaluate the projected gradient in the direction of sVec (using boundary condition). */
-//        
-//        for(int l=0;l<n_fields;l++)
-//          temp_normal_bc_grad_u_l(l) = (temp_normal_u_l(l) - 0.0)/Dist;
-//        
-//        /*! Evaluate the projected gradient in the direction of sVec. */
-//        
-//        for(int l=0;l<n_fields;l++) {
-//          temp_normal_grad_u_l(l) = 0.0;
-//          for(int k=0;k<n_dims;k++)
-//            temp_normal_grad_u_l(l) += temp_grad_u_l(l,k)*sVec(k);
-//        }
-//        
-//        /*! Evaluate gradient maintaining tangential component but changing
-//         the component in the sVec direction. */
-//        
-//        for (int l=0;l<n_fields;l++)
-//          for (int k=0;k<n_dims;k++)
-//            temp_grad_u_l(l,k) = (temp_normal_bc_grad_u_l(l)-temp_normal_grad_u_l(l))*sVec(k);
-//        
-//      }
+      if (boundary_type(i)==12) {
+        
+        double Dist;
+        array<double> sVec(n_dims), temp_normal_grad_u_l(n_fields), temp_normal_bc_grad_u_l(n_fields);
+        
+        /*! Obtain coordinates of the closest solution point to the flux point. */
+        
+        for(int l=0;l<n_fields;l++)
+          temp_normal_u_l(l) = *normal_disu_fpts_l(j,i,l);
+        
+        /*! Obtain the unitary vector conectng the flux point with the closest solution point. */
+        
+        Dist = 0.0;
+        for(int l=0;l<n_dims;l++) {
+          temp_pos_u_l(l) = pos_disu_fpts_l(j,i,l);
+          temp_loc(l) = *loc_fpts(j,i,l);
+          sVec(l) = temp_pos_u_l(l) - temp_loc(l);
+          Dist += sVec(l)*sVec(l);
+        }
+        Dist = sqrt(Dist);
+        
+        for(int l=0;l<n_dims;l++) {
+          sVec(l) /= Dist;
+        }
+        
+        /*! Evaluate the projected gradient in the direction of sVec (using boundary condition). */
+        
+        for(int l=0;l<n_fields;l++)
+          temp_normal_bc_grad_u_l(l) = (temp_normal_u_l(l) - 0.0)/Dist;
+        
+        /*! Evaluate the projected gradient in the direction of sVec. */
+        
+        for(int l=0;l<n_fields;l++) {
+          temp_normal_grad_u_l(l) = 0.0;
+          for(int k=0;k<n_dims;k++)
+            temp_normal_grad_u_l(l) += temp_grad_u_l(l,k)*sVec(k);
+        }
+        
+        /*! Evaluate gradient maintaining tangential component but changing
+         the component in the sVec direction. */
+        
+        for (int l=0;l<n_fields;l++)
+          for (int k=0;k<n_dims;k++)
+            temp_grad_u_l(l,k) = (temp_normal_bc_grad_u_l(l)-temp_normal_grad_u_l(l))*sVec(k);
+        
+      }
       
       /*! Right gradient. */
       
