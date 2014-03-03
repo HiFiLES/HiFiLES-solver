@@ -60,6 +60,8 @@ void calc_source_SA_2d(array<double>& in_u, array<double>& in_grad_u, double& d,
     else
         psi = Chi;
 
+		//cout << "Chi, nu_tilde/mu, psi: " << setprecision(6) << Chi << ", " << in_u(4)/mu << ", " << psi << endl;
+
     // solve for production term for eddy viscosity
     // (solve for S = magnitude of vorticity)
     S = abs(dv_dx - du_dy);
@@ -88,10 +90,21 @@ void calc_source_SA_2d(array<double>& in_u, array<double>& in_grad_u, double& d,
     f_w = g*pow((1.0 + pow(run_input.c_w3, 6.0))/(pow(g, 6.0) + pow(run_input.c_w3, 6.0)), 1.0/6.0);
 
     // (destruction term)
-    nu_t_dest = -c_w1*rho*f_w*pow((mu*psi/rho)/d, 2.0);
+		// set a larger destruction term if using RANS as a wall model
+		if (run_input.wall_model == 3) {
+			if (d < run_input.wall_layer_t)
+		    nu_t_dest = -c_w1*rho*f_w*pow((mu*psi/rho)/d, 2.0);
+			else
+		    nu_t_dest = -nu_t_prod-nu_t_diff;
+		}
+		else {
+	    nu_t_dest = -c_w1*rho*f_w*pow((mu*psi/rho)/d, 2.0);
+		}
 
     // construct source term
     out_source = nu_t_prod + nu_t_diff + nu_t_dest;
+
+		//if (d<0.6) cout << "d, dest, diff, prod, sum: " << setprecision(6) << d << ", " << nu_t_dest << ", " << nu_t_diff << ", " << nu_t_prod << ", " << out_source << endl;
 }
 
 // calculate source term for Spalart-Allmaras turbulence model in 3D

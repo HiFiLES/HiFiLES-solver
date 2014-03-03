@@ -2395,7 +2395,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 		}
 	} // end wall model 1,2
 
-	// Experimental hybrid RANS/LES implementation. Need rans_model!=0.
+	// Experimental hybrid RANS/LES implementation.
 	else if (wall_model == 3) {
 		//cout << "RANS near-wall model" << endl;
 
@@ -2480,7 +2480,9 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 				for (j=0;j<n_dims;j++) {
 					temp_sgsf(0,j) = 0.0; // Density flux
 					temp_sgsf(n_dims+1,j) = (1-f_blend)*temp_sgsf(n_dims+1,j) + f_blend*(-1.0*run_input.gamma*mu_t/Pr*de(j)); // Energy flux
-					temp_sgsf(n_fields-1,j) = (1-f_blend)*temp_sgsf(n_fields-1,j) + f_blend*(-1.0/run_input.omega*(mu + mu*psi)*dnu_tilde(j)); // nu_tilde flux
+					//temp_sgsf(n_fields-1,j) = (1-f_blend)*temp_sgsf(n_fields-1,j) + f_blend*(-1.0/run_input.omega*(mu + mu*psi)*dnu_tilde(j)); // nu_tilde flux
+					// nu_tilde piles up at the interface - reduce flux
+					temp_sgsf(n_fields-1,j) = f_blend*(-1.0/run_input.omega*(mu + mu*psi)*dnu_tilde(j)); // nu_tilde flux
 
 					for (i=1;i<n_dims+1;i++) {
 						temp_sgsf(i,j) = (1-f_blend)*temp_sgsf(i,j) + f_blend*(-2.0*mu_t*S(i-1,j)); // Velocity flux
