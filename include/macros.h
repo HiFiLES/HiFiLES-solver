@@ -32,34 +32,34 @@
 #define stoptimer(tmr) (tmr += MPI_Wtime())
 #define gettimer(tmr) (tmr)
 #define STARTTIMER(ctrl, tmr) \
-   do { \
-     IFSET((ctrl)->dbglvl, DBG_TIME, gkMPI_Barrier((ctrl)->gcomm));\
-     IFSET((ctrl)->dbglvl, DBG_TIME, starttimer((tmr))); \
-   } while (0)
+  do { \
+  IFSET((ctrl)->dbglvl, DBG_TIME, gkMPI_Barrier((ctrl)->gcomm));\
+  IFSET((ctrl)->dbglvl, DBG_TIME, starttimer((tmr))); \
+  } while (0)
 #define STOPTIMER(ctrl, tmr) \
-   do { \
-     IFSET((ctrl)->dbglvl, DBG_TIME, gkMPI_Barrier((ctrl)->gcomm));\
-     IFSET((ctrl)->dbglvl, DBG_TIME, stoptimer((tmr))); \
-   } while (0)
+  do { \
+  IFSET((ctrl)->dbglvl, DBG_TIME, gkMPI_Barrier((ctrl)->gcomm));\
+  IFSET((ctrl)->dbglvl, DBG_TIME, stoptimer((tmr))); \
+  } while (0)
 
 
 
 /* Debugging macros */
 #ifndef NDEBUG
 #   define PASSERT(ctrl, expr)                                          \
-    if (!(expr)) {                                               \
-       myprintf(ctrl, "***ASSERTION failed on line %d of file %s: " #expr "\n", \
-            __LINE__, __FILE__);                               \
-       assert(expr);                                           \
-    }
+  if (!(expr)) {                                               \
+  myprintf(ctrl, "***ASSERTION failed on line %d of file %s: " #expr "\n", \
+  __LINE__, __FILE__);                               \
+  assert(expr);                                           \
+  }
 
 #   define PASSERTP(ctrl, expr, msg)                                          \
-    if (!(expr)) {                                               \
-        myprintf(ctrl, "***ASSERTION failed on line %d of file %s:" #expr "\n", \
-              __LINE__, __FILE__);                               \
-        myprintf msg ; \
-        assert(expr); \
-    }
+  if (!(expr)) {                                               \
+  myprintf(ctrl, "***ASSERTION failed on line %d of file %s:" #expr "\n", \
+  __LINE__, __FILE__);                               \
+  myprintf msg ; \
+  assert(expr); \
+  }
 
 #else
 #   define PASSERT(ctrl, expr) ;
@@ -71,16 +71,16 @@
  * * These macros insert and remove nodes from the boundary list
  * **************************************************************************/
 #define BNDInsert(nbnd, bndind, bndptr, vtx) \
-   do { \
-	bndind[nbnd] = vtx; \
-	bndptr[vtx] = nbnd++;\
-      } while(0)
+  do { \
+  bndind[nbnd] = vtx; \
+  bndptr[vtx] = nbnd++;\
+  } while(0)
 
 #define BNDDelete(nbnd, bndind, bndptr, vtx) \
-   do { \
-        bndind[bndptr[vtx]] = bndind[--nbnd]; \
-	bndptr[bndind[nbnd]] = bndptr[vtx]; \
-	bndptr[vtx] = -1; \
-      } while(0)
+  do { \
+  bndind[bndptr[vtx]] = bndind[--nbnd]; \
+  bndptr[bndind[nbnd]] = bndptr[vtx]; \
+  bndptr[vtx] = -1; \
+  } while(0)
 
 

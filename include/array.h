@@ -33,109 +33,113 @@ class array
 {
 public:
 
-    // #### constructors ####
+  // #### constructors ####
 
-    // default constructor
+  // default constructor
 
-    array();
+  array();
 
-    // constructor 1
+  // constructor 1
 
-    array(int in_dim_0, int in_dim_1=1, int in_dim_2=1, int in_dim_3=1);
+  array(int in_dim_0, int in_dim_1=1, int in_dim_2=1, int in_dim_3=1);
 
-    // copy constructor
+  // copy constructor
 
-    array(const array<T>& in_array);
+  array(const array<T>& in_array);
 
-    // assignment
+  // assignment
 
-    array<T>& operator=(const array<T>& in_array);
+  array<T>& operator=(const array<T>& in_array);
 
-    // destructor
+  // destructor
 
-    ~array();
+  ~array();
 
-    // #### methods ####
+  // #### methods ####
 
 #ifdef _GPU
-    void check_cuda_error(const char *message, const char *filename, const int lineno);
+  void check_cuda_error(const char *message, const char *filename, const int lineno);
 #endif
 
-    // setup
+  // setup
 
-    void setup(int in_dim_0, int in_dim_1=1, int in_dim_2=1, int in_dim_3=1);
+  void setup(int in_dim_0, int in_dim_1=1, int in_dim_2=1, int in_dim_3=1);
 
-    // access/set 1d
+  // access/set 1d
 
-    T& operator() (int in_pos_0);
+  T& operator() (int in_pos_0);
 
-    // access/set 2d
+  // access/set 2d
 
-    T& operator() (int in_pos_0, int in_pos_1);
+  T& operator() (int in_pos_0, int in_pos_1);
 
-    // access/set 3d
+  // access/set 3d
 
-    T& operator() (int in_pos_0, int in_pos_1, int in_pos_2);
+  T& operator() (int in_pos_0, int in_pos_1, int in_pos_2);
 
-    // access/set 4d
+  // access/set 4d
 
-    T& operator() (int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3);
+  T& operator() (int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3);
 
-    // return pointer
+  // return pointer
 
-    T* get_ptr_cpu(void);
-    T* get_ptr_gpu(void);
+  T* get_ptr_cpu(void);
+  T* get_ptr_gpu(void);
 
-    // return pointer
+  // return pointer
 
-    T* get_ptr_cpu(int in_pos_0, int in_pos_1=0, int in_pos_2=0, int in_pos_3=0);
-    T* get_ptr_gpu(int in_pos_0, int in_pos_1=0, int in_pos_2=0, int in_pos_3=0);
+  T* get_ptr_cpu(int in_pos_0, int in_pos_1=0, int in_pos_2=0, int in_pos_3=0);
+  T* get_ptr_gpu(int in_pos_0, int in_pos_1=0, int in_pos_2=0, int in_pos_3=0);
 
-    // return dimension
+  // return dimension
 
-    int get_dim(int in_dim);
+  int get_dim(int in_dim);
 
-    // method to get maximum value of array
+  // method to get maximum value of array
 
-    T get_max(void);
+  T get_max(void);
 
-    // print
+  // print
 
-    void print(void);
+  void print(void);
 
-    // move data from cpu to gpu
+  // move data from cpu to gpu
 
-    void mv_cpu_gpu(void);
+  void mv_cpu_gpu(void);
 
-    // copy data from cpu to gpu
+  // copy data from cpu to gpu
 
-    void cp_cpu_gpu(void);
+  void cp_cpu_gpu(void);
 
-    // move data from gpu to cpu
+  // move data from gpu to cpu
 
-    void mv_gpu_cpu(void);
+  void mv_gpu_cpu(void);
 
-    // copy data from gpu to cpu
+  // copy data from gpu to cpu
 
-    void cp_gpu_cpu(void);
+  void cp_gpu_cpu(void);
 
 
-    // remove data from cpu
+  // remove data from cpu
 
-    void rm_cpu(void);
+  void rm_cpu(void);
+
+  // NEW FUNCTION: used to initialize int, double and float types
+
+  void initialize_to_zero();
 
 protected:
 
-    int dim_0;
-    int dim_1;
-    int dim_2;
-    int dim_3;
+  int dim_0;
+  int dim_1;
+  int dim_2;
+  int dim_3;
 
-    T* cpu_data;
-    T* gpu_data;
+  T* cpu_data;
+  T* gpu_data;
 
-    int cpu_flag;
-    int gpu_flag;
+  int cpu_flag;
+  int gpu_flag;
 
 };
 
@@ -152,15 +156,15 @@ using namespace std;
 template <typename T>
 array<T>::array()
 {
-    dim_0=1;
-    dim_1=1;
-    dim_2=1;
-    dim_3=1;
+  dim_0=1;
+  dim_1=1;
+  dim_2=1;
+  dim_3=1;
 
-    cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
+  cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
 
-    cpu_flag=1;
-    gpu_flag=0;
+  cpu_flag=1;
+  gpu_flag=0;
 }
 
 // constructor 1
@@ -168,16 +172,16 @@ array<T>::array()
 template <typename T>
 array<T>::array(int in_dim_0, int in_dim_1, int in_dim_2, int in_dim_3)
 {
-    dim_0=in_dim_0;
-    dim_1=in_dim_1;
-    dim_2=in_dim_2;
-    dim_3=in_dim_3;
+  dim_0=in_dim_0;
+  dim_1=in_dim_1;
+  dim_2=in_dim_2;
+  dim_3=in_dim_3;
 
-    cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
+  cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
 
 
-    cpu_flag=1;
-    gpu_flag=0;
+  cpu_flag=1;
+  gpu_flag=0;
 }
 
 // copy constructor
@@ -185,18 +189,18 @@ array<T>::array(int in_dim_0, int in_dim_1, int in_dim_2, int in_dim_3)
 template <typename T>
 array<T>::array(const array<T>& in_array)
 {
-    int i;
+  int i;
 
-    dim_0=in_array.dim_0;
-    dim_1=in_array.dim_1;
-    dim_2=in_array.dim_2;
-    dim_3=in_array.dim_3;
+  dim_0=in_array.dim_0;
+  dim_1=in_array.dim_1;
+  dim_2=in_array.dim_2;
+  dim_3=in_array.dim_3;
 
-    cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
+  cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
 
-    for(i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
+  for(i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
     {
-        cpu_data[i]=in_array.cpu_data[i];
+      cpu_data[i]=in_array.cpu_data[i];
     }
 }
 
@@ -205,32 +209,32 @@ array<T>::array(const array<T>& in_array)
 template <typename T>
 array<T>& array<T>::operator=(const array<T>& in_array)
 {
-    int i;
+  int i;
 
-    if(this == &in_array)
+  if(this == &in_array)
     {
-        return (*this);
+      return (*this);
     }
-    else
+  else
     {
-        delete[] cpu_data;
+      delete[] cpu_data;
 
-        dim_0=in_array.dim_0;
-        dim_1=in_array.dim_1;
-        dim_2=in_array.dim_2;
-        dim_3=in_array.dim_3;
+      dim_0=in_array.dim_0;
+      dim_1=in_array.dim_1;
+      dim_2=in_array.dim_2;
+      dim_3=in_array.dim_3;
 
-        cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
-        //NOTE: THIS COPIES POINTERS; NOT VALUES
-        for(i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
+      cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
+      //NOTE: THIS COPIES POINTERS; NOT VALUES
+      for(i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
         {
-            cpu_data[i]=in_array.cpu_data[i];
+          cpu_data[i]=in_array.cpu_data[i];
         }
 
-        cpu_flag=1;
-        gpu_flag=0;
+      cpu_flag=1;
+      gpu_flag=0;
 
-        return (*this);
+      return (*this);
     }
 }
 
@@ -239,8 +243,8 @@ array<T>& array<T>::operator=(const array<T>& in_array)
 template <typename T>
 array<T>::~array()
 {
-    delete[] cpu_data;
-    // do we need to deallocate gpu memory here as well?
+  delete[] cpu_data;
+  // do we need to deallocate gpu memory here as well?
 }
 
 // #### methods ####
@@ -250,40 +254,40 @@ array<T>::~array()
 template <typename T>
 void array<T>::setup(int in_dim_0, int in_dim_1, int in_dim_2, int in_dim_3)
 {
-    delete[] cpu_data;
+  delete[] cpu_data;
 
-    dim_0=in_dim_0;
-    dim_1=in_dim_1;
-    dim_2=in_dim_2;
-    dim_3=in_dim_3;
+  dim_0=in_dim_0;
+  dim_1=in_dim_1;
+  dim_2=in_dim_2;
+  dim_3=in_dim_3;
 
-    cpu_data=new T[dim_0*dim_1*dim_2*dim_3];
-    cpu_flag=1;
-    gpu_flag=0;
+  cpu_data=new T[dim_0*dim_1*dim_2*dim_3];
+  cpu_flag=1;
+  gpu_flag=0;
 }
 
 template <typename T>
 T& array<T>::operator()(int in_pos_0)
 {
-    return cpu_data[in_pos_0]; // column major with matrix indexing
+  return cpu_data[in_pos_0]; // column major with matrix indexing
 }
 
 template <typename T>
 T& array<T>::operator()(int in_pos_0, int in_pos_1)
 {
-    return cpu_data[in_pos_0+(dim_0*in_pos_1)]; // column major with matrix indexing
+  return cpu_data[in_pos_0+(dim_0*in_pos_1)]; // column major with matrix indexing
 }
 
 template <typename T>
 T& array<T>::operator()(int in_pos_0, int in_pos_1, int in_pos_2)
 {
-    return cpu_data[in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)]; // column major with matrix indexing
+  return cpu_data[in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)]; // column major with matrix indexing
 }
 
 template <typename T>
 T& array<T>::operator()(int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3)
 {
-    return cpu_data[in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)+(dim_0*dim_1*dim_2*in_pos_3)]; // column major with matrix indexing
+  return cpu_data[in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)+(dim_0*dim_1*dim_2*in_pos_3)]; // column major with matrix indexing
 }
 
 // return pointer
@@ -291,10 +295,10 @@ T& array<T>::operator()(int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3)
 template <typename T>
 T* array<T>::get_ptr_cpu(void)
 {
-    if(cpu_flag==1)
-        return cpu_data;
-    else
-        FatalError("CPU array does not exist");
+  if(cpu_flag==1)
+    return cpu_data;
+  else
+    FatalError("CPU array does not exist");
 }
 
 
@@ -303,12 +307,12 @@ T* array<T>::get_ptr_cpu(void)
 template <typename T>
 T* array<T>::get_ptr_gpu(void)
 {
-    if(gpu_flag==1)
-        return gpu_data;
-    else
+  if(gpu_flag==1)
+    return gpu_data;
+  else
     {
-        cout << "dim_0=" << dim_0 << " dim_1=" << dim_1 << " dim_2=" << dim_2 << endl;
-        FatalError("GPU array does not exist");
+      cout << "dim_0=" << dim_0 << " dim_1=" << dim_1 << " dim_2=" << dim_2 << endl;
+      FatalError("GPU array does not exist");
     }
 }
 
@@ -319,20 +323,20 @@ T* array<T>::get_ptr_gpu(void)
 template <typename T>
 T* array<T>::get_ptr_cpu(int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3)
 {
-    if(cpu_flag==1)
-        return cpu_data+in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)+(dim_0*dim_1*dim_2*in_pos_3); // column major with matrix indexing
-    else
-        FatalError("Cpu data does not exist");
+  if(cpu_flag==1)
+    return cpu_data+in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)+(dim_0*dim_1*dim_2*in_pos_3); // column major with matrix indexing
+  else
+    FatalError("Cpu data does not exist");
 }
 
 
 template <typename T>
 T* array<T>::get_ptr_gpu(int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3)
 {
-    if(gpu_flag==1)
-        return gpu_data+in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)+(dim_0*dim_1*dim_2*in_pos_3); // column major with matrix indexing
-    else
-        FatalError("GPU data does not exist, get ptr");
+  if(gpu_flag==1)
+    return gpu_data+in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)+(dim_0*dim_1*dim_2*in_pos_3); // column major with matrix indexing
+  else
+    FatalError("GPU data does not exist, get ptr");
 }
 
 
@@ -341,26 +345,26 @@ T* array<T>::get_ptr_gpu(int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3)
 template <typename T>
 int array<T>::get_dim(int in_dim)
 {
-    if(in_dim==0)
+  if(in_dim==0)
     {
-        return dim_0;
+      return dim_0;
     }
-    else if(in_dim==1)
+  else if(in_dim==1)
     {
-        return dim_1;
+      return dim_1;
     }
-    else if(in_dim==2)
+  else if(in_dim==2)
     {
-        return dim_2;
+      return dim_2;
     }
-    else if(in_dim==3)
+  else if(in_dim==3)
     {
-        return dim_3;
+      return dim_3;
     }
-    else
+  else
     {
-        cout << "ERROR: Invalid dimension ... " << endl;
-        return 0;
+      cout << "ERROR: Invalid dimension ... " << endl;
+      return 0;
     }
 }
 
@@ -370,15 +374,15 @@ int array<T>::get_dim(int in_dim)
 template <typename T>
 T array<T>::get_max(void)
 {
-    int i;
-    T max = 0;
+  int i;
+  T max = 0;
 
-    for(i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
+  for(i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
     {
-        if( ((*this).get_ptr_cpu())[i] > max)
-            max = ((*this).get_ptr_cpu())[i];
+      if( ((*this).get_ptr_cpu())[i] > max)
+        max = ((*this).get_ptr_cpu())[i];
     }
-    return max;
+  return max;
 }
 
 // print
@@ -386,38 +390,38 @@ T array<T>::get_max(void)
 template <typename T>
 void array<T>::print(void)
 {
-    if(dim_3==1)
+  if(dim_3==1)
     {
-        int i,j,k;
-        bool threeD = (dim_2==1?false:true);
-        for (k = 0; k< dim_2; k++)
+      int i,j,k;
+      bool threeD = (dim_2==1?false:true);
+      for (k = 0; k< dim_2; k++)
         {
-            if (threeD)
-                cout<<endl<<"ans(:,:,"<<k+1<<") = "<<endl;
-            for(i=0; i<dim_0; i++)
+          if (threeD)
+            cout<<endl<<"ans(:,:,"<<k+1<<") = "<<endl;
+          for(i=0; i<dim_0; i++)
             {
-                for(j=0; j<dim_1; j++)
+              for(j=0; j<dim_1; j++)
                 {
 
-                    if((*this)(i,j,k)*(*this)(i,j,k)<1e-12)
+                  if((*this)(i,j,k)*(*this)(i,j,k)<1e-12)
                     {
-                        cout << " 0 ";
+                      cout << " 0 ";
                     }
-                    else
+                  else
                     {
-                        cout << " " << (*this)(i,j,k) << " ";
+                      cout << " " << (*this)(i,j,k) << " ";
                     }
                 }
 
-                cout << endl;
+              cout << endl;
             }
-            if (threeD)
-                cout<<endl;
+          if (threeD)
+            cout<<endl;
         }
     }
-    else
+  else
     {
-        cout << "ERROR: Can only print an array of dimension three or less ...." << endl;
+      cout << "ERROR: Can only print an array of dimension three or less ...." << endl;
     }
 }
 
@@ -425,12 +429,12 @@ void array<T>::print(void)
 template <typename T>
 void array<T>::check_cuda_error(const char *message, const char *filename, const int lineno)
 {
-    cudaThreadSynchronize();
-    cudaError_t error = cudaGetLastError();
-    if(error != cudaSuccess)
+  cudaThreadSynchronize();
+  cudaError_t error = cudaGetLastError();
+  if(error != cudaSuccess)
     {
-        printf("CUDA error after %s at %s:%d: %s\n", message, filename, lineno, cudaGetErrorString(error));
-        exit(-1);
+      printf("CUDA error after %s at %s:%d: %s\n", message, filename, lineno, cudaGetErrorString(error));
+      exit(-1);
     }
 }
 #endif
@@ -442,22 +446,22 @@ void array<T>::mv_cpu_gpu(void)
 {
 #ifdef _GPU
 
-    if (cpu_flag==0)
-        FatalError("CPU data does not exist");
+  if (cpu_flag==0)
+    FatalError("CPU data does not exist");
 
-    check_cuda_error("Before",__FILE__,__LINE__);
+  check_cuda_error("Before",__FILE__,__LINE__);
 
-    // free gpu pointer first?
-    cudaMalloc((void**) &gpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T));
-    cudaMemcpy(gpu_data,cpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T),cudaMemcpyHostToDevice);
+  // free gpu pointer first?
+  cudaMalloc((void**) &gpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T));
+  cudaMemcpy(gpu_data,cpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T),cudaMemcpyHostToDevice);
 
-    delete[] cpu_data;
-    cpu_data = new T[1];
+  delete[] cpu_data;
+  cpu_data = new T[1];
 
-    cpu_flag=0;
-    gpu_flag=1;
+  cpu_flag=0;
+  gpu_flag=1;
 
-    check_cuda_error("After Memcpy, asking for too much memory?",__FILE__,__LINE__);
+  check_cuda_error("After Memcpy, asking for too much memory?",__FILE__,__LINE__);
 
 #endif
 }
@@ -469,18 +473,18 @@ void array<T>::mv_gpu_cpu(void)
 {
 #ifdef _GPU
 
-    check_cuda_error("mv_gpu_cpu before",__FILE__, __LINE__);
-    delete[] cpu_data;
-    cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
+  check_cuda_error("mv_gpu_cpu before",__FILE__, __LINE__);
+  delete[] cpu_data;
+  cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
 
-    cudaMemcpy(cpu_data,gpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T),cudaMemcpyDeviceToHost);
-    cudaFree(gpu_data);
-    // assign gpu pointer unit size afterwards?
+  cudaMemcpy(cpu_data,gpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T),cudaMemcpyDeviceToHost);
+  cudaFree(gpu_data);
+  // assign gpu pointer unit size afterwards?
 
-    cpu_flag=1;
-    gpu_flag=0;
+  cpu_flag=1;
+  gpu_flag=0;
 
-    check_cuda_error("mv_gpu_cpu after",__FILE__, __LINE__);
+  check_cuda_error("mv_gpu_cpu after",__FILE__, __LINE__);
 #endif
 }
 
@@ -491,21 +495,21 @@ void array<T>::cp_gpu_cpu(void)
 {
 #ifdef _GPU
 
-    //delete[] cpu_data;
-    //cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
+  //delete[] cpu_data;
+  //cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
 
-    if (gpu_flag==0)
-        FatalError("GPU data does not exist");
+  if (gpu_flag==0)
+    FatalError("GPU data does not exist");
 
-    if (cpu_flag==0)
+  if (cpu_flag==0)
     {
-        cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
-        cpu_flag=1;
+      cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
+      cpu_flag=1;
     }
 
-    check_cuda_error("cp_gpu_cpu before",__FILE__, __LINE__);
-    cudaMemcpy(cpu_data,gpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T),cudaMemcpyDeviceToHost);
-    check_cuda_error("cp_gpu_cpu after",__FILE__, __LINE__);
+  check_cuda_error("cp_gpu_cpu before",__FILE__, __LINE__);
+  cudaMemcpy(cpu_data,gpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T),cudaMemcpyDeviceToHost);
+  check_cuda_error("cp_gpu_cpu after",__FILE__, __LINE__);
 
 #endif
 }
@@ -517,18 +521,18 @@ void array<T>::cp_cpu_gpu(void)
 {
 #ifdef _GPU
 
-    if (cpu_flag==0)
-        FatalError("Cpu data does not exist");
+  if (cpu_flag==0)
+    FatalError("Cpu data does not exist");
 
-    check_cuda_error("cp_cpu_gpu before",__FILE__, __LINE__);
-    if (gpu_flag==0)
+  check_cuda_error("cp_cpu_gpu before",__FILE__, __LINE__);
+  if (gpu_flag==0)
     {
-        cudaMalloc((void**) &gpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T));
-        gpu_flag=1;
+      cudaMalloc((void**) &gpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T));
+      gpu_flag=1;
     }
-    cudaMemcpy(gpu_data,cpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T),cudaMemcpyHostToDevice);
+  cudaMemcpy(gpu_data,cpu_data,dim_0*dim_1*dim_2*dim_3*sizeof(T),cudaMemcpyHostToDevice);
 
-    check_cuda_error("cp_cpu_gpu after",__FILE__, __LINE__);
+  check_cuda_error("cp_cpu_gpu after",__FILE__, __LINE__);
 
 #endif
 }
@@ -540,13 +544,25 @@ void array<T>::rm_cpu(void)
 {
 #ifdef _GPU
 
-    check_cuda_error("rm_cpu before",__FILE__, __LINE__);
-    delete[] cpu_data;
-    cpu_data = new T[1];
+  check_cuda_error("rm_cpu before",__FILE__, __LINE__);
+  delete[] cpu_data;
+  cpu_data = new T[1];
 
-    cpu_flag=0;
-    check_cuda_error("rm_cpu after",__FILE__, __LINE__);
+  cpu_flag=0;
+  check_cuda_error("rm_cpu after",__FILE__, __LINE__);
 
 #endif
 }
 
+// Initialize values to zero
+// NEW FUNCTION: used to initialize int, double and float types
+template <typename T>
+void array<T>::initialize_to_zero()
+{
+
+  for(int i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
+    {
+      cpu_data[i]=0;
+    }
+
+}

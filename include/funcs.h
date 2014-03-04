@@ -186,7 +186,7 @@ bool iszero(array<T> & poly);
 // Calculate the number of sides given the number of nodes in triangle
 inline int calcNumSides(int nNodes)
 {
-    return int ( 0.5*(-1 + sqrt( 1 + 8*double(nNodes) ) ) ) ;
+  return int ( 0.5*(-1 + sqrt( 1 + 8*double(nNodes) ) ) ) ;
 }
 
 

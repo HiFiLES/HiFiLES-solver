@@ -31,18 +31,18 @@
 using namespace std;
 
 int main(int argc, char *argv[]) {
-  
-	int rank = 0, error_state = 0;
+
+  int rank = 0, error_state = 0;
   int i, j;                           /*!< Loop iterators */
   int i_steps = 0;                    /*!< Iteration index */
   ifstream run_input_file;            /*!< Config input file */
   clock_t init, final;                /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
-  ofstream write_force, write_stats;  /*!< Output files (forces and statistics) */
+  ofstream write_force, write_stats, write_hist;  /*!< Output files (forces, statistics, and history) */
 
   /*! Check the command line input. */
   if (argc < 2) { cout << "ERROR: No input file specified ... " << endl; return(0); }
-  
+
   /*! Initialize MPI. */
 #ifdef _MPI
   MPI_Init(&argc, &argv);
@@ -50,65 +50,65 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 #endif
-  
+
   if (rank == 0) {
-    cout << " _    _  _  ______  _  _       ______   _____ " << endl;
-    cout << "| |  | |(_)|  ____|(_)| |     |  ____| / ____|" << endl;
-    cout << "| |__| | _ | |__    _ | |     | |__   | (___  " << endl;
-    cout << "|  __  || ||  __|  | || |     |  __|   \\___ \\ " << endl;
-    cout << "| |  | || || |     | || |____ | |____  ____) |" << endl;
-    cout << "|_|  |_||_||_|     |_||______||______||_____/ " << endl;
-    cout << "                                              " << endl;
-    cout << "Aerospace Computing Lab (Stanford University) " << endl;
-  }
+      cout << " _    _  _  ______  _  _       ______   _____ " << endl;
+      cout << "| |  | |(_)|  ____|(_)| |     |  ____| / ____|" << endl;
+      cout << "| |__| | _ | |__    _ | |     | |__   | (___  " << endl;
+      cout << "|  __  || ||  __|  | || |     |  __|   \\___ \\ " << endl;
+      cout << "| |  | || || |     | || |____ | |____  ____) |" << endl;
+      cout << "|_|  |_||_||_|     |_||______||______||_____/ " << endl;
+      cout << "                                              " << endl;
+      cout << "Aerospace Computing Lab (Stanford University) " << endl;
+    }
 
   /////////////////////////////////////////////////
   /// Read config file and mesh
   /////////////////////////////////////////////////
-  
+
   /*! Read the config file and store the information in run_input. */
   run_input_file.open(argv[1], ifstream::in);
   if (!run_input_file) FatalError("Unable to open input file");
   run_input.setup(run_input_file, rank);
-  
+
   /*! Set the input values in the FlowSol structure. */
   SetInput(&FlowSol);
 
   /*! Read the mesh file from a file. */
   GeoPreprocess(run_input.run_type, &FlowSol);
-  
+
   InitSolution(&FlowSol);
-  
+
   init = clock();
-  
+
   /*! Just output. */
   if (run_input.run_type == 1) {
-		plot_continuous(&FlowSol);
-	  /*! Finalize MPI. */
+      plot_continuous(&FlowSol);
+      /*! Finalize MPI. */
 #ifdef _MPI
-	  MPI_Finalize();
+      MPI_Finalize();
 #endif
-		/*! Exit. */
-		return(0);
-	}
-  
+      /*! Exit. */
+      return(0);
+    }
+
   /////////////////////////////////////////////////
   /// Pre-processing
   /////////////////////////////////////////////////
-  
+
   /*! Variable initialization. */
   error_state = 0;
   FlowSol.ene_hist = 1000.;
   FlowSol.grad_ene_hist = 1000.;
-  
+
   /*! Warning about body forcing term for periodic channel. */
   if (run_input.equation == 0 and run_input.run_type == 0 and run_input.forcing == 1) {
-    if(run_input.monitor_force_freq>100)
-      cout<<"WARNING: when running the periodic channel, it is necessary to add a body forcing term to prevent the flow decaying to zero. Make sure monitor_force_freq is set to a relatively small number, e.g. 100"<<endl;
-    FlowSol.body_force.setup(5);
-    for (i=0; i<5; i++) FlowSol.body_force(i)=0.0;
-  }
-  
+      if(run_input.monitor_force_freq>100)
+        cout<<"WARNING: when running the periodic channel, it is necessary to add a body forcing term to prevent the flow decaying to zero. Make sure monitor_force_freq is set to a relatively small number, e.g. 100"<<endl;
+      FlowSol.body_force.setup(5);
+      for (i=0; i<5; i++) FlowSol.body_force(i)=0.0;
+    }
+
   /*! Compute forces in the initial solution. */
   if (FlowSol.rank == 0) {
     write_force.open("force000.dat", ios::app);
@@ -121,21 +121,21 @@ int main(int argc, char *argv[]) {
   	  for(j=0; j<run_input.n_diagnostics; ++j) { write_stats << run_input.diagnostics(j) << " "; }
   	  write_stats << endl;
   	  write_stats.close();
-		}
+    }
   }
   
   /*! Dump initial Paraview or tecplot file. */
   if (FlowSol.write_type == 0) write_vtu(FlowSol.ini_iter+i_steps, &FlowSol);
   else if (FlowSol.write_type == 1) write_tec(FlowSol.ini_iter+i_steps, &FlowSol);
   else FatalError("ERROR: Trying to write unrecognized file format ... ");
-  
+
   /*! Compute diagnostics at t=0. */
   if(run_input.diagnostics_freq!=0 and run_input.n_diagnostics != 0) {
     CalcDiagnostics(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
   }
   
   if (FlowSol.rank == 0) cout << endl;
-  
+
   /*! Main solver loop (outer loop). */
   while(i_steps < FlowSol.n_steps) {
     
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
     /*! Dump residual and error. */
     if(i_steps%run_input.monitor_res_freq==0 ) {
       
-      error_state = monitor_residual(FlowSol.ini_iter+i_steps, &FlowSol);
+      error_state = monitor_residual(FlowSol.ini_iter+i_steps, init, &write_hist, &FlowSol);
       
       if (error_state) cout << "error_state=" << error_state << "rank=" << FlowSol.rank << endl;
       
@@ -221,6 +221,10 @@ int main(int argc, char *argv[]) {
   /////////////////////////////////////////////////
   /// End simulation
   /////////////////////////////////////////////////
+
+  /*! Close convergence history file. */
+  if (rank == 0)
+    write_hist.close();
   
   /*! Compute execution time. */
   final = clock()-init;
@@ -230,5 +234,5 @@ int main(int argc, char *argv[]) {
 #ifdef _MPI
   MPI_Finalize();
 #endif
-  
+
 }
