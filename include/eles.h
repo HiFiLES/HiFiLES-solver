@@ -216,8 +216,11 @@ public:
   /*! get a pointer to the normal at a flux point */
   double* get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
 
-  /*! get a pointer to the coordinates at a flux point */
-  double* get_loc_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
+  /*! get a CPU pointer to the coordinates at a flux point */
+  double* get_loc_fpts_ptr_cpu(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
+
+  /*! get a GPU pointer to the coordinates at a flux point */
+  double* get_loc_fpts_ptr_gpu(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
 
   /*! get a pointer to delta of the transformed discontinuous solution at a flux point */
   double* get_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);

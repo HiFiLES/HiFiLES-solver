@@ -222,11 +222,19 @@ double* get_norm_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int i
   return FlowSol->mesh_eles(in_ele_type)->get_norm_fpts_ptr(in_fpt,in_local_inter,in_dim,in_ele);
 }
 
-// get pointer to the coordinates at a flux point
+// get CPU pointer to the coordinates at a flux point.
+// See bdy_inters for reasons for this CPU/GPU split.
 
-double* get_loc_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
+double* get_loc_fpts_ptr_cpu(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
 {
-  return FlowSol->mesh_eles(in_ele_type)->get_loc_fpts_ptr(in_fpt,in_local_inter,in_dim,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_loc_fpts_ptr_cpu(in_fpt,in_local_inter,in_dim,in_ele);
+}
+
+// get GPU pointer to the coordinates at a flux point
+
+double* get_loc_fpts_ptr_gpu(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_loc_fpts_ptr_gpu(in_fpt,in_local_inter,in_dim,in_ele);
 }
 
 // get pointer to normal continuous transformed viscous flux at a flux point
