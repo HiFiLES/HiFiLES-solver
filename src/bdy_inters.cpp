@@ -122,25 +122,35 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
             }
         }
 
-      for(int i=0;i<n_fpts_per_inter;i++)
+      for(int j=0;j<n_fpts_per_inter;j++)
         {
-          mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
+          mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
 
-          for(int j=0;j<n_dims;j++)
+          for(int k=0;k<n_dims;k++)
             {
-              norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-              loc_fpts(i,in_inter,j)=get_loc_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-            }
+              norm_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 
+#ifdef _CPU
+              loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+#endif
+#ifdef _GPU
+              loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_gpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+#endif
+            }
         }
       
+      // Get coordinates and solution at closest solution points to boundary
+
       for(int j=0;j<n_fpts_per_inter;j++)
       {
         
         // flux point location
-        for (int m=0;m<n_dims;m++)
-          temp_loc(m) = *loc_fpts(j,in_inter,m);
-        
+
+        // get CPU ptr regardless of ifdef _CPU or _GPU
+        // - we need a CPU ptr to pass to get_normal_disu_fpts_ptr below
+        for (int k=0;k<n_dims;k++)
+          temp_loc(k) = *get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+
         // location of the closest solution point
         double temp_pos[3];
 
@@ -150,12 +160,9 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
           
           for(int i=0;i<n_dims;i++)
               pos_disu_fpts_l(j,in_inter,i) = temp_pos[i];
-        }
-        
+        } 
       }
-      
     }
-
 }
 
 // move all from cpu to gpu
@@ -175,6 +182,8 @@ void bdy_inters::mv_all_cpu_gpu(void)
   if(viscous)
     {
       grad_disu_fpts_l.mv_cpu_gpu();
+      normal_disu_fpts_l.mv_cpu_gpu();
+      pos_disu_fpts_l.mv_cpu_gpu();
       //norm_tconvisf_fpts_l.mv_cpu_gpu();
     }
   //detjac_fpts_l.mv_cpu_gpu();
@@ -900,7 +909,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
   
 #ifdef _GPU
   if (n_inters!=0)
-    calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff);
+    calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),normal_disu_fpts_l.get_ptr_gpu(),pos_disu_fpts_l.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff);
 #endif
 }
 
