@@ -748,7 +748,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
   // Flag interfaces for calculating LES wall model
   if(in_run_type==0) {
-	if(run_input.wall_model > 0 or run_input.rans_model == 1) {
+  if(run_input.wall_model > 0 or run_input.rans_model == 1) {
 
     if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
 
@@ -842,7 +842,6 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
           for(int j=0;j<n_fpts_per_inter_seg;j++) {
             for(int k=0;k<FlowSol->n_dims;k++) {
 
-              // find coordinates
               FlowSol->loc_noslip_bdy(0)(j,n_seg_noslip_inters,k) = *get_loc_fpts_ptr_cpu(ctype(ic_l), local_c(ic_l), f2loc_f(i,0), j, k, FlowSol);
             }
           }
@@ -913,7 +912,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
     }
   }
 
-	// set on GPU
+  // set on GPU
 #ifdef _GPU
   if (in_run_type==0)
     {
