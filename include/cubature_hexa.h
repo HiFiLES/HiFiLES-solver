@@ -18,56 +18,56 @@
 
 class cubature_hexa
 {
-	public:
+public:
 
-	// #### constructors ####
+  // #### constructors ####
 
-	// default constructor
-	cubature_hexa();
+  // default constructor
+  cubature_hexa();
 
-	// constructor 1
-	cubature_hexa(int in_rule); // set by order
-	
-	// copy constructor
-	cubature_hexa(const cubature_hexa& in_cubature);
-	
-	// assignment
-	cubature_hexa& operator=(const cubature_hexa& in_cubature);
-	
-	// destructor
-	~cubature_hexa();
+  // constructor 1
+  cubature_hexa(int in_rule); // set by order
 
-	// #### methods ####
-	
-	// method to initialize a cubature rule
-	void set_rule(int in_rule);
-	
-	// method to get number of cubature points
-	double get_n_pts(void);
+  // copy constructor
+  cubature_hexa(const cubature_hexa& in_cubature);
 
-	// method to get r location of cubature point
-	double get_r(int in_pos);
+  // assignment
+  cubature_hexa& operator=(const cubature_hexa& in_cubature);
 
-	// method to get s location of cubature point
-	double get_s(int in_pos);
+  // destructor
+  ~cubature_hexa();
 
-	// method to get s location of cubature point
-	double get_t(int in_pos);
+  // #### methods ####
 
-	// method to get weight location of cubature point
-	double get_weight(int in_pos);
+  // method to initialize a cubature rule
+  void set_rule(int in_rule);
 
-	// #### members ####
+  // method to get number of cubature points
+  double get_n_pts(void);
 
-	// cubature rule
-	int rule;
-	
-	// number of cubature points
-	int n_pts;
+  // method to get r location of cubature point
+  double get_r(int in_pos);
 
-	// location of cubature points
-	array<double> locs;
-	
-	// weight of cubature points
-	array<double> weights;
+  // method to get s location of cubature point
+  double get_s(int in_pos);
+
+  // method to get s location of cubature point
+  double get_t(int in_pos);
+
+  // method to get weight location of cubature point
+  double get_weight(int in_pos);
+
+  // #### members ####
+
+  // cubature rule
+  int rule;
+
+  // number of cubature points
+  int n_pts;
+
+  // location of cubature points
+  array<double> locs;
+
+  // weight of cubature points
+  array<double> weights;
 };

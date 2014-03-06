@@ -54,121 +54,120 @@ void CalcResidual(struct solution* FlowSol) {
 
   int in_disu_upts_from = 0;        /*!< Define... */
   int in_div_tconf_upts_to = 0;     /*!< Define... */
-	int i;                            /*!< Loop iterator */
-  
+  int i;                            /*!< Loop iterator */
+
   /*! If at first RK step and using certain LES models, compute some model-related quantities. */
   if(run_input.LES==1 and in_disu_upts_from==0) {
-    if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
-		  for(i=0; i<FlowSol->n_ele_types; i++) {
-				FlowSol->mesh_eles(i)->calc_sgs_terms(in_disu_upts_from);
-			}
-		}
-  }
+      if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
+          for(i=0; i<FlowSol->n_ele_types; i++)
+            FlowSol->mesh_eles(i)->calc_sgs_terms(in_disu_upts_from);
+        }
+    }
 
   /*! Compute the solution at the flux points. */
-	for(i=0; i<FlowSol->n_ele_types; i++)
-		FlowSol->mesh_eles(i)->calc_disu_fpts(in_disu_upts_from);
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calc_disu_fpts(in_disu_upts_from);
 
 #ifdef _MPI
   /*! Send the solution at the flux points across the MPI interfaces. */
   if (FlowSol->nproc>1)
-		for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-			FlowSol->mesh_mpi_inters(i).send_disu_fpts();
+    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+      FlowSol->mesh_mpi_inters(i).send_disu_fpts();
 #endif
 
   if (FlowSol->viscous) {
-    /*! Compute the uncorrected gradient of the solution at the solution points. */
-    for(i=0; i<FlowSol->n_ele_types; i++)
-			FlowSol->mesh_eles(i)->calc_uncor_tgrad_disu_upts(in_disu_upts_from);
-  }
+      /*! Compute the uncorrected gradient of the solution at the solution points. */
+      for(i=0; i<FlowSol->n_ele_types; i++)
+        FlowSol->mesh_eles(i)->calc_uncor_tgrad_disu_upts(in_disu_upts_from);
+    }
 
   /*! Compute the inviscid flux at the solution points and store in total flux storage. */
-	for(i=0; i<FlowSol->n_ele_types; i++)
-		FlowSol->mesh_eles(i)->calc_tdisinvf_upts(in_disu_upts_from);
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calc_tdisinvf_upts(in_disu_upts_from);
 
   /*! Calculate body forcing, if switched on, and add to flux. */
-	if((run_input.equation==0 || run_input.equation==2) && run_input.run_type==0 && run_input.forcing==1) {
-		for(i=0; i<FlowSol->n_ele_types; i++)
-	    FlowSol->mesh_eles(i)->add_body_force_upts(FlowSol->body_force);
-	}
+  if((run_input.equation==0 || run_input.equation==2) && run_input.run_type==0 && run_input.forcing==1) {
+      for(i=0; i<FlowSol->n_ele_types; i++)
+        FlowSol->mesh_eles(i)->add_body_force_upts(FlowSol->body_force);
+    }
 
   /*! Compute the inviscid numerical fluxes.
    Compute the common solution and solution corrections (viscous only). */
-	for(i=0; i<FlowSol->n_int_inter_types; i++)
-		FlowSol->mesh_int_inters(i).calc_norm_tconinvf_fpts();
+  for(i=0; i<FlowSol->n_int_inter_types; i++)
+    FlowSol->mesh_int_inters(i).calc_norm_tconinvf_fpts();
 
-	for(i=0; i<FlowSol->n_bdy_inter_types; i++)
-		FlowSol->mesh_bdy_inters(i).calc_norm_tconinvf_fpts_boundary(FlowSol->time);
+  for(i=0; i<FlowSol->n_bdy_inter_types; i++)
+    FlowSol->mesh_bdy_inters(i).calc_norm_tconinvf_fpts_boundary(FlowSol->time);
 
 #ifdef _MPI
   /*! Send the previously computed values across the MPI interfaces. */
   if (FlowSol->nproc>1) {
-	  for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-	  	FlowSol->mesh_mpi_inters(i).receive_disu_fpts();
+      for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+        FlowSol->mesh_mpi_inters(i).receive_disu_fpts();
 
-	  for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-	  	FlowSol->mesh_mpi_inters(i).calc_norm_tconinvf_fpts_mpi();
-  }
-#endif
-
-	if (FlowSol->viscous) {
-    /*! Compute corrected gradient of the solution at the solution and flux points. */
-		for(i=0; i<FlowSol->n_ele_types; i++)
-			FlowSol->mesh_eles(i)->calc_cor_grad_disu_upts();
-
-		for(i=0; i<FlowSol->n_ele_types; i++)
-			FlowSol->mesh_eles(i)->calc_cor_grad_disu_fpts();
-
-#ifdef _MPI
-    /*! Send the corrected value across the MPI interface. */
-    if (FlowSol->nproc>1) {
-	    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-	  	  FlowSol->mesh_mpi_inters(i).send_cor_grad_disu_fpts();
+      for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+        FlowSol->mesh_mpi_inters(i).calc_norm_tconinvf_fpts_mpi();
     }
 #endif
 
-    /*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
-		for(i=0; i<FlowSol->n_ele_types; i++)
-			FlowSol->mesh_eles(i)->calc_tdisvisf_upts(in_disu_upts_from);
-  }
-  
+  if (FlowSol->viscous) {
+      /*! Compute corrected gradient of the solution at the solution and flux points. */
+      for(i=0; i<FlowSol->n_ele_types; i++)
+        FlowSol->mesh_eles(i)->calc_cor_grad_disu_upts();
+
+      for(i=0; i<FlowSol->n_ele_types; i++)
+        FlowSol->mesh_eles(i)->calc_cor_grad_disu_fpts();
+
+#ifdef _MPI
+      /*! Send the corrected value across the MPI interface. */
+      if (FlowSol->nproc>1) {
+          for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+            FlowSol->mesh_mpi_inters(i).send_cor_grad_disu_fpts();
+        }
+#endif
+
+      /*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
+      for(i=0; i<FlowSol->n_ele_types; i++)
+        FlowSol->mesh_eles(i)->calc_tdisvisf_upts(in_disu_upts_from);
+    }
+
   /*! If using LES, compute the SGS flux at flux points. */
   if (run_input.LES) {
 	  for(i=0; i<FlowSol->n_ele_types; i++)
 			FlowSol->mesh_eles(i)->calc_sgsf_fpts();
-	}
+  }
 
   /*! For viscous or inviscid, compute the divergence of flux at solution points. */
-	for(i=0; i<FlowSol->n_ele_types; i++)
-		FlowSol->mesh_eles(i)->calc_div_tdisf_upts(in_div_tconf_upts_to);
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calc_div_tdisf_upts(in_div_tconf_upts_to);
 
   /*! For viscous or inviscid, compute the normal discontinuous flux at flux points. */
   for(i=0; i<FlowSol->n_ele_types; i++)
-		FlowSol->mesh_eles(i)->calc_norm_tdisf_fpts();
+    FlowSol->mesh_eles(i)->calc_norm_tdisf_fpts();
 
   if (FlowSol->viscous) {
-    /*! Compute normal interface viscous flux and add to normal inviscid flux. */
-		for(i=0; i<FlowSol->n_int_inter_types; i++)
-			FlowSol->mesh_int_inters(i).calc_norm_tconvisf_fpts();
+      /*! Compute normal interface viscous flux and add to normal inviscid flux. */
+      for(i=0; i<FlowSol->n_int_inter_types; i++)
+        FlowSol->mesh_int_inters(i).calc_norm_tconvisf_fpts();
 
-	  for(i=0; i<FlowSol->n_bdy_inter_types; i++)
-      FlowSol->mesh_bdy_inters(i).calc_norm_tconvisf_fpts_boundary(FlowSol->time);
-   
+      for(i=0; i<FlowSol->n_bdy_inter_types; i++)
+        FlowSol->mesh_bdy_inters(i).calc_norm_tconvisf_fpts_boundary(FlowSol->time);
+
 #if _MPI
-    /*! Evaluate the MPI interfaces. */
-    if (FlowSol->nproc>1) {
-	    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-	  	  FlowSol->mesh_mpi_inters(i).receive_cor_grad_disu_fpts();
+      /*! Evaluate the MPI interfaces. */
+      if (FlowSol->nproc>1) {
+          for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+            FlowSol->mesh_mpi_inters(i).receive_cor_grad_disu_fpts();
 
-	    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-        FlowSol->mesh_mpi_inters(i).calc_norm_tconvisf_fpts_mpi();
-    }
+          for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+            FlowSol->mesh_mpi_inters(i).calc_norm_tconvisf_fpts_mpi();
+        }
 #endif
-	}
+    }
 
   /*! Compute the divergence of the transformed continuous flux. */
-	for(i=0; i<FlowSol->n_ele_types; i++)
-		FlowSol->mesh_eles(i)->calc_div_tconf_upts(in_div_tconf_upts_to);
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calc_div_tconf_upts(in_div_tconf_upts_to);
 
   /*! Compute source term */
   if (run_input.rans_model==1) {
@@ -190,14 +189,14 @@ void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol)
 
 double* get_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol)
 {
-	return FlowSol->mesh_eles(in_ele_type)->get_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
 }
 
 // get pointer to normal continuous transformed inviscid flux at a flux point
 
 double* get_norm_tconf_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol)
 {
-	return FlowSol->mesh_eles(in_ele_type)->get_norm_tconf_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_norm_tconf_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
 }
 
 // get pointer to subgrid-scale flux at a flux point
@@ -211,28 +210,36 @@ double* get_sgsf_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int i
 
 double* get_detjac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol)
 {
-	return FlowSol->mesh_eles(in_ele_type)->get_detjac_fpts_ptr(in_inter_local_fpt,in_ele_local_inter,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_detjac_fpts_ptr(in_inter_local_fpt,in_ele_local_inter,in_ele);
 }
 
 // get pointer to magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at a flux point
 
 double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol)
 {
-	return FlowSol->mesh_eles(in_ele_type)->get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_inter_local_fpt,in_ele_local_inter,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_inter_local_fpt,in_ele_local_inter,in_ele);
 }
 
 // get pointer to the normal at a flux point
 
 double* get_norm_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
 {
-	return FlowSol->mesh_eles(in_ele_type)->get_norm_fpts_ptr(in_fpt,in_local_inter,in_dim,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_norm_fpts_ptr(in_fpt,in_local_inter,in_dim,in_ele);
 }
 
-// get pointer to the coordinates at a flux point
+// get CPU pointer to the coordinates at a flux point.
+// See bdy_inters for reasons for this CPU/GPU split.
 
-double* get_loc_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
+double* get_loc_fpts_ptr_cpu(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
 {
-	return FlowSol->mesh_eles(in_ele_type)->get_loc_fpts_ptr(in_fpt,in_local_inter,in_dim,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_loc_fpts_ptr_cpu(in_fpt,in_local_inter,in_dim,in_ele);
+}
+
+// get GPU pointer to the coordinates at a flux point
+
+double* get_loc_fpts_ptr_gpu(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_loc_fpts_ptr_gpu(in_fpt,in_local_inter,in_dim,in_ele);
 }
 
 // get pointer to normal continuous transformed viscous flux at a flux point
@@ -246,50 +253,56 @@ double* get_loc_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in
 
 double* get_delta_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol)
 {
-	return FlowSol->mesh_eles(in_ele_type)->get_delta_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_delta_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
 }
 
 // get pointer to gradient of the discontinuous solution at a flux point
 double* get_grad_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol)
 {
-	return FlowSol->mesh_eles(in_ele_type)->get_grad_disu_fpts_ptr(in_fpt,in_local_inter,in_dim,in_field,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_grad_disu_fpts_ptr(in_fpt,in_local_inter,in_dim,in_field,in_ele);
+}
+
+// get pointer to the discontinuous solution (close normal) at a flux point
+double* get_normal_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_fpt, struct solution* FlowSol, array<double> temp_loc, double temp_pos[3])
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_normal_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele, temp_loc, temp_pos);
 }
 
 
 void InitSolution(struct solution* FlowSol)
 {
   // set initial conditions
-	if (FlowSol->rank==0) cout << "Setting initial conditions... " << endl;
+  if (FlowSol->rank==0) cout << "Setting initial conditions... " << endl;
 
   if (run_input.restart_flag==0) {
-	  for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
+      for(int i=0;i<FlowSol->n_ele_types;i++) {
+          if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
 
-	  	  FlowSol->mesh_eles(i)->set_ics(FlowSol->time);
+            FlowSol->mesh_eles(i)->set_ics(FlowSol->time);
+        }
+
+      FlowSol->time = 0.;
     }
-
-    FlowSol->time = 0.;
-  }
   else
-  {
-    FlowSol->ini_iter = run_input.restart_iter;
-    read_restart(run_input.restart_iter,run_input.n_restart_files,FlowSol);
-  }
+    {
+      FlowSol->ini_iter = run_input.restart_iter;
+      read_restart(run_input.restart_iter,run_input.n_restart_files,FlowSol);
+    }
 
   for (int i=0;i<FlowSol->n_ele_types;i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->set_disu_upts_to_zero_other_levels();
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+          FlowSol->mesh_eles(i)->set_disu_upts_to_zero_other_levels();
+        }
     }
-  }
 
-	// copy solution to gpu
+  // copy solution to gpu
 #ifdef _GPU
-	for(int i=0;i<FlowSol->n_ele_types;i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-		  FlowSol->mesh_eles(i)->cp_disu_upts_cpu_gpu();
+  for(int i=0;i<FlowSol->n_ele_types;i++) {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+          FlowSol->mesh_eles(i)->cp_disu_upts_cpu_gpu();
 
+        }
     }
-  }
 #endif
 
 }
@@ -297,64 +310,64 @@ void InitSolution(struct solution* FlowSol)
 void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
 {
 
-	char file_name_s[50];
-	char *file_name;
-	ifstream restart_file;
-	restart_file.precision(15);
+  char file_name_s[50];
+  char *file_name;
+  ifstream restart_file;
+  restart_file.precision(15);
 
   // Open the restart files and read info
   cout << "rank=" << FlowSol->rank << " reading restart info" << endl;
 
   for (int i=0;i<FlowSol->n_ele_types;i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-      //cout << "Ele_type=" << i << "Reading restart file ";
+          //cout << "Ele_type=" << i << "Reading restart file ";
 
-      for (int j=0;j<in_n_files;j++)
-      {
-        cout << j << " ";
-        sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,j);
-        file_name = &file_name_s[0];
-        cout<<"restart file name: "<<file_name_s<<endl;
-        restart_file.open(file_name);
-        if (!restart_file)
-          FatalError("Could not open restart file ");
+          for (int j=0;j<in_n_files;j++)
+            {
+              cout << j << " ";
+              sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,j);
+              file_name = &file_name_s[0];
+              cout<<"restart file name: "<<file_name_s<<endl;
+              restart_file.open(file_name);
+              if (!restart_file)
+                FatalError("Could not open restart file ");
 
-        restart_file >> FlowSol->time;
+              restart_file >> FlowSol->time;
 
-        int info_found = FlowSol->mesh_eles(i)->read_restart_info(restart_file);
-        restart_file.close();
+              int info_found = FlowSol->mesh_eles(i)->read_restart_info(restart_file);
+              restart_file.close();
 
-        if (info_found)
-          break;
-      }
-      cout << endl;
+              if (info_found)
+                break;
+            }
+          cout << endl;
+        }
     }
-  }
   cout << "Rank=" << FlowSol->rank << " Done reading restart info" << endl;
 
   // Now open all the restart files one by one and store data belonging to you
 
   for (int j=0;j<in_n_files;j++)
-  {
-    //cout <<  "Reading restart file " << j << endl;
-	  sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,j);
-	  file_name = &file_name_s[0];
-	  restart_file.open(file_name);
+    {
+      //cout <<  "Reading restart file " << j << endl;
+      sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,j);
+      file_name = &file_name_s[0];
+      restart_file.open(file_name);
 
-    if (restart_file.fail())
-      FatalError(strcat("Could not open restart file ",file_name));
+      if (restart_file.fail())
+        FatalError(strcat("Could not open restart file ",file_name));
 
-    for (int i=0;i<FlowSol->n_ele_types;i++)  {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      for (int i=0;i<FlowSol->n_ele_types;i++)  {
+          if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-        FlowSol->mesh_eles(i)->read_restart_data(restart_file);
+              FlowSol->mesh_eles(i)->read_restart_data(restart_file);
 
-      }
+            }
+        }
+
+      restart_file.close();
     }
-
-    restart_file.close();
-  }
   cout << "Rank=" << FlowSol->rank << " Done reading restart data" << endl;
 
 

@@ -35,15 +35,15 @@ class bdy_inters; /*!< Forwards declaration */
 class mpi_inters; /*!< Forwards declaration */
 
 struct solution {
-		
-	int viscous;
+
+  int viscous;
   double time;
   double ene_hist;
   double grad_ene_hist;
   
   array<int> num_f_per_c;
   
-	int n_ele_types;
+  int n_ele_types;
   int n_dims;
   
   int num_eles;
@@ -51,26 +51,26 @@ struct solution {
   int num_edges;
   int num_inters;
   
-	int n_steps;
-	int adv_type;
-	int plot_freq;
-	int restart_dump_freq;
+  int n_steps;
+  int adv_type;
+  int plot_freq;
+  int restart_dump_freq;
   int ini_iter;
-	
-	int write_type;
-	
-	array<eles*> mesh_eles;
-	eles_quads mesh_eles_quads;
-	eles_tris mesh_eles_tris;
-	eles_hexas mesh_eles_hexas;
-	eles_tets mesh_eles_tets;
-	eles_pris mesh_eles_pris;
-	
-	int n_int_inter_types;
-	int n_bdy_inter_types;
-	
-	array<int_inters> mesh_int_inters;
-	array<bdy_inters> mesh_bdy_inters;
+
+  int write_type;
+
+  array<eles*> mesh_eles;
+  eles_quads mesh_eles_quads;
+  eles_tris mesh_eles_tris;
+  eles_hexas mesh_eles_hexas;
+  eles_tets mesh_eles_tets;
+  eles_pris mesh_eles_pris;
+
+  int n_int_inter_types;
+  int n_bdy_inter_types;
+
+  array<int_inters> mesh_int_inters;
+  array<bdy_inters> mesh_bdy_inters;
   
   int rank;
 
@@ -80,7 +80,7 @@ struct solution {
   
   /*! Diagnostics. */
   
-	array<double> body_force;
+  array<double> body_force;
   
   /*! Plotting related. */
   
@@ -101,8 +101,8 @@ struct solution {
   
   int nproc;
   
-	int n_mpi_inter_types;
-	array<mpi_inters> mesh_mpi_inters;
+  int n_mpi_inter_types;
+  array<mpi_inters> mesh_mpi_inters;
   array<int> error_states;
   
   int n_mpi_inters;

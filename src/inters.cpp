@@ -39,9 +39,9 @@ using namespace std;
 
 inters::inters()
 {	
-	order=run_input.order;
-	viscous=run_input.viscous;
-	LES = run_input.LES;
+  order=run_input.order;
+  viscous=run_input.viscous;
+  LES = run_input.LES;
 }
 
 inters::~inters() { }
@@ -50,291 +50,295 @@ inters::~inters() { }
 
 void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
 {
-	n_inters    = in_n_inters;
-	inters_type = in_inters_type;	
+  n_inters    = in_n_inters;
+  inters_type = in_inters_type;
 
-	if(inters_type==0) // segs
-	{
-		n_dims=2;
+  if(inters_type==0) // segs
+    {
+      n_dims=2;
 
-    if (run_input.equation==0)
-	    n_fields=4;
-    else if (run_input.equation==2)
-      n_fields=5;
-    else if (run_input.equation==1)
-      n_fields=1;
-    else 
-      FatalError("Equation not supported");
+      if (run_input.equation==0)
+        n_fields=4;
+      else if (run_input.equation==2)
+        n_fields=5;
+      else if (run_input.equation==1)
+        n_fields=1;
+      else
+        FatalError("Equation not supported");
 
-		n_fpts_per_inter=order+1;
-	}
-	else if(inters_type==1) // tris
-	{
-		n_dims=3;
+      n_fpts_per_inter=order+1;
+    }
+  else if(inters_type==1) // tris
+    {
+      n_dims=3;
 
-    if (run_input.equation==0)
-	    n_fields=5;
-    else if (run_input.equation==2)
-      n_fields=6;
-    else if (run_input.equation==1)
-      n_fields=1;
-    else 
-      FatalError("Equation not supported");
+      if (run_input.equation==0)
+        n_fields=5;
+      else if (run_input.equation==2)
+        n_fields=6;
+      else if (run_input.equation==1)
+        n_fields=1;
+      else
+        FatalError("Equation not supported");
 
-		n_fpts_per_inter=(order+2)*(order+1)/2;
-	}
-	else if(inters_type==2) // quads
-	{
-		n_dims=3;
-    if (run_input.equation==0)
-	    n_fields=5;
-    else if (run_input.equation==2)
-      n_fields=6;
-    else if (run_input.equation==1)
-      n_fields=1;
-    else 
-      FatalError("Equation not supported");
+      n_fpts_per_inter=(order+2)*(order+1)/2;
+    }
+  else if(inters_type==2) // quads
+    {
+      n_dims=3;
+      if (run_input.equation==0)
+        n_fields=5;
+      else if (run_input.equation==2)
+        n_fields=6;
+      else if (run_input.equation==1)
+        n_fields=1;
+      else
+        FatalError("Equation not supported");
 
-		n_fpts_per_inter=(order+1)*(order+1);
-	}
-	else
-	{
-		FatalError("ERROR: Invalid interface type ... ");
-	}
+      n_fpts_per_inter=(order+1)*(order+1);
+    }
+  else
+    {
+      FatalError("ERROR: Invalid interface type ... ");
+    }
 
   if (in_run_type==0)
-  {
+    {
 
-	  disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
-    delta_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
-	  norm_tconf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
-	  detjac_fpts_l.setup(n_fpts_per_inter,n_inters);
-	  mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.setup(n_fpts_per_inter,n_inters);
+      disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
+      norm_tconf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
+      detjac_fpts_l.setup(n_fpts_per_inter,n_inters);
+      mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.setup(n_fpts_per_inter,n_inters);
+      norm_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
+      loc_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
 
-	  norm_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
-	  loc_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
+      delta_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
 
+      if(viscous)
+        {
+          grad_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+          normal_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
+          pos_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_dims);
+        }
 
-	  if(viscous)
-	  {
-	  	grad_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
-	  	//norm_tconvisf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
-	  }
+      if(LES) {
+        sgsf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+        temp_sgsf_l.setup(n_fields,n_dims);
+      }
 
-		if(LES) {
-			sgsf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
-			temp_sgsf_l.setup(n_fields,n_dims);
-		}
+      temp_u_l.setup(n_fields);
+      temp_u_r.setup(n_fields);
 
-	  temp_u_l.setup(n_fields);
-	  temp_u_r.setup(n_fields);
-	  
-	  temp_grad_u_l.setup(n_fields,n_dims);
-	  temp_grad_u_r.setup(n_fields,n_dims);
-	  
-	  temp_f_l.setup(n_fields,n_dims);
-	  temp_f_r.setup(n_fields,n_dims);
-	  
-	  temp_f.setup(n_fields,n_dims);
-	  
-	  temp_fn_l.setup(n_fields);
-	  temp_fn_r.setup(n_fields);
-	  
-    temp_loc.setup(n_dims);
+      temp_grad_u_l.setup(n_fields,n_dims);
+      temp_grad_u_r.setup(n_fields,n_dims);
 
-	  lut.setup(n_fpts_per_inter);
+      temp_normal_u_l.setup(n_fields);
 
-    // For Roe flux computation
-    v_l.setup(n_dims);
-    v_r.setup(n_dims);
-    um.setup(n_dims);
-    du.setup(n_fields);
+      temp_pos_u_l.setup(n_dims);
 
-  }
+      temp_f_l.setup(n_fields,n_dims);
+      temp_f_r.setup(n_fields,n_dims);
+
+      temp_f.setup(n_fields,n_dims);
+
+      temp_fn_l.setup(n_fields);
+      temp_fn_r.setup(n_fields);
+
+      temp_loc.setup(n_dims);
+
+      lut.setup(n_fpts_per_inter);
+
+      // For Roe flux computation
+      v_l.setup(n_dims);
+      v_r.setup(n_dims);
+      um.setup(n_dims);
+      du.setup(n_fields);
+
+    }
 }
 
 // get look up table for flux point connectivity based on rotation tag
 void inters::get_lut(int in_rot_tag)
 {
-	int i,j;
+  int i,j;
 
-	if(inters_type==0) // segment
-	{
-		for(i=0;i<n_fpts_per_inter;i++)
-		{
-			lut(i)=n_fpts_per_inter-i-1;
-		}
-	}
-	else if(inters_type==1) // triangle face
-	{
-    int index0,index1;
-	  if(in_rot_tag==0) // Example face 0 with 1
-	  {
-	  	for(j=0;j<order+1;j++)
-	  	{
-	  		for (i=0;i<order-j+1;i++)
-	  		{
-	  			index0 = j*(order+1) - (j-1)*j/2 + i;
-	  			index1 = i*(order+1) - (i-1)*i/2 + j;
-	  			lut(index0) = index1;
-	  		
-	  		}	
-	  	}		
-	  }
-	  else if(in_rot_tag==1) // Example face 0 with 3
-	  {
-	  	for(j=0;j<order+1;j++)
-	  	{
-	  		for (i=0;i<order+1-j;i++)
-	  		{
-	  			index0 = j*(order+1) - (j-1)*j/2 + i;
-	  			index1 = (order+1)*(order+2)/2 -1 -(i+j)*(i+j+1)/2 -j;
-	  			lut(index0) = index1;
+  if(inters_type==0) // segment
+    {
+      for(i=0;i<n_fpts_per_inter;i++)
+        {
+          lut(i)=n_fpts_per_inter-i-1;
+        }
+    }
+  else if(inters_type==1) // triangle face
+    {
+      int index0,index1;
+      if(in_rot_tag==0) // Example face 0 with 1
+        {
+          for(j=0;j<order+1;j++)
+            {
+              for (i=0;i<order-j+1;i++)
+                {
+                  index0 = j*(order+1) - (j-1)*j/2 + i;
+                  index1 = i*(order+1) - (i-1)*i/2 + j;
+                  lut(index0) = index1;
 
-	  		}	
-	  	}		
-	  }
-	  else if(in_rot_tag==2) // Example face 0 with 2
-	  {
+                }
+            }
+        }
+      else if(in_rot_tag==1) // Example face 0 with 3
+        {
+          for(j=0;j<order+1;j++)
+            {
+              for (i=0;i<order+1-j;i++)
+                {
+                  index0 = j*(order+1) - (j-1)*j/2 + i;
+                  index1 = (order+1)*(order+2)/2 -1 -(i+j)*(i+j+1)/2 -j;
+                  lut(index0) = index1;
 
-	  	for(j=0;j<order+1;j++)
-	  	{
-	  		for (i=0;i<order+1-j;i++)
-	  		{
-	  			index0 = j*(order+1) - (j-1)*j/2 + i;
-	  			index1 = j*(order+1) - (j-1)*j/2 + (order-j-i);
-	  			lut(index0) = index1;
-	  		}	
-	  	}		
-	  }
-	  else
-	  {
-	  	cout << "ERROR: Unknown rotation of triangular face..." << endl;
-	  }
-	}
-	else if(inters_type==2) // quad face
-	{
-		if(in_rot_tag==0)
-		{
-			for(i=0;i<(order+1);i++)	
-			{
-				for(j=0;j<(order+1);j++)	
-				{
-					lut((i*(order+1))+j)=((order+1)-1-j)+((order+1)*i);
-				}
-			}
-		}
-		else if(in_rot_tag==1)
-		{
-			for(i=0;i<(order+1);i++)	
-			{
-				for(j=0;j<(order+1);j++)	
-				{
-					lut((i*(order+1))+j)=n_fpts_per_inter-((order+1)-1-j)-((order+1)*i)-1;
-				}
-			}
-		}
-		else if(in_rot_tag==2)
-		{
-			for(i=0;i<(order+1);i++)	
-			{
-				for(j=0;j<(order+1);j++)	
-				{
-					lut((i*(order+1))+j)=((order+1)*j)+i;
-				}
-			}
-		}
-		else if(in_rot_tag==3)
-		{
-			for(i=0;i<(order+1);i++)	
-			{
-				for(j=0;j<(order+1);j++)	
-				{
-					lut((i*(order+1))+j)=n_fpts_per_inter-((order+1)*j)-i-1;
-				}
-			}
-		}
-		else
-		{
-			cout << "ERROR: Unknown rotation tag ... " << endl;
-		}	
-	}
-	else
-	{
-		FatalError("ERROR: Invalid interface type ... ");
-	}
+                }
+            }
+        }
+      else if(in_rot_tag==2) // Example face 0 with 2
+        {
+
+          for(j=0;j<order+1;j++)
+            {
+              for (i=0;i<order+1-j;i++)
+                {
+                  index0 = j*(order+1) - (j-1)*j/2 + i;
+                  index1 = j*(order+1) - (j-1)*j/2 + (order-j-i);
+                  lut(index0) = index1;
+                }
+            }
+        }
+      else
+        {
+          cout << "ERROR: Unknown rotation of triangular face..." << endl;
+        }
+    }
+  else if(inters_type==2) // quad face
+    {
+      if(in_rot_tag==0)
+        {
+          for(i=0;i<(order+1);i++)
+            {
+              for(j=0;j<(order+1);j++)
+                {
+                  lut((i*(order+1))+j)=((order+1)-1-j)+((order+1)*i);
+                }
+            }
+        }
+      else if(in_rot_tag==1)
+        {
+          for(i=0;i<(order+1);i++)
+            {
+              for(j=0;j<(order+1);j++)
+                {
+                  lut((i*(order+1))+j)=n_fpts_per_inter-((order+1)-1-j)-((order+1)*i)-1;
+                }
+            }
+        }
+      else if(in_rot_tag==2)
+        {
+          for(i=0;i<(order+1);i++)
+            {
+              for(j=0;j<(order+1);j++)
+                {
+                  lut((i*(order+1))+j)=((order+1)*j)+i;
+                }
+            }
+        }
+      else if(in_rot_tag==3)
+        {
+          for(i=0;i<(order+1);i++)
+            {
+              for(j=0;j<(order+1);j++)
+                {
+                  lut((i*(order+1))+j)=n_fpts_per_inter-((order+1)*j)-i-1;
+                }
+            }
+        }
+      else
+        {
+          cout << "ERROR: Unknown rotation tag ... " << endl;
+        }
+    }
+  else
+    {
+      FatalError("ERROR: Invalid interface type ... ");
+    }
 }
 
 // Rusanov inviscid numerical flux
 void inters::right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma)
 {
   // calculate normal flux from discontinuous solution at flux points
-	for(int k=0;k<n_fields;k++) {
-		fn(k)=0.;
-		for(int l=0;l<n_dims;l++) {
-			fn(k)+=f_r(k,l)*norm(l);
-		}		
-	}
+  for(int k=0;k<n_fields;k++) {
+      fn(k)=0.;
+      for(int l=0;l<n_dims;l++) {
+          fn(k)+=f_r(k,l)*norm(l);
+        }
+    }
 }
 
 // Rusanov inviscid numerical flux
 void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma)
 {
-	double vx_l,vy_l,vx_r,vy_r,vz_l,vz_r,vn_l,vn_r,p_l,p_r,vn_av_mag,c_av;
+  double vx_l,vy_l,vx_r,vy_r,vz_l,vz_r,vn_l,vn_r,p_l,p_r,vn_av_mag,c_av;
   array<double> fn_l(n_fields),fn_r(n_fields);
 
   // calculate normal flux from discontinuous solution at flux points
-	for(int k=0;k<n_fields;k++) {
+  for(int k=0;k<n_fields;k++) {
 
-		fn_l(k)=0.;
-		fn_r(k)=0.;
+      fn_l(k)=0.;
+      fn_r(k)=0.;
 
-		for(int l=0;l<n_dims;l++) {
-  		fn_l(k)+=f_l(k,l)*norm(l);
-			fn_r(k)+=f_r(k,l)*norm(l);
-		}		
-	}
+      for(int l=0;l<n_dims;l++) {
+          fn_l(k)+=f_l(k,l)*norm(l);
+          fn_r(k)+=f_r(k,l)*norm(l);
+        }
+    }
 
-	// calculate wave speeds
-	vx_l=u_l(1)/u_l(0);
-	vx_r=u_r(1)/u_r(0);
-		
+  // calculate wave speeds
+  vx_l=u_l(1)/u_l(0);
+  vx_r=u_r(1)/u_r(0);
+
   vy_l=u_l(2)/u_l(0);
-	vy_r=u_r(2)/u_r(0);
-		
+  vy_r=u_r(2)/u_r(0);
+
   if(n_dims==2) {
-			vn_l=vx_l*norm(0)+vy_l*norm(1);
-			vn_r=vx_r*norm(0)+vy_r*norm(1);
-			
-			p_l=(gamma-1.0)*(u_l(3)-(0.5*u_l(0)*((vx_l*vx_l)+(vy_l*vy_l))));
-			p_r=(gamma-1.0)*(u_r(3)-(0.5*u_r(0)*((vx_r*vx_r)+(vy_r*vy_r))));
-		}
-		else if(n_dims==3) {
-			vz_l=u_l(3)/u_l(0);
-			vz_r=u_r(3)/u_r(0);
-			
-			vn_l=vx_l*norm(0)+vy_l*norm(1)+vz_l*norm(2);
-			vn_r=vx_r*norm(0)+vy_r*norm(1)+vz_r*norm(2);
-			
-			p_l=(gamma-1.0)*(u_l(4)-(0.5*u_l(0)*((vx_l*vx_l)+(vy_l*vy_l)+(vz_l*vz_l))));
-			p_r=(gamma-1.0)*(u_r(4)-(0.5*u_r(0)*((vx_r*vx_r)+(vy_r*vy_r)+(vz_r*vz_r))));
-		}
-		else
-			FatalError("ERROR: Invalid number of dimensions ... ");
-		
-		vn_av_mag=sqrt(0.25*(vn_l+vn_r)*(vn_l+vn_r));
-		c_av=sqrt((gamma*(p_l+p_r))/(u_l(0)+u_r(0)));
-      
-		// calculate the normal transformed continuous flux at the flux points
-		
-		for(int k=0;k<n_fields;k++) 
-			fn(k)=0.5*((fn_l(k)+fn_r(k))-(vn_av_mag+c_av)*(u_r(k)-u_l(k)));
+      vn_l=vx_l*norm(0)+vy_l*norm(1);
+      vn_r=vx_r*norm(0)+vy_r*norm(1);
+
+      p_l=(gamma-1.0)*(u_l(3)-(0.5*u_l(0)*((vx_l*vx_l)+(vy_l*vy_l))));
+      p_r=(gamma-1.0)*(u_r(3)-(0.5*u_r(0)*((vx_r*vx_r)+(vy_r*vy_r))));
+    }
+  else if(n_dims==3) {
+      vz_l=u_l(3)/u_l(0);
+      vz_r=u_r(3)/u_r(0);
+
+      vn_l=vx_l*norm(0)+vy_l*norm(1)+vz_l*norm(2);
+      vn_r=vx_r*norm(0)+vy_r*norm(1)+vz_r*norm(2);
+
+      p_l=(gamma-1.0)*(u_l(4)-(0.5*u_l(0)*((vx_l*vx_l)+(vy_l*vy_l)+(vz_l*vz_l))));
+      p_r=(gamma-1.0)*(u_r(4)-(0.5*u_r(0)*((vx_r*vx_r)+(vy_r*vy_r)+(vz_r*vz_r))));
+    }
+  else
+    FatalError("ERROR: Invalid number of dimensions ... ");
+
+  vn_av_mag=sqrt(0.25*(vn_l+vn_r)*(vn_l+vn_r));
+  c_av=sqrt((gamma*(p_l+p_r))/(u_l(0)+u_r(0)));
+
+  // calculate the normal transformed continuous flux at the flux points
+
+  for(int k=0;k<n_fields;k++)
+    fn(k)=0.5*((fn_l(k)+fn_r(k))-(vn_av_mag+c_av)*(u_r(k)-u_l(k)));
 }
 
 // Rusanov inviscid numerical flux
 void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma)
 {
-	double p_l,p_r;
+  double p_l,p_r;
   double h_l, h_r;
   double sq_rho,rrho,hm,usq,am,am_sq,unm;
   double lambda0,lambdaP,lambdaM;
@@ -344,14 +348,14 @@ void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &nor
 
   // velocities
   for (int i=0;i<n_dims;i++)  {
-    v_l(i) = u_l(i+1)/u_l(0);
-    v_r(i) = u_r(i+1)/u_r(0);
-  }
+      v_l(i) = u_l(i+1)/u_l(0);
+      v_r(i) = u_r(i+1)/u_r(0);
+    }
 
   if (n_dims==2) {
-	  p_l=(gamma-1.0)*(u_l(3)-(0.5*u_l(0)*((v_l(0)*v_l(0))+(v_l(1)*v_l(1)))));
-	  p_r=(gamma-1.0)*(u_r(3)-(0.5*u_r(0)*((v_r(0)*v_r(0))+(v_r(1)*v_r(1)))));
-  }
+      p_l=(gamma-1.0)*(u_l(3)-(0.5*u_l(0)*((v_l(0)*v_l(0))+(v_l(1)*v_l(1)))));
+      p_r=(gamma-1.0)*(u_r(3)-(0.5*u_r(0)*((v_r(0)*v_r(0))+(v_r(1)*v_r(1)))));
+    }
   else
     FatalError("Roe not implemented in 3D");
 
@@ -383,26 +387,26 @@ void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &nor
   rhoun_l = 0.;
   rhoun_r = 0.;
   for (int i=0;i<n_dims;i++)
-  {
-    rhoun_l += u_l(i+1)*norm(i);
-    rhoun_r += u_r(i+1)*norm(i);
-  }
+    {
+      rhoun_l += u_l(i+1)*norm(i);
+      rhoun_r += u_r(i+1)*norm(i);
+    }
 
   if (n_dims==2)
-  {
-    fn(0) = rhoun_l + rhoun_r;
-    fn(1) = rhoun_l*v_l(0) + rhoun_r*v_r(0) + (p_l+p_r)*norm(0);
-    fn(2) = rhoun_l*v_l(1) + rhoun_r*v_r(1) + (p_l+p_r)*norm(1);
-    fn(3) = rhoun_l*h_l   +rhoun_r*h_r;
+    {
+      fn(0) = rhoun_l + rhoun_r;
+      fn(1) = rhoun_l*v_l(0) + rhoun_r*v_r(0) + (p_l+p_r)*norm(0);
+      fn(2) = rhoun_l*v_l(1) + rhoun_r*v_r(1) + (p_l+p_r)*norm(1);
+      fn(3) = rhoun_l*h_l   +rhoun_r*h_r;
 
-  }
+    }
   else
     FatalError("Roe not implemented in 3D");
 
   for (int i=0;i<n_fields;i++)
-  {
-    du(i) = u_r(i)-u_l(i);
-  }
+    {
+      du(i) = u_r(i)-u_l(i);
+    }
 
   lambda0 = abs(unm);
   lambdaP = abs(unm+am);
@@ -410,11 +414,11 @@ void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &nor
 
   // Entropy fix
   eps = 0.5*(abs(rhoun_l/u_l(0)-rhoun_r/u_r(0))+ abs(sqrt(gamma*p_l/u_l(0))-sqrt(gamma*p_r/u_r(0))));
-  if(lambda0 < 2.*eps) 
+  if(lambda0 < 2.*eps)
     lambda0 = 0.25*lambda0*lambda0/eps + eps;
-  if(lambdaP < 2.*eps) 
+  if(lambdaP < 2.*eps)
     lambdaP = 0.25*lambdaP*lambdaP/eps + eps;
-  if(lambdaM < 2.*eps) 
+  if(lambdaM < 2.*eps)
     lambdaM = 0.25*lambdaM*lambdaM/eps + eps;
 
   a2 = 0.5*(lambdaP+lambdaM)-lambda0;
@@ -423,16 +427,16 @@ void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &nor
   a4 = a3*(gamma-1.);
 
   if (n_dims==2)
-  {
+    {
 
-    a5 = usq*du(0)-um(0)*du(1)-um(1)*du(2)+du(3);
-    a6 = unm*du(0)-norm(0)*du(1)-norm(1)*du(2);
-  }
+      a5 = usq*du(0)-um(0)*du(1)-um(1)*du(2)+du(3);
+      a6 = unm*du(0)-norm(0)*du(1)-norm(1)*du(2);
+    }
   else if (n_dims==3)
-  {
-    a5 = usq*du(0)-um(0)*du(1)-um(1)*du(2)-um(2)*du(3)+du(4);
-    a6 = unm*du(0)-norm(0)*du(1)-norm(1)*du(2)-norm(2)*du(3);
-  }
+    {
+      a5 = usq*du(0)-um(0)*du(1)-um(1)*du(2)-um(2)*du(3)+du(4);
+      a6 = unm*du(0)-norm(0)*du(1)-norm(1)*du(2)-norm(2)*du(3);
+    }
 
 
   aL1 = a1*a5 - a3*a6;
@@ -440,26 +444,26 @@ void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &nor
 
   // Compute Euler flux (second part)
   if (n_dims==2)
-  {
-    fn(0) = fn(0) - (lambda0*du(0)+aL1);
-    fn(1) = fn(1) - (lambda0*du(1)+aL1*um(0)+bL1*norm(0));
-    fn(2) = fn(2) - (lambda0*du(2)+aL1*um(1)+bL1*norm(1));
-    fn(3) = fn(3) - (lambda0*du(3)+aL1*hm   +bL1*unm);
+    {
+      fn(0) = fn(0) - (lambda0*du(0)+aL1);
+      fn(1) = fn(1) - (lambda0*du(1)+aL1*um(0)+bL1*norm(0));
+      fn(2) = fn(2) - (lambda0*du(2)+aL1*um(1)+bL1*norm(1));
+      fn(3) = fn(3) - (lambda0*du(3)+aL1*hm   +bL1*unm);
 
-  }
+    }
   else if (n_dims==3)
-  {
-    fn(0) = fn(0) - (lambda0*du(0)+aL1);
-    fn(1) = fn(1) - (lambda0*du(1)+aL1*um(0)+bL1*norm(0));
-    fn(2) = fn(2) - (lambda0*du(2)+aL1*um(1)+bL1*norm(1));
-    fn(3) = fn(3) - (lambda0*du(3)+aL1*um(2)+bL1*norm(2));
-    fn(4) = fn(4) - (lambda0*du(4)+aL1*hm   +bL1*unm);
-  }
+    {
+      fn(0) = fn(0) - (lambda0*du(0)+aL1);
+      fn(1) = fn(1) - (lambda0*du(1)+aL1*um(0)+bL1*norm(0));
+      fn(2) = fn(2) - (lambda0*du(2)+aL1*um(1)+bL1*norm(1));
+      fn(3) = fn(3) - (lambda0*du(3)+aL1*um(2)+bL1*norm(2));
+      fn(4) = fn(4) - (lambda0*du(4)+aL1*hm   +bL1*unm);
+    }
 
   for (int i=0;i<n_fields;i++)
-  {
-    fn(i) =  0.5*fn(i);
-  }
+    {
+      fn(i) =  0.5*fn(i);
+    }
 
 }
 
@@ -467,7 +471,7 @@ void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &nor
 // Rusanov inviscid numerical flux
 void inters::lax_friedrich(array<double> &u_l, array<double> &u_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double lambda, array<double>& wave_speed)
 {
- 
+
   double u_av;
   double u_diff;
 
@@ -476,15 +480,15 @@ void inters::lax_friedrich(array<double> &u_l, array<double> &u_r, array<double>
 
   double norm_speed = 0;
   for (int i=0;i<n_dims;i++)
-  {
-    norm_speed += wave_speed(i)*norm(i);
-  }
-  
+    {
+      norm_speed += wave_speed(i)*norm(i);
+    }
+
   fn(0) = 0.;
   for (int i=0;i<n_dims;i++)
-  {
-    fn(0) += wave_speed(i)*norm(i)*u_av;
-  }
+    {
+      fn(0) += wave_speed(i)*norm(i)*u_av;
+    }
 
   fn(0) += 0.5*lambda*abs(norm_speed)*u_diff;
 }
@@ -494,94 +498,94 @@ void inters::lax_friedrich(array<double> &u_l, array<double> &u_r, array<double>
 void inters::ldg_flux(int flux_spec, array<double> &u_l, array<double> &u_r, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double tau, double pen_fact)
 {
   array<double> f_c(n_fields,n_dims);
-	double norm_x, norm_y, norm_z;
- 
-	if(n_dims==2)
-	{
-  	if ((norm(0)+norm(1)) <0.)
-    	pen_fact = -pen_fact;
-  }
-	if(n_dims==3)
-	{
-		if ((norm(0)+norm(1)+sqrt(2.)*norm(2)) <0.)
-    	pen_fact = -pen_fact;
-	}
+  double norm_x, norm_y, norm_z;
+
+  if(n_dims==2)
+    {
+      if ((norm(0)+norm(1)) <0.)
+        pen_fact = -pen_fact;
+    }
+  if(n_dims==3)
+    {
+      if ((norm(0)+norm(1)+sqrt(2.)*norm(2)) <0.)
+        pen_fact = -pen_fact;
+    }
 
   norm_x = norm(0);
   norm_y = norm(1);
-  
+
   if(n_dims == 3)
     norm_z = norm(2);
-  
-  
+
+
   if(flux_spec == 0) //Interior and mpi
-  {
-    for(int k=0;k<n_fields;k++)
-    {	
-      if(n_dims == 2)
-      {
-        f_c(k,0) = 0.5*(f_l(k,0) + f_r(k,0)) + pen_fact*norm_x*( norm_x*(f_l(k,0) - f_r(k,0)) + norm_y*(f_l(k,1) - f_r(k,1)) ) + tau*norm_x*(u_l(k) - u_r(k));				
-        f_c(k,1) = 0.5*(f_l(k,1) + f_r(k,1)) + pen_fact*norm_y*( norm_x*(f_l(k,0) - f_r(k,0)) + norm_y*(f_l(k,1) - f_r(k,1)) ) + tau*norm_y*(u_l(k) - u_r(k));
-      }
+    {
+      for(int k=0;k<n_fields;k++)
+        {
+          if(n_dims == 2)
+            {
+              f_c(k,0) = 0.5*(f_l(k,0) + f_r(k,0)) + pen_fact*norm_x*( norm_x*(f_l(k,0) - f_r(k,0)) + norm_y*(f_l(k,1) - f_r(k,1)) ) + tau*norm_x*(u_l(k) - u_r(k));
+              f_c(k,1) = 0.5*(f_l(k,1) + f_r(k,1)) + pen_fact*norm_y*( norm_x*(f_l(k,0) - f_r(k,0)) + norm_y*(f_l(k,1) - f_r(k,1)) ) + tau*norm_y*(u_l(k) - u_r(k));
+            }
 
-      if(n_dims == 3)
-      {
-	  	  f_c(k,0) = 0.5*(f_l(k,0) + f_r(k,0)) + pen_fact*norm_x*( norm_x*(f_l(k,0) - f_r(k,0)) + norm_y*(f_l(k,1) - f_r(k,1)) + norm_z*(f_l(k,2) - f_r(k,2)) ) + tau*norm_x*(u_l(k) - u_r(k));
-	      f_c(k,1) = 0.5*(f_l(k,1) + f_r(k,1)) + pen_fact*norm_y*( norm_x*(f_l(k,0) - f_r(k,0)) + norm_y*(f_l(k,1) - f_r(k,1)) + norm_z*(f_l(k,2) - f_r(k,2)) ) + tau*norm_y*(u_l(k) - u_r(k));
-        f_c(k,2) = 0.5*(f_l(k,2) + f_r(k,2)) + pen_fact*norm_z*( norm_x*(f_l(k,0) - f_r(k,0)) + norm_y*(f_l(k,1) - f_r(k,1)) + norm_z*(f_l(k,2) - f_r(k,2)) ) + tau*norm_z*(u_l(k) - u_r(k));
-	    }
+          if(n_dims == 3)
+            {
+              f_c(k,0) = 0.5*(f_l(k,0) + f_r(k,0)) + pen_fact*norm_x*( norm_x*(f_l(k,0) - f_r(k,0)) + norm_y*(f_l(k,1) - f_r(k,1)) + norm_z*(f_l(k,2) - f_r(k,2)) ) + tau*norm_x*(u_l(k) - u_r(k));
+              f_c(k,1) = 0.5*(f_l(k,1) + f_r(k,1)) + pen_fact*norm_y*( norm_x*(f_l(k,0) - f_r(k,0)) + norm_y*(f_l(k,1) - f_r(k,1)) + norm_z*(f_l(k,2) - f_r(k,2)) ) + tau*norm_y*(u_l(k) - u_r(k));
+              f_c(k,2) = 0.5*(f_l(k,2) + f_r(k,2)) + pen_fact*norm_z*( norm_x*(f_l(k,0) - f_r(k,0)) + norm_y*(f_l(k,1) - f_r(k,1)) + norm_z*(f_l(k,2) - f_r(k,2)) ) + tau*norm_z*(u_l(k) - u_r(k));
+            }
+        }
     }
-  }
   else if(flux_spec == 1) //Dirichlet
-  {
-    for(int k=0;k<n_fields;k++)
-    {	
-      if(n_dims == 2)
-      {
-        f_c(k,0) = f_l(k,0) + tau*norm_x*(u_l(k) - u_r(k));
-        f_c(k,1) = f_l(k,1) + tau*norm_y*(u_l(k) - u_r(k));
-      }
+    {
+      for(int k=0;k<n_fields;k++)
+        {
+          if(n_dims == 2)
+            {
+              f_c(k,0) = f_l(k,0) + tau*norm_x*(u_l(k) - u_r(k));
+              f_c(k,1) = f_l(k,1) + tau*norm_y*(u_l(k) - u_r(k));
+            }
 
-      if(n_dims == 3)
-      {
-	  	  f_c(k,0) = f_l(k,0) + tau*norm_x*(u_l(k) - u_r(k));
-	      f_c(k,1) = f_l(k,1) + tau*norm_y*(u_l(k) - u_r(k));
-        f_c(k,2) = f_l(k,2) + tau*norm_z*(u_l(k) - u_r(k));
-	    }
+          if(n_dims == 3)
+            {
+              f_c(k,0) = f_l(k,0) + tau*norm_x*(u_l(k) - u_r(k));
+              f_c(k,1) = f_l(k,1) + tau*norm_y*(u_l(k) - u_r(k));
+              f_c(k,2) = f_l(k,2) + tau*norm_z*(u_l(k) - u_r(k));
+            }
+        }
     }
-  }
   else if(flux_spec == 2) //von Neumann
-  {
-    for(int k=0;k<n_fields;k++)
-    {	
-      if(n_dims == 2)
-      {
-        f_c(k,0) = f_r(k,0);
-        f_c(k,1) = f_r(k,1);
-      }
+    {
+      for(int k=0;k<n_fields;k++)
+        {
+          if(n_dims == 2)
+            {
+              f_c(k,0) = f_r(k,0);
+              f_c(k,1) = f_r(k,1);
+            }
 
-      if(n_dims == 3)
-      {
-	  	  f_c(k,0) = f_r(k,0);
-	      f_c(k,1) = f_r(k,1);
-        f_c(k,2) = f_r(k,2);
-	    }
+          if(n_dims == 3)
+            {
+              f_c(k,0) = f_r(k,0);
+              f_c(k,1) = f_r(k,1);
+              f_c(k,2) = f_r(k,2);
+            }
+        }
     }
-  }
   else
     FatalError("This variant of the LDG flux has not been implemented");
-    
+
 
   // calculate normal flux from discontinuous solution at flux points
   for(int k=0;k<n_fields;k++)
-  {
-    fn(k) = f_c(k,0)*norm(0);
-				
-    for(int l=1;l<n_dims;l++)
     {
-      fn(k) += f_c(k,l)*norm(l);
+      fn(k) = f_c(k,0)*norm(0);
+
+      for(int l=1;l<n_dims;l++)
+        {
+          fn(k) += f_c(k,l)*norm(l);
+        }
     }
-  }
 }
 
 
@@ -590,32 +594,32 @@ void inters::ldg_solution(int flux_spec, array<double> &u_l, array<double> &u_r,
 {
 
   if(flux_spec == 0) // Interior and mpi
-  {
-    // Choosing a unique direction for the switch
-		if(n_dims==2)
-		{
-  		if ((norm(0)+norm(1)) <0.)
-  	  	pen_fact = -pen_fact;
-  	}
-		if(n_dims==3)
-		{
-			if ((norm(0)+norm(1)+sqrt(2.)*norm(2)) <0.)
-  	  	pen_fact = -pen_fact;
-		}
+    {
+      // Choosing a unique direction for the switch
+      if(n_dims==2)
+        {
+          if ((norm(0)+norm(1)) <0.)
+            pen_fact = -pen_fact;
+        }
+      if(n_dims==3)
+        {
+          if ((norm(0)+norm(1)+sqrt(2.)*norm(2)) <0.)
+            pen_fact = -pen_fact;
+        }
 
-    for(int k=0;k<n_fields;k++)
-      u_c(k) = 0.5*(u_l(k) + u_r(k)) - pen_fact*(u_l(k) - u_r(k));
-  }
+      for(int k=0;k<n_fields;k++)
+        u_c(k) = 0.5*(u_l(k) + u_r(k)) - pen_fact*(u_l(k) - u_r(k));
+    }
   else if(flux_spec == 1) //Dirichlet
-  {
-    for(int k=0;k<n_fields;k++)
-      u_c(k) = u_r(k);
-  }
+    {
+      for(int k=0;k<n_fields;k++)
+        u_c(k) = u_r(k);
+    }
   else if(flux_spec == 2) //von Neumann
-  {
-    for(int k=0;k<n_fields;k++)
-      u_c(k) = u_l(k);
-  }
+    {
+      for(int k=0;k<n_fields;k++)
+        u_c(k) = u_l(k);
+    }
   else
     FatalError("This variant of the LDG flux has not been implemented");
 

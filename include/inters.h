@@ -22,22 +22,22 @@
 
 class inters
 {
-	public:
-	
-	// #### constructors ####
-	
-	// default constructor
-	
-	inters();
+public:
+
+  // #### constructors ####
+
+  // default constructor
+
+  inters();
 
   // default destructor
- 
-  ~inters(); 
 
-	// #### methods ####
-	
-	/*! setup inters */
-	void setup_inters(int in_n_inters, int in_inter_type, int in_run_type);
+  ~inters();
+
+  // #### methods ####
+
+  /*! setup inters */
+  void setup_inters(int in_n_inters, int in_inter_type, int in_run_type);
 
   /*! Set normal flux to be normal * f_r */
   void right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
@@ -83,7 +83,10 @@ class inters
 	array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_l;
 	array<double*> norm_fpts;
 	array<double*> loc_fpts;
-	array<double*> grad_disu_fpts_l;
+
+  array<double> pos_disu_fpts_l;
+  array<double*> grad_disu_fpts_l;
+  array<double*> normal_disu_fpts_l;
 
 	array<double> temp_u_l;
 	array<double> temp_u_r;
@@ -91,6 +94,10 @@ class inters
 	array<double> temp_grad_u_l;
 	array<double> temp_grad_u_r;
 	
+  array<double> temp_normal_u_l;
+
+  array<double> temp_pos_u_l;
+
 	array<double> temp_f_l;
 	array<double> temp_f_r;
 
