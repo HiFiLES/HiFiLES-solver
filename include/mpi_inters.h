@@ -26,22 +26,22 @@ struct solution; // forwards declaration
 
 class mpi_inters: public inters
 {
-	public:
-	
-	// #### constructors ####
-	
-	// default constructor
-	
-	mpi_inters();
+public:
+
+  // #### constructors ####
+
+  // default constructor
+
+  mpi_inters();
 
   // default destructor
- 
-  ~mpi_inters(); 
 
-	// #### methods ####
-	
-	/*! setup mpi_inters */
-	void setup(int in_n_inters, int in_inter_type, int in_run_type);
+  ~mpi_inters();
+
+  // #### methods ####
+
+  /*! setup mpi_inters */
+  void setup(int in_n_inters, int in_inter_type, int in_run_type);
 
   void set_nproc(int in_nproc, int in_rank);
 
@@ -62,15 +62,15 @@ class mpi_inters: public inters
   void calc_norm_tconinvf_fpts_mpi(void);
   void calc_norm_tconvisf_fpts_mpi(void);
 
-	/*! move all from cpu to gpu */
-	void mv_all_cpu_gpu(void);
+  /*! move all from cpu to gpu */
+  void mv_all_cpu_gpu(void);
 
-	protected:
+protected:
 
-	// #### members ####
+  // #### members ####
 
-	array<double*> disu_fpts_r;
-	array<double*> grad_disu_fpts_r;
+  array<double*> disu_fpts_r;
+  array<double*> grad_disu_fpts_r;
 
   int nproc;
   int rank;

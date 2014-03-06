@@ -22,22 +22,22 @@ struct solution; // forwards declaration
 
 class bdy_inters: public inters
 {
-	public:
-	
-	// #### constructors ####
-	
-	// default constructor
-	
-	bdy_inters();
+public:
+
+  // #### constructors ####
+
+  // default constructor
+
+  bdy_inters();
 
   // default destructor
- 
-  ~bdy_inters(); 
 
-	// #### methods ####
-	
-	/*! setup inters */
-	void setup(int in_n_inters, int in_inter_type, int in_run_type);
+  ~bdy_inters();
+
+  // #### methods ####
+
+  /*! setup inters */
+  void setup(int in_n_inters, int in_inter_type, int in_run_type);
 
   /*! setup array that contains boundary parameters */
   void set_bdy_params();
@@ -51,25 +51,25 @@ class bdy_inters: public inters
   /*! Compute right hand side gradient at boundaries */
   void set_vis_boundary_conditions(int bdy_type, double* u_l, double* u_r, double* grad_u, double *norm, double *loc, double *bdy_params, int n_dims, int n_fields, double gamma, double R_ref, double time_bound, int equation);
 
-	/*! move all from cpu to gpu */
-	void mv_all_cpu_gpu(void);
+  /*! move all from cpu to gpu */
+  void mv_all_cpu_gpu(void);
 
-	/*! calculate normal transformed continuous inviscid flux at the flux points on boundaries*/
-	void calc_norm_tconinvf_fpts_boundary(double time_bound);
+  /*! calculate normal transformed continuous inviscid flux at the flux points on boundaries*/
+  void calc_norm_tconinvf_fpts_boundary(double time_bound);
 
   /*! calculate delta in transformed discontinuous solution at flux points */
   void calc_delta_disu_fpts_boundary(void);
-	
+
   /*! calculate normal transformed continuous viscous flux at the flux points on boundaries*/
   void calc_norm_tconvisf_fpts_boundary(double time_bound);
-	
-	protected:
 
-	// #### members ####
+protected:
+
+  // #### members ####
 
   int max_bdy_params;
 
-  array<int> boundary_type;	
+  array<int> boundary_type;
   array<double> bdy_params;
 
 };
