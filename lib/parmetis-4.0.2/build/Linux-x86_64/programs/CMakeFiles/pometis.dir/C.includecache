@@ -188,11 +188,11 @@ proto.h
 
 ../../programs/./proto.h
 
-/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/io.c
+/home/mlopez14/fpalacios-HiFiLES/lib/parmetis-4.0.2/programs/io.c
 parmetisbin.h
 -
 
-/home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/programs/pometis.c
+/home/mlopez14/fpalacios-HiFiLES/lib/parmetis-4.0.2/programs/pometis.c
 parmetisbin.h
 -
 

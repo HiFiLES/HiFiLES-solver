@@ -195,6 +195,15 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
 
           set_inv_boundary_conditions(boundary_type(i),temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 
+
+          // if boundary is no-slip wall
+          if(boundary_type(i) == 11 || boundary_type(i) == 12){
+              for(int k=0;k<n_dims;k++){
+                temp_u_l(k+1)=0;
+                temp_u_r(k+1)=0;
+                }
+            }
+
           // calculate flux from discontinuous solution at flux points
           if(n_dims==2) {
               calc_invf_2d(temp_u_l,temp_f_l);
@@ -217,7 +226,7 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
             {
               // Calling Riemann solver
               if (run_input.riemann_solve_type==0) { //Rusanov
-                  rusanov_flux(temp_u_l,temp_u_r,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.gamma);
+                  convective_flux_boundary(temp_f_l,temp_f_r,norm,fn,n_dims,n_fields);
                 }
               else if (run_input.riemann_solve_type==1) { // Lax-Friedrich
                   lax_friedrich(temp_u_l,temp_u_r,norm,fn,n_dims,n_fields,run_input.lambda,run_input.wave_speed);
@@ -249,8 +258,9 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
               else
                 FatalError("Viscous Riemann solver not implemented");
 
-              for(int k=0;k<n_fields;k++)
-                *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k));
+              for(int k=0;k<n_fields;k++){
+                *delta_disu_fpts_l(j,i,k) = (u_c(k) - (*disu_fpts_l(j,i,k)));
+                }
             }
 
         }
@@ -294,7 +304,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         v_sq += (v_l[i]*v_l[i]);
       p_l = (gamma-1.0)*(e_l - 0.5*rho_l*v_sq);
 
-      // Subsonic inflow simple (free pressure)
+      // Subsonic inflow simple (free pressure) //CONSIDER DELETING
       if(bdy_type == 1)
         {
           // fix density and velocity
@@ -312,7 +322,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
         }
 
-      // Subsonic outflow simple (fixed pressure)
+      // Subsonic outflow simple (fixed pressure) //CONSIDER DELETING
       else if(bdy_type == 2)
         {
           // extrapolate density and velocity
@@ -480,6 +490,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
         }
 
+
       // Supersonic outflow
       else if(bdy_type == 6)
         {
@@ -522,8 +533,10 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           rho_r = p_r/(R_ref*T_r);
 
           // no-slip
-          for (int i=0; i<n_dims; i++)
+          for (int i=0; i<n_dims; i++){
             v_r[i] = 0.;
+            v_l[i] = 0.;
+            }
 
           // energy
           v_sq = 0.;
@@ -532,24 +545,25 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
         }
 
-      // Adiabatic, no-slip wall (fixed)
+      // Adiabatic, no-slip wall (fixed) // redundant after adding boundary constraint outside method
       else if(bdy_type == 12)
         {
           // extrapolate density
-          rho_r = rho_l;
+          rho_r = rho_l; // only useful part
 
           // extrapolate pressure
           p_r = p_l;
 
-          // no-slip
-          for (int i=0; i<n_dims; i++)
-            v_r[i] = 0.;
-
+          // no-slip (TODO: CHECK CORRECTNESS OF THIS IMPLEMENTATION)
+          for (int i=0; i<n_dims; i++){
+              v_r[i] = 0.;
+              v_l[i] = 0.;
+              }
           // energy
           v_sq = 0.;
           for (int i=0; i<n_dims; i++)
             v_sq += (v_r[i]*v_r[i]);
-          e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+          e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq; // only useful part
         }
 
       // Isothermal, no-slip wall (moving)
@@ -758,6 +772,14 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
 
           set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 
+          // if boundary is no-slip wall
+          if(bdy_spec == 11 || bdy_spec == 12){
+              for(int k=0; k<n_dims;k++){
+                temp_u_l(k+1) = 0;
+                temp_u_r(k+1) = 0;
+                }
+            }
+
           // obtain gradient of discontinuous solution at flux points
           for(int k=0;k<n_dims;k++)
             {
@@ -785,15 +807,15 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
           // calculate flux from discontinuous solution at flux points
           if(n_dims==2) {
 
-              if(flux_spec == 1)
+              if(flux_spec == 1 || flux_spec == 2)
                 {
                   calc_visf_2d(temp_u_l,temp_grad_u_l,temp_f_l);
                 }
-              else if(flux_spec == 2)
+              if(flux_spec == 2)
                 {
                   calc_visf_2d(temp_u_r,temp_grad_u_r,temp_f_r);
                 }
-              else
+              if(flux_spec != 1 && flux_spec !=2)
                 FatalError("Invalid viscous flux specification");
             }
           else if(n_dims==3)  {
@@ -858,7 +880,7 @@ void bdy_inters::set_vis_boundary_conditions(int bdy_type, double* u_l, double* 
 
       inte = p_r/((gamma-1.0)*u_r[0]);
 
-      if(cpu_flag)
+      if(cpu_flag) // execute always
         {
           // Velocity gradients
           for (int j=0;j<n_dims;j++)
