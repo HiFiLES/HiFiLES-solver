@@ -594,7 +594,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // no-slip
           for (int i=0; i<n_dims; i++)
-            v_r[i] = 0.;
+            v_r[i] = 0.0; //v_l[i] - 0.1*(v_l[i] - 0.0);
 
           // energy
           v_sq = 0.;
@@ -844,7 +844,8 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
         
         temp_normal_bc_grad_u_l(0) = (temp_normal_u_l(0) - temp_u_l(0))/Dist;
         for(int l=0;l<n_dims;l++) {
-          temp_normal_bc_grad_u_l(l+1) = (temp_normal_u_l(l+1) - 0.0)/Dist;
+          double vel = 0.0; //temp_u_l(l+1) - 0.1*(temp_u_l(l+1) - 0.0);
+          temp_normal_bc_grad_u_l(l+1) = (temp_normal_u_l(l+1) - vel)/Dist;
         }
         temp_normal_bc_grad_u_l(n_dims+1) = (temp_normal_u_l(n_dims+1) - temp_u_l(n_dims+1))/Dist;
         
@@ -861,7 +862,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
         
         for (int l=0;l<n_fields;l++) {
           for (int k=0;k<n_dims;k++) {
-            temp_grad_u_l(l,k) += (temp_normal_bc_grad_u_l(l)-temp_normal_grad_u_l(l))*sVec(k);
+            temp_grad_u_l(l,k) = temp_grad_u_l(l,k) + (temp_normal_bc_grad_u_l(l)-temp_normal_grad_u_l(l))*sVec(k);
           }
         }
         
@@ -906,6 +907,22 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
       /*! Transform back to reference space. */
       if (boundary_type(i)==12) {
         fn(0) = 0.0;
+        
+//        if(n_dims==2) {
+//          calc_visf_2d(temp_u_l,temp_grad_u_l,temp_f_l);
+//          calc_visf_2d(temp_u_r,temp_grad_u_r,temp_f_r);
+//        }
+//        else if(n_dims==3)  {
+//          calc_visf_3d(temp_u_l,temp_grad_u_l,temp_f_l);
+//          calc_visf_3d(temp_u_r,temp_grad_u_r,temp_f_r);
+//        }
+//        else
+//          FatalError("ERROR: Invalid number of dimensions ... ");
+//        
+//        for(int l=0;l<n_dims;l++) {
+//          fn(l+1) = 0.5*(temp_f_l(l+1) + temp_f_r(l+1));
+//        }
+        
         fn(n_dims+1) = 0.0;
       }
       
