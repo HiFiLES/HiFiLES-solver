@@ -54,14 +54,20 @@ double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_ele_type, int in_el
 /*! get pointer to normal at a flux point */
 double* get_norm_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol);
 
-/*! get pointer to coordinates at a flux point */
-double* get_loc_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol);
+/*! get CPU pointer to coordinates at a flux point */
+double* get_loc_fpts_ptr_cpu(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol);
+
+/*! get GPU pointer to coordinates at a flux point */
+double* get_loc_fpts_ptr_gpu(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol);
 
 /*! get pointer to delta of the transformed discontinuous solution at a flux point */
 double* get_delta_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int n_local_inter, int in_fpt, struct solution* FlowSol);
 
 /*! get pointer to gradient of the discontinuous solution at a flux point */
 double* get_grad_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol);
+
+/*! get pointer to the closest normal point of the discontinuous solution at a flux point */
+double* get_normal_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_fpt, struct solution* FlowSol, array<double> temp_loc, double temp_pos[3]);
 
 // Initialize the solution in the mesh
 void InitSolution(struct solution* FlowSol);

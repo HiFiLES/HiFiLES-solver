@@ -134,7 +134,7 @@ array<double> LagrangeP(int order, int node, array<double> & subs);
 % following node ordering from Hughes, pp 169
 % nNodesSide: number of nodes in each side
 */
-array<double> shapePoly4Tri(int I, int nNodesSide);
+array<double> shapePoly4Tri(int in_index, int nNodesSide);
 
 
 // multPoly function: multiplies polynomials symbolically by stacking them (puts them in different rows)
@@ -182,7 +182,7 @@ bool iszero(array<T> & poly);
 // Calculate the number of sides given the number of nodes in triangle
 inline int calcNumSides(int nNodes)
 {
-    return int ( 0.5*(-1 + sqrt( 1 + 8*double(nNodes) ) ) ) ;
+  return int ( 0.5*(-1 + sqrt( 1 + 8*double(nNodes) ) ) ) ;
 }
 
 

@@ -19,17 +19,17 @@
 
 class input
 {	
-	public:
-	
-	// #### constructors ####
-	
-	// default constructor
-	
-	input();
+public:
 
-	~input();
-	
-	// #### methods ####
+  // #### constructors ####
+
+  // default constructor
+
+  input();
+
+  ~input();
+
+  // #### methods ####
 
 
   void set_vcjh_scheme_tri(int in_vcjh_scheme_tri);
@@ -40,16 +40,16 @@ class input
   void set_c(double in_c_tri, double in_c_quad);
   void set_dt(double in_dt);
 
-	void setup(ifstream& in_run_input_file, int rank);
+  void setup(ifstream& in_run_input_file, int rank);
   
   void reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, int dev_ind, int dim_ind);
-	
-	// #### members ####
-		
-	double gamma;
 
-  int run_type;  
-	int viscous;
+  // #### members ####
+
+  double gamma;
+
+  int run_type;
+  int viscous;
   int equation;
 
   int n_plot_quantities;
@@ -57,15 +57,15 @@ class input
   int n_diagnostics;
   array<string> diagnostics;
 
-	double prandtl;
+  double prandtl;
 
-	double tau;
-	double pen_fact;
+  double tau;
+  double pen_fact;
   double fix_vis;
   double diff_coeff;
   double const_src_term;
 
-	int order;
+  int order;
   int inters_cub_order;
   int volume_cub_order;
 
@@ -73,79 +73,81 @@ class input
   array<double> wave_speed;
   double lambda;
 
-	double dt;
-	int n_steps;
-	int plot_freq;
-	int restart_dump_freq;
-	int adv_type;
+  double dt;
+  int n_steps;
+  int plot_freq;
+  int restart_dump_freq;
+  int adv_type;
 
   int LES;
   int filter_type;
-	double filter_ratio;
-	int SGS_model;
+  double filter_ratio;
+  int SGS_model;
 
   int monitor_res_freq;
   int monitor_force_freq;
   int diagnostics_freq;
   int res_norm_type; // 0:infinity norm, 1:L1 norm, 2:L2 norm
   int error_norm_type; // 0:infinity norm, 1:L1 norm, 2:L2 norm
-  int res_norm_field; 
+  int res_norm_field;
 
   int restart_flag;
   int restart_iter;
   int n_restart_files;
 
-	int ic_form;
+  int ic_form;
 
 
   // boundary_conditions
   double rho_bound;
   array<double> v_bound;
   double p_bound;
+  double p_total_bound;
+  double T_total_bound;
 
   int mesh_format;
   string mesh_file;
-	
+
   double dx_cyclic;
   double dy_cyclic;
   double dz_cyclic;
 
-	
-	int p_res;
-	int write_type;
-	
-	int upts_type_tri;
-	int fpts_type_tri;
-	int vcjh_scheme_tri;
-	double c_tri;
-	int sparse_tri;
-	
-	int upts_type_quad;
-	int vcjh_scheme_quad;
-	double eta_quad;
-	double c_quad;
-	int sparse_quad;
 
-	int upts_type_hexa;
-	int vcjh_scheme_hexa;
-	double eta_hexa;
-	int sparse_hexa;
-	
-	int upts_type_tet;
-	int fpts_type_tet;
-	int vcjh_scheme_tet;
+  int p_res;
+  int write_type;
+
+  int upts_type_tri;
+  int fpts_type_tri;
+  int vcjh_scheme_tri;
+  double c_tri;
+  int sparse_tri;
+
+  int upts_type_quad;
+  int vcjh_scheme_quad;
+  double eta_quad;
+  double c_quad;
+  int sparse_quad;
+
+  int upts_type_hexa;
+  int vcjh_scheme_hexa;
+  double eta_hexa;
+  int sparse_hexa;
+
+  int upts_type_tet;
+  int fpts_type_tet;
+  int vcjh_scheme_tet;
   double c_tet;
-	double eta_tet;
-	int sparse_tet;
-	
-	int upts_type_pri_tri;
-	int upts_type_pri_1d;
-	int vcjh_scheme_pri_1d;
-	double eta_pri;
-	int sparse_pri;
-	
-	int riemann_solve_type;	
-	int vis_riemann_solve_type;	
+  double eta_tet;
+  int sparse_tet;
+
+  int upts_type_pri_tri;
+  int upts_type_pri_1d;
+  int vcjh_scheme_pri_1d;
+  double eta_pri;
+  int sparse_pri;
+
+  int riemann_solve_type;
+  int vis_riemann_solve_type;
 
   //new
   double S_gas;
@@ -206,10 +208,10 @@ class input
   double a_init, b_init;
   int bis_ind, file_lines;
   int device_num;
-	int forcing;
+  int forcing;
   array<double> x_coeffs;
   array<double> y_coeffs;
   array<double> z_coeffs;
-	int perturb_ic;
+  int perturb_ic;
 
 };

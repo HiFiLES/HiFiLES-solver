@@ -22,22 +22,22 @@
 
 class inters
 {
-	public:
-	
-	// #### constructors ####
-	
-	// default constructor
-	
-	inters();
+public:
+
+  // #### constructors ####
+
+  // default constructor
+
+  inters();
 
   // default destructor
- 
-  ~inters(); 
 
-	// #### methods ####
-	
-	/*! setup inters */
-	void setup_inters(int in_n_inters, int in_inter_type, int in_run_type);
+  ~inters();
+
+  // #### methods ####
+
+  /*! setup inters */
+  void setup_inters(int in_n_inters, int in_inter_type, int in_run_type);
 
 
   /*! Set normal flux to be normal * f_r */
@@ -58,49 +58,56 @@ class inters
   /*! Compute common solution using LDG formulation */
   void ldg_solution(int flux_spec, array<double> &u_l, array<double> &u_r, array<double> &u_c, double pen_fact, array<double>& norm);
 
-	/*! get look up table for flux point connectivity based on rotation tag */
-	void get_lut(int in_rot_tag);
-	
-	protected:
+  /*! get look up table for flux point connectivity based on rotation tag */
+  void get_lut(int in_rot_tag);
 
-	// #### members ####
+protected:
 
-	int inters_type; // segment, quad or tri
+  // #### members ####
 
-	int order;
-	int viscous;
-	int n_inters;
-	int n_fpts_per_inter;
-	int n_fields;
-	int n_dims;
-	
-	array<double*> disu_fpts_l;
-	array<double*> delta_disu_fpts_l;
-	array<double*> norm_tconf_fpts_l;
-	//array<double*> norm_tconvisf_fpts_l;
-	array<double*> detjac_fpts_l;
-	array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_l;
-	array<double*> norm_fpts;
-	array<double*> loc_fpts;
-	array<double*> grad_disu_fpts_l;
+  int inters_type; // segment, quad or tri
 
-	array<double> temp_u_l;
-	array<double> temp_u_r;
-	
-	array<double> temp_grad_u_l;
-	array<double> temp_grad_u_r;
-	
-	array<double> temp_f_l;
-	array<double> temp_f_r;
+  int order;
+  int viscous;
+  int n_inters;
+  int n_fpts_per_inter;
+  int n_fields;
+  int n_dims;
 
-	array<double> temp_fn_l;
-	array<double> temp_fn_r;
-	
-	array<double> temp_f;
-	
+  array<double*> disu_fpts_l;
+  array<double*> delta_disu_fpts_l;
+  array<double*> norm_tconf_fpts_l;
+  //array<double*> norm_tconvisf_fpts_l;
+  array<double*> detjac_fpts_l;
+  array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_l;
+  array<double*> norm_fpts;
+  array<double*> loc_fpts;
+
+  array<double> pos_disu_fpts_l;
+  array<double*> grad_disu_fpts_l;
+  array<double*> normal_disu_fpts_l;
+
+  array<double> temp_u_l;
+  array<double> temp_u_r;
+
+  array<double> temp_grad_u_l;
+  array<double> temp_grad_u_r;
+
+  array<double> temp_normal_u_l;
+
+  array<double> temp_pos_u_l;
+
+  array<double> temp_f_l;
+  array<double> temp_f_r;
+
+  array<double> temp_fn_l;
+  array<double> temp_fn_r;
+
+  array<double> temp_f;
+
   array<double> temp_loc;
-	
-	array<int> lut;
+
+  array<int> lut;
 
   array<double> v_l, v_r, um, du;
 

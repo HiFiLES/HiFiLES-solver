@@ -18,47 +18,47 @@
 
 class cubature_1d
 {
-	public:
+public:
 
-	// #### constructors ####
+  // #### constructors ####
 
-	// default constructor
-	cubature_1d();
+  // default constructor
+  cubature_1d();
 
-	// constructor 1
-	cubature_1d(int in_order); // set by order
-	
-	// copy constructor
-	cubature_1d(const cubature_1d& in_cubature_1d);
-	
-	// assignment
-	cubature_1d& operator=(const cubature_1d& in_cubature_1d);
-	
-	// destructor
-	~cubature_1d();
+  // constructor 1
+  cubature_1d(int in_order); // set by order
 
-	// #### methods ####
-	
-	// method to get number of cubature_1d points
-	double get_n_pts(void);
+  // copy constructor
+  cubature_1d(const cubature_1d& in_cubature_1d);
 
-	// method to get r location of cubature_1d point
-	double get_r(int in_pos);
+  // assignment
+  cubature_1d& operator=(const cubature_1d& in_cubature_1d);
 
-	// method to get weight location of cubature_1d point
-	double get_weight(int in_pos);
+  // destructor
+  ~cubature_1d();
 
-	// #### members ####
+  // #### methods ####
 
-	// cubature_1d order
-	int order;
-	
-	// number of cubature_1d points
-	int n_pts;
+  // method to get number of cubature_1d points
+  double get_n_pts(void);
 
-	// location of cubature_1d points
-	array<double> locs;
-	
-	// weight of cubature_1d points
-	array<double> weights;
+  // method to get r location of cubature_1d point
+  double get_r(int in_pos);
+
+  // method to get weight location of cubature_1d point
+  double get_weight(int in_pos);
+
+  // #### members ####
+
+  // cubature_1d order
+  int order;
+
+  // number of cubature_1d points
+  int n_pts;
+
+  // location of cubature_1d points
+  array<double> locs;
+
+  // weight of cubature_1d points
+  array<double> weights;
 };

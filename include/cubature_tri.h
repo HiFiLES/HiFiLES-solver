@@ -18,53 +18,53 @@
 
 class cubature_tri
 {
-	public:
+public:
 
-	// #### constructors ####
+  // #### constructors ####
 
-	// default constructor
-	cubature_tri();
+  // default constructor
+  cubature_tri();
 
-	// constructor 1
-	cubature_tri(int in_order); // set by order
-	
-	// copy constructor
-	cubature_tri(const cubature_tri& in_cubature_tri);
-	
-	// assignment
-	cubature_tri& operator=(const cubature_tri& in_cubature_tri);
-	
-	// destructor
-	~cubature_tri();
+  // constructor 1
+  cubature_tri(int in_order); // set by order
 
-	// #### methods ####
-	
-	// method to initialize a cubature_tri rule
-	void set_order(int in_order);
-	
-	// method to get number of cubature_tri points
-	double get_n_pts(void);
+  // copy constructor
+  cubature_tri(const cubature_tri& in_cubature_tri);
 
-	// method to get r location of cubature_tri point
-	double get_r(int in_pos);
+  // assignment
+  cubature_tri& operator=(const cubature_tri& in_cubature_tri);
 
-	// method to get s location of cubature_tri point
-	double get_s(int in_pos);
+  // destructor
+  ~cubature_tri();
 
-	// method to get weight location of cubature_tri point
-	double get_weight(int in_pos);
+  // #### methods ####
 
-	// #### members ####
+  // method to initialize a cubature_tri rule
+  void set_order(int in_order);
 
-	// cubature_tri order
-	int order;
-	
-	// number of cubature_tri points
-	int n_pts;
+  // method to get number of cubature_tri points
+  double get_n_pts(void);
 
-	// location of cubature_tri points
-	array<double> locs;
-	
-	// weight of cubature_tri points
-	array<double> weights;
+  // method to get r location of cubature_tri point
+  double get_r(int in_pos);
+
+  // method to get s location of cubature_tri point
+  double get_s(int in_pos);
+
+  // method to get weight location of cubature_tri point
+  double get_weight(int in_pos);
+
+  // #### members ####
+
+  // cubature_tri order
+  int order;
+
+  // number of cubature_tri points
+  int n_pts;
+
+  // location of cubature_tri points
+  array<double> locs;
+
+  // weight of cubature_tri points
+  array<double> weights;
 };
