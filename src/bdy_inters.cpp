@@ -833,8 +833,11 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
         
         /*! Evaluate the projected gradient in the direction of sVec (using boundary condition). */
         
-        for(int l=0;l<n_fields;l++)
-          temp_normal_bc_grad_u_l(l) = (temp_normal_u_l(l) - 0.0)/Dist;
+        temp_normal_bc_grad_u_l(0) = (temp_normal_u_l(0) - temp_u_l(0))/Dist;
+        for(int l=0;l<n_dims;l++) {
+          temp_normal_bc_grad_u_l(l+1) = (temp_normal_u_l(l+1) - 0.0)/Dist;
+        }
+        temp_normal_bc_grad_u_l(n_dims+1) = (temp_normal_u_l(n_dims+1) - temp_u_l(n_dims+1))/Dist;
         
         /*! Evaluate the projected gradient in the direction of sVec. */
         
@@ -847,9 +850,11 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
         /*! Evaluate gradient maintaining tangential component but changing
          the component in the sVec direction. */
         
-        for (int l=0;l<n_fields;l++)
-          for (int k=0;k<n_dims;k++)
-            temp_grad_u_l(l,k) = (temp_normal_bc_grad_u_l(l)-temp_normal_grad_u_l(l))*sVec(k);
+        for (int l=0;l<n_fields;l++) {
+          for (int k=0;k<n_dims;k++) {
+            temp_grad_u_l(l,k) += (temp_normal_bc_grad_u_l(l)-temp_normal_grad_u_l(l))*sVec(k);
+          }
+        }
         
       }
       
@@ -890,6 +895,10 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
         FatalError("Viscous Riemann solver not implemented");
       
       /*! Transform back to reference space. */
+      if (boundary_type(i)==12) {
+        fn(0) = 0.0;
+        fn(n_dims+1) = 0.0;
+      }
       
       for(int k=0;k<n_fields;k++)
         (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
