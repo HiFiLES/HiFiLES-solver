@@ -69,142 +69,94 @@ void eles_pris::setup_ele_type_specific(int in_run_type)
   set_opp_p();
 
   if (in_run_type==0)
-  {
-	  n_fpts_per_inter.setup(5);
-
-	  n_fpts_per_inter(0)=(order+2)*(order+1)/2;
-	  n_fpts_per_inter(1)=(order+2)*(order+1)/2;
-	  n_fpts_per_inter(2)=(order+1)*(order+1);
-	  n_fpts_per_inter(3)=(order+1)*(order+1);
-	  n_fpts_per_inter(4)=(order+1)*(order+1);
-	  
-	  n_fpts_per_ele=3*(order+1)*(order+1)+(order+2)*(order+1);
-
-    // Check consistency between tet-pri interface
-    if (upts_type_pri_tri != run_input.fpts_type_tet)
-      FatalError("upts_type_pri_tri != fpts_type_tet");
-
-    // Check consistency between hex-pri interface
-    if (upts_type_pri_1d != run_input.upts_type_hexa)
-      FatalError("upts_type_pri_1d != upts_type_hexa");
-
-	  set_tloc_fpts();
-
-	  set_tnorm_fpts();
-	  
-	  set_opp_0(run_input.sparse_pri);
-	  set_opp_1(run_input.sparse_pri);
-	  set_opp_2(run_input.sparse_pri);
-	  set_opp_3(run_input.sparse_pri);
-	  
-	  if(viscous)
-	  {
-	  	set_opp_4(run_input.sparse_pri);
-	  	set_opp_5(run_input.sparse_pri);
-	  	set_opp_6(run_input.sparse_pri);
-	  
-	  	temp_grad_u.setup(n_fields,n_dims);
-	  }
-	  
-	  temp_u.setup(n_fields);
-	  temp_f.setup(n_fields,n_dims);
-  //}  
-  //else
-  //{
-    if (viscous==1)
     {
-	  	set_opp_4(run_input.sparse_pri);
-    }
+      n_fpts_per_inter.setup(5);
 
-    n_verts_per_ele = 6;
-    n_edges_per_ele = 9; 
+      n_fpts_per_inter(0)=(order+2)*(order+1)/2;
+      n_fpts_per_inter(1)=(order+2)*(order+1)/2;
+      n_fpts_per_inter(2)=(order+1)*(order+1);
+      n_fpts_per_inter(3)=(order+1)*(order+1);
+      n_fpts_per_inter(4)=(order+1)*(order+1);
 
-    n_ppts_per_edge = p_res-2;
+      n_fpts_per_ele=3*(order+1)*(order+1)+(order+2)*(order+1);
 
-    // Number of plot points per face, excluding points on vertices or edges
-    n_ppts_per_face.setup(n_inters_per_ele);
-    n_ppts_per_face(0) = (p_res-3)*(p_res-2)/2; 
-    n_ppts_per_face(1) = (p_res-3)*(p_res-2)/2; 
-    n_ppts_per_face(2) = (p_res-2)*(p_res-2);
-    n_ppts_per_face(3) = (p_res-2)*(p_res-2); 
-    n_ppts_per_face(4) = (p_res-2)*(p_res-2); 
+      // Check consistency between tet-pri interface
+      if (upts_type_pri_tri != run_input.fpts_type_tet)
+        FatalError("upts_type_pri_tri != fpts_type_tet");
 
-    n_ppts_per_face2.setup(n_inters_per_ele);
-    n_ppts_per_face2(0) = (p_res+1)*(p_res)/2; 
-    n_ppts_per_face2(1) = (p_res+1)*(p_res)/2; 
-    n_ppts_per_face2(2) = (p_res)*(p_res);
-    n_ppts_per_face2(3) = (p_res)*(p_res); 
-    n_ppts_per_face2(4) = (p_res)*(p_res); 
+      // Check consistency between hex-pri interface
+      if (upts_type_pri_1d != run_input.upts_type_hexa)
+        FatalError("upts_type_pri_1d != upts_type_hexa");
 
-    max_n_ppts_per_face = n_ppts_per_face(2);
+      set_tloc_fpts();
 
-    // Number of plot points not on faces, edges or vertices
-    n_interior_ppts = n_ppts_per_ele-6-2*n_ppts_per_face(0)-3*n_ppts_per_face(2)
-                      -9*n_ppts_per_edge; 
+      set_tnorm_fpts();
 
-    vert_to_ppt.setup(n_verts_per_ele);
-    edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
-    face_ppt_to_ppt.setup(n_inters_per_ele);
-    for (int i=0;i<n_inters_per_ele;i++)
-      face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
+      set_opp_0(run_input.sparse_pri);
+      set_opp_1(run_input.sparse_pri);
+      set_opp_2(run_input.sparse_pri);
+      set_opp_3(run_input.sparse_pri);
 
-    face2_ppt_to_ppt.setup(n_inters_per_ele);
-    for (int i=0;i<n_inters_per_ele;i++)
-      face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
+      if(viscous)
+        {
+          set_opp_4(run_input.sparse_pri);
+          set_opp_5(run_input.sparse_pri);
+          set_opp_6(run_input.sparse_pri);
 
-    interior_ppt_to_ppt.setup(n_interior_ppts);
+          temp_grad_u.setup(n_fields,n_dims);
+        }
 
-    create_map_ppt();
-  }
-	/*! Plot mode */
-  else
-  {
-    if (viscous==1)
-    {
-	  	set_opp_4(run_input.sparse_pri);
-    }
+      temp_u.setup(n_fields);
+      temp_f.setup(n_fields,n_dims);
+      //}
+      //else
+      //{
+      if (viscous==1)
+        {
+          set_opp_4(run_input.sparse_pri);
+        }
 
-    n_verts_per_ele = 6;
-    n_edges_per_ele = 9; 
+      n_verts_per_ele = 6;
+      n_edges_per_ele = 9;
 
-    n_ppts_per_edge = p_res-2;
+      n_ppts_per_edge = p_res-2;
 
-    // Number of plot points per face, excluding points on vertices or edges
-    n_ppts_per_face.setup(n_inters_per_ele);
-    n_ppts_per_face(0) = (p_res-3)*(p_res-2)/2; 
-    n_ppts_per_face(1) = (p_res-3)*(p_res-2)/2; 
-    n_ppts_per_face(2) = (p_res-2)*(p_res-2);
-    n_ppts_per_face(3) = (p_res-2)*(p_res-2); 
-    n_ppts_per_face(4) = (p_res-2)*(p_res-2); 
+      // Number of plot points per face, excluding points on vertices or edges
+      n_ppts_per_face.setup(n_inters_per_ele);
+      n_ppts_per_face(0) = (p_res-3)*(p_res-2)/2;
+      n_ppts_per_face(1) = (p_res-3)*(p_res-2)/2;
+      n_ppts_per_face(2) = (p_res-2)*(p_res-2);
+      n_ppts_per_face(3) = (p_res-2)*(p_res-2);
+      n_ppts_per_face(4) = (p_res-2)*(p_res-2);
 
-    n_ppts_per_face2.setup(n_inters_per_ele);
-    n_ppts_per_face2(0) = (p_res+1)*(p_res)/2; 
-    n_ppts_per_face2(1) = (p_res+1)*(p_res)/2; 
-    n_ppts_per_face2(2) = (p_res)*(p_res);
-    n_ppts_per_face2(3) = (p_res)*(p_res); 
-    n_ppts_per_face2(4) = (p_res)*(p_res); 
+      n_ppts_per_face2.setup(n_inters_per_ele);
+      n_ppts_per_face2(0) = (p_res+1)*(p_res)/2;
+      n_ppts_per_face2(1) = (p_res+1)*(p_res)/2;
+      n_ppts_per_face2(2) = (p_res)*(p_res);
+      n_ppts_per_face2(3) = (p_res)*(p_res);
+      n_ppts_per_face2(4) = (p_res)*(p_res);
 
-    max_n_ppts_per_face = n_ppts_per_face(2);
+      max_n_ppts_per_face = n_ppts_per_face(2);
 
-    // Number of plot points not on faces, edges or vertices
-    n_interior_ppts = n_ppts_per_ele-6-2*n_ppts_per_face(0)-3*n_ppts_per_face(2)
-                      -9*n_ppts_per_edge; 
+      // Number of plot points not on faces, edges or vertices
+      n_interior_ppts = n_ppts_per_ele-6-2*n_ppts_per_face(0)-3*n_ppts_per_face(2)
+          -9*n_ppts_per_edge;
 
-    vert_to_ppt.setup(n_verts_per_ele);
-    edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
-    face_ppt_to_ppt.setup(n_inters_per_ele);
-    for (int i=0;i<n_inters_per_ele;i++)
-      face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
+      vert_to_ppt.setup(n_verts_per_ele);
+      edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
+      face_ppt_to_ppt.setup(n_inters_per_ele);
+      for (int i=0;i<n_inters_per_ele;i++)
+        face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
 
-    face2_ppt_to_ppt.setup(n_inters_per_ele);
-    for (int i=0;i<n_inters_per_ele;i++)
-      face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
+      face2_ppt_to_ppt.setup(n_inters_per_ele);
+      for (int i=0;i<n_inters_per_ele;i++)
+        face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
 
-    interior_ppt_to_ppt.setup(n_interior_ppts);
+      interior_ppt_to_ppt.setup(n_interior_ppts);
 
-    create_map_ppt();  
+      create_map_ppt();
 
-    /*
+      /*
     cout << "vert_ppt" << endl << endl;
     vert_to_ppt.print();
     cout << "edge_ppt" << endl << endl;
