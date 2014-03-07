@@ -648,7 +648,6 @@ void eles::cp_disu_upts_cpu_gpu(void)
 #endif
 }
 
-
 // copy gradient of discontinuous solution at solution points to cpu
 void eles::cp_grad_disu_upts_gpu_cpu(void)
 {
@@ -684,7 +683,6 @@ void eles::cp_div_tconf_upts_gpu_cpu(void)
 #endif
     }
 }
-
 
 // remove transformed discontinuous solution at solution points from cpu
 
@@ -3202,7 +3200,7 @@ void eles::set_transforms(int in_run_type)
 #ifdef _GPU
           mag_tnorm_dot_inv_detjac_mul_jac_fpts.mv_cpu_gpu();
           norm_fpts.mv_cpu_gpu();
-          loc_fpts.mv_cpu_gpu();
+          loc_fpts.cp_cpu_gpu();
 
           /*
       inv_detjac_mul_jac_fpts.mv_cpu_gpu();
@@ -3804,9 +3802,9 @@ double* eles::get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
 #endif
 }
 
-// get a pointer to the coordinates at a flux point
+// get a CPU pointer to the coordinates at a flux point
 
-double* eles::get_loc_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele)
+double* eles::get_loc_fpts_ptr_cpu(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele)
 {
   int i;
 
@@ -3819,11 +3817,25 @@ double* eles::get_loc_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, i
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
-  return loc_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
-#else
   return loc_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
-#endif
+}
+
+// get a GPU pointer to the coordinates at a flux point
+
+double* eles::get_loc_fpts_ptr_gpu(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele)
+{
+  int i;
+
+  int fpt;
+
+  fpt=in_inter_local_fpt;
+
+  for(i=0;i<in_ele_local_inter;i++)
+    {
+      fpt+=n_fpts_per_inter(i);
+    }
+
+  return loc_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 }
 
 // get a pointer to delta of the transformed discontinuous solution at a flux point
