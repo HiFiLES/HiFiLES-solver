@@ -195,15 +195,6 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
 
           set_inv_boundary_conditions(boundary_type(i),temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 
-
-          // if boundary is no-slip wall
-          if(boundary_type(i) == 11 || boundary_type(i) == 12){
-              for(int k=0;k<n_dims;k++){
-                temp_u_l(k+1)=0;
-                temp_u_r(k+1)=0;
-                }
-            }
-
           // calculate flux from discontinuous solution at flux points
           if(n_dims==2) {
               calc_invf_2d(temp_u_l,temp_f_l);
@@ -241,6 +232,23 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
           // Transform back to reference space
           for(int k=0;k<n_fields;k++)
             (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+
+          if (boundary_type(i)==11){
+              cout<<setprecision(10);
+              if( abs(fn(1)) > 1e-10 || abs(fn(0)) > 1e-10 || abs(fn(3)) > 1e-10 ){
+              cout<<i<<": "<<fn(0)<<" "<<fn(1)<<" "<<fn(2)<<" "<<fn(3)<<endl;
+              for (int m=0;m<n_dims;m++)
+                cout<<temp_loc(m)<<"; ";
+              cout<<endl;
+                }
+              //cin.get();
+            }
+
+
+
+          // TEMPORARY TEST: RELOAD UNMODIFIED STATE AT BOUNDARY TO CALCULATE COMMON SOLUTION VALUE
+//          for(int k=0;k<n_fields;k++)
+//            temp_u_l(k)=(*disu_fpts_l(j,i,k));
 
           if(viscous)
             {
@@ -523,6 +531,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       // Isothermal, no-slip wall (fixed)
       else if(bdy_type == 11)
         {
+          // Set state for the right side
           // extrapolate pressure
           p_r = p_l;
 
@@ -535,14 +544,26 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           // no-slip
           for (int i=0; i<n_dims; i++){
             v_r[i] = 0.;
-            v_l[i] = 0.;
             }
 
           // energy
           v_sq = 0.;
           for (int i=0; i<n_dims; i++)
-            v_sq += (v_r[i]*v_r[i]);
-          e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+            v_sq += 0.;//(v_r[i]*v_r[i]);
+          e_r = (p_r/(gamma-1.0));// + 0.5*rho_r*v_sq;
+
+//          // Set state for the left side (equal to right side)
+//          // Pressure: are the same -- no need to change
+
+//          // Temperature: use T_wall to compute density and energy
+//          u_l[0] = rho_r;
+
+//          // Energy
+//          for (int i=0; i<n_dims; i++)
+//            u_l[i+1] = 0.;
+//          u_l[n_dims+1] = e_r;
+
+
         }
 
       // Adiabatic, no-slip wall (fixed) // redundant after adding boundary constraint outside method
@@ -564,6 +585,18 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           for (int i=0; i<n_dims; i++)
             v_sq += (v_r[i]*v_r[i]);
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq; // only useful part
+
+
+          // Set state for the left side (equal to right side)
+          // Pressure: are the same -- no need to change
+
+//          // Temperature: use T_wall to compute density and energy
+//          u_l[0] = rho_r;
+
+//          // Energy
+//          for (int i=0; i<n_dims; i++)
+//            u_l[i+1] = 0.;
+//          u_l[n_dims+1] = e_r;
         }
 
       // Isothermal, no-slip wall (moving)
@@ -772,14 +805,6 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
 
           set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 
-          // if boundary is no-slip wall
-          if(bdy_spec == 11 || bdy_spec == 12){
-              for(int k=0; k<n_dims;k++){
-                temp_u_l(k+1) = 0;
-                temp_u_r(k+1) = 0;
-                }
-            }
-
           // obtain gradient of discontinuous solution at flux points
           for(int k=0;k<n_dims;k++)
             {
@@ -807,15 +832,15 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
           // calculate flux from discontinuous solution at flux points
           if(n_dims==2) {
 
-              if(flux_spec == 1 || flux_spec == 2)
+              if(flux_spec == 1)
                 {
                   calc_visf_2d(temp_u_l,temp_grad_u_l,temp_f_l);
                 }
-              if(flux_spec == 2)
+              else if(flux_spec == 2)
                 {
                   calc_visf_2d(temp_u_r,temp_grad_u_r,temp_f_r);
                 }
-              if(flux_spec != 1 && flux_spec !=2)
+              else
                 FatalError("Invalid viscous flux specification");
             }
           else if(n_dims==3)  {
@@ -834,6 +859,9 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound)
           else
             FatalError("ERROR: Invalid number of dimensions ... ");
 
+           //TEMPORARY TEST: FORGET MODIFICATION OF LEFT STATE
+//          for(int k=0;k<n_fields;k++)
+//            temp_u_l(k)=(*disu_fpts_l(j,i,k));
 
           // Calling viscous riemann solver
           if (run_input.vis_riemann_solve_type==0)
