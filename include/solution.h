@@ -77,7 +77,9 @@ struct solution {
   /*! Diagnostics. */
   
   array<double> body_force;
-  
+  array<double> inv_force;
+  array<double> vis_force;
+
   /*! Plotting related. */
   
   int p_res;

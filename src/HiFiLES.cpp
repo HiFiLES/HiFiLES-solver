@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
   ifstream run_input_file;            /*!< Config input file */
   clock_t init, final;                /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
-  ofstream write_force, write_stats, write_hist;  /*!< Output files (forces, statistics, and history) */
+  ofstream write_stats, write_hist;  /*!< Output files (forces, statistics, and history) */
 
   /*! Check the command line input. */
   if (argc < 2) { cout << "ERROR: No input file specified ... " << endl; return(0); }
@@ -111,9 +111,12 @@ int main(int argc, char *argv[]) {
 
   /*! Compute forces in the initial solution. */
   if (FlowSol.rank == 0) {
-      write_force.open("force000.dat", ios::app);
-      write_force << "new run" << endl;
-      write_force.close();
+    
+    FlowSol.inv_force.setup(5);
+    FlowSol.vis_force.setup(5);
+
+    for (i=0; i<5; i++) FlowSol.inv_force(i)=0.0;
+    for (i=0; i<5; i++) FlowSol.vis_force(i)=0.0;
 
       write_stats.open("statfile.dat");
       write_stats << "time ";
@@ -171,6 +174,8 @@ int main(int argc, char *argv[]) {
       /*! Dump residual and error. */
       if(i_steps%run_input.monitor_res_freq==0 ) {
 
+          compute_forces(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
+
           error_state = monitor_residual(FlowSol.ini_iter+i_steps, init, &write_hist, &FlowSol);
 
           if (error_state) cout << "error_state=" << error_state << "rank=" << FlowSol.rank << endl;
@@ -185,11 +190,6 @@ int main(int argc, char *argv[]) {
               compute_error(FlowSol.ini_iter+i_steps, &FlowSol);
             }
 
-        }
-
-      /*! Dump forces. */
-      if(i_steps%run_input.monitor_force_freq == 0 && run_input.equation == 0) {
-          compute_forces(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
         }
 
       if (i_steps%run_input.monitor_res_freq == 0 || i_steps%run_input.monitor_force_freq == 0)

@@ -2752,21 +2752,22 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 
 }
 
-void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
-{
+void compute_forces(int in_file_num, double in_time,struct solution* FlowSol) {
 
-  char file_name_s[50];
-  char *file_name;
+  char file_name_s[50], *file_name;
   ofstream cp_file;
-
+  bool output = false;
+  
+  if (output) {
 #ifdef _MPI
-  sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
+    sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
 #else
-  sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,0);
+    sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,0);
 #endif
-
-  file_name = &file_name_s[0];
-  cp_file.open(file_name);
+    
+    file_name = &file_name_s[0];
+    cp_file.open(file_name);
+  }
 
   // copy solution to cpu
 #ifdef _GPU
@@ -2782,23 +2783,23 @@ void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
     }
 #endif
 
-  array<double> inv_force(FlowSol->n_dims),temp_inv_force(FlowSol->n_dims);
-  array<double> vis_force(FlowSol->n_dims),temp_vis_force(FlowSol->n_dims);
+  array<double> temp_inv_force(FlowSol->n_dims);
+  array<double> temp_vis_force(FlowSol->n_dims);
 
   for (int m=0;m<FlowSol->n_dims;m++)
     {
-      inv_force(m) = 0.;
-      vis_force(m) = 0.;
+      FlowSol->inv_force(m) = 0.;
+      FlowSol->vis_force(m) = 0.;
     }
 
   for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force,temp_vis_force,cp_file);
+          FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force, temp_vis_force, cp_file, output);
 
           for (int m=0;m<FlowSol->n_dims;m++) {
-              inv_force(m) += temp_inv_force(m);
-              vis_force(m) += temp_vis_force(m);
+              FlowSol->inv_force(m) += temp_inv_force(m);
+              FlowSol->vis_force(m) += temp_vis_force(m);
             }
         }
     }
@@ -2811,46 +2812,46 @@ void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
   for (int m=0;m<FlowSol->n_dims;m++) {
       inv_force_global(m) = 0.;
       vis_force_global(m) = 0.;
-      MPI_Reduce(&inv_force(m),&inv_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      MPI_Reduce(&vis_force(m),&vis_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      MPI_Reduce(&FlowSol->inv_force(m),&inv_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      MPI_Reduce(&FlowSol->vis_force(m),&vis_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
     }
 
   for (int m=0;m<FlowSol->n_dims;m++)
     {
-      inv_force(m) = inv_force_global(m);
-      vis_force(m) = vis_force_global(m);
+      FlowSol->inv_force(m) = inv_force_global(m);
+      FlowSol->vis_force(m) = vis_force_global(m);
     }
 #endif
 
   // Calculate body forcing, if running periodic channel, and add to viscous flux
-  if(run_input.equation==0 and run_input.run_type==0 and run_input.forcing==1 and FlowSol->n_dims==3)
-    {
-      for(int i=0;i<FlowSol->n_ele_types;i++)
-        FlowSol->mesh_eles(i)->calc_body_force_upts(vis_force, FlowSol->body_force);
-    }
+  if(run_input.equation==0 and run_input.run_type==0 and run_input.forcing==1 and FlowSol->n_dims==3) {
+    for(int i=0;i<FlowSol->n_ele_types;i++)
+      FlowSol->mesh_eles(i)->calc_body_force_upts(FlowSol->vis_force, FlowSol->body_force);
+  }
 
-  if (FlowSol->rank==0)
-    {
-      sprintf(file_name_s,"force000.dat",FlowSol->rank);
-      file_name = &file_name_s[0];
-      ofstream write_force;
-      write_force.open(file_name,ios::app);
 
-      write_force << scientific << setprecision(7) <<  in_time << " , ";
-      write_force << setw(10) << scientific << setprecision(7) << inv_force(0)+vis_force(0) << " , " << scientific << setprecision(7) << setw(10) << inv_force(1)+vis_force(1);
-      if (FlowSol->n_dims==3)
-        write_force << " , " << scientific << setprecision(7) << setw(10) << inv_force(2)+vis_force(2) ;
-      write_force << endl;
-      write_force.close();
+//  if (FlowSol->rank==0)
+//    {
+//      sprintf(file_name_s,"force000.dat",FlowSol->rank);
+//      file_name = &file_name_s[0];
+//      ofstream write_force;
+//      write_force.open(file_name,ios::app);
+//
+//      write_force << scientific << setprecision(7) <<  in_time << " , ";
+//      write_force << setw(10) << scientific << setprecision(7) << inv_force(0)+vis_force(0) << " , " << scientific << setprecision(7) << setw(10) << inv_force(1)+vis_force(1);
+//      if (FlowSol->n_dims==3)
+//        write_force << " , " << scientific << setprecision(7) << setw(10) << inv_force(2)+vis_force(2) ;
+//      write_force << endl;
+//      write_force.close();
+//
+//      //cout <<scientific << "    fx= " << setprecision(13) << inv_force(0)+vis_force(0) << "    fy=" << inv_force(1)+vis_force(1);
+//      cout <<scientific << "    fx_i= " << setprecision(7) << inv_force(0) << "    fx_v= " << setprecision(7) << vis_force(0);
+//      cout <<scientific << "    fy_i= " << setprecision(7) << inv_force(1) << "    fy_v= " << setprecision(7) << vis_force(1);
+//      if (FlowSol->n_dims==3)
+//        cout <<scientific << "    fz_i= " << setprecision(7) << inv_force(2) << "    fz_v= " << setprecision(7) << vis_force(2) << "    time= " << setprecision(7) << in_time;
+//    }
 
-      //cout <<scientific << "    fx= " << setprecision(13) << inv_force(0)+vis_force(0) << "    fy=" << inv_force(1)+vis_force(1);
-      cout <<scientific << "    fx_i= " << setprecision(7) << inv_force(0) << "    fx_v= " << setprecision(7) << vis_force(0);
-      cout <<scientific << "    fy_i= " << setprecision(7) << inv_force(1) << "    fy_v= " << setprecision(7) << vis_force(1);
-      if (FlowSol->n_dims==3)
-        cout <<scientific << "    fz_i= " << setprecision(7) << inv_force(2) << "    fz_v= " << setprecision(7) << vis_force(2) << "    time= " << setprecision(7) << in_time;
-    }
-
-  cp_file.close();
+  if (output) cp_file.close();
 
 }
 
@@ -3150,8 +3151,8 @@ int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct
       write_hist->open("history.plt", ios::out);
       write_hist->precision(15);
       write_hist[0] << "TITLE = \"HiFiLES simulation\"" << endl;
-      if (FlowSol->n_dims==2) write_hist[0] << "VARIABLES = \"Iteration\",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"Time(m)\"" << endl;
-      else write_hist[0] <<  "VARIABLES = \"Iteration\",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"Time(m)\"" << endl;
+      if (FlowSol->n_dims==2) write_hist[0] << "VARIABLES = \"Iteration\",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"Time(m)\"" << endl;
+      else write_hist[0] <<  "VARIABLES = \"Iteration\",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"F<sub>z</sub>(Total)\",\"Time(m)\"" << endl;
       write_hist[0] << "ZONE T= \"Convergence history\"" << endl;
     }
     
@@ -3169,11 +3170,11 @@ int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct
     
     // Write the header
     if (write_heads) {
-      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]" << endl;
-      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]" << endl;
+      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
+      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
     }
     
-    // Screen output
+    // Output residuals
     cout.precision(8);
     cout.setf(ios::fixed, ios::floatfield);
     cout.width(6); cout << in_file_num;
@@ -3183,6 +3184,12 @@ int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct
       write_hist[0] <<", " << log10(norm[i]);
     }
     
+    // Output forces
+    for(i=0; i< FlowSol->n_dims; i++) {
+      cout.width(15); cout << FlowSol->inv_force(i) + FlowSol->vis_force(i);
+      write_hist[0] <<", " << FlowSol->inv_force(i) + FlowSol->vis_force(i);
+    }
+
     // Compute execution time
     final = clock()-init;
     write_hist[0] << ", " << (double) final/(((double) CLOCKS_PER_SEC) * 60.0) << endl;
