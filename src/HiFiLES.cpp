@@ -52,15 +52,15 @@ int main(int argc, char *argv[]) {
 #endif
 
   if (rank == 0) {
-      cout << " _    _  _  ______  _  _       ______   _____ " << endl;
-      cout << "| |  | |(_)|  ____|(_)| |     |  ____| / ____|" << endl;
-      cout << "| |__| | _ | |__    _ | |     | |__   | (___  " << endl;
-      cout << "|  __  || ||  __|  | || |     |  __|   \\___ \\ " << endl;
-      cout << "| |  | || || |     | || |____ | |____  ____) |" << endl;
-      cout << "|_|  |_||_||_|     |_||______||______||_____/ " << endl;
-      cout << "                                              " << endl;
-      cout << "Aerospace Computing Lab (Stanford University) " << endl;
-    }
+    cout << " __    __   __   _______  __          __       _______     _______." << endl;
+    cout << "|  |  |  | |  | |   ____||  |        |  |     |   ____|   /       |" << endl;
+    cout << "|  |__|  | |  | |  |__   |  |  _____ |  |     |  |__     |   (----`" << endl;
+    cout << "|   __   | |  | |   __|  |  | |____| |  |     |   __|     \\   \\" << endl;
+    cout << "|  |  |  | |  | |  |     |  |        |  `----.|  |____.----)   |" << endl;
+    cout << "|__|  |__| |__| |__|     |__|        |_______||_______|_______/" << endl;
+    cout << "                                              " << endl;
+    cout << "Aerospace Computing Laboratory (Stanford University) " << endl;
+  }
 
   /////////////////////////////////////////////////
   /// Read config file and mesh
