@@ -124,13 +124,11 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
   /*! Reading vertices and cells. */
   ReadMesh(run_input.mesh_file, xv, c2v, c2n_v, ctype, ic2icg, iv2ivg, FlowSol->num_eles, FlowSol->num_verts, FlowSol);
 
-  if (in_run_type==1) // Plotting mode
-    {
-      /*! Store c2v, c2n_v, ctype. */
-      FlowSol->ele2vert = c2v;
-      FlowSol->ele2n_vert = c2n_v;
-      FlowSol->ele_type = ctype;
-    }
+  // Plotting mode
+  /*! Store c2v, c2n_v, ctype. */
+  FlowSol->ele2vert = c2v;
+  FlowSol->ele2n_vert = c2n_v;
+  FlowSol->ele_type = ctype;
 
   /////////////////////////////////////////////////
   /// Set connectivity
@@ -169,14 +167,13 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
   // Reading boundaries
   ReadBound(run_input.mesh_file,c2v,c2n_v,ctype,bctype_c,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts, FlowSol);
-  if (in_run_type==1)
-    {
-      // Store ele2face
-      FlowSol->ele2face = c2f;
-      FlowSol->ele2edge = c2e;
-      FlowSol->inter2loc_inter = f2loc_f;
-      FlowSol->inter2ele = f2c;
-    }
+
+  // Plot mode
+  // Store ele2face
+  FlowSol->ele2face = c2f;
+  FlowSol->ele2edge = c2e;
+  FlowSol->inter2loc_inter = f2loc_f;
+  FlowSol->inter2ele = f2c;
 
   /////////////////////////////////////////////////
   /// Initializing Elements
@@ -542,10 +539,8 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
   match_mpifaces(f2v,f2nv,xv,f_mpi2f,mpifaces_part,delta_cyclic,FlowSol->n_mpi_inters,tol,FlowSol);
 
-  if (in_run_type==1)
-    {
-      FlowSol->inter_mpi2inter = f_mpi2f;
-    }
+  // Plot mode
+  FlowSol->inter_mpi2inter = f_mpi2f;
 
   array<int> rot_tag_mpi(FlowSol->n_mpi_inters);
   find_rot_mpifaces(f2v,f2nv,xv,f_mpi2f,rot_tag_mpi,mpifaces_part,delta_cyclic,FlowSol->n_mpi_inters,tol,FlowSol);

@@ -86,33 +86,25 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
       // Initialize the element specific static members
       (*this).setup_ele_type_specific(in_run_type);
 
-      if (in_run_type==0)
-        {
-          if(run_input.adv_type==0)
-            {
-              n_adv_levels=1;
-            }
-          else if(run_input.adv_type==1)
-            {
-              n_adv_levels=3;
-            }
-          else if(run_input.adv_type==2)
-            {
-              n_adv_levels=4;
-            }
-          else if(run_input.adv_type==3)
-            {
-              n_adv_levels=2;
-            }
-          else
-            {
-              cout << "ERROR: Type of time integration scheme not recongized ... " << endl;
-            }
-        }
-      // For plotting, we just need 0 adv_level
-      else if (in_run_type==1)
+      if(run_input.adv_type==0)
         {
           n_adv_levels=1;
+        }
+      else if(run_input.adv_type==1)
+        {
+          n_adv_levels=3;
+        }
+      else if(run_input.adv_type==2)
+        {
+          n_adv_levels=4;
+        }
+      else if(run_input.adv_type==3)
+        {
+          n_adv_levels=2;
+        }
+      else
+        {
+          cout << "ERROR: Type of time integration scheme not recongized ... " << endl;
         }
 
       // Allocate storage for solution
@@ -153,53 +145,43 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
       n_fields_mul_n_eles=n_fields*n_eles;
       n_dims_mul_n_upts_per_ele=n_dims*n_upts_per_ele;
 
-      if (in_run_type==0) {
-
-          div_tconf_upts.setup(n_adv_levels);
-          for(int i=0;i<n_adv_levels;i++)
-            {
-              div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
-            }
-
-          // Initialize to zero
-          for (int m=0;m<n_adv_levels;m++)
-            for (int i=0;i<n_upts_per_ele;i++)
-              for (int j=0;j<n_eles;j++)
-                for (int k=0;k<n_fields;k++)
-                  div_tconf_upts(m)(i,j,k) = 0.;
-
-          disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-          tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
-          norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-          norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-
-          if(viscous)
-            {
-              delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-              grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
-              grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
-            }
-          // Set connectivity array. Needed for Paraview output.
-          if (ele_type==3) // prism
-            connectivity_plot.setup(8,n_peles_per_ele);
-          else
-            connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
-
-          set_connectivity_plot();
-        }
-      else if (in_run_type==1)
+      div_tconf_upts.setup(n_adv_levels);
+      for(int i=0;i<n_adv_levels;i++)
         {
-          ppt_to_pnode.setup(n_eles,n_ppts_per_ele);
-          pos_ppts.setup(n_eles,n_ppts_per_ele);
-          for (int i=0;i<n_eles;i++)
-            for (int j=0;j<n_ppts_per_ele;j++)
-              pos_ppts(i,j).setup(n_dims);
-
-          if (ele_type==3) // prism
-            connectivity_plot.setup(8,n_peles_per_ele);
-          else
-            connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
+          div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
         }
+
+      // Initialize to zero
+      for (int m=0;m<n_adv_levels;m++)
+        for (int i=0;i<n_upts_per_ele;i++)
+          for (int j=0;j<n_eles;j++)
+            for (int k=0;k<n_fields;k++)
+              div_tconf_upts(m)(i,j,k) = 0.;
+
+      disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+      tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
+      norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+      norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+
+      if(viscous)
+        {
+          delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+          grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
+          grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
+        }
+
+      /*! Plot mode */
+
+      ppt_to_pnode.setup(n_eles,n_ppts_per_ele);
+      pos_ppts.setup(n_eles,n_ppts_per_ele);
+      for (int i=0;i<n_eles;i++)
+        for (int j=0;j<n_ppts_per_ele;j++)
+          pos_ppts(i,j).setup(n_dims);
+
+      if (ele_type==3) // prism
+        connectivity_plot.setup(8,n_peles_per_ele);
+      else
+        connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
 
     }
 
