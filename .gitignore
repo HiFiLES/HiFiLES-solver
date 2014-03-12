@@ -11,3 +11,26 @@
 # *.lai
 # *.la
 # *.a
+
+# QT IDE-generated files
+*.pro.user
+
+# MSVC IDE-generated files
+*.sdf
+*.opensdf
+*.suo
+*.vcxproj.user
+
+# TeX-generated files
+*.aux
+*.synctex.gz
+*.log
+*.toc
+
+# Visualization Output Files
+*.vtu
+*.plt
+
+# Other files
+*.dat
+*~
