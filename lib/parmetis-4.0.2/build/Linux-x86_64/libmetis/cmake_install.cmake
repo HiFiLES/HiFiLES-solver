@@ -1,4 +1,4 @@
-# Install script for directory: /home/mlopez14/fpalacios-HiFiLES/lib/parmetis-4.0.2/metis/libmetis
+# Install script for directory: /home/abisheks/HiFiLES-experimental/HiFiLES/lib/parmetis-4.0.2/metis/libmetis
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -29,6 +29,6 @@ ENDIF(NOT CMAKE_INSTALL_COMPONENT)
 
 # Install shared libraries without execute permission?
 IF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
-  SET(CMAKE_INSTALL_SO_NO_EXE "1")
+  SET(CMAKE_INSTALL_SO_NO_EXE "0")
 ENDIF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 

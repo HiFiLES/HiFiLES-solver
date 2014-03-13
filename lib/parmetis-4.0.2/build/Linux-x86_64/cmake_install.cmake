@@ -1,4 +1,4 @@
-# Install script for directory: /home/mlopez14/fpalacios-HiFiLES/lib/parmetis-4.0.2
+# Install script for directory: /home/abisheks/HiFiLES-experimental/HiFiLES/lib/parmetis-4.0.2
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -29,15 +29,15 @@ ENDIF(NOT CMAKE_INSTALL_COMPONENT)
 
 # Install shared libraries without execute permission?
 IF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
-  SET(CMAKE_INSTALL_SO_NO_EXE "1")
+  SET(CMAKE_INSTALL_SO_NO_EXE "0")
 ENDIF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 
 IF(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  INCLUDE("/home/mlopez14/fpalacios-HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis/cmake_install.cmake")
-  INCLUDE("/home/mlopez14/fpalacios-HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/include/cmake_install.cmake")
-  INCLUDE("/home/mlopez14/fpalacios-HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis/cmake_install.cmake")
-  INCLUDE("/home/mlopez14/fpalacios-HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/programs/cmake_install.cmake")
+  INCLUDE("/home/abisheks/HiFiLES-experimental/HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/libmetis/cmake_install.cmake")
+  INCLUDE("/home/abisheks/HiFiLES-experimental/HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/include/cmake_install.cmake")
+  INCLUDE("/home/abisheks/HiFiLES-experimental/HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/libparmetis/cmake_install.cmake")
+  INCLUDE("/home/abisheks/HiFiLES-experimental/HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/programs/cmake_install.cmake")
 
 ENDIF(NOT CMAKE_INSTALL_LOCAL_ONLY)
 
@@ -47,7 +47,7 @@ ELSE(CMAKE_INSTALL_COMPONENT)
   SET(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 ENDIF(CMAKE_INSTALL_COMPONENT)
 
-FILE(WRITE "/home/mlopez14/fpalacios-HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/${CMAKE_INSTALL_MANIFEST}" "")
+FILE(WRITE "/home/abisheks/HiFiLES-experimental/HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/${CMAKE_INSTALL_MANIFEST}" "")
 FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/home/mlopez14/fpalacios-HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
+  FILE(APPEND "/home/abisheks/HiFiLES-experimental/HiFiLES/lib/parmetis-4.0.2/build/Linux-x86_64/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 ENDFOREACH(file)
