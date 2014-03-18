@@ -15,5 +15,3 @@
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
 SUBDIRS = obj/
-
-dist_data_DATA=cudalt.py

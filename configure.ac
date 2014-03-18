@@ -49,10 +49,16 @@ AC_ARG_WITH(CXX,
 AC_ARG_WITH(BLAS,
     AS_HELP_STRING([--with-BLAS[=ARG]], [Build using support for a BLAS variant, ARG = BLAS library to use]), 
     [with_BLAS=$withval], [with_BLAS="no"])
+AC_ARG_WITH(BLAS-lib,
+    AS_HELP_STRING([--with-BLAS-lib[=ARG]], [BLAS library directory, ARG = path to libcblas.a]), 
+    [with_BLAS_lib=$withval], [with_BLAS_lib="no"])
+AC_ARG_WITH(BLAS-include,
+    AS_HELP_STRING([--with-BLAS-include[=ARG]], [BLAS include directory, ARG = path to cblas.h]), 
+    [with_BLAS_include=$withval], [with_BLAS_include="no"])
     
 ########################### CUDA (GPU-Enabled)
 # check if we're building GPU or CPU version
-# first, check for CUDA library
+# first, check for [a] CUDA library in the given directory
 CUDAlib=libcublas.a
 CUDAheader=cuda.h
 have_CUDA="no"
@@ -85,7 +91,7 @@ if test "$have_CUDA" != "no"
 then
   	AM_CONDITIONAL(BUILD_GPU,true)
 	NVCCFLAGS="-D_GPU -I"$with_CUDA_include	
-	CUDA_CXXFLAGS="-D_GPU"
+	CUDA_CXX="-D_GPU"
     ARCH=`uname -m`
     if [[ $ARCH == "x86_64" ]];
     then
@@ -93,14 +99,15 @@ then
     else
       SUFFIX=""
     fi
-	CUDA_LIBS="$with_CUDA_lib -lcudart -lcublas -lcusparse -lm"
+	CUDA_LIBS="-L$with_CUDA_lib -lcudart -lcublas -lcusparse -lm"
     NVCC=$with_CUDA
 else
 	AM_CONDITIONAL(BUILD_GPU,false)
-	CUDA_CXXFLAGS="-D_CPU"
+	CUDA_CXX="-D_CPU"
 fi
 AC_SUBST([NVCC])
 AC_SUBST([CUDA_LIBS])
+AC_SUBST([CUDA_CXX])
 AC_SUBST([NVCCFLAGS])
 
 ########################### ParMETIS
@@ -209,9 +216,40 @@ if test "$with_MPI" != "no"
 then
 	CXX="$with_MPI"	
 	have_MPI="yes"
-else
-	CXXFLAGS=""$CXXFLAGS" -DNO_MPI"
+	CXXFLAGS=$CXXFLAGS" -D_MPI"
 fi
+
+########################### BLAS
+# *** still need to implement library & header-file checks ***
+if test "$with_BLAS" == "ACCELERATE_BLAS"
+then
+    BLAS_CXX=" -flax-vector-conversions -DACCELERATE_BLAS"
+    BLAS_LDFLAGS=" -framework Accelerate"
+    BLAS_LD=
+else if test "$with_BLAS" == "STANDARD_BLAS"
+then
+    BLAS_CXX="-I$with_BLAS_include -DSTANDARD_BLAS"
+    BLAS_LD="$with_BLAS_lib/libcblas.a"
+    BLAS_LDFLAGS=
+# needs more work here (not terribly familiar with our MKL usage)
+if test "$with_BLAS" == "MKL_BLAS"
+then
+    if test "$CXX" == "icpc"
+    then
+       BLAS_CXX="-mkl=parallel -DMKL_BLAS"
+       BLAS_LD=
+       BLAS_LDFLAGS=
+    fi
+else if test "$with_BLAS" == "NO_BLAS"
+then
+    BLAS_CXX="-DNO_BLAS"
+    BLAS_LD=
+    BLAS_LDFLAGS=
+fi
+
+AC_SUBST([BLAS_CXX])
+AC_SUBST([BLAS_LDFLAGS])
+AC_SUBST([BLAS_LD])
 
 ###########################
 # AC_CONFIG_HEADERS([config.h])
@@ -237,6 +275,7 @@ Build Configuration Summary:
     Preprocessor flags:   ${CPPFLAGS}
     Compiler flags:       ${CXXFLAGS}
     Linker flags:         ${LDFLAGS}
+    BLAS support:         $have_BLAS
     MPI support:          $have_MPI
     ParMetis support:     $have_ParMetis
     TecIO support:        $have_Tecio

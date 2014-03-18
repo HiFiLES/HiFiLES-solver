@@ -15,28 +15,32 @@
 # Standard (Helpful) Settings [Should not need to change these]
 HIFILES_HOME=$PWD
 HIFILES_RUN=$PWD/bin
-
+# ---------------------------------------------------------------
 # Basic User-Modifiable Build Settings [Change these as desired]
-NODE="CPU"
-CODE="DEBUG"
-BLAS="STANDARD_BLAS"
-PARALLEL="MPI"
-TECIO="NO"
-
-# Compiler Selection [Add filepaths to executables if needed]
-CXX="gcc"
-NVCC="nvcc"
-MPICC="mpicxx"
-
+NODE="CPU"              # CPU or GPU
+CODE="DEBUG"            # DEBUG or RELEASE
+BLAS="STANDARD_BLAS"    # STANDARD_BLAS, ACCLERATE_BLAS, MKL_BLAS, NO_BLAS
+PARALLEL="MPI"          # MPI or NO
+TECIO="NO"              # YES or NO
+# ---------------------------------------------------------------
+# Compiler Selections [Change compilers or add full filepaths if needed]
+CXX="g++"               # Typically g++ (default) or icpc (Intel)
+NVCC="nvcc"             # NVidia CUDA compiler
+MPICC="mpicxx"          # MPI compiler
+# ---------------------------------------------------------------
 # Library Locations [Change filepaths as needed]
-BLAS_DIR="/usr/local/atlas"
+BLAS_LIB="/usr/local/atlas/lib"
+BLAS_INCLUDE="/usr/local/atlas/include"
+
 PARMETIS_LIB="/usr/local/lib"
 PARMETIS_INCLUDE="/usr/local/include"
+
 TECIO_LIB="lib/tecio-2008/lib"
 TECIO_INCLUDE="lib/tecio-2008/include"
+
 CUDA_LIB="/usr/local/cuda/lib64"
 CUDA_INCLUE="/usr/local/cuda/include"
-
+# ---------------------------------------------------------------
 # Run configure using the chosen options [Should not change this]
 if [[ "$NODE" == "GPU" ]]
 then
@@ -57,6 +61,8 @@ fi
 ./configure -prefix=$HIFILES_RUN/.. \
             --with-CXX=$CXX \
             --with-BLAS=$BLAS \
+            --with-BLAS-lib=$BLAS_LIB \
+            --with-BLAS-include=$BLAS_INCLUDE \
             --with-MPI=$_MPI \
             --with-CUDA=$_GPU \
             --with-CUDA-lib=$CUDA_LIB \

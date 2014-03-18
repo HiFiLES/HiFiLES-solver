@@ -47,11 +47,18 @@ ___bin_HiFiLES_SOURCES = ../src/global.cpp \
 
 # -------------- GPU --------------
 if BUILD_GPU
-# Setup needed for compiling CUDA files 
+# Tell AutoMake how to compile CUDA files
+# See http://www.clusterchimps.org/autotools.php
+# GPU Architechture Selection: -gencode=arch=compute_xx,code=sm_xx
+#   compute_10	 Basic features
+#   compute_11	 + atomic memory operations on global memory
+#   compute_12	 + atomic memory operations on shared memory
+#                + vote instructions
+#   compute_13	 + double precision floating point support
+#   compute_20	 + Fermi support
+#   compute_30	 + Kepler support
 .cu.o:
-	$(NVCC) -lib $@ -c $< $(NVCCFLAGS)
-.cu.lo:
-	$(HIFILES_HOME)/cudalt.py $@ $(NVCC) $(NVCCFLAGS) --compiler-options=\"$(CFLAGS) -I$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)\" -c $<
+	$(NVCC) $(NVCCFLAGS) -gencode=arch=compute_13,code=sm_13 -o $@ -c $<
 
 noinst_LIBRARIES = cudafiles
 cudafiles_a_SOURCES = ../src/cuda_kernels.cu
@@ -73,16 +80,10 @@ ___bin_HiFiLES_LDADD += @TECIO_LD@
 
 # CUDA
 ___bin_HiFiLES_CXXFLAGS += @CUDA_CXX@
+___bin_HiFiLES_LDFLAGS += @CUDA_LIBS@
 ___bin_HiFiLES_LDADD += @CUDA_LD@
 
 # BLAS
-ifeq ($(BLAS),ACCELERATE_BLAS)
-	LIBS	+= -framework Accelerate
-	OPTS	+= -flax-vector-conversions 
-endif
-
-ifeq ($(BLAS),STANDARD_BLAS)
-  LIBS    += -L $(BLAS_DIR)/lib -lcblas
-endif
 ___bin_HiFiLES_CXXFLAGS += @BLAS_CXX@
+___bin_HiFiLES_LDFLAGS += @BLAS_LDFLAGS@
 ___bin_HiFiLES_LDADD += @BLAS_LD@
