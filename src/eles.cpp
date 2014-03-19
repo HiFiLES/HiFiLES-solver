@@ -706,124 +706,106 @@ void eles::rm_detjac_upts_cpu(void)
 #endif
 }
 
-// advance with rk11 (forwards euler)
+// advance solution
 
-void eles::advance_rk11(void)
-{
+void eles::AdvanceSolution(int in_step, int adv_type) {
+  
   if (n_eles!=0)
-    {
-
+  {
+    
+    /*! Time integration using a forwards Euler integration. */
+    
+    if (adv_type == 0) {
+      
       /*!
-    Performs B = B + (alpha*A) where: \n
-    alpha = -run_input.dt \n
-    A = div_tconf_upts(0)\n
-    B = disu_upts(0)
-    */
-
+       Performs B = B + (alpha*A) where: \n
+       alpha = -run_input.dt \n
+       A = div_tconf_upts(0)\n
+       B = disu_upts(0)
+       */
+      
 #ifdef _CPU
       for (int i=0;i<n_fields;i++)
+      {
+        for (int ic=0;ic<n_eles;ic++)
         {
-          for (int ic=0;ic<n_eles;ic++)
-            {
-              for (int inp=0;inp<n_upts_per_ele;inp++)
-                {
-                  disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
-                }
-            }
+          for (int inp=0;inp<n_upts_per_ele;inp++)
+          {
+            disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+          }
         }
+      }
 #endif
-
+      
 #ifdef _GPU
       RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
 #endif
-
-      /*
-
-    #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
-    cblas_daxpy(n_eles*n_fields*n_upts_per_ele,-run_input.dt,div_tconf_upts(0).get_ptr_cpu(),1,disu_upts(0).get_ptr_cpu(),1);
-
-
-    #endif
-
-
-    cublasDaxpy(n_eles*n_fields*n_upts_per_ele,-run_input.dt,div_tconf_upts(0).get_ptr_gpu(),1,disu_upts(0).get_ptr_gpu(),1);
-
-    #endif
-  */
+      
     }
-}
-
-// advance with rk33 (three-stage third-order runge-kutta)
-
-void eles::advance_rk33(int in_step)
-{
-  FatalError("Advance_rk33 not implemented");
-}
-
-// advance with rk44 (four-stage forth-order runge-kutta)
-
-void eles::advance_rk44(int in_step)
-{
-  FatalError("Advance_rk44 not implemented");
-}
-
-// advance with rk45 (five-stage forth-order low-storage runge-kutta)
-
-void eles::advance_rk45(int in_step)
-{	
-  if (n_eles!=0)
-    {
-
+    
+    /*! Time integration using a RK45 method. */
+    
+    else if (adv_type == 3) {
+      
       double rk4a, rk4b;
       if (in_step==0) {
-          rk4a=    0.0;
-          rk4b=   0.149659021999229;
-        }
+        rk4a=    0.0;
+        rk4b=   0.149659021999229;
+      }
       else if (in_step==1) {
-          rk4a=   -0.417890474499852;
-          rk4b=   0.379210312999627;
-        }
+        rk4a=   -0.417890474499852;
+        rk4b=   0.379210312999627;
+      }
       else if (in_step==2) {
-          rk4a=   -1.192151694642677;
-          rk4b=   0.822955029386982;
-        }
+        rk4a=   -1.192151694642677;
+        rk4b=   0.822955029386982;
+      }
       else if (in_step==3) {
-          rk4a=   -1.697784692471528;
-          rk4b=   0.699450455949122;
-        }
+        rk4a=   -1.697784692471528;
+        rk4b=   0.699450455949122;
+      }
       else if (in_step==4) {
-          rk4a=   -1.514183444257156;
-          rk4b=   0.153057247968152;
-        }
-
+        rk4a=   -1.514183444257156;
+        rk4b=   0.153057247968152;
+      }
+      
 #ifdef _CPU
-
+      
       double res, rhs;
       for (int ic=0;ic<n_eles;ic++)
+      {
+        for (int i=0;i<n_fields;i++)
         {
-          for (int i=0;i<n_fields;i++)
-            {
-              for (int inp=0;inp<n_upts_per_ele;inp++)
-                {
-                  rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
-                  res = disu_upts(1)(inp,ic,i);
-                  res = rk4a*res + run_input.dt*rhs;
-
-                  disu_upts(1)(inp,ic,i) = res;
-                  disu_upts(0)(inp,ic,i) += rk4b*res;
-                }
-            }
+          for (int inp=0;inp<n_upts_per_ele;inp++)
+          {
+            rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
+            res = disu_upts(1)(inp,ic,i);
+            res = rk4a*res + run_input.dt*rhs;
+            
+            disu_upts(1)(inp,ic,i) = res;
+            disu_upts(0)(inp,ic,i) += rk4b*res;
+          }
         }
+      }
+      
 #endif
-
+      
 #ifdef _GPU
-
+      
       RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
-
+      
 #endif
-
+      
     }
+    
+    /*! Time integration not implemented. */
+    
+    else {
+      cout << "ERROR: Time integration type not recognised ... " << endl;
+    }
+    
+  }
+  
 }
 
 

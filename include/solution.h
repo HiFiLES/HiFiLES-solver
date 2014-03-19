@@ -80,6 +80,7 @@ struct solution {
   array<double> inv_force;
   array<double> vis_force;
   array<double> norm_residual;
+  array<double> diagnostics;
 
   /*! Plotting related. */
   

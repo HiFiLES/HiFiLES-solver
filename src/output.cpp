@@ -2752,7 +2752,7 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 
 }
 
-void compute_forces(int in_file_num, double in_time,struct solution* FlowSol) {
+void compute_forces(int in_file_num, struct solution* FlowSol) {
 
   char file_name_s[50], *file_name;
   ofstream cp_file;
@@ -2856,11 +2856,7 @@ void compute_forces(int in_file_num, double in_time,struct solution* FlowSol) {
 }
 
 // Calculate global diagnostic quantities
-void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
-{
-
-  char file_name_s[50];
-  char *file_name;
+void compute_diagnostics(int in_file_num, struct solution* FlowSol) {
 
   // copy solution to cpu
 #ifdef _GPU
@@ -2880,16 +2876,13 @@ void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
 #endif
 
   int ndiags = run_input.n_diagnostics;
-  array <double> diagnostics(ndiags);
-  for(int j=0;j<ndiags;++j)
-    diagnostics(j) = 0.;
 
   // Loop over element types
   for(int i=0;i<FlowSol->n_ele_types;i++)
     {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
         {
-          FlowSol->mesh_eles(i)->CalcDiagnostics(ndiags, diagnostics);
+          FlowSol->mesh_eles(i)->CalcDiagnostics(ndiags, FlowSol->diagnostics);
         }
     }
 
@@ -2899,26 +2892,11 @@ void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
   for(int j=0;j<ndiags;++j)
     {
       diagnostics_global(j) = 0.0;
-      MPI_Reduce(&diagnostics(j),&diagnostics_global(j),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      diagnostics(j) = diagnostics_global(j);
+      MPI_Reduce(&FlowSol->diagnostics(j),&diagnostics_global(j),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      FlowSol->diagnostics(j) = diagnostics_global(j);
     }
 #endif
-
-  if (FlowSol->rank==0)
-    {
-      sprintf(file_name_s,"statfile.dat",FlowSol->rank);
-      file_name = &file_name_s[0];
-      ofstream write_diagnostics;
-      write_diagnostics.open(file_name,ios::app);
-
-      write_diagnostics << scientific << setprecision(7) <<  in_time << " ";
-      for(int j=0;j<ndiags;++j)
-        {
-          write_diagnostics << setw(10) << scientific << setprecision(7) << diagnostics(j) << " ";
-        }
-      write_diagnostics << endl;
-      write_diagnostics.close();
-    }
+  
 }
 
 void compute_error(int in_file_num, struct solution* FlowSol)
@@ -3001,8 +2979,6 @@ void compute_error(int in_file_num, struct solution* FlowSol)
                 }
             }
         }
-
-      //cout << scientific << "    error= " << setprecision(13) << error << endl;
 
       for(int j=0;j<n_fields; j++) {
           cout << scientific << " sol error, field " << j << " = " << setprecision(13) << error(0,j) << endl;
@@ -3105,7 +3081,7 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 
 }
 
-int compute_residual(struct solution* FlowSol) {
+void compute_residual(struct solution* FlowSol) {
   
   int i, j, n_upts = 0, n_fields;
   double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
@@ -3146,8 +3122,6 @@ int compute_residual(struct solution* FlowSol) {
   
   if (FlowSol->rank == 0) {
     
-    FlowSol->norm_residual.setup(5);
-
     // Compute the norm
     for(i=0; i<n_fields; i++) {
       if (run_input.res_norm_type==1) { FlowSol->norm_residual(i) = sum[i] / n_upts; } // L1 norm
@@ -3156,20 +3130,21 @@ int compute_residual(struct solution* FlowSol) {
       
       if (isnan(norm[i])) {
         cout << "NaN residual at iteration. Exiting" << endl;
-        return 1;
       }
     }
     
   }
   
-  return 0;
 }
 
 void history_output(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
   
   int i, n_fields;
-  bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
   clock_t final;
+
+  bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
+  int n_diags = run_input.n_diagnostics;
+  double in_time = FlowSol->time;
   
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
@@ -3181,8 +3156,20 @@ void history_output(int in_file_num, clock_t init, ofstream *write_hist, struct 
       write_hist->open("history.plt", ios::out);
       write_hist->precision(15);
       write_hist[0] << "TITLE = \"HiFiLES simulation\"" << endl;
-      if (FlowSol->n_dims==2) write_hist[0] << "VARIABLES = \"Iteration\",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"Time(m)\"" << endl;
-      else write_hist[0] <<  "VARIABLES = \"Iteration\",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"F<sub>z</sub>(Total)\",\"Time(m)\"" << endl;
+      
+      write_hist[0] << "VARIABLES = \"Iteration\"";
+      
+      // Add residual and variables
+      if (FlowSol->n_dims==2) write_hist[0] << ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\"";
+      else write_hist[0] <<  ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"F<sub>z</sub>(Total)\"";
+      
+      // Add diagnostics
+      for(i=0; i<n_diags; i++)
+        write_hist[0] << ",\"Diagnostics[" << i << "]\"";
+  
+      // Add physical and computational time
+      write_hist[0] << ",\"Time<sub>Physical</sub>\",\"Time<sub>Comp</sub>(m)\"" << endl;
+      
       write_hist[0] << "ZONE T= \"Convergence history\"" << endl;
     }
     
@@ -3207,6 +3194,13 @@ void history_output(int in_file_num, clock_t init, ofstream *write_hist, struct 
       cout.width(15); cout << FlowSol->inv_force(i) + FlowSol->vis_force(i);
       write_hist[0] <<", " << FlowSol->inv_force(i) + FlowSol->vis_force(i);
     }
+    
+    // Output diagnostics
+    for(i=0; i<n_diags; i++)
+      write_hist[0] <<", " << FlowSol->diagnostics(i);
+
+    // Output physical time
+    write_hist[0] << ", " << in_time << endl;
     
     // Compute execution time
     final = clock()-init;

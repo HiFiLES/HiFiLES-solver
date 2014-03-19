@@ -141,17 +141,8 @@ public:
   /*! calculate divergence of transformed continuous viscous flux at solution points */
   //void calc_div_tconvisf_upts(int in_div_tconinvf_upts_to);
   
-  /*! advance with rk11 (forwards euler) */
-  void advance_rk11(void);
-  
-  /*! advance with rk33 (three-stage third-order runge-kutta) */
-  void advance_rk33(int in_step);
-  
-  /*! advance with rk44 (four-stage forth-order runge-kutta) */
-  void advance_rk44(int in_step);
-  
-  /*! advance with rk45 (five-stage forth-order low-storage runge-kutta) */
-  void advance_rk45(int in_step);
+  /*! advance solution using a runge-kutta scheme */
+  void AdvanceSolution(int in_step, int adv_type);
 
   /*! get number of elements */
   int get_n_eles(void);

@@ -53,16 +53,16 @@ void write_vtu_bin(int in_file_num, struct solution* FlowSol);
 void write_restart(int in_file_num, struct solution* FlowSol);
 
 /*! compute forces on wall faces*/
-void compute_forces(int in_file_num, double in_time, struct solution* FlowSol);
+void compute_forces(int in_file_num, struct solution* FlowSol);
 
 /*! compute diagnostics */
-void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol);
+void compute_diagnostics(int in_file_num, struct solution* FlowSol);
 
 /*! compute error */
 void compute_error(int in_file_num, struct solution* FlowSol);
 
 /*! monitor convergence of residual */
-int compute_residual(struct solution* FlowSol);
+void compute_residual(struct solution* FlowSol);
 
 /*! monitor convergence of residual */
 void history_output(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol);
