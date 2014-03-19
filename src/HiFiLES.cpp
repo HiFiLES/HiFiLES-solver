@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
   int i_steps = 0;                    /*!< Iteration index */
   int RKSteps;                        /*!< Number of RK steps */
   ifstream run_input_file;            /*!< Config input file */
-  clock_t init, final;                /*!< To control the time */
+  clock_t init_time, final_time;                /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
   ofstream write_hist;                /*!< Output files (forces, statistics, and history) */
   
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   
   InitSolution(&FlowSol);
   
-  init = clock();
+  init_time = clock();
   
   /////////////////////////////////////////////////
   /// Pre-processing
@@ -174,19 +174,19 @@ int main(int argc, char *argv[]) {
 
       /*! Compute the value of the forces. */
       
-      compute_forces(FlowSol.ini_iter+i_steps, &FlowSol);
+      CalcForces(FlowSol.ini_iter+i_steps, &FlowSol);
       
       /*! Compute diagnostics. */
       
-      compute_diagnostics(FlowSol.ini_iter+i_steps, &FlowSol);
+      CalcDiagnostics(FlowSol.ini_iter+i_steps, &FlowSol);
       
       /*! Compute the norm of the residual. */
       
-      compute_residual(&FlowSol);
+      CalcNormResidual(&FlowSol);
       
       /*! Output the history file. */
       
-      history_output(FlowSol.ini_iter+i_steps, init, &write_hist, &FlowSol);
+      HistoryOutput(FlowSol.ini_iter+i_steps, init_time, &write_hist, &FlowSol);
       
     }
     
@@ -220,8 +220,8 @@ int main(int argc, char *argv[]) {
   
   /*! Compute execution time. */
   
-  final = clock()-init;
-  printf("Execution time= %f s\n", (double) final/((double) CLOCKS_PER_SEC));
+  final_time = clock()-init_time;
+  printf("Execution time= %f s\n", (double) final_time/((double) CLOCKS_PER_SEC));
   
   /*! Finalize MPI. */
   

@@ -2752,7 +2752,7 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 
 }
 
-void compute_forces(int in_file_num, struct solution* FlowSol) {
+void CalcForces(int in_file_num, struct solution* FlowSol) {
 
   char file_name_s[50], *file_name;
   ofstream cp_file;
@@ -2856,7 +2856,7 @@ void compute_forces(int in_file_num, struct solution* FlowSol) {
 }
 
 // Calculate global diagnostic quantities
-void compute_diagnostics(int in_file_num, struct solution* FlowSol) {
+void CalcDiagnostics(int in_file_num, struct solution* FlowSol) {
 
   // copy solution to cpu
 #ifdef _GPU
@@ -3081,7 +3081,7 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 
 }
 
-void compute_residual(struct solution* FlowSol) {
+void CalcNormResidual(struct solution* FlowSol) {
   
   int i, j, n_upts = 0, n_fields;
   double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
@@ -3137,7 +3137,7 @@ void compute_residual(struct solution* FlowSol) {
   
 }
 
-void history_output(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
+void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
   
   int i, n_fields;
   clock_t final;
