@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
 
           compute_forces(FlowSol.ini_iter+i_steps, FlowSol.time, &FlowSol);
 
-          error_state = monitor_residual(FlowSol.ini_iter+i_steps, init, &write_hist, &FlowSol);
+          error_state = compute_residual(&FlowSol);
 
           if (error_state) cout << "error_state=" << error_state << "rank=" << FlowSol.rank << endl;
 
@@ -189,6 +189,8 @@ int main(int argc, char *argv[]) {
               if (error_state == 1) return 1;
               compute_error(FlowSol.ini_iter+i_steps, &FlowSol);
             }
+
+          history_output(FlowSol.ini_iter+i_steps, init, &write_hist, &FlowSol);
 
         }
 

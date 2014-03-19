@@ -4513,7 +4513,7 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
     }
 }
 
-void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force, ofstream& cp_file)
+void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force, ofstream& cp_file, bool output)
 {
 
   array<double> u_l(n_fields),norm(n_dims);

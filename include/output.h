@@ -62,7 +62,10 @@ void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol);
 void compute_error(int in_file_num, struct solution* FlowSol);
 
 /*! monitor convergence of residual */
-int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol);
+int compute_residual(struct solution* FlowSol);
+
+/*! monitor convergence of residual */
+void history_output(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol);
 
 /*! check if the solution is bounded !*/
 void check_stability(struct solution* FlowSol);

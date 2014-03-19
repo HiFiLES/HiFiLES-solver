@@ -3105,15 +3105,15 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 
 }
 
-int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
+int compute_residual(struct solution* FlowSol) {
   
   int i, j, n_upts = 0, n_fields;
   double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
-  bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
-  clock_t final;
   
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
+  
+  
   
 #ifdef _GPU
   // copy residual to cpu
@@ -3146,6 +3146,36 @@ int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct
   
   if (FlowSol->rank == 0) {
     
+    FlowSol->norm_residual.setup(5);
+
+    // Compute the norm
+    for(i=0; i<n_fields; i++) {
+      if (run_input.res_norm_type==1) { FlowSol->norm_residual(i) = sum[i] / n_upts; } // L1 norm
+      else if (run_input.res_norm_type==2) { FlowSol->norm_residual(i) = sqrt(sum[i]) / n_upts; } // L2 norm
+      else FatalError("norm_type not recognized");
+      
+      if (isnan(norm[i])) {
+        cout << "NaN residual at iteration. Exiting" << endl;
+        return 1;
+      }
+    }
+    
+  }
+  
+  return 0;
+}
+
+void history_output(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
+  
+  int i, n_fields;
+  bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
+  clock_t final;
+  
+  if (FlowSol->n_dims==2) n_fields = 4;
+  else n_fields = 5;
+  
+  if (FlowSol->rank == 0) {
+    
     // Open history file
     if (in_file_num == 1) {
       write_hist->open("history.plt", ios::out);
@@ -3154,18 +3184,6 @@ int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct
       if (FlowSol->n_dims==2) write_hist[0] << "VARIABLES = \"Iteration\",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"Time(m)\"" << endl;
       else write_hist[0] <<  "VARIABLES = \"Iteration\",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"F<sub>z</sub>(Total)\",\"Time(m)\"" << endl;
       write_hist[0] << "ZONE T= \"Convergence history\"" << endl;
-    }
-    
-    // Compute the norm
-    for(i=0; i<n_fields; i++) {
-      if (run_input.res_norm_type==1) { norm[i] = sum[i] / n_upts; } // L1 norm
-      else if (run_input.res_norm_type==2) { norm[i] = sqrt(sum[i]) / n_upts; } // L2 norm
-      else FatalError("norm_type not recognized");
-      
-      if (isnan(norm[i])) {
-        cout << "NaN residual at iteration " << in_file_num << ". Exiting" << endl;
-        return 1;
-      }
     }
     
     // Write the header
@@ -3180,8 +3198,8 @@ int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct
     cout.width(6); cout << in_file_num;
     write_hist[0] << in_file_num;
     for(i=0; i<n_fields; i++) {
-      cout.width(15); cout << norm[i];
-      write_hist[0] <<", " << log10(norm[i]);
+      cout.width(15); cout << FlowSol->norm_residual(i);
+      write_hist[0] <<", " << log10(FlowSol->norm_residual(i));
     }
     
     // Output forces
@@ -3189,15 +3207,13 @@ int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct
       cout.width(15); cout << FlowSol->inv_force(i) + FlowSol->vis_force(i);
       write_hist[0] <<", " << FlowSol->inv_force(i) + FlowSol->vis_force(i);
     }
-
+    
     // Compute execution time
     final = clock()-init;
     write_hist[0] << ", " << (double) final/(((double) CLOCKS_PER_SEC) * 60.0) << endl;
   }
   
-  return 0;
 }
-
 
 void check_stability(struct solution* FlowSol)
 {
