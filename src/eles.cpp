@@ -122,6 +122,25 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
           disu_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
         }
 
+      // Allocate storage for timestep
+      // If using global minimum, only one timestep
+      if (run_input.dt_type == 1)
+        dt_local.setup(1);
+      // If using local, one timestep per element
+      else
+        dt_local.setup(n_eles);
+
+      // If in parallel and using global minumum timestep, allocate storage
+      // for minimum timesteps in each partition
+#ifdef _MPI
+      if (run_input.dt_type == 1)
+        {
+          MPI_Comm_size(MPI_COMM_WORLD,&nproc);
+          dt_local_mpi.setup(nproc);
+          dt_local_mpi.initialize_to_zero();
+        }
+#endif
+
       // Initialize to zero
       for (int m=0;m<n_adv_levels;m++)
         for (int i=0;i<n_upts_per_ele;i++)
@@ -482,6 +501,18 @@ void eles::set_ics(double& time)
             }
         }
     }
+
+    // If required, calculate element reference lengths
+    if (run_input.dt_type != 0)
+      {
+        // Allocate array
+        h_ref.setup(n_eles);
+        h_ref.initialize_to_zero();
+
+        // Call element specific function to obtain length
+        for (int i=0; i<n_eles; i++)
+          h_ref(i) = (*this).calc_h_ref_specific(i);
+      }
 }
 
 
@@ -721,13 +752,61 @@ void eles::advance_rk11(void)
     */
 
 #ifdef _CPU
+      // If using global minimum timestep based on CFL, determine
+      // global minimum
+      if (run_input.dt_type == 1)
+        {
+          // Find minimum timestep
+          dt_local(0) = 1e12; // Set to large value
+
+          for (int ic=0; ic<n_eles; ic++)
+            {
+              dt_local_new = calc_dt_local(ic);
+              
+              if (dt_local_new < dt_local(0))
+                  dt_local(0) = dt_local_new;
+            }
+
+          // If running in parallel, gather minimum timestep values from
+          // each partition and find global minumum across partitions
+#ifdef _MPI
+          MPI_Barrier(MPI_COMM_WORLD);
+          MPI_ALLgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
+              1, MPI_DOUBLE, MPI_COMM_WORLD);
+          MPI_Barrier(MPI_COMM_WORLD);
+
+          dt_local(0) = dt_local_mpi.get_min();
+#endif
+        }
+
+        // If using local timestepping, just compute and store all local
+        // timesteps
+        if (run_input.dt_type == 2)
+          {
+            for (int ic=0; ic<n_eles; ic++)
+              dt_local(ic) = calc_dt_local(ic);
+          }
+
       for (int i=0;i<n_fields;i++)
         {
           for (int ic=0;ic<n_eles;ic++)
             {
               for (int inp=0;inp<n_upts_per_ele;inp++)
                 {
-                  disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                  // User supplied timestep
+                  if (run_input.dt_type == 0)
+                    disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                  
+                  // Global minimum timestep
+                  else if (run_input.dt_type == 1)
+                    disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+
+                  // Element local timestep
+                  else if (run_input.dt_type == 2)
+                    disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                  else
+                    FatalError("ERROR: dt_type not recognized!")
+
                 }
             }
         }
@@ -798,6 +877,42 @@ void eles::advance_rk45(int in_step)
         }
 
 #ifdef _CPU
+      // for first stage only, compute timestep
+      if (in_step == 0)
+        {
+          if (run_input.dt_type == 1)
+            {
+              dt_local(0) = 1e12;
+
+              for (int ic=0; ic<n_eles; ic++)
+                {
+                  dt_local_new = calc_dt_local(ic);
+
+                  if (dt_local_new < dt_local(0))
+                    {
+                      dt_local(0) = dt_local_new;
+                    }
+                }
+            
+         
+
+#ifdef _MPI
+              MPI_Barrier(MPI_COMM_WORLD);
+              MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),1,MPI_DOUBLE,MPI_COMM_WORLD);
+              MPI_Barrier(MPI_COMM_WORLD);
+
+              dt_local(0) = dt_local_mpi.get_min();
+#endif
+            }
+
+          if (run_input.dt_type == 2)
+            {
+              for (int ic=0; ic<n_eles; ic++)
+                {
+                  dt_local(ic) = calc_dt_local(ic);
+                }
+            }
+        }
 
       double res, rhs;
       for (int ic=0;ic<n_eles;ic++)
@@ -808,7 +923,13 @@ void eles::advance_rk45(int in_step)
                 {
                   rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
                   res = disu_upts(1)(inp,ic,i);
-                  res = rk4a*res + run_input.dt*rhs;
+
+                  if (run_input.dt_type == 0)
+                    res = rk4a*res + run_input.dt*rhs;
+                  else if (run_input.dt_type == 1)
+                    res = rk4a*res + dt_local(0)*rhs;
+                  else if (run_input.dt_type == 2)
+                    res = rk4a*res + dt_local(ic)*rhs;
 
                   disu_upts(1)(inp,ic,i) = res;
                   disu_upts(0)(inp,ic,i) += rk4b*res;
@@ -826,6 +947,42 @@ void eles::advance_rk45(int in_step)
     }
 }
 
+double eles::calc_dt_local(int in_ele)
+  {
+    double lam, lam_new;
+    double out_dt_local;
+
+    // 2-D Elements
+    if (n_dims == 2)
+      {
+        double u,v,p,c;
+
+        lam = 0;
+
+        // Calculate maximum internal wavespeed per element
+        for (int i=0; i<n_upts_per_ele; i++)
+          {
+            u = disu_upts(0)(i,in_ele,1)/disu_upts(0)(i,in_ele,0);
+            v = disu_upts(0)(i,in_ele,2)/disu_upts(0)(i,in_ele,0);
+            p = (run_input.gamma - 1.0) * (disu_upts(0)(i,in_ele,3) - 0.5*disu_upts(0)(i,in_ele,0)*(u*u+v*v));
+            c = sqrt(run_input.gamma * p/disu_upts(0)(i,in_ele,0));
+
+            lam_new = sqrt(u*u + v*v) + c;
+
+            if (lam < lam_new)
+              lam = lam_new;
+          }
+
+          out_dt_local = run_input.CFL*h_ref(in_ele)/lam*1.0/(2.0*run_input.order + 1.0);
+      }
+
+    else if (n_dims == 3)
+    {
+      FatalError("Timestep type is not implemented in 3D yet.");
+    }
+
+    return out_dt_local;
+  }
 
 // calculate the discontinuous solution at the flux points 
 

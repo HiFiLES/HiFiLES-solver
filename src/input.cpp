@@ -153,9 +153,17 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> volume_cub_order;
         }
+      else if (!param_name.compare("dt_type"))
+        {
+          in_run_input_file >> dt_type;
+        }
       else if (!param_name.compare("dt"))
         {
           in_run_input_file >> dt;
+        }
+      else if (!param_name.compare("CFL"))
+        {
+          in_run_input_file >> CFL;
         }
       else if (!param_name.compare("n_steps"))
         {

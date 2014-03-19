@@ -107,6 +107,9 @@ public:
   /*! Calculate element volume */
   double calc_ele_vol(double& detjac);
 
+  /*! Element reference length calculation */
+  double calc_h_ref_specific(int in_ele);
+
 protected:
 
   // methods

@@ -13,7 +13,7 @@ NODE=     CPU
 CODE=     DEBUG
 BLAS=     STANDARD_BLAS
 COMP=     GCC
-PARALLEL= MPI
+PARALLEL= NO
 TECIO=    NO
 
 BLAS_DIR= /usr/local/atlas

@@ -153,6 +153,9 @@ public:
   /*! advance with rk45 (five-stage forth-order low-storage runge-kutta) */
   void advance_rk45(int in_step);
 
+  /*! Calculate element local timestep */
+  double calc_dt_local(int in_ele);
+
   /*! get number of elements */
   int get_n_eles(void);
 
@@ -321,6 +324,9 @@ public:
   // #### virtual methods ####
 
   virtual void setup_ele_type_specific(int in_run_type)=0;
+
+  /*! prototype for element reference length calculation */
+  virtual double calc_h_ref_specific(int in_eles) = 0;
 
   virtual int read_restart_info(ifstream& restart_file)=0;
 
@@ -779,5 +785,13 @@ protected:
   int n_dims_mul_n_upts_per_ele;
 
   int rank;
+
+  /*! reference element length */
+  array<double> h_ref;
+  
+  /*! element local timestep */
+  array<double> dt_local;
+  double dt_local_new;
+  array<double> dt_local_mpi;
 
 };
