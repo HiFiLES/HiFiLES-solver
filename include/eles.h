@@ -785,6 +785,7 @@ protected:
   int n_dims_mul_n_upts_per_ele;
 
   int rank;
+  int nproc;
 
   /*! reference element length */
   array<double> h_ref;

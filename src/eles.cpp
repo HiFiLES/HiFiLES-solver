@@ -771,7 +771,7 @@ void eles::advance_rk11(void)
           // each partition and find global minumum across partitions
 #ifdef _MPI
           MPI_Barrier(MPI_COMM_WORLD);
-          MPI_ALLgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
+          MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
               1, MPI_DOUBLE, MPI_COMM_WORLD);
           MPI_Barrier(MPI_COMM_WORLD);
 
