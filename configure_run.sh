@@ -19,9 +19,9 @@ HIFILES_RUN=$PWD/bin
 # Basic User-Modifiable Build Settings [Change these as desired]
 NODE="CPU"              # CPU or GPU
 CODE="DEBUG"            # DEBUG or RELEASE
-BLAS="STANDARD_BLAS"    # STANDARD_BLAS, ACCLERATE_BLAS, MKL_BLAS, NO_BLAS
-PARALLEL="MPI"          # MPI or NO
-TECIO="NO"              # YES or NO
+BLAS="ATLAS_BLAS"       # *_BLAS: ATLAS, STANDARD, ACCLERATE, MKL, or NO
+PARALLEL="no"           # MPI or NO
+TECIO="no"              # YES or NO
 # ---------------------------------------------------------------
 # Compiler Selections [Change compilers or add full filepaths if needed]
 CXX="g++"               # Typically g++ (default) or icpc (Intel)
@@ -29,8 +29,9 @@ NVCC="nvcc"             # NVidia CUDA compiler
 MPICC="mpicxx"          # MPI compiler
 # ---------------------------------------------------------------
 # Library Locations [Change filepaths as needed]
-BLAS_LIB="/usr/local/atlas/lib"
+#BLAS_LIB="/usr/local/atlas/lib"
 BLAS_INCLUDE="/usr/local/atlas/include"
+BLAS_LIB="/usr/lib/atlas-base"
 
 PARMETIS_LIB="/usr/local/lib"
 PARMETIS_INCLUDE="/usr/local/include"
@@ -53,12 +54,15 @@ then
     _MPI=$MPICC
 else
     _MPI="no"
+    PARMETIS_LIB="no"
+    PARMETIS_INCLUDE="no"
 fi
-if [[ "$TECIO" == "NO" ]]
-    $TECIO_LIB="no"
-    $TECIO_INCLUDE="no"
+if [[ "$TECIO" == "no" ]]
+then
+    TECIO_LIB="no"
+    TECIO_INCLUDE="no"
 fi
-./configure -prefix=$HIFILES_RUN/.. \
+./configure --prefix=$HIFILES_RUN/.. \
             --with-CXX=$CXX \
             --with-BLAS=$BLAS \
             --with-BLAS-lib=$BLAS_LIB \

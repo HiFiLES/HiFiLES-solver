@@ -14,7 +14,8 @@
 AC_INIT([HiFiLES], [1.0.0], [HiFiLES-dev@lists.stanford.edu],
         [HiFiLES], [http://hifiles.stanford.edu])
 AC_PREREQ([2.59])
-AM_INIT_AUTOMAKE([subdir-objects])
+#AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE([foreign])
 
 # optional bindings
 AC_ARG_WITH(CUDA,
@@ -99,14 +100,15 @@ then
     else
       SUFFIX=""
     fi
-	CUDA_LIBS="-L$with_CUDA_lib -lcudart -lcublas -lcusparse -lm"
+	CUDA_LD="-L$with_CUDA_lib -lcudart -lcublas -lcusparse -lm"
     NVCC=$with_CUDA
 else
 	AM_CONDITIONAL(BUILD_GPU,false)
 	CUDA_CXX="-D_CPU"
+	CUDA_LD=
 fi
 AC_SUBST([NVCC])
-AC_SUBST([CUDA_LIBS])
+AC_SUBST([CUDA_LD])
 AC_SUBST([CUDA_CXX])
 AC_SUBST([NVCCFLAGS])
 
@@ -144,14 +146,14 @@ fi
 # ParMETIS version check
 if test "$with_ParMetis_version" == "5"
 then
-	ParMETISversion=-DMETIS_5
+	ParMETISversion=-DPARMETIS_5
 fi
 
 if test "$have_ParMetis" != "no"
 then
   	AM_CONDITIONAL(BUILD_PARMETIS,true)
-	PARMETIS_CXX="-I"$with_ParMetis_include" "$ParMETISversion""
-	PARMETIS_LD="$with_ParMetis_lib"/$ParMETISlib
+	PARMETIS_CXX="-I"$with_ParMetis_include $ParMETISversion
+	PARMETIS_LD=$with_ParMetis_lib"/"$ParMETISlib
 else
 	AM_CONDITIONAL(BUILD_PARMETIS,false)
 	PARMETIS_CXX=-DNO_PARMETIS
@@ -185,7 +187,7 @@ if test "$have_Tecio" != "no"
 then
 	if test "$with_Tecio_include" != "no"
 	then
-		AC_CHECK_FILE([$with_Tecio_include/$Tecioheader],[have_Tecio='yes'],[have_Tecio='no']) 
+		AC_CHECK_FILE([$with_Tecio_include/$Tecioheader],[have_Tecio="yes"],[have_Tecio="no"]) 
 		if test "$have_Tecio" == "no"
 		then
 			AC_MSG_ERROR([Tecplot linking requested but header file not found.])
@@ -198,8 +200,8 @@ fi
 if test "$have_Tecio" != "no"
 then
   	AM_CONDITIONAL(BUILD_TECIO,true)
-	TECIO_CXX=-I"$with_Tecio_include"
-	TECIO_LD="$with_Tecio_lib"/$Teciolib
+	TECIO_CXX="-I"$with_Tecio_include
+	TECIO_LD=$with_Tecio_lib"/"$Teciolib
 else
 	AM_CONDITIONAL(BUILD_TECIO,false)
 	TECIO_CXX=-DNO_TECIO
@@ -223,28 +225,59 @@ fi
 # *** still need to implement library & header-file checks ***
 if test "$with_BLAS" == "ACCELERATE_BLAS"
 then
-    BLAS_CXX=" -flax-vector-conversions -DACCELERATE_BLAS"
+    BLAS_CXX=" -flax-vector-conversions -D_ACCELERATE_BLAS"
     BLAS_LDFLAGS=" -framework Accelerate"
     BLAS_LD=
-else if test "$with_BLAS" == "STANDARD_BLAS"
+elif test "$with_BLAS" == "STANDARD_BLAS"
 then
-    BLAS_CXX="-I$with_BLAS_include -DSTANDARD_BLAS"
-    BLAS_LD="$with_BLAS_lib/libcblas.a"
-    BLAS_LDFLAGS=
+    AC_CHECK_FILE([$with_BLAS_lib/libcblas.a],[have_BLAS="yes"],[have_BLAS="no"]) 
+	if test "$have_BLAS" != "no"
+	then
+		BLAS_CXX="-I $with_BLAS_include -D_STANDARD_BLAS"
+        BLAS_LD="$with_BLAS_lib/libcblas.a"
+        BLAS_LDFLAGS=
+	fi
+	if test "$have_BLAS" == "no"
+	then
+		AC_MSG_ERROR([BLAS linking requested but library file not found.])
+	fi
+elif test "$with_BLAS" == "ATLAS_BLAS"
+then
+    AC_CHECK_FILE([$with_BLAS_lib/libcblas.a],[have_BLAS="yes"],[have_BLAS="no"]) 
+	if test "$have_BLAS" != "no"
+	then
+	    AC_CHECK_FILE([$with_BLAS_lib/libatlas.a],[have_BLAS="yes"],[have_BLAS="no"]) 
+	fi
+	if test "$have_BLAS" != "no"
+	then
+       	BLAS_CXX="-I $with_BLAS_include -D_STANDARD_BLAS"
+        BLAS_LD="$with_BLAS_lib/libcblas.a $with_BLAS_lib/libatlas.a"
+        BLAS_LDFLAGS=
+	else
+		AC_MSG_ERROR([BLAS linking requested but library file not found.])
+	fi
 # needs more work here (not terribly familiar with our MKL usage)
-if test "$with_BLAS" == "MKL_BLAS"
+elif test "$with_BLAS" == "MKL_BLAS"
 then
     if test "$CXX" == "icpc"
     then
-       BLAS_CXX="-mkl=parallel -DMKL_BLAS"
-       BLAS_LD=
-       BLAS_LDFLAGS=
+        BLAS_CXX="-mkl=parallel -D_MKL_BLAS"
+        BLAS_LD=
+        BLAS_INCLUDE=
+        BLAS_LDFLAGS=
     fi
-else if test "$with_BLAS" == "NO_BLAS"
+elif test "$with_BLAS" == "NO_BLAS"
 then
     BLAS_CXX="-DNO_BLAS"
     BLAS_LD=
     BLAS_LDFLAGS=
+    have_BLAS="no"
+elif test "$with_BLAS" == "no"
+then
+    BLAS_CXX="-DNO_BLAS"
+    BLAS_LD=
+    BLAS_LDFLAGS=
+    have_BLAS="no"
 fi
 
 AC_SUBST([BLAS_CXX])
@@ -258,7 +291,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_RANLIB
 AC_OUTPUT(Makefile \
-	src/Makefile)
+	obj/Makefile)
 
 abs_srcdir=`(cd $srcdir && pwd)`
 abs_prefix=`(cd $prefix && pwd)`
@@ -279,14 +312,5 @@ Build Configuration Summary:
     MPI support:          $have_MPI
     ParMetis support:     $have_ParMetis
     TecIO support:        $have_Tecio
-
-Please be sure to add the [\$]HIFILES_HOME and [\$]HIFILES_RUN environment variables, and update your [\$]PATH with [\$]HIFILES_RUN
-
-Based on the input to this configuration, add these lines to your .bashrc file -
-
-export HIFILES_RUN="${abs_prefix}/bin"
-export HIFILES_HOME="${abs_srcdir}"
-export PATH=[\$]PATH:[\$]HIFILES_RUN
-
 
 ])
