@@ -18,7 +18,7 @@ run_type                          // 0: Normal run mode, 1: Plot mode (solution 
 order                             // Order of basis polynomials
 3
 dt_type                           // 0: User-supplied, 1: Global, 2: Local
-2
+0
 dt 
 0.000002
 CFL                               
