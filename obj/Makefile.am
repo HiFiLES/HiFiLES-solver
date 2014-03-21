@@ -17,6 +17,8 @@ BUILD_MPI =      @BUILD_MPI@
 BUILD_GPU =      @BUILD_GPU@
 
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
+AM_CXXFLAGS = -g o0
+AM_CPPFLAGS = -I../include/
 
 bin_PROGRAMS = ../bin/HiFiLES
 
@@ -25,7 +27,7 @@ bin_PROGRAMS = ../bin/HiFiLES
 ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/input.cpp \
                   ../src/flux.cpp \
-                  ../src/cubatrue_tet.cpp \
+                  ../src/cubature_tet.cpp \
                   ../src/cubature_hexa.cpp \
                   ../src/cubature_quad.cpp \
                   ../src/cubature_tri.cpp \
@@ -43,7 +45,12 @@ ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/eles_pris.cpp \
                   ../src/output.cpp \
                   ../src/geometry.cpp \
-                  ../src/HiFiLES.cpp \
+                  ../src/solver.cpp \
+                  ../src/HiFiLES.cpp
+
+___bin_HiFiLES_CXXFLAGS=@CXXFLAGS@
+___bin_HiFiLES_LDADD=
+___bin_HiFiLES_LDFLAGS=
 
 # -------------- GPU --------------
 if BUILD_GPU
@@ -58,18 +65,16 @@ if BUILD_GPU
 #   compute_20	 + Fermi support
 #   compute_30	 + Kepler support
 .cu.o:
-	$(NVCC) $(NVCCFLAGS) -gencode=arch=compute_13,code=sm_13 -o $@ -c $<
+	$(NVCC) $(NVCCFLAGS) -gencode=arch=compute_20,code=sm_20 --ptxas-options=-v -o $@ -c $<
 
-noinst_LIBRARIES = cudafiles
-cudafiles_a_SOURCES = ../src/cuda_kernels.cu
-cudafiles_a_LDADD = $(CUDA_LIBS)
-cudafiles_a_CFLAGS = $(NVCCFLAGS)
+noinst_LIBRARIES = libcudafiles.a
+libcudafiles_a_SOURCES = ../src/cuda_kernels.cu
+libcudafiles_a_LIBADD = $(CUDA_LD)
+libcudafiles_a_CFLAGS = $(NVCCFLAGS)
 ___bin_HiFiLES_LDADD += libcudafiles.a
 endif
 # ------------ END GPU ------------
 
-# NOTE: these 'if' statements shouldn't be needed here, as it is taken care 
-# of in configure.ac (i.e. if not building, TECIO_LD="")  (I think...)
 # ParMETIS
 ___bin_HiFiLES_CXXFLAGS += @PARMETIS_CXX@
 ___bin_HiFiLES_LDADD += @PARMETIS_LD@
@@ -80,7 +85,7 @@ ___bin_HiFiLES_LDADD += @TECIO_LD@
 
 # CUDA
 ___bin_HiFiLES_CXXFLAGS += @CUDA_CXX@
-___bin_HiFiLES_LDFLAGS += @CUDA_LIBS@
+___bin_HiFiLES_LDFLAGS += @CUDA_LD@
 ___bin_HiFiLES_LDADD += @CUDA_LD@
 
 # BLAS
