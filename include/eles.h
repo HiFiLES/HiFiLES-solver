@@ -148,7 +148,7 @@ public:
   //void calc_div_tconvisf_upts(int in_div_tconinvf_upts_to);
 
   /*! calculate source term for SA turbulence model at solution points */
-  void calc_src_term_SA();
+  void calc_src_term_SA(int in_disu_upts_from);
 
   /*! advance with rk11 (forwards euler) */
   void advance_rk11(void);

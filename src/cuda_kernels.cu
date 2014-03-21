@@ -114,7 +114,7 @@ __global__ void bespoke_SPMV_kernel(double *g_c, double *g_b, double *g_cont_mat
 
 
 template<int n_dims, int n_fields> 
-__device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, double* u_r, double* norm, double* loc, double *bdy_params, double gamma, double R_ref, double time_bound, int equation)
+__device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, double* u_r, double* norm, double* loc, double *bdy_params, double gamma, double R_ref, double time_bound, int equation, int turb_model)
 {
   double rho_l, rho_r;
   double v_l[n_dims], v_r[n_dims];
@@ -130,7 +130,7 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
   double T_wall = bdy_params[8];
 
   // Navier-Stokes Boundary Conditions
-  if(equation==0)
+  if(equation==0 || equation==2)
     {
       // Store primitive variables for clarity
       rho_l = u_l[0];
@@ -160,6 +160,14 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
           for (int i=0; i<n_dims; i++)
             v_sq += (v_r[i]*v_r[i]);
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (turb_model == 1)
+          {
+              // set turbulent eddy viscosity
+              double mu_tilde_inf = bdy_params[14];
+              u_r[n_dims+2] = mu_tilde_inf;
+          }
         }
 
       // Subsonic outflow simple (fixed pressure)
@@ -178,6 +186,13 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
           for (int i=0; i<n_dims; i++)
             v_sq += (v_r[i]*v_r[i]);
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (turb_model == 1)
+          {
+              // extrapolate turbulent eddy viscosity
+              u_r[n_dims+2] = u_l[n_dims+2];
+          }
         }
 
       // Subsonic inflow characteristic
@@ -262,6 +277,14 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
 
           // Compute energy
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (turb_model == 1)
+          {
+              // set turbulent eddy viscosity
+              double mu_tilde_inf = bdy_params[14];
+              u_r[n_dims+2] = mu_tilde_inf;
+          }
         }
 
       // Subsonic outflow characteristic
@@ -310,6 +333,13 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
               v_sq += (v_r[i]*v_r[i]);
             }
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (turb_model == 1)
+          {
+              // extrapolate turbulent eddy viscosity
+              u_r[n_dims+2] = u_l[n_dims+2];
+          }
         }
 
       // Supersonic inflow
@@ -380,6 +410,13 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
           for (int i=0; i<n_dims; i++)
             v_sq += (v_r[i]*v_r[i]);
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (turb_model == 1)
+          {
+              // zero turbulent eddy viscosity at the wall
+              u_r[n_dims+2] = 0.0;
+          }
         }
 
       // Adiabatic, no-slip wall (fixed)
@@ -400,6 +437,13 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
           for (int i=0; i<n_dims; i++)
             v_sq += (v_r[i]*v_r[i]);
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (turb_model == 1)
+          {
+              // zero turbulent eddy viscosity at the wall
+              u_r[n_dims+2] = 0.0;
+          }
         }
 
       // Isothermal, no-slip wall (moving)
@@ -500,6 +544,14 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
 
               p_r = rho_r/gamma*c_star*c_star;
               e_r = rho_r*h_free_stream - p_r;
+
+              // SA model
+              if (turb_model == 1)
+              {
+                  // set turbulent eddy viscosity
+                  double mu_tilde_inf = bdy_params[14];
+                  u_r[n_dims+2] = mu_tilde_inf;
+              }
             }
 
           // Outflow
@@ -525,6 +577,13 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
               for (int i=0; i<n_dims; i++)
                 v_sq += (v_r[i]*v_r[i]);
               e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+              // SA model
+              if (turb_model == 1)
+              {
+                  // extrapolate turbulent eddy viscosity
+                  u_r[n_dims+2] = u_l[n_dims+2];
+              }
             }
         }
 
@@ -648,7 +707,7 @@ __device__ void set_vis_boundary_conditions_kernel(int bdy_type, double* u_l, do
 
 
 template<int in_n_dims>
-__device__ void inv_NS_flux(double* q, double *p, double* f, double in_gamma, int in_field)
+__device__ void inv_NS_flux(double* q, double *p, double* f, double in_gamma, int in_field, int in_turb_model)
 {
   if(in_n_dims==2) {
 
@@ -671,6 +730,12 @@ __device__ void inv_NS_flux(double* q, double *p, double* f, double in_gamma, in
           f[0]  = q[1]/q[0]*(q[3]+(*p));
           f[1]  = q[2]/q[0]*(q[3]+(*p));
         }
+      else if (in_field==4) {
+          if (in_turb_model==1) {
+              f[0] = q[4]*q[1]/q[0];
+              f[1] = q[4]*q[2]/q[0];
+            }
+        }   
     }
   else if(in_n_dims==3)
     {
@@ -702,12 +767,19 @@ __device__ void inv_NS_flux(double* q, double *p, double* f, double in_gamma, in
           f[1] = q[2]/q[0]*(q[4]+(*p));
           f[2] = q[3]/q[0]*(q[4]+(*p));
         }
+      else if (in_field==5) {
+          if (in_turb_model==1) {
+              f[0] = q[5]*q[1]/q[0];
+              f[1] = q[5]*q[2]/q[0];
+              f[2] = q[5]*q[3]/q[0];
+            }
+        }   
     }
 }
 
 
 template<int in_n_dims>
-__device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double* grad_ene, double* stensor, double* f, double* inte, double* mu, double in_prandtl, double in_gamma, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int in_field, double in_epsilon, int artif_only)
+__device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double* grad_ene, double* stensor, double* f, double* inte, double* mu, double* mu_t, double in_prandtl, double in_gamma, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int in_field, double in_epsilon, int artif_only, int in_turb_model, double in_c_v1, double in_omega, double in_prandtl_t)
 {
   double diag;
   double rt_ratio;
@@ -723,6 +795,21 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
           rt_ratio = (in_gamma-1.)*(*inte)/(in_rt_inf);
           (*mu) = in_mu_inf*pow(rt_ratio,1.5)*(1.+in_c_sth)/(rt_ratio+in_c_sth);
           (*mu) = (1 - artif_only)*((*mu) + in_fix_vis*(in_mu_inf - (*mu)));
+
+          // turbulent eddy viscosity
+          if (in_turb_model==1) {
+              double nu_tilde = q[4]/q[0];
+              if (nu_tilde >= 0.0) {
+                  double f_v1 = pow(q[4]/(*mu), 3.0)/(pow(q[4]/(*mu), 3.0) + pow(in_c_v1, 3.0));
+                  (*mu_t) = q[4]*f_v1;
+                }
+              else {
+                  (*mu_t) = 0.0;
+                }
+            }
+            else {
+                (*mu_t) = 0.0;
+              }
 
           // Velocity gradients
 #pragma unroll
@@ -748,9 +835,9 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
           // Stress tensor
 #pragma unroll
           for (int i=0;i<in_n_dims;i++)
-            stensor[i] = 2.0*(*mu)*(grad_vel[i*in_n_dims + i] - diag);
+            stensor[i] = 2.0*((*mu)+(*mu_t))*(grad_vel[i*in_n_dims + i] - diag);
 
-          stensor[2] = (*mu)*(grad_vel[0*in_n_dims + 1] + grad_vel[1*in_n_dims + 0]);
+          stensor[2] = ((*mu)+(*mu_t))*(grad_vel[0*in_n_dims + 1] + grad_vel[1*in_n_dims + 0]);
 
           /*// If LES, calculate SGS stress tensor
             if(run_input.LES==1)
@@ -783,13 +870,29 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
           f[1]  = -stensor[1];
         }
       else if (in_field==3) {
-          f[0]  = -((q[1]/q[0])*stensor[0] + (q[2]/q[0])*stensor[2] + (*mu)*in_gamma*grad_ene[0]/in_prandtl);
-          f[1]  = -((q[1]/q[0])*stensor[2] + (q[2]/q[0])*stensor[1] + (*mu)*in_gamma*grad_ene[1]/in_prandtl);
+          f[0]  = -((q[1]/q[0])*stensor[0] + (q[2]/q[0])*stensor[2] + ((*mu)/in_prandtl + (*mu_t)/in_prandtl_t)*in_gamma*grad_ene[0]);
+          f[1]  = -((q[1]/q[0])*stensor[2] + (q[2]/q[0])*stensor[1] + ((*mu)/in_prandtl + (*mu_t)/in_prandtl_t)*in_gamma*grad_ene[1]);
+        }
+      else if (in_field==4) {
+          if (in_turb_model==1) {
+              double Chi, psi;
+              Chi = q[4]/(*mu);
+              if (Chi <= 10.0)
+                psi = 0.05*log(1.0 + exp(20.0*Chi));
+              else
+                psi = Chi;
+
+              double dnu_tilde_dx = (grad_q[4*in_n_dims + 0]-grad_q[0*in_n_dims + 0]*q[4]/q[0])/q[0];
+              double dnu_tilde_dy = (grad_q[4*in_n_dims + 1]-grad_q[0*in_n_dims + 1]*q[4]/q[0])/q[0];
+
+              f[0] = -(1.0/in_omega)*((*mu) + (*mu)*psi)*dnu_tilde_dx;
+              f[1] = -(1.0/in_omega)*((*mu) + (*mu)*psi)*dnu_tilde_dy;
+            }
         }
 
       if(in_field != -1){
-	f[0] = f[0] + in_epsilon*grad_q[in_field*in_n_dims + 0];
-	f[1] = f[1] + in_epsilon*grad_q[in_field*in_n_dims + 1];
+	        f[0] = f[0] + in_epsilon*grad_q[in_field*in_n_dims + 0];
+	        f[1] = f[1] + in_epsilon*grad_q[in_field*in_n_dims + 1];
       }
     }
   else if(in_n_dims==3)
@@ -803,6 +906,21 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
           rt_ratio = (in_gamma-1.)*(*inte)/(in_rt_inf);
           (*mu) = in_mu_inf*pow(rt_ratio,1.5)*(1.+in_c_sth)/(rt_ratio+in_c_sth);
           (*mu) = (*mu) + in_fix_vis*(in_mu_inf - (*mu));
+          
+          // turbulent eddy viscosity
+          if (in_turb_model==1) {
+              double nu_tilde = q[5]/q[0];
+              if (nu_tilde >= 0.0) {
+                  double f_v1 = pow(q[5]/(*mu), 3.0)/(pow(q[5]/(*mu), 3.0) + pow(in_c_v1, 3.0));
+                  (*mu_t) = q[5]*f_v1;
+                }
+              else {
+                  (*mu_t) = 0.0;
+                }
+            }
+            else {
+                (*mu_t) = 0.0;
+              }
 
           // Velocity gradients
 #pragma unroll
@@ -828,11 +946,11 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
           // Stress tensor
 #pragma unroll
           for (int i=0;i<in_n_dims;i++)
-            stensor[i] = 2.0*(*mu)*(grad_vel[i*in_n_dims + i] - diag);
+            stensor[i] = 2.0*((*mu)+(*mu_t))*(grad_vel[i*in_n_dims + i] - diag);
 
-          stensor[3] = (*mu)*(grad_vel[0*in_n_dims + 1] + grad_vel[1*in_n_dims + 0]);
-          stensor[4] = (*mu)*(grad_vel[0*in_n_dims + 2] + grad_vel[2*in_n_dims + 0]);
-          stensor[5] = (*mu)*(grad_vel[1*in_n_dims + 2] + grad_vel[2*in_n_dims + 1]);
+          stensor[3] = ((*mu)+(*mu_t))*(grad_vel[0*in_n_dims + 1] + grad_vel[1*in_n_dims + 0]);
+          stensor[4] = ((*mu)+(*mu_t))*(grad_vel[0*in_n_dims + 2] + grad_vel[2*in_n_dims + 0]);
+          stensor[5] = ((*mu)+(*mu_t))*(grad_vel[1*in_n_dims + 2] + grad_vel[2*in_n_dims + 1]);
         }
       else if (in_field==0) {
           f[0] = 0.0;
@@ -855,15 +973,114 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
           f[2] = -stensor[2];
         }
       else if (in_field==4) {
-          f[0] = -((q[1]/q[0])*stensor[0]+(q[2]/q[0])*stensor[3]+(q[3]/q[0])*stensor[4] + (*mu)*in_gamma*grad_ene[0]/in_prandtl);
-          f[1] = -((q[1]/q[0])*stensor[3]+(q[2]/q[0])*stensor[1]+(q[3]/q[0])*stensor[5] + (*mu)*in_gamma*grad_ene[1]/in_prandtl);
-          f[2] = -((q[1]/q[0])*stensor[4]+(q[2]/q[0])*stensor[5]+(q[3]/q[0])*stensor[2] + (*mu)*in_gamma*grad_ene[2]/in_prandtl);
+          f[0] = -((q[1]/q[0])*stensor[0]+(q[2]/q[0])*stensor[3]+(q[3]/q[0])*stensor[4] + ((*mu)/in_prandtl + (*mu_t)/in_prandtl_t)*in_gamma*grad_ene[0]);
+          f[1] = -((q[1]/q[0])*stensor[3]+(q[2]/q[0])*stensor[1]+(q[3]/q[0])*stensor[5] + ((*mu)/in_prandtl + (*mu_t)/in_prandtl_t)*in_gamma*grad_ene[1]);
+          f[2] = -((q[1]/q[0])*stensor[4]+(q[2]/q[0])*stensor[5]+(q[3]/q[0])*stensor[2] + ((*mu)/in_prandtl + (*mu_t)/in_prandtl_t)*in_gamma*grad_ene[2]);
+        }
+      else if (in_field==5) {
+          if (in_turb_model==1) {
+              double Chi, psi;
+              Chi = q[5]/(*mu);
+              if (Chi <= 10.0)
+                psi = 0.05*log(1.0 + exp(20.0*Chi));
+              else
+                psi = Chi;
+
+              double dnu_tilde_dx = (grad_q[5*in_n_dims + 0]-grad_q[0*in_n_dims + 0]*q[5]/q[0])/q[0];
+              double dnu_tilde_dy = (grad_q[5*in_n_dims + 1]-grad_q[0*in_n_dims + 1]*q[5]/q[0])/q[0];
+              double dnu_tilde_dz = (grad_q[5*in_n_dims + 2]-grad_q[0*in_n_dims + 2]*q[5]/q[0])/q[0];
+
+              f[0] = -(1.0/in_omega)*((*mu) + (*mu)*psi)*dnu_tilde_dx;
+              f[1] = -(1.0/in_omega)*((*mu) + (*mu)*psi)*dnu_tilde_dy;
+              f[2] = -(1.0/in_omega)*((*mu) + (*mu)*psi)*dnu_tilde_dz;
+            }
         }
     }
 }
 
+
+template<int in_n_dims>
+__device__ void calc_source_SA(double* in_u, double* in_grad_u, double src_term, double d, double prandtl, double gamma, double rt_inf, double mu_inf, double c_sth, int fix_vis, double c_v1, double c_v2, double c_v3, double c_b1, double c_b2, double c_w2, double c_w3, double omega, double Kappa)
+{
+  if(in_n_dims == 2)
+  {
+    double rho, u, v, ene, nu_tilde;
+    double dv_dx, du_dy, dnu_tilde_dx, dnu_tilde_dy;
+
+    double inte, rt_ratio, mu;
+
+    double nu_t_prod, nu_t_diff, nu_t_dest;
+
+    double S, S_bar, S_tilde, Chi, psi, f_v1, f_v2;
+
+    double c_w1, r, g, f_w;
+
+    // primitive variables
+    rho = in_u[0];
+    u = in_u[1]/in_u[0];
+    v = in_u[2]/in_u[0];
+    ene = in_u[3];
+    nu_tilde = in_u[4]/in_u[0];
+
+    // gradients
+    dv_dx = (in_grad_u[2*in_n_dims+0]-in_grad_u[0*in_n_dims+0]*v)/rho;
+    du_dy = (in_grad_u[1*in_n_dims+1]-in_grad_u[0*in_n_dims+1]*u)/rho;
+
+    dnu_tilde_dx = (in_grad_u[4*in_n_dims+0]-in_grad_u[0*in_n_dims+0]*nu_tilde)/rho;
+    dnu_tilde_dy = (in_grad_u[4*in_n_dims+1]-in_grad_u[0*in_n_dims+1]*nu_tilde)/rho;
+
+    // viscosity
+    inte = ene/rho - 0.5*(u*u+v*v);
+    rt_ratio = (gamma-1.0)*inte/(rt_inf);
+    mu = (mu_inf)*pow(rt_ratio,1.5)*(1.+c_sth)/(rt_ratio+c_sth);
+    mu = mu + fix_vis*(mu_inf - mu);
+    // regulate eddy viscosity (must not become negative)
+    Chi = in_u[4]/mu;
+    if (Chi <= 10.0)
+        psi = 0.05*log(1.0 + exp(20.0*Chi));
+    else
+        psi = Chi;
+
+    // solve for production term for eddy viscosity
+    // (solve for S = magnitude of vorticity)
+    S = abs(dv_dx - du_dy);
+
+    // (solve for S_bar)
+    f_v1 = pow(in_u[4]/mu, 3.0)/(pow(in_u[4]/mu, 3.0) + pow(c_v1, 3.0));
+    f_v2 = 1.0 - psi/(1.0 + psi*f_v1);
+    S_bar = pow(mu*psi/rho, 2.0)*f_v2/(pow(Kappa, 2.0)*pow(d, 2.0));
+
+    // (solve for S_tilde)
+    if (S_bar >= -c_v2*S)
+        S_tilde = S + S_bar;
+    else
+        S_tilde = S + S*(pow(c_v2, 2.0)*S + c_v3*S_bar)/((c_v3 - 2.0*c_v2)*S - S_bar);
+
+    // (production term)
+    nu_t_prod = c_b1*S_tilde*mu*psi;
+
+    // solve for non-conservative diffusion term for eddy viscosity
+    nu_t_diff = (1.0/omega)*(c_b2*rho*(pow(dnu_tilde_dx, 2.0)+pow(dnu_tilde_dy, 2.0)));
+
+    // solve for destruction term for eddy viscosity
+    c_w1 = c_b1/pow(Kappa, 2.0) + (1.0/omega)*(1.0 + c_b2);
+    r = min((mu*psi/rho)/(S_tilde*pow(Kappa, 2.0)*pow(d, 2.0)), 10.0);
+    g = r + c_w2*(pow(r, 6.0) - r);
+    f_w = g*pow((1.0 + pow(c_w3, 6.0))/(pow(g, 6.0) + pow(c_w3, 6.0)), 1.0/6.0);
+
+    // (destruction term)
+    nu_t_dest = -c_w1*rho*f_w*pow((mu*psi/rho)/d, 2.0);
+
+    // construct source term
+    src_term = nu_t_prod + nu_t_diff + nu_t_dest;
+  }
+
+  // NOTE: 3d Source term not implemented yet!!!
+}
+
+
 template<int in_n_fields, int in_n_dims>
-__device__ __host__ void rusanov_flux(double* q_l, double *q_r, double *norm, double *fn, double in_gamma)
+__device__ __host__ void rusanov_flux(double* q_l, double *q_r, double *norm, double *fn, double in_gamma, int in_turb_model)
 {
   double vn_l, vn_r;
   double vn_av_mag, c_av;
@@ -881,8 +1098,8 @@ __device__ __host__ void rusanov_flux(double* q_l, double *q_r, double *norm, do
     }
 
   // Flux prep
-  inv_NS_flux<in_n_dims>(q_l,&p_l,f,in_gamma,-1);
-  inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,-1);
+  inv_NS_flux<in_n_dims>(q_l,&p_l,f,in_gamma,-1,in_turb_model);
+  inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,-1,in_turb_model);
 
   vn_av_mag=sqrt(0.25*(vn_l+vn_r)*(vn_l+vn_r));
   c_av=sqrt((in_gamma*(p_l+p_r))/(q_l[0]+q_r[0]));
@@ -891,14 +1108,14 @@ __device__ __host__ void rusanov_flux(double* q_l, double *q_r, double *norm, do
   for (int i=0;i<in_n_fields;i++)
     {
       // Left normal flux
-      inv_NS_flux<in_n_dims>(q_l,&p_l,f,in_gamma,i);
+      inv_NS_flux<in_n_dims>(q_l,&p_l,f,in_gamma,i,in_turb_model);
 
       f_l = f[0]*norm[0] + f[1]*norm[1];
       if(in_n_dims==3)
         f_l += f[2]*norm[2];
 
       // Right normal flux
-      inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,i);
+      inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,i,in_turb_model);
 
       f_r = f[0]*norm[0] + f[1]*norm[1];
       if(in_n_dims==3)
@@ -911,20 +1128,20 @@ __device__ __host__ void rusanov_flux(double* q_l, double *q_r, double *norm, do
 
 
 template<int in_n_fields, int in_n_dims>
-__device__ __host__ void right_flux(double *q_r, double *norm, double *fn, double in_gamma)
+__device__ __host__ void right_flux(double *q_r, double *norm, double *fn, double in_gamma, int in_turb_model)
 {
 
   double p_r,f_r;
   double f[in_n_dims];
 
   // Flux prep
-  inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,-1);
+  inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,-1,in_turb_model);
 
 #pragma unroll
   for (int i=0;i<in_n_fields;i++)
     {
       //Right normal flux
-      inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,i);
+      inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,i,in_turb_model);
 
       f_r = f[0]*norm[0] + f[1]*norm[1];
       if(in_n_dims==3)
@@ -1205,7 +1422,7 @@ __device__ __host__ void ldg_flux(double q_l, double q_r, double* f_l, double* f
 
 
 template< int n_fields >
-__global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts, 
+__global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts, double *src_term,
                                    const int n_cells, const int n_qpts, const double dt, const double const_src_term)
 {
   int n = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1220,7 +1437,7 @@ __global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts,
 #pragma unroll
       for (int i=0;i<n_fields;i++)
         {
-          g_q_qpts[n] -= dt*(g_div_tfg_con_qpts[n]/jac - const_src_term);
+          g_q_qpts[n] -= dt*(g_div_tfg_con_qpts[n]/jac - const_src_term - src_term[n]);
           n += stride;
         }
     }
@@ -1228,7 +1445,7 @@ __global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts,
 
 
 template< int n_fields >
-__global__ void RK45_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_res_qpts, double *g_jac_det_qpts, 
+__global__ void RK45_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_res_qpts, double *g_jac_det_qpts, double *src_term,
                                    const int n_cells, const int n_qpts, const double fa, const double fb, const double dt, const double const_src_term)
 {
   int n = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1243,7 +1460,7 @@ __global__ void RK45_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts,
 #pragma unroll
       for (int i=0;i<n_fields;i++)
         {
-          rhs = -(g_div_tfg_con_qpts[n]/jac - const_src_term);
+          rhs = -(g_div_tfg_con_qpts[n]/jac - const_src_term - src_term[n]);
           res = g_res_qpts[n];
           res = fa*res + dt*rhs;
           g_res_qpts[n] = res;
@@ -1307,7 +1524,7 @@ __global__ void calc_tdisinvf_upts_AD_gpu_kernel(int in_n_upts_per_ele, int in_n
 // gpu kernel to calculate transformed discontinuous inviscid flux at solution points for the Navier-Stokes equation
 // otherwise, switch to one thread per output?
 template<int in_n_dims, int in_n_fields>
-__global__ void calc_tdisinvf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma)
+__global__ void calc_tdisinvf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, int in_turb_model)
 {
 
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
@@ -1334,7 +1551,7 @@ __global__ void calc_tdisinvf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
           met[j][i] = in_inv_detjac_mul_jac_upts_ptr[thread_id + (i*in_n_dims+j)*stride];
 
       // Flux prep
-      inv_NS_flux<in_n_dims>(q,&p,f,in_gamma,-1);
+      inv_NS_flux<in_n_dims>(q,&p,f,in_gamma,-1,in_turb_model);
 
       int index;
 
@@ -1342,7 +1559,7 @@ __global__ void calc_tdisinvf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         {
-          inv_NS_flux<in_n_dims>(q,&p,f,in_gamma,i);
+          inv_NS_flux<in_n_dims>(q,&p,f,in_gamma,i,in_turb_model);
 
           index = thread_id+i*stride;
 
@@ -1364,7 +1581,7 @@ __global__ void calc_tdisinvf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 
 // gpu kernel to calculate normal transformed continuous inviscid flux at the flux points
 template <int in_n_dims, int in_n_fields, int in_riemann_solve_type, int in_vis_riemann_solve_type>
-__global__ void calc_norm_tconinvf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_norm_tconf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, double** in_delta_disu_fpts_l_ptr, double** in_delta_disu_fpts_r_ptr, double in_gamma, double in_pen_fact, int in_viscous)
+__global__ void calc_norm_tconinvf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_norm_tconf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, double** in_delta_disu_fpts_l_ptr, double** in_delta_disu_fpts_r_ptr, double in_gamma, double in_pen_fact, int in_viscous, int in_turb_model)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
@@ -1396,7 +1613,7 @@ __global__ void calc_norm_tconinvf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
         norm[i]=*(in_norm_fpts_ptr[thread_id + i*stride]);
 
       if (in_riemann_solve_type==0)
-        rusanov_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
+        rusanov_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma,in_turb_model);
       else if (in_riemann_solve_type==2)
         roe_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
 
@@ -1514,7 +1731,7 @@ __global__ void calc_norm_tconinvf_fpts_lax_friedrich_gpu_kernel(int in_n_fpts_p
 
 // kernel to calculate normal transformed continuous inviscid flux at the flux points at boundaries
 template<int in_n_dims, int in_n_fields, int in_riemann_solve_type, int in_vis_riemann_solve_type>
-__global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, double in_gamma, double in_R_ref, int in_viscous, double in_time_bound, double in_wave_speed_x, double in_wave_speed_y, double in_wave_speed_z, double in_lambda, int in_equation)
+__global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, double in_gamma, double in_R_ref, int in_viscous, double in_time_bound, double in_wave_speed_x, double in_wave_speed_y, double in_wave_speed_z, double in_lambda, int in_equation, int in_turb_model)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
@@ -1550,17 +1767,17 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
       // Set boundary condition
       bdy_spec = in_boundary_type[thread_id/in_n_fpts_per_inter];
 
-      set_inv_boundary_conditions_kernel<in_n_dims,in_n_fields>(bdy_spec,q_l,q_r,norm,loc,in_bdy_params,in_gamma, in_R_ref, in_time_bound, in_equation);
+      set_inv_boundary_conditions_kernel<in_n_dims,in_n_fields>(bdy_spec,q_l,q_r,norm,loc,in_bdy_params,in_gamma, in_R_ref, in_time_bound, in_equation, in_turb_model);
 
       if (bdy_spec==16) // Dual consistent
         {
-          //  right_flux<in_n_fields,in_n_dims> (q_r,norm,fn,in_gamma);
+          //  right_flux<in_n_fields,in_n_dims> (q_r,norm,fn,in_gamma,in_turb_model);
           roe_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
         }
       else
         {
           if (in_riemann_solve_type==0)
-            rusanov_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
+            rusanov_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma,in_turb_model);
           else if (in_riemann_solve_type==1)
             lax_friedrichs_flux<in_n_dims> (q_l,q_r,norm,fn,in_wave_speed_x,in_wave_speed_y,in_wave_speed_z,in_lambda);
           else if (in_riemann_solve_type==2)
@@ -1736,7 +1953,7 @@ __global__ void calc_artivisc_coeff_fpts_gpu_kernel(int in_n_eles, int in_n_fpts
 
 // gpu kernel to calculate transformed discontinuous viscous flux at solution points
 template<int in_n_dims, int in_n_fields, int in_n_comp>
-__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int artif_only, double* in_epsilon_ptr, double* in_epsilon_upts_ptr)
+__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int artif_only, double* in_epsilon_ptr, double* in_epsilon_upts_ptr, int in_turb_model, double in_c_v1, double in_omega, double in_prandtl_t)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
@@ -1750,7 +1967,7 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
   double grad_vel[in_n_dims*in_n_dims];
   double grad_q[in_n_fields*in_n_dims];
 
-  double inte, mu;
+  double inte, mu, mu_t;
 
   int ind;
   int stride = in_n_upts_per_ele*in_n_eles;
@@ -1783,7 +2000,7 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
         }
 
       // Flux prep
-      vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon, artif_only);
+      vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon, artif_only, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
       int index;
 
@@ -1791,7 +2008,7 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         {
-          vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon, artif_only);
+          vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon, artif_only, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
           index = thread_id+i*stride;
 
@@ -1809,6 +2026,50 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
     }
 }
 
+template<int in_n_dims, int in_n_fields>
+__global__ void calc_src_term_gpu_kernel(int in_n_upts_per_ele,int in_n_eles,double* in_disu_upts_ptr,double* in_grad_disu_upts_ptr,double* in_wall_distance_mag_ptr,double* out_src_term_ptr,double in_gamma,double in_prandtl,double in_rt_inf,double in_mu_inf,double in_c_sth,int in_fix_vis,double in_c_v1,double in_c_v2,double in_c_v3,double in_c_b1,double in_c_b2,double in_c_w2,double in_c_w3,double in_omega,double in_Kappa)
+{
+
+  const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
+
+  double q[in_n_fields];
+  double src_term;
+
+  double grad_q[in_n_fields*in_n_dims];
+
+  double inte, mu;
+  double wall_distance_mag;
+
+  int ind;
+  int stride = in_n_upts_per_ele*in_n_eles;
+  int element_number = thread_id/in_n_upts_per_ele;
+  
+  if(thread_id<(in_n_upts_per_ele*in_n_eles))
+    {
+      // Physical solution
+#pragma unroll
+      for (int i=0;i<in_n_fields;i++)
+        q[i] = in_disu_upts_ptr[thread_id + i*stride];
+   
+      // Physical gradient
+#pragma unroll
+      for (int i=0;i<in_n_fields;i++)
+        {
+          ind = thread_id + i*stride;
+          grad_q[i*in_n_dims + 0] = in_grad_disu_upts_ptr[ind];
+          grad_q[i*in_n_dims + 1] = in_grad_disu_upts_ptr[ind + stride*in_n_fields];
+
+          if(in_n_dims==3)
+            grad_q[i*in_n_dims + 2] = in_grad_disu_upts_ptr[ind + 2*stride*in_n_fields];
+        }
+
+      wall_distance_mag = in_wall_distance_mag_ptr[thread_id];
+
+      calc_source_SA<in_n_dims>(q,grad_q,src_term,wall_distance_mag,in_prandtl,in_gamma,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,in_c_v1,in_c_v2,in_c_v3,in_c_b1,in_c_b2,in_c_w2,in_c_w3,in_omega,in_Kappa);
+
+      out_src_term_ptr[thread_id + (in_n_fields-1)*stride] = src_term;
+    }
+}
 
 // gpu kernel to calculate transformed discontinuous viscous flux at solution points
 template<int in_n_dims>
@@ -1977,7 +2238,7 @@ __global__ void transform_grad_disu_upts_kernel(int in_n_upts_per_ele, int in_n_
 
 // gpu kernel to calculate normal transformed continuous viscous flux at the flux points
 template <int in_n_dims, int in_n_fields, int in_n_comp, int in_vis_riemann_solve_type>
-__global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_norm_tconf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_r_ptr, double** in_epsilon_fpts_l_ptr, double** in_epsilon_fpts_r_ptr)
+__global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_norm_tconf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_r_ptr, double** in_epsilon_fpts_l_ptr, double** in_epsilon_fpts_r_ptr, int in_turb_model, double in_c_v1, double in_omega, double in_prandtl_t)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
@@ -1999,7 +2260,7 @@ __global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
   double stensor[in_n_comp];
 
   double jac;
-  double inte, mu;
+  double inte, mu, mu_t;
 
   if(thread_id<stride)
     {
@@ -2026,12 +2287,12 @@ __global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
         norm[i]=*(in_norm_fpts_ptr[thread_id + i*stride]);
 
       // Left flux prep
-      vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_l, artif_only);
+      vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_l, artif_only, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
       // Left flux computation
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
-        vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f_l[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_l, artif_only);
+        vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f_l[i], &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_l, artif_only, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
 
       // Right solution
@@ -2049,12 +2310,12 @@ __global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
         }
 
       // Right flux prep
-      vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_r, artif_only);
+      vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_r, artif_only, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
       // Right flux computation
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
-        vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f_r[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_r, artif_only);
+        vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f_r[i], &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_r, artif_only, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
       // Compute common flux
       if(in_vis_riemann_solve_type == 0)
@@ -2169,7 +2430,7 @@ __global__ void calc_norm_tconvisf_fpts_AD_gpu_kernel(int in_n_fpts_per_inter, i
 
 // kernel to calculate normal transformed continuous viscous flux at the flux points at boundaries
 template<int in_n_dims, int in_n_fields, int in_n_comp, int in_vis_riemann_solve_type>
-__global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double diff_coeff, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_fpts_l_ptr)
+__global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double diff_coeff, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_fpts_l_ptr, int in_turb_model, double in_c_v1, double in_omega, double in_prandtl_t)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
@@ -2194,7 +2455,7 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
   double stensor[in_n_comp];
 
   double jac;
-  double inte, mu;
+  double inte, mu, mu_t;
 
   if(thread_id<stride)
     {
@@ -2227,7 +2488,7 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
 
       // Right solution
       bdy_spec = in_boundary_type[thread_id/in_n_fpts_per_inter];
-      set_inv_boundary_conditions_kernel<in_n_dims,in_n_fields>(bdy_spec,q_l,q_r,norm,loc,in_bdy_params,in_gamma,in_R_ref,in_time_bound,in_equation);
+      set_inv_boundary_conditions_kernel<in_n_dims,in_n_fields>(bdy_spec,q_l,q_r,norm,loc,in_bdy_params,in_gamma,in_R_ref,in_time_bound,in_equation,in_turb_model);
 
 
       // Compute common flux
@@ -2236,15 +2497,15 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
           // Right solution gradient
           set_vis_boundary_conditions_kernel<in_n_dims,in_n_fields>(bdy_spec,q_l,q_r,grad_q,norm,loc,in_bdy_params,in_gamma,in_R_ref,in_time_bound,in_equation);
 
-          if(in_equation==0)
+          if(in_equation==0 || in_equation==2)
             {
               // Right flux prep
-              vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_r, artif_only);
+              vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_r, artif_only, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
               // Right flux computation
 #pragma unroll
               for (int i=0;i<in_n_fields;i++)
-                vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_r, artif_only);
+                vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_r, artif_only, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
             }
           if(in_equation==1)
             {
@@ -2264,15 +2525,15 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
         }
       else
         {
-          if(in_equation==0)
+          if(in_equation==0 || in_equation==2)
             {
               // Left flux prep
-              vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_l, artif_only);
+              vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, epsilon_l, artif_only, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
               // Left flux computation
 #pragma unroll
               for (int i=0;i<in_n_fields;i++)
-                vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_l, artif_only);
+                vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, epsilon_l, artif_only, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
             }
           if(in_equation==1)
             {
@@ -2315,7 +2576,7 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
 
 // gpu kernel to calculate normal transformed continuous inviscid flux at the flux points for mpi faces
 template <int in_n_dims, int in_n_fields, int in_riemann_solve_type, int in_vis_riemann_solve_type>
-__global__ void calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_delta_disu_fpts_l_ptr, double in_gamma, double in_pen_fact, int in_viscous)
+__global__ void calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_delta_disu_fpts_l_ptr, double in_gamma, double in_pen_fact, int in_viscous, int in_turb_model)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
@@ -2347,7 +2608,7 @@ __global__ void calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
         norm[i]=*(in_norm_fpts_ptr[thread_id + i*stride]);
 
       if (in_riemann_solve_type==0)
-        rusanov_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
+        rusanov_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma,in_turb_model);
       else if (in_riemann_solve_type==2)
         roe_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
 
@@ -2376,7 +2637,7 @@ __global__ void calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
 
 // gpu kernel to calculate normal transformed continuous viscous flux at the flux points
 template <int in_n_dims, int in_n_fields, int in_n_comp, int in_vis_riemann_solve_type>
-__global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
+__global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int in_turb_model, double in_c_v1, double in_omega, double in_prandtl_t)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
@@ -2397,7 +2658,7 @@ __global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
   double stensor[in_n_comp];
 
   double jac;
-  double inte, mu;
+  double inte, mu, mu_t;
 
   if(thread_id<stride)
     {
@@ -2421,12 +2682,12 @@ __global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
         norm[i]=*(in_norm_fpts_ptr[thread_id + i*stride]);
 
       // Left flux prep
-      vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, 0, 0);
+      vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, 0, 0, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
       // Left flux computation
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
-        vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f_l[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, 0, 0);
+        vis_NS_flux<in_n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f_l[i], &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, 0, 0, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
 
       // Right solution
@@ -2444,12 +2705,12 @@ __global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
         }
 
       // Right flux prep
-      vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, 0, 0);
+      vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, NULL, &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1, 0, 0, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
       // Right flux computation
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
-        vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f_r[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, 0, 0);
+        vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f_r[i], &inte, &mu, &mu_t, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i, 0, 0, in_turb_model, in_c_v1, in_omega, in_prandtl_t);
 
 
       // Compute common flux
@@ -2692,7 +2953,7 @@ __global__ void  pack_out_buffer_grad_disu_gpu_kernel(int in_n_fpts_per_inter, i
 
 
 
-void RK45_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_disu1_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_rk4a, double in_rk4b, double in_dt, double in_const_src_term)
+void RK45_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_disu1_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double* src_term_ptr, double in_rk4a, double in_rk4b, double in_dt, double in_const_src_term)
 {
 
   // HACK: fix 256 threads per block
@@ -2700,22 +2961,26 @@ void RK45_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fie
 
   if (in_n_fields==1)
     {
-      RK45_update_kernel <1> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_dt, in_const_src_term);
+      RK45_update_kernel <1> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, src_term_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_dt, in_const_src_term);
     }
   else if (in_n_fields==4)
     {
-      RK45_update_kernel <4> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_dt, in_const_src_term);
+      RK45_update_kernel <4> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, src_term_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_dt, in_const_src_term);
     }
   else if (in_n_fields==5)
     {
-      RK45_update_kernel <5> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_dt, in_const_src_term);
+      RK45_update_kernel <5> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, src_term_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_dt, in_const_src_term);
+    }
+  else if (in_n_fields==6)
+    {
+      RK45_update_kernel <6> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, src_term_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_dt, in_const_src_term);
     }
   else
     FatalError("n_fields not supported");
 
 }
 
-void RK11_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_dt, double in_const_src_term)
+void RK11_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double* src_term_ptr, double in_dt, double in_const_src_term)
 {
 
   // HACK: fix 256 threads per block
@@ -2723,15 +2988,19 @@ void RK11_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fie
 
   if (in_n_fields==1)
     {
-      RK11_update_kernel <1> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_const_src_term);
+      RK11_update_kernel <1> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, src_term_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_const_src_term);
     }
   else if (in_n_fields==4)
     {
-      RK11_update_kernel <4> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_const_src_term);
+      RK11_update_kernel <4> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, src_term_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_const_src_term);
     }
   else if (in_n_fields==5)
     {
-      RK11_update_kernel <5> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_const_src_term);
+      RK11_update_kernel <5> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, src_term_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_const_src_term);
+    }
+  else if (in_n_fields==6)
+    {
+      RK11_update_kernel <6> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, src_term_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_const_src_term);
     }
   else
     FatalError("n_fields not supported");
@@ -2740,19 +3009,33 @@ void RK11_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fie
 
 
 // wrapper for gpu kernel to calculate transformed discontinuous inviscid flux at solution points
-void calc_tdisinvf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, int equation, double wave_speed_x, double wave_speed_y, double wave_speed_z)
+void calc_tdisinvf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, int equation, double wave_speed_x, double wave_speed_y, double wave_speed_z, int in_turb_model)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
-  if (equation==0)
+  if (equation==0 || equation==2)
     {
-      if (in_n_dims==2)
-        calc_tdisinvf_upts_NS_gpu_kernel<2,4> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma);
-      else if (in_n_dims==3)
-        calc_tdisinvf_upts_NS_gpu_kernel<3,5> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma);
+      if (in_n_dims==2){
+        if(in_n_fields==4)
+          calc_tdisinvf_upts_NS_gpu_kernel<2,4> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_turb_model);
+        else if(in_n_fields==5)
+          calc_tdisinvf_upts_NS_gpu_kernel<2,5> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_turb_model);
+        else
+          FatalError("ERROR: Invalid number of fields for this dimension ... ");
+      }
+
+      else if (in_n_dims==3){
+        if(in_n_fields==5)
+          calc_tdisinvf_upts_NS_gpu_kernel<3,5> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_turb_model);
+        else if(in_n_fields==6)
+          calc_tdisinvf_upts_NS_gpu_kernel<3,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_turb_model);
+        else
+          FatalError("ERROR: Invalid number of fields for this dimension ... ");
+      }
+
       else
         FatalError("ERROR: Invalid number of dimensions ... ");
     }
@@ -2776,7 +3059,7 @@ void calc_tdisinvf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims,
 
 
 // wrapper for gpu kernel to calculate normal transformed continuous inviscid flux at the flux points
-void calc_norm_tconinvf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_norm_tconinvf_fpts_l_ptr, double** in_norm_tconinvf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, double** in_delta_disu_fpts_l_ptr, double** in_delta_disu_fpts_r_ptr, double in_gamma, double in_pen_fact, int in_viscous, int in_vis_riemann_solve_type, double wave_speed_x, double wave_speed_y, double wave_speed_z, double lambda)
+void calc_norm_tconinvf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_norm_tconinvf_fpts_l_ptr, double** in_norm_tconinvf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, double** in_delta_disu_fpts_l_ptr, double** in_delta_disu_fpts_r_ptr, double in_gamma, double in_pen_fact, int in_viscous, int in_vis_riemann_solve_type, double wave_speed_x, double wave_speed_y, double wave_speed_z, double lambda, int in_turb_model)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_inters*in_n_fpts_per_inter-1)/256)+1;
@@ -2787,26 +3070,58 @@ void calc_norm_tconinvf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_
     {
       if(in_vis_riemann_solve_type==0) //LDG
         {
-          if (in_n_dims==2)
-            calc_norm_tconinvf_fpts_NS_gpu_kernel<2,4,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous);
-          else if (in_n_dims==3)
-            calc_norm_tconinvf_fpts_NS_gpu_kernel<3,5,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous);
+          if (in_n_dims==2){
+            if(in_n_fields==4)
+              calc_norm_tconinvf_fpts_NS_gpu_kernel<2,4,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else if(in_n_fields==5)
+              calc_norm_tconinvf_fpts_NS_gpu_kernel<2,5,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+
+          else if (in_n_dims==3){
+            if(in_n_fields==5)
+              calc_norm_tconinvf_fpts_NS_gpu_kernel<3,5,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            if(in_n_fields==6)
+              calc_norm_tconinvf_fpts_NS_gpu_kernel<3,6,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else
+            FatalError("ERROR: Invalid number of dimensions ... ");
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized ... ");
     }
+
   else if ( in_riemann_solve_type==2) // Roe
     {
       if(in_vis_riemann_solve_type==0) //LDG
         {
-          if (in_n_dims==2)
-            calc_norm_tconinvf_fpts_NS_gpu_kernel<2,4,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous);
-          else if (in_n_dims==3)
-            calc_norm_tconinvf_fpts_NS_gpu_kernel<3,5,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous);
+          if (in_n_dims==2){
+            if(in_n_fields==4)
+              calc_norm_tconinvf_fpts_NS_gpu_kernel<2,4,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else if(in_n_fields==5)
+              calc_norm_tconinvf_fpts_NS_gpu_kernel<2,5,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+
+          else if (in_n_dims==3){
+            if(in_n_fields==5)
+              calc_norm_tconinvf_fpts_NS_gpu_kernel<3,5,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            if(in_n_fields==6)
+              calc_norm_tconinvf_fpts_NS_gpu_kernel<3,6,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconinvf_fpts_l_ptr,in_norm_tconinvf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_delta_disu_fpts_r_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else
+            FatalError("ERROR: Invalid number of dimensions ... ");
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized ... ");
     }
+
   else if (in_riemann_solve_type==1) // Lax-Friedrich
     {
       if(in_vis_riemann_solve_type==0) //LDG
@@ -2826,7 +3141,7 @@ void calc_norm_tconinvf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_
 }
 
 // wrapper for gpu kernel to calculate normal transformed continuous inviscid flux at the flux points at boundaries
-void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, int in_riemann_solve_type, double** in_delta_disu_fpts_l_ptr, double in_gamma, double in_R_ref, int in_viscous, int in_vis_riemann_solve_type, double in_time_bound, double in_wave_speed_x, double in_wave_speed_y, double in_wave_speed_z, double in_lambda, int in_equation)
+void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, int in_riemann_solve_type, double** in_delta_disu_fpts_l_ptr, double in_gamma, double in_R_ref, int in_viscous, int in_vis_riemann_solve_type, double in_time_bound, double in_wave_speed_x, double in_wave_speed_y, double in_wave_speed_z, double in_lambda, int in_equation, int in_turb_model)
 {
 
   check_cuda_error("Before", __FILE__, __LINE__);
@@ -2837,10 +3152,25 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
     {
       if (in_vis_riemann_solve_type==0) // LDG
         {
-          if (in_n_dims==2)
-            calc_norm_tconinvf_fpts_boundary_gpu_kernel<2,4,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation);
-          else if (in_n_dims==3)
-            calc_norm_tconinvf_fpts_boundary_gpu_kernel<3,5,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation);
+          if (in_n_dims==2){
+            if (in_n_fields==4)
+              calc_norm_tconinvf_fpts_boundary_gpu_kernel<2,4,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation, in_turb_model);
+            else if (in_n_fields==5)
+              calc_norm_tconinvf_fpts_boundary_gpu_kernel<2,5,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation, in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+
+          else if (in_n_dims==3){
+            if (in_n_fields==5)
+              calc_norm_tconinvf_fpts_boundary_gpu_kernel<3,5,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation, in_turb_model);
+            else if (in_n_fields==6)
+              calc_norm_tconinvf_fpts_boundary_gpu_kernel<3,6,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation, in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else
+            FatalError("ERROR: Invalid number of dimensions ... ");
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized in bdy riemann solver");
@@ -2850,9 +3180,9 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
       if (in_vis_riemann_solve_type==0) // LDG
         {
           if (in_n_dims==2)
-            calc_norm_tconinvf_fpts_boundary_gpu_kernel<2,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation);
+            calc_norm_tconinvf_fpts_boundary_gpu_kernel<2,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation, in_turb_model);
           else if (in_n_dims==3)
-            calc_norm_tconinvf_fpts_boundary_gpu_kernel<3,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation);
+            calc_norm_tconinvf_fpts_boundary_gpu_kernel<3,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation, in_turb_model);
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized in bdy riemann solver");
@@ -2861,10 +3191,24 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
     {
       if (in_vis_riemann_solve_type==0) // LDG
         {
-          if (in_n_dims==2)
-            calc_norm_tconinvf_fpts_boundary_gpu_kernel<2,4,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation);
-          else if (in_n_dims==3)
-            calc_norm_tconinvf_fpts_boundary_gpu_kernel<3,5,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation);
+          if (in_n_dims==2){
+            if (in_n_fields==4)
+              calc_norm_tconinvf_fpts_boundary_gpu_kernel<2,4,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation, in_turb_model);
+            else if (in_n_fields==5)
+              calc_norm_tconinvf_fpts_boundary_gpu_kernel<2,5,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation, in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else if (in_n_dims==3){
+            if (in_n_fields==5)
+              calc_norm_tconinvf_fpts_boundary_gpu_kernel<3,5,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation, in_turb_model);
+            else if (in_n_fields==6)
+              calc_norm_tconinvf_fpts_boundary_gpu_kernel<3,6,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation, in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else
+            FatalError("ERROR: Invalid number of dimensions ... ");
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized in bdy riemann solver");
@@ -2878,19 +3222,31 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
 }
 
 // wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points
-void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff, int artif_only, double* in_epsilon_ptr, double* in_epsilon_upts_ptr)
+void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff, int artif_only, double* in_epsilon_ptr, double* in_epsilon_upts_ptr, int in_turb_model, double in_c_v1, double in_omega, double in_prandtl_t)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
-  if (equation==0)
+  if (equation==0 || equation==2)
     {
-      if (in_n_dims==2)
-        calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,artif_only,in_epsilon_ptr,in_epsilon_upts_ptr);
-      else if (in_n_dims==3)
-        calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,artif_only,in_epsilon_ptr,in_epsilon_upts_ptr);
+      if (in_n_dims==2){
+        if (in_n_fields==4)
+          calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,artif_only,in_epsilon_ptr,in_epsilon_upts_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+        else if (in_n_fields==5)
+          calc_tdisvisf_upts_NS_gpu_kernel<2,5,3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,artif_only,in_epsilon_ptr,in_epsilon_upts_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+        else
+          FatalError("ERROR: Invalid fields for this dimension ... ");
+      }
+      else if (in_n_dims==3){
+        if (in_n_fields==5)
+          calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,artif_only,in_epsilon_ptr,in_epsilon_upts_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+        else if (in_n_fields==6)
+          calc_tdisvisf_upts_NS_gpu_kernel<3,6,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,artif_only,in_epsilon_ptr,in_epsilon_upts_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+        else
+          FatalError("ERROR: Invalid fields for this dimension ... ");
+      }
       else
         FatalError("ERROR: Invalid number of dimensions ... ");
     }
@@ -2909,6 +3265,26 @@ void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims,
   check_cuda_error("After",__FILE__, __LINE__);
 }
 
+
+// gpu kernel wrapper to calculate source term for SA turbulence model
+void calc_src_term_SA_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* in_grad_disu_upts_ptr, double* in_wall_distance_mag_ptr, double* in_src_term_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, int in_fix_vis, double in_c_v1, double in_c_v2, double in_c_v3, double in_c_b1, double in_c_b2, double in_c_w2, double in_c_w3, double in_omega, double in_Kappa)
+{
+
+  // HACK: fix 256 threads per block
+  int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+  if(in_n_dims == 2)
+    calc_src_term_gpu_kernel<2,5> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,in_grad_disu_upts_ptr,in_wall_distance_mag_ptr,in_src_term_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,in_c_v1,in_c_v2,in_c_v3,in_c_b1,in_c_b2,in_c_w2,in_c_w3,in_omega,in_Kappa);
+  else if(in_n_dims == 3)
+    calc_src_term_gpu_kernel<3,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,in_grad_disu_upts_ptr,in_wall_distance_mag_ptr,in_src_term_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis,in_c_v1,in_c_v2,in_c_v3,in_c_b1,in_c_b2,in_c_w2,in_c_w3,in_omega,in_Kappa);
+  else
+    FatalError("ERROR: Invalid number of dimensions ... ");
+
+  check_cuda_error("After",__FILE__, __LINE__);
+}
+
 // wrapper for gpu kernel to transform gradient at sol points to physical gradient
 void transform_grad_disu_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, int equation) 
 {
@@ -2917,11 +3293,23 @@ void transform_grad_disu_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_dim
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
-  if(equation == 0) {
-      if (in_n_dims==2)
-        transform_grad_disu_upts_kernel<2,4> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr);
-      else if (in_n_dims==3)
-        transform_grad_disu_upts_kernel<3,5> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr);
+  if(equation==0 || equation==2) {
+      if (in_n_dims==2){
+        if (in_n_fields==4)
+          transform_grad_disu_upts_kernel<2,4> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr);
+        else if (in_n_fields==5)
+          transform_grad_disu_upts_kernel<2,5> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr);
+        else
+          FatalError("ERROR: Invalid fields for this dimension ... ");
+      }
+      else if (in_n_dims==3){
+        if (in_n_fields==5)
+          transform_grad_disu_upts_kernel<3,5> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr);
+        else if (in_n_fields==6)
+          transform_grad_disu_upts_kernel<3,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr);
+        else
+          FatalError("ERROR: Invalid fields for this dimension ... ");
+      }
       else
         FatalError("ERROR: Invalid number of dimensions ... ");
     }
@@ -2997,21 +3385,35 @@ void calc_artivisc_coeff_fpts_gpu_kernel_wrapper(int in_n_eles, int in_n_fpts_pe
 }
 
 // wrapper for gpu kernel to calculate normal transformed continuous viscous flux at the flux points
-void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_norm_tconf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_r_ptr, double** in_epsilon_fpts_l_ptr, double** in_epsilon_fpts_r_ptr)
+void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_norm_tconf_fpts_r_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_r_ptr, double** in_epsilon_fpts_l_ptr, double** in_epsilon_fpts_r_ptr, int in_turb_model, double in_c_v1, double in_omega, double in_prandtl_t)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_inters*in_n_fpts_per_inter-1)/256)+1;
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
-  if(equation==0)
+  if(equation==0 || equation==2)
     {
       if (in_vis_riemann_solve_type==0) // LDG
         {
-          if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_NS_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_norm_tconf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis, artif_only, in_epsilon_l_ptr, in_epsilon_r_ptr, in_epsilon_fpts_l_ptr, in_epsilon_fpts_r_ptr);
-          else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_NS_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_norm_tconf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis, artif_only, in_epsilon_l_ptr, in_epsilon_r_ptr, in_epsilon_fpts_l_ptr, in_epsilon_fpts_r_ptr);
+          if (in_n_dims==2){
+            if (in_n_fields==4)
+              calc_norm_tconvisf_fpts_NS_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_norm_tconf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis, artif_only, in_epsilon_l_ptr, in_epsilon_r_ptr, in_epsilon_fpts_l_ptr, in_epsilon_fpts_r_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else if (in_n_fields==5)
+              calc_norm_tconvisf_fpts_NS_gpu_kernel<2,5,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_norm_tconf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis, artif_only, in_epsilon_l_ptr, in_epsilon_r_ptr, in_epsilon_fpts_l_ptr, in_epsilon_fpts_r_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else if (in_n_dims==3){
+            if (in_n_fields==5)
+              calc_norm_tconvisf_fpts_NS_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_norm_tconf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis, artif_only, in_epsilon_l_ptr, in_epsilon_r_ptr, in_epsilon_fpts_l_ptr, in_epsilon_fpts_r_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else if (in_n_fields==6)
+              calc_norm_tconvisf_fpts_NS_gpu_kernel<3,6,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_norm_tconf_fpts_r_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_r_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis, artif_only, in_epsilon_l_ptr, in_epsilon_r_ptr, in_epsilon_fpts_l_ptr, in_epsilon_fpts_r_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else
+            FatalError("ERROR: Invalid number of dimensions ... ");
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized ... ");
@@ -3036,7 +3438,7 @@ void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_
 }
 
 // wrapper for gpu kernel to calculate normal transformed continuous viscous flux at the flux points at boundaries
-void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double in_diff_coeff, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_fpts_l_ptr)
+void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double in_diff_coeff, int artif_only, double** in_epsilon_l_ptr, double** in_epsilon_fpts_l_ptr, int in_turb_model, double in_c_v1, double in_omega, double in_prandtl_t)
 {
 
   // HACK: fix 256 threads per block
@@ -3046,19 +3448,33 @@ void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
 
   if (in_vis_riemann_solve_type==0) // LDG
     {
-      if(in_equation==0)
+      if(in_equation==0 || in_equation==2)
         {
-          if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr);
-          else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr);
+          if (in_n_dims==2){
+            if (in_n_fields==4)
+              calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else if (in_n_fields==5)
+              calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,5,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else if (in_n_dims==3){
+            if (in_n_fields==5)
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else if (in_n_fields==6)
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,6,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else
+            FatalError("ERROR: Invalid number of dimensions ... ");
         }
       else if(in_equation==1)
         {
           if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
           else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_grad_disu_fpts_l_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_loc_fpts_ptr,in_boundary_type,in_bdy_params,in_delta_disu_fpts_l_ptr,in_R_ref,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis, in_time_bound, in_equation, in_diff_coeff,artif_only,in_epsilon_l_ptr, in_epsilon_fpts_l_ptr,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
         }
     }
   else
@@ -3083,6 +3499,8 @@ void pack_out_buffer_disu_gpu_kernel_wrapper(int in_n_fpts_per_inter,int in_n_in
     pack_out_buffer_disu_gpu_kernel<4> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_out_buffer_disu_ptr);
   else if (in_n_fields==5)
     pack_out_buffer_disu_gpu_kernel<5> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_out_buffer_disu_ptr);
+  else if (in_n_fields==6)
+    pack_out_buffer_disu_gpu_kernel<6> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_out_buffer_disu_ptr);
   else
     FatalError("Number of fields not supported in pack_out_buffer");
 
@@ -3097,33 +3515,35 @@ void pack_out_buffer_grad_disu_gpu_kernel_wrapper(int in_n_fpts_per_inter,int in
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
-  if (in_n_fields==1)
-    {
-      if (in_n_dims==2) {
-          pack_out_buffer_grad_disu_gpu_kernel<1,2> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_grad_disu_fpts_l_ptr,in_out_buffer_grad_disu_ptr);
-        }
-      else if (in_n_dims==3) {
-          pack_out_buffer_grad_disu_gpu_kernel<1,3> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_grad_disu_fpts_l_ptr,in_out_buffer_grad_disu_ptr);
-        }
-
-    }
-  else if (in_n_fields==4)
-    {
+  if (in_n_dims==2){
+    if (in_n_fields==1)
+      pack_out_buffer_grad_disu_gpu_kernel<1,2> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_grad_disu_fpts_l_ptr,in_out_buffer_grad_disu_ptr);
+    else if (in_n_fields==4)
       pack_out_buffer_grad_disu_gpu_kernel<4,2> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_grad_disu_fpts_l_ptr,in_out_buffer_grad_disu_ptr);
-    }
-  else if (in_n_fields==5)
-    {
+    else if (in_n_fields==5)
+      pack_out_buffer_grad_disu_gpu_kernel<5,2> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_grad_disu_fpts_l_ptr,in_out_buffer_grad_disu_ptr);
+    else
+      FatalError("Number of fields not supported for this dimension in pack_out_buffer");
+  }
+  else if (in_n_dims==3){
+    if (in_n_fields==1)
+      pack_out_buffer_grad_disu_gpu_kernel<1,3> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_grad_disu_fpts_l_ptr,in_out_buffer_grad_disu_ptr);
+    else if (in_n_fields==5)
       pack_out_buffer_grad_disu_gpu_kernel<5,3> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_grad_disu_fpts_l_ptr,in_out_buffer_grad_disu_ptr);
-    }
+    else if (in_n_fields==6)
+      pack_out_buffer_grad_disu_gpu_kernel<6,3> <<< n_blocks,block_size >>> (in_n_fpts_per_inter,in_n_inters,in_grad_disu_fpts_l_ptr,in_out_buffer_grad_disu_ptr);
+    else
+      FatalError("Number of fields not supported for this dimension in pack_out_buffer");
+  }
   else
-    FatalError("Number of fields not supported in pack_out_buffer");
+    FatalError("Number of dimensions not supported in pack_out_buffer");
 
   check_cuda_error("After", __FILE__, __LINE__);
 
 }
 
 // wrapper for gpu kernel to calculate normal transformed continuous inviscid flux at the flux points
-void calc_norm_tconinvf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr,int in_riemann_solve_type, double** in_delta_disu_fpts_l_ptr, double in_gamma, double in_pen_fact,  int in_viscous, int in_vis_riemann_solve_type, double wave_speed_x, double wave_speed_y, double wave_speed_z, double lambda)
+void calc_norm_tconinvf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr,int in_riemann_solve_type, double** in_delta_disu_fpts_l_ptr, double in_gamma, double in_pen_fact,  int in_viscous, int in_vis_riemann_solve_type, double wave_speed_x, double wave_speed_y, double wave_speed_z, double lambda, int in_turb_model)
 {
 
   int block_size=256;
@@ -3131,26 +3551,54 @@ void calc_norm_tconinvf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
-  if (in_riemann_solve_type==0 ) // Rusanov
+  if (in_riemann_solve_type==0) // Rusanov
     {
-      if (in_vis_riemann_solve_type==0 ) //LDG
+      if (in_vis_riemann_solve_type==0) //LDG
         {
-          if (in_n_dims==2)
-            calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<2,4,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous);
-          else if (in_n_dims==3)
-            calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<3,5,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous);
+          if (in_n_dims==2){
+            if (in_n_fields==4)
+              calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<2,4,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else if (in_n_fields==5)
+              calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<2,5,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else if (in_n_dims==3){
+            if (in_n_fields==5)
+              calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<3,5,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else if (in_n_fields==6)
+              calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<3,6,0,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else
+            FatalError("ERROR: Invalid number of dimensions ... ");
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized ... ");
     }
-  else if (in_riemann_solve_type==2 ) // Roe
+  else if (in_riemann_solve_type==2) // Roe
     {
-      if (in_vis_riemann_solve_type==0 ) //LDG
+      if (in_vis_riemann_solve_type==0) //LDG
         {
-          if (in_n_dims==2)
-            calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<2,4,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous);
-          else if (in_n_dims==3)
-            calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<3,5,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous);
+          if (in_n_dims==2){
+            if (in_n_fields==4)
+              calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<2,4,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else if (in_n_fields==5)
+              calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<2,5,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else if (in_n_dims==3){
+            if (in_n_fields==5)
+              calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<3,5,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else if (in_n_fields==6)
+              calc_norm_tconinvf_fpts_NS_mpi_gpu_kernel<3,6,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_delta_disu_fpts_l_ptr,in_gamma,in_pen_fact,in_viscous,in_turb_model);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else
+            FatalError("ERROR: Invalid number of dimensions ... ");
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized ... ");
@@ -3178,7 +3626,7 @@ void calc_norm_tconinvf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int
 
 
 // wrapper for gpu kernel to calculate normal transformed continuous viscous flux at the flux points
-void calc_norm_tconvisf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_diff_coeff)
+void calc_norm_tconvisf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_diff_coeff, int in_turb_model, double in_c_v1, double in_omega, double in_prandtl_t)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_inters*in_n_fpts_per_inter-1)/256)+1;
@@ -3189,10 +3637,24 @@ void calc_norm_tconvisf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int
     {
       if (in_vis_riemann_solve_type==0) // LDG
         {
-          if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis);
-          else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis);
+          if (in_n_dims==2){
+            if (in_n_fields==4)
+              calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else if (in_n_fields==5)
+              calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel<2,5,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else if (in_n_dims==3){
+            if (in_n_fields==5)
+              calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else if (in_n_fields==6)
+              calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel<3,6,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter,in_n_inters,in_disu_fpts_l_ptr,in_disu_fpts_r_ptr,in_grad_disu_fpts_l_ptr,in_grad_disu_fpts_r_ptr,in_norm_tconf_fpts_l_ptr,in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr,in_norm_fpts_ptr,in_pen_fact,in_tau,in_gamma,in_prandtl,in_rt_inf, in_mu_inf,in_c_sth,in_fix_vis,in_turb_model,in_c_v1,in_omega,in_prandtl_t);
+            else
+              FatalError("ERROR: Invalid fields for this dimension ... ");
+          }
+          else
+            FatalError("ERROR: Invalid number of dimensions ... ");
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized ... ");
@@ -3215,7 +3677,6 @@ void calc_norm_tconvisf_fpts_mpi_gpu_kernel_wrapper(int in_n_fpts_per_inter, int
     }
 
   check_cuda_error("After", __FILE__, __LINE__);
-
 }
 
 #endif
@@ -3240,7 +3701,12 @@ void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_p
     {
       bespoke_SPMV_kernel<5> <<<grid_size, block_size, shared_mem*sizeof(double) >>> (c_ptr, b_ptr, opp_ell_data_ptr, opp_ell_indices_ptr, nnz_per_row, n_eles, n, m, eles_per_block,n_eles*n,n_eles*m,add_flag);
     }
-
+  else if (n_fields==6)
+    {
+      bespoke_SPMV_kernel<6> <<<grid_size, block_size, shared_mem*sizeof(double) >>> (c_ptr, b_ptr, opp_ell_data_ptr, opp_ell_indices_ptr, nnz_per_row, n_eles, n, m, eles_per_block,n_eles*n,n_eles*m,add_flag);
+    }
+  else
+    FatalError("Number of fields not supported in bespoke_SPMV");
+  
+  check_cuda_error("After", __FILE__, __LINE__);
 }
-
-

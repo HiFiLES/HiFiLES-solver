@@ -657,6 +657,12 @@ void eles::mv_all_cpu_gpu(void)
           //norm_tdisvisf_fpts.mv_cpu_gpu();
           //norm_tconvisf_fpts.mv_cpu_gpu();
         }
+
+      if(run_input.turb_model == 1)
+        {
+          wall_distance_mag.mv_cpu_gpu();
+          src_term.cp_cpu_gpu();
+        }
     }
 #endif
 }
@@ -772,7 +778,7 @@ void eles::advance_rk11(void)
 #endif
 
 #ifdef _GPU
-      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
+      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_term.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
 #endif
 
       /*
@@ -857,7 +863,7 @@ void eles::advance_rk45(int in_step)
 
 #ifdef _GPU
 
-      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
+      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(), src_term.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
 
 #endif
 
@@ -979,7 +985,7 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 #endif
 
 #ifdef _GPU
-      calc_tdisinvf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
+      calc_tdisinvf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.turb_model);
 
 
       //tdisinvf_upts.cp_gpu_cpu();
@@ -1695,14 +1701,14 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 #endif
 
 #ifdef _GPU
-      calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff,run_input.artif_only, epsilon.get_ptr_gpu(), epsilon_upts.get_ptr_gpu());
+      calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff,run_input.artif_only, epsilon.get_ptr_gpu(), epsilon_upts.get_ptr_gpu(),run_input.turb_model,run_input.c_v1,run_input.omega,run_input.prandtl_t);
 #endif
 
     }
 }
 
 // calculate source term for SA turbulence model at solution points
-void eles::calc_src_term_SA()
+void eles::calc_src_term_SA(int in_disu_upts_from)
 {
     if (n_eles!=0)
     {
@@ -1717,7 +1723,7 @@ void eles::calc_src_term_SA()
                 // physical solution
                 for(k=0; k<n_fields; k++)
                 {
-                    temp_u(k)=disu_upts(0)(j,i,k);
+                    temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
                 }
 
                 // physical gradient
@@ -1741,9 +1747,9 @@ void eles::calc_src_term_SA()
 
 #endif
 
-//#ifdef _GPU
-//        calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
-//#endif
+#ifdef _GPU
+        calc_src_term_SA_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(), wall_distance_mag.get_ptr_gpu(), src_term.get_ptr_gpu(), run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.c_v1,run_input.c_v2,run_input.c_v3,run_input.c_b1,run_input.c_b2,run_input.c_w2,run_input.c_w3,run_input.omega,run_input.Kappa);
+#endif
 
     }
 }

@@ -854,7 +854,9 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
               for(int k=0;k<FlowSol->n_dims;k++) {
 
                 // find coordinates using function in class eles
+      cout << "I'm here!!! " << *FlowSol->mesh_eles(ctype(ic_l))->get_loc_fpts_ptr(j,f2loc_f(i,0),k,local_c(ic_l)) << endl;
                 FlowSol->loc_noslip_bdy(0)(j,n_seg_noslip_inters,k) = *FlowSol->mesh_eles(ctype(ic_l))->get_loc_fpts_ptr(j,f2loc_f(i,0),k,local_c(ic_l));
+      cout << "Now I'm here!!!" << endl;
               }
             }
             n_seg_noslip_inters++;
