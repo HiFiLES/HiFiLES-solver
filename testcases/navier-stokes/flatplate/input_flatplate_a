@@ -17,8 +17,12 @@ run_type                          // 0: Normal run mode, 1: Plot mode (solution 
 0
 order                             // Order of basis polynomials
 3
+dt_type                           // 0: User-supplied, 1: Global, 2: Local
+2
 dt 
 0.000002
+CFL                               
+0.001
 n_steps
 5000000
 adv_type                          // 0: Forward Euler, 3: RK45
@@ -61,7 +65,7 @@ inters_cub_order                  // Order of cubature rule for integrating over
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
 12
 plot_freq
-100000
+1000
 restart_dump_freq
 200000
 diagnostics_freq

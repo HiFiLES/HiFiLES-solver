@@ -2270,7 +2270,7 @@ GROUP:          1 ELEMENTS:        714 MATERIAL:          2 NFLAGS:          1
      711     712     713     714
 ENDOFSECTION
  BOUNDARY CONDITIONS 2.3.16
-                         Sup_In       1      15       0       6
+                         Char       1      15       0       6
         46    3    1
         61    3    1
         71    3    1
@@ -2288,7 +2288,7 @@ ENDOFSECTION
         40    3    2
 ENDOFSECTION
  BOUNDARY CONDITIONS 2.3.16
-                         Sup_In       1       5       0       6
+                         Char       1       5       0       6
         55    3    1
         57    3    3
         63    3    3
@@ -2296,7 +2296,7 @@ ENDOFSECTION
         44    3    1
 ENDOFSECTION
  BOUNDARY CONDITIONS 2.3.16
-                      Isotherm_Fix       1      20       0       6
+                      Slip_Wall       1      20       0       6
          3    3    1
          5    3    1
          7    3    1

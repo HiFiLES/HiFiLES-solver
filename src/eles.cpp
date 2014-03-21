@@ -880,6 +880,7 @@ void eles::advance_rk45(int in_step)
       // for first stage only, compute timestep
       if (in_step == 0)
         {
+          // For global timestepping, find minimum timestep
           if (run_input.dt_type == 1)
             {
               dt_local(0) = 1e12;
@@ -895,7 +896,7 @@ void eles::advance_rk45(int in_step)
                 }
             
          
-
+          // If using MPI, find minimum across partitions
 #ifdef _MPI
               MPI_Barrier(MPI_COMM_WORLD);
               MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),1,MPI_DOUBLE,MPI_COMM_WORLD);
@@ -905,6 +906,7 @@ void eles::advance_rk45(int in_step)
 #endif
             }
 
+          // For local timestepping, find element local timesteps
           if (run_input.dt_type == 2)
             {
               for (int ic=0; ic<n_eles; ic++)
@@ -973,6 +975,9 @@ double eles::calc_dt_local(int in_ele)
               lam = lam_new;
           }
 
+        if (viscous)
+          out_dt_local = run_input.CFL*h_ref(in_ele)/(run_input.order*run_input.order*(lam + run_input.order*run_input.order*run_input.mu_inf/h_ref(in_ele)));
+        else
           out_dt_local = run_input.CFL*h_ref(in_ele)/lam*1.0/(2.0*run_input.order + 1.0);
       }
 

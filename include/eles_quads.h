@@ -129,4 +129,7 @@ protected:
   /*! location of solution points in standard interval (tensor product elements only)*/
   array<double> loc_1d_upts_rest;
 
+  /*! element edge lengths for h_ref calculation */
+  array<double> length;
+
 };
