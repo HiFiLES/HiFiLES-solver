@@ -45,6 +45,9 @@ double* get_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int n_local
 /*! get pointer to normal continuous transformed inviscid flux at a flux point */
 double* get_norm_tconf_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol);
 
+/*! get pointer to subgrid-scale flux at a flux point */
+double* get_sgsf_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol);
+
 /*! get pointer to determinant of jacobian at a flux point */
 double* get_detjac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol);
 

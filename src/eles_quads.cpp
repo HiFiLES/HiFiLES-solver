@@ -70,6 +70,7 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
     FatalError("Equation not supported");
 
   n_inters_per_ele=4;
+  length.setup(4);
 
   n_upts_per_ele=(order+1)*(order+1);
   upts_type=run_input.upts_type_quad;
@@ -86,6 +87,7 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
   set_volume_cubpts();
   set_opp_volume_cubpts();
 
+	/*! Run mode */
   if (in_run_type==0)
     {
       n_fpts_per_inter.setup(4);
@@ -113,13 +115,9 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
           set_opp_6(run_input.sparse_quad);
 
           temp_grad_u.setup(n_fields,n_dims);
-          if(run_input.LES)
-            {
-              temp_sgsf.setup(n_fields,n_dims);
 
-              // Compute quad filter matrix
-              compute_filter_upts();
-            }
+          // Compute quad filter matrix
+          if(filter) compute_filter_upts();
         }
 
       temp_u.setup(n_fields);
@@ -760,7 +758,7 @@ void eles_quads::compute_filter_upts(void)
       printf("\nBuilding modal filter\n");
 
       // Compute modal filter
-      compute_modal_filter(filter_upts_1D, vandermonde, inv_vandermonde, N);
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
 
       sum = 0;
       for(i=0;i<N;i++)
@@ -1162,3 +1160,19 @@ double eles_quads::calc_ele_vol(double& detjac)
   return vol;
 }
 
+/*! Calculate element reference length for timestep calculation */
+double eles_quads::calc_h_ref_specific(int in_ele)
+  {
+    double out_h_ref;
+
+    // Compute edge lengths
+    length(0) = sqrt(pow(shape(0,0,in_ele) - shape(0,1,in_ele),2.0) + pow(shape(1,0,in_ele) - shape(1,1,in_ele),2.0));
+    length(1) = sqrt(pow(shape(0,1,in_ele) - shape(0,2,in_ele),2.0) + pow(shape(1,1,in_ele) - shape(1,2,in_ele),2.0));
+    length(2) = sqrt(pow(shape(0,2,in_ele) - shape(0,3,in_ele),2.0) + pow(shape(1,2,in_ele) - shape(1,3,in_ele),2.0));
+    length(3) = sqrt(pow(shape(0,3,in_ele) - shape(0,0,in_ele),2.0) + pow(shape(1,3,in_ele) - shape(1,0,in_ele),2.0));
+
+    // Get minimum edge length
+    out_h_ref = length.get_min();
+
+    return out_h_ref;
+  }

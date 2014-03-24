@@ -80,8 +80,13 @@ void SetInput(struct solution* FlowSol) {
 #ifdef _GPU
 
   /*! Associate a GPU to each rank. */
-  if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
-  if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+  // Cluster:
+  //if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
+  //if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+  // Enrico:
+  if (FlowSol->rank==0) { cudaSetDevice(2); }
+  else if (FlowSol->rank==1) { cudaSetDevice(0); }
+  else if (FlowSol->rank==2) { cudaSetDevice(3); }
 
 #endif
 
@@ -381,13 +386,15 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
         }
     }
 
-  // Set metrics at volume cubpts
-  if (FlowSol->rank==0) cout << "setting element transforms at volume cubpts ... " << endl;
-  for(int i=0;i<FlowSol->n_ele_types;i++) {
+  // Set metrics at volume cubpts. Only needed for computing error and diagnostics.
+  if (run_input.test_case != 0 || run_input.diagnostics_freq!=0) {
+    if (FlowSol->rank==0) cout << "setting element transforms at volume cubpts ... " << endl;
+    for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
-        }
+        FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
+      }
     }
+  }
 
   // set on gpu (important - need to do this before we set connectivity, so that pointers point to GPU memory)
 #ifdef _GPU
@@ -650,7 +657,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
       if (bctype_f!=10)
         {
-          if (bctype_f==0)	// internal interface
+          if (bctype_f==0)  // internal interface
             {
               if (ic_r==-1)
                 {
@@ -739,6 +746,169 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
         }
     }
 
+  // Flag interfaces for calculating LES wall model
+  if(run_input.wall_model>0 and in_run_type==0) {
+
+    if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
+
+    int n_seg_noslip_inters = 0;
+    int n_tri_noslip_inters = 0;
+    int n_quad_noslip_inters = 0;
+    int order = run_input.order;
+    int n_fpts_per_inter_seg = order+1;
+    int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+    int n_fpts_per_inter_quad = (order+1)*(order+1);
+
+    for(int i=0;i<FlowSol->num_inters;i++) {
+
+      bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0) );
+
+      // All types of no-slip wall
+      if(bctype_f == 11 || bctype_f == 12 || bctype_f == 13 || bctype_f == 14) {
+
+        // segs
+        if (f2nv(i)==2) n_seg_noslip_inters++;
+
+        // tris
+        if (f2nv(i)==3) n_tri_noslip_inters++;
+
+        // quads
+        if (f2nv(i)==4) n_quad_noslip_inters++;
+      }
+    }
+
+#ifdef _MPI
+
+    /*! Code paraphrased from SU2 */
+
+    array<int> n_seg_inters_array(FlowSol->nproc);
+    array<int> n_tri_inters_array(FlowSol->nproc);
+    array<int> n_quad_inters_array(FlowSol->nproc);
+    int n_global_seg_noslip_inters = 0;
+    int n_global_tri_noslip_inters = 0;
+    int n_global_quad_noslip_inters = 0;
+    int max_seg_noslip_inters = 0;
+    int max_tri_noslip_inters = 0;
+    int max_quad_noslip_inters = 0;
+    int buf;
+
+    /*! Communicate to all processors the total number of no-slip boundary
+    inters, the maximum number of no-slip boundary inters on any single
+    partition, and the number of no-slip inters on each partition. */
+
+    MPI_Allreduce(&n_seg_noslip_inters, &n_global_seg_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_tri_noslip_inters, &n_global_tri_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_quad_noslip_inters, &n_global_quad_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+    MPI_Allreduce(&n_seg_noslip_inters, &max_seg_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_tri_noslip_inters, &max_tri_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_quad_noslip_inters, &max_quad_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+    MPI_Allgather(&n_seg_noslip_inters, 1, MPI_INT, n_seg_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgather(&n_tri_noslip_inters, 1, MPI_INT, n_tri_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgather(&n_quad_noslip_inters, 1, MPI_INT, n_quad_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
+
+    // Set loop counters to max. inters on any partition
+    n_seg_noslip_inters = max_seg_noslip_inters;
+    n_tri_noslip_inters = max_tri_noslip_inters;
+    n_quad_noslip_inters = max_quad_noslip_inters;
+
+#endif
+
+    // Allocate arrays for coordinates of points on no-slip boundaries
+    FlowSol->loc_noslip_bdy.setup(FlowSol->n_bdy_inter_types);
+    FlowSol->loc_noslip_bdy(0).setup(n_fpts_per_inter_seg,n_seg_noslip_inters,FlowSol->n_dims);
+    FlowSol->loc_noslip_bdy(1).setup(n_fpts_per_inter_tri,n_tri_noslip_inters,FlowSol->n_dims);
+    FlowSol->loc_noslip_bdy(2).setup(n_fpts_per_inter_quad,n_quad_noslip_inters,FlowSol->n_dims);
+
+    n_seg_noslip_inters = 0;
+    n_tri_noslip_inters = 0;
+    n_quad_noslip_inters = 0;
+
+    // Get coordinates
+    for(int i=0;i<FlowSol->num_inters;i++) {
+
+      ic_l = f2c(i,0);
+      bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0) );
+
+      // All types of no-slip wall
+      if(bctype_f == 11 || bctype_f == 12 || bctype_f == 13 || bctype_f == 14) {
+
+        // segs
+        if (f2nv(i)==2) {
+          for(int j=0;j<n_fpts_per_inter_seg;j++) {
+            for(int k=0;k<FlowSol->n_dims;k++) {
+
+              // find coordinates
+              FlowSol->loc_noslip_bdy(0)(j,n_seg_noslip_inters,k) = *get_loc_fpts_ptr_cpu(ctype(ic_l), local_c(ic_l), f2loc_f(i,0), j, k, FlowSol);
+            }
+          }
+          n_seg_noslip_inters++;
+        }
+        // tris
+        if (f2nv(i)==3) {
+          for(int j=0;j<n_fpts_per_inter_tri;j++) {
+            for(int k=0;k<FlowSol->n_dims;k++) {
+
+              FlowSol->loc_noslip_bdy(1)(j,n_tri_noslip_inters,k) = *get_loc_fpts_ptr_cpu(ctype(ic_l), local_c(ic_l), f2loc_f(i,0), j, k, FlowSol);
+
+            }
+          }
+          n_tri_noslip_inters++;
+        }
+        // quads
+        if (f2nv(i)==4) {
+          for(int j=0;j<n_fpts_per_inter_quad;j++) {
+            for(int k=0;k<FlowSol->n_dims;k++) {
+
+              FlowSol->loc_noslip_bdy(2)(j,n_quad_noslip_inters,k) = *get_loc_fpts_ptr_cpu(ctype(ic_l), local_c(ic_l), f2loc_f(i,0), j, k, FlowSol);
+
+            }
+          }
+
+          n_quad_noslip_inters++;
+        }
+      }
+    }
+
+#ifdef _MPI
+
+    // Allocate global arrays for coordinates of points on no-slip boundaries
+    FlowSol->loc_noslip_bdy_global.setup(FlowSol->n_bdy_inter_types);
+
+    FlowSol->loc_noslip_bdy_global(0).setup(n_fpts_per_inter_seg,max_seg_noslip_inters,FlowSol->nproc*FlowSol->n_dims);
+
+    FlowSol->loc_noslip_bdy_global(1).setup(n_fpts_per_inter_tri,max_tri_noslip_inters,FlowSol->nproc*FlowSol->n_dims);
+
+    FlowSol->loc_noslip_bdy_global(2).setup(n_fpts_per_inter_quad,max_quad_noslip_inters,FlowSol->nproc*FlowSol->n_dims);
+
+    // Broadcast coordinates of interface points to all partitions
+
+    buf = max_seg_noslip_inters*n_fpts_per_inter_seg*FlowSol->n_dims;
+
+    MPI_Allgather(FlowSol->loc_noslip_bdy(0).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(0).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+    buf = max_tri_noslip_inters*n_fpts_per_inter_tri*FlowSol->n_dims;
+
+    MPI_Allgather(FlowSol->loc_noslip_bdy(1).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(1).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+    buf = max_quad_noslip_inters*n_fpts_per_inter_quad*FlowSol->n_dims;
+
+    MPI_Allgather(FlowSol->loc_noslip_bdy(2).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(2).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+    // Calculate distance of every solution point to nearest point on no-slip boundary for every partition
+    for(int i=0;i<FlowSol->n_ele_types;i++)
+      FlowSol->mesh_eles(i)->calc_wall_distance_parallel(n_seg_inters_array,n_tri_inters_array,n_quad_inters_array,FlowSol->loc_noslip_bdy_global,FlowSol->nproc);
+
+#else // serial
+
+    // Calculate distance of every solution point to nearest point on no-slip boundary
+    for(int i=0;i<FlowSol->n_ele_types;i++)
+      FlowSol->mesh_eles(i)->calc_wall_distance(n_seg_noslip_inters,n_tri_noslip_inters,n_quad_noslip_inters,FlowSol->loc_noslip_bdy);
+
+#endif
+  }
+
   // set on GPU
 #ifdef _GPU
   if (in_run_type==0)
@@ -749,6 +919,10 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
       for(int i=0;i<FlowSol->n_bdy_inter_types;i++)
         FlowSol->mesh_bdy_inters(i).mv_all_cpu_gpu();
+
+      if (FlowSol->rank==0) cout << "Moving wall_distance to GPU ... " << endl;
+      for(int i=0;i<FlowSol->n_ele_types;i++)
+        FlowSol->mesh_eles(i)->mv_wall_distance_cpu_gpu();
     }
 #endif
 
@@ -911,7 +1085,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
 
   for (int i=0;i<n_bcs;i++)
     {
-      mesh_file.getline(buf,BUFSIZ);	// Load ith boundary group
+      mesh_file.getline(buf,BUFSIZ);  // Load ith boundary group
       if (strstr(buf,"ENDOFSECTION")){
           continue; // may not have a boundary section
         }
@@ -1033,7 +1207,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   char bc_txt_temp[100];
 
   mesh_file >> dummy;
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   for(int i=0;i<dummy;i++)
     {
       mesh_file.getline(buf,BUFSIZ);
@@ -1050,8 +1224,8 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   // Each processor reads number of entities
   int n_entities;
   // Read number of elements and bdys
-  mesh_file 	>> n_entities; 	// num cells in mesh
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+  mesh_file   >> n_entities;   // num cells in mesh
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
   array<int> vlist_boun(4), vlist_cell(4);
   array<int> vlist_local(4);
@@ -1075,7 +1249,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
 
       if (strstr(bcTXT[bcid],"FLUID"))
         {
-          mesh_file.getline(buf,BUFSIZ);	// skip line
+          mesh_file.getline(buf,BUFSIZ);  // skip line
           continue;
         }
       else
@@ -1109,7 +1283,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
           vlist_boun(j)--;
         }
 
-      mesh_file.getline(buf,BUFSIZ);	// Get rest of line
+      mesh_file.getline(buf,BUFSIZ);  // Get rest of line
 
       // Check if two vertices belong to processor
       bool belong_to_proc = 1;
@@ -1209,9 +1383,9 @@ void read_vertices_gambit(string& in_file_name, int in_n_verts, array<int> &in_i
   // Find number of vertices and number of cells
   int n_verts_global, dummy;
   mesh_file       >> n_verts_global // num vertices in mesh
-                  >> dummy 	// num elements
-                  >> dummy 	// num material groups
-                  >> dummy 	// num boundary groups
+                  >> dummy   // num elements
+                  >> dummy   // num material groups
+                  >> dummy   // num boundary groups
                   >> FlowSol->n_dims;        // num space dimensions
 
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
@@ -1371,18 +1545,18 @@ void read_connectivity_gambit(string& in_file_name, int &out_n_cells, array<int>
     mesh_file.getline(buf,BUFSIZ);
 
   // Find number of vertices and number of cells
-  mesh_file >> n_verts_global 	// num vertices in mesh
+  mesh_file >> n_verts_global   // num vertices in mesh
             >> n_cells_global     // num elements
             >> dummy              // num material groups
             >> dummy              // num boundary groups
-            >> FlowSol->n_dims;	// num space dimensions
+            >> FlowSol->n_dims;  // num space dimensions
 
   if (FlowSol->n_dims != 2 && FlowSol->n_dims != 3) {
       FatalError("Invalid mesh dimensionality. Expected 2D or 3D.");
     }
 
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
-  mesh_file.getline(buf,BUFSIZ);	// Skip 2 lines
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
+  mesh_file.getline(buf,BUFSIZ);  // Skip 2 lines
   mesh_file.getline(buf,BUFSIZ);
 
   // Skip the x,y,z location of vertices
@@ -1438,7 +1612,7 @@ void read_connectivity_gambit(string& in_file_name, int &out_n_cells, array<int>
   // Start reading elements
   for (int i=0;i<out_n_cells;i++)
     {
-      //  ctype is the element type:	1=edge, 2=quad, 3=tri, 4=brick, 5=wedge, 6=tet, 7=pyramid
+      //  ctype is the element type:  1=edge, 2=quad, 3=tri, 4=brick, 5=wedge, 6=tet, 7=pyramid
       mesh_file >> out_ic2icg(i) >> dummy >> out_c2n_v(i);
 
       if (dummy==3) out_ctype(i)=0;
@@ -1551,7 +1725,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
 
   // Read number of boundaries and fields defined
   mesh_file >> n_bnds;
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   for(int i=0;i<n_bnds;i++)
     {
       cout << "i "<<i << endl;
@@ -1580,8 +1754,8 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   // Each processor first reads number of global cells
   int n_entities;
   // Read number of elements and bdys
-  mesh_file >> n_entities; 	// num cells in mesh
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+  mesh_file >> n_entities;   // num cells in mesh
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
   int icount=0;
 
@@ -1595,7 +1769,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
       if (strstr(bcTXT[bcid],"FLUID"))
         icount++;
 
-      mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+      mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
     }
   n_cells_global=icount;
@@ -1640,8 +1814,8 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
       if (str=="$Elements") break;
     }
 
-  mesh_file >> n_entities; 	// num cells in mesh
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+  mesh_file >> n_entities;   // num cells in mesh
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
   // Skip elements being read by other processors
   icount=0;
@@ -1896,7 +2070,7 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
   //array<int> part_array(klocal);
   //for (i=0;i<klocal;i++)
   //{
-  //	part_array(i) = part[i];
+  //  part_array(i) = part[i];
   //}
   //part_array.print_to_file(FlowSol->rank);
   //cout << "After print" << endl;
@@ -2028,8 +2202,8 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
 void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e, array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv, array<int>& out_rot_tag, array<int>& out_unmatched_faces, int& out_n_unmatched_faces, array<int>& out_icvsta, array<int>& out_icvert, int& out_n_faces, int& out_n_edges, struct solution* FlowSol)
 {
 
-  // inputs: 	in_c2v (clls to vertex) , in_ctype (type of cell)
-  // outputs:	f2c (face to cell), c2f (cell to face), f2loc_f (face to local face index of right and left cells), rot_tag,  n_faces (number of faces in the mesh)
+  // inputs:   in_c2v (clls to vertex) , in_ctype (type of cell)
+  // outputs:  f2c (face to cell), c2f (cell to face), f2loc_f (face to local face index of right and left cells), rot_tag,  n_faces (number of faces in the mesh)
   // assumes that array f2c,f2f
 
   int sta_ind,end_ind;
@@ -2284,7 +2458,7 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
                 }
             }
 
-        }	// end of loop over k
+        }  // end of loop over k
     } // end of loop over ic
 
   out_n_faces = iface;

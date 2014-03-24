@@ -47,7 +47,7 @@ using namespace std;
 // default constructor
 
 eles_tets::eles_tets()
-{	
+{
 }
 
 // #### methods ####
@@ -86,6 +86,7 @@ void eles_tets::setup_ele_type_specific(int in_run_type)
   set_volume_cubpts();
   set_opp_volume_cubpts();
 
+	/*! Run mode */
   if (in_run_type==0)
     {
       n_fpts_per_inter.setup(4);
@@ -117,12 +118,9 @@ void eles_tets::setup_ele_type_specific(int in_run_type)
           set_opp_6(run_input.sparse_tet);
 
           temp_grad_u.setup(n_fields,n_dims);
-          if(run_input.LES)
-            {
-              temp_sgsf.setup(n_fields,n_dims);
-              // Compute tri filter matrix
-              compute_filter_upts();
-            }
+
+          // Compute tet filter matrix
+          if(filter) compute_filter_upts();
         }
 
 
@@ -697,14 +695,14 @@ void eles_tets::set_loc_spts(void)
     // Node 2 at (-1,1,-1)
     // Node 3 at (-1,-1,1)
 
-// 	z	
+// 	z
 //	|      y
 // 	      /
 //  3
 //  |   2
-//  |  / 
-//	| /   
-//	|/        
+//  |  /
+//	| /
+//	|/
 //  0--------1    ----> x
 
 // Second order
@@ -720,14 +718,14 @@ void eles_tets::set_loc_spts(void)
 // Node 8 at (-1,0,0)
 // Node 9 at (0,-1,0)
 
-// 	z	
+// 	z
 //	|      y
 // 	      /
 //  3
 //  |   2
-//  6  / \ 
-//	| 5   7  
-//	|/     \    
+//  6  / \
+//	| 5   7
+//	|/     \
 //  0---4----1    ----> x
 
 }
@@ -830,10 +828,10 @@ void eles_tets::compute_filter_upts(void)
       printf("\nBuilding modal filter\n");
 
       // Compute modal filter
-      compute_modal_filter(filter_upts, vandermonde, inv_vandermonde, N);
+      compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order);
 
-      printf("\nFilter:\n");
-      filter_upts.print();
+      //printf("\nFilter:\n");
+      //filter_upts.print();
 
     }
   else // Simple average for low order
@@ -859,8 +857,8 @@ void eles_tets::compute_filter_upts(void)
           filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
         }
     }
-  printf("\nFilter after symmetrising:\n");
-  filter_upts.print();
+  //printf("\nFilter after symmetrising:\n");
+  //filter_upts.print();
   for(i=0;i<N2;i++)
     {
       norm = 0.0;
@@ -947,7 +945,7 @@ int eles_tets::read_restart_info(ifstream& restart_file)
 }
 
 // write restart info
-void eles_tets::write_restart_info(ofstream& restart_file)        
+void eles_tets::write_restart_info(ofstream& restart_file)
 {
   restart_file << "TETS" << endl;
 
@@ -1676,3 +1674,8 @@ double eles_tets::calc_ele_vol(double& detjac)
   return vol;
 }
 
+/*! Calculate element reference length for timestep calculation */
+double eles_tets::calc_h_ref_specific(int in_ele)
+  {
+    FatalError("Reference length calculation not implemented for this element!")
+  }

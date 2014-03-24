@@ -38,9 +38,10 @@ using namespace std;
 // default constructor
 
 inters::inters()
-{	
+{
   order=run_input.order;
   viscous=run_input.viscous;
+  LES = run_input.LES;
 }
 
 inters::~inters() { }
@@ -113,6 +114,14 @@ void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
           normal_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
           pos_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_dims);
         }
+
+      if(LES) {
+        sgsf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+        temp_sgsf_l.setup(n_fields,n_dims);
+      }
+      else {
+        sgsf_fpts_l.setup(1);
+      }
 
       temp_u_l.setup(n_fields);
       temp_u_r.setup(n_fields);

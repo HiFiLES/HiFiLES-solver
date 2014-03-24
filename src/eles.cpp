@@ -57,7 +57,7 @@ using namespace std;
 // default constructor
 
 eles::eles()
-{	
+{
 }
 
 // default destructor
@@ -69,7 +69,7 @@ eles::~eles() {}
 // set number of elements
 
 void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
-{	
+{
 
   n_eles=in_n_eles;
 
@@ -79,6 +79,16 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
       order=run_input.order;
       p_res=run_input.p_res;
       viscous =run_input.viscous;
+      LES = run_input.LES;
+      sgs_model = run_input.SGS_model;
+      wall_model = run_input.wall_model;
+
+      // Set filter flag before calling setup_ele_type_specific
+      filter = 0;
+      if(LES)
+        if(sgs_model==3 || sgs_model==2 || sgs_model==4)
+          filter = 1;
+
       inters_cub_order = run_input.inters_cub_order;
       volume_cub_order = run_input.volume_cub_order;
       n_bdy_eles=0;
@@ -122,6 +132,25 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
           disu_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
         }
 
+      // Allocate storage for timestep
+      // If using global minimum, only one timestep
+      if (run_input.dt_type == 1)
+        dt_local.setup(1);
+      // If using local, one timestep per element
+      else
+        dt_local.setup(n_eles);
+
+      // If in parallel and using global minumum timestep, allocate storage
+      // for minimum timesteps in each partition
+#ifdef _MPI
+      if (run_input.dt_type == 1)
+        {
+          MPI_Comm_size(MPI_COMM_WORLD,&nproc);
+          dt_local_mpi.setup(nproc);
+          dt_local_mpi.initialize_to_zero();
+        }
+#endif
+
       // Initialize to zero
       for (int m=0;m<n_adv_levels;m++)
         for (int i=0;i<n_upts_per_ele;i++)
@@ -129,15 +158,72 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
             for (int k=0;k<n_fields;k++)
               disu_upts(m)(i,j,k) = 0.;
 
-      // Allocate Leonard tensors if WSM model
-      if(run_input.LES==1)
-        {
-          if(run_input.SGS_model==2 || run_input.SGS_model==4)
-            {
-              Lm.setup(n_upts_per_ele,n_dims,n_dims);
-              Hm.setup(n_upts_per_ele,n_dims);
-            }
+      // Allocate extra arrays for LES models
+      if(LES) {
+
+        sgsf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
+        sgsf_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
+
+        // SVV model requires filtered solution
+        if(sgs_model==3 || sgs_model==2 || sgs_model==4) {
+          disuf_upts.setup(n_upts_per_ele,n_eles,n_fields);
         }
+        // allocate dummy array for passing to GPU routine
+        else {
+          disuf_upts.setup(1);
+        }
+
+        // Similarity model requires product terms and Leonard tensors
+        if(sgs_model==2 || sgs_model==4) {
+
+          // Leonard tensor and velocity-velocity product for momentum SGS term
+          if(n_dims==2) {
+            Lu.setup(n_upts_per_ele,n_eles,3);
+            uu.setup(n_upts_per_ele,n_eles,3);
+          }
+          else if(n_dims==3) {
+            Lu.setup(n_upts_per_ele,n_eles,6);
+            uu.setup(n_upts_per_ele,n_eles,6);
+          }
+
+          // Leonard tensor and velocity-energy product for energy SGS term
+          Le.setup(n_upts_per_ele,n_eles,n_dims);
+          ue.setup(n_upts_per_ele,n_eles,n_dims);
+
+        }
+        // allocate dummy arrays
+        else {
+          Lu.setup(1);
+          uu.setup(1);
+          Le.setup(1);
+          ue.setup(1);
+        }
+      }
+      // Dummy arrays to pass to GPU kernel wrapper
+      else {
+        disuf_upts.setup(1);
+        Lu.setup(1);
+        uu.setup(1);
+        Le.setup(1);
+        ue.setup(1);
+      }
+
+      // Allocate array for wall distance if using a wall model
+      if(wall_model > 0) {
+        wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
+        twall.setup(n_upts_per_ele,n_eles,n_fields);
+        zero_array(wall_distance);
+        zero_array(twall);
+      }
+      else {
+        wall_distance.setup(1);
+        twall.setup(1);
+      }
+
+      // Allocate SGS flux array if using LES or wall model
+      if(LES || wall_model > 0) {
+        temp_sgsf.setup(n_fields,n_dims);
+      }
 
       set_shape(in_max_n_spts_per_ele);
       ele2global_ele.setup(n_eles);
@@ -482,6 +568,18 @@ void eles::set_ics(double& time)
             }
         }
     }
+
+    // If required, calculate element reference lengths
+    if (run_input.dt_type != 0)
+      {
+        // Allocate array
+        h_ref.setup(n_eles);
+        h_ref.initialize_to_zero();
+
+        // Call element specific function to obtain length
+        for (int i=0; i<n_eles; i++)
+          h_ref(i) = (*this).calc_h_ref_specific(i);
+      }
 }
 
 
@@ -593,36 +691,58 @@ void eles::write_restart_data(ofstream& restart_file)
 
 void eles::mv_all_cpu_gpu(void)
 {
-#ifdef _GPU
+  #ifdef _GPU
   if (n_eles!=0)
+  {
+    disu_upts(0).cp_cpu_gpu();
+    div_tconf_upts(0).cp_cpu_gpu();
+
+    for(int i=1;i<n_adv_levels;i++)
     {
-      disu_upts(0).cp_cpu_gpu();
-      div_tconf_upts(0).cp_cpu_gpu();
-
-      for(int i=1;i<n_adv_levels;i++)
-        {
-          disu_upts(i).cp_cpu_gpu();
-          div_tconf_upts(i).mv_cpu_gpu();
-        }
-
-      disu_fpts.mv_cpu_gpu();
-      tdisf_upts.mv_cpu_gpu();
-      norm_tdisf_fpts.mv_cpu_gpu();
-      norm_tconf_fpts.mv_cpu_gpu();
-
-      //TODO: mv instead of cp
-      if(viscous)
-        {
-          delta_disu_fpts.mv_cpu_gpu();
-          grad_disu_upts.cp_cpu_gpu();
-          grad_disu_fpts.mv_cpu_gpu();
-
-          //tdisvisf_upts.mv_cpu_gpu();
-          //norm_tdisvisf_fpts.mv_cpu_gpu();
-          //norm_tconvisf_fpts.mv_cpu_gpu();
-        }
+      disu_upts(i).cp_cpu_gpu();
+      div_tconf_upts(i).mv_cpu_gpu();
     }
-#endif
+
+    disu_fpts.mv_cpu_gpu();
+    tdisf_upts.mv_cpu_gpu();
+    norm_tdisf_fpts.mv_cpu_gpu();
+    norm_tconf_fpts.mv_cpu_gpu();
+
+    //TODO: mv instead of cp
+    if(viscous)
+    {
+      delta_disu_fpts.mv_cpu_gpu();
+      grad_disu_upts.cp_cpu_gpu();
+      grad_disu_fpts.mv_cpu_gpu();
+
+      //tdisvisf_upts.mv_cpu_gpu();
+      //norm_tdisvisf_fpts.mv_cpu_gpu();
+      //norm_tconvisf_fpts.mv_cpu_gpu();
+    }
+
+    // LES and wall model arrays
+    filter_upts.mv_cpu_gpu();
+    disuf_upts.mv_cpu_gpu();
+    sgsf_upts.mv_cpu_gpu();
+    sgsf_fpts.mv_cpu_gpu();
+    uu.mv_cpu_gpu();
+    ue.mv_cpu_gpu();
+    Lu.mv_cpu_gpu();
+    Le.mv_cpu_gpu();
+    twall.mv_cpu_gpu();
+  }
+  #endif
+}
+
+// move wall distance array to gpu
+
+void eles::mv_wall_distance_cpu_gpu(void)
+{
+  #ifdef _GPU
+
+  wall_distance.mv_cpu_gpu();
+
+  #endif
 }
 
 // copy discontinuous solution at solution points to cpu
@@ -706,115 +826,181 @@ void eles::rm_detjac_upts_cpu(void)
 #endif
 }
 
-// advance with rk11 (forwards euler)
+// advance solution
 
-void eles::advance_rk11(void)
-{
+void eles::AdvanceSolution(int in_step, int adv_type) {
+
   if (n_eles!=0)
-    {
+  {
+
+    /*! Time integration using a forwards Euler integration. */
+
+    if (adv_type == 0) {
 
       /*!
-    Performs B = B + (alpha*A) where: \n
-    alpha = -run_input.dt \n
-    A = div_tconf_upts(0)\n
-    B = disu_upts(0)
-    */
+       Performs B = B + (alpha*A) where: \n
+       alpha = -run_input.dt \n
+       A = div_tconf_upts(0)\n
+       B = disu_upts(0)
+       */
 
 #ifdef _CPU
-      for (int i=0;i<n_fields;i++)
+      // If using global minimum timestep based on CFL, determine
+      // global minimum
+      if (run_input.dt_type == 1)
+        {
+          // Find minimum timestep
+          dt_local(0) = 1e12; // Set to large value
+
+          for (int ic=0; ic<n_eles; ic++)
+            {
+              dt_local_new = calc_dt_local(ic);
+
+              if (dt_local_new < dt_local(0))
+                  dt_local(0) = dt_local_new;
+            }
+
+          // If running in parallel, gather minimum timestep values from
+          // each partition and find global minumum across partitions
+#ifdef _MPI
+          MPI_Barrier(MPI_COMM_WORLD);
+          MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
+              1, MPI_DOUBLE, MPI_COMM_WORLD);
+          MPI_Barrier(MPI_COMM_WORLD);
+
+          dt_local(0) = dt_local_mpi.get_min();
+#endif
+        }
+
+        // If using local timestepping, just compute and store all local
+        // timesteps
+        if (run_input.dt_type == 2)
+          {
+            for (int ic=0; ic<n_eles; ic++)
+              dt_local(ic) = calc_dt_local(ic);
+          }
+
+        for (int i=0;i<n_fields;i++)
         {
           for (int ic=0;ic<n_eles;ic++)
             {
               for (int inp=0;inp<n_upts_per_ele;inp++)
                 {
-                  disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                  // User supplied timestep
+                  if (run_input.dt_type == 0)
+                    disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+
+                  // Global minimum timestep
+                  else if (run_input.dt_type == 1)
+                    disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+
+                  // Element local timestep
+                  else if (run_input.dt_type == 2)
+                    disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                  else
+                    FatalError("ERROR: dt_type not recognized!")
+
                 }
             }
         }
+
 #endif
 
 #ifdef _GPU
       RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
 #endif
 
-      /*
-
-    #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
-    cblas_daxpy(n_eles*n_fields*n_upts_per_ele,-run_input.dt,div_tconf_upts(0).get_ptr_cpu(),1,disu_upts(0).get_ptr_cpu(),1);
-
-
-    #endif
-
-
-    cublasDaxpy(n_eles*n_fields*n_upts_per_ele,-run_input.dt,div_tconf_upts(0).get_ptr_gpu(),1,disu_upts(0).get_ptr_gpu(),1);
-
-    #endif
-  */
     }
-}
 
-// advance with rk33 (three-stage third-order runge-kutta)
+    /*! Time integration using a RK45 method. */
 
-void eles::advance_rk33(int in_step)
-{
-  FatalError("Advance_rk33 not implemented");
-}
-
-// advance with rk44 (four-stage forth-order runge-kutta)
-
-void eles::advance_rk44(int in_step)
-{
-  FatalError("Advance_rk44 not implemented");
-}
-
-// advance with rk45 (five-stage forth-order low-storage runge-kutta)
-
-void eles::advance_rk45(int in_step)
-{	
-  if (n_eles!=0)
-    {
+    else if (adv_type == 3) {
 
       double rk4a, rk4b;
       if (in_step==0) {
-          rk4a=    0.0;
-          rk4b=   0.149659021999229;
-        }
+        rk4a=    0.0;
+        rk4b=   0.149659021999229;
+      }
       else if (in_step==1) {
-          rk4a=   -0.417890474499852;
-          rk4b=   0.379210312999627;
-        }
+        rk4a=   -0.417890474499852;
+        rk4b=   0.379210312999627;
+      }
       else if (in_step==2) {
-          rk4a=   -1.192151694642677;
-          rk4b=   0.822955029386982;
-        }
+        rk4a=   -1.192151694642677;
+        rk4b=   0.822955029386982;
+      }
       else if (in_step==3) {
-          rk4a=   -1.697784692471528;
-          rk4b=   0.699450455949122;
-        }
+        rk4a=   -1.697784692471528;
+        rk4b=   0.699450455949122;
+      }
       else if (in_step==4) {
-          rk4a=   -1.514183444257156;
-          rk4b=   0.153057247968152;
-        }
+        rk4a=   -1.514183444257156;
+        rk4b=   0.153057247968152;
+      }
 
 #ifdef _CPU
-
-      double res, rhs;
-      for (int ic=0;ic<n_eles;ic++)
+      // for first stage only, compute timestep
+      if (in_step == 0)
         {
-          for (int i=0;i<n_fields;i++)
+          // For global timestepping, find minimum timestep
+          if (run_input.dt_type == 1)
             {
-              for (int inp=0;inp<n_upts_per_ele;inp++)
-                {
-                  rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
-                  res = disu_upts(1)(inp,ic,i);
-                  res = rk4a*res + run_input.dt*rhs;
+              dt_local(0) = 1e12;
 
-                  disu_upts(1)(inp,ic,i) = res;
-                  disu_upts(0)(inp,ic,i) += rk4b*res;
+              for (int ic=0; ic<n_eles; ic++)
+                {
+                  dt_local_new = calc_dt_local(ic);
+
+                  if (dt_local_new < dt_local(0))
+                    {
+                      dt_local(0) = dt_local_new;
+                    }
+                }
+
+
+          // If using MPI, find minimum across partitions
+#ifdef _MPI
+              MPI_Barrier(MPI_COMM_WORLD);
+              MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),1,MPI_DOUBLE,MPI_COMM_WORLD);
+              MPI_Barrier(MPI_COMM_WORLD);
+
+              dt_local(0) = dt_local_mpi.get_min();
+#endif
+            }
+
+          // For local timestepping, find element local timesteps
+          if (run_input.dt_type == 2)
+            {
+              for (int ic=0; ic<n_eles; ic++)
+                {
+                  dt_local(ic) = calc_dt_local(ic);
                 }
             }
         }
+
+      double res, rhs;
+      for (int ic=0;ic<n_eles;ic++)
+      {
+        for (int i=0;i<n_fields;i++)
+          {
+            for (int inp=0;inp<n_upts_per_ele;inp++)
+              {
+                rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
+                res = disu_upts(1)(inp,ic,i);
+
+                if (run_input.dt_type == 0)
+                  res = rk4a*res + run_input.dt*rhs;
+                else if (run_input.dt_type == 1)
+                  res = rk4a*res + dt_local(0)*rhs;
+                else if (run_input.dt_type == 2)
+                  res = rk4a*res + dt_local(ic)*rhs;
+
+                disu_upts(1)(inp,ic,i) = res;
+                disu_upts(0)(inp,ic,i) += rk4b*res;
+              }
+          }
+      }
+
 #endif
 
 #ifdef _GPU
@@ -824,10 +1010,58 @@ void eles::advance_rk45(int in_step)
 #endif
 
     }
+
+    /*! Time integration not implemented. */
+
+    else {
+      cout << "ERROR: Time integration type not recognised ... " << endl;
+    }
+
+  }
+
 }
 
+double eles::calc_dt_local(int in_ele)
+  {
+    double lam, lam_new;
+    double out_dt_local;
 
-// calculate the discontinuous solution at the flux points 
+    // 2-D Elements
+    if (n_dims == 2)
+      {
+        double u,v,p,c;
+
+        lam = 0;
+
+        // Calculate maximum internal wavespeed per element
+        for (int i=0; i<n_upts_per_ele; i++)
+          {
+            u = disu_upts(0)(i,in_ele,1)/disu_upts(0)(i,in_ele,0);
+            v = disu_upts(0)(i,in_ele,2)/disu_upts(0)(i,in_ele,0);
+            p = (run_input.gamma - 1.0) * (disu_upts(0)(i,in_ele,3) - 0.5*disu_upts(0)(i,in_ele,0)*(u*u+v*v));
+            c = sqrt(run_input.gamma * p/disu_upts(0)(i,in_ele,0));
+
+            lam_new = sqrt(u*u + v*v) + c;
+
+            if (lam < lam_new)
+              lam = lam_new;
+          }
+
+        if (viscous)
+          out_dt_local = run_input.CFL*h_ref(in_ele)/(run_input.order*run_input.order*(lam + run_input.order*run_input.order*run_input.mu_inf/h_ref(in_ele)));
+        else
+          out_dt_local = run_input.CFL*h_ref(in_ele)/lam*1.0/(2.0*run_input.order + 1.0);
+      }
+
+    else if (n_dims == 3)
+    {
+      FatalError("Timestep type is not implemented in 3D yet.");
+    }
+
+    return out_dt_local;
+  }
+
+// calculate the discontinuous solution at the flux points
 
 void eles::calc_disu_fpts(int in_disu_upts_from)
 {
@@ -842,7 +1076,7 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
       C = disu_fpts
       */
 
-      Arows =	n_fpts_per_ele;
+      Arows =  n_fpts_per_ele;
       Acols = n_upts_per_ele;
 
       Brows = Acols;
@@ -1217,14 +1451,14 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 }
 
 
-// calculate uncorrected transformed gradient of the discontinuous solution at the solution points 
+// calculate uncorrected transformed gradient of the discontinuous solution at the solution points
 // (mixed derivative)
 
 void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
 {
   if (n_eles!=0)
     {
-      Arows =	n_upts_per_ele;
+      Arows =  n_upts_per_ele;
       Acols = n_upts_per_ele;
 
       Brows = Acols;
@@ -1303,7 +1537,7 @@ void eles::calc_cor_grad_disu_upts(void)
 {
   if (n_eles!=0)
     {
-      Arows =	n_upts_per_ele;
+      Arows =  n_upts_per_ele;
       Acols = n_fpts_per_ele;
 
       Brows = Acols;
@@ -1449,13 +1683,13 @@ void eles::calc_cor_grad_disu_upts(void)
 }
 
 
-// calculate corrected gradient of the discontinuous solution at flux points 
+// calculate corrected gradient of the discontinuous solution at flux points
 
 void eles::calc_cor_grad_disu_fpts(void)
 {
   if (n_eles!=0)
     {
-      Arows =	n_fpts_per_ele;
+      Arows =  n_fpts_per_ele;
       Acols = n_upts_per_ele;
 
       Brows = Acols;
@@ -1527,65 +1761,256 @@ void eles::calc_cor_grad_disu_fpts(void)
   */
 }
 
-// calculate filtered discontinuous solution at solution points
+/*! If at first RK step and using certain LES models, compute some model-related quantities.
+If using similarity or WALE-similarity (WSM) models, compute filtered solution and Leonard tensors.
+If using spectral vanishing viscosity (SVV) model, compute filtered solution. */
 
-void eles::calc_disuf_upts(int in_disu_upts_from)
+void eles::calc_sgs_terms(int in_disu_upts_from)
 {
   if (n_eles!=0) {
+
+    int i,j,k,l;
+    int dim3;
+    double diag, rsq;
+    array <double> utemp(n_fields);
+
+    /*! Filter solution */
+
+    Arows =  n_upts_per_ele;
+    Acols = n_upts_per_ele;
+    Brows = Acols;
+    Bcols = n_fields*n_eles;
+
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+
 #ifdef _CPU
-      int i,j,k;
-      double uprev;
-      array<double> temp_u_upts(n_fields,n_upts_per_ele);
-      array<double> temp_uf_upts(n_fields,n_upts_per_ele);
 
-      //physical solution at all solution pts in ele
-      for(i=0;i<n_eles;i++)
-        {
-          for(j=0;j<n_upts_per_ele;j++)
-            {
-              for(k=0;k<n_fields;k++)
-                {
-                  temp_u_upts(k,j)=disu_upts(in_disu_upts_from)(j,i,k);
-                  temp_uf_upts(k,j)=0.0;
-                }
-            }
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-          // Filter the solution and calculate Leonard tensors for similarity model
-          calc_disuf_upts_ele(temp_u_upts, temp_uf_upts);
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,disuf_upts.get_ptr_cpu(),Cstride);
 
-          // Check for NaNs
-          for(j=0;j<n_upts_per_ele;j++)
-            {
-              for(k=0;k<n_fields;k++)
-                {
-                  if(isnan(temp_uf_upts(k,j)))
-                    {
-                      cout << "\nWARNING 1: NAN SOLUTION UF" << endl;
-                      cout << "ele, pt, field: " <<i<<", "<<j<<", "<<k<< endl;
-                      temp_uf_upts.print();
-                      exit(1);
-                    }
-                }
-            }
+#else
 
-          // Explicit SVV filtering: copy filtered solution back
-          if(run_input.SGS_model==3)
-            {
-              for(j=0;j<n_upts_per_ele;j++)
-                {
-                  for(k=0;k<n_fields;k++)
-                    {
-                      disu_upts(in_disu_upts_from)(j,i,k) = temp_uf_upts(k,j);
-                    }
-                }
-            }
+    /*! slow matrix multiplication */
+    for(i=0;i<n_upts_per_ele;i++) {
+      for(j=0;j<n_eles;j++) {
+        for(k=0;k<n_fields;k++) {
+          disuf_upts(i,j,k) = 0.0;
+          for(l=0;l<n_upts_per_ele;l++) {
+            disuf_upts(i,j,k) += filter_upts(i,l)*disu_upts(in_disu_upts_from)(l,j,k);
+          }
         }
+      }
+    }
+
 #endif
 
-      //#ifdef _GPU
-      //calc_disuf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu());
-      //#endif
+    /*! Check for NaNs */
+    for(i=0;i<n_upts_per_ele;i++)
+      for(j=0;j<n_eles;j++)
+        for(k=0;k<n_fields;k++)
+          if(isnan(disuf_upts(i,j,k)))
+            FatalError("nan in filtered solution");
+
+    /*! If SVV model, copy filtered solution back to solution */
+    if(sgs_model==3)
+      for(i=0;i<n_upts_per_ele;i++)
+        for(j=0;j<n_eles;j++)
+          for(k=0;k<n_fields;k++)
+            disu_upts(in_disu_upts_from)(i,j,k) = disuf_upts(i,j,k);
+
+    /*! If Similarity model, compute product terms and Leonard tensors */
+    else if(sgs_model==2 || sgs_model==4) {
+
+      /*! third dimension of Lu, uu arrays */
+      if(n_dims==2)      dim3 = 3;
+      else if(n_dims==3) dim3 = 6;
+
+      /*! Calculate velocity and energy product arrays uu, ue */
+      for(i=0;i<n_upts_per_ele;i++) {
+        for(j=0;j<n_eles;j++) {
+          for(k=0;k<n_fields;k++) {
+            utemp(k) = disu_upts(in_disu_upts_from)(i,j,k);
+          }
+
+          rsq = utemp(0)*utemp(0);
+
+          /*! note that product arrays are symmetric */
+          if(n_dims==2) {
+            /*! velocity-velocity product */
+            uu(i,j,0) = utemp(1)*utemp(1)/rsq;
+            uu(i,j,1) = utemp(2)*utemp(2)/rsq;
+            uu(i,j,2) = utemp(1)*utemp(2)/rsq;
+
+            /*! velocity-energy product */
+            utemp(3) -= 0.5*(utemp(1)*utemp(1)+utemp(2)*utemp(2))/utemp(0); // internal energy*rho
+
+            ue(i,j,0) = utemp(1)*utemp(3)/rsq;
+            ue(i,j,1) = utemp(2)*utemp(3)/rsq;
+          }
+          else if(n_dims==3) {
+            /*! velocity-velocity product */
+            uu(i,j,0) = utemp(1)*utemp(1)/rsq;
+            uu(i,j,1) = utemp(2)*utemp(2)/rsq;
+            uu(i,j,2) = utemp(3)*utemp(3)/rsq;
+            uu(i,j,3) = utemp(1)*utemp(2)/rsq;
+            uu(i,j,4) = utemp(1)*utemp(3)/rsq;
+            uu(i,j,5) = utemp(2)*utemp(3)/rsq;
+
+            /*! velocity-energy product */
+            utemp(4) -= 0.5*(utemp(1)*utemp(1)+utemp(2)*utemp(2)+utemp(3)*utemp(3))/utemp(0); // internal energy*rho
+
+            ue(i,j,0) = utemp(1)*utemp(4)/rsq;
+            ue(i,j,1) = utemp(2)*utemp(4)/rsq;
+            ue(i,j,2) = utemp(3)*utemp(4)/rsq;
+          }
+        }
+      }
+
+      /*! Filter products uu and ue */
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      Bcols = dim3*n_eles;
+
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,uu.get_ptr_cpu(),Bstride,0.0,Lu.get_ptr_cpu(),Cstride);
+
+      Bcols = n_dims*n_eles;
+
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,ue.get_ptr_cpu(),Bstride,0.0,Le.get_ptr_cpu(),Cstride);
+
+#else
+
+      /*! slow matrix multiplication */
+      for(i=0;i<n_upts_per_ele;i++) {
+        for(j=0;j<n_eles;j++) {
+
+          for(k=0;k<dim3;k++)
+            for(l=0;l<n_upts_per_ele;l++)
+              Lu(i,j,k) += filter_upts(i,l)*uu(l,j,k);
+
+          for(k=0;k<n_dims;k++)
+            for(l=0;l<n_upts_per_ele;l++)
+              Le(i,j,k) += filter_upts(i,l)*ue(l,j,k);
+
+        }
+      }
+
+#endif
+
+      /*! Subtract product of unfiltered quantities from Leonard tensors */
+      for(i=0;i<n_upts_per_ele;i++) {
+        for(j=0;j<n_eles;j++) {
+
+          // filtered solution
+          for(k=0;k<n_fields;k++)
+            utemp(k) = disuf_upts(i,j,k);
+
+          rsq = utemp(0)*utemp(0);
+
+          if(n_dims==2) {
+
+            Lu(i,j,0) -= (utemp(1)*utemp(1))/rsq;
+            Lu(i,j,1) -= (utemp(2)*utemp(2))/rsq;
+            Lu(i,j,2) -= (utemp(1)*utemp(2))/rsq;
+
+            diag = (Lu(i,j,0)+Lu(i,j,1))/3.0;
+
+            // internal energy*rho
+            utemp(3) -= 0.5*(utemp(1)*utemp(1)+utemp(2)*utemp(2))/utemp(0);
+
+            Le(i,j,0) = (Le(i,j,0) - utemp(1)*utemp(3))/rsq;
+            Le(i,j,1) = (Le(i,j,1) - utemp(2)*utemp(3))/rsq;
+
+          }
+          else if(n_dims==3) {
+
+            Lu(i,j,0) -= (utemp(1)*utemp(1))/rsq;
+            Lu(i,j,1) -= (utemp(2)*utemp(2))/rsq;
+            Lu(i,j,2) -= (utemp(3)*utemp(3))/rsq;
+            Lu(i,j,3) -= (utemp(1)*utemp(2))/rsq;
+            Lu(i,j,4) -= (utemp(1)*utemp(3))/rsq;
+            Lu(i,j,5) -= (utemp(2)*utemp(3))/rsq;
+
+            diag = (Lu(i,j,0)+Lu(i,j,1)+Lu(i,j,2))/3.0;
+
+            // internal energy*rho
+            utemp(4) -= 0.5*(utemp(1)*utemp(1)+utemp(2)*utemp(2)+utemp(3)*utemp(3))/utemp(0);
+
+            Le(i,j,0) = (Le(i,j,0) - utemp(1)*utemp(4))/rsq;
+            Le(i,j,1) = (Le(i,j,1) - utemp(2)*utemp(4))/rsq;
+            Le(i,j,2) = (Le(i,j,2) - utemp(3)*utemp(4))/rsq;
+
+          }
+
+          /*! subtract diagonal from Lu */
+          for (k=0;k<n_dims;++k) Lu(i,j,k) -= diag;
+
+        }
+      }
     }
+
+#endif
+
+    /*! GPU version of the above */
+#ifdef _GPU
+
+    /*! Filter solution (CUDA BLAS library) */
+    cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_gpu(),Bstride,0.0,disuf_upts.get_ptr_gpu(),Cstride);
+
+    /*! Check for NaNs */
+    disuf_upts.cp_gpu_cpu();
+
+    for(i=0;i<n_upts_per_ele;i++)
+      for(j=0;j<n_eles;j++)
+        for(k=0;k<n_fields;k++)
+          if(isnan(disuf_upts(i,j,k)))
+            FatalError("nan in filtered solution");
+
+    /*! If Similarity model */
+    if(sgs_model==2 || sgs_model==4) {
+
+      /*! compute product terms uu, ue (pass flag=0 to wrapper function) */
+      calc_similarity_model_kernel_wrapper(0, n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu());
+
+      /*! third dimension of Lu, uu arrays */
+      if(n_dims==2)
+        dim3 = 3;
+      else if(n_dims==3)
+        dim3 = 6;
+
+      Bcols = dim3*n_eles;
+
+      /*! Filter product terms uu and ue */
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,uu.get_ptr_gpu(),Bstride,0.0,Lu.get_ptr_gpu(),Cstride);
+
+      Bcols = n_dims*n_eles;
+
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,ue.get_ptr_gpu(),Bstride,0.0,Le.get_ptr_gpu(),Cstride);
+
+    /*! compute Leonard tensors Lu, Le (pass flag=1 to wrapper function) */
+      calc_similarity_model_kernel_wrapper(1, n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu());
+
+    }
+
+    /*! If SVV model, copy filtered solution back to original solution */
+    else if(sgs_model==3) {
+      for(i=0;i<n_upts_per_ele;i++) {
+        for(j=0;j<n_eles;j++) {
+          for(k=0;k<n_fields;k++) {
+            disu_upts(in_disu_upts_from)(i,j,k) = disuf_upts(i,j,k);
+          }
+        }
+      }
+      /*! copy back to GPU */
+      disu_upts(in_disu_upts_from).cp_cpu_gpu();
+    }
+
+#endif
+
+  }
 }
 
 // calculate transformed discontinuous viscous flux at solution points
@@ -1593,417 +2018,947 @@ void eles::calc_disuf_upts(int in_disu_upts_from)
 void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 {
   if (n_eles!=0)
+  {
+    #ifdef _CPU
+
+    int i,j,k,l,m;
+    double detjac;
+    for(i=0;i<n_eles;i++)
     {
-#ifdef _CPU
-
-      int i,j,k,l,m;
-      double detjac;
-      for(i=0;i<n_eles;i++)
+      // Calculate viscous flux
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        detjac = detjac_upts(j,i);
+        //physical solution
+        for(k=0;k<n_fields;k++)
         {
-          // Calculate viscous flux
-          for(j=0;j<n_upts_per_ele;j++)
-            {
-              detjac = detjac_upts(j,i);
-              //physical solution
-              for(k=0;k<n_fields;k++)
-                {
-                  temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
+          temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
 
-                  //physical gradient
-                  for (m=0;m<n_dims;m++)
-                    {
-                      temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
-                    }
-                }
-              if(n_dims==2)
-                {
-                  calc_visf_2d(temp_u,temp_grad_u,temp_f);
-                }
-              else if(n_dims==3)
-                {
-                  calc_visf_3d(temp_u,temp_grad_u,temp_f);
-                }
-              else
-                {
-                  cout << "ERROR: Invalid number of dimensions ... " << endl;
-                }
-              // If LES, calculate SGS viscous flux
-              if(run_input.LES==1)
-                {
-                  calc_sgsf_upts(temp_u,temp_grad_u,detjac,j,temp_sgsf);
-
-                  // Add SGS flux to viscous flux
-                  for(k=0;k<n_fields;k++)
-                    {
-                      for(m=0;m<n_dims;m++)
-                        {
-                          temp_f(k,m) += temp_sgsf(k,m);
-                        }
-                    }
-                }
-              // Transform flux
-              for(k=0;k<n_fields;k++)
-                {
-                  for(l=0;l<n_dims;l++)
-                    {
-                      for(m=0;m<n_dims;m++)
-                        {
-                          tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_f(k,m);
-                        }
-                    }
-                }
-            }
+          //physical gradient
+          for (m=0;m<n_dims;m++)
+          {
+            temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
+          }
         }
-#endif
+        if(n_dims==2)
+        {
+          calc_visf_2d(temp_u,temp_grad_u,temp_f);
+        }
+        else if(n_dims==3)
+        {
+          calc_visf_3d(temp_u,temp_grad_u,temp_f);
+        }
+        else
+        {
+          cout << "ERROR: Invalid number of dimensions ... " << endl;
+        }
 
-#ifdef _GPU
-      calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
-#endif
+        // If LES or wall model, calculate SGS viscous flux
+        if(LES || (wall_model > 0)) {
 
+          calc_sgsf_upts(temp_u,temp_grad_u,detjac,i,j,temp_sgsf);
+
+          // Add SGS or wall flux to viscous flux
+          for(k=0;k<n_fields;k++)
+            for(l=0;l<n_dims;l++)
+              temp_f(k,l) += temp_sgsf(k,l);
+
+        }
+
+        // If LES, add SGS flux to global array (needed for interface flux calc)
+        if(LES) {
+
+          for(k=0;k<n_fields;k++) {
+            for(l=0;l<n_dims;l++) {
+              sgsf_upts(j,i,k,l) = 0.0;
+              for(m=0;m<n_dims;m++) {
+                sgsf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_sgsf(k,m);
+              }
+            }
+          }
+        }
+
+        // Transform viscous flux
+        for(k=0;k<n_fields;k++)
+        {
+          for(l=0;l<n_dims;l++)
+          {
+            for(m=0;m<n_dims;m++)
+            {
+              tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_f(k,m);
+            }
+          }
+        }
+      }
     }
+    #endif
+
+    #ifdef _GPU
+
+    calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+
+    #endif
+
+  }
 }
 
-// Calculate SGS flux
-void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int upt, array<double>& temp_sgsf)
+// Calculate SGS flux at solution points
+void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf)
 {
-  int eddy, sim;
+  int i,j,k;
+  int eddy, sim, wall;
   double Cs;
-  double trace=0.0;
+  double diag=0.0;
   double Smod=0.0;
   double ke=0.0;
   double Pr=0.5; // turbulent Prandtl number
-  double dlt, delta, nu_t, vol;
-  double rho, inte;
+  double delta, mu, mu_t, vol;
+  double rho, inte, rt_ratio;
   array<double> u(n_dims);
   array<double> drho(n_dims), dene(n_dims), dke(n_dims), de(n_dims);
   array<double> dmom(n_dims,n_dims), du(n_dims,n_dims), S(n_dims,n_dims);
 
-  for (int i=0;i<n_dims;i++)
-    for (int j=0;j<n_dims;j++)
-      temp_sgsf(i,j) = 0.0;
+  // quantities for wall model
+  array<double> norm(n_dims);
+  array<double> tau(n_dims,n_dims);
+  array<double> Mrot(n_dims,n_dims);
+  array<double> temp(n_dims,n_dims);
+  array<double> urot(n_dims);
+  array<double> tw(n_dims);
+  double y, qw, utau, yplus;
 
-  // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
-  if(run_input.SGS_model==0)
-    {
-      eddy = 1;
-      sim = 0;
-    }
-  else if(run_input.SGS_model==1)
-    {
-      eddy = 1;
-      sim = 0;
-    }
-  else if(run_input.SGS_model==2)
-    {
-      eddy = 1;
-      sim = 1;
-    }
-  else if(run_input.SGS_model==3)
-    {
-      eddy = 0;
-      sim = 0;
-    }
-  else if(run_input.SGS_model==4)
-    {
-      eddy = 0;
-      sim = 1;
-    }
-  else
-    {
-      cout<<"Warning: SGS model not implemented"<<endl;
-      exit(1);
-    }
-
-  // Filter width: local (2/order on reference element)
-  // or global (Deardorff measure on real element) coordinates?
-  // Use a measure appropriate to the filter being applied.
-
-  // OPTION 1. Approx resolution in 1D element. Interval is [-1:1]
-  // Appropriate for quads, hexes and tris. Not sure about tets.
-  //dlt = 2.0/order;
-
-  // OPTION 2. Deardorff definition
-  vol = (*this).calc_ele_vol(detjac);
-  delta = run_input.filter_ratio*pow(vol,1./n_dims);
-  delta *= delta;
-  //cout.precision(15);
-  //cout<<"vol: "<<fixed<<vol<<endl;
-  //cout<<"delta: "<<fixed<<delta<<endl;
-  // Implement anisotropy correction of Scotti et al?
-
-  // Filtered solution
+  // primitive variables
   rho = temp_u(0);
-  for (int i=0;i<n_dims;i++)
-    {
-      u(i) = temp_u(i)/rho;
-      ke += 0.5*pow(u(i),2);
-    }
+  for (i=0;i<n_dims;i++) {
+    u(i) = temp_u(i)/rho;
+    ke += 0.5*pow(u(i),2);
+  }
   inte = temp_u(n_fields-1)/rho - ke;
 
-  if(eddy==1)
-    {
+  // fluid properties
+  rt_ratio = (run_input.gamma-1.0)*inte/(run_input.rt_inf);
+  mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
+  mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
+
+  // Initialize SGS flux array to zero
+  zero_array(temp_sgsf);
+
+  // Compute SGS flux using wall model if sufficiently close to solid boundary
+  wall = 0;
+
+  if(wall_model > 0) {
+
+    // Magnitude of wall distance vector
+    y = 0.0;
+    for (i=0;i<n_dims;i++)
+      y += wall_distance(upt,ele,i)*wall_distance(upt,ele,i);
+
+    y = sqrt(y);
+
+    // get subgrid momentum flux at previous timestep
+    //utau = 0.0;
+    for (i=0;i<n_dims;i++) {
+      tw(i) = twall(upt,ele,i+1);
+      //utau += tw(i)*tw(i);
+    }
+    // shear velocity
+    //utau = pow((utau/rho/rho),0.25);
+
+    // Wall distance in wall units
+    //yplus = y*rho*utau/mu;
+
+    if(y < run_input.wall_layer_t) wall = 1;
+    //if(yplus < 100.0) wall = 1;
+    //cout << "tw, y, y+ " << tw(0) << ", " << y << ", " << yplus << endl;
+  }
+
+  // calculate SGS flux from a wall model
+  if(wall) {
+
+    for (i=0;i<n_dims;i++) {
+      // Get approximate normal from wall distance vector
+      norm(i) = wall_distance(upt,ele,i)/y;
+    }
+
+    // subgrid energy flux from previous timestep
+    qw = twall(upt,ele,n_fields-1);
+
+    // Calculate local rotation matrix
+    Mrot = calc_rotation_matrix(norm);
+
+    // Rotate velocity to surface
+    if(n_dims==2) {
+      urot(0) = u(0)*Mrot(0,1)+u(1)*Mrot(1,1);
+      urot(1) = 0.0;
+    }
+    else {
+      urot(0) = u(0)*Mrot(0,1)+u(1)*Mrot(1,1)+u(2)*Mrot(2,1);
+      urot(1) = u(0)*Mrot(0,2)+u(1)*Mrot(1,2)+u(2)*Mrot(2,2);
+      urot(2) = 0.0;
+    }
+
+    // Calculate wall shear stress
+    calc_wall_stress(rho,urot,inte,mu,run_input.prandtl,run_input.gamma,y,tw,qw);
+
+    // correct the sign of wall shear stress and wall heat flux? - see SD3D
+
+    // Set arrays for next timestep
+    for(i=0;i<n_dims;++i) twall(upt,ele,i+1) = tw(i); // momentum flux
+
+    twall(upt,ele,0)          = 0.0; // density flux
+    twall(upt,ele,n_fields-1) = qw;  // energy flux
+
+    // populate ndims*ndims rotated stress array
+    zero_array(tau);
+
+    for(i=0;i<n_dims-1;i++) tau(i+1,0) = tau(0,i+1) = tw(i);
+
+    // rotate stress array back to Cartesian coordinates
+    zero_array(temp);
+    for(i=0;i<n_dims;++i)
+      for(j=0;j<n_dims;++j)
+        for(k=0;k<n_dims;++k)
+          temp(i,j) += tau(i,k)*Mrot(k,j);
+
+    zero_array(tau);
+    for(i=0;i<n_dims;++i)
+      for(j=0;j<n_dims;++j)
+        for(k=0;k<n_dims;++k)
+          tau(i,j) += Mrot(k,i)*temp(k,j);
+
+    // set SGS fluxes
+    for(i=0;i<n_dims;i++) {
+
+      // density
+      temp_sgsf(0,i) = 0.0;
+
+      // velocity
+      for(j=0;j<n_dims;j++) {
+        temp_sgsf(j+1,i) = 0.5*(tau(i,j)+tau(j,i));
+      }
+
+      // energy
+      temp_sgsf(n_fields-1,i) = qw*norm(i);
+    }
+  }
+
+  // Free-stream SGS flux
+  else {
+
+    // Set wall shear stress to 0 to prevent NaNs
+    for(i=0;i<n_dims;++i)
+      twall(upt,ele,i) = 0.0;
+
+    // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
+    if(sgs_model==0) {
+      eddy = 1;
+      sim = 0;
+    }
+    else if(sgs_model==1) {
+      eddy = 1;
+      sim = 0;
+    }
+    else if(sgs_model==2) {
+      eddy = 1;
+      sim = 1;
+    }
+    else if(sgs_model==3) {
+      eddy = 0;
+      sim = 0;
+    }
+    else if(sgs_model==4) {
+      eddy = 0;
+      sim = 1;
+    }
+    else {
+      FatalError("SGS model not implemented");
+    }
+
+    if(eddy==1) {
+
+      // Delta is the cutoff length-scale representing local grid resolution.
+
+      // OPTION 1. Approx resolution in 1D element. Interval is [-1:1]
+      // Appropriate for quads, hexes and tris. Not sure about tets.
+      //dlt = 2.0/order;
+
+      // OPTION 2. Deardorff definition (Deardorff, JFM 1970)
+      vol = (*this).calc_ele_vol(detjac);
+      delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
+
+      // OPTION 3. Suggested by Bardina, AIAA 1980:
+      // delta = sqrt((dx^2+dy^2+dz^2)/3)
+
       // Filtered solution gradient
-      for (int i=0;i<n_dims;i++)
-        {
-          drho(i) = temp_grad_u(0,i); // density gradient
-          dene(i) = temp_grad_u(n_fields-1,i); // energy gradient
-          for (int j=1;j<n_fields-1;j++)
-            {
-              dmom(i,j-1) = temp_grad_u(j,i); // momentum gradients
-            }
+      for (i=0;i<n_dims;i++) {
+        drho(i) = temp_grad_u(0,i); // density gradient
+        dene(i) = temp_grad_u(n_fields-1,i); // energy gradient
+
+        for (j=1;j<n_fields-1;j++) {
+          dmom(i,j-1) = temp_grad_u(j,i); // momentum gradients
         }
+      }
 
       // Velocity and energy gradients
-      for (int i=0;i<n_dims;i++)
-        {
-          dke(i) = ke*drho(i);
-          for (int j=0;j<n_dims;j++)
-            {
-              du(i,j) = (dmom(i,j)-u(j)*drho(j))/rho;
-              dke(i) += rho*u(j)*du(i,j);
-            }
-          de(i) = (dene(i)-dke(i)-drho(i)*inte)/rho;
+      for (i=0;i<n_dims;i++) {
+        dke(i) = ke*drho(i);
+
+        for (j=0;j<n_dims;j++) {
+          du(i,j) = (dmom(i,j)-u(j)*drho(j))/rho;
+          dke(i) += rho*u(j)*du(i,j);
         }
+
+        de(i) = (dene(i)-dke(i)-drho(i)*inte)/rho;
+      }
 
       // Strain rate tensor
-      for (int i=0;i<n_dims;i++)
-        {
-          for (int j=0;j<n_dims;j++)
-            {
-              S(i,j) = (du(i,j)+du(j,i))/2.0;
-            }
-          trace += S(i,i)/n_dims;
+      for (i=0;i<n_dims;i++) {
+        for (j=0;j<n_dims;j++) {
+          S(i,j) = (du(i,j)+du(j,i))/2.0;
         }
+        diag += S(i,i)/3.0;
+      }
 
-      // Subtract trace
-      for (int i=0;i<n_dims;i++)
-        {
-          S(i,i) -= trace;
-        }
+      // Subtract diag
+      for (i=0;i<n_dims;i++) S(i,i) -= diag;
 
       // Strain modulus
-      for (int i=0;i<n_dims;i++)
-        {
-          for (int j=0;j<n_dims;j++)
-            {
-              Smod += 2.0*pow(S(i,j),2);
-            }
-        }
+      for (i=0;i<n_dims;i++)
+        for (j=0;j<n_dims;j++)
+          Smod += 2.0*S(i,j)*S(i,j);
+
       Smod = sqrt(Smod);
 
       // Eddy viscosity
-      if(run_input.SGS_model==0) // Smagorinsky model
-        {
-          Cs=0.1;
-          nu_t = Cs*Cs*delta*Smod;
+
+      // Smagorinsky model
+      if(sgs_model==0) {
+
+        Cs=0.1;
+        mu_t = rho*Cs*Cs*delta*delta*Smod;
+
+      }
+
+      //  Wall-Adapting Local Eddy-viscosity (WALE) SGS Model
+      //
+      //  NICOUD F., DUCROS F.: "Subgrid-Scale Stress Modelling Based on the Square
+      //                         of the Velocity Gradient Tensor"
+      //  Flow, Turbulence and Combustion 62: 183-200, 1999.
+      //
+      //                                            (sqij*sqij)^3/2
+      //  Output: mu_t = rho*Cs^2*delta^2 * -----------------------------
+      //                                     (Sij*Sij)^5/2+(sqij*sqij)^5/4
+      //
+      //  Typically Cw = 0.5.
+
+      else if(sgs_model==1 || sgs_model==2) {
+
+        Cs=0.5;
+        double num=0.0;
+        double denom=0.0;
+        double eps=1.e-12;
+        array<double> Sq(n_dims,n_dims);
+        diag = 0.0;
+
+        // Square of gradient tensor
+        // This needs optimising!
+        for (i=0;i<n_dims;i++) {
+          for (j=0;j<n_dims;j++) {
+            Sq(i,j) = 0.0;
+            for (k=0;k<n_dims;++k) {
+              Sq(i,j) += (du(i,k)*du(k,j)+du(j,k)*du(k,i))/2.0;
+            }
+            diag += du(i,j)*du(j,i)/3.0;
+          }
         }
-      else if(run_input.SGS_model==1 || run_input.SGS_model==2) // WALE or WSM model
-        {
-          Cs=0.5;
-          double num=0.0;
-          double denom=0.0;
-          double eps=1.e-12;
-          array<double> Sq(n_dims,n_dims);
-          trace = 0.0;
 
-          // Square of gradient tensor
-          for (int i=0;i<n_dims;i++)
-            for (int j=0;j<n_dims;j++)
-              Sq(i,j) = 0.0;
+        // Subtract diag
+        for (i=0;i<n_dims;i++) Sq(i,i) -= diag;
 
-          for (int i=0;i<n_dims;i++)
-            {
-              for (int j=0;j<n_dims;j++)
-                {
-                  for (int k=0;k<n_dims;++k)
-                    {
-                      Sq(i,j) += (du(i,k)*du(k,j)+du(j,k)*du(k,i))/2.0;
-                    }
-                  trace += du(i,j)*du(j,i)/n_dims;
-                }
-            }
-          // Subtract trace
-          for (int i=0;i<n_dims;i++)
-            {
-              Sq(i,i) -= trace;
-            }
-
-          // Numerator and denominator
-          for (int i=0;i<n_dims;i++)
-            for (int j=0;j<n_dims;j++)
-              denom += S(i,j)*S(i,j);
-
-          if(denom>eps)
-            {
-              for (int i=0;i<n_dims;i++)
-                for (int j=0;j<n_dims;j++)
-                  num += Sq(i,j)*Sq(i,j);
-              num = pow(num,1.5);
-              denom = pow(denom,2.5) + pow(num,1.25);
-              nu_t = Cs*Cs*delta*num/denom;
-            }
-          else
-            nu_t = 0.0;
+        // Numerator and denominator
+        for (i=0;i<n_dims;i++) {
+          for (j=0;j<n_dims;j++) {
+            num += Sq(i,j)*Sq(i,j);
+            denom += S(i,j)*S(i,j);
+          }
         }
+
+        denom = pow(denom,2.5) + pow(num,1.25);
+        num = pow(num,1.5);
+        mu_t = rho*Cs*Cs*delta*delta*num/(denom+eps);
+      }
 
       // Add eddy-viscosity term to SGS fluxes
-      for (int j=0;j<n_dims;j++)
-        {
-          temp_sgsf(0,j) = 0.0; // Density flux
-          temp_sgsf(n_fields-1,j) = -1.0*run_input.gamma*rho*nu_t/Pr*de(j); // Energy flux
-          for (int i=1;i<n_fields-1;i++)
-            {
-              temp_sgsf(i,j) = -2.0*rho*nu_t*S(i-1,j); // Velocity flux
-            }
+      for (j=0;j<n_dims;j++) {
+        temp_sgsf(0,j) = 0.0; // Density flux
+        temp_sgsf(n_fields-1,j) = -1.0*run_input.gamma*mu_t/Pr*de(j); // Energy flux
+
+        for (i=1;i<n_fields-1;i++) {
+          temp_sgsf(i,j) = -2.0*mu_t*S(i-1,j); // Velocity flux
         }
-      //cout<<"SGS flux:"<<endl;
-      //temp_sgsf.print();
+      }
     }
 
-  // Add similarity term to SGS fluxes if WSM or Similarity model
-  if(sim==1)
-    {
-      for (int j=0;j<n_dims;j++)
-        {
-          temp_sgsf(0,j) += 0.0; // Density flux
-          temp_sgsf(n_fields-1,j) += run_input.gamma*rho*Hm(upt,j); // Energy flux
-          for (int i=1;i<n_fields-1;i++)
-            {
-              temp_sgsf(i,j) += rho*Lm(upt,i-1,j); // Momentum fluxes
-            }
-        }
-      //cout<<"WSM flux:"<<endl;
-      //temp_sgsf.print();
+    // Add similarity term to SGS fluxes if WSM or Similarity model
+    if(sim==1) {
+      for (j=0;j<n_dims;j++) {
+        temp_sgsf(0,j) += 0.0; // Density flux
+        temp_sgsf(n_fields-1,j) += run_input.gamma*rho*Le(upt,ele,j); // Energy flux
+      }
+
+      // Momentum fluxes
+      if(n_dims==2) {
+        temp_sgsf(1,0) += rho*Lu(upt,ele,0);
+        temp_sgsf(1,1) += rho*Lu(upt,ele,2);
+        temp_sgsf(2,0) += temp_sgsf(1,1);
+        temp_sgsf(2,1) += rho*Lu(upt,ele,1);
+      }
+      else if(n_dims==3) {
+        temp_sgsf(1,0) += rho*Lu(upt,ele,0);
+        temp_sgsf(1,1) += rho*Lu(upt,ele,3);
+        temp_sgsf(1,2) += rho*Lu(upt,ele,4);
+        temp_sgsf(2,0) += temp_sgsf(1,1);
+        temp_sgsf(2,1) += rho*Lu(upt,ele,1);
+        temp_sgsf(2,2) += rho*Lu(upt,ele,5);
+        temp_sgsf(3,0) += temp_sgsf(1,2);
+        temp_sgsf(3,1) += temp_sgsf(2,2);
+        temp_sgsf(3,2) += rho*Lu(upt,ele,2);
+      }
     }
+  }
 }
 
-// Calculate filtered solution and Leonard terms
-void eles::calc_disuf_upts_ele(array<double>& in_u, array<double>& out_u)
+/*! If using a RANS or LES near-wall model, calculate distance
+of each solution point to nearest no-slip wall by a brute-force method */
+
+void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> > loc_noslip_bdy)
 {
-  int i,j,k,l,ii;
-  int npts = n_upts_per_ele;
-  int M = n_dims*n_dims;
-  double rho, coeff, trace, sum, rtemp, diag, maxl;
+  if(n_eles!=0)
+  {
+    int i,j,k,m,n,p;
+    int n_fpts_per_inter_seg = order+1;
+    int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+    int n_fpts_per_inter_quad = (order+1)*(order+1);
+    double dist;
+    double distmin;
+    array<double> pos(n_dims);
+    array<double> pos_bdy(n_dims);
+    array<double> vec(n_dims);
+    array<double> vecmin(n_dims);
 
-  array<double> r(npts);
-  array<double> ru(npts,n_dims);
-  array<double> re(npts);
-  array<double> rf(npts);
-  array<double> ruf(npts,n_dims);
-  array<double> ref(npts);
-  array<double> rff(npts);
-  array<double> ruff(npts,n_dims);
-  array<double> reff(npts);
-  array<double> eu(npts,n_dims);
-  array<double> uu(npts,M);
-  array<double> euf(npts,n_dims);
-  array<double> uuf(npts,M);
-  array<double> temp_uuf(npts,n_dims,n_dims);
+    // hold our breath and go round the brute-force loop...
+    for (i=0;i<n_eles;++i) {
+      for (j=0;j<n_upts_per_ele;++j) {
 
-  for (i=0;i<npts;i++)
-    {
-      r(i)   = in_u(0,i);
-      re(i) = in_u(n_fields-1,i);
-      rf(i) = 0.0;
-      ref(i) = 0.0;
-      for (j=0;j<n_dims;++j)
-        {
-          ru(i,j) = in_u(j+1,i);
-          re(i) -= 0.5*pow(ru(i,j),2)/r(i);
-          ruf(i,j) = 0.0;
+        // get coords of current solution point
+        calc_pos_upt(j,i,pos);
+
+        // initialize wall distance
+        distmin = 1e20;
+
+        // line segment boundaries
+        for (k=0;k<n_seg_noslip_inters;++k) {
+
+          for (m=0;m<n_fpts_per_inter_seg;++m) {
+
+            dist = 0.0;
+            // get coords of boundary flux point
+            for (n=0;n<n_dims;++n) {
+              pos_bdy(n) = loc_noslip_bdy(0)(m,k,n);
+              vec(n) = pos(n) - pos_bdy(n);
+              dist += vec(n)*vec(n);
+            }
+            dist = sqrt(dist);
+
+            // update shortest vector
+            if (dist < distmin) {
+              for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+              distmin = dist;
+            }
+          }
         }
+
+        // tri boundaries
+        for (k=0;k<n_tri_noslip_inters;++k) {
+
+          for (m=0;m<n_fpts_per_inter_tri;++m) {
+
+            dist = 0.0;
+            // get coords of boundary flux point
+            for (n=0;n<n_dims;++n) {
+              pos_bdy(n) = loc_noslip_bdy(1)(m,k,n);
+              vec(n) = pos(n) - pos_bdy(n);
+              dist += vec(n)*vec(n);
+            }
+            dist = sqrt(dist);
+
+            // update shortest vector
+            if (dist < distmin) {
+              for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+              distmin = dist;
+            }
+          }
+        }
+
+        // quad boundaries
+        for (k=0;k<n_quad_noslip_inters;++k) {
+
+          for (m=0;m<n_fpts_per_inter_quad;++m) {
+
+            dist = 0.0;
+            // get coords of boundary flux point
+            for (n=0;n<n_dims;++n) {
+              pos_bdy(n) = loc_noslip_bdy(2)(m,k,n);
+              vec(n) = pos(n) - pos_bdy(n);
+              dist += vec(n)*vec(n);
+            }
+            dist = sqrt(dist);
+
+            // update shortest vector
+            if (dist < distmin) {
+              for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+              distmin = dist;
+            }
+          }
+        }
+      }
+
+      for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+
     }
+  }
+}
 
-#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+#ifdef _MPI
 
-  // Filter r, ru and re
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,npts,1,npts,1.0,filter_upts.get_ptr_cpu(),npts,r.get_ptr_cpu(),npts,0.0,rf.get_ptr_cpu(),npts);
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,npts,n_dims,npts,1.0,filter_upts.get_ptr_cpu(),npts,ru.get_ptr_cpu(),npts,0.0,ruf.get_ptr_cpu(),npts);
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,npts,1,npts,1.0,filter_upts.get_ptr_cpu(),npts,re.get_ptr_cpu(),npts,0.0,ref.get_ptr_cpu(),npts);
+void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int> n_tri_inters_array, array<int> n_quad_inters_array, array< array<double> > loc_noslip_bdy_global, int nproc)
+{
+  if(n_eles!=0)
+  {
+    int i,j,k,m,n,p;
+    int n_fpts_per_inter_seg = order+1;
+    int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+    int n_fpts_per_inter_quad = (order+1)*(order+1);
+    double dist;
+    double distmin;
+    array<double> pos(n_dims);
+    array<double> pos_bdy(n_dims);
+    array<double> vec(n_dims);
+    array<double> vecmin(n_dims);
 
-  // Write to output array if using explicit SVV filtering 'model'
-  if(run_input.SGS_model==3)
-    {
-      for (i=0;i<npts;i++)
-        {
-          out_u(0,i) = rf(i);
-          out_u(n_fields-1,i) = ref(i);
-          for (j=0;j<n_dims;++j)
-            {
-              out_u(j+1,i) = ruf(i,j);
-              out_u(n_fields-1,i) += 0.5*pow(ruf(i,j),2)/rf(i);
+    // hold our breath and go round the brute-force loop...
+    for (i=0;i<n_eles;++i) {
+      for (j=0;j<n_upts_per_ele;++j) {
+
+        // get coords of current solution point
+        calc_pos_upt(j,i,pos);
+
+        // initialize wall distance
+        distmin = 1e20;
+
+        // loop over all partitions
+        for (p=0;p<nproc;++p) {
+
+          // line segment boundaries
+          for (k=0;k<n_seg_inters_array(p);++k) {
+
+            for (m=0;m<n_fpts_per_inter_seg;++m) {
+
+              dist = 0.0;
+              // get coords of boundary flux point
+              for (n=0;n<n_dims;++n) {
+                pos_bdy(n) = loc_noslip_bdy_global(0)(m,k,p*n_dims+n);
+                vec(n) = pos(n) - pos_bdy(n);
+                dist += vec(n)*vec(n);
+              }
+              dist = sqrt(dist);
+
+              // update shortest vector
+              if (dist < distmin) {
+                for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+                distmin = dist;
+              }
             }
+          }
+
+          // tri boundaries
+          for (k=0;k<n_tri_inters_array(p);++k) {
+
+            for (m=0;m<n_fpts_per_inter_tri;++m) {
+
+              dist = 0.0;
+              // get coords of boundary flux point
+              for (n=0;n<n_dims;++n) {
+                pos_bdy(n) = loc_noslip_bdy_global(1)(m,k,p*n_dims+n);
+                vec(n) = pos(n) - pos_bdy(n);
+                dist += vec(n)*vec(n);
+              }
+              dist = sqrt(dist);
+
+              // update shortest vector
+              if (dist < distmin) {
+                for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+                distmin = dist;
+              }
+            }
+          }
+
+          // quad boundaries
+          for (k=0;k<n_quad_inters_array(p);++k) {
+
+            for (m=0;m<n_fpts_per_inter_quad;++m) {
+
+              dist = 0.0;
+              // get coords of boundary flux point
+              for (n=0;n<n_dims;++n) {
+                pos_bdy(n) = loc_noslip_bdy_global(2)(m,k,p*n_dims+n);
+                vec(n) = pos(n) - pos_bdy(n);
+                dist += vec(n)*vec(n);
+              }
+              dist = sqrt(dist);
+
+              // update shortest vector
+              if (dist < distmin) {
+                for (n=0;n<n_dims;++n) vecmin(n) = vec(n);
+                distmin = dist;
+              }
+            }
+          }
         }
+
+        for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+
+      }
     }
+  }
+}
 
-  // Tensor products uu and eu needed for similarity model
-  if(run_input.SGS_model==2 || run_input.SGS_model==4)
-    {
-      for (i=0;i<npts;i++)
-        {
-          ii=0;
-          for (j=0;j<n_dims;++j)
-            {
-              for (k=0;k<n_dims;++k)
-                {
-                  uu(i,ii) = ru(i,j)*ru(i,k);
-                  ++ii;
-                }
-              eu(i,j) = re(i)*ru(i,j);
-            }
-        }
-
-      // Filter tensor products uu and eu
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,npts,M,npts,1.0,filter_upts.get_ptr_cpu(),npts,uu.get_ptr_cpu(),npts,0.0,uuf.get_ptr_cpu(),npts);
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,npts,n_dims,npts,1.0,filter_upts.get_ptr_cpu(),npts,eu.get_ptr_cpu(),npts,0.0,euf.get_ptr_cpu(),npts);
-
-      // Reshape arrays
-      for (i=0;i<npts;i++)
-        {
-          ii=0;
-          for (j=0;j<n_dims;++j)
-            {
-              for (k=0;k<n_dims;++k)
-                {
-                  temp_uuf(i,j,k) = uuf(i,ii);
-                  ++ii;
-                }
-            }
-        }
-
-      // Calculate Leonard tensors for similarity model
-      for (i=0;i<npts;++i)
-        {
-          rtemp=rf(i)*rf(i);
-          trace = 0.0;
-          for (j=0;j<n_dims;++j)
-            {
-              for (k=0;k<n_dims;++k)
-                {
-                  Lm(i,j,k) = (temp_uuf(i,j,k) - ruf(i,j)*ruf(i,k))/rtemp;
-                }
-              //cout<<"uuf, ruf*ruf/r, Lm:"<<setprecision(15)<<temp_uuf(i,ii)<<", "<<ruf(i,j)*ruf(i,k)/rtemp<<", "<<Lm(i,j,k)<<endl;
-              trace += Lm(i,j,j);
-
-              // Energy terms
-              Hm(i,j) = (euf(i,j) - ref(i)*ruf(i,j))/rtemp;
-            }
-
-          // Subtract trace from Lm
-          for (j=0;j<n_dims;++j)
-            {
-              Lm(i,j,j) -= trace/n_dims;
-              maxl = max(Lm(i,j,k),maxl);
-            }
-        }
-
-      //cout<<"Lm max: "<<setprecision(6)<<maxl<<endl;
-    }
-
-#else
-  // slow matrix multiplication
 #endif
 
+array<double> eles::calc_rotation_matrix(array<double>& norm)
+{
+  array <double> mrot(n_dims,n_dims);
+  double nn;
+
+  // Create rotation matrix
+  if(n_dims==2) {
+    if(abs(norm(1)) > 0.7) {
+      mrot(0,0) = norm(0);
+      mrot(1,0) = norm(1);
+      mrot(0,1) = norm(1);
+      mrot(1,1) = -norm(0);
+    }
+    else {
+      mrot(0,0) = -norm(0);
+      mrot(1,0) = -norm(1);
+      mrot(0,1) = norm(1);
+      mrot(1,1) = -norm(0);
+    }
+  }
+  else if(n_dims==3) {
+    if(abs(norm(2)) > 0.7) {
+      nn = sqrt(norm(1)*norm(1)+norm(2)*norm(2));
+
+      mrot(0,0) = norm(0)/nn;
+      mrot(1,0) = norm(1)/nn;
+      mrot(2,0) = norm(2)/nn;
+      mrot(0,1) = 0.0;
+      mrot(1,1) = -norm(2)/nn;
+      mrot(2,1) = norm(1)/nn;
+      mrot(0,2) = nn;
+      mrot(1,2) = -norm(0)*norm(1)/nn;
+      mrot(2,2) = -norm(0)*norm(2)/nn;
+    }
+    else {
+      nn = sqrt(norm(0)*norm(0)+norm(1)*norm(1));
+
+      mrot(0,0) = norm(0)/nn;
+      mrot(1,0) = norm(1)/nn;
+      mrot(2,0) = norm(2)/nn;
+      mrot(0,1) = norm(1)/nn;
+      mrot(1,1) = -norm(0)/nn;
+      mrot(2,1) = 0.0;
+      mrot(0,2) = norm(0)*norm(2)/nn;
+      mrot(1,2) = norm(1)*norm(2)/nn;
+      mrot(2,2) = -nn;
+    }
+  }
+
+  return mrot;
+}
+
+void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double mu, double Pr, double gamma, double y, array<double>& tau_wall, double q_wall)
+{
+  double eps = 1.e-10;
+  double Rey, Rey_c, u, uplus, utau, tw, qw;
+  double Pr_t = 0.9;
+  double c0;
+  double ymatch = 11.8;
+  int i,j;
+
+  // Magnitude of surface velocity
+  u = 0.0;
+  for(i=0;i<n_dims;++i) u += urot(i)*urot(i);
+
+  u = sqrt(u);
+
+  if(u > eps) {
+
+    /*! Simple power-law wall model Werner and Wengle (1991)
+
+              u+ = y+               for y+ < 11.8
+              u+ = 8.3*(y+)^(1/7)   for y+ > 11.8
+    */
+
+    if(run_input.wall_model == 1) {
+
+      Rey_c = ymatch*ymatch;
+      Rey = rho*u*y/mu;
+
+      if(Rey < Rey_c) uplus = sqrt(Rey);
+      else            uplus = pow(8.3,0.875)*pow(Rey,0.125);
+
+      utau = u/uplus;
+      tw = rho*utau*utau;
+
+      for (i=0;i<n_dims;i++) tau_wall(i) = tw*urot(i)/u;
+
+      // Wall heat flux
+      if(Rey < Rey_c) q_wall = ene*gamma*tw / (Pr * u);
+      else            q_wall = ene*gamma*tw / (Pr * (u + utau * sqrt(Rey_c) * (Pr/Pr_t-1.0)));
+    }
+
+    /*! Breuer-Rodi 3-layer wall model (Breuer and Rodi, 1996)
+
+              u+ = y+               for y+ <= 5.0
+              u+ = A*ln(y+)+B       for 5.0 < y+ <= 30.0
+              u+ = ln(E*y+)/k       for y+ > 30.0
+
+              k=0.42, E=9.8
+              A=(log(30.0*E)/k-5.0)/log(6.0)
+              B=5.0-A*log(5.0)
+
+    Note: the law of wall is made algebraic by first guessing the friction
+    velocity with the wall shear at the previous timestep
+
+    N.B. using a two-layer law to compute the wall heat flux
+    */
+
+    else if(run_input.wall_model == 2) {
+
+      double A, B, phi;
+      double E = 9.8;
+      double Rey0, ReyL, ReyH, ReyM;
+      double yplus, yplusL, yplusH, yplusM, yplusN;
+      double kappa = 0.42;
+      double sign, s;
+      int maxit = 0;
+      int it;
+
+      A = (log(30.0*E)/kappa - 5.0)/log(6.0);
+      B = 5.0 - A*log(5.0);
+
+      // compute wall distance in wall units
+      phi = rho*y/mu;
+      Rey0 = u*phi;
+      utau = 0.0;
+      for (i=0;i<n_dims;i++)
+        utau += tau_wall(i)*tau_wall(i);
+
+      utau = pow((utau/rho/rho),0.25);
+      yplus = utau*phi;
+
+      if(maxit > 0) {
+        Rey = wallfn_br(yplus,A,B,E,kappa);
+
+        // if in the
+        if(Rey > Rey0) {
+          yplusH = yplus;
+          ReyH = Rey-Rey0;
+          yplusL = yplus*Rey0/Rey;
+
+          ReyL = wallfn_br(yplusL,A,B,E,kappa);
+          ReyL -= Rey0;
+
+          it = 0;
+          while(ReyL*ReyH >= 0.0 && it < maxit) {
+
+            yplusL -= 1.6*(yplusH-yplusL);
+            ReyL = wallfn_br(yplusL,A,B,E,kappa);
+            ReyL -= Rey0;
+            ++it;
+
+          }
+        }
+        else {
+          yplusH = yplus;
+          ReyH = Rey-Rey0;
+
+          if(Rey > eps) yplusH = yplus*Rey0/Rey;
+          else yplusH = 2.0*yplusL;
+
+          ReyH = wallfn_br(yplusH,A,B,E,kappa);
+          ReyH -= Rey0;
+
+          it = 0;
+          while(ReyL*ReyH >= 0.0 && it < maxit) {
+
+            yplusH += 1.6*(yplusH - yplusL);
+            ReyH = wallfn_br(yplusH,A,B,E,kappa);
+            ReyH -= Rey0;
+            ++it;
+
+          }
+        }
+
+        // iterative solution by Ridders' Method
+
+        yplus = 0.5*(yplusL+yplusH);
+
+        for(it=0;it<maxit;++it) {
+
+          yplusM = 0.5*(yplusL+yplusH);
+          ReyM = wallfn_br(yplusM,A,B,E,kappa);
+          ReyM -= Rey0;
+          s = sqrt(ReyM*ReyM - ReyL*ReyH);
+          if(s==0.0) break;
+
+          sign = (ReyL-ReyH)/abs(ReyL-ReyH);
+          yplusN = yplusM + (yplusM-yplusL)*(sign*ReyM/s);
+          if(abs(yplusN-yplus) < eps) break;
+
+          yplus = yplusN;
+          Rey = wallfn_br(yplus,A,B,E,kappa);
+          Rey -= Rey0;
+          if(abs(Rey) < eps) break;
+
+          if(Rey/abs(Rey)*ReyM != ReyM) {
+            yplusL = yplusM;
+            ReyL = ReyM;
+            yplusH = yplus;
+            ReyH = Rey;
+          }
+          else if(Rey/abs(Rey)*ReyL != ReyL) {
+            yplusH = yplus;
+            ReyH = Rey;
+          }
+          else if(Rey/abs(Rey)*ReyH != ReyH) {
+            yplusL = yplus;
+            ReyL = Rey;
+          }
+
+          if(abs(yplusH-yplusL) < eps) break;
+        } // end for loop
+
+        utau = u*yplus/Rey0;
+      }
+
+      // approximate solution using tw at previous timestep
+      // Wang, Moin (2002), Phys.Fluids 14(7)
+      else {
+        if(Rey > eps) utau = u*yplus/Rey;
+        else          utau = 0.0;
+        yplus = utau*phi;
+      }
+
+      tw = rho*utau*utau;
+
+      // why different to WW model?
+      for (i=0;i<n_dims;i++) tau_wall(i) = abs(tw*urot(i)/u);
+
+      // Wall heat flux
+      if(yplus <= ymatch) q_wall = ene*gamma*tw / (Pr * u);
+      else                q_wall = ene*gamma*tw / (Pr * (u + utau * ymatch * (Pr/Pr_t-1.0)));
+    }
+  }
+
+  // if velocity is 0
+  else {
+    for (i=0;i<n_dims;i++) tau_wall(i) = 0.0;
+    q_wall = 0.0;
+  }
+}
+
+double eles::wallfn_br(double yplus, double A, double B, double E, double kappa) {
+  double Rey;
+
+  if     (yplus < 0.5)  Rey = yplus*yplus;
+  else if(yplus > 30.0) Rey = yplus*log(E*yplus)/kappa;
+  else                  Rey = yplus*(A*log(yplus)+B);
+
+  return Rey;
+}
+
+/*! Calculate SGS flux at solution points */
+void eles::calc_sgsf_fpts(void)
+{
+  if (n_eles!=0) {
+
+    /*!
+    Performs C = (alpha*A*B) + (beta*C) where: \n
+    alpha = 1.0 \n
+    beta = 0.0 \n
+    A = opp_0 \n
+    B = sgsf_upts \n
+    C = sgsf_fpts
+    */
+
+    Arows =  n_fpts_per_ele;
+    Acols = n_upts_per_ele;
+
+    Brows = Acols;
+    Bcols = n_fields*n_eles;
+
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+
+    #ifdef _CPU
+
+    if(opp_0_sparse==0) // dense
+    {
+      #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      for (int i=0;i<n_dims;i++) {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,sgsf_upts.get_ptr_cpu(0,0,0,i),Bstride,0.0,sgsf_fpts.get_ptr_cpu(0,0,0,i),Cstride);
+      }
+
+      #endif
+    }
+    else if(opp_0_sparse==1) // mkl blas four-array csr format
+    {
+      #if defined _MKL_BLAS
+
+      for (int i=0;i<n_dims;i++) {
+        mkl_dcsrmm(&transa, &n_fpts_per_ele, &n_fields_mul_n_eles, &n_upts_per_ele, &one, matdescra, opp_0_data.get_ptr_cpu(), opp_0_cols.get_ptr_cpu(), opp_0_b.get_ptr_cpu(), opp_0_e.get_ptr_cpu(), sgsf_upts.get_ptr_cpu(0,0,0,i), &n_upts_per_ele, &zero, sgsf_fpts.get_ptr_cpu(0,0,0,i), &n_fpts_per_ele);
+      }
+
+      #endif
+    }
+    else { cout << "ERROR: Unknown storage for opp_0 ... " << endl; }
+
+    #endif
+
+    #ifdef _GPU
+
+    if(opp_0_sparse==0)
+    {
+      for (int i=0;i<n_dims;i++) {
+        cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_0.get_ptr_gpu(),Astride,sgsf_upts.get_ptr_gpu(0,0,0,i),Bstride,0.0,sgsf_fpts.get_ptr_gpu(0,0,0,i),Cstride);
+      }
+    }
+    else if (opp_0_sparse==1)
+    {
+      for (int i=0;i<n_dims;i++) {
+        bespoke_SPMV(n_fpts_per_ele, n_upts_per_ele, n_fields, n_eles, opp_0_ell_data.get_ptr_gpu(), opp_0_ell_indices.get_ptr_gpu(), opp_0_nnz_per_row, sgsf_upts.get_ptr_gpu(0,0,0,i), sgsf_fpts.get_ptr_gpu(0,0,0,i), ele_type, order, 0);
+      }
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_0 ... " << endl;
+    }
+    #endif
+  }
 }
 
 // get the type of element
@@ -2026,13 +2981,13 @@ int eles::get_n_ppts_per_ele(void)
   return n_ppts_per_ele;
 }
 
-// get number of peles_per_ele 
+// get number of peles_per_ele
 int eles::get_n_peles_per_ele(void)
 {
   return n_peles_per_ele;
 }
 
-// get number of verts_per_ele 
+// get number of verts_per_ele
 int eles::get_n_verts_per_ele(void)
 {
   return n_verts_per_ele;
@@ -2081,13 +3036,13 @@ void eles::set_rank(int in_rank)
   rank = in_rank;
 }
 
-// set bc type 
+// set bc type
 void eles::set_bctype(int in_ele,int in_inter, int in_bctype)
 {
   bctype(in_ele, in_inter) = in_bctype;
 }
 
-// set number of shape points 
+// set number of shape points
 
 void eles::set_n_spts(int in_ele, int in_n_spts)
 {
@@ -2224,7 +3179,7 @@ void eles::set_opp_1(int in_sparse)
       for (int i=0;i<n_dims;i++) {
           array_to_mklcsr(opp_1(i),opp_1_data(i),opp_1_cols(i),opp_1_b(i),opp_1_e(i));
         }
-#endif 
+#endif
 
 #ifdef _GPU
       opp_1_ell_data.setup(n_dims);
@@ -2336,7 +3291,7 @@ void eles::set_opp_3(int in_sparse)
 
 #ifdef _GPU
   opp_3.cp_cpu_gpu();
-#endif 
+#endif
 
   if(in_sparse==0)
     {
@@ -2348,7 +3303,7 @@ void eles::set_opp_3(int in_sparse)
 
 #ifdef _CPU
       array_to_mklcsr(opp_3,opp_3_data,opp_3_cols,opp_3_b,opp_3_e);
-#endif 
+#endif
 
 #ifdef _GPU
       array_to_ellpack(opp_3, opp_3_ell_data, opp_3_ell_indices, opp_3_nnz_per_row);
@@ -2524,7 +3479,7 @@ void eles::set_opp_6(int in_sparse)
 
 #ifdef _GPU
   opp_6.cp_cpu_gpu();
-#endif 
+#endif
 
   if(in_sparse==0)
     {
@@ -2534,7 +3489,7 @@ void eles::set_opp_6(int in_sparse)
     {
       opp_6_sparse=1;
 
-#ifdef _CPU  
+#ifdef _CPU
       array_to_mklcsr(opp_6,opp_6_data,opp_6_cols,opp_6_b,opp_6_e);
 #endif
 
@@ -3706,7 +4661,7 @@ double* eles::get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
   return disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -3728,7 +4683,7 @@ double* eles::get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return norm_tconf_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
   return norm_tconf_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -3751,14 +4706,14 @@ double* eles::get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return detjac_fpts.get_ptr_gpu(fpt,in_ele);
 #else
   return detjac_fpts.get_ptr_cpu(fpt,in_ele);
 #endif
 }
 
-// get a pointer to the magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points
+// get a pointer to the magnitude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points
 
 double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
 {
@@ -3773,7 +4728,7 @@ double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_f
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_gpu(fpt,in_ele);
 #else
   return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_cpu(fpt,in_ele);
@@ -3795,7 +4750,7 @@ double* eles::get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return norm_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 #else
   return norm_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
@@ -3859,7 +4814,7 @@ double* eles::get_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return delta_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
   return delta_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -3881,7 +4836,7 @@ double* eles::get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_in
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return grad_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field,in_dim);
 #else
   return grad_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field,in_dim);
@@ -3890,23 +4845,23 @@ double* eles::get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_in
 
 double* eles::get_normal_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele, array<double> temp_loc, double temp_pos[3])
 {
-  
+
   array<double> pos(n_dims);
   double dist = 0.0, min_dist = 1E6;
   int min_index = 0;
 
   // find closest solution point
-  
+
   for (int i=0; i<n_upts_per_ele; i++) {
-    
+
     calc_pos_upt(i, in_ele, pos);
-    
+
     dist = 0.0;
     for(int j=0;j<n_dims;j++) {
       dist += (pos(j)-temp_loc(j))*(pos(j)-temp_loc(j));
     }
     dist = sqrt(dist);
-    
+
     if (dist < min_dist) {
       min_dist = dist;
       min_index = i;
@@ -3914,15 +4869,15 @@ double* eles::get_normal_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_
         temp_pos[j] = pos(j);
       }
     }
-    
+
   }
-  
+
 #ifdef _GPU
   return disu_upts(0).get_ptr_gpu(min_index,in_ele,in_field);
 #else
   return disu_upts(0).get_ptr_cpu(min_index,in_ele,in_field);
 #endif
-  
+
 }
 
 // get a pointer to the normal transformed continuous viscous flux at a flux point
@@ -3940,13 +4895,34 @@ double* eles::get_norm_tconvisf_fpts_ptr(int in_inter_local_fpt, int in_ele_loca
         fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
     return norm_tconvisf_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
     return norm_tconvisf_fpts.get_ptr_cpu(fpt,in_ele,in_field);
 #endif
 }
 */
+
+// get a pointer to the subgrid-scale flux at a flux point
+double* eles::get_sgsf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_dim, int in_ele)
+{
+  int i;
+
+  int fpt;
+
+  fpt=in_inter_local_fpt;
+
+  for(i=0;i<in_ele_local_inter;i++)
+  {
+    fpt+=n_fpts_per_inter(i);
+  }
+
+#ifdef _GPU
+  return sgsf_fpts.get_ptr_gpu(fpt,in_ele,in_field,in_dim);
+#else
+  return sgsf_fpts.get_ptr_cpu(fpt,in_ele,in_field,in_dim);
+#endif
+}
 
 //#### helper methods ####
 
@@ -4018,6 +4994,7 @@ void eles::calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_p
     }
 }
 
+/*! Calculate residual sum for monitoring purposes */
 double eles::compute_res_upts(int in_norm_type, int in_field) {
 
   int i, j;
@@ -4380,140 +5357,139 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
   double dudx, dudy, dudz;
   double dvdx, dvdy, dvdz;
   double dwdx, dwdy, dwdz;
-  double diagnostic, tke, pressure, trace, irho, detjac;
+  double diagnostic, tke, pressure, diag, irho, detjac;
 
   // Sum over elements
   for (int i=0;i<n_eles;i++)
+  {
+    for (int j=0;j<n_cubpts_per_ele;j++)
     {
-      for (int j=0;j<n_cubpts_per_ele;j++)
-        {
-          // Get jacobian determinant at cubpts
-          detjac = vol_detjac_vol_cubpts(j)(i);
+      // Get jacobian determinant at cubpts
+      detjac = vol_detjac_vol_cubpts(j)(i);
 
-          // Get the solution at cubature point
-          for (int m=0;m<n_fields;m++)
-            {
-              disu_cubpt(m) = 0.;
-              for (int k=0;k<n_upts_per_ele;k++)
-                {
-                  disu_cubpt(m) += opp_volume_cubpts(j,k)*disu_upts(0)(k,i,m);
-                }
-            }
-          // Get the solution gradient at cubature point
-          for (int m=0;m<n_fields;m++)
-            {
-              for (int n=0;n<n_dims;n++)
-                {
-                  grad_disu_cubpt(m,n)=0.;
-                  for (int k=0;k<n_upts_per_ele;k++)
-                    {
-                      grad_disu_cubpt(m,n) += opp_volume_cubpts(j,k)*grad_disu_upts(k,i,m,n);
-                    }
-                }
-            }
-          irho = 1./disu_cubpt(0);
-          dudx = irho*(grad_disu_cubpt(1,0) - disu_cubpt(1)*irho*grad_disu_cubpt(0,0));
-          dudy = irho*(grad_disu_cubpt(1,1) - disu_cubpt(1)*irho*grad_disu_cubpt(0,1));
-          dvdx = irho*(grad_disu_cubpt(2,0) - disu_cubpt(2)*irho*grad_disu_cubpt(0,0));
-          dvdy = irho*(grad_disu_cubpt(2,1) - disu_cubpt(2)*irho*grad_disu_cubpt(0,1));
+      // Get the solution at cubature point
+      for (int m=0;m<n_fields;m++)
+      {
+        disu_cubpt(m) = 0.;
+        for (int k=0;k<n_upts_per_ele;k++)
+        {
+          disu_cubpt(m) += opp_volume_cubpts(j,k)*disu_upts(0)(k,i,m);
+        }
+      }
+      // Get the solution gradient at cubature point
+      for (int m=0;m<n_fields;m++)
+      {
+        for (int n=0;n<n_dims;n++)
+        {
+          grad_disu_cubpt(m,n)=0.;
+          for (int k=0;k<n_upts_per_ele;k++)
+          {
+            grad_disu_cubpt(m,n) += opp_volume_cubpts(j,k)*grad_disu_upts(k,i,m,n);
+          }
+        }
+      }
+      irho = 1./disu_cubpt(0);
+      dudx = irho*(grad_disu_cubpt(1,0) - disu_cubpt(1)*irho*grad_disu_cubpt(0,0));
+      dudy = irho*(grad_disu_cubpt(1,1) - disu_cubpt(1)*irho*grad_disu_cubpt(0,1));
+      dvdx = irho*(grad_disu_cubpt(2,0) - disu_cubpt(2)*irho*grad_disu_cubpt(0,0));
+      dvdy = irho*(grad_disu_cubpt(2,1) - disu_cubpt(2)*irho*grad_disu_cubpt(0,1));
+
+      if (n_dims==3)
+      {
+        dudz = irho*(grad_disu_cubpt(1,2) - disu_cubpt(1)*irho*grad_disu_cubpt(0,2));
+        dvdz = irho*(grad_disu_cubpt(2,2) - disu_cubpt(2)*irho*grad_disu_cubpt(0,2));
+        dwdx = irho*(grad_disu_cubpt(3,0) - disu_cubpt(3)*irho*grad_disu_cubpt(0,0));
+        dwdy = irho*(grad_disu_cubpt(3,1) - disu_cubpt(3)*irho*grad_disu_cubpt(0,1));
+        dwdz = irho*(grad_disu_cubpt(3,2) - disu_cubpt(3)*irho*grad_disu_cubpt(0,2));
+      }
+
+      // Now calculate diagnostic quantities
+      for (int m=0;m<n_diagnostics;++m)
+      {
+        diagnostic = 0.0;
+        if (run_input.diagnostics(m)=="kineticenergy")
+        {
+          // Compute kinetic energy
+          tke = 0.0;
+          for (int n=1;n<n_fields-1;n++)
+            tke += 0.5*disu_cubpt(n)*disu_cubpt(n);
+
+          diagnostic = irho*tke;
+        }
+        else if (run_input.diagnostics(m)=="vorticity")
+        {
+          // Compute vorticity squared
+           wz = dvdx - dudy;
+          diagnostic = wz*wz;
+          if (n_dims==3)
+          {
+            wx = dwdy - dvdz;
+            wy = dudz - dwdx;
+            diagnostic += wx*wx+wy*wy;
+          }
+          diagnostic *= 0.5/irho;
+        }
+        else if (run_input.diagnostics(m)=="pressuredilatation")
+        {
+          // Kinetic energy
+          tke = 0.0;
+          for (int n=1;n<n_fields-1;n++)
+            tke += 0.5*disu_cubpt(n)*disu_cubpt(n);
+
+          // Compute pressure
+          pressure = (run_input.gamma-1.0)*(disu_cubpt(n_fields-1) - irho*tke);
+
+          // Multiply pressure by divergence of velocity
+          if (n_dims==2) {
+            diagnostic = pressure*(dudx+dvdy);
+          }
+          else if (n_dims==3) {
+            diagnostic = pressure*(dudx+dvdy+dwdz);
+          }
+        }
+        else if (run_input.diagnostics(m)=="straincolonproduct" || run_input.diagnostics(m)=="devstraincolonproduct")
+        {
+          // Rate of strain tensor
+          S(0,0) = dudx;
+          S(0,1) = (dudy+dvdx)/2.0;
+          S(1,0) = S(0,1);
+          S(1,1) = dvdy;
+          diag = (S(0,0)+S(1,1))/3.0;
 
           if (n_dims==3)
-            {
-              dudz = irho*(grad_disu_cubpt(1,2) - disu_cubpt(1)*irho*grad_disu_cubpt(0,2));
-              dvdz = irho*(grad_disu_cubpt(2,2) - disu_cubpt(2)*irho*grad_disu_cubpt(0,2));
-              dwdx = irho*(grad_disu_cubpt(3,0) - disu_cubpt(3)*irho*grad_disu_cubpt(0,0));
-              dwdy = irho*(grad_disu_cubpt(3,1) - disu_cubpt(3)*irho*grad_disu_cubpt(0,1));
-              dwdz = irho*(grad_disu_cubpt(3,2) - disu_cubpt(3)*irho*grad_disu_cubpt(0,2));
-            }
+          {
+            S(0,2) = (dudz+dwdx)/2.0;
+            S(1,2) = (dvdz+dwdy)/2.0;
+            S(2,0) = S(0,2);
+            S(2,1) = S(1,2);
+            S(2,2) = dwdz;
+            diag += S(2,2)/3.0;
+          }
 
-          // Now calculate diagnostic quantities
-          for (int m=0;m<n_diagnostics;++m)
-            {
-              diagnostic = 0.0;
-              if (run_input.diagnostics(m)=="kineticenergy")
-                {
-                  // Compute kinetic energy
-                  tke = 0.0;
-                  for (int n=1;n<n_fields-1;n++)
-                    tke += 0.5*disu_cubpt(n)*disu_cubpt(n);
+          // Subtract diag if deviatoric strain
+          if (run_input.diagnostics(m)=="devstraincolonproduct") {
+            for (int i=0;i<n_dims;i++)
+              S(i,i) -= diag;
+          }
 
-                  diagnostic = irho*tke;
-                }
-              else if (run_input.diagnostics(m)=="vorticity")
-                {
-                  // Compute vorticity squared
-                  wz = dvdx - dudy;
-                  diagnostic = wz*wz;
-                  if (n_dims==3)
-                    {
-                      wx = dwdy - dvdz;
-                      wy = dudz - dwdx;
-                      diagnostic += wx*wx+wy*wy;
-                    }
-                  diagnostic *= 0.5/irho;
-                }
-              else if (run_input.diagnostics(m)=="pressuredilatation")
-                {
-                  // Kinetic energy
-                  tke = 0.0;
-                  for (int n=1;n<n_fields-1;n++)
-                    tke += 0.5*disu_cubpt(n)*disu_cubpt(n);
+          for (int i=0;i<n_dims;i++)
+            for (int j=0;j<n_dims;j++)
+              diagnostic += S(i,j)*S(i,j);
 
-                  // Compute pressure
-                  pressure = (run_input.gamma-1.0)*(disu_cubpt(n_fields-1) - irho*tke);
-
-                  // Multiply pressure by divergence of velocity
-                  if (n_dims==2) {
-                      diagnostic = pressure*(dudx+dvdy);
-                    }
-                  else if (n_dims==3) {
-                      diagnostic = pressure*(dudx+dvdy+dwdz);
-                    }
-                }
-              else if (run_input.diagnostics(m)=="straincolonproduct" || run_input.diagnostics(m)=="devstraincolonproduct")
-                {
-                  // Rate of strain tensor
-                  S(0,0) = dudx;
-                  S(0,1) = (dudy+dvdx)/2.0;
-                  S(1,0) = S(0,1);
-                  S(1,1) = dvdy;
-                  trace = (S(0,0)+S(1,1))/3.;
-
-                  if (n_dims==3)
-                    {
-                      S(0,2) = (dudz+dwdx)/2.0;
-                      S(1,1) = dvdy;
-                      S(1,2) = (dvdz+dwdy)/2.0;
-                      S(2,0) = S(0,2);
-                      S(2,1) = S(1,2);
-                      S(2,2) = dwdz;
-                      trace += S(2,2)/3.;
-                    }
-
-                  // Subtract trace if deviatoric strain
-                  if (run_input.diagnostics(m)=="devstraincolonproduct") {
-                      for (int i=0;i<n_dims;i++)
-                        S(i,i) -= trace;
-                    }
-
-                  for (int i=0;i<n_dims;i++)
-                    for (int j=0;j<n_dims;j++)
-                      diagnostic += S(i,j)*S(i,j);
-
-                }
-              else
-                {
-                  cout<<"Error: diagnostic quantity not recognized"<<endl;
-                  exit(1);
-                }
-              // Add contribution to global integral
-              diagnostic_array(m) += diagnostic*weight_volume_cubpts(j)*detjac;
-            }
         }
+        else
+        {
+          cout<<"Error: diagnostic quantity not recognized"<<endl;
+          exit(1);
+        }
+        // Add contribution to global integral
+        diagnostic_array(m) += diagnostic*weight_volume_cubpts(j)*detjac;
+      }
     }
+  }
 }
 
-void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force, ofstream& cp_file)
+void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force, ofstream& cp_file, bool output)
 {
 
   array<double> u_l(n_fields),norm(n_dims);

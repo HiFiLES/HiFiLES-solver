@@ -14,7 +14,6 @@
 #pragma once
 
 #include "inters.h"
-#include "mpi_inters.h"
 #include "array.h"
 #include "solution.h"
 

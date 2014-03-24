@@ -85,6 +85,7 @@ void eles_hexas::setup_ele_type_specific(int in_run_type)
   set_loc_ppts();
   set_opp_p();
 
+	/*! Run mode */
   if (in_run_type==0)
     {
       n_fpts_per_inter.setup(6);
@@ -109,13 +110,10 @@ void eles_hexas::setup_ele_type_specific(int in_run_type)
 
       if(viscous)
         {
-          if(run_input.LES)
-            {
-              temp_sgsf.setup(n_fields,n_dims);
 
-              // Compute hex filter matrix
-              compute_filter_upts();
-            }
+          // Compute hex filter matrix
+          if(filter) compute_filter_upts();
+
           set_opp_4(run_input.sparse_hexa);
           set_opp_5(run_input.sparse_hexa);
           set_opp_6(run_input.sparse_hexa);
@@ -995,7 +993,7 @@ void eles_hexas::compute_filter_upts(void)
       printf("\nBuilding modal filter\n");
 
       // Compute restriction-prolongation filter
-      compute_modal_filter(filter_upts_1D, vandermonde, inv_vandermonde, N);
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
 
       sum = 0;
       for(i=0;i<N;i++)
@@ -1598,3 +1596,8 @@ double eles_hexas::calc_ele_vol(double& detjac)
   return vol;
 }
 
+/*! Calculate element reference length for timestep calculation */
+double eles_hexas::calc_h_ref_specific(int in_ele)
+  {
+    FatalError("Reference length calculation not implemented for this element!")
+  }

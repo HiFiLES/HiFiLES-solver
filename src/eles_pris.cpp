@@ -68,6 +68,7 @@ void eles_pris::setup_ele_type_specific(int in_run_type)
   set_loc_ppts();
   set_opp_p();
 
+	/*! Run mode */
   if (in_run_type==0)
     {
       n_fpts_per_inter.setup(5);
@@ -1526,3 +1527,8 @@ double eles_pris::calc_ele_vol(double& detjac)
 
 }
 
+/*! Calculate element reference length for timestep calculation */
+double eles_pris::calc_h_ref_specific(int in_ele)
+  {
+    FatalError("Reference length calculation not implemented for this element!")
+  }
