@@ -128,7 +128,7 @@ __global__ void bespoke_SPMV_kernel(double *g_c, double *g_b, double *g_cont_mat
 }
 
 
-template<int n_dims, int n_fields> 
+template<int n_dims, int n_fields>
 __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, double* u_r, double* norm, double* loc, double *bdy_params, double gamma, double R_ref, double time_bound, int equation)
 {
   double rho_l, rho_r;
@@ -907,7 +907,7 @@ __device__ void rotation_matrix_kernel(double* norm, double* mrot)
     }
   }
 }
-  
+
 __device__ double wallfn_br(double yplus, double A, double B, double E, double kappa)
 {
   double Rey;
@@ -918,7 +918,7 @@ __device__ double wallfn_br(double yplus, double A, double B, double E, double k
   return Rey;
 }
 
-__device__ double SGS_filter_width(double in_detjac, int in_ele_type, int in_n_dims, double in_filter_ratio)
+__device__ double SGS_filter_width(double in_detjac, int in_ele_type, int in_n_dims, int in_order, double in_filter_ratio)
 {
   // Define filter width by Deardorff's unstructured element method
   double delta, vol;
@@ -940,9 +940,8 @@ __device__ double SGS_filter_width(double in_detjac, int in_ele_type, int in_n_d
     vol = in_detjac*8.0;
   }
 
-  delta = in_filter_ratio*pow(vol,1./in_n_dims);
-  //printf("vol: %6.10f",vol);
-  //printf("delta: %6.10f",delta);
+  delta = in_filter_ratio*pow(vol,1./in_n_dims)/in_order;
+
   return delta;
 }
 
@@ -1086,15 +1085,11 @@ __device__ void wall_model_kernel(int wall_model, double rho, double* urot, doub
       Rey_c = ymatch*ymatch;
       Rey = rho*u*y/(*mu);
 
-      //cout << "Rey "<< Rey << endl;
-
       if(Rey < Rey_c) uplus = sqrt(Rey);
       else            uplus = pow(8.3,0.875)*pow(Rey,0.125);
 
       utau = u/uplus;
       tw = rho*utau*utau;
-
-      //cout << "utau "<< utau << endl;
 
       #pragma unroll
       for(i=0;i<in_n_dims;++i) tau_wall[i] = tw*urot[i]/u;
@@ -1850,7 +1845,7 @@ __device__ __host__ void ldg_flux(double q_l, double q_r, double* f_l, double* f
 
 
 template< int n_fields >
-__global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts, 
+__global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts,
                                    const int n_cells, const int n_qpts, const double dt, const double const_src_term)
 {
   int n = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1873,7 +1868,7 @@ __global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts,
 
 
 template< int n_fields >
-__global__ void RK45_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_res_qpts, double *g_jac_det_qpts, 
+__global__ void RK45_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_res_qpts, double *g_jac_det_qpts,
                                    const int n_cells, const int n_qpts, const double fa, const double fb, const double dt, const double const_src_term)
 {
   int n = blockIdx.x*blockDim.x + threadIdx.x;
@@ -2271,14 +2266,14 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
 
 // gpu kernel to calculate transformed discontinuous viscous flux at solution points
 template<int in_n_dims, int in_n_fields, int in_n_comp>
-__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, int in_ele_type, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* Leonard_mom, double* Leonard_ene, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
+__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, int in_ele_type, int in_order, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* Leonard_mom, double* Leonard_ene, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
- double q[in_n_fields];
+  double q[in_n_fields];
   double f[in_n_dims];
-  double met[in_n_dims][in_n_dims]; // Jacobian
-  double stensor[in_n_comp]; // viscous stress tensor
+  double met[in_n_dims][in_n_dims];   // Jacobian
+  double stensor[in_n_comp];          // viscous stress tensor
   double grad_ene[in_n_dims];
   double grad_vel[in_n_dims*in_n_dims];
   double grad_q[in_n_fields*in_n_dims];
@@ -2286,22 +2281,22 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
 
   // LES model variables
   double sgsf[in_n_fields*in_n_dims]; // SGS flux array
-  double straintensor[in_n_comp]; // strain for SGS models
-  double sdtensor[in_n_comp]; // for WALE SGS model
-  double lmtensor[in_n_comp]; // local Leonard tensor for momentum
-  double letensor[in_n_dims]; // local Leonard tensor for energy
+  double straintensor[in_n_comp];     // strain for SGS models
+  double sdtensor[in_n_comp];         // for WALE SGS model
+  double lmtensor[in_n_comp];         // local Leonard tensor for momentum
+  double letensor[in_n_dims];         // local Leonard tensor for energy
   double jac, delta;
 
   // wall model variables
-  double norm[in_n_dims]; // wall normal
-  double tau[in_n_dims*in_n_dims]; // shear stress
-  double mrot[in_n_dims*in_n_dims]; // rotation matrix
-  double temp[in_n_dims*in_n_dims]; // array for matrix mult
-  double urot[in_n_dims]; // rotated velocity components
-  double tw[in_n_dims]; // wall shear stress components
-  double qw; // wall heat flux
-  double y; // wall distance
-  int wall; // flag
+  double norm[in_n_dims];             // wall normal
+  double tau[in_n_dims*in_n_dims];    // shear stress
+  double mrot[in_n_dims*in_n_dims];   // rotation matrix
+  double temp[in_n_dims*in_n_dims];   // array for matrix mult
+  double urot[in_n_dims];             // rotated velocity components
+  double tw[in_n_dims];               // wall shear stress components
+  double qw;                          // wall heat flux
+  double y;                           // wall distance
+  int wall;                           // flag
 
   int i, j, k, index;
   int stride = in_n_upts_per_ele*in_n_eles;
@@ -2405,9 +2400,6 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
       // calculate wall flux
       wall_model_kernel<in_n_dims>( wall_model, q[0], urot, &inte, &mu, in_gamma, in_prandtl, y, tw, qw);
 
-      //printf("tw = %6.10f\n",tw[0]);
-      //printf("qw = %6.10f\n",qw);
-
       // correct the sign of wall shear stress and wall heat flux? - see SD3D
 
       // Set arrays for next timestep
@@ -2418,7 +2410,7 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
       in_twall_ptr[thread_id] = 0.0; //density
       in_twall_ptr[thread_id + (in_n_fields-1)*stride] = qw; //energy
 
-      // populate ndims*ndims rotated stress array. Tedious but safer than populating n_comp array.
+      // populate ndims*ndims rotated stress array
       if(in_n_dims==2) {
         tau[0] = 0.0;
         tau[1] = tw[0];
@@ -2437,7 +2429,7 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
         tau[8] = 0.0;
       }
 
-      // rotate stress array back to Cartesian coordinates. Tedious but safe.
+      // rotate stress array back to Cartesian coordinates
       #pragma unroll
       for(i=0;i<in_n_dims;i++) {
         #pragma unroll
@@ -2461,8 +2453,6 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
           }
         }
       }
-
-      //printf("tau = %6.10f, %6.10f, %6.10f, %6.10f\n",tau[0],tau[1],tau[2],tau[3]);
 
       // set SGS fluxes
       #pragma unroll
@@ -2494,17 +2484,18 @@ __global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n
       // Calculate filter width
       jac = in_detjac_upts_ptr[thread_id];
 
-      delta = SGS_filter_width(jac, in_ele_type, in_n_dims, in_filter_ratio);
+      delta = SGS_filter_width(jac, in_ele_type, in_n_dims, in_order, in_filter_ratio);
 
       // momentum Leonard tensor
       #pragma unroll
       for (j=0;j<in_n_comp;j++)
         lmtensor[j] = Leonard_mom[thread_id + j*stride];
 
-      // energy Leonard tensor - bugged?
+      // energy Leonard tensor - bugged or just sensitive to the filter?
       #pragma unroll
       for (j=0;j<in_n_dims;j++)
-        letensor[j] = 0.0;//Leonard_ene[thread_id + j*stride];
+        letensor[j] = 0.0;
+        //letensor[j] = Leonard_ene[thread_id + j*stride];
 
       //printf("Lu = %6.10f\n",lmtensor[0]);
 
@@ -3608,7 +3599,7 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
 }
 
 // wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points
-void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, int in_ele_type, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* in_Lu_ptr, double* in_Le_ptr, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
+void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, int in_ele_type, int in_order, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* in_Lu_ptr, double* in_Le_ptr, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
@@ -3618,9 +3609,9 @@ void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims,
   if (equation==0)
   {
     if (in_n_dims==2)
-      calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_filter_ratio, LES, sgs_model, wall_model, in_wall_thickness, in_wall_dist_ptr, in_twall_ptr, in_Lu_ptr, in_Le_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, out_sgsf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
+      calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_order, in_filter_ratio, LES, sgs_model, wall_model, in_wall_thickness, in_wall_dist_ptr, in_twall_ptr, in_Lu_ptr, in_Le_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, out_sgsf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
     else if (in_n_dims==3)
-      calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_filter_ratio, LES, sgs_model, wall_model, in_wall_thickness, in_wall_dist_ptr, in_twall_ptr, in_Lu_ptr, in_Le_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, out_sgsf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
+      calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_order, in_filter_ratio, LES, sgs_model, wall_model, in_wall_thickness, in_wall_dist_ptr, in_twall_ptr, in_Lu_ptr, in_Le_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, out_sgsf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
     else
       FatalError("ERROR: Invalid number of dimensions ... ");
   }

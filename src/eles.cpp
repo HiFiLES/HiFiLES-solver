@@ -829,21 +829,21 @@ void eles::rm_detjac_upts_cpu(void)
 // advance solution
 
 void eles::AdvanceSolution(int in_step, int adv_type) {
-  
+
   if (n_eles!=0)
   {
-    
+
     /*! Time integration using a forwards Euler integration. */
-    
+
     if (adv_type == 0) {
-      
+
       /*!
        Performs B = B + (alpha*A) where: \n
        alpha = -run_input.dt \n
        A = div_tconf_upts(0)\n
        B = disu_upts(0)
        */
-      
+
 #ifdef _CPU
       // If using global minimum timestep based on CFL, determine
       // global minimum
@@ -855,7 +855,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
           for (int ic=0; ic<n_eles; ic++)
             {
               dt_local_new = calc_dt_local(ic);
-              
+
               if (dt_local_new < dt_local(0))
                   dt_local(0) = dt_local_new;
             }
@@ -889,7 +889,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
                   // User supplied timestep
                   if (run_input.dt_type == 0)
                     disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
-                  
+
                   // Global minimum timestep
                   else if (run_input.dt_type == 1)
                     disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
@@ -903,19 +903,19 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
                 }
             }
         }
-    
+
 #endif
-      
+
 #ifdef _GPU
       RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
 #endif
-      
+
     }
-    
+
     /*! Time integration using a RK45 method. */
-    
+
     else if (adv_type == 3) {
-      
+
       double rk4a, rk4b;
       if (in_step==0) {
         rk4a=    0.0;
@@ -937,7 +937,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
         rk4a=   -1.514183444257156;
         rk4b=   0.153057247968152;
       }
-      
+
 #ifdef _CPU
       // for first stage only, compute timestep
       if (in_step == 0)
@@ -956,8 +956,8 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
                       dt_local(0) = dt_local_new;
                     }
                 }
-            
-         
+
+
           // If using MPI, find minimum across partitions
 #ifdef _MPI
               MPI_Barrier(MPI_COMM_WORLD);
@@ -1000,25 +1000,25 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
               }
           }
       }
-      
+
 #endif
-      
+
 #ifdef _GPU
-      
+
       RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
-      
+
 #endif
-      
+
     }
-    
+
     /*! Time integration not implemented. */
-    
+
     else {
       cout << "ERROR: Time integration type not recognised ... " << endl;
     }
-    
+
   }
-  
+
 }
 
 double eles::calc_dt_local(int in_ele)
@@ -1061,7 +1061,7 @@ double eles::calc_dt_local(int in_ele)
     return out_dt_local;
   }
 
-// calculate the discontinuous solution at the flux points 
+// calculate the discontinuous solution at the flux points
 
 void eles::calc_disu_fpts(int in_disu_upts_from)
 {
@@ -1785,10 +1785,6 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
     Bstride = Brows;
     Cstride = Arows;
 
-    //zero_array(disuf_upts);
-    //zero_array(Lu);
-    //zero_array(Le);
-
 #ifdef _CPU
 
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
@@ -1952,9 +1948,6 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
           /*! subtract diagonal from Lu */
           for (k=0;k<n_dims;++k) Lu(i,j,k) -= diag;
 
-          //cout << "uf*uf = " << setprecision(10) << disuf_upts(i,j,1)*disuf_upts(i,j,1) <<", "<< disuf_upts(i,j,2)*disuf_upts(i,j,2) <<", "<< disuf_upts(i,j,1)*disuf_upts(i,j,2) << endl;
-          //cout<<"uu = "<<setprecision(10)<<uu(i,j,0)<<", "<<uu(i,j,1)<<", "<<uu(i,j,2)<<endl;
-          //cout<<"Leonard = "<<setprecision(10)<<Lu(i,j,0)<<", "<<Lu(i,j,1)<<", "<<Lu(i,j,2)<<endl;
         }
       }
     }
@@ -1968,13 +1961,13 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
     cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_gpu(),Bstride,0.0,disuf_upts.get_ptr_gpu(),Cstride);
 
     /*! Check for NaNs */
-    /*disuf_upts.cp_gpu_cpu();
+    disuf_upts.cp_gpu_cpu();
 
     for(i=0;i<n_upts_per_ele;i++)
       for(j=0;j<n_eles;j++)
         for(k=0;k<n_fields;k++)
           if(isnan(disuf_upts(i,j,k)))
-            FatalError("nan in filtered solution");*/
+            FatalError("nan in filtered solution");
 
     /*! If Similarity model */
     if(sgs_model==2 || sgs_model==4) {
@@ -2100,10 +2093,9 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
     }
     #endif
 
-    // TODO: modify GPU routine to account for new SGS flux array sgsf_upts
     #ifdef _GPU
 
-    calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+    calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
 
     #endif
 
@@ -2221,9 +2213,6 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 
     for(i=0;i<n_dims-1;i++) tau(i+1,0) = tau(0,i+1) = tw(i);
 
-    //cout << "tau " << setprecision(6) << endl;
-    //tau.print();
-
     // rotate stress array back to Cartesian coordinates
     zero_array(temp);
     for(i=0;i<n_dims;++i)
@@ -2236,9 +2225,6 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       for(j=0;j<n_dims;++j)
         for(k=0;k<n_dims;++k)
           tau(i,j) += Mrot(k,i)*temp(k,j);
-
-    //cout << "tau " << setprecision(6) << endl;
-    //tau.print();
 
     // set SGS fluxes
     for(i=0;i<n_dims;i++) {
@@ -2254,17 +2240,14 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       // energy
       temp_sgsf(n_fields-1,i) = qw*norm(i);
     }
-    //cout<<"rank, wall flux: "<<rank<<endl;
-    //temp_sgsf.print();
-    //cout << endl;
   }
 
   // Free-stream SGS flux
   else {
 
     // Set wall shear stress to 0 to prevent NaNs
-    //for(i=0;i<n_dims;++i)
-      //twall(upt,ele,i) = 0.0;
+    for(i=0;i<n_dims;++i)
+      twall(upt,ele,i) = 0.0;
 
     // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
     if(sgs_model==0) {
@@ -2441,14 +2424,8 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         temp_sgsf(3,1) += temp_sgsf(2,2);
         temp_sgsf(3,2) += rho*Lu(upt,ele,2);
       }
-
-      //cout<<"Leonard = "<<setprecision(10)<<Lu(upt,ele,0)<<", "<<Lu(upt,ele,1)<<", "<<Lu(upt,ele,2)<<endl;
-
     }
   }
-  //cout<<"rank, sgs flux: "<<rank<<endl;
-  //temp_sgsf.print();
-  //cout << endl;
 }
 
 /*! If using a RANS or LES near-wall model, calculate distance
@@ -2475,8 +2452,6 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
 
         // get coords of current solution point
         calc_pos_upt(j,i,pos);
-        //cout << "rank, coords " << rank << endl;
-        //pos.print();
 
         // initialize wall distance
         distmin = 1e20;
@@ -2494,9 +2469,6 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
               dist += vec(n)*vec(n);
             }
             dist = sqrt(dist);
-
-            //cout << "rank, coords_bdy " << rank << endl;
-            //pos_bdy.print();
 
             // update shortest vector
             if (dist < distmin) {
@@ -2553,10 +2525,6 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
 
       for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
 
-      //cout << "vec" << endl;
-      //vecmin.print();
-      //if(rank==0) cout << "rank, wall distance " << rank << ", " << distmin << endl;
-      //if(rank==0) cout << endl;
     }
   }
 }
@@ -2578,25 +2546,18 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
     array<double> vec(n_dims);
     array<double> vecmin(n_dims);
 
-    //if (rank==0) cout << "rank, nproc " << rank << endl;
-
-
     // hold our breath and go round the brute-force loop...
     for (i=0;i<n_eles;++i) {
       for (j=0;j<n_upts_per_ele;++j) {
 
         // get coords of current solution point
         calc_pos_upt(j,i,pos);
-        //if (rank==0) cout << "rank, coords " << rank << endl;
-        //if (rank==0) pos.print();
 
         // initialize wall distance
         distmin = 1e20;
 
         // loop over all partitions
         for (p=0;p<nproc;++p) {
-
-          //if (rank==0) cout << "p, n_seg_inters(p) " << p << ", " << n_seg_inters_array(p) << endl;
 
           // line segment boundaries
           for (k=0;k<n_seg_inters_array(p);++k) {
@@ -2611,9 +2572,6 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
                 dist += vec(n)*vec(n);
               }
               dist = sqrt(dist);
-
-              //if (rank==0) cout << "pos_bdy" << endl;
-              //if (rank==0) pos_bdy.print();
 
               // update shortest vector
               if (dist < distmin) {
@@ -2670,10 +2628,6 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
 
         for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
 
-        //if (rank==0) cout << "vecmin" << endl;
-        //if (rank==0) vecmin.print();
-        //if (rank==0) cout << "rank, wall distance " << rank << ", " << distmin << endl;
-        //if (rank==0) cout << endl;
       }
     }
   }
@@ -2685,8 +2639,6 @@ array<double> eles::calc_rotation_matrix(array<double>& norm)
 {
   array <double> mrot(n_dims,n_dims);
   double nn;
-
-  //cout << "norm "<< norm(0) << ", " << norm(1) << endl;
 
   // Create rotation matrix
   if(n_dims==2) {
@@ -2763,15 +2715,11 @@ void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double 
       Rey_c = ymatch*ymatch;
       Rey = rho*u*y/mu;
 
-      //cout << "Rey "<< Rey << endl;
-
       if(Rey < Rey_c) uplus = sqrt(Rey);
       else            uplus = pow(8.3,0.875)*pow(Rey,0.125);
 
       utau = u/uplus;
       tw = rho*utau*utau;
-
-      //cout << "utau "<< utau << endl;
 
       for (i=0;i<n_dims;i++) tau_wall(i) = tw*urot(i)/u;
 
@@ -3231,7 +3179,7 @@ void eles::set_opp_1(int in_sparse)
       for (int i=0;i<n_dims;i++) {
           array_to_mklcsr(opp_1(i),opp_1_data(i),opp_1_cols(i),opp_1_b(i),opp_1_e(i));
         }
-#endif 
+#endif
 
 #ifdef _GPU
       opp_1_ell_data.setup(n_dims);
@@ -3343,7 +3291,7 @@ void eles::set_opp_3(int in_sparse)
 
 #ifdef _GPU
   opp_3.cp_cpu_gpu();
-#endif 
+#endif
 
   if(in_sparse==0)
     {
@@ -3355,7 +3303,7 @@ void eles::set_opp_3(int in_sparse)
 
 #ifdef _CPU
       array_to_mklcsr(opp_3,opp_3_data,opp_3_cols,opp_3_b,opp_3_e);
-#endif 
+#endif
 
 #ifdef _GPU
       array_to_ellpack(opp_3, opp_3_ell_data, opp_3_ell_indices, opp_3_nnz_per_row);
@@ -3531,7 +3479,7 @@ void eles::set_opp_6(int in_sparse)
 
 #ifdef _GPU
   opp_6.cp_cpu_gpu();
-#endif 
+#endif
 
   if(in_sparse==0)
     {
@@ -3541,7 +3489,7 @@ void eles::set_opp_6(int in_sparse)
     {
       opp_6_sparse=1;
 
-#ifdef _CPU  
+#ifdef _CPU
       array_to_mklcsr(opp_6,opp_6_data,opp_6_cols,opp_6_b,opp_6_e);
 #endif
 
@@ -4713,7 +4661,7 @@ double* eles::get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
   return disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -4735,7 +4683,7 @@ double* eles::get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return norm_tconf_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
   return norm_tconf_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -4758,7 +4706,7 @@ double* eles::get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return detjac_fpts.get_ptr_gpu(fpt,in_ele);
 #else
   return detjac_fpts.get_ptr_cpu(fpt,in_ele);
@@ -4780,7 +4728,7 @@ double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_f
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_gpu(fpt,in_ele);
 #else
   return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_cpu(fpt,in_ele);
@@ -4802,7 +4750,7 @@ double* eles::get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return norm_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 #else
   return norm_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
@@ -4866,7 +4814,7 @@ double* eles::get_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return delta_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
   return delta_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
@@ -4888,7 +4836,7 @@ double* eles::get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_in
       fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
   return grad_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field,in_dim);
 #else
   return grad_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field,in_dim);
@@ -4897,23 +4845,23 @@ double* eles::get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_in
 
 double* eles::get_normal_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele, array<double> temp_loc, double temp_pos[3])
 {
-  
+
   array<double> pos(n_dims);
   double dist = 0.0, min_dist = 1E6;
   int min_index = 0;
 
   // find closest solution point
-  
+
   for (int i=0; i<n_upts_per_ele; i++) {
-    
+
     calc_pos_upt(i, in_ele, pos);
-    
+
     dist = 0.0;
     for(int j=0;j<n_dims;j++) {
       dist += (pos(j)-temp_loc(j))*(pos(j)-temp_loc(j));
     }
     dist = sqrt(dist);
-    
+
     if (dist < min_dist) {
       min_dist = dist;
       min_index = i;
@@ -4921,15 +4869,15 @@ double* eles::get_normal_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_
         temp_pos[j] = pos(j);
       }
     }
-    
+
   }
-  
+
 #ifdef _GPU
   return disu_upts(0).get_ptr_gpu(min_index,in_ele,in_field);
 #else
   return disu_upts(0).get_ptr_cpu(min_index,in_ele,in_field);
 #endif
-  
+
 }
 
 // get a pointer to the normal transformed continuous viscous flux at a flux point
@@ -4947,7 +4895,7 @@ double* eles::get_norm_tconvisf_fpts_ptr(int in_inter_local_fpt, int in_ele_loca
         fpt+=n_fpts_per_inter(i);
     }
 
-#ifdef _GPU  
+#ifdef _GPU
     return norm_tconvisf_fpts.get_ptr_gpu(fpt,in_ele,in_field);
 #else
     return norm_tconvisf_fpts.get_ptr_cpu(fpt,in_ele,in_field);
