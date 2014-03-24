@@ -65,11 +65,7 @@ inters_cub_order                  // Order of cubature rule for integrating over
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
 12
 plot_freq
-<<<<<<< HEAD
-1000
-=======
 100
->>>>>>> origin/adiabat
 restart_dump_freq
 5000
 diagnostics_freq
