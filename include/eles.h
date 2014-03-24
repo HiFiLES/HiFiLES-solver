@@ -147,17 +147,11 @@ public:
   /*! calculate divergence of transformed continuous viscous flux at solution points */
   //void calc_div_tconvisf_upts(int in_div_tconinvf_upts_to);
   
-  /*! advance with rk11 (forwards euler) */
-  void advance_rk11(void);
-  
-  /*! advance with rk33 (three-stage third-order runge-kutta) */
-  void advance_rk33(int in_step);
-  
-  /*! advance with rk44 (four-stage forth-order runge-kutta) */
-  void advance_rk44(int in_step);
-  
-  /*! advance with rk45 (five-stage forth-order low-storage runge-kutta) */
-  void advance_rk45(int in_step);
+  /*! advance solution using a runge-kutta scheme */
+  void AdvanceSolution(int in_step, int adv_type);
+
+  /*! Calculate element local timestep */
+  double calc_dt_local(int in_ele);
 
   /*! get number of elements */
   int get_n_eles(void);
@@ -338,6 +332,9 @@ public:
 
   virtual void setup_ele_type_specific(int in_run_type)=0;
 
+  /*! prototype for element reference length calculation */
+  virtual double calc_h_ref_specific(int in_eles) = 0;
+
   virtual int read_restart_info(ifstream& restart_file)=0;
 
   virtual void write_restart_info(ofstream& restart_file)=0;
@@ -394,7 +391,7 @@ public:
   /*! Compute volume integral of diagnostic quantities */
   void CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array);
 
-  void compute_wall_forces(array<double>& inv_force, array<double>& vis_force,ofstream& cp_file );
+  void compute_wall_forces(array<double>& inv_force, array<double>& vis_force, ofstream& cp_file, bool output);
 
   array<double> compute_error(int in_norm_type, double& time);
   
@@ -839,5 +836,14 @@ protected:
   int n_dims_mul_n_upts_per_ele;
 
   int rank;
+  int nproc;
+
+  /*! reference element length */
+  array<double> h_ref;
+  
+  /*! element local timestep */
+  array<double> dt_local;
+  double dt_local_new;
+  array<double> dt_local_mpi;
 
 };

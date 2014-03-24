@@ -941,3 +941,21 @@ double eles_tris::calc_ele_vol(double& detjac)
   return vol;
 }
 
+/*! Calculate element reference length for timestep calculation */
+double eles_tris::calc_h_ref_specific(int in_ele)
+  {
+    double a,b,c,s;
+    double out_h_ref;
+
+    // Compute edge lengths
+    a = sqrt(pow(shape(0,0,in_ele) - shape(0,1,in_ele),2.0) + pow(shape(1,0,in_ele) - shape(1,1,in_ele),2.0));
+    b = sqrt(pow(shape(0,1,in_ele) - shape(0,2,in_ele),2.0) + pow(shape(1,1,in_ele) - shape(1,2,in_ele),2.0));
+    c = sqrt(pow(shape(0,2,in_ele) - shape(0,0,in_ele),2.0) + pow(shape(1,2,in_ele) - shape(1,0,in_ele),2.0));
+
+    // Compute diameter of incircle
+    s = 0.5*(a+b+c);
+    out_h_ref = sqrt(((s-a)*(s-b)*(s-c))/s);
+
+    return out_h_ref;
+  }
+

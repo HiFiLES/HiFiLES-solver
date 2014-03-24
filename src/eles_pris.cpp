@@ -1527,3 +1527,8 @@ double eles_pris::calc_ele_vol(double& detjac)
 
 }
 
+/*! Calculate element reference length for timestep calculation */
+double eles_pris::calc_h_ref_specific(int in_ele)
+  {
+    FatalError("Reference length calculation not implemented for this element!")
+  }

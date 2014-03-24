@@ -74,6 +74,8 @@ public:
   double lambda;
 
   double dt;
+  int dt_type;
+  double CFL;
   int n_steps;
   int plot_freq;
   int restart_dump_freq;

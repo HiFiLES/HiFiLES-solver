@@ -94,6 +94,9 @@ public:
 
   int face0_map(int index);
 
+  /*! Element reference length calculation */
+  double calc_h_ref_specific(int in_ele);
+
 protected:
 
   // members

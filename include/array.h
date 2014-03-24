@@ -99,6 +99,10 @@ public:
 
   T get_max(void);
 
+  // method to get minimum value of array
+
+  T get_min(void);
+
   // print
 
   void print(void);
@@ -385,6 +389,21 @@ T array<T>::get_max(void)
   return max;
 }
 
+// method to calculate minimum value of array
+// Template specialization
+template <typename T>
+T array<T>::get_min(void)
+{
+  int i;
+  T min = 1e16;
+
+  for(i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
+    {
+      if( ((*this).get_ptr_cpu())[i] < min)
+        min = ((*this).get_ptr_cpu())[i];
+    }
+  return min;
+}
 // print
 
 template <typename T>

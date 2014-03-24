@@ -74,209 +74,220 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
   n_eles=in_n_eles;
 
   if (n_eles!=0)
-  {
-
-  order=run_input.order;
-  p_res=run_input.p_res;
-  viscous = run_input.viscous;
-  LES = run_input.LES;
-  sgs_model = run_input.SGS_model;
-  filter = 0;
-  // Set filter flag before calling setup_ele_type_specific
-  if(LES)
-    if(sgs_model==3 || sgs_model==2 || sgs_model==4)
-      filter = 1;
-
-  wall_model = run_input.wall_model;
-  inters_cub_order = run_input.inters_cub_order;
-  volume_cub_order = run_input.volume_cub_order;
-  n_bdy_eles=0;
-
-  // Initialize the element specific static members
-  (*this).setup_ele_type_specific(in_run_type);
-
-  if (in_run_type==0)
-  {
-    if(run_input.adv_type==0)
     {
-      n_adv_levels=1;
-    }
-    else if(run_input.adv_type==1)
-    {
-      n_adv_levels=3;
-    }
-    else if(run_input.adv_type==2)
-    {
-      n_adv_levels=4;
-    }
-    else if(run_input.adv_type==3)
-    {
-      n_adv_levels=2;
-    }
-    else
-    {
-      cout << "ERROR: Type of time integration scheme not recongized ... " << endl;
-    }
-  }
-  // For plotting, we just need 0 adv_level
-  else if (in_run_type==1)
-  {
-      n_adv_levels=1;
-  }
 
-  // Allocate storage for solution
-  disu_upts.setup(n_adv_levels);
-  for(int i=0;i<n_adv_levels;i++)
-  {
-    disu_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
-  }
+      order=run_input.order;
+      p_res=run_input.p_res;
+      viscous =run_input.viscous;
+      LES = run_input.LES;
+      sgs_model = run_input.SGS_model;
+      wall_model = run_input.wall_model;
 
-  // Initialize to zero
-  for (int m=0;m<n_adv_levels;m++)
-  for (int i=0;i<n_upts_per_ele;i++)
-    for (int j=0;j<n_eles;j++)
-      for (int k=0;k<n_fields;k++)
-        disu_upts(m)(i,j,k) = 0.;
+      // Set filter flag before calling setup_ele_type_specific
+      filter = 0;
+      if(LES)
+        if(sgs_model==3 || sgs_model==2 || sgs_model==4)
+          filter = 1;
 
-  // Allocate extra arrays for LES models
-  if(LES) {
+      inters_cub_order = run_input.inters_cub_order;
+      volume_cub_order = run_input.volume_cub_order;
+      n_bdy_eles=0;
 
-    sgsf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
-    sgsf_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
+      // Initialize the element specific static members
+      (*this).setup_ele_type_specific(in_run_type);
 
-    // SVV model requires filtered solution
-    if(sgs_model==3 || sgs_model==2 || sgs_model==4) {
+      if (in_run_type==0)
+        {
+          if(run_input.adv_type==0)
+            {
+              n_adv_levels=1;
+            }
+          else if(run_input.adv_type==1)
+            {
+              n_adv_levels=3;
+            }
+          else if(run_input.adv_type==2)
+            {
+              n_adv_levels=4;
+            }
+          else if(run_input.adv_type==3)
+            {
+              n_adv_levels=2;
+            }
+          else
+            {
+              cout << "ERROR: Type of time integration scheme not recongized ... " << endl;
+            }
+        }
+      // For plotting, we just need 0 adv_level
+      else if (in_run_type==1)
+        {
+          n_adv_levels=1;
+        }
 
-      disuf_upts.setup(n_upts_per_ele,n_eles,n_fields);
-    }
-    // is this necessary?
-    else {
-      disuf_upts.setup(1);
-    }
+      // Allocate storage for solution
+      disu_upts.setup(n_adv_levels);
+      for(int i=0;i<n_adv_levels;i++)
+        {
+          disu_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
+        }
 
-    // Similarity model requires product terms and Leonard tensors
-    if(sgs_model==2 || sgs_model==4) {
-      // Leonard tensor and velocity-velocity product for momentum SGS term
-      if(n_dims==2) {
-        Lu.setup(n_upts_per_ele,n_eles,3);
-        uu.setup(n_upts_per_ele,n_eles,3);
+      // Allocate storage for timestep
+      // If using global minimum, only one timestep
+      if (run_input.dt_type == 1)
+        dt_local.setup(1);
+      // If using local, one timestep per element
+      else
+        dt_local.setup(n_eles);
+
+      // If in parallel and using global minumum timestep, allocate storage
+      // for minimum timesteps in each partition
+#ifdef _MPI
+      if (run_input.dt_type == 1)
+        {
+          MPI_Comm_size(MPI_COMM_WORLD,&nproc);
+          dt_local_mpi.setup(nproc);
+          dt_local_mpi.initialize_to_zero();
+        }
+#endif
+
+      // Initialize to zero
+      for (int m=0;m<n_adv_levels;m++)
+        for (int i=0;i<n_upts_per_ele;i++)
+          for (int j=0;j<n_eles;j++)
+            for (int k=0;k<n_fields;k++)
+              disu_upts(m)(i,j,k) = 0.;
+
+      // Allocate extra arrays for LES models
+      if(LES) {
+
+        sgsf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
+        sgsf_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
+
+        // SVV model requires filtered solution
+        if(sgs_model==3 || sgs_model==2 || sgs_model==4) {
+          disuf_upts.setup(n_upts_per_ele,n_eles,n_fields);
+        }
+        // allocate dummy array for passing to GPU routine
+        else {
+          disuf_upts.setup(1);
+        }
+
+        // Similarity model requires product terms and Leonard tensors
+        if(sgs_model==2 || sgs_model==4) {
+
+          // Leonard tensor and velocity-velocity product for momentum SGS term
+          if(n_dims==2) {
+            Lu.setup(n_upts_per_ele,n_eles,3);
+            uu.setup(n_upts_per_ele,n_eles,3);
+          }
+          else if(n_dims==3) {
+            Lu.setup(n_upts_per_ele,n_eles,6);
+            uu.setup(n_upts_per_ele,n_eles,6);
+          }
+
+          // Leonard tensor and velocity-energy product for energy SGS term
+          Le.setup(n_upts_per_ele,n_eles,n_dims);
+          ue.setup(n_upts_per_ele,n_eles,n_dims);
+
+        }
+        // allocate dummy arrays
+        else {
+          Lu.setup(1);
+          uu.setup(1);
+          Le.setup(1);
+          ue.setup(1);
+        }
       }
-      else if(n_dims==3) {
-        Lu.setup(n_upts_per_ele,n_eles,6);
-        uu.setup(n_upts_per_ele,n_eles,6);
+      // Dummy arrays to pass to GPU kernel wrapper
+      else {
+        disuf_upts.setup(1);
+        Lu.setup(1);
+        uu.setup(1);
+        Le.setup(1);
+        ue.setup(1);
       }
 
-      // Leonard tensor and velocity-energy product for energy SGS term
-      Le.setup(n_upts_per_ele,n_eles,n_dims);
-      ue.setup(n_upts_per_ele,n_eles,n_dims);
+      // Allocate array for wall distance if using a wall model
+      if(wall_model > 0) {
+        wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
+        twall.setup(n_upts_per_ele,n_eles,n_fields);
+        zero_array(wall_distance);
+        zero_array(twall);
+      }
+      else {
+        wall_distance.setup(1);
+        twall.setup(1);
+      }
+
+      // Allocate SGS flux array if using LES or wall model
+      if(LES || wall_model > 0) {
+        temp_sgsf.setup(n_fields,n_dims);
+      }
+
+      set_shape(in_max_n_spts_per_ele);
+      ele2global_ele.setup(n_eles);
+      bctype.setup(n_eles,n_inters_per_ele);
+
+      // for mkl sparse blas
+      matdescra[0]='G';
+      matdescra[3]='F';
+      transa='N';
+      one=1.0;
+      zero=0.0;
+
+      n_fields_mul_n_eles=n_fields*n_eles;
+      n_dims_mul_n_upts_per_ele=n_dims*n_upts_per_ele;
+
+      if (in_run_type==0) {
+
+          div_tconf_upts.setup(n_adv_levels);
+          for(int i=0;i<n_adv_levels;i++)
+            {
+              div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
+            }
+
+          // Initialize to zero
+          for (int m=0;m<n_adv_levels;m++)
+            for (int i=0;i<n_upts_per_ele;i++)
+              for (int j=0;j<n_eles;j++)
+                for (int k=0;k<n_fields;k++)
+                  div_tconf_upts(m)(i,j,k) = 0.;
+
+          disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+          tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
+          norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+          norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+
+          if(viscous)
+            {
+              delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+              grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
+              grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
+            }
+          // Set connectivity array. Needed for Paraview output.
+          if (ele_type==3) // prism
+            connectivity_plot.setup(8,n_peles_per_ele);
+          else
+            connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
+
+          set_connectivity_plot();
+        }
+      else if (in_run_type==1)
+        {
+          ppt_to_pnode.setup(n_eles,n_ppts_per_ele);
+          pos_ppts.setup(n_eles,n_ppts_per_ele);
+          for (int i=0;i<n_eles;i++)
+            for (int j=0;j<n_ppts_per_ele;j++)
+              pos_ppts(i,j).setup(n_dims);
+
+          if (ele_type==3) // prism
+            connectivity_plot.setup(8,n_peles_per_ele);
+          else
+            connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
+        }
+
     }
-    // is this necessary?
-    else {
-      Lu.setup(1);
-      uu.setup(1);
-      Le.setup(1);
-      ue.setup(1);
-    }
-  }
-  // Dummy arrays to pass to GPU kernel wrapper. is this necessary?
-  else {
-    disuf_upts.setup(1);
-    Lu.setup(1);
-    uu.setup(1);
-    Le.setup(1);
-    ue.setup(1);
-  }
-
-  // Allocate array for wall distance if using a wall model
-  if(wall_model > 0) {
-    wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
-    twall.setup(n_upts_per_ele,n_eles,n_fields);
-    zero_array(wall_distance);
-    zero_array(twall);
-  }
-  else {
-    wall_distance.setup(1);
-    twall.setup(1);
-  }
-
-  // Allocate small SGS flux array if using LES or wall model
-  if(LES || wall_model > 0) {
-    temp_sgsf.setup(n_fields,n_dims);
-  }
-
-  set_shape(in_max_n_spts_per_ele);
-  ele2global_ele.setup(n_eles);
-  bctype.setup(n_eles,n_inters_per_ele);
-
-  // for mkl sparse blas
-  matdescra[0]='G';
-  matdescra[3]='F';
-  transa='N';
-  one=1.0;
-  zero=0.0;
-
-  n_fields_mul_n_eles=n_fields*n_eles;
-  n_dims_mul_n_upts_per_ele=n_dims*n_upts_per_ele;
-
-  if (in_run_type==0) {
-
-    div_tconf_upts.setup(n_adv_levels);
-    for(int i=0;i<n_adv_levels;i++)
-    {
-      div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
-    }
-
-    // Initialize to zero
-    for (int m=0;m<n_adv_levels;m++)
-    for (int i=0;i<n_upts_per_ele;i++)
-      for (int j=0;j<n_eles;j++)
-        for (int k=0;k<n_fields;k++)
-          div_tconf_upts(m)(i,j,k) = 0.;
-
-    disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-    tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
-    norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-    norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-
-    if(viscous)
-    {
-      delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-      grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
-      grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
-    }
-
-    //ppt_to_pnode.setup(n_eles,n_ppts_per_ele);
-    //pos_ppts.setup(n_eles,n_ppts_per_ele);
-    //for (int i=0;i<n_eles;i++)
-      //for (int j=0;j<n_ppts_per_ele;j++)
-       // pos_ppts(i,j).setup(n_dims);
-
-    // Compute and store position of plot points
-    //set_pos_ppts();
-
-    // Set connectivity array. Needed for Paraview output.
-    if (ele_type==3) // prism
-      connectivity_plot.setup(8,n_peles_per_ele);
-    else
-      connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
-
-    set_connectivity_plot();
-  }
-  else if (in_run_type==1)
-  {
-    ppt_to_pnode.setup(n_eles,n_ppts_per_ele);
-    pos_ppts.setup(n_eles,n_ppts_per_ele);
-    for (int i=0;i<n_eles;i++)
-      for (int j=0;j<n_ppts_per_ele;j++)
-        pos_ppts(i,j).setup(n_dims);
-
-    if (ele_type==3) // prism
-      connectivity_plot.setup(8,n_peles_per_ele);
-    else
-      connectivity_plot.setup(n_verts_per_ele,n_peles_per_ele);
-  }
-
-  }
 
 }
 
@@ -557,6 +568,18 @@ void eles::set_ics(double& time)
             }
         }
     }
+
+    // If required, calculate element reference lengths
+    if (run_input.dt_type != 0)
+      {
+        // Allocate array
+        h_ref.setup(n_eles);
+        h_ref.initialize_to_zero();
+
+        // Call element specific function to obtain length
+        for (int i=0; i<n_eles; i++)
+          h_ref(i) = (*this).calc_h_ref_specific(i);
+      }
 }
 
 
@@ -697,21 +720,16 @@ void eles::mv_all_cpu_gpu(void)
       //norm_tconvisf_fpts.mv_cpu_gpu();
     }
 
-    // LES arrays
-    //if(LES) {
-      filter_upts.mv_cpu_gpu();
-      disuf_upts.mv_cpu_gpu();
-      sgsf_upts.mv_cpu_gpu();
-      sgsf_fpts.mv_cpu_gpu();
-      uu.mv_cpu_gpu();
-      ue.mv_cpu_gpu();
-      Lu.mv_cpu_gpu();
-      Le.mv_cpu_gpu();
-    //}
-    // wall model array
-    //if(wall_model > 0) {
-      twall.mv_cpu_gpu();
-    //}
+    // LES and wall model arrays
+    filter_upts.mv_cpu_gpu();
+    disuf_upts.mv_cpu_gpu();
+    sgsf_upts.mv_cpu_gpu();
+    sgsf_fpts.mv_cpu_gpu();
+    uu.mv_cpu_gpu();
+    ue.mv_cpu_gpu();
+    Lu.mv_cpu_gpu();
+    Le.mv_cpu_gpu();
+    twall.mv_cpu_gpu();
   }
   #endif
 }
@@ -808,126 +826,240 @@ void eles::rm_detjac_upts_cpu(void)
 #endif
 }
 
-// advance with rk11 (forwards euler)
+// advance solution
 
-void eles::advance_rk11(void)
-{
+void eles::AdvanceSolution(int in_step, int adv_type) {
+  
   if (n_eles!=0)
-    {
-
+  {
+    
+    /*! Time integration using a forwards Euler integration. */
+    
+    if (adv_type == 0) {
+      
       /*!
-    Performs B = B + (alpha*A) where: \n
-    alpha = -run_input.dt \n
-    A = div_tconf_upts(0)\n
-    B = disu_upts(0)
-    */
-
+       Performs B = B + (alpha*A) where: \n
+       alpha = -run_input.dt \n
+       A = div_tconf_upts(0)\n
+       B = disu_upts(0)
+       */
+      
 #ifdef _CPU
-      for (int i=0;i<n_fields;i++)
+      // If using global minimum timestep based on CFL, determine
+      // global minimum
+      if (run_input.dt_type == 1)
+        {
+          // Find minimum timestep
+          dt_local(0) = 1e12; // Set to large value
+
+          for (int ic=0; ic<n_eles; ic++)
+            {
+              dt_local_new = calc_dt_local(ic);
+              
+              if (dt_local_new < dt_local(0))
+                  dt_local(0) = dt_local_new;
+            }
+
+          // If running in parallel, gather minimum timestep values from
+          // each partition and find global minumum across partitions
+#ifdef _MPI
+          MPI_Barrier(MPI_COMM_WORLD);
+          MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
+              1, MPI_DOUBLE, MPI_COMM_WORLD);
+          MPI_Barrier(MPI_COMM_WORLD);
+
+          dt_local(0) = dt_local_mpi.get_min();
+#endif
+        }
+
+        // If using local timestepping, just compute and store all local
+        // timesteps
+        if (run_input.dt_type == 2)
+          {
+            for (int ic=0; ic<n_eles; ic++)
+              dt_local(ic) = calc_dt_local(ic);
+          }
+
+        for (int i=0;i<n_fields;i++)
         {
           for (int ic=0;ic<n_eles;ic++)
             {
               for (int inp=0;inp<n_upts_per_ele;inp++)
                 {
-                  disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                  // User supplied timestep
+                  if (run_input.dt_type == 0)
+                    disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                  
+                  // Global minimum timestep
+                  else if (run_input.dt_type == 1)
+                    disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+
+                  // Element local timestep
+                  else if (run_input.dt_type == 2)
+                    disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                  else
+                    FatalError("ERROR: dt_type not recognized!")
+
                 }
             }
         }
+    
 #endif
-
+      
 #ifdef _GPU
       RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
 #endif
-
-      /*
-
-    #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
-    cblas_daxpy(n_eles*n_fields*n_upts_per_ele,-run_input.dt,div_tconf_upts(0).get_ptr_cpu(),1,disu_upts(0).get_ptr_cpu(),1);
-
-
-    #endif
-
-
-    cublasDaxpy(n_eles*n_fields*n_upts_per_ele,-run_input.dt,div_tconf_upts(0).get_ptr_gpu(),1,disu_upts(0).get_ptr_gpu(),1);
-
-    #endif
-  */
+      
     }
-}
-
-// advance with rk33 (three-stage third-order runge-kutta)
-
-void eles::advance_rk33(int in_step)
-{
-  FatalError("Advance_rk33 not implemented");
-}
-
-// advance with rk44 (four-stage forth-order runge-kutta)
-
-void eles::advance_rk44(int in_step)
-{
-  FatalError("Advance_rk44 not implemented");
-}
-
-// advance with rk45 (five-stage forth-order low-storage runge-kutta)
-
-void eles::advance_rk45(int in_step)
-{  
-  if (n_eles!=0)
-    {
-
+    
+    /*! Time integration using a RK45 method. */
+    
+    else if (adv_type == 3) {
+      
       double rk4a, rk4b;
       if (in_step==0) {
-          rk4a=    0.0;
-          rk4b=   0.149659021999229;
-        }
+        rk4a=    0.0;
+        rk4b=   0.149659021999229;
+      }
       else if (in_step==1) {
-          rk4a=   -0.417890474499852;
-          rk4b=   0.379210312999627;
-        }
+        rk4a=   -0.417890474499852;
+        rk4b=   0.379210312999627;
+      }
       else if (in_step==2) {
-          rk4a=   -1.192151694642677;
-          rk4b=   0.822955029386982;
-        }
+        rk4a=   -1.192151694642677;
+        rk4b=   0.822955029386982;
+      }
       else if (in_step==3) {
-          rk4a=   -1.697784692471528;
-          rk4b=   0.699450455949122;
-        }
+        rk4a=   -1.697784692471528;
+        rk4b=   0.699450455949122;
+      }
       else if (in_step==4) {
-          rk4a=   -1.514183444257156;
-          rk4b=   0.153057247968152;
-        }
-
+        rk4a=   -1.514183444257156;
+        rk4b=   0.153057247968152;
+      }
+      
 #ifdef _CPU
-
-      double res, rhs;
-      for (int ic=0;ic<n_eles;ic++)
+      // for first stage only, compute timestep
+      if (in_step == 0)
         {
-          for (int i=0;i<n_fields;i++)
+          // For global timestepping, find minimum timestep
+          if (run_input.dt_type == 1)
             {
-              for (int inp=0;inp<n_upts_per_ele;inp++)
-                {
-                  rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
-                  res = disu_upts(1)(inp,ic,i);
-                  res = rk4a*res + run_input.dt*rhs;
+              dt_local(0) = 1e12;
 
-                  disu_upts(1)(inp,ic,i) = res;
-                  disu_upts(0)(inp,ic,i) += rk4b*res;
+              for (int ic=0; ic<n_eles; ic++)
+                {
+                  dt_local_new = calc_dt_local(ic);
+
+                  if (dt_local_new < dt_local(0))
+                    {
+                      dt_local(0) = dt_local_new;
+                    }
+                }
+            
+         
+          // If using MPI, find minimum across partitions
+#ifdef _MPI
+              MPI_Barrier(MPI_COMM_WORLD);
+              MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),1,MPI_DOUBLE,MPI_COMM_WORLD);
+              MPI_Barrier(MPI_COMM_WORLD);
+
+              dt_local(0) = dt_local_mpi.get_min();
+#endif
+            }
+
+          // For local timestepping, find element local timesteps
+          if (run_input.dt_type == 2)
+            {
+              for (int ic=0; ic<n_eles; ic++)
+                {
+                  dt_local(ic) = calc_dt_local(ic);
                 }
             }
         }
-#endif
 
+      double res, rhs;
+      for (int ic=0;ic<n_eles;ic++)
+      {
+        for (int i=0;i<n_fields;i++)
+          {
+            for (int inp=0;inp<n_upts_per_ele;inp++)
+              {
+                rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
+                res = disu_upts(1)(inp,ic,i);
+
+                if (run_input.dt_type == 0)
+                  res = rk4a*res + run_input.dt*rhs;
+                else if (run_input.dt_type == 1)
+                  res = rk4a*res + dt_local(0)*rhs;
+                else if (run_input.dt_type == 2)
+                  res = rk4a*res + dt_local(ic)*rhs;
+
+                disu_upts(1)(inp,ic,i) = res;
+                disu_upts(0)(inp,ic,i) += rk4b*res;
+              }
+          }
+      }
+      
+#endif
+      
 #ifdef _GPU
-
+      
       RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
-
+      
 #endif
-
+      
     }
+    
+    /*! Time integration not implemented. */
+    
+    else {
+      cout << "ERROR: Time integration type not recognised ... " << endl;
+    }
+    
+  }
+  
 }
 
+double eles::calc_dt_local(int in_ele)
+  {
+    double lam, lam_new;
+    double out_dt_local;
+
+    // 2-D Elements
+    if (n_dims == 2)
+      {
+        double u,v,p,c;
+
+        lam = 0;
+
+        // Calculate maximum internal wavespeed per element
+        for (int i=0; i<n_upts_per_ele; i++)
+          {
+            u = disu_upts(0)(i,in_ele,1)/disu_upts(0)(i,in_ele,0);
+            v = disu_upts(0)(i,in_ele,2)/disu_upts(0)(i,in_ele,0);
+            p = (run_input.gamma - 1.0) * (disu_upts(0)(i,in_ele,3) - 0.5*disu_upts(0)(i,in_ele,0)*(u*u+v*v));
+            c = sqrt(run_input.gamma * p/disu_upts(0)(i,in_ele,0));
+
+            lam_new = sqrt(u*u + v*v) + c;
+
+            if (lam < lam_new)
+              lam = lam_new;
+          }
+
+        if (viscous)
+          out_dt_local = run_input.CFL*h_ref(in_ele)/(run_input.order*run_input.order*(lam + run_input.order*run_input.order*run_input.mu_inf/h_ref(in_ele)));
+        else
+          out_dt_local = run_input.CFL*h_ref(in_ele)/lam*1.0/(2.0*run_input.order + 1.0);
+      }
+
+    else if (n_dims == 3)
+    {
+      FatalError("Timestep type is not implemented in 3D yet.");
+    }
+
+    return out_dt_local;
+  }
 
 // calculate the discontinuous solution at the flux points 
 
@@ -2169,8 +2301,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 
       // OPTION 2. Deardorff definition (Deardorff, JFM 1970)
       vol = (*this).calc_ele_vol(detjac);
-      //delta = run_input.filter_ratio*pow(vol,1./n_dims);
-      delta = pow(vol,1./n_dims);
+      delta = run_input.filter_ratio*pow(vol,1./n_dims)/order;
 
       // OPTION 3. Suggested by Bardina, AIAA 1980:
       // delta = sqrt((dx^2+dy^2+dz^2)/3)
@@ -3630,16 +3761,6 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
               disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
             }
         }
-
-  // HACK to show wall distance in Paraview
-  //for(i=1;i<n_fields-1;i++)
-    //for(j=0;j<n_upts_per_ele;j++)
-      //disu_upts_plot(j,i)=wall_distance(j,in_ele,i-1);
-
-  //for(j=0;j<n_upts_per_ele;j++) {
-    //disu_upts_plot(j,0)=1.0;
-    //disu_upts_plot(j,n_fields-1)=1.0;
-  //}
 
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
@@ -5420,7 +5541,7 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
   }
 }
 
-void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force, ofstream& cp_file)
+void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force, ofstream& cp_file, bool output)
 {
 
   array<double> u_l(n_fields),norm(n_dims);
