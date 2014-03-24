@@ -24,7 +24,7 @@ dt
 CFL                               
 0.001
 n_steps
-5000000
+500000000
 adv_type                          // 0: Forward Euler, 3: RK45
 3
 tau 
@@ -35,11 +35,11 @@ pen_fact
 Restart options
 -----------------------
 restart_flag
-0
+1
 restart_iter
-2000000
+60000
 n_restart_files
-3
+8
 -----------------------
 Mesh options
 -----------------------
@@ -57,7 +57,7 @@ Monitoring, plotting parameters
 p_res                             // Plotting resolution, number of nodes per direction
 6
 write_type                        // 0: Paraview, 1: Tecplot
-1
+0
 n_plot_quantities
 7 rho u v w energy pressure mach
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
@@ -65,15 +65,19 @@ inters_cub_order                  // Order of cubature rule for integrating over
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
 12
 plot_freq
+<<<<<<< HEAD
 1000
+=======
+100
+>>>>>>> origin/adiabat
 restart_dump_freq
-200000
+5000
 diagnostics_freq
 100000
 monitor_res_freq
-100
+10
 monitor_force_freq
-100000
+100
 res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
 2
 error_norm_type                   // 0:infinity norm, 1:L1 norm, 2:L2 norm
