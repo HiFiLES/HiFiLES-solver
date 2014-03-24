@@ -563,28 +563,13 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           rho_r = p_r/(R_ref*T_r);
 
           // no-slip
-          for (int i=0; i<n_dims; i++){
+          for (int i=0; i<n_dims; i++)
             v_r[i] = 0.;
-            }
 
           // energy
           v_sq = 0.;
-          for (int i=0; i<n_dims; i++)
-            v_sq += 0.;//(v_r[i]*v_r[i]);
+
           e_r = (p_r/(gamma-1.0));// + 0.5*rho_r*v_sq;
-
-//          // Set state for the left side (equal to right side)
-//          // Pressure: are the same -- no need to change
-
-//          // Temperature: use T_wall to compute density and energy
-//          u_l[0] = rho_r;
-
-//          // Energy
-//          for (int i=0; i<n_dims; i++)
-//            u_l[i+1] = 0.;
-//          u_l[n_dims+1] = e_r;
-
-
         }
 
       // Adiabatic, no-slip wall (fixed)
@@ -625,8 +610,10 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // energy
           v_sq = 0.;
+          for (int i=0; i<n_dims; i++)
+            v_sq += (v_r[i]*v_r[i]);
 
-          e_r = (p_r/(gamma-1.0));// + 0.5*rho_r*v_sq;
+          e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
         }
 
       // Adiabatic, no-slip wall (moving)

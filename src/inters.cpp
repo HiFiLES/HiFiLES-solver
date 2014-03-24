@@ -562,15 +562,15 @@ void inters::ldg_flux(int flux_spec, array<double> &u_l, array<double> &u_r, arr
         {
           if(n_dims == 2)
             {
-              f_c(k,0) = f_r(k,0) + tau*norm_x*(u_l(k) - u_r(k));
-              f_c(k,1) = f_r(k,1) + tau*norm_y*(u_l(k) - u_r(k));
+              f_c(k,0) = f_l(k,0) + tau*norm_x*(u_l(k) - u_r(k));
+              f_c(k,1) = f_l(k,1) + tau*norm_y*(u_l(k) - u_r(k));
             }
 
           if(n_dims == 3)
             {
-              f_c(k,0) = f_r(k,0) + tau*norm_x*(u_l(k) - u_r(k));
-              f_c(k,1) = f_r(k,1) + tau*norm_y*(u_l(k) - u_r(k));
-              f_c(k,2) = f_r(k,2) + tau*norm_z*(u_l(k) - u_r(k));
+              f_c(k,0) = f_l(k,0) + tau*norm_x*(u_l(k) - u_r(k));
+              f_c(k,1) = f_l(k,1) + tau*norm_y*(u_l(k) - u_r(k));
+              f_c(k,2) = f_l(k,2) + tau*norm_z*(u_l(k) - u_r(k));
             }
         }
     }
@@ -580,15 +580,15 @@ void inters::ldg_flux(int flux_spec, array<double> &u_l, array<double> &u_r, arr
         {
           if(n_dims == 2)
             {
-              f_c(k,0) = f_r(k,0) + tau*norm_x*(u_l(k) - u_r(k));;
+              f_c(k,0) = f_r(k,0) + tau*norm_x*(u_l(k) - u_r(k));
               f_c(k,1) = f_r(k,1) + tau*norm_y*(u_l(k) - u_r(k));
             }
 
           if(n_dims == 3)
             {
-              f_c(k,0) = f_r(k,0);
-              f_c(k,1) = f_r(k,1);
-              f_c(k,2) = f_r(k,2);
+              f_c(k,0) = f_r(k,0) + tau*norm_x*(u_l(k) - u_r(k));
+              f_c(k,1) = f_r(k,1) + tau*norm_y*(u_l(k) - u_r(k));
+              f_c(k,2) = f_r(k,2) + tau*norm_z*(u_l(k) - u_r(k));
             }
         }
     }

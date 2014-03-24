@@ -35,7 +35,7 @@ pen_fact
 Restart options
 -----------------------
 restart_flag
-1
+0
 restart_iter
 60000
 n_restart_files
