@@ -275,51 +275,152 @@ void get_opp_3_dg(array<double>& opp_3_dg, array<double>& loc_upts_tri, array<do
     }
 }
 
-// Compute a modal filter matrix, given Vandermonde matrix and inverse
-void compute_modal_filter(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N)
+// Compute a 1D modal filter matrix, given Vandermonde matrix and inverse
+void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order)
 {
-#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+	int i,j,ind=0;
+	double Cp=0.1;     // filter strength coeff.
+	double p=order;    // filter exponent
+	double alpha, eta;
+	array <double> modal(N,N), mtemp(N,N);
 
-  int i,j;
-  array <double> modal(N,N), mtemp(N,N);
+	zero_array(modal);
+	zero_array(filter_upts);
 
-  zero_array(modal);
-  zero_array(filter_upts);
+	// Full form: alpha = Cp*N*dt
+	alpha = Cp*N;
 
-  // Modal coefficients
-  double eta,Cp;
-  Cp=-100.0; // Dubiner SVV filter strength coeff.
-  double alpha = Cp/N; // Full form: alpha = Cp*(N+!)*dt/delta
+	for(i=0;i<p+1;i++) {
+		// Exponential filter (SVV method) (similar to Meister et al 2009)
+		eta = i/(p+1.0);
+		modal(ind,ind) = exp(-alpha*pow(eta,2*p));
 
-  for(i=0;i<N;i++)
-    {
-      //modal(i,i)=1.0;	// Sharp modal cutoff filter
-      eta = i/(N+1.0);
-      modal(i,i)=exp(alpha*pow(eta,2*(N-1))); // Dubiner SVV 2D exp filter. MUST be even power
-    }
-  // Sharp modal cutoff filter
-  //modal(N-1,N-1)=0.0;
+		// Gaussian filter in modal space (from SD3D)
+		//modal(ind,ind) = exp(-pow(pi*eta,2.0)/24.0);
 
-  cout<<"modal coeffs:"<<endl;
-  modal.print();
+		// Sharp cutoff filter
+		//if(i+j<order)
+			//modal(ind,ind) = 1.0;
 
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
+		ind++;
+	}
 
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+	//cout<<"modal coeffs:"<<endl;
+	//modal.print();
 
-#else // inefficient matrix multiplication
+	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-  // TODO: finish coding
-  int i,j;
-  array<double> mtemp(N,N);
+	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
 
-  for(i=0;i<N-1;i++)
-    filter_upts(i,i) = 1.0;
+	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
-  mtemp = mult_arrays(inv_vandermonde,filter_upts);
-  filter_upts = mult_arrays(mtemp,vandermonde);
+	#else // inefficient matrix multiplication
 
-#endif
+	mtemp = mult_arrays(inv_vandermonde,modal);
+	filter_upts = mult_arrays(mtemp,vandermonde);
+
+	#endif
+}
+
+// Compute a modal filter matrix for a triangular element, given Vandermonde matrix and inverse
+void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order)
+{
+	int i,j,ind=0;
+	double Cp=0.1;     // Dubiner SVV filter strength coeff.
+	double p=order;    // filter exponent
+	double alpha, eta;
+	array <double> modal(N,N), mtemp(N,N);
+
+	zero_array(modal);
+	zero_array(filter_upts);
+
+	// Full form: alpha = Cp*(N+1)*dt/delta
+	alpha = Cp*N;
+
+	for(i=0;i<p+1;i++) {
+		for(j=0;j<p-i+1;j++) {
+			// Exponential filter (SVV method) (similar to Meister et al 2009)
+			eta = (i+j)/(p+1.0);
+			modal(ind,ind) = exp(-alpha*pow(eta,2*p));
+
+			// Gaussian filter in modal space (from SD3D)
+			//modal(ind,ind) = exp(-pow(pi*eta,2.0)/24.0);
+
+			// Sharp cutoff filter
+			//if(i+j<order)
+				//modal(ind,ind) = 1.0;
+
+			ind++;
+		}
+	}
+
+	// Sharp modal cutoff filter
+	//modal(N-1,N-1)=0.0;
+
+	//cout<<"modal coeffs:"<<endl;
+	//modal.print();
+
+	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
+
+	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+
+	#else // inefficient matrix multiplication
+
+	mtemp = mult_arrays(inv_vandermonde,modal);
+	filter_upts = mult_arrays(mtemp,vandermonde);
+
+	#endif
+}
+
+// Compute a modal filter matrix for a tetrahedral element, given Vandermonde matrix and inverse
+void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order)
+{
+	int i,j,k,ind=0;
+	double Cp=0.1;     // Dubiner SVV filter strength coeff.
+	double p=order;    // filter exponent
+	double alpha, eta;
+	array <double> modal(N,N), mtemp(N,N);
+
+	zero_array(modal);
+	zero_array(filter_upts);
+
+	// Full form: alpha = Cp*(N+1)*dt/delta
+	alpha = Cp*N;
+
+	for(i=0;i<p+1;i++) {
+		for(j=0;j<p-i+1;j++) {
+			for(k=0;k<p-i-j+1;k++) {
+				// Exponential filter (SVV method) (similar to Meister et al 2009)
+				eta = (i+j+k)/(p+1.0);
+				modal(ind,ind) = exp(-alpha*pow(eta,2*p));
+
+				// Gaussian filter in modal space (from SD3D)
+				//modal(ind,ind) = exp(-pow(pi*eta*delta,2.0)/24.0)
+				ind++;
+			}
+		}
+	}
+
+	// Sharp modal cutoff filter
+	//modal(N-1,N-1)=0.0;
+
+	//cout<<"modal coeffs:"<<endl;
+	//modal.print();
+
+	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
+
+	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+
+	#else // inefficient matrix multiplication
+
+	mtemp = mult_arrays(inv_vandermonde,modal);
+	filter_upts = mult_arrays(mtemp,vandermonde);
+
+	#endif
 }
 
 void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_tri, int order, double c_tri, int vcjh_scheme_tri, array<double>& loc_upts_tri)
@@ -2226,7 +2327,7 @@ void eval_dn_nodal_s_basis(array<double> &dd_nodal_s_basis,
 
 //----------------------------------------------------------------------------
 // Linear equation solution by Gauss-Jordan elimination.
-// a(1:n,1:n) is the coefficients input matrix. 
+// a(1:n,1:n) is the coefficients input matrix.
 // b(1:n) is the input matrix containing the right-hand side vector.
 // On output, a(1:n,1:n) is replaced by its matrix inverse,
 // and b(1:n) is replaced by the corresponding solution vector.

@@ -153,9 +153,17 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> volume_cub_order;
         }
+      else if (!param_name.compare("dt_type"))
+        {
+          in_run_input_file >> dt_type;
+        }
       else if (!param_name.compare("dt"))
         {
           in_run_input_file >> dt;
+        }
+      else if (!param_name.compare("CFL"))
+        {
+          in_run_input_file >> CFL;
         }
       else if (!param_name.compare("n_steps"))
         {
@@ -176,6 +184,14 @@ void input::setup(ifstream& in_run_input_file, int rank)
       else if (!param_name.compare("SGS_model"))
         {
           in_run_input_file >> SGS_model;
+        }
+      else if (!param_name.compare("wall_model"))
+        {
+          in_run_input_file >> wall_model;
+        }
+      else if (!param_name.compare("wall_layer_thickness"))
+        {
+          in_run_input_file >> wall_layer_t;
         }
       else if (!param_name.compare("plot_freq"))
         {

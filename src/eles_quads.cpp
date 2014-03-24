@@ -70,6 +70,7 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
     FatalError("Equation not supported");
 
   n_inters_per_ele=4;
+  length.setup(4);
 
   n_upts_per_ele=(order+1)*(order+1);
   upts_type=run_input.upts_type_quad;
@@ -86,77 +87,84 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
   set_volume_cubpts();
   set_opp_volume_cubpts();
 
-  n_fpts_per_inter.setup(4);
-
-  n_fpts_per_inter(0)=(order+1);
-  n_fpts_per_inter(1)=(order+1);
-  n_fpts_per_inter(2)=(order+1);
-  n_fpts_per_inter(3)=(order+1);
-
-  n_fpts_per_ele=n_inters_per_ele*(order+1);
-
-  set_tloc_fpts();
-
-  set_tnorm_fpts();
-
-  set_opp_0(run_input.sparse_quad);
-  set_opp_1(run_input.sparse_quad);
-  set_opp_2(run_input.sparse_quad);
-  set_opp_3(run_input.sparse_quad);
-
-  if(viscous)
+	/*! Run mode */
+  if (in_run_type==0)
     {
-      set_opp_4(run_input.sparse_quad);
-      set_opp_5(run_input.sparse_quad);
-      set_opp_6(run_input.sparse_quad);
+      n_fpts_per_inter.setup(4);
 
-      temp_grad_u.setup(n_fields,n_dims);
-      if(run_input.LES)
+      n_fpts_per_inter(0)=(order+1);
+      n_fpts_per_inter(1)=(order+1);
+      n_fpts_per_inter(2)=(order+1);
+      n_fpts_per_inter(3)=(order+1);
+
+      n_fpts_per_ele=n_inters_per_ele*(order+1);
+
+      set_tloc_fpts();
+
+      set_tnorm_fpts();
+
+      set_opp_0(run_input.sparse_quad);
+      set_opp_1(run_input.sparse_quad);
+      set_opp_2(run_input.sparse_quad);
+      set_opp_3(run_input.sparse_quad);
+
+      if(viscous)
         {
-          temp_sgsf.setup(n_fields,n_dims);
+          set_opp_4(run_input.sparse_quad);
+          set_opp_5(run_input.sparse_quad);
+          set_opp_6(run_input.sparse_quad);
+
+          temp_grad_u.setup(n_fields,n_dims);
 
           // Compute quad filter matrix
-          compute_filter_upts();
+          if(filter) compute_filter_upts();
         }
+
+      temp_u.setup(n_fields);
+      temp_f.setup(n_fields,n_dims);
+      //}
+      //else
+      //{
+
+      if (viscous==1)
+        {
+          set_opp_4(run_input.sparse_quad);
+        }
+
+      n_verts_per_ele = 4;
+      n_edges_per_ele = 0;
+      n_ppts_per_edge = 0;
+
+      // Number of plot points per face, excluding points on vertices or edges
+      n_ppts_per_face.setup(n_inters_per_ele);
+      for (int i=0;i<n_inters_per_ele;i++)
+        n_ppts_per_face(i) = (p_res-2);
+
+      n_ppts_per_face2.setup(n_inters_per_ele);
+      for (int i=0;i<n_inters_per_ele;i++)
+        n_ppts_per_face2(i) = (p_res);
+
+      max_n_ppts_per_face = n_ppts_per_face(0);
+
+      // Number of plot points not on faces, edges or vertices
+      n_interior_ppts = n_ppts_per_ele-4-4*n_ppts_per_face(0);
+
+      vert_to_ppt.setup(n_verts_per_ele);
+      edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
+
+      face_ppt_to_ppt.setup(n_inters_per_ele);
+      for (int i=0;i<n_inters_per_ele;i++)
+        face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
+
+      face2_ppt_to_ppt.setup(n_inters_per_ele);
+      for (int i=0;i<n_inters_per_ele;i++)
+        face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
+
+      interior_ppt_to_ppt.setup(n_interior_ppts);
+
+      create_map_ppt();
+
     }
-
-  temp_u.setup(n_fields);
-  temp_f.setup(n_fields,n_dims);
-
-  /*! Plot mode setup */
-
-  n_verts_per_ele = 4;
-  n_edges_per_ele = 0;
-  n_ppts_per_edge = 0;
-
-  // Number of plot points per face, excluding points on vertices or edges
-  n_ppts_per_face.setup(n_inters_per_ele);
-  for (int i=0;i<n_inters_per_ele;i++)
-    n_ppts_per_face(i) = (p_res-2);
-
-  n_ppts_per_face2.setup(n_inters_per_ele);
-  for (int i=0;i<n_inters_per_ele;i++)
-    n_ppts_per_face2(i) = (p_res);
-
-  max_n_ppts_per_face = n_ppts_per_face(0);
-
-  // Number of plot points not on faces, edges or vertices
-  n_interior_ppts = n_ppts_per_ele-4-4*n_ppts_per_face(0);
-
-  vert_to_ppt.setup(n_verts_per_ele);
-  edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
-
-  face_ppt_to_ppt.setup(n_inters_per_ele);
-  for (int i=0;i<n_inters_per_ele;i++)
-    face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
-
-  face2_ppt_to_ppt.setup(n_inters_per_ele);
-  for (int i=0;i<n_inters_per_ele;i++)
-    face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
-
-  interior_ppt_to_ppt.setup(n_interior_ppts);
-
-  create_map_ppt();
 
 }
 
@@ -750,7 +758,7 @@ void eles_quads::compute_filter_upts(void)
       printf("\nBuilding modal filter\n");
 
       // Compute modal filter
-      compute_modal_filter(filter_upts_1D, vandermonde, inv_vandermonde, N);
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
 
       sum = 0;
       for(i=0;i<N;i++)
@@ -1152,3 +1160,19 @@ double eles_quads::calc_ele_vol(double& detjac)
   return vol;
 }
 
+/*! Calculate element reference length for timestep calculation */
+double eles_quads::calc_h_ref_specific(int in_ele)
+  {
+    double out_h_ref;
+
+    // Compute edge lengths
+    length(0) = sqrt(pow(shape(0,0,in_ele) - shape(0,1,in_ele),2.0) + pow(shape(1,0,in_ele) - shape(1,1,in_ele),2.0));
+    length(1) = sqrt(pow(shape(0,1,in_ele) - shape(0,2,in_ele),2.0) + pow(shape(1,1,in_ele) - shape(1,2,in_ele),2.0));
+    length(2) = sqrt(pow(shape(0,2,in_ele) - shape(0,3,in_ele),2.0) + pow(shape(1,2,in_ele) - shape(1,3,in_ele),2.0));
+    length(3) = sqrt(pow(shape(0,3,in_ele) - shape(0,0,in_ele),2.0) + pow(shape(1,3,in_ele) - shape(1,0,in_ele),2.0));
+
+    // Get minimum edge length
+    out_h_ref = length.get_min();
+
+    return out_h_ref;
+  }

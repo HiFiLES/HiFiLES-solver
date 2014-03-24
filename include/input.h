@@ -74,6 +74,8 @@ public:
   double lambda;
 
   double dt;
+  int dt_type;
+  double CFL;
   int n_steps;
   int plot_freq;
   int restart_dump_freq;
@@ -81,8 +83,10 @@ public:
 
   int LES;
   int filter_type;
-  double filter_ratio;
-  int SGS_model;
+	double filter_ratio;
+	int SGS_model;
+	int wall_model;
+	double wall_layer_t;
 
   int monitor_res_freq;
   int monitor_force_freq;

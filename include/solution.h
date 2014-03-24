@@ -74,10 +74,18 @@ struct solution {
   
   int rank;
   
+  /*! No-slip wall flux point coordinates for wall models. */
+
+	array< array<double> > loc_noslip_bdy;
+
   /*! Diagnostics. */
   
   array<double> body_force;
-  
+  array<double> inv_force;
+  array<double> vis_force;
+  array<double> norm_residual;
+  array<double> diagnostics;
+
   /*! Plotting related. */
   
   int p_res;
@@ -111,6 +119,8 @@ struct solution {
   array<double> out_buffer_plotq, in_buffer_plotq;
   array<int> out_buffer_pnode, in_buffer_pnode;
   
+	array< array<double> > loc_noslip_bdy_global;
+
 #endif
   
 };

@@ -135,18 +135,18 @@ void plot_continuous(struct solution* FlowSol)
 #endif
 
   for(int i=0;i<FlowSol->num_pnodes;i++)
+  {
+    for (int j=0;j<run_input.n_plot_quantities;j++)
     {
-      for (int j=0;j<run_input.n_plot_quantities;j++)
-        {
-          FlowSol->plotq_pnodes(i,j) /= (1.0*FlowSol->factor_pnode(i));
-        }
+      FlowSol->plotq_pnodes(i,j) /= (1.0*FlowSol->factor_pnode(i));
     }
-
-  //if(FlowSol->write_type==0)
-  //write_vtu_bin(FlowSol->ini_iter, FlowSol);
-  //else if(FlowSol->write_type==1)
-  //write_tec_bin(FlowSol->ini_iter, FlowSol);
-
+  }
+  
+  if(FlowSol->write_type==0)
+    write_vtu_bin(FlowSol->ini_iter, FlowSol);
+  else if(FlowSol->write_type==1)
+    write_tec_bin(FlowSol->ini_iter, FlowSol);
+  
 }
 
 void plotter_setup(struct solution* FlowSol)
@@ -1004,7 +1004,7 @@ output: Mesh_<in_file_num>/Mesh_<in_file_num>_<rank>.vtu			(parallel) data file 
 output: Mesh_<in_file_num>.pvtu																(parallel) file stitching together all .vtu files (written by master node)
 */
 
-void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
+void write_vtu(int in_file_num, struct solution* FlowSol)
 {
   int i,j,k,l,m,count;
   /*! Current rank */
@@ -1037,12 +1037,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   /*! VTK element types (different to HiFiLES element type) */
   /*! tri, quad, tet, prism (undefined), hex */
   /*! See vtkCellType.h for full list */
-  array<int> vtktypes(5);
-  vtktypes(0) = 5;
-  vtktypes(1) = 9;
-  vtktypes(2) = 10;
-  vtktypes(3) = 0;
-  vtktypes(4) = 12;
+
+  int vtktypes[5] = {5,9,10,0,12};
 
   /*! File names */
   char vtu_s[50];
@@ -1295,7 +1291,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
               write_vtu << "				<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << endl;
               for(k=0;k<n_cells;k++)
                 {
-                  write_vtu << vtktypes(i) << " ";
+                  write_vtu << vtktypes[i] << " ";
                 }
               write_vtu << endl;
               write_vtu << "				</DataArray>" << endl;
@@ -2752,21 +2748,22 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 
 }
 
-void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
-{
+void CalcForces(int in_file_num, struct solution* FlowSol) {
 
-  char file_name_s[50];
-  char *file_name;
+  char file_name_s[50], *file_name;
   ofstream cp_file;
-
+  bool output = false;
+  
+  if (output) {
 #ifdef _MPI
-  sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
+    sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
 #else
-  sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,0);
+    sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,0);
 #endif
-
-  file_name = &file_name_s[0];
-  cp_file.open(file_name);
+    
+    file_name = &file_name_s[0];
+    cp_file.open(file_name);
+  }
 
   // copy solution to cpu
 #ifdef _GPU
@@ -2782,23 +2779,23 @@ void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
     }
 #endif
 
-  array<double> inv_force(FlowSol->n_dims),temp_inv_force(FlowSol->n_dims);
-  array<double> vis_force(FlowSol->n_dims),temp_vis_force(FlowSol->n_dims);
+  array<double> temp_inv_force(FlowSol->n_dims);
+  array<double> temp_vis_force(FlowSol->n_dims);
 
   for (int m=0;m<FlowSol->n_dims;m++)
     {
-      inv_force(m) = 0.;
-      vis_force(m) = 0.;
+      FlowSol->inv_force(m) = 0.;
+      FlowSol->vis_force(m) = 0.;
     }
 
   for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force,temp_vis_force,cp_file);
+          FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force, temp_vis_force, cp_file, output);
 
           for (int m=0;m<FlowSol->n_dims;m++) {
-              inv_force(m) += temp_inv_force(m);
-              vis_force(m) += temp_vis_force(m);
+              FlowSol->inv_force(m) += temp_inv_force(m);
+              FlowSol->vis_force(m) += temp_vis_force(m);
             }
         }
     }
@@ -2811,55 +2808,51 @@ void compute_forces(int in_file_num, double in_time,struct solution* FlowSol)
   for (int m=0;m<FlowSol->n_dims;m++) {
       inv_force_global(m) = 0.;
       vis_force_global(m) = 0.;
-      MPI_Reduce(&inv_force(m),&inv_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      MPI_Reduce(&vis_force(m),&vis_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      MPI_Reduce(&FlowSol->inv_force(m),&inv_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      MPI_Reduce(&FlowSol->vis_force(m),&vis_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
     }
 
   for (int m=0;m<FlowSol->n_dims;m++)
     {
-      inv_force(m) = inv_force_global(m);
-      vis_force(m) = vis_force_global(m);
+      FlowSol->inv_force(m) = inv_force_global(m);
+      FlowSol->vis_force(m) = vis_force_global(m);
     }
 #endif
 
   // Calculate body forcing, if running periodic channel, and add to viscous flux
-  if(run_input.equation==0 and run_input.run_type==0 and run_input.forcing==1 and FlowSol->n_dims==3)
-    {
-      for(int i=0;i<FlowSol->n_ele_types;i++)
-        FlowSol->mesh_eles(i)->calc_body_force_upts(vis_force, FlowSol->body_force);
-    }
+  if(run_input.equation==0 and run_input.run_type==0 and run_input.forcing==1 and FlowSol->n_dims==3) {
+    for(int i=0;i<FlowSol->n_ele_types;i++)
+      FlowSol->mesh_eles(i)->calc_body_force_upts(FlowSol->vis_force, FlowSol->body_force);
+  }
 
-  if (FlowSol->rank==0)
-    {
-      sprintf(file_name_s,"force000.dat",FlowSol->rank);
-      file_name = &file_name_s[0];
-      ofstream write_force;
-      write_force.open(file_name,ios::app);
 
-      write_force << scientific << setprecision(7) <<  in_time << " , ";
-      write_force << setw(10) << scientific << setprecision(7) << inv_force(0)+vis_force(0) << " , " << scientific << setprecision(7) << setw(10) << inv_force(1)+vis_force(1);
-      if (FlowSol->n_dims==3)
-        write_force << " , " << scientific << setprecision(7) << setw(10) << inv_force(2)+vis_force(2) ;
-      write_force << endl;
-      write_force.close();
+//  if (FlowSol->rank==0)
+//    {
+//      sprintf(file_name_s,"force000.dat",FlowSol->rank);
+//      file_name = &file_name_s[0];
+//      ofstream write_force;
+//      write_force.open(file_name,ios::app);
+//
+//      write_force << scientific << setprecision(7) <<  in_time << " , ";
+//      write_force << setw(10) << scientific << setprecision(7) << inv_force(0)+vis_force(0) << " , " << scientific << setprecision(7) << setw(10) << inv_force(1)+vis_force(1);
+//      if (FlowSol->n_dims==3)
+//        write_force << " , " << scientific << setprecision(7) << setw(10) << inv_force(2)+vis_force(2) ;
+//      write_force << endl;
+//      write_force.close();
+//
+//      //cout <<scientific << "    fx= " << setprecision(13) << inv_force(0)+vis_force(0) << "    fy=" << inv_force(1)+vis_force(1);
+//      cout <<scientific << "    fx_i= " << setprecision(7) << inv_force(0) << "    fx_v= " << setprecision(7) << vis_force(0);
+//      cout <<scientific << "    fy_i= " << setprecision(7) << inv_force(1) << "    fy_v= " << setprecision(7) << vis_force(1);
+//      if (FlowSol->n_dims==3)
+//        cout <<scientific << "    fz_i= " << setprecision(7) << inv_force(2) << "    fz_v= " << setprecision(7) << vis_force(2) << "    time= " << setprecision(7) << in_time;
+//    }
 
-      //cout <<scientific << "    fx= " << setprecision(13) << inv_force(0)+vis_force(0) << "    fy=" << inv_force(1)+vis_force(1);
-      cout <<scientific << "    fx_i= " << setprecision(7) << inv_force(0) << "    fx_v= " << setprecision(7) << vis_force(0);
-      cout <<scientific << "    fy_i= " << setprecision(7) << inv_force(1) << "    fy_v= " << setprecision(7) << vis_force(1);
-      if (FlowSol->n_dims==3)
-        cout <<scientific << "    fz_i= " << setprecision(7) << inv_force(2) << "    fz_v= " << setprecision(7) << vis_force(2) << "    time= " << setprecision(7) << in_time;
-    }
-
-  cp_file.close();
+  if (output) cp_file.close();
 
 }
 
 // Calculate global diagnostic quantities
-void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
-{
-
-  char file_name_s[50];
-  char *file_name;
+void CalcDiagnostics(int in_file_num, struct solution* FlowSol) {
 
   // copy solution to cpu
 #ifdef _GPU
@@ -2879,16 +2872,13 @@ void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
 #endif
 
   int ndiags = run_input.n_diagnostics;
-  array <double> diagnostics(ndiags);
-  for(int j=0;j<ndiags;++j)
-    diagnostics(j) = 0.;
 
   // Loop over element types
   for(int i=0;i<FlowSol->n_ele_types;i++)
     {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
         {
-          FlowSol->mesh_eles(i)->CalcDiagnostics(ndiags, diagnostics);
+          FlowSol->mesh_eles(i)->CalcDiagnostics(ndiags, FlowSol->diagnostics);
         }
     }
 
@@ -2898,26 +2888,11 @@ void CalcDiagnostics(int in_file_num, double in_time, struct solution* FlowSol)
   for(int j=0;j<ndiags;++j)
     {
       diagnostics_global(j) = 0.0;
-      MPI_Reduce(&diagnostics(j),&diagnostics_global(j),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      diagnostics(j) = diagnostics_global(j);
+      MPI_Reduce(&FlowSol->diagnostics(j),&diagnostics_global(j),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      FlowSol->diagnostics(j) = diagnostics_global(j);
     }
 #endif
-
-  if (FlowSol->rank==0)
-    {
-      sprintf(file_name_s,"statfile.dat",FlowSol->rank);
-      file_name = &file_name_s[0];
-      ofstream write_diagnostics;
-      write_diagnostics.open(file_name,ios::app);
-
-      write_diagnostics << scientific << setprecision(7) <<  in_time << " ";
-      for(int j=0;j<ndiags;++j)
-        {
-          write_diagnostics << setw(10) << scientific << setprecision(7) << diagnostics(j) << " ";
-        }
-      write_diagnostics << endl;
-      write_diagnostics.close();
-    }
+  
 }
 
 void compute_error(int in_file_num, struct solution* FlowSol)
@@ -3000,8 +2975,6 @@ void compute_error(int in_file_num, struct solution* FlowSol)
                 }
             }
         }
-
-      //cout << scientific << "    error= " << setprecision(13) << error << endl;
 
       for(int j=0;j<n_fields; j++) {
           cout << scientific << " sol error, field " << j << " = " << setprecision(13) << error(0,j) << endl;
@@ -3104,15 +3077,15 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 
 }
 
-int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
+void CalcNormResidual(struct solution* FlowSol) {
   
   int i, j, n_upts = 0, n_fields;
   double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
-  bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
-  clock_t final;
   
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
+  
+  
   
 #ifdef _GPU
   // copy residual to cpu
@@ -3145,52 +3118,92 @@ int monitor_residual(int in_file_num, clock_t init, ofstream *write_hist, struct
   
   if (FlowSol->rank == 0) {
     
+    // Compute the norm
+    for(i=0; i<n_fields; i++) {
+      if (run_input.res_norm_type==1) { FlowSol->norm_residual(i) = sum[i] / n_upts; } // L1 norm
+      else if (run_input.res_norm_type==2) { FlowSol->norm_residual(i) = sqrt(sum[i]) / n_upts; } // L2 norm
+      else FatalError("norm_type not recognized");
+      
+      if (isnan(norm[i])) {
+        cout << "NaN residual at iteration. Exiting" << endl;
+      }
+    }
+    
+  }
+  
+}
+
+void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
+  
+  int i, n_fields;
+  clock_t final;
+
+  bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
+  int n_diags = run_input.n_diagnostics;
+  double in_time = FlowSol->time;
+  
+  if (FlowSol->n_dims==2) n_fields = 4;
+  else n_fields = 5;
+  
+  if (FlowSol->rank == 0) {
+    
     // Open history file
     if (in_file_num == 1) {
       write_hist->open("history.plt", ios::out);
       write_hist->precision(15);
       write_hist[0] << "TITLE = \"HiFiLES simulation\"" << endl;
-      if (FlowSol->n_dims==2) write_hist[0] << "VARIABLES = \"Iteration\",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"Time(m)\"" << endl;
-      else write_hist[0] <<  "VARIABLES = \"Iteration\",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"Time(m)\"" << endl;
-      write_hist[0] << "ZONE T= \"Convergence history\"" << endl;
-    }
-    
-    // Compute the norm
-    for(i=0; i<n_fields; i++) {
-      if (run_input.res_norm_type==1) { norm[i] = sum[i] / n_upts; } // L1 norm
-      else if (run_input.res_norm_type==2) { norm[i] = sqrt(sum[i]) / n_upts; } // L2 norm
-      else FatalError("norm_type not recognized");
       
-      if (isnan(norm[i])) {
-        cout << "NaN residual at iteration " << in_file_num << ". Exiting" << endl;
-        return 1;
-      }
+      write_hist[0] << "VARIABLES = \"Iteration\"";
+      
+      // Add residual and variables
+      if (FlowSol->n_dims==2) write_hist[0] << ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\"";
+      else write_hist[0] <<  ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"F<sub>z</sub>(Total)\"";
+      
+      // Add diagnostics
+      for(i=0; i<n_diags; i++)
+        write_hist[0] << ",\"Diagnostics[" << i << "]\"";
+  
+      // Add physical and computational time
+      write_hist[0] << ",\"Time<sub>Physical</sub>\",\"Time<sub>Comp</sub>(m)\"" << endl;
+      
+      write_hist[0] << "ZONE T= \"Convergence history\"" << endl;
     }
     
     // Write the header
     if (write_heads) {
-      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]" << endl;
-      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]" << endl;
+      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
+      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
     }
     
-    // Screen output
+    // Output residuals
     cout.precision(8);
     cout.setf(ios::fixed, ios::floatfield);
     cout.width(6); cout << in_file_num;
     write_hist[0] << in_file_num;
     for(i=0; i<n_fields; i++) {
-      cout.width(15); cout << norm[i];
-      write_hist[0] <<", " << log10(norm[i]);
+      cout.width(15); cout << FlowSol->norm_residual(i);
+      write_hist[0] <<", " << log10(FlowSol->norm_residual(i));
     }
+    
+    // Output forces
+    for(i=0; i< FlowSol->n_dims; i++) {
+      cout.width(15); cout << FlowSol->inv_force(i) + FlowSol->vis_force(i);
+      write_hist[0] <<", " << FlowSol->inv_force(i) + FlowSol->vis_force(i);
+    }
+    
+    // Output diagnostics
+    for(i=0; i<n_diags; i++)
+      write_hist[0] <<", " << FlowSol->diagnostics(i);
+
+    // Output physical time
+    write_hist[0] << ", " << in_time << endl;
     
     // Compute execution time
     final = clock()-init;
     write_hist[0] << ", " << (double) final/(((double) CLOCKS_PER_SEC) * 60.0) << endl;
   }
   
-  return 0;
 }
-
 
 void check_stability(struct solution* FlowSol)
 {

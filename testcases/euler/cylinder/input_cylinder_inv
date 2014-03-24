@@ -4,7 +4,7 @@
 equation                          // 0: Euler/Navier-Stokes, 1:Advection/Adv-Diffusion
 0
 viscous
-1
+0
 riemann_solve_type                // 0: Rusanov, 1: Lax-Friedrich, 2: Roe
 0
 vis_riemann_solve_type
@@ -18,13 +18,13 @@ run_type                          // 0: Normal run mode, 1: Plot mode (solution 
 order                             // Order of basis polynomials
 3
 dt_type                           // 0: User-supplied, 1: Global, 2: Local
-0
+1
 dt 
-0.000002
-CFL                               
-0.001
+0.0001
+CFL
+3.5
 n_steps
-5000000
+50000
 adv_type                          // 0: Forward Euler, 3: RK45
 3
 tau 
@@ -44,7 +44,7 @@ n_restart_files
 Mesh options
 -----------------------
 mesh_file
-flatplate_a2-125-2s.neu
+cylinder_2ndorder_tri_vis.neu
 dx_cyclic
 200000000.0
 dy_cyclic
@@ -59,7 +59,7 @@ p_res                             // Plotting resolution, number of nodes per di
 write_type                        // 0: Paraview, 1: Tecplot
 1
 n_plot_quantities
-7 rho u v w energy pressure mach
+8 rho u v w energy pressure mach vorticity
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 12
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
@@ -67,17 +67,17 @@ volume_cub_order                  // Order of cubature rule for integrating over
 plot_freq
 1000
 restart_dump_freq
-200000
-diagnostics_freq
 100000
+diagnostics_freq
+100
 monitor_res_freq
 100
 monitor_force_freq
-100000
+1000
 res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
-2
+1
 error_norm_type                   // 0:infinity norm, 1:L1 norm, 2:L2 norm
-2
+1
 res_norm_field                    // Density
 0
 ---------------------------
@@ -99,7 +99,7 @@ upts_type_tri
 fpts_type_tri
 0
 vcjh_scheme_tri
-1
+3
 c_tri
 0.0
 sparse_tri
@@ -107,7 +107,7 @@ sparse_tri
 upts_type_quad
 0
 vcjh_scheme_quad
-1
+3
 eta_quad
 0.0
 sparse_quad
@@ -162,9 +162,9 @@ Boundary conditions
 Viscous
 ---------
 fix_vis                               // 0: Sutherland's law, 1: Constant viscosity
-1
+0.
 Mach_free_stream 
-0.5
+0.2
 nx_free_stream 
 1.
 ny_free_stream 
@@ -172,7 +172,7 @@ ny_free_stream
 nz_free_stream
 0.
 Re_free_stream 
-1000000.
+100.
 L_free_stream 
 1.
 T_free_stream 
@@ -188,7 +188,7 @@ nz_wall
 T_wall    
 300
 Mach_c_ic
-0.5
+0.2
 nx_c_ic
 1.
 ny_c_ic 
@@ -196,7 +196,7 @@ ny_c_ic
 nz_c_ic
 0.
 Re_c_ic
-1000000.
+100
 T_c_ic
 300
 -----------

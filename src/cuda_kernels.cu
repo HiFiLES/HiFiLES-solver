@@ -1,7 +1,15 @@
-/*
-Copyright 2011 the Board of Trustees of The Leland Stanford Junior University. All Rights Reserved.
-Developers (alphabetical by surname): Patrice Castonguay, Antony Jameson, Peter Vincent, David Williams.
-*/
+/*!
+ * \file cuda_kernels.cu
+ * \brief _____________________________
+ * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
+ *                          Peter Vincent, David Williams (alphabetical by surname).
+ *         - Current development: Aerospace Computing Laboratory (ACL) directed
+ *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
+ * \version 1.0.0
+ *
+ * HiFiLES (High Fidelity Large Eddy Simulation).
+ * Copyright (C) 2013 Aerospace Computing Laboratory.
+ */
 
 #define HALFWARP 16
 #include <iostream>
@@ -12,6 +20,10 @@ using namespace std;
 #include "../include/error.h"
 #include "../include/util.h"
 
+#ifdef _MPI
+#include "mpi.h"
+#endif
+
 //Key
 
 // met[0][0] = rx
@@ -19,8 +31,9 @@ using namespace std;
 // met[0][1] = ry
 // met[1][1] = sy
 
+// Add a bespoke_MV_kernel to do non-sparse matrix-vector multiplication
 
-template<int n_fields> 
+template<int n_fields>
 __global__ void bespoke_SPMV_kernel(double *g_c, double *g_b, double *g_cont_mat, int *g_col_mat, const int n_nz, const int n_cells, const int dim1, const int dim0, const int cells_per_block, const int stride_n, const int stride_m, int add_flag)
 {
   extern __shared__ double s_b[];
@@ -48,6 +61,7 @@ __global__ void bespoke_SPMV_kernel(double *g_c, double *g_b, double *g_cont_mat
 
       // Since n_qpts might be larger than dim0
       // each thread might have to fetch more than n_fields values
+#pragma unroll
       for (int i=0;i<n_fetch_loops;i++)
         {
           i_qpt= i*dim0+ifp;
@@ -77,6 +91,7 @@ __global__ void bespoke_SPMV_kernel(double *g_c, double *g_b, double *g_cont_mat
 
       // With data in shared memory, perform matrix multiplication
       // 1 thread per flux point
+#pragma unroll
       for (int i=0;i<n_nz;i++)
         {
           m = i*dim0+ifp;
@@ -113,7 +128,7 @@ __global__ void bespoke_SPMV_kernel(double *g_c, double *g_b, double *g_cont_mat
 }
 
 
-template<int n_dims, int n_fields> 
+template<int n_dims, int n_fields>
 __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, double* u_r, double* norm, double* loc, double *bdy_params, double gamma, double R_ref, double time_bound, int equation)
 {
   double rho_l, rho_r;
@@ -752,22 +767,6 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
 
           stensor[2] = (*mu)*(grad_vel[0*in_n_dims + 1] + grad_vel[1*in_n_dims + 0]);
 
-          /*// If LES, calculate SGS stress tensor
-            if(run_input.LES==1)
-            {
-                calc_sgsf_upts(temp_u,temp_grad_u,detjac,j,temp_sgsf);
-
-                // Add SGS flux to viscous flux
-      #pragma unroll
-            for(k=0;k<n_fields;k++)
-            {
-      #pragma unroll
-                for(m=0;m<n_dims;m++)
-                {
-                      temp_f(k,m) += temp_sgsf(k,m);
-                    }
-                }
-            }*/
 
         }
       else if (in_field==0) {
@@ -855,6 +854,652 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
           f[2] = -((q[1]/q[0])*stensor[4]+(q[2]/q[0])*stensor[5]+(q[3]/q[0])*stensor[2] + (*mu)*in_gamma*grad_ene[2]/in_prandtl);
         }
     }
+}
+
+// Create rotation matrix from Cartesian to wall-aligned coords
+template<int in_n_dims>
+__device__ void rotation_matrix_kernel(double* norm, double* mrot)
+{
+  double nn;
+
+  //cout << "norm "<< norm(0) << ", " << norm(1) << endl;
+
+  if(in_n_dims==2) {
+    if(abs(norm[1]) > 0.7) {
+      mrot[0*in_n_dims+0] = norm[0];
+      mrot[1*in_n_dims+0] = norm[1];
+      mrot[0*in_n_dims+1] = norm[1];
+      mrot[1*in_n_dims+1] = -norm[0];
+    }
+    else {
+      mrot[0*in_n_dims+0] = -norm[0];
+      mrot[1*in_n_dims+0] = -norm[1];
+      mrot[0*in_n_dims+1] = norm[1];
+      mrot[1*in_n_dims+1] = -norm[0];
+    }
+  }
+  else if(in_n_dims==3) {
+    if(abs(norm[2]) > 0.7) {
+      nn = sqrt(norm[1]*norm[1]+norm[2]*norm[2]);
+
+      mrot[0*in_n_dims+0] = norm[0]/nn;
+      mrot[1*in_n_dims+0] = norm[1]/nn;
+      mrot[2*in_n_dims+0] = norm[2]/nn;
+      mrot[0*in_n_dims+1] = 0.0;
+      mrot[1*in_n_dims+1] = -norm[2]/nn;
+      mrot[2*in_n_dims+1] = norm[1]/nn;
+      mrot[0*in_n_dims+2] = nn;
+      mrot[1*in_n_dims+2] = -norm[0]*norm[1]/nn;
+      mrot[2*in_n_dims+2] = -norm[0]*norm[2]/nn;
+    }
+    else {
+      nn = sqrt(norm[0]*norm[0]+norm[1]*norm[1]);
+
+      mrot[0*in_n_dims+0] = norm[0]/nn;
+      mrot[1*in_n_dims+0] = norm[1]/nn;
+      mrot[2*in_n_dims+0] = norm[2]/nn;
+      mrot[0*in_n_dims+1] = norm[1]/nn;
+      mrot[1*in_n_dims+1] = -norm[0]/nn;
+      mrot[2*in_n_dims+1] = 0.0;
+      mrot[0*in_n_dims+2] = norm[0]*norm[2]/nn;
+      mrot[1*in_n_dims+2] = norm[1]*norm[2]/nn;
+      mrot[2*in_n_dims+2] = -nn;
+    }
+  }
+}
+
+__device__ double wallfn_br(double yplus, double A, double B, double E, double kappa)
+{
+  double Rey;
+  if     (yplus < 0.5)  Rey = yplus*yplus;
+  else if(yplus > 30.0) Rey = yplus*log(E*yplus)/kappa;
+  else                  Rey = yplus*(A*log(yplus)+B);
+
+  return Rey;
+}
+
+__device__ double SGS_filter_width(double in_detjac, int in_ele_type, int in_n_dims, int in_order, double in_filter_ratio)
+{
+  // Define filter width by Deardorff's unstructured element method
+  double delta, vol;
+
+  if (in_ele_type==0) // triangle
+  {
+    vol = in_detjac*2.0;
+  }
+  else if (in_ele_type==1) // quads
+  {
+    vol = in_detjac*4.0;
+  }
+  else if (in_ele_type==2) // tets
+  {
+    vol = in_detjac*8.0/6.0;
+  }
+  else if (in_ele_type==4) // hexas
+  {
+    vol = in_detjac*8.0;
+  }
+
+  delta = in_filter_ratio*pow(vol,1./in_n_dims)/(in_order+1.);
+
+  return delta;
+}
+
+/*! gpu kernel to calculate velocity and energy product terms for similarity model */
+template<int in_n_fields>
+__global__ void calc_similarity_terms_kernel(int in_n_upts_per_ele, int in_n_eles, int in_n_dims, double* in_disu_upts_ptr, double* in_uu_ptr, double* in_ue_ptr)
+{
+  const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
+
+  int stride = in_n_upts_per_ele*in_n_eles;
+  int i;
+  double q[in_n_fields];
+  double rsq;
+
+   if(thread_id<in_n_upts_per_ele*in_n_eles) {
+
+    // Solution
+    #pragma unroll
+    for (i=0;i<in_n_fields;i++) {
+      q[i] = in_disu_upts_ptr[thread_id + i*stride];
+    }
+
+    rsq = q[0]*q[0];
+
+    if(in_n_dims==2) {
+      /*! velocity-velocity product */
+      in_uu_ptr[thread_id + 0*stride] = q[1]*q[1]/rsq;
+      in_uu_ptr[thread_id + 1*stride] = q[2]*q[2]/rsq;
+      in_uu_ptr[thread_id + 2*stride] = q[1]*q[2]/rsq;
+
+      /*! velocity-energy product */
+      q[3] -= 0.5*(q[1]*q[1] + q[2]*q[2])/q[0]; // internal energy*rho
+
+      in_ue_ptr[thread_id + 0*stride] = q[1]*q[3]/rsq; // subtract kinetic energy
+      in_ue_ptr[thread_id + 1*stride] = q[2]*q[3]/rsq;
+    }
+    else if(in_n_dims==3) {
+      /*! velocity-velocity product */
+      in_uu_ptr[thread_id + 0*stride] = q[1]*q[1]/rsq;
+      in_uu_ptr[thread_id + 1*stride] = q[2]*q[2]/rsq;
+      in_uu_ptr[thread_id + 2*stride] = q[3]*q[3]/rsq;
+      in_uu_ptr[thread_id + 3*stride] = q[1]*q[2]/rsq;
+      in_uu_ptr[thread_id + 4*stride] = q[1]*q[3]/rsq;
+      in_uu_ptr[thread_id + 5*stride] = q[2]*q[3]/rsq;
+
+      /*! velocity-energy product */
+      q[4] -= 0.5*(q[1]*q[1] + q[2]*q[2] + q[3]*q[3])/q[0]; // internal energy*rho
+
+      in_ue_ptr[thread_id + 0*stride] = q[1]*q[4]/rsq; // subtract kinetic energy
+      in_ue_ptr[thread_id + 1*stride] = q[2]*q[4]/rsq;
+      in_ue_ptr[thread_id + 2*stride] = q[3]*q[4]/rsq;
+    }
+  }
+}
+
+/*! gpu kernel to calculate Leonard tensors for similarity model */
+template<int in_n_fields>
+__global__ void calc_Leonard_tensors_kernel(int in_n_upts_per_ele, int in_n_eles, int in_n_dims, double* in_disuf_upts_ptr, double* in_Lu_ptr, double* in_Le_ptr)
+{
+  const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
+
+  int stride = in_n_upts_per_ele*in_n_eles;
+  int i;
+  double q[in_n_fields];
+  double diag, rsq;
+
+   if(thread_id<in_n_upts_per_ele*in_n_eles) {
+    // filtered solution
+    #pragma unroll
+    for (i=0;i<in_n_fields;i++) {
+      q[i] = in_disuf_upts_ptr[thread_id + i*stride];
+    }
+
+    rsq = q[0]*q[0];
+
+    /*! subtract product of filtered solution terms from Leonard tensors */
+    if(in_n_dims==2) {
+      in_Lu_ptr[thread_id + 0*stride] = (in_Lu_ptr[thread_id + 0*stride] - q[1]*q[1])/rsq;
+      in_Lu_ptr[thread_id + 1*stride] = (in_Lu_ptr[thread_id + 1*stride] - q[2]*q[2])/rsq;
+      in_Lu_ptr[thread_id + 2*stride] = (in_Lu_ptr[thread_id + 2*stride] - q[1]*q[2])/rsq;
+
+      diag = (in_Lu_ptr[thread_id + 0*stride] + in_Lu_ptr[thread_id + 1*stride])/3.0;
+
+      q[3] -= 0.5*(q[1]*q[1] + q[2]*q[2])/q[0]; // internal energy*rho
+
+      in_Le_ptr[thread_id + 0*stride] = (in_Le_ptr[thread_id + 0*stride] - q[1]*q[3])/rsq;
+      in_Le_ptr[thread_id + 1*stride] = (in_Le_ptr[thread_id + 1*stride] - q[2]*q[3])/rsq;
+    }
+    else if(in_n_dims==3) {
+      in_Lu_ptr[thread_id + 0*stride] = (in_Lu_ptr[thread_id + 0*stride] - q[1]*q[1])/rsq;
+      in_Lu_ptr[thread_id + 1*stride] = (in_Lu_ptr[thread_id + 1*stride] - q[2]*q[2])/rsq;
+      in_Lu_ptr[thread_id + 2*stride] = (in_Lu_ptr[thread_id + 2*stride] - q[3]*q[3])/rsq;
+      in_Lu_ptr[thread_id + 3*stride] = (in_Lu_ptr[thread_id + 3*stride] - q[1]*q[2])/rsq;
+      in_Lu_ptr[thread_id + 4*stride] = (in_Lu_ptr[thread_id + 4*stride] - q[1]*q[3])/rsq;
+      in_Lu_ptr[thread_id + 5*stride] = (in_Lu_ptr[thread_id + 5*stride] - q[2]*q[3])/rsq;
+
+      diag = (in_Lu_ptr[thread_id + 0*stride] + in_Lu_ptr[thread_id + 1*stride] + in_Lu_ptr[thread_id + 2*stride])/3.0;
+
+      q[4] -= 0.5*(q[1]*q[1] + q[2]*q[2] + q[3]*q[3])/q[0]; // internal energy*rho
+
+      in_Le_ptr[thread_id + 0*stride] = (in_Le_ptr[thread_id + 0*stride] - q[1]*q[4])/rsq;
+      in_Le_ptr[thread_id + 1*stride] = (in_Le_ptr[thread_id + 1*stride] - q[2]*q[4])/rsq;
+      in_Le_ptr[thread_id + 2*stride] = (in_Le_ptr[thread_id + 2*stride] - q[3]*q[4])/rsq;
+    }
+
+    /*! subtract diagonal from Lu */
+    #pragma unroll
+    for (i=0;i<in_n_dims;++i) {
+      in_Lu_ptr[thread_id + i*stride] -= diag;
+    }
+    // subtract diagonal from Le?
+  }
+}
+
+template<int in_n_dims>
+__device__ void wall_model_kernel(int wall_model, double rho, double* urot, double* inte, double* mu, double in_gamma, double in_prandtl, double y, double* tau_wall, double q_wall)
+{
+  double eps = 1.e-10;
+  double Rey, Rey_c, u, uplus, utau, tw;
+  double prandtl_t = 0.9;
+  double ymatch = 11.8;
+  int i;
+
+  // Magnitude of surface velocity
+  u = 0.0;
+  #pragma unroll
+  for(i=0;i<in_n_dims;++i) u += urot[i]*urot[i];
+
+  u = sqrt(u);
+
+  if(u > eps) {
+
+    /*! Simple power-law wall model Werner and Wengle (1991)
+
+              u+ = y+               for y+ < 11.8
+              u+ = 8.3*(y+)^(1/7)   for y+ > 11.8
+    */
+
+    if(wall_model == 1) {
+
+      Rey_c = ymatch*ymatch;
+      Rey = rho*u*y/(*mu);
+
+      if(Rey < Rey_c) uplus = sqrt(Rey);
+      else            uplus = pow(8.3,0.875)*pow(Rey,0.125);
+
+      utau = u/uplus;
+      tw = rho*utau*utau;
+
+      #pragma unroll
+      for(i=0;i<in_n_dims;++i) tau_wall[i] = tw*urot[i]/u;
+
+      // Wall heat flux
+      if(Rey < Rey_c) q_wall = (*inte)*in_gamma*tw / (in_prandtl * u);
+      else            q_wall = (*inte)*in_gamma*tw / (in_prandtl * (u + utau * sqrt(Rey_c) * (in_prandtl/prandtl_t-1.0)));
+    }
+
+    /*! Breuer-Rodi 3-layer wall model (Breuer and Rodi, 1996)
+
+              u+ = y+               for y+ <= 5.0
+              u+ = A*ln(y+)+B       for 5.0 < y+ <= 30.0
+              u+ = ln(E*y+)/k       for y+ > 30.0
+
+              k=0.42, E=9.8
+              A=(log(30.0*E)/k-5.0)/log(6.0)
+              B=5.0-A*log(5.0)
+
+    Note: the law of wall is made algebraic by first guessing the friction
+    velocity with the wall shear at the previous timestep
+
+    N.B. using a two-layer law to compute the wall heat flux
+    */
+    else if(wall_model == 2) {
+
+      double A, B, phi;
+      double E = 9.8;
+      double Rey0, ReyL, ReyH, ReyM;
+      double yplus, yplusL, yplusH, yplusM, yplusN;
+      double kappa = 0.42;
+      double sign, s;
+      int maxit = 0;
+      int it;
+
+      A = (log(30.0*E)/kappa - 5.0)/log(6.0);
+      B = 5.0 - A*log(5.0);
+
+      // compute wall distance in wall units
+      phi = rho*y/(*mu);
+      Rey0 = u*phi;
+      utau = 0.0;
+
+      #pragma unroll
+      for (i=0;i<in_n_dims;i++)
+        utau += tau_wall[i]*tau_wall[i];
+
+      utau /= pow( (rho*rho), 0.25);
+      yplus = utau*phi;
+
+      if(maxit > 0) {
+        Rey = wallfn_br(yplus,A,B,E,kappa);
+
+        // if in the
+        if(Rey > Rey0) {
+          yplusH = yplus;
+          ReyH = Rey-Rey0;
+          yplusL = yplus*Rey0/Rey;
+
+          ReyL = wallfn_br(yplusL,A,B,E,kappa);
+          ReyL -= Rey0;
+
+          it = 0;
+          while(ReyL*ReyH >= 0.0 && it < maxit) {
+
+            yplusL -= 1.6*(yplusH-yplusL);
+            ReyL = wallfn_br(yplusL,A,B,E,kappa);
+            ReyL -= Rey0;
+            ++it;
+
+          }
+        }
+        else {
+          yplusH = yplus;
+          ReyH = Rey-Rey0;
+
+          if(Rey > eps) yplusH = yplus*Rey0/Rey;
+          else yplusH = 2.0*yplusL;
+
+          ReyH = wallfn_br(yplusH,A,B,E,kappa);
+          ReyH -= Rey0;
+
+          it = 0;
+          while(ReyL*ReyH >= 0.0 && it < maxit) {
+
+            yplusH += 1.6*(yplusH - yplusL);
+            ReyH = wallfn_br(yplusH,A,B,E,kappa);
+            ReyH -= Rey0;
+            ++it;
+
+          }
+        }
+
+        // iterative solution by Ridders' Method
+
+        yplus = 0.5*(yplusL+yplusH);
+
+        #pragma unroll
+        for(it=0;it<maxit;++it) {
+
+          yplusM = 0.5*(yplusL+yplusH);
+          ReyM = wallfn_br(yplusM,A,B,E,kappa);
+          ReyM -= Rey0;
+          s = sqrt(ReyM*ReyM - ReyL*ReyH);
+          if(s==0.0) break;
+
+          sign = (ReyL-ReyH)/abs(ReyL-ReyH);
+          yplusN = yplusM + (yplusM-yplusL)*(sign*ReyM/s);
+          if(abs(yplusN-yplus) < eps) break;
+
+          yplus = yplusN;
+          Rey = wallfn_br(yplus,A,B,E,kappa);
+          Rey -= Rey0;
+          if(abs(Rey) < eps) break;
+
+          if(Rey/abs(Rey)*ReyM != ReyM) {
+            yplusL = yplusM;
+            ReyL = ReyM;
+            yplusH = yplus;
+            ReyH = Rey;
+          }
+          else if(Rey/abs(Rey)*ReyL != ReyL) {
+            yplusH = yplus;
+            ReyH = Rey;
+          }
+          else if(Rey/abs(Rey)*ReyH != ReyH) {
+            yplusL = yplus;
+            ReyL = Rey;
+          }
+
+          if(abs(yplusH-yplusL) < eps) break;
+        } // end for loop
+
+        utau = u*yplus/Rey0;
+      }
+
+      // approximate solution using tw at previous timestep
+      // Wang, Moin (2002), Phys.Fluids 14(7)
+      else {
+        if(Rey > eps) utau = u*yplus/Rey;
+        else          utau = 0.0;
+        yplus = utau*phi;
+      }
+
+      tw = rho*utau*utau;
+
+      // why different to WW model?
+      #pragma unroll
+      for (i=0;i<in_n_dims;i++) tau_wall[i] = abs(tw*urot[i]/u);
+
+      // Wall heat flux
+      if(yplus <= ymatch) q_wall = (*inte)*in_gamma*tw / (in_prandtl * u);
+      else                q_wall = (*inte)*in_gamma*tw / (in_prandtl * (u + utau * ymatch * (in_prandtl/prandtl_t-1.0)));
+    }
+  }
+
+  // if velocity is 0
+  else {
+    #pragma unroll
+    for (i=0;i<in_n_dims;i++) tau_wall[i] = 0.0;
+    q_wall = 0.0;
+  }
+}
+
+template<int in_n_dims>
+__device__ void SGS_flux_kernel(double* q, double* grad_q, double* grad_vel, double* grad_ene, double* sdtensor, double* straintensor, double* Leonard_mom, double* Leonard_ene, double* f, int sgs_model, double delta, double in_gamma, int in_field)
+{
+  int i, j;
+  int eddy, sim;
+  double Cs, mu_t;
+  double Smod=0.0;
+  double prandtl_t=0.5; // turbulent Prandtl number
+  double num=0.0;
+  double denom=0.0;
+  double diag=0.0;
+  double eps=1.e-10;
+
+  // Initialize SGS flux to 0
+  #pragma unroll
+  for (i=0;i<in_n_dims;i++)
+    f[i] = 0.0;
+
+  // Set flags depending on which SGS model we are using
+  // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
+  if(sgs_model==0) {
+    eddy = 1;
+    sim = 0;
+  }
+  else if(sgs_model==1) {
+    eddy = 1;
+    sim = 0;
+  }
+  else if(sgs_model==2) {
+    eddy = 1;
+    sim = 1;
+  }
+  else if(sgs_model==3) {
+    eddy = 0;
+    sim = 0;
+  }
+  else if(sgs_model==4) {
+    eddy = 0;
+    sim = 1;
+  }
+
+  // Calculate eddy viscosity
+
+  // Smagorinsky model
+  if(sgs_model==0) {
+
+    Cs=0.1;
+
+    // Calculate modulus of strain rate tensor
+    #pragma unroll
+    for (i=0;i<in_n_dims;i++) {
+      Smod += 2.0*straintensor[i]*straintensor[i];
+    }
+
+    // Now the off-diagonal components of strain tensor:
+    if(in_n_dims==2) {
+      Smod += 4.0*straintensor[2]*straintensor[2];
+    }
+    else if(in_n_dims==3) {
+      Smod += 4.0*(straintensor[3]*straintensor[3] + straintensor[4]*straintensor[4] + straintensor[5]*straintensor[5]);
+    }
+
+    // Finally, the modulus of strain rate tensor
+    Smod = sqrt(Smod);
+
+    mu_t = q[0]*Cs*Cs*delta*delta*Smod;
+  }
+
+  // WALE or WSM model
+  else if(sgs_model==1 || sgs_model==2) {
+
+    Cs=0.5;
+
+    // Square of velocity gradient tensor
+    #pragma unroll
+    for (i=0;i<in_n_dims;i++) {
+      sdtensor[i] = 0.0;
+      #pragma unroll
+      for (j=0;j<in_n_dims;j++) {
+        diag += grad_vel[i*in_n_dims + j]*grad_vel[j*in_n_dims + i]/3.0;
+        sdtensor[i] += grad_vel[i*in_n_dims + j]*grad_vel[j*in_n_dims + i];
+      }
+    }
+
+    // subtract trace from diagonal entries of tensor
+    #pragma unroll
+    for (i=0;i<in_n_dims;i++)
+      sdtensor[i] -= diag;
+
+    // off-diagonal terms of tensor
+    if(in_n_dims==2) {
+      sdtensor[2] = 0.0;
+      #pragma unroll
+      for (j=0;j<in_n_dims;j++) {
+        sdtensor[2] += (grad_vel[0*in_n_dims + j]*grad_vel[j*in_n_dims + 1] + grad_vel[1*in_n_dims + j]*grad_vel[j*in_n_dims + 0])/2.0;
+      }
+    }
+    else if(in_n_dims==3) {
+      sdtensor[3] = 0.0;
+      sdtensor[4] = 0.0;
+      sdtensor[5] = 0.0;
+      #pragma unroll
+      for (j=0;j<in_n_dims;j++) {
+        sdtensor[3] += (grad_vel[0*in_n_dims + j]*grad_vel[j*in_n_dims + 1] + grad_vel[1*in_n_dims + j]*grad_vel[j*in_n_dims + 0])/2.0;
+
+        sdtensor[4] += (grad_vel[0*in_n_dims + j]*grad_vel[j*in_n_dims + 2] + grad_vel[2*in_n_dims + j]*grad_vel[j*in_n_dims + 0])/2.0;
+
+        sdtensor[5] += (grad_vel[1*in_n_dims + j]*grad_vel[j*in_n_dims + 2] + grad_vel[2*in_n_dims + j]*grad_vel[j*in_n_dims + 1])/2.0;
+      }
+    }
+
+    // numerator and denominator of eddy viscosity term
+    #pragma unroll
+    for (i=0;i<in_n_dims;i++) {
+      num += sdtensor[i]*sdtensor[i];
+      denom += straintensor[i]*straintensor[i];
+    }
+
+    if(in_n_dims==2) {
+      num += 2.0*sdtensor[2]*sdtensor[2];
+      denom += 2.0*straintensor[2]*straintensor[2];
+    }
+    else if(in_n_dims==3) {
+      num += 2.0*(sdtensor[3]*sdtensor[3] + sdtensor[4]*sdtensor[4] + sdtensor[5]*sdtensor[5]);
+      denom += 2.0*(straintensor[3]*straintensor[3] + straintensor[4]*straintensor[4] + straintensor[5]*straintensor[5]);
+    }
+
+    denom = pow(denom,2.5) + pow(num,1.25);
+    num = pow(num,1.5);
+    mu_t = q[0]*Cs*Cs*delta*delta*num/(denom+eps);
+  }
+
+  // Now set the flux values
+  if (eddy==1) {
+    if (in_n_dims==2) {
+
+      // Density
+      if (in_field==0) {
+        f[0] = 0.0;
+        f[1] = 0.0;
+      }
+      // u
+      else if (in_field==1) {
+        f[0] = -2.0*mu_t*straintensor[0];
+        f[1] = -2.0*mu_t*straintensor[2];
+      }
+      // v
+      else if (in_field==2) {
+        f[0] = -2.0*mu_t*straintensor[2];
+        f[1] = -2.0*mu_t*straintensor[1];
+      }
+      // Energy
+      else if (in_field==3) {
+        f[0] = -1.0*in_gamma*mu_t/prandtl_t*grad_ene[0];
+        f[1] = -1.0*in_gamma*mu_t/prandtl_t*grad_ene[1];
+      }
+    }
+    else if(in_n_dims==3) {
+
+      // Density
+      if (in_field==0) {
+        f[0] = 0.0;
+        f[1] = 0.0;
+        f[2] = 0.0;
+      }
+      // u
+      else if (in_field==1) {
+        f[0] = -2.0*mu_t*straintensor[0];
+        f[1] = -2.0*mu_t*straintensor[3];
+        f[2] = -2.0*mu_t*straintensor[4];
+      }
+      // v
+      else if (in_field==2) {
+        f[0] = -2.0*mu_t*straintensor[3];
+        f[1] = -2.0*mu_t*straintensor[1];
+        f[2] = -2.0*mu_t*straintensor[5];
+      }
+      // w
+      else if (in_field==3) {
+        f[0] = -2.0*mu_t*straintensor[4];
+        f[1] = -2.0*mu_t*straintensor[5];
+        f[2] = -2.0*mu_t*straintensor[2];
+      }
+      // Energy
+      else if (in_field==4) {
+        f[0] = -1.0*in_gamma*mu_t/prandtl_t*grad_ene[0];
+        f[1] = -1.0*in_gamma*mu_t/prandtl_t*grad_ene[1];
+        f[2] = -1.0*in_gamma*mu_t/prandtl_t*grad_ene[2];
+      }
+    }
+  }
+  // Add similarity term to SGS fluxes if WSM or Similarity model
+  if (sim==1)
+  {
+    if(in_n_dims==2) {
+
+      // Density
+      if (in_field==0) {
+        f[0] += 0.0;
+        f[1] += 0.0;
+      }
+
+      // u
+      if (in_field==1) {
+        f[0] += q[0]*Leonard_mom[0];
+        f[1] += q[0]*Leonard_mom[2];
+      }
+      // v
+      else if (in_field==2) {
+        f[0] += q[0]*Leonard_mom[2];
+        f[1] += q[0]*Leonard_mom[1];
+      }
+      // Energy
+      else if (in_field==3) {
+        f[0] += q[0]*in_gamma*Leonard_ene[0];
+        f[1] += q[0]*in_gamma*Leonard_ene[1];
+      }
+    }
+    else if(in_n_dims==3)
+    {
+      // u
+      if (in_field==1) {
+        f[0] += q[0]*Leonard_mom[0];
+        f[1] += q[0]*Leonard_mom[3];
+        f[2] += q[0]*Leonard_mom[4];
+      }
+      // v
+      else if (in_field==2) {
+        f[0] += q[0]*Leonard_mom[3];
+        f[1] += q[0]*Leonard_mom[1];
+        f[2] += q[0]*Leonard_mom[5];
+      }
+      // w
+      else if (in_field==3) {
+        f[0] += q[0]*Leonard_mom[4];
+        f[1] += q[0]*Leonard_mom[5];
+        f[2] += q[0]*Leonard_mom[2];
+      }
+      // Energy
+      else if (in_field==4) {
+        f[0] += q[0]*in_gamma*Leonard_ene[0];
+        f[1] += q[0]*in_gamma*Leonard_ene[1];
+        f[2] += q[0]*in_gamma*Leonard_ene[2];
+      }
+    }
+  }
 }
 
 template<int in_n_fields, int in_n_dims>
@@ -1200,7 +1845,7 @@ __device__ __host__ void ldg_flux(double q_l, double q_r, double* f_l, double* f
 
 
 template< int n_fields >
-__global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts, 
+__global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts,
                                    const int n_cells, const int n_qpts, const double dt, const double const_src_term)
 {
   int n = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1223,7 +1868,7 @@ __global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts,
 
 
 template< int n_fields >
-__global__ void RK45_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_res_qpts, double *g_jac_det_qpts, 
+__global__ void RK45_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_res_qpts, double *g_jac_det_qpts,
                                    const int n_cells, const int n_qpts, const double fa, const double fb, const double dt, const double const_src_term)
 {
   int n = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1621,75 +2266,272 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
 
 // gpu kernel to calculate transformed discontinuous viscous flux at solution points
 template<int in_n_dims, int in_n_fields, int in_n_comp>
-__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
+__global__ void calc_tdisvisf_upts_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, int in_ele_type, int in_order, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* Leonard_mom, double* Leonard_ene, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
   double q[in_n_fields];
   double f[in_n_dims];
-  double met[in_n_dims][in_n_dims];
-
-  double stensor[in_n_comp];
-
+  double met[in_n_dims][in_n_dims];   // Jacobian
+  double stensor[in_n_comp];          // viscous stress tensor
   double grad_ene[in_n_dims];
   double grad_vel[in_n_dims*in_n_dims];
   double grad_q[in_n_fields*in_n_dims];
-
   double inte, mu;
 
-  int ind;
+  // LES model variables
+  double sgsf[in_n_fields*in_n_dims]; // SGS flux array
+  double straintensor[in_n_comp];     // strain for SGS models
+  double sdtensor[in_n_comp];         // for WALE SGS model
+  double lmtensor[in_n_comp];         // local Leonard tensor for momentum
+  double letensor[in_n_dims];         // local Leonard tensor for energy
+  double jac, delta;
+
+  // wall model variables
+  double norm[in_n_dims];             // wall normal
+  double tau[in_n_dims*in_n_dims];    // shear stress
+  double mrot[in_n_dims*in_n_dims];   // rotation matrix
+  double temp[in_n_dims*in_n_dims];   // array for matrix mult
+  double urot[in_n_dims];             // rotated velocity components
+  double tw[in_n_dims];               // wall shear stress components
+  double qw;                          // wall heat flux
+  double y;                           // wall distance
+  int wall;                           // flag
+
+  int i, j, k, index;
   int stride = in_n_upts_per_ele*in_n_eles;
 
-  if(thread_id<(in_n_upts_per_ele*in_n_eles))
+   if(thread_id<(in_n_upts_per_ele*in_n_eles))
+   {
+    // Physical solution
+    #pragma unroll
+    for (i=0;i<in_n_fields;i++) {
+      q[i] = in_disu_upts_ptr[thread_id + i*stride];
+    }
+
+    #pragma unroll
+    for (i=0;i<in_n_dims;i++) {
+      #pragma unroll
+      for (j=0;j<in_n_dims;j++) {
+        met[j][i] = in_inv_detjac_mul_jac_upts_ptr[thread_id + (i*in_n_dims+j)*stride];
+      }
+    }
+
+    // Physical gradient
+    #pragma unroll
+    for (i=0;i<in_n_fields;i++)
     {
-      // Physical solution
-#pragma unroll
-      for (int i=0;i<in_n_fields;i++)
-        q[i] = in_disu_upts_ptr[thread_id + i*stride];
+      index = thread_id + i*stride;
+      grad_q[i*in_n_dims + 0] = in_grad_disu_upts_ptr[index];
+      grad_q[i*in_n_dims + 1] = in_grad_disu_upts_ptr[index + stride*in_n_fields];
 
-#pragma unroll
-      for (int i=0;i<in_n_dims;i++)
-#pragma unroll
-        for (int j=0;j<in_n_dims;j++)
-          met[j][i] = in_inv_detjac_mul_jac_upts_ptr[thread_id + (i*in_n_dims+j)*stride];
+      if(in_n_dims==3)
+        grad_q[i*in_n_dims + 2] = in_grad_disu_upts_ptr[index + 2*stride*in_n_fields];
+    }
 
-      // Physical gradient
-#pragma unroll
-      for (int i=0;i<in_n_fields;i++)
-        {
-          ind = thread_id + i*stride;
-          grad_q[i*in_n_dims + 0] = in_grad_disu_upts_ptr[ind];
-          grad_q[i*in_n_dims + 1] = in_grad_disu_upts_ptr[ind + stride*in_n_fields];
+    // Flux prep
+    vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1);
 
-          if(in_n_dims==3)
-            grad_q[i*in_n_dims + 2] = in_grad_disu_upts_ptr[ind + 2*stride*in_n_fields];
-        }
+    // Flux computation for each field
+    #pragma unroll
+    for (i=0;i<in_n_fields;i++) {
 
-      // Flux prep
-      vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1);
+      index = thread_id + i*stride;
 
-      int index;
+      vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
 
-      // Flux computation
-#pragma unroll
-      for (int i=0;i<in_n_fields;i++)
-        {
-          vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
+      if(in_n_dims==2) {
+        out_tdisf_upts_ptr[index                   ] += met[0][0]*f[0] + met[0][1]*f[1];
+        out_tdisf_upts_ptr[index+stride*in_n_fields] += met[1][0]*f[0] + met[1][1]*f[1];
+      }
+      else if(in_n_dims==3) {
+        out_tdisf_upts_ptr[index                     ] += met[0][0]*f[0] + met[0][1]*f[1] + met[0][2]*f[2];
+        out_tdisf_upts_ptr[index+  stride*in_n_fields] += met[1][0]*f[0] + met[1][1]*f[1] + met[1][2]*f[2];
+        out_tdisf_upts_ptr[index+2*stride*in_n_fields] += met[2][0]*f[0] + met[2][1]*f[1] + met[2][2]*f[2];
+      }
+    }
 
-          index = thread_id+i*stride;
+    // wall flux prep.
+    // If using a wall model, flag if upt is within wall distance threshold
+    wall = 0;
+    if(wall_model > 0) {
 
-          if(in_n_dims==2) {
-              out_tdisf_upts_ptr[index                   ] += met[0][0]*f[0] + met[0][1]*f[1];
-              out_tdisf_upts_ptr[index+stride*in_n_fields] += met[1][0]*f[0] + met[1][1]*f[1];
-            }
-          else if(in_n_dims==3) {
-              out_tdisf_upts_ptr[index                     ] += met[0][0]*f[0] + met[0][1]*f[1] + met[0][2]*f[2];
-              out_tdisf_upts_ptr[index+  stride*in_n_fields] += met[1][0]*f[0] + met[1][1]*f[1] + met[1][2]*f[2];
-              out_tdisf_upts_ptr[index+2*stride*in_n_fields] += met[2][0]*f[0] + met[2][1]*f[1] + met[2][2]*f[2];
-            }
-        }
+      // wall distance vector
+      y = 0.0;
+      #pragma unroll
+      for (j=0;j<in_n_dims;j++)
+        y += in_wall_dist_ptr[thread_id + j*stride]*in_wall_dist_ptr[thread_id + j*stride];
+
+      y = sqrt(y);
+
+      if(y < in_wall_thickness) wall = 1;
 
     }
+
+    // if within near-wall region
+    if (wall) {
+
+      // get wall normal
+      #pragma unroll
+      for (j=0;j<in_n_dims;j++)
+        norm[j] = in_wall_dist_ptr[thread_id + j*stride]/y;
+
+      // calculate rotation matrix
+      rotation_matrix_kernel<in_n_dims>(norm, mrot);
+
+      // rotate velocity to surface
+      if(in_n_dims==2) {
+        urot[0] = q[1]*mrot[0*in_n_dims+1] + q[2]*mrot[1*in_n_dims+1];
+        urot[1] = 0.0;
+      }
+      else {
+        urot[0] = q[1]*mrot[0*in_n_dims+1] + q[2]*mrot[1*in_n_dims+1] + q[3]*mrot[2*in_n_dims+1];
+        urot[1] = q[1]*mrot[0*in_n_dims+2] + q[2]*mrot[1*in_n_dims+2] + q[3]*mrot[2*in_n_dims+2];
+        urot[2] = 0.0;
+      }
+
+      // get wall flux at previous timestep
+      #pragma unroll
+      for (j=0;j<in_n_dims;j++)
+        tw[j] = in_twall_ptr[thread_id + (j+1)*stride];
+
+      qw = in_twall_ptr[thread_id + (in_n_fields-1)*stride];
+
+      // calculate wall flux
+      wall_model_kernel<in_n_dims>( wall_model, q[0], urot, &inte, &mu, in_gamma, in_prandtl, y, tw, qw);
+
+      // correct the sign of wall shear stress and wall heat flux? - see SD3D
+
+      // Set arrays for next timestep
+      #pragma unroll
+      for (j=0;j<in_n_dims;j++)
+        in_twall_ptr[thread_id + (j+1)*stride] = tw[j]; // momentum
+
+      in_twall_ptr[thread_id] = 0.0; //density
+      in_twall_ptr[thread_id + (in_n_fields-1)*stride] = qw; //energy
+
+      // populate ndims*ndims rotated stress array
+      if(in_n_dims==2) {
+        tau[0] = 0.0;
+        tau[1] = tw[0];
+        tau[2] = tw[0];
+        tau[3] = 0.0;
+      }
+      else {
+        tau[0] = 0.0;
+        tau[1] = tw[0];
+        tau[2] = tw[1];
+        tau[3] = tw[0];
+        tau[4] = 0.0;
+        tau[5] = 0.0;
+        tau[6] = tw[1];
+        tau[7] = 0.0;
+        tau[8] = 0.0;
+      }
+
+      // rotate stress array back to Cartesian coordinates
+      #pragma unroll
+      for(i=0;i<in_n_dims;i++) {
+        #pragma unroll
+        for(j=0;j<in_n_dims;j++) {
+          temp[i*in_n_dims + j] = 0.0;
+          #pragma unroll
+          for(k=0;k<in_n_dims;k++) {
+            temp[i*in_n_dims + j] += tau[i*in_n_dims + k]*mrot[k*in_n_dims + j];
+          }
+        }
+      }
+
+      #pragma unroll
+      for(i=0;i<in_n_dims;i++) {
+        #pragma unroll
+        for(j=0;j<in_n_dims;j++) {
+          tau[i*in_n_dims + j] = 0.0;
+          #pragma unroll
+          for(k=0;k<in_n_dims;k++) {
+            tau[i*in_n_dims + j] += mrot[k*in_n_dims + i]*temp[k*in_n_dims + j];
+          }
+        }
+      }
+
+      // set SGS fluxes
+      #pragma unroll
+      for(i=0;i<in_n_dims;i++) {
+
+        // density
+        sgsf[0*in_n_dims + i] = 0.0;
+
+        // velocity
+        #pragma unroll
+        for(j=0;j<in_n_dims;j++) {
+          sgsf[(j+1)*in_n_dims + i] = 0.5*(tau[j*in_n_dims+i]+tau[i*in_n_dims+j]);
+        }
+
+        // energy
+        sgsf[(in_n_fields-1)*in_n_dims + i] = qw*norm[i];
+      }
+
+    }
+    else {
+      // if not near a wall and using LES, compute SGS flux
+      if(LES) {
+
+      // Calculate strain rate tensor from viscous stress tensor
+      #pragma unroll
+      for (j=0;j<in_n_comp;j++)
+        straintensor[j] = stensor[j]/2.0/mu;
+
+      // Calculate filter width
+      jac = in_detjac_upts_ptr[thread_id];
+
+      delta = SGS_filter_width(jac, in_ele_type, in_n_dims, in_order, in_filter_ratio);
+
+      // momentum Leonard tensor
+      #pragma unroll
+      for (j=0;j<in_n_comp;j++)
+        lmtensor[j] = Leonard_mom[thread_id + j*stride];
+
+      // energy Leonard tensor - bugged or just sensitive to the filter?
+      #pragma unroll
+      for (j=0;j<in_n_dims;j++)
+        letensor[j] = 0.0;
+        //letensor[j] = Leonard_ene[thread_id + j*stride];
+
+      //printf("Lu = %6.10f\n",lmtensor[0]);
+
+      #pragma unroll
+       for (i=0;i<in_n_fields;i++) {
+
+        SGS_flux_kernel<in_n_dims>(q, grad_q, grad_vel, grad_ene, sdtensor, straintensor, lmtensor, letensor, f, sgs_model, delta, in_gamma, i);
+
+        // set local SGS flux array
+        #pragma unroll
+        for(j=0;j<in_n_dims;j++)
+          sgsf[i*in_n_dims + j] = f[j];
+
+      }
+    }
+    }
+
+    // add wall or SGS flux to output array
+    if(LES || wall) {
+      #pragma unroll
+      for (i=0;i<in_n_fields;i++) {
+
+        index = thread_id + i*stride;
+
+        if(in_n_dims==2) {
+          out_tdisf_upts_ptr[index                   ] += met[0][0]*sgsf[i*in_n_dims] + met[0][1]*sgsf[i*in_n_dims + 1];
+          out_tdisf_upts_ptr[index+stride*in_n_fields] += met[1][0]*sgsf[i*in_n_dims] + met[1][1]*sgsf[i*in_n_dims + 1];
+        }
+        else if(in_n_dims==3) {
+          out_tdisf_upts_ptr[index                     ] += met[0][0]*sgsf[i*in_n_dims] + met[0][1]*sgsf[i*in_n_dims + 1] + met[0][2]*sgsf[i*in_n_dims + 2];
+          out_tdisf_upts_ptr[index+  stride*in_n_fields] += met[1][0]*sgsf[i*in_n_dims] + met[1][1]*sgsf[i*in_n_dims + 1] + met[1][2]*sgsf[i*in_n_dims + 2];
+          out_tdisf_upts_ptr[index+2*stride*in_n_fields] += met[2][0]*sgsf[i*in_n_dims] + met[2][1]*sgsf[i*in_n_dims + 1] + met[2][2]*sgsf[i*in_n_dims + 2];
+        }
+      }
+    }
+  }
 }
 
 
@@ -1743,65 +2585,6 @@ __global__ void calc_tdisvisf_upts_AD_gpu_kernel(int in_n_upts_per_ele, int in_n
           out_tdisf_upts_ptr[index+  stride] += met[1][0]*f[0] + met[1][1]*f[1] + met[1][2]*f[2];
           out_tdisf_upts_ptr[index+2*stride] += met[2][0]*f[0] + met[2][1]*f[1] + met[2][2]*f[2];
         }
-
-    }
-}
-
-// gpu kernel to calculate filtered solution at solution points
-template<int in_n_dims, int in_n_fields>
-__global__ void calc_disuf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_eles, double* in_disu_upts_ptr, double* in_disuf_upts_ptr)
-{
-  const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
-  int i,j,k;
-  double temp_u_upts[in_n_fields][in_n_upts_per_ele];
-  double temp_uf_upts[in_n_fields][in_n_upts_per_ele];
-
-
-  if(thread_id<in_n_eles)
-    {
-      // Temporary solution storage
-#pragma unroll
-      for (int i=0;i<in_n_fields;i++)
-#pragma unroll
-        for (j=0;j<in_n_upts_per_ele;++j)
-          {
-            temp_u_upts[i][j] = in_disu_upts_ptr[thread_id + i*in_n_eles];
-            temp_u_upts[i][j] = 0.0;
-          }
-
-      /*
-    //physical solution at all solution pts in ele
-    for(i=0;i<n_eles;i++)
-    {
-        // Filter the solution
-        (*this).calc_disuf_upts_ele(temp_u_upts, temp_uf_upts);
-
-        // Check for NaNs
-        for(j=0;j<n_upts_per_ele;j++)
-        {
-        for(k=0;k<n_fields;k++)
-        {
-                if(isnan(temp_uf_upts(k,j)))
-                {
-                    cout << "\nWARNING 1: NAN SOLUTION UF" << endl;
-                    cout << "ele, pt, field: " <<i<<", "<<j<<", "<<k<< endl;
-                    temp_uf_upts.print();
-                    exit(1);
-                }
-        }
-        }
-
-        // Explicit SVV filtering: copy filtered solution back
-        if(run_input.SGS_model==3)
-        {
-            for(j=0;j<n_upts_per_ele;j++)
-            {
-            for(k=0;k<n_fields;k++)
-            {
-                    disu_upts(in_disu_upts_from)(j,i,k) = temp_uf_upts(k,j);
-                }
-            }
-        }*/
 
     }
 }
@@ -2048,7 +2831,7 @@ __global__ void calc_norm_tconvisf_fpts_AD_gpu_kernel(int in_n_fpts_per_inter, i
 
 // kernel to calculate normal transformed continuous viscous flux at the flux points at boundaries
 template<int in_n_dims, int in_n_fields, int in_n_comp, int in_vis_riemann_solve_type>
-__global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, double** in_normal_disu_fpts_l_ptr, double* in_pos_disu_fpts_l_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double diff_coeff)
+__global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, double** in_normal_disu_fpts_l_ptr, double* in_pos_disu_fpts_l_ptr, double** in_sgsf_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double diff_coeff)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
@@ -2185,6 +2968,18 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
               for (int i=0;i<in_n_fields;i++)
                 vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
 
+              // If LES but no model used on this boundary, get SGS flux and add to viscous flux
+              /*if(LES==1 and wallfn==0) {
+                for(int k=0;k<n_dims;k++) {
+                  for(int l=0;l<n_fields;l++) {
+                    // pointer to subgrid-scale flux at flux point
+                    temp_sgsf_l(l,k) = in_sgsf_fpts_ptr(j,i,l,k);
+
+                    // Add SGS flux to viscous flux
+                    temp_f_l(l,k) += temp_sgsf_l(l,k);
+                  }
+                }
+              }*/
             }
           if(in_equation==1)
             {
@@ -2630,8 +3425,6 @@ __global__ void  pack_out_buffer_grad_disu_gpu_kernel(int in_n_fpts_per_inter, i
 
 #endif
 
-
-
 void RK45_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_disu1_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_rk4a, double in_rk4b, double in_dt, double in_const_src_term)
 {
 
@@ -2818,7 +3611,7 @@ void calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
 }
 
 // wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points
-void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
+void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, int in_ele_type, int in_order, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* in_Lu_ptr, double* in_Le_ptr, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
@@ -2826,23 +3619,23 @@ void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims,
   check_cuda_error("Before", __FILE__, __LINE__);
 
   if (equation==0)
-    {
-      if (in_n_dims==2)
-        calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis);
-      else if (in_n_dims==3)
-        calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_gamma,in_prandtl,in_rt_inf,in_mu_inf,in_c_sth,in_fix_vis);
-      else
-        FatalError("ERROR: Invalid number of dimensions ... ");
-    }
+  {
+    if (in_n_dims==2)
+      calc_tdisvisf_upts_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_order, in_filter_ratio, LES, sgs_model, wall_model, in_wall_thickness, in_wall_dist_ptr, in_twall_ptr, in_Lu_ptr, in_Le_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, out_sgsf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
+    else if (in_n_dims==3)
+      calc_tdisvisf_upts_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_order, in_filter_ratio, LES, sgs_model, wall_model, in_wall_thickness, in_wall_dist_ptr, in_twall_ptr, in_Lu_ptr, in_Le_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, out_sgsf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
+    else
+      FatalError("ERROR: Invalid number of dimensions ... ");
+  }
   else if (equation==1)
-    {
-      if (in_n_dims==2)
-        calc_tdisvisf_upts_AD_gpu_kernel<2> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_diff_coeff);
-      else if (in_n_dims==3)
-        calc_tdisvisf_upts_AD_gpu_kernel<3> <<<n_blocks,256>>>(in_n_upts_per_ele,in_n_eles,in_disu_upts_ptr,out_tdisf_upts_ptr,in_grad_disu_upts_ptr,in_detjac_upts_ptr,in_inv_detjac_mul_jac_upts_ptr,in_diff_coeff);
-      else
-        FatalError("ERROR: Invalid number of dimensions ... ");
-    }
+  {
+    if (in_n_dims==2)
+      calc_tdisvisf_upts_AD_gpu_kernel<2> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_disu_upts_ptr, out_tdisf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_diff_coeff);
+    else if (in_n_dims==3)
+      calc_tdisvisf_upts_AD_gpu_kernel<3> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_disu_upts_ptr, out_tdisf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_diff_coeff);
+    else
+      FatalError("ERROR: Invalid number of dimensions ... ");
+  }
   else
     FatalError("equation not recognized");
 
@@ -2850,7 +3643,7 @@ void calc_tdisvisf_upts_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims,
 }
 
 // wrapper for gpu kernel to transform gradient at sol points to physical gradient
-void transform_grad_disu_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, int equation) 
+void transform_grad_disu_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, int equation)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
@@ -2920,7 +3713,7 @@ void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_
 }
 
 // wrapper for gpu kernel to calculate normal transformed continuous viscous flux at the flux points at boundaries
-void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, double** in_normal_disu_fpts_l_ptr, double* in_pos_disu_fpts_l_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double in_diff_coeff)
+void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, double** in_normal_disu_fpts_l_ptr, double* in_pos_disu_fpts_l_ptr, double** in_sgsf_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double in_diff_coeff)
 {
 
   // HACK: fix 256 threads per block
@@ -2933,22 +3726,55 @@ void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
       if(in_equation==0)
         {
           if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_sgsf_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
           else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_sgsf_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
         }
       else if(in_equation==1)
         {
           if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_sgsf_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
           else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_sgsf_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
         }
     }
   else
     FatalError("ERROR: Viscous riemann solver type not recognized ... ");
 
   check_cuda_error("After", __FILE__, __LINE__);
+}
+
+/*! wrapper for gpu kernel to calculate terms for similarity model */
+void calc_similarity_model_kernel_wrapper(int flag, int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, double* in_disu_upts_ptr, double* in_disuf_upts_ptr, double* in_uu_ptr, double* in_ue_ptr, double* in_Lu_ptr, double* in_Le_ptr)
+{
+  // HACK: fix 256 threads per block
+  int block_size=256;
+  int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/block_size)+1;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+  /*! Calculate product terms uu, ue */
+  if (flag==0) {
+    // fixed n_fields at 4 for 2d and 5 for 3d
+    if(in_n_dims==2) {
+      calc_similarity_terms_kernel<4> <<< n_blocks,block_size >>> (in_n_upts_per_ele, in_n_eles, in_n_dims, in_disu_upts_ptr, in_uu_ptr, in_ue_ptr);
+    }
+    else if(in_n_dims==3) {
+      calc_similarity_terms_kernel<5> <<< n_blocks,block_size >>> (in_n_upts_per_ele, in_n_eles, in_n_dims, in_disu_upts_ptr, in_uu_ptr, in_ue_ptr);
+    }
+  }
+  /*! Calculate Leonard tensors Lu, Le */
+  else if (flag==1) {
+    // fixed n_fields at 4 for 2d and 5 for 3d
+    if(in_n_dims==2) {
+      calc_Leonard_tensors_kernel<4> <<< n_blocks,block_size >>> (in_n_upts_per_ele, in_n_eles, in_n_dims, in_disuf_upts_ptr, in_Lu_ptr, in_Le_ptr);
+    }
+    else if(in_n_dims==3) {
+      calc_Leonard_tensors_kernel<5> <<< n_blocks,block_size >>> (in_n_upts_per_ele, in_n_eles, in_n_dims, in_disuf_upts_ptr, in_Lu_ptr, in_Le_ptr);
+    }
+  }
+
+  check_cuda_error("After",__FILE__, __LINE__);
 }
 
 
@@ -3126,5 +3952,4 @@ void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_p
     }
 
 }
-
 
