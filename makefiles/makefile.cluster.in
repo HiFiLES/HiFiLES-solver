@@ -10,7 +10,7 @@
 # Copyright (C) 2013 Aerospace Computing Laboratory.
 
 NODE=     GPU
-CODE=     DEBUG
+CODE=     RELEASE
 BLAS=     STANDARD_BLAS
 COMP=     GCC
 PARALLEL= NO

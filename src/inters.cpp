@@ -326,6 +326,62 @@ void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> 
     fn(k)=0.5*((fn_l(k)+fn_r(k))-(vn_av_mag+c_av)*(u_r(k)-u_l(k)));
 }
 
+
+// Convective flux for the boundary
+void inters::convective_flux_boundary(array<double> &u_l, array<double> &u_r, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma)
+{
+  double vx_l,vy_l,vx_r,vy_r,vz_l,vz_r,vn_l,vn_r,p_l,p_r,vn_av_mag,c_av;
+  array<double> fn_l(n_fields),fn_r(n_fields);
+
+  // calculate normal flux from discontinuous solution at flux points
+  for(int k=0;k<n_fields;k++) {
+
+      fn_l(k)=0.;
+      fn_r(k)=0.;
+
+      for(int l=0;l<n_dims;l++) {
+          fn_l(k)+=f_l(k,l)*norm(l);
+          fn_r(k)+=f_r(k,l)*norm(l);
+        }
+    }
+
+  // calculate wave speeds
+  vx_l=u_l(1)/u_l(0);
+  vx_r=u_r(1)/u_r(0);
+
+  vy_l=u_l(2)/u_l(0);
+  vy_r=u_r(2)/u_r(0);
+
+  if(n_dims==2) {
+      vn_l=vx_l*norm(0)+vy_l*norm(1);
+      vn_r=vx_r*norm(0)+vy_r*norm(1);
+
+      p_l=(gamma-1.0)*(u_l(3)-(0.5*u_l(0)*((vx_l*vx_l)+(vy_l*vy_l))));
+      p_r=(gamma-1.0)*(u_r(3)-(0.5*u_r(0)*((vx_r*vx_r)+(vy_r*vy_r))));
+    }
+  else if(n_dims==3) {
+      vz_l=u_l(3)/u_l(0);
+      vz_r=u_r(3)/u_r(0);
+
+      vn_l=vx_l*norm(0)+vy_l*norm(1)+vz_l*norm(2);
+      vn_r=vx_r*norm(0)+vy_r*norm(1)+vz_r*norm(2);
+
+      p_l=(gamma-1.0)*(u_l(4)-(0.5*u_l(0)*((vx_l*vx_l)+(vy_l*vy_l)+(vz_l*vz_l))));
+      p_r=(gamma-1.0)*(u_r(4)-(0.5*u_r(0)*((vx_r*vx_r)+(vy_r*vy_r)+(vz_r*vz_r))));
+    }
+  else
+    FatalError("ERROR: Invalid number of dimensions ... ");
+
+  vn_av_mag=sqrt(0.25*(vn_l+vn_r)*(vn_l+vn_r));
+  c_av=sqrt((gamma*(p_l+p_r))/(u_l(0)+u_r(0)));
+
+  // calculate the normal transformed continuous flux at the flux points
+
+  for(int k=0;k<n_fields;k++)
+    fn(k)=0.5*(fn_l(k)+fn_r(k));
+}
+
+
 // Rusanov inviscid numerical flux
 void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma)
 {
@@ -551,15 +607,15 @@ void inters::ldg_flux(int flux_spec, array<double> &u_l, array<double> &u_r, arr
         {
           if(n_dims == 2)
             {
-              f_c(k,0) = f_r(k,0);
-              f_c(k,1) = f_r(k,1);
+              f_c(k,0) = f_r(k,0) + tau*norm_x*(u_l(k) - u_r(k));
+              f_c(k,1) = f_r(k,1) + tau*norm_y*(u_l(k) - u_r(k));
             }
 
           if(n_dims == 3)
             {
-              f_c(k,0) = f_r(k,0);
-              f_c(k,1) = f_r(k,1);
-              f_c(k,2) = f_r(k,2);
+              f_c(k,0) = f_r(k,0) + tau*norm_x*(u_l(k) - u_r(k));
+              f_c(k,1) = f_r(k,1) + tau*norm_y*(u_l(k) - u_r(k));
+              f_c(k,2) = f_r(k,2) + tau*norm_z*(u_l(k) - u_r(k));
             }
         }
     }
@@ -604,12 +660,12 @@ void inters::ldg_solution(int flux_spec, array<double> &u_l, array<double> &u_r,
   else if(flux_spec == 1) //Dirichlet
     {
       for(int k=0;k<n_fields;k++)
-        u_c(k) = u_r(k);
+        u_c(k) = 0.5*(u_l(k) + u_r(k));
     }
   else if(flux_spec == 2) //von Neumann
     {
       for(int k=0;k<n_fields;k++)
-        u_c(k) = u_l(k);
+        u_c(k) = 0.5*(u_l(k) + u_r(k));
     }
   else
     FatalError("This variant of the LDG flux has not been implemented");

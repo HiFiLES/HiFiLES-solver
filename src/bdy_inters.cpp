@@ -227,7 +227,7 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound)
             {
               // Calling Riemann solver
               if (run_input.riemann_solve_type==0) { //Rusanov
-                  rusanov_flux(temp_u_l,temp_u_r,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.gamma);
+                  convective_flux_boundary(temp_u_l,temp_u_r,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.gamma);
                 }
               else if (run_input.riemann_solve_type==1) { // Lax-Friedrich
                   lax_friedrich(temp_u_l,temp_u_r,norm,fn,n_dims,n_fields,run_input.lambda,run_input.wave_speed);
