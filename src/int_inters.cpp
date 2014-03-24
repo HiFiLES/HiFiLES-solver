@@ -39,7 +39,7 @@ using namespace std;
 // default constructor
 
 int_inters::int_inters()
-{	
+{
   order=run_input.order;
   viscous=run_input.viscous;
   LES=run_input.LES;
@@ -162,9 +162,7 @@ void int_inters::mv_all_cpu_gpu(void)
       //norm_tconvisf_fpts_r.mv_cpu_gpu();
     }
 
-  if(LES) {
-    sgsf_fpts_l.mv_cpu_gpu();
-  }
+  sgsf_fpts_l.mv_cpu_gpu();
 
 #endif
 }

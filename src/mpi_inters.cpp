@@ -29,7 +29,7 @@
 #endif
 
 #if defined _GPU
-#include "../include/cuda_kernels.h" 
+#include "../include/cuda_kernels.h"
 #endif
 
 using namespace std;
@@ -70,7 +70,7 @@ void mpi_inters::setup(int in_n_inters, int in_inters_type, int in_run_type)
           out_buffer_grad_disu.cp_cpu_gpu();
           in_buffer_grad_disu.cp_cpu_gpu();
         }
-#endif 
+#endif
 
       disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
       if(viscous)
@@ -141,9 +141,7 @@ void mpi_inters::mv_all_cpu_gpu(void)
 
     }
 
-  if(LES) {
-    sgsf_fpts_l.mv_cpu_gpu();
-  }
+  sgsf_fpts_l.mv_cpu_gpu();
 
   #endif
 }
@@ -168,7 +166,7 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
 
 #ifdef _GPU
               disu_fpts_r(j,in_inter,i)=in_buffer_disu.get_ptr_gpu(in_inter*n_fpts_per_inter*n_fields+i*n_fpts_per_inter+j_rhs);
-#else 
+#else
               disu_fpts_r(j,in_inter,i)=in_buffer_disu.get_ptr_cpu(in_inter*n_fpts_per_inter*n_fields+i*n_fpts_per_inter+j_rhs);
 #endif
 
@@ -226,7 +224,7 @@ void mpi_inters::send_disu_fpts()
         for(int k=0;k<n_fields;k++)
           for(int j=0;j<n_fpts_per_inter;j++)
             out_buffer_disu(counter++) = (*disu_fpts_l(j,i,k));
-#endif 
+#endif
 #ifdef _GPU
       pack_out_buffer_disu_gpu_kernel_wrapper(n_fpts_per_inter,n_inters,n_fields,disu_fpts_l.get_ptr_gpu(),out_buffer_disu.get_ptr_gpu());
 
@@ -286,7 +284,7 @@ void mpi_inters::send_cor_grad_disu_fpts()
           for(int k=0;k<n_fields;k++)
             for(int j=0;j<n_fpts_per_inter;j++)
               out_buffer_grad_disu(counter++) = (*grad_disu_fpts_l(j,i,k,m));
-#endif 
+#endif
 
 #ifdef _GPU
       if (n_inters!=0)
