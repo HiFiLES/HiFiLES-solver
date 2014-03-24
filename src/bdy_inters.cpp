@@ -195,9 +195,7 @@ void bdy_inters::mv_all_cpu_gpu(void)
     }
   //detjac_fpts_l.mv_cpu_gpu();
 
-	if(LES) {
-		sgsf_fpts_l.mv_cpu_gpu();
-	}
+	sgsf_fpts_l.mv_cpu_gpu();
 
   boundary_type.mv_cpu_gpu();
   bdy_params.mv_cpu_gpu();
