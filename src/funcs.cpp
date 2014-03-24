@@ -305,8 +305,8 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 		ind++;
 	}
 
-	cout<<"modal coeffs:"<<endl;
-	modal.print();
+	//cout<<"modal coeffs:"<<endl;
+	//modal.print();
 
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
@@ -357,8 +357,8 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 	// Sharp modal cutoff filter
 	//modal(N-1,N-1)=0.0;
 
-	cout<<"modal coeffs:"<<endl;
-	modal.print();
+	//cout<<"modal coeffs:"<<endl;
+	//modal.print();
 
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
@@ -406,8 +406,8 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
 	// Sharp modal cutoff filter
 	//modal(N-1,N-1)=0.0;
 
-	cout<<"modal coeffs:"<<endl;
-	modal.print();
+	//cout<<"modal coeffs:"<<endl;
+	//modal.print();
 
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 

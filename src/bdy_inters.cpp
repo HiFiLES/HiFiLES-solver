@@ -145,12 +145,12 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
 #endif
             }
         }
-      
+
       // Get coordinates and solution at closest solution points to boundary
 
       for(int j=0;j<n_fpts_per_inter;j++)
       {
-        
+
         // flux point location
 
         // get CPU ptr regardless of ifdef _CPU or _GPU
@@ -164,10 +164,10 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
         if(viscous) {
           for(int i=0;i<n_fields;i++)
             normal_disu_fpts_l(j,in_inter,i) = get_normal_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol, temp_loc, temp_pos);
-          
+
           for(int i=0;i<n_dims;i++)
               pos_disu_fpts_l(j,in_inter,i) = temp_pos[i];
-        } 
+        }
       }
     }
 }
@@ -208,31 +208,31 @@ void bdy_inters::mv_all_cpu_gpu(void)
 /*! Calculate normal transformed continuous inviscid flux at the flux points on the boundaries.*/
 
 void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound) {
-  
+
 #ifdef _CPU
-  
+
   array<double> norm(n_dims), fn(n_fields), u_c(n_fields);
   int bdy_spec, flux_spec;
-  
+
   for(int i=0;i<n_inters;i++) {
     for(int j=0;j<n_fpts_per_inter;j++) {
-      
+
       /*! Storing normal components, and location of the flux points. */
-      
+
       for (int m=0;m<n_dims;m++) {
         norm(m) = *norm_fpts(j,i,m);
         temp_loc(m) = *loc_fpts(j,i,m);
       }
-      
+
       /*! Calculate discontinuous solution at flux points. */
-      
+
       for (int k=0;k<n_fields;k++)
         temp_u_l(k)=(*disu_fpts_l(j,i,k));
-      
+
       set_inv_boundary_conditions(boundary_type(i),temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
-      
+
       /*! Calculate flux from discontinuous solution at flux points. */
-      
+
       if (n_dims==2) {
         calc_invf_2d(temp_u_l,temp_f_l);
         calc_invf_2d(temp_u_r,temp_f_r);
@@ -243,37 +243,37 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound) {
       }
       else
         FatalError("ERROR: Invalid number of dimensions ... ");
-      
+
       if (boundary_type(i)==16) { // Dual consistent BC
 
         /*! Set Normal flux to be right flux. */
-        
+
         right_flux(temp_f_l,norm,fn,n_dims,n_fields,run_input.gamma);
       }
       else if ((boundary_type(i)==7) || (boundary_type(i)==11) || (boundary_type(i)==12)) { // Euler and N-S wall
 
         double rho_l, e_l, v_sq, p_l;
         array<double> v_l(n_dims);
-        
+
         /*! Store primitive variables for clarity. */
         rho_l = temp_u_l(0);
         for (int i=0; i<n_dims; i++)
           v_l(i) = temp_u_l(i+1)/temp_u_l(0);
         e_l = temp_u_l(n_dims+1);
-        
+
         /*! Compute pressure on left side. */
         v_sq = 0.;
         for (int i=0; i<n_dims; i++)
           v_sq += (v_l(i)*v_l(i));
         p_l = (run_input.gamma-1.0)*(e_l - 0.5*rho_l*v_sq);
-        
+
         /*! Evaluate analytical fluxes. */
-        
+
         fn(0) = 0.0;
         for (int i=0; i<n_dims; i++)
           fn(i+1) = p_l*norm(i);
         fn(n_dims+1) = 0.0;
-        
+
       }
       else { // Call Riemann solver
 
@@ -289,37 +289,37 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound) {
         else
           FatalError("Riemann solver not implemented");
       }
-      
+
       /*! Transform back to reference space. */
-      
+
       for (int k=0;k<n_fields;k++)
         (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
-      
+
       if(viscous) {
-        
+
         /*! boundary specification. */
-        
+
         bdy_spec = boundary_type(i);
-        
+
         if(bdy_spec == 12 || bdy_spec == 14) flux_spec = 2;
         else flux_spec = 1;
-        
+
         /*! Calling viscous riemann solver. */
-        
+
         if (run_input.vis_riemann_solve_type==0)
           ldg_solution(flux_spec,temp_u_l,temp_u_r,u_c,run_input.pen_fact,norm);
         else
           FatalError("Viscous Riemann solver not implemented");
-        
+
         for(int k=0;k<n_fields;k++)
           *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k));
       }
-      
+
     }
   }
-  
+
 #endif
-  
+
 #ifdef _GPU
   if (n_inters!=0)
     calc_norm_tconinvf_fpts_boundary_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.R_ref,viscous,run_input.vis_riemann_solve_type, time_bound, run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda,run_input.equation);
@@ -790,55 +790,55 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 /*! Calculate normal transformed continuous viscous flux at the flux points on the boundaries. */
 
 void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
-  
+
 #ifdef _CPU
   int bdy_spec, flux_spec;
   array<double> norm(n_dims), fn(n_fields);
   int wallfn;
 
   for(int i=0;i<n_inters;i++) {
-    
+
     /*! Boundary specification. */
-    
+
     bdy_spec = boundary_type(i);
-    
+
     if(bdy_spec == 12 || bdy_spec == 14) flux_spec = 2;
     else flux_spec = 1;
-    
+
     for(int j=0;j<n_fpts_per_inter;j++) {
-      
+
       /*! Storing normal components. */
-      
+
       for (int m=0;m<n_dims;m++) {
         norm(m) = *norm_fpts(j,i,m);
         temp_loc(m) = *loc_fpts(j,i,m);
       }
-      
+
       /*! Obtain discontinuous solution at flux points. */
-      
+
       for (int k=0;k<n_fields;k++)
         temp_u_l(k)=(*disu_fpts_l(j,i,k));
-      
+
       set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
-      
+
       /*! Obtain gradient of discontinuous solution at flux points. */
-      
+
       for(int k=0;k<n_dims;k++)
         for(int l=0;l<n_fields;l++)
           temp_grad_u_l(l,k) = *grad_disu_fpts_l(j,i,l,k);
-      
+
       if (boundary_type(i)==12) {
-        
+
         double Dist;
         array<double> sVec(n_dims), temp_normal_grad_u_l(n_fields), temp_normal_bc_grad_u_l(n_fields);
-        
+
         /*! Obtain coordinates of the closest solution point to the flux point. */
-        
+
         for(int l=0;l<n_fields;l++)
           temp_normal_u_l(l) = *normal_disu_fpts_l(j,i,l);
-        
+
         /*! Obtain the unitary vector conectng the flux point with the closest solution point. */
-        
+
         Dist = 0.0;
         for(int l=0;l<n_dims;l++) {
           temp_pos_u_l(l) = pos_disu_fpts_l(j,i,l);
@@ -847,54 +847,54 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
           Dist += sVec(l)*sVec(l);
         }
         Dist = sqrt(Dist);
-        
+
         for(int l=0;l<n_dims;l++) {
           sVec(l) /= Dist;
         }
-        
+
         /*! Evaluate the projected gradient in the direction of sVec (using boundary condition). */
-        
+
         temp_normal_bc_grad_u_l(0) = (temp_normal_u_l(0) - temp_u_l(0))/Dist;
         for(int l=0;l<n_dims;l++) {
           double vel = 0.0; //temp_u_l(l+1) - 0.1*(temp_u_l(l+1) - 0.0);
           temp_normal_bc_grad_u_l(l+1) = (temp_normal_u_l(l+1) - vel)/Dist;
         }
         temp_normal_bc_grad_u_l(n_dims+1) = (temp_normal_u_l(n_dims+1) - temp_u_l(n_dims+1))/Dist;
-        
+
         /*! Evaluate the projected gradient in the direction of sVec. */
-        
+
         for(int l=0;l<n_fields;l++) {
           temp_normal_grad_u_l(l) = 0.0;
           for(int k=0;k<n_dims;k++)
             temp_normal_grad_u_l(l) += temp_grad_u_l(l,k)*sVec(k);
         }
-        
+
         /*! Evaluate gradient maintaining tangential component but changing
          the component in the sVec direction. */
-        
+
         for (int l=0;l<n_fields;l++) {
           for (int k=0;k<n_dims;k++) {
             temp_grad_u_l(l,k) = temp_grad_u_l(l,k) + (temp_normal_bc_grad_u_l(l)-temp_normal_grad_u_l(l))*sVec(k);
           }
         }
-        
+
       }
-      
+
       /*! Right gradient. */
-      
+
       if(flux_spec == 2) {
-        
+
         /*! Extrapolate. */
-        
+
         for(int k=0;k<n_dims;k++)
           for(int l=0;l<n_fields;l++)
             temp_grad_u_r(l,k) = temp_grad_u_l(l,k);
-        
+
         set_vis_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),temp_grad_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
       }
-      
+
       /*! Calculate flux from discontinuous solution at flux points. */
-      
+
       if(n_dims==2) {
         if(flux_spec == 1) calc_visf_2d(temp_u_l,temp_grad_u_l,temp_f_l);
         else if(flux_spec == 2)calc_visf_2d(temp_u_r,temp_grad_u_r,temp_f_r);
@@ -907,7 +907,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
       }
       else
         FatalError("ERROR: Invalid number of dimensions ... ");
-      
+
       // If LES but no model used on this boundary, get SGS flux and add to viscous flux
       if(LES==1 and wallfn==0) {
         for(int k=0;k<n_dims;k++) {
@@ -920,18 +920,18 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
           }
         }
       }
-      
+
       /*! Calling viscous riemann solver. */
-      
+
       if (run_input.vis_riemann_solve_type==0)
         ldg_flux(flux_spec,temp_u_l,temp_u_r,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.tau,run_input.pen_fact);
       else
         FatalError("Viscous Riemann solver not implemented");
-      
+
       /*! Transform back to reference space. */
       if (boundary_type(i)==12) {
         fn(0) = 0.0;
-        
+
 //        if(n_dims==2) {
 //          calc_visf_2d(temp_u_l,temp_grad_u_l,temp_f_l);
 //          calc_visf_2d(temp_u_r,temp_grad_u_r,temp_f_r);
@@ -942,24 +942,24 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
 //        }
 //        else
 //          FatalError("ERROR: Invalid number of dimensions ... ");
-//        
+//
 //        for(int l=0;l<n_dims;l++) {
 //          fn(l+1) = 0.5*(temp_f_l(l+1) + temp_f_r(l+1));
 //        }
-        
+
         fn(n_dims+1) = 0.0;
       }
-      
+
       for(int k=0;k<n_fields;k++)
         (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
     }
   }
-  
+
 #endif
-  
+
 #ifdef _GPU
   if (n_inters!=0)
-    calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),normal_disu_fpts_l.get_ptr_gpu(),pos_disu_fpts_l.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff);
+    calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),normal_disu_fpts_l.get_ptr_gpu(),pos_disu_fpts_l.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff);
 #endif
 }
 

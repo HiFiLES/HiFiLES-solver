@@ -695,7 +695,7 @@ void eles_tets::set_loc_spts(void)
     // Node 2 at (-1,1,-1)
     // Node 3 at (-1,-1,1)
 
-// 	z	
+// 	z
 //	|      y
 // 	      /
 //  3
@@ -718,7 +718,7 @@ void eles_tets::set_loc_spts(void)
 // Node 8 at (-1,0,0)
 // Node 9 at (0,-1,0)
 
-// 	z	
+// 	z
 //	|      y
 // 	      /
 //  3
@@ -830,8 +830,8 @@ void eles_tets::compute_filter_upts(void)
       // Compute modal filter
       compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order);
 
-      printf("\nFilter:\n");
-      filter_upts.print();
+      //printf("\nFilter:\n");
+      //filter_upts.print();
 
     }
   else // Simple average for low order
@@ -857,8 +857,8 @@ void eles_tets::compute_filter_upts(void)
           filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
         }
     }
-  printf("\nFilter after symmetrising:\n");
-  filter_upts.print();
+  //printf("\nFilter after symmetrising:\n");
+  //filter_upts.print();
   for(i=0;i<N2;i++)
     {
       norm = 0.0;

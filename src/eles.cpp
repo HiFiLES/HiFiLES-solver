@@ -2284,7 +2284,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 
       // OPTION 2. Deardorff definition (Deardorff, JFM 1970)
       vol = (*this).calc_ele_vol(detjac);
-      delta = run_input.filter_ratio*pow(vol,1./n_dims)/order;
+      delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
 
       // OPTION 3. Suggested by Bardina, AIAA 1980:
       // delta = sqrt((dx^2+dy^2+dz^2)/3)

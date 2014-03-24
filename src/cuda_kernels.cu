@@ -940,7 +940,7 @@ __device__ double SGS_filter_width(double in_detjac, int in_ele_type, int in_n_d
     vol = in_detjac*8.0;
   }
 
-  delta = in_filter_ratio*pow(vol,1./in_n_dims)/in_order;
+  delta = in_filter_ratio*pow(vol,1./in_n_dims)/(in_order+1.);
 
   return delta;
 }
@@ -2831,7 +2831,7 @@ __global__ void calc_norm_tconvisf_fpts_AD_gpu_kernel(int in_n_fpts_per_inter, i
 
 // kernel to calculate normal transformed continuous viscous flux at the flux points at boundaries
 template<int in_n_dims, int in_n_fields, int in_n_comp, int in_vis_riemann_solve_type>
-__global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, double** in_normal_disu_fpts_l_ptr, double* in_pos_disu_fpts_l_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double diff_coeff)
+__global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, double** in_normal_disu_fpts_l_ptr, double* in_pos_disu_fpts_l_ptr, double** in_sgsf_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double diff_coeff)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
@@ -2968,6 +2968,18 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
               for (int i=0;i<in_n_fields;i++)
                 vis_NS_flux<in_n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
 
+              // If LES but no model used on this boundary, get SGS flux and add to viscous flux
+              /*if(LES==1 and wallfn==0) {
+                for(int k=0;k<n_dims;k++) {
+                  for(int l=0;l<n_fields;l++) {
+                    // pointer to subgrid-scale flux at flux point
+                    temp_sgsf_l(l,k) = in_sgsf_fpts_ptr(j,i,l,k);
+
+                    // Add SGS flux to viscous flux
+                    temp_f_l(l,k) += temp_sgsf_l(l,k);
+                  }
+                }
+              }*/
             }
           if(in_equation==1)
             {
@@ -3701,7 +3713,7 @@ void calc_norm_tconvisf_fpts_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_
 }
 
 // wrapper for gpu kernel to calculate normal transformed continuous viscous flux at the flux points at boundaries
-void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, double** in_normal_disu_fpts_l_ptr, double* in_pos_disu_fpts_l_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double in_diff_coeff)
+void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in_n_dims, int in_n_fields, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_grad_disu_fpts_l_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_loc_fpts_ptr, double** in_normal_disu_fpts_l_ptr, double* in_pos_disu_fpts_l_ptr, double** in_sgsf_fpts_ptr, int* in_boundary_type, double* in_bdy_params, double** in_delta_disu_fpts_l_ptr, int in_riemann_solve_type, int in_vis_riemann_solve_type, double in_R_ref, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, double in_time_bound, int in_equation, double in_diff_coeff)
 {
 
   // HACK: fix 256 threads per block
@@ -3714,16 +3726,16 @@ void calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(int in_n_fpts_per_inter
       if(in_equation==0)
         {
           if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,4,3,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_sgsf_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
           else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,5,6,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_sgsf_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
         }
       else if(in_equation==1)
         {
           if (in_n_dims==2)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<2,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_sgsf_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
           else if (in_n_dims==3)
-            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
+            calc_norm_tconvisf_fpts_boundary_gpu_kernel<3,1,1,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_grad_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_mag_tnorm_dot_inv_detjac_mul_jac_fpts_l_ptr, in_norm_fpts_ptr, in_loc_fpts_ptr, in_normal_disu_fpts_l_ptr, in_pos_disu_fpts_l_ptr, in_sgsf_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_R_ref, in_pen_fact, in_tau, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, in_time_bound, in_equation, in_diff_coeff);
         }
     }
   else
