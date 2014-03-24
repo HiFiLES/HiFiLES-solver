@@ -290,9 +290,9 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 	// Full form: alpha = Cp*N*dt
 	alpha = Cp*N;
 
-	for(i=0;i<order+1;i++) {
+	for(i=0;i<p+1;i++) {
 		// Exponential filter (SVV method) (similar to Meister et al 2009)
-		eta = i/order;
+		eta = i/(p+1.0);
 		modal(ind,ind) = exp(-alpha*pow(eta,2*p));
 
 		// Gaussian filter in modal space (from SD3D)
@@ -337,10 +337,10 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 	// Full form: alpha = Cp*(N+1)*dt/delta
 	alpha = Cp*N;
 
-	for(i=0;i<order+1;i++) {
-		for(j=0;j<order-i+1;j++) {
+	for(i=0;i<p+1;i++) {
+		for(j=0;j<p-i+1;j++) {
 			// Exponential filter (SVV method) (similar to Meister et al 2009)
-			eta = (i+j)/(order+1.0);
+			eta = (i+j)/(p+1.0);
 			modal(ind,ind) = exp(-alpha*pow(eta,2*p));
 
 			// Gaussian filter in modal space (from SD3D)
@@ -389,11 +389,11 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
 	// Full form: alpha = Cp*(N+1)*dt/delta
 	alpha = Cp*N;
 
-	for(i=0;i<order+1;i++) {
-		for(j=0;j<order-i+1;j++) {
-			for(k=0;k<order-i-j+1;k++) {
+	for(i=0;i<p+1;i++) {
+		for(j=0;j<p-i+1;j++) {
+			for(k=0;k<p-i-j+1;k++) {
 				// Exponential filter (SVV method) (similar to Meister et al 2009)
-				eta = (i+j+k)/(order+1.0);
+				eta = (i+j+k)/(p+1.0);
 				modal(ind,ind) = exp(-alpha*pow(eta,2*p));
 
 				// Gaussian filter in modal space (from SD3D)
