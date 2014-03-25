@@ -186,7 +186,7 @@ void int_inters::calc_norm_tconinvf_fpts(void)
 
           if (motion) {
             for (int k=0; k<n_dims; k++)
-              temp_v(k)=(*vel_fpts_l(k,j,i));
+              temp_v(k)=(*vel_fpts(k,j,i));
           }else{
             temp_v.initialize_to_zero();
           }

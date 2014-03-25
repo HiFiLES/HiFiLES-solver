@@ -636,6 +636,13 @@ void input::setup(ifstream& in_run_input_file, int rank)
         FatalError("Initial condition not supported with Advection-Diffusion equation");
     }
 
+  // Mesh Deformation-Related Options
+  if (motion)
+  {
+    if (mesh_output_freq==-1)
+      mesh_output_freq = plot_freq;
+  }
+
   if(viscous)
     {
       if(ic_form == 0)  {

@@ -199,6 +199,7 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
           for(j=0;j<n_dims;j++)
             {
               norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
+              vel_fpts(j,i,in_inter)=get_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
             }
         }
 }
@@ -349,6 +350,13 @@ void mpi_inters::calc_norm_tconinvf_fpts_mpi(void)
               //}
             }
 
+          if (motion) {
+            for (int k=0; k<n_dims; k++)
+              temp_v(k)=(*vel_fpts(k,j,i));
+          }else{
+            temp_v.initialize_to_zero();
+          }
+
           // storing normal components
           for (int m=0;m<n_dims;m++)
             norm(m) = *norm_fpts(j,i,m);
@@ -359,23 +367,31 @@ void mpi_inters::calc_norm_tconinvf_fpts_mpi(void)
               if(n_dims==2) {
                   calc_invf_2d(temp_u_l,temp_f_l);
                   calc_invf_2d(temp_u_r,temp_f_r);
+                  if (motion) {
+                    calc_alef_2d(temp_u_l,temp_v,temp_f_l);
+                    calc_alef_2d(temp_u_r,temp_v,temp_f_r);
+                  }
                 }
               else if(n_dims==3) {
                   calc_invf_3d(temp_u_l,temp_f_l);
                   calc_invf_3d(temp_u_r,temp_f_r);
+                  if (motion) {
+                    calc_alef_3d(temp_u_l,temp_v,temp_f_l);
+                    calc_alef_3d(temp_u_r,temp_v,temp_f_r);
+                  }
                 }
               else
                 FatalError("ERROR: Invalid number of dimensions ... ");
 
               // Calling Riemann solver
-              rusanov_flux(temp_u_l,temp_u_r,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.gamma);
+              rusanov_flux(temp_u_l,temp_u_r,temp_v,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.gamma);
             }
           else if (run_input.riemann_solve_type==1)
             {
               lax_friedrich(temp_u_l,temp_u_r,norm,fn,n_dims,n_fields,run_input.lambda,run_input.wave_speed);
             }
           else if (run_input.riemann_solve_type==2) { // ROE
-              roe_flux(temp_u_l,temp_u_r,norm,fn,n_dims,n_fields,run_input.gamma);
+              roe_flux(temp_u_l,temp_u_r,temp_v,norm,fn,n_dims,n_fields,run_input.gamma);
             }
           else
             FatalError("Riemann solver not implemented");

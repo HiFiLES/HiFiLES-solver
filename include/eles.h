@@ -454,9 +454,14 @@ public:
   /*! Get pointer to grid velocity at a flux point */
   double *get_vel_fpts_ptr(int in_ele, int in_ele_local_inter, int in_inter_local_fpt, int in_dim);
 
+  /*! Set new position of shape node */
+  void set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos);
+
 protected:
 
   // #### members ####
+  /// **NEW** flag to avoid re-setting-up transform arrays
+  bool first_time;
 
   /*! viscous flag */
   int viscous;

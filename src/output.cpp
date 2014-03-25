@@ -499,6 +499,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! Solution data at plot points */
   array<double> disu_ppts_temp;
 
+  /*! Grid velocity at plot points */
+  array<double> grid_vel_ppts_temp;
+
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
 

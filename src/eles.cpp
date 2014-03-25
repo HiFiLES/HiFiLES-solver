@@ -70,7 +70,7 @@ eles::~eles() {}
 
 void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 {
-
+  first_time = true;
   n_eles=in_n_eles;
 
   if (n_eles!=0)
@@ -2933,6 +2933,7 @@ int eles::get_n_upts_per_ele(void)
 void eles::set_shape(int in_max_n_spts_per_ele)
 {
   shape.setup(n_dims,in_max_n_spts_per_ele,n_eles);
+  shape_dyn.setup(n_dims,in_max_n_spts_per_ele,n_eles);
   n_spts_per_ele.setup(n_eles);
 }
 
@@ -2943,6 +2944,14 @@ void eles::set_shape_node(int in_spt, int in_ele, array<double>& in_pos)
   for(int i=0;i<n_dims;i++)
     {
       shape(i,in_spt,in_ele)=in_pos(i);
+      shape_dyn(i,in_spt,in_ele)=in_pos(i); // initial dynamic mesh position
+    }
+}
+
+void eles::set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos)
+{
+    for(int i=0;i<n_dims;i++) {
+        shape_dyn(i,in_spt,in_ele)=in_pos(i);
     }
 }
 

@@ -89,6 +89,8 @@ void mesh::move(int _iter, int time_level, solution *FlowSol) {
     rigid_move(FlowSol);
   }else if (run_input.motion == 3) {
     perturb(FlowSol);
+  }else{
+    // Do Nothing
   }
 }
 
@@ -356,6 +358,7 @@ bool mesh::set_2D_StiffMat_ele_tri(array<double> &stiffMat_ele, int ele_id)
     D_Matrix[2][0] = 0.0;               D_Matrix[2][1] = 0.0;               D_Matrix[2][2] = Mu;
 
     /*--- Compute the BT.D Matrix ---*/
+    /// IMPLEMENT BLAS?
     for (iVar = 0; iVar < 6; iVar++) {
       for (jVar = 0; jVar < 3; jVar++) {
         Aux_Matrix[iVar][jVar] = 0.0;
@@ -365,6 +368,7 @@ bool mesh::set_2D_StiffMat_ele_tri(array<double> &stiffMat_ele, int ele_id)
     }
 
     /*--- Compute the BT.D.B Matrix (stiffness matrix) ---*/
+    /// IMPLEMENT BLAS?
     for (iVar = 0; iVar < 6; iVar++) {
       for (jVar = 0; jVar < 6; jVar++) {
         stiffMat_ele(iVar,jVar) = 0.0;
@@ -472,7 +476,7 @@ void mesh::update(solution* FlowSol)
   //if (FlowSol->rank==0) cout << "Deform: updating element transforms ... " << endl;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->set_transforms(run_input.run_type);
+      FlowSol->mesh_eles(i)->set_transforms();
     }
   }
 

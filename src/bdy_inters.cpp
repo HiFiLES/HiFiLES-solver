@@ -135,7 +135,7 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
           for(int k=0;k<n_dims;k++)
             {
               norm_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
-              vel_fpts(j,i,in_inter)=get_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
+              vel_fpts(k,j,in_inter)=get_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 #ifdef _CPU
               loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 #endif
@@ -232,7 +232,7 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound) {
           // get grid velocity at flux point (or set to 0)
           if (motion) {
               for(int k=0; k<n_dims; k++)
-                  temp_v(k)=(*vel_fpts_l(k,j,i));
+                  temp_v(k)=(*vel_fpts(k,j,i));
           }else{
               temp_v.initialize_to_zero();
           }
@@ -317,7 +317,7 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound) {
 #endif
 }
 
-void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* u_r, double *norm, double *loc, double *bdy_params, int n_dims, int n_fields, double gamma, double R_ref, double time_bound, int equation)
+void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* u_r, double* v_g, double *norm, double *loc, double *bdy_params, int n_dims, int n_fields, double gamma, double R_ref, double time_bound, int equation)
 {
   double rho_l, rho_r;
   double v_l[n_dims], v_r[n_dims];
@@ -553,7 +553,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           // Compute normal velocity on left side
           vn_l = 0.;
           for (int i=0; i<n_dims; i++)
-            vn_l += v_l[i]*norm[i];
+            vn_l += (v_l[i]-v_g[i])*norm[i];
 
           // reflect normal velocity
           for (int i=0; i<n_dims; i++)
@@ -578,12 +578,13 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // no-slip
           for (int i=0; i<n_dims; i++)
-            v_r[i] = 0.;
+            v_r[i] = v_g[i];
 
           // energy
           v_sq = 0.;
-
-          e_r = (p_r/(gamma-1.0));// + 0.5*rho_r*v_sq;
+          for (int i=0; i<n_dims; i++)
+            v_sq += (v_r[i]*v_r[i]);
+          e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
         }
 
       // Adiabatic, no-slip wall (fixed)
@@ -597,12 +598,13 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // no-slip
           for (int i=0; i<n_dims; i++)
-            v_r[i] = 0.;
+            v_r[i] = v_g[i];
 
           // energy
           v_sq = 0.;
-
-          e_r = (p_r/(gamma-1.0));// + 0.5*rho_r*v_sq;
+          for (int i=0; i<n_dims; i++)
+            v_sq += (v_r[i]*v_r[i]);
+          e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
 
         }
 
@@ -620,7 +622,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // no-slip
           for (int i=0; i<n_dims; i++)
-            v_r[i] = v_wall[i];
+            v_r[i] = v_wall[i] + v_g[i];
 
           // energy
           v_sq = 0.;
@@ -641,7 +643,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // no-slip
           for (int i=0; i<n_dims; i++)
-            v_r[i] = v_wall[i];
+            v_r[i] = v_wall[i] + v_g[i];
 
           // energy
           v_sq = 0.;
@@ -807,6 +809,14 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
               temp_loc(m) = *loc_fpts(j,i,m);
             }
 
+          // get grid velocity at flux point (or set to 0)
+          if (motion) {
+              for(int k=0; k<n_dims; k++)
+                  temp_v(k)=(*vel_fpts(k,j,i));
+          }else{
+              temp_v.initialize_to_zero();
+          }
+
           /*! obtain discontinuous solution at flux points */
           for(int k=0;k<n_fields;k++)
             temp_u_l(k)=(*disu_fpts_l(j,i,k));
@@ -814,7 +824,7 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
           for (int m=0;m<n_dims;m++)
 
 
-            set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
+            set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),temp_v.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 
           /*! obtain gradient of discontinuous solution at flux points */
           for(int k=0;k<n_dims;k++)

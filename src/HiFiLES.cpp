@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
   clock_t init_time, final_time;                /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
   ofstream write_hist;                /*!< Output files (forces, statistics, and history) */
+  mesh Mesh;                          /*!< Store mesh details & perform mesh motion */
   
   /*! Check the command line input. */
   
@@ -81,7 +82,7 @@ int main(int argc, char *argv[]) {
   
   /*! Read the mesh file from a file. */
   
-  GeoPreprocess(&FlowSol);
+  GeoPreprocess(&FlowSol, Mesh);
   
   InitSolution(&FlowSol);
   
@@ -149,12 +150,13 @@ int main(int argc, char *argv[]) {
     
     for(i=0; i < RKSteps; i++) {
       
-      /*! Spatial integration. */
+      // Update the mesh
+      Mesh.move(i_steps,i,&FlowSol);
 
+      /*! Spatial integration. */
       CalcResidual(&FlowSol);
       
       /*! Time integration usign a RK scheme */
-      
       for(j=0; j<FlowSol.n_ele_types; j++) {
         
         FlowSol.mesh_eles(j)->AdvanceSolution(i, FlowSol.adv_type);
@@ -205,6 +207,11 @@ int main(int argc, char *argv[]) {
     
     if(i_steps%FlowSol.restart_dump_freq==0) {
       write_restart(FlowSol.ini_iter+i_steps, &FlowSol);
+    }
+
+    /*! Dump mesh file. */
+    if (run_input.motion!=0 && i_steps%run_input.mesh_output_freq==0) {
+      Mesh.write_mesh(run_input.mesh_output_format,FlowSol.time);
     }
     
   }
