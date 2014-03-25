@@ -263,6 +263,11 @@ double* get_normal_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter
   return FlowSol->mesh_eles(in_ele_type)->get_normal_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele, temp_loc, temp_pos);
 }
 
+// get pointer to the grid velocity at a flux point
+double* get_vel_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_vel_fpts_ptr(in_ele,in_local_inter,in_fpt,in_dim);
+}
 
 void InitSolution(struct solution* FlowSol)
 {

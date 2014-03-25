@@ -640,6 +640,10 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           /*! Temporary solution array at plot points */
           disu_ppts_temp.setup(n_points,n_fields);
 
+          /*! Temporary grid velocity array at plot points */
+          FlowSol->mesh_eles(i)->set_grid_vel_ppts();
+          grid_vel_ppts_temp = FlowSol->mesh_eles(i)->get_grid_vel_ppts();
+
           con.setup(n_verts,n_cells);
           con = FlowSol->mesh_eles(i)->get_connectivity_plot();
 
@@ -681,6 +685,26 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                       write_vtu << disu_ppts_temp(k,3)/disu_ppts_temp(k,0) << " ";
                     }
                 }
+              write_vtu << endl;
+              write_vtu << "				</DataArray>" << endl;
+
+              /*! grid velocity */
+              write_vtu << "				<DataArray type= \"Float32\" NumberOfComponents=\"3\" Name=\"GridVelocity\" format=\"ascii\">" << endl;
+              for(k=0;k<n_points;k++)
+              {
+                write_vtu << grid_vel_ppts_temp(0,k,j) << " " << grid_vel_ppts_temp(1,k,j) << " ";
+
+                /*! In 2D the z-component of velocity is not stored, but Paraview needs it so write a 0. */
+                if(n_fields==4)
+                {
+                  write_vtu << 0.0 << " ";
+                }
+                /*! In 3D just write the z-component of velocity */
+                else
+                {
+                  write_vtu << grid_vel_ppts_temp(2,k,j) << " ";
+                }
+              }
               write_vtu << endl;
               write_vtu << "				</DataArray>" << endl;
 

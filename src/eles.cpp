@@ -1035,47 +1035,57 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
 void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 {
   if (n_eles!=0)
-    {
+  {
 
 #ifdef _CPU
 
-      int i,j,k,l,m;
+    int i,j,k,l,m;
 
-      for(i=0;i<n_eles;i++)
+    for(i=0;i<n_eles;i++)
+    {
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        for(k=0;k<n_fields;k++)
         {
-          for(j=0;j<n_upts_per_ele;j++)
-            {
-              for(k=0;k<n_fields;k++)
-                {
-                  temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
-                }
-
-              if(n_dims==2)
-                {
-                  calc_invf_2d(temp_u,temp_f);
-                }
-              else if(n_dims==3)
-                {
-                  calc_invf_3d(temp_u,temp_f);
-                }
-              else
-                {
-                  cout << "ERROR: Invalid number of dimensions ... " << endl;
-                }
-
-              for(k=0;k<n_fields;k++)
-                {
-                  for(l=0;l<n_dims;l++)
-                    {
-                      tdisf_upts(j,i,k,l)=0.;
-                      for(m=0;m<n_dims;m++)
-                        {
-                          tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_f(k,m);
-                        }
-                    }
-                }
-            }
+          temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
         }
+
+        if (motion) {
+          for (k=0; k<n_dims; k++) {
+            temp_v(k) = vel_upts(k,j,i);
+          }
+        }else{
+          temp_v.initialize_to_zero();
+        }
+
+        if(n_dims==2)
+        {
+          calc_invf_2d(temp_u,temp_f);
+          if (motion) calc_alef_2d(temp_u, temp_v, temp_f);
+        }
+        else if(n_dims==3)
+        {
+          calc_invf_3d(temp_u,temp_f);
+          if (motion) calc_alef_3d(temp_u, temp_v, temp_f);
+        }
+        else
+        {
+          cout << "ERROR: Invalid number of dimensions ... " << endl;
+        }
+
+        for(k=0;k<n_fields;k++)
+        {
+          for(l=0;l<n_dims;l++)
+          {
+            tdisf_upts(j,i,k,l)=0.;
+            for(m=0;m<n_dims;m++)
+            {
+              tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_f(k,m);
+            }
+          }
+        }
+      }
+    }
 
 #endif
 

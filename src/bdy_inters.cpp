@@ -43,6 +43,7 @@ bdy_inters::bdy_inters()
   order=run_input.order;
   viscous=run_input.viscous;
   LES=run_input.LES;
+  motion=run_input.motion;
 }
 
 bdy_inters::~bdy_inters() { }
@@ -228,16 +229,32 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound) {
           for (int m=0;m<n_dims;m++)
             temp_loc(m) = *loc_fpts(j,i,m);
 
-          set_inv_boundary_conditions(boundary_type(i),temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
+          // get grid velocity at flux point (or set to 0)
+          if (motion) {
+              for(int k=0; k<n_dims; k++)
+                  temp_v(k)=(*vel_fpts_l(k,j,i));
+          }else{
+              temp_v.initialize_to_zero();
+          }
+
+          set_inv_boundary_conditions(boundary_type(i),temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),temp_v.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 
           /*! calculate flux from discontinuous solution at flux points */
           if(n_dims==2) {
               calc_invf_2d(temp_u_l,temp_f_l);
               calc_invf_2d(temp_u_r,temp_f_r);
+              if(motion) {
+                  calc_alef_2d(temp_u_l,temp_v,temp_f_l);
+                  calc_alef_2d(temp_u_r,temp_v,temp_f_r);
+              }
             }
           else if(n_dims==3) {
               calc_invf_3d(temp_u_l,temp_f_l);
               calc_invf_3d(temp_u_r,temp_f_r);
+              if(motion) {
+                  calc_alef_3d(temp_u_l,temp_v,temp_f_l);
+                  calc_alef_3d(temp_u_r,temp_v,temp_f_r);
+              }
             }
           else
             FatalError("ERROR: Invalid number of dimensions ... ");
@@ -258,7 +275,7 @@ void bdy_inters::calc_norm_tconinvf_fpts_boundary(double time_bound) {
                   lax_friedrich(temp_u_l,temp_u_r,norm,fn,n_dims,n_fields,run_input.lambda,run_input.wave_speed);
                 }
               else if (run_input.riemann_solve_type==2) { // ROE
-                  roe_flux(temp_u_l,temp_u_r,norm,fn,n_dims,n_fields,run_input.gamma);
+                  roe_flux(temp_u_l,temp_u_r,temp_v,norm,fn,n_dims,n_fields,run_input.gamma);
                 }
               else
                 FatalError("Riemann solver not implemented");

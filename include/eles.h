@@ -473,6 +473,9 @@ protected:
   /*! near-wall model */
   int wall_model;
 
+  /*! mesh motion flag */
+  int motion;
+
   /*! number of elements */
   int n_eles;
 
