@@ -157,7 +157,6 @@ int main(int argc, char *argv[]) {
 
       /*! Time integration not implemented. */
       else { cout << "ERROR: Time integration type not recognised ... " << endl; }
-
       /*! Update total time. */
       FlowSol.time += run_input.dt;
 

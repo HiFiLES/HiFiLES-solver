@@ -128,8 +128,8 @@ void CalcResidual(struct solution* FlowSol) {
         }
 #endif
 
+    if(run_input.ArtifOn){
 #ifdef _GPU
-
       /*! Compute element-wise artificial viscosity co-efficients */
       for(i=0;i<FlowSol->n_ele_types;i++)
         FlowSol->mesh_eles(i)->calc_artivisc_coeff(in_disu_upts_from, FlowSol->epsilon_global_eles.get_ptr_gpu());
@@ -142,6 +142,7 @@ void CalcResidual(struct solution* FlowSol) {
         FlowSol->mesh_eles(i)->calc_artivisc_coeff_upts_fpts(FlowSol->epsilon_verts.get_ptr_gpu(), FlowSol->ele2vert.get_ptr_gpu(), FlowSol->num_eles);
 
 #endif
+    }
 
       /*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
       for(i=0; i<FlowSol->n_ele_types; i++)

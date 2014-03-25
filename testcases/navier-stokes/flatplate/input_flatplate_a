@@ -53,7 +53,7 @@ Monitoring, plotting parameters
 p_res                             // Plotting resolution, number of nodes per direction
 6
 write_type                        // 0: Paraview, 1: Tecplot
-1
+0
 n_plot_quantities
 7 rho u v w energy pressure mach
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
@@ -218,3 +218,18 @@ w_bound
 0.0
 p_bound 
 17.857142857142854098
+---------------------------------
+Artificial Viscosity Parameters
+---------------------------------
+ArtifOn				  // To swtich artificial viscosity on or off
+0
+artif_only			  // To run inviscid case with artificial viscosity (mu = 0), set this to 1
+0
+epsilon0                          // Set this to 0 if you don't want artificial viscosity at all
+-0.01
+s0
+-2
+kappa
+1
+turb_model
+0

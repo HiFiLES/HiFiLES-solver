@@ -1362,6 +1362,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 
   /*! Close the .vtu file */
   write_vtu.close();
+
 }
 
 
