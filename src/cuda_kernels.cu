@@ -1549,6 +1549,55 @@ __device__ __host__ void rusanov_flux(double* q_l, double *q_r, double *norm, do
     }
 }
 
+template<int in_n_fields, int in_n_dims>
+__device__ __host__ void convective_flux_boundary(double* q_l, double *q_r, double *norm, double *fn, double in_gamma)
+{
+  double vn_l, vn_r;
+  double vn_av_mag, c_av;
+  double p_l, p_r,f_l,f_r;
+
+  double f[in_n_dims];
+
+  // Compute normal velocity
+  vn_l = 0.;
+  vn_r = 0.;
+#pragma unroll
+  for (int i=0;i<in_n_dims;i++) {
+      vn_l += q_l[i+1]/q_l[0]*norm[i];
+      vn_r += q_r[i+1]/q_r[0]*norm[i];
+    }
+
+  // Flux prep
+  inv_NS_flux<in_n_dims>(q_l,&p_l,f,in_gamma,-1);
+  inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,-1);
+
+  vn_av_mag=sqrt(0.25*(vn_l+vn_r)*(vn_l+vn_r));
+  c_av=sqrt((in_gamma*(p_l+p_r))/(q_l[0]+q_r[0]));
+
+#pragma unroll
+  for (int i=0;i<in_n_fields;i++)
+    {
+      // Left normal flux
+      inv_NS_flux<in_n_dims>(q_l,&p_l,f,in_gamma,i);
+
+      f_l = f[0]*norm[0] + f[1]*norm[1];
+      if(in_n_dims==3)
+        f_l += f[2]*norm[2];
+
+      // Right normal flux
+      inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,i);
+
+      f_r = f[0]*norm[0] + f[1]*norm[1];
+      if(in_n_dims==3)
+        f_r += f[2]*norm[2];
+
+      // Common normal flux
+      //fn[i] = 0.5*(f_l+f_r) - 0.5*(vn_av_mag+c_av)*(q_r[i]-q_l[i]);
+      fn[i] = 0.5*(f_l+f_r);  // Taking a purely convective flux without diffusive terms
+    }
+}
+
+
 
 template<int in_n_fields, int in_n_dims>
 __device__ __host__ void right_flux(double *q_r, double *norm, double *fn, double in_gamma)
@@ -1792,13 +1841,13 @@ __device__ void ldg_solution(double* q_l, double* q_r, double* norm, double* q_c
     {
 #pragma unroll
       for (int i=0;i<n_fields;i++)
-        q_c[i] = q_r[i];
+        q_c[i] = 0.5*(q_r[i] + q_l[i]);
     }
   else if(flux_spec==2) // von Neumann
     {
 #pragma unroll
       for (int i=0;i<n_fields;i++)
-        q_c[i] = q_l[i];
+        q_c[i] = 0.5*(q_l[i] + q_r[i]);
     }
 }
 
@@ -1839,7 +1888,7 @@ __device__ __host__ void ldg_flux(double q_l, double q_r, double* f_l, double* f
     {
 #pragma unroll
       for (int i=0;i<in_n_dims;i++)
-        f_c[i] = f_r[i];
+        f_c[i] = f_r[i] + in_tau*norm[i]*(q_l - q_r); // Adding penalty factor term for this as well
     }
 }
 
@@ -2227,9 +2276,9 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
         }
       else // Call Riemann solver
         {
-          if (in_riemann_solve_type==0) //Rusanov
-            rusanov_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
-          else if (in_riemann_solve_type==1) // Lax-Friedrich
+          if (in_riemann_solve_type==0)
+            convective_flux_boundary<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
+          else if (in_riemann_solve_type==1)
             lax_friedrichs_flux<in_n_dims> (q_l,q_r,norm,fn,in_wave_speed_x,in_wave_speed_y,in_wave_speed_z,in_lambda);
           else if (in_riemann_solve_type==2) // ROE
             roe_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
