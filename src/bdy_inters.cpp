@@ -136,7 +136,7 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
           for(int k=0;k<n_dims;k++)
             {
               norm_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
-
+              vel_fpts(j,i,in_inter)=get_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
 #ifdef _CPU
               loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 #endif

@@ -101,6 +101,14 @@ public:
 
   int ic_form;
 
+  // Mesh deformation options ----
+  int n_moving_bnds, motion;
+  int n_deform_iters;
+  int mesh_output_freq;
+  int mesh_output_format;
+  array<string> boundary_flags;
+  array<double> bound_vel_simple;
+  // -----------------------------
 
   // boundary_conditions
   double rho_bound;

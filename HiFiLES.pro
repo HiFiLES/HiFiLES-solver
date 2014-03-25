@@ -31,7 +31,14 @@ SOURCES += \
     $$SRC_DIR/cubature_quad.cpp \
     $$SRC_DIR/cubature_hexa.cpp \
     $$SRC_DIR/cubature_1d.cpp \
-    $$SRC_DIR/bdy_inters.cpp
+    $$SRC_DIR/bdy_inters.cpp \
+    src/vector_structure.cpp \
+    src/mesh.cpp \
+    src/matrix_structure.cpp \
+    src/linear_solvers_structure.cpp \
+    include/vector_structure.inl \
+    include/matrix_structure.inl \
+    include/linear_solvers_structure.inl
 
 HEADERS += \
     $$INCLUDE_DIR/util.h \
@@ -64,6 +71,10 @@ HEADERS += \
     $$INCLUDE_DIR/cubature_1d.h \
     $$INCLUDE_DIR/bdy_inters.h \
     $$INCLUDE_DIR/array.h \
+    include/vector_structure.hpp \
+    include/matrix_structure.hpp \
+    include/linear_solvers_structure.hpp \
+    include/mesh.h
 
 OTHER_FILES += \
     $$DATA_DIR/loc_tri_inter_pts.dat \

@@ -43,10 +43,10 @@ public:
   void right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Rusanov flux */
-  void rusanov_flux(array<double> &q_l, array<double> &q_r, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
+  void rusanov_flux(array<double> &q_l, array<double> &q_r, array<double> &f_l, array<double> &f_r, array<double> v_g, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Roe flux */
-  void roe_flux(array<double> &q_l, array<double> &q_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
+  void roe_flux(array<double> &q_l, array<double> &q_r, array<double> v_g, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Lax-Friedrich flux (works only for wave equation) */
   void lax_friedrich(array<double> &u_l, array<double> &u_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double lambda, array<double>& wave_speed);
@@ -77,6 +77,7 @@ protected:
   int n_fpts_per_inter;
   int n_fields;
   int n_dims;
+  int motion;
 
   array<double*> disu_fpts_l;
   array<double*> delta_disu_fpts_l;
@@ -94,6 +95,10 @@ protected:
 
   array<double> temp_u_l;
   array<double> temp_u_r;
+
+  // Note: grid velocity is continuous across interfaces
+  array<double*> vel_fpts;
+  array<double> temp_v;
 
   array<double> temp_grad_u_l;
   array<double> temp_grad_u_r;

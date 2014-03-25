@@ -78,6 +78,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
 
       order=run_input.order;
       p_res=run_input.p_res;
+      motion = run_input.motion;
       viscous =run_input.viscous;
       LES = run_input.LES;
       sgs_model = run_input.SGS_model;
@@ -225,9 +226,27 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
         temp_sgsf.setup(n_fields,n_dims);
       }
 
+      temp_v.setup(n_dims);
+      temp_v.initialize_to_zero();
+
+      int n_comp;
+      if(n_dims == 2)
+          n_comp = 3;
+      else if(n_dims == 3)
+          n_comp = 6;
+
       set_shape(in_max_n_spts_per_ele);
       ele2global_ele.setup(n_eles);
       bctype.setup(n_eles,n_inters_per_ele);
+
+      // TODO: reduce unused allocation space (i.e. more spts alloc'd than needed)
+      nodal_s_basis_fpts.setup(in_max_n_spts_per_ele,n_fpts_per_ele,n_eles);
+      nodal_s_basis_upts.setup(in_max_n_spts_per_ele,n_upts_per_ele,n_eles);
+      nodal_s_basis_ppts.setup(in_max_n_spts_per_ele,n_ppts_per_ele,n_eles);
+      d_nodal_s_basis_fpts.setup(n_dims,in_max_n_spts_per_ele,n_fpts_per_ele,n_eles);
+      d_nodal_s_basis_upts.setup(n_dims,in_max_n_spts_per_ele,n_upts_per_ele,n_eles);
+      dd_nodal_s_basis_fpts.setup(n_comp,in_max_n_spts_per_ele,n_fpts_per_ele,n_eles);
+      dd_nodal_s_basis_upts.setup(n_comp,in_max_n_spts_per_ele,n_upts_per_ele,n_eles);
 
       // for mkl sparse blas
       matdescra[0]='G';
@@ -3791,24 +3810,22 @@ void eles::set_transforms(int in_run_type)
       double yrr, yss, ytt, yrs, yrt, yst;
       double zrr, zss, ztt, zrs, zrt, zst;
 
-      detjac_upts.setup(n_upts_per_ele,n_eles);
-      inv_detjac_mul_jac_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
+      if (first_time) {
+          detjac_upts.setup(n_upts_per_ele,n_eles);
+          inv_detjac_mul_jac_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
 
-      if (in_run_type==0) {
-
-          if (viscous) {
+          if (in_run_type==0 && viscous) {
               tgrad_detjac_upts.setup(n_upts_per_ele,n_eles,n_dims);
-            }
-        }
+          }
+      }
 
-      if (rank==0) {
+      if (rank==0 && first_time) {
           cout << " at solution points" << endl;
-        }
+      }
 
-      for(i=0;i<n_eles;i++)
-        {
-          if ((i%1000)==0 && rank==0)
-            cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
+      for(i=0;i<n_eles;i++) {
+        if ((i%1000)==0 && rank==0 && first_time)
+          cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
           for(j=0;j<n_upts_per_ele;j++)
             {
@@ -3820,11 +3837,20 @@ void eles::set_transforms(int in_run_type)
                 }
 
               // calculate first derivatives of shape functions at the solution point
-              calc_d_pos(loc,i,d_pos);
+              if (motion) {
+                  calc_d_pos_dyn_upt(j,i,d_pos);
+              }else{
+                  calc_d_pos(loc,i,d_pos);
+              }
 
               // calculate second derivatives of shape functions at the solution point
-              if (viscous && in_run_type==0)
-                calc_dd_pos(loc,i,dd_pos);
+              if (viscous && in_run_type==0) {
+                  if (motion) {
+                      calc_dd_pos_dyn_upt(j,i,dd_pos);
+                  }else{
+                      calc_dd_pos(loc,i,dd_pos);
+                  }
+              }
 
               // store quantities at the solution point
 
@@ -3961,25 +3987,25 @@ void eles::set_transforms(int in_run_type)
 #endif
 
       if (in_run_type==0) // Compute metrics term at flux points
-        {
+      {
+        if (first_time) {
           detjac_fpts.setup(n_fpts_per_ele,n_eles);
           inv_detjac_mul_jac_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
           mag_tnorm_dot_inv_detjac_mul_jac_fpts.setup(n_fpts_per_ele,n_eles);
           norm_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
           loc_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
 
-          if (viscous)
-            {
-              tgrad_detjac_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-            }
+          if (viscous) {
+            tgrad_detjac_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+          }
+        }
 
-          if (rank==0)
-            cout << endl << " at flux points"  << endl;
+        if (rank==0 && first_time)
+          cout << endl << " at flux points"  << endl;
 
-          for(i=0;i<n_eles;i++)
-            {
-              if ((i%1000)==0 && rank==0)
-                cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
+        for(i=0;i<n_eles;i++) {
+          if ((i%1000)==0 && rank==0 && first_time)
+            cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
               for(j=0;j<n_fpts_per_ele;j++)
                 {
@@ -3990,7 +4016,11 @@ void eles::set_transforms(int in_run_type)
                       loc(k)=tloc_fpts(k,j);
                     }
 
-                  calc_pos(loc,i,pos);
+                  if (motion) {
+                      calc_pos_dyn_fpt(j,i,pos);
+                  }else{
+                      calc_pos(loc,i,pos);
+                  }
 
                   for(k=0;k<n_dims;k++)
                     {
@@ -3998,13 +4028,20 @@ void eles::set_transforms(int in_run_type)
                     }
 
                   // calculate first derivatives of shape functions at the flux points
-
-                  calc_d_pos(loc,i,d_pos);
+                  if (motion) {
+                      calc_d_pos_dyn_fpt(j,i,d_pos);
+                  }else{
+                      calc_d_pos(loc,i,d_pos);
+                  }
 
                   // calculate second derivatives of shape functions at the flux point
-
-                  if(viscous)
-                    calc_dd_pos(loc,i,dd_pos);
+                  if(viscous) {
+                      if (motion) {
+                          calc_dd_pos_dyn_fpt(j,i,dd_pos);
+                      }else{
+                          calc_dd_pos(loc,i,dd_pos);
+                      }
+                  }
 
                   // store quantities at the flux point
 
@@ -4170,7 +4207,10 @@ void eles::set_transforms(int in_run_type)
 
         }
 
-      if (rank==0) cout << endl;
+      if (rank==0 && first_time) cout << endl;
+
+      // To avoid re-setting up ALL transform arrays in the future (for dynamic grids)
+      first_time = false;
     } // if n_eles!=0
 }
 
@@ -4924,10 +4964,29 @@ double* eles::get_sgsf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
 #endif
 }
 
+double* eles::get_vel_fpts_ptr(int in_ele, int in_ele_local_inter, int in_inter_local_fpt, int in_dim)
+{
+    int i;
+
+    int fpt;
+
+    fpt=in_inter_local_fpt;
+
+    for(i=0;i<in_ele_local_inter;i++)
+    {
+        fpt+=n_fpts_per_inter(i);
+    }
+
+#ifdef _GPU
+    return vel_fpts.get_ptr_gpu(in_dim,fpt,in_ele);
+#else
+    return vel_fpts.get_ptr_cpu(in_dim,fpt,in_ele);
+#endif
+}
+
 //#### helper methods ####
 
-// calculate position
-
+/** calculate physical position of point in an element (r,s,t -> x,y,z) */
 void eles::calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos)
 {
   int i,j;
@@ -4944,8 +5003,48 @@ void eles::calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos)
 
 }
 
-// calculate derivative of position - NEEDS TO BE OPTIMIZED
+/** find the position of a point within the element (r,s,t -> xd,yd,zd) (using positions in dynamic grid) */
+void eles::calc_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_pos)
+{
+    int i,j;
 
+    for(i=0;i<n_dims;i++) {
+        out_pos(i)=0.0;
+
+        for(j=0;j<n_spts_per_ele(in_ele);j++) {
+            out_pos(i)+=eval_nodal_s_basis(j,in_loc,n_spts_per_ele(in_ele))*shape_dyn(i,j,in_ele);
+        }
+    }
+}
+
+/** find the physical position of a flux point within the element (using positions in dynamic grid) */
+void eles::calc_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_pos)
+{
+    int i,j;
+
+    out_pos.initialize_to_zero();
+    for(i=0;i<n_dims;i++) {
+        for(j=0;j<n_spts_per_ele(in_ele);j++) {
+            out_pos(i)+=nodal_s_basis_fpts(j,in_fpt,in_ele)*shape_dyn(i,j,in_ele);
+        }
+    }
+}
+
+/** find the physical position of a solution point within the element (using positions in dynamic grid) */
+void eles::calc_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_pos)
+{
+    int i,j;
+
+    out_pos.initialize_to_zero();
+    for(i=0;i<n_dims;i++) {
+        for(j=0;j<n_spts_per_ele(in_ele);j++) {
+            out_pos(i)+=nodal_s_basis_fpts(j,in_upt,in_ele)*shape_dyn(i,j,in_ele);
+        }
+    }
+}
+
+// calculate derivative of position - NEEDS TO BE OPTIMIZED
+/** Calculate derivative of position in computational space (dx/dr, dx/ds, etc.) */
 void eles::calc_d_pos(array<double> in_loc, int in_ele, array<double>& out_d_pos)
 {
   int i,j,k;
@@ -4961,6 +5060,74 @@ void eles::calc_d_pos(array<double> in_loc, int in_ele, array<double>& out_d_pos
             {
               //out_d_pos(j,k)+=eval_d_nodal_s_basis(i,k,in_loc,n_spts_per_ele(in_ele))*shape(j,i,in_ele);
               out_d_pos(j,k)+=d_nodal_s_basis(i,k)*shape(j,i,in_ele);
+            }
+        }
+    }
+}
+
+/**
+ * Calculate derivative of dynamic position wrt reference (initial,static) position
+ * \param[in] in_loc - position of point in computational space
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ */
+void eles::calc_d_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_d_pos)
+{
+    int i,j,k;
+
+    eval_d_nodal_s_basis(d_nodal_s_basis,in_loc,n_spts_per_ele(in_ele));
+
+    // Calculate dx/d<c>
+    out_d_pos.initialize_to_zero();
+    for(j=0;j<n_dims;j++) {
+        for(k=0;k<n_dims;k++) {
+            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+                out_d_pos(j,k)+=d_nodal_s_basis(i,k)*shape_dyn(j,i,in_ele);
+            }
+        }
+    }
+}
+
+/**
+ * Calculate derivative of dynamic position wrt reference (initial,static) position at fpt
+ * Uses pre-computed nodal shape basis derivatives for efficiency
+ * \param[in] in_fpt - ID of flux point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ */
+void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
+{
+    int i,j,k;
+    //array<double> d_pos_ref(n_dims,n_dims); ///< derivative of ref. pos. wrt compuational space vars
+
+    // Calculate dx/d<c>
+    out_d_pos.initialize_to_zero();
+    for(j=0;j<n_dims;j++) {
+        for(k=0;k<n_dims;k++) {
+            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+                out_d_pos(j,k)+=d_nodal_s_basis_fpts(k,i,in_fpt,in_ele)*shape_dyn(j,i,in_ele);
+            }
+        }
+    }
+}
+
+/**
+ * Calculate derivative of dynamic position wrt reference (initial,static) position at upt
+ * Uses pre-computed nodal shape basis derivatives for efficiency
+ * \param[in] in_fpt - ID of solution point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ */
+void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
+{
+    int i,j,k;
+
+    // Calculate dx/d<c>
+    out_d_pos.initialize_to_zero();
+    for(j=0;j<n_dims;j++) {
+        for(k=0;k<n_dims;k++) {
+            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+                out_d_pos(j,k)+=d_nodal_s_basis_upts(k,i,in_upt,in_ele)*shape_dyn(j,i,in_ele);
             }
         }
     }
@@ -4989,6 +5156,92 @@ void eles::calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_p
           for(i=0;i<n_spts_per_ele(in_ele);i++)
             {
               out_dd_pos(j,k)+=dd_nodal_s_basis(i,k)*shape(j,i,in_ele);
+            }
+        }
+    }
+}
+
+/**
+ * Calculate 2nd derivative of dynamic position wrt computational domain at point
+ * \param[in] in_loc - location of point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dr_j
+ */
+void eles::calc_dd_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_dd_pos)
+{
+    int i,j,k;
+    int n_comp;
+
+    if(n_dims == 2)
+        n_comp = 3;
+    else if(n_dims == 3)
+        n_comp = 6;
+
+    eval_dd_nodal_s_basis(dd_nodal_s_basis,in_loc,n_spts_per_ele(in_ele));
+
+    for(j=0;j<n_dims;j++)
+    {
+        for(k=0;k<n_comp;k++)
+        {
+            out_dd_pos(j,k)=0.0;
+
+            for(i=0;i<n_spts_per_ele(in_ele);i++)
+            {
+                out_dd_pos(j,k)+=dd_nodal_s_basis(i,k)*shape_dyn(j,i,in_ele);
+            }
+        }
+    }
+}
+
+/**
+ * Calculate 2nd derivative of dynamic position wrt computational domain at fpt
+ * \param[in] in_fpt - ID of flux point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dr_j
+ */
+void eles::calc_dd_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_dd_pos)
+{
+    int i,j,k;
+    int n_comp;
+
+    if(n_dims == 2)
+        n_comp = 3;
+    else if(n_dims == 3)
+        n_comp = 6;
+
+    // Calculate dx/d<c>
+    out_dd_pos.initialize_to_zero();
+    for(j=0;j<n_dims;j++) {
+        for(k=0;k<n_comp;k++) {
+            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+                out_dd_pos(j,k)+=dd_nodal_s_basis_fpts(k,i,in_fpt,in_ele)*shape_dyn(j,i,in_ele);
+            }
+        }
+    }
+}
+
+/**
+ * Calculate 2nd derivative of dynamic position wrt computational domain at upt
+ * \param[in] in_fpt - ID of flux point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dr_j
+ */
+void eles::calc_dd_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_dd_pos)
+{
+    int i,j,k;
+    int n_comp;
+
+    if(n_dims == 2)
+        n_comp = 3;
+    else if(n_dims == 3)
+        n_comp = 6;
+
+    // Calculate dx/d<c>
+    out_dd_pos.initialize_to_zero();
+    for(j=0;j<n_dims;j++) {
+        for(k=0;k<n_comp;k++) {
+            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+                out_dd_pos(j,k)+=dd_nodal_s_basis_upts(k,i,in_upt,in_ele)*shape_dyn(j,i,in_ele);
             }
         }
     }
@@ -5719,3 +5972,238 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
     }
 }
 
+/*! Set the grid velocity at one shape point */
+void eles::set_grid_vel_spt(int in_ele, int in_spt, array<double> in_vel)
+{
+  for (int i=0; i<n_dims; i++)
+    vel_spts(in_ele)(in_spt,i) = in_vel(i);
+}
+
+void eles::store_nodal_s_basis_fpts(void)
+{
+  int ic,fpt,j,k;
+  array<double> loc(n_dims);
+  for (ic=0; ic<n_eles; ic++) {
+    for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
+      for(k=0;k<n_dims;k++) {
+        loc(k) = tloc_fpts(k,fpt);
+      }
+      for(j=0;j<n_spts_per_ele(ic);j++) {
+        nodal_s_basis_fpts(j,fpt,ic) = eval_nodal_s_basis(j,loc,n_spts_per_ele(ic));
+      }
+    }
+  }
+}
+
+void eles::store_nodal_s_basis_upts(void)
+{
+  int ic,upt,j,k;
+  array<double> loc(n_dims);
+  for (ic=0; ic<n_eles; ic++) {
+    for (upt=0; upt<n_upts_per_ele; upt++) {
+      for(k=0;k<n_dims;k++) {
+        loc(k) = loc_upts(k,upt);
+      }
+      for(j=0;j<n_spts_per_ele(ic);j++) {
+        nodal_s_basis_upts(j,upt,ic) = eval_nodal_s_basis(j,loc,n_spts_per_ele(ic));
+      }
+    }
+  }
+}
+
+void eles::store_nodal_s_basis_ppts(void)
+{
+  int ic,ppt,j,k;
+
+  array<double> loc(n_dims);
+  for(ic=0; ic<n_eles; ic++) {
+    for(ppt=0; ppt<n_ppts_per_ele; ppt++) {
+      for(k=0; k<n_dims; k++) {
+        loc(k)=loc_ppts(k,ppt);
+      }
+      for (j=0; j<n_spts_per_ele(ic); j++) {
+        nodal_s_basis_ppts(j,ppt,ic) = eval_nodal_s_basis(j,loc,n_spts_per_ele(ic));
+      }
+    }
+  }
+}
+
+
+void eles::store_d_nodal_s_basis_fpts(void)
+{
+  int ic,fpt,j,k;
+  array<double> loc(n_dims);
+  array<double> d_nodal_basis;
+
+  for (ic=0; ic<n_eles; ic++) {
+    for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
+      for(k=0;k<n_dims;k++) {
+        loc(k) = tloc_fpts(k,fpt);
+      }
+      d_nodal_basis.setup(n_spts_per_ele(ic),n_dims);
+      eval_d_nodal_s_basis(d_nodal_basis,loc,n_spts_per_ele(ic));
+      for (j=0; j<n_spts_per_ele(ic); j++) {
+        for (k=0; k<n_dims; k++) {
+          d_nodal_s_basis_fpts(k,j,fpt,ic) = d_nodal_basis(j,k);
+        }
+      }
+    }
+  }
+}
+
+
+void eles::store_d_nodal_s_basis_upts(void)
+{
+  int ic,upt,j,k;
+  array<double> loc(n_dims);
+  array<double> d_nodal_basis;
+
+  for (ic=0; ic<n_eles; ic++) {
+    for (upt=0; upt<n_upts_per_ele; upt++) {
+      for(k=0;k<n_dims;k++) {
+        loc(k) = loc_upts(k,upt);
+      }
+      d_nodal_basis.setup(n_spts_per_ele(ic),n_dims);
+      eval_d_nodal_s_basis(d_nodal_basis,loc,n_spts_per_ele(ic));
+      for (j=0; j<n_spts_per_ele(ic); j++) {
+        for (k=0; k<n_dims; k++) {
+          d_nodal_s_basis_upts(k,j,upt,ic) = d_nodal_basis(j,k);
+        }
+      }
+    }
+  }
+}
+
+void eles::store_dd_nodal_s_basis_fpts(void)
+{
+  int ic,fpt,j,k;
+  array<double> loc(n_dims);
+  array<double> dd_nodal_basis;
+
+  int n_comp;
+  if(n_dims == 2)
+    n_comp = 3;
+  else if(n_dims == 3)
+    n_comp = 6;
+
+  for (ic=0; ic<n_eles; ic++) {
+    for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
+      for(k=0;k<n_dims;k++) {
+        loc(k) = tloc_fpts(k,fpt);
+      }
+      dd_nodal_basis.setup(n_spts_per_ele(ic),n_comp);
+      eval_dd_nodal_s_basis(dd_nodal_basis,loc,n_spts_per_ele(ic));
+      for (j=0; j<n_spts_per_ele(ic); j++) {
+        for (k=0; k<n_comp; k++) {
+          dd_nodal_s_basis_fpts(k,j,fpt,ic) = dd_nodal_basis(j,k);
+        }
+      }
+    }
+  }
+}
+
+void eles::store_dd_nodal_s_basis_upts(void)
+{
+  int ic,upt,j,k;
+  array<double> loc(n_dims);
+  array<double> dd_nodal_basis;
+
+  int n_comp;
+  if(n_dims == 2)
+    n_comp = 3;
+  else if(n_dims == 3)
+    n_comp = 6;
+
+  for (ic=0; ic<n_eles; ic++) {
+    for (upt=0; upt<n_upts_per_ele; upt++) {
+      for(k=0;k<n_dims;k++) {
+        loc(k) = loc_upts(k,upt);
+      }
+      dd_nodal_basis.setup(n_spts_per_ele(ic),n_comp);
+      eval_dd_nodal_s_basis(dd_nodal_basis,loc,n_spts_per_ele(ic));
+      for (j=0; j<n_spts_per_ele(ic); j++) {
+        for (k=0; k<n_comp; k++) {
+          dd_nodal_s_basis_upts(k,j,upt,ic) = dd_nodal_basis(j,k);
+        }
+      }
+    }
+  }
+}
+
+void eles::initialize_grid_vel(void)
+{
+    /* --- Setup arrays --- */
+    // At solution & flux points
+    vel_fpts.setup(n_dims,n_fpts_per_ele,n_eles);
+    vel_fpts.initialize_to_zero();
+    vel_upts.setup(n_dims,n_upts_per_ele,n_eles);
+    vel_upts.initialize_to_zero();
+
+    // At output / plotting points
+    vel_ppts.setup(n_dims,n_ppts_per_ele,n_eles);
+    vel_ppts.initialize_to_zero();
+
+    // at shape points
+        vel_spts.setup(n_eles);
+        for (int i=0;i<n_eles; i++) {
+                vel_spts(i).setup(n_spts_per_ele(i),n_dims);
+        vel_spts(i).initialize_to_zero();
+        }
+}
+
+/*! Interpolate the grid velocity from shape points to flux points
+ *  TODO: Find a way to speed up with BLAS or something */
+void eles::set_grid_vel_fpts(void)
+{
+  int ic,fpt,j,k;
+  for (ic=0; ic<n_eles; ic++) {
+    for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
+      for(k=0;k<n_dims;k++) {
+        vel_fpts(k,fpt,ic) = 0.0;
+        for(j=0;j<n_spts_per_ele(ic);j++) {
+          vel_fpts(k,fpt,ic)+=nodal_s_basis_fpts(j,fpt,ic)*vel_spts(ic)(j,k);
+        }
+      }
+    }
+  }
+}
+
+/*! Interpolate the grid velocity from shape points to solution points
+ *  TODO: Find a way to speed up with BLAS or something */
+void eles::set_grid_vel_upts(void)
+{
+  int ic,upt,j,k;
+  for (ic=0; ic<n_eles; ic++) {
+    for (upt=0; upt<n_upts_per_ele; upt++) {
+      for(k=0;k<n_dims;k++) {
+        vel_upts(k,upt,ic) = 0.0;
+        for(j=0;j<n_spts_per_ele(ic);j++) {
+          vel_upts(k,upt,ic)+=nodal_s_basis_upts(j,upt,ic)*vel_spts(ic)(j,k);
+        }
+      }
+    }
+  }
+}
+
+
+/*! Interpolate the grid velocity from shape points to solution points
+ *  TODO: Find a way to speed up with BLAS or something */
+void eles::set_grid_vel_ppts(void)
+{
+  int ic,ppt,j,k;
+  for (ic=0; ic<n_eles; ic++) {
+    for (ppt=0; ppt<n_ppts_per_ele; ppt++) {
+      for(k=0;k<n_dims;k++) {
+        vel_ppts(k,ppt,ic) = 0.0;
+        for(j=0;j<n_spts_per_ele(ic);j++) {
+          vel_ppts(k,ppt,ic)+=nodal_s_basis_ppts(j,ppt,ic)*vel_spts(ic)(j,k);
+        }
+      }
+    }
+  }
+}
+
+array<double> eles::get_grid_vel_ppts(void)
+{
+  return vel_ppts;
+}
