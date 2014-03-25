@@ -60,7 +60,7 @@ AC_ARG_WITH(BLAS-include,
 ########################### CUDA (GPU-Enabled)
 # check if we're building GPU or CPU version
 # first, check for [a] CUDA library in the given directory
-CUDAlib=libcublas.a
+CUDAlib=libcublas.so
 CUDAheader=cuda.h
 have_CUDA="no"
 
