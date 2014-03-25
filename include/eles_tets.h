@@ -56,9 +56,7 @@ public:
 
   //#### helper methods ####
 
-  void setup_ele_type_specific(int in_run_type);
-
-  void create_map_ppt(void);
+  void setup_ele_type_specific(void);
 
   /*! read restart info */
   int read_restart_info(ifstream& restart_file);

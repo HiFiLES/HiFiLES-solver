@@ -137,10 +137,6 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> test_case;
         }
-      else if (!param_name.compare("run_type"))
-        {
-          in_run_input_file >> run_type;
-        }
       else if (!param_name.compare("n_plot_quantities"))
         {
           in_run_input_file >> n_plot_quantities;
@@ -638,8 +634,6 @@ void input::setup(ifstream& in_run_input_file, int rank)
         FatalError("Rusanov flux not supported with Advection-Diffusion equation");
       if (ic_form==0 || ic_form==1)
         FatalError("Initial condition not supported with Advection-Diffusion equation");
-      if (run_type==1)
-        FatalError("Run type not supported with Advection-Diffusion equation");
     }
 
   if(viscous)

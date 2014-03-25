@@ -37,7 +37,7 @@ public:
   // #### methods ####
 
   /*! setup inters */
-  void setup_inters(int in_n_inters, int in_inter_type, int in_run_type);
+  void setup_inters(int in_n_inters, int in_inter_type);
 
   /*! Set normal flux to be normal * f_r */
   void right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);

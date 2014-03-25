@@ -48,7 +48,7 @@ inters::~inters() { }
 
 // #### methods ####
 
-void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
+void inters::setup_inters(int in_n_inters, int in_inters_type)
 {
   n_inters    = in_n_inters;
   inters_type = in_inters_type;
@@ -95,9 +95,6 @@ void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
     {
       FatalError("ERROR: Invalid interface type ... ");
     }
-
-  if (in_run_type==0)
-    {
 
       disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
       norm_tconf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
@@ -153,8 +150,6 @@ void inters::setup_inters(int in_n_inters, int in_inters_type, int in_run_type)
       v_r.setup(n_dims);
       um.setup(n_dims);
       du.setup(n_fields);
-
-    }
 }
 
 // get look up table for flux point connectivity based on rotation tag
