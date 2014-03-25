@@ -51,10 +51,10 @@ bdy_inters::~bdy_inters() { }
 
 // setup inters
 
-void bdy_inters::setup(int in_n_inters, int in_inters_type, int in_run_type)
+void bdy_inters::setup(int in_n_inters, int in_inters_type)
 {
 
-  (*this).setup_inters(in_n_inters,in_inters_type,in_run_type);
+  (*this).setup_inters(in_n_inters,in_inters_type);
 
   boundary_type.setup(in_n_inters);
   set_bdy_params();
@@ -88,12 +88,10 @@ void bdy_inters::set_bdy_params()
   bdy_params(13) = run_input.nz_free_stream;
 }
 
-void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int in_run_type, struct solution* FlowSol)
+void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int in_ele_l, int in_local_inter_l, struct solution* FlowSol)
 {
   boundary_type(in_inter) = bdy_type;
 
-  if (in_run_type==0)
-    {
       for(int i=0;i<n_fields;i++)
         {
           for(int j=0;j<n_fpts_per_inter;j++)
@@ -169,7 +167,6 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
               pos_disu_fpts_l(j,in_inter,i) = temp_pos[i];
         }
       }
-    }
 }
 
 // move all from cpu to gpu

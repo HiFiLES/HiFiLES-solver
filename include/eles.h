@@ -38,34 +38,7 @@ public:
   // #### methods ####
 
   /*! setup */
-  void setup(int in_n_eles, int in_max_s_spts_per_ele, int in_run_type);
-
-  /*! returns the number of ppts for all eles */
-  int calc_num_ppts();
-
-  array<double> calc_pos_pnode_vert(int in_ele, int in_vert);
-
-  array<double> calc_pos_pnode_edge(int in_ele, int in_edge, int in_edge_ppt);
-
-  array<double> calc_pos_pnode_face(int in_ele, int in_face, int in_face_ppt);
-
-  array<double> calc_pos_pnode_interior(int in_ele, int in_interior_ppt);
-
-  void set_pnode_vert(int in_ele, int in_vert, int in_pnode);
-
-  void set_pnode_edge(int in_ele, int in_edge, int in_edge_ppt, int in_pnode);
-
-  void set_pnode_face(int in_ele, int in_face, int in_face_ppt,  int in_pnode);
-
-  void set_pnode_interior(int in_ele, int in_interior_ppt, int in_pnode);
-
-  int get_n_interior_ppts();
-
-  int get_n_ppts_per_face(int in_face);
-
-  int get_max_n_ppts_per_face();
-
-  virtual void create_map_ppt(void)=0;
+  void setup(int in_n_eles, int in_max_s_spts_per_ele);
 
   /*! setup initial conditions */
   void set_ics(double& time);
@@ -267,36 +240,16 @@ public:
   /*! calculate position of the plot points */
   void calc_pos_ppts(int in_ele, array<double>& out_pos_ppts);
 
-  /*! get position of the plot points inside one cell*/
-  void get_pos_ppts(int in_ele, array<double>& out_pos_ppts);
-
-  /*! get position of a single plot point */
-  array<double> get_pos_ppt(int in_ele, int in_ppt);
-
-  /*! set position of the plot points for all eles*/
-  void set_pos_ppts();
-
   void set_rank(int in_rank);
 
   virtual void set_connectivity_plot()=0;
 
   void set_disu_upts_to_zero_other_levels(void);
 
-  /*! get a pointer to the plot point connectivity array */
-  int* get_connectivity_plot_ptr();
-
   array<int> get_connectivity_plot();
-
-  void get_plotq_ppts(int in_ele, array<double> &out_plotq_ppts, array<double>& plotq_pnodes);
-
-  /*! return the list of pnodes on face loc_f of cell ic_l */
-  void get_face_pnode_list(array<int>& out_inter_pnodes, int ic_l, int loc_f, int& out_n_inter_pnodes);
 
   /*! calculate solution at the plot points */
   void calc_disu_ppts(int in_ele, array<double>& out_disu_ppts);
-
-  /*! calculate solution at the plot points and store it*/
-  void add_contribution_to_pnodes(array<double> &plotq_pnodes);
 
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
@@ -305,7 +258,7 @@ public:
   double get_loc_upt(int in_upt, int in_dim);
 
   /*! set transforms */
-  void set_transforms(int in_run_type);
+  void set_transforms(void);
        
   /*! set transforms at the interface cubature points */
   void set_transforms_inters_cubpts(void);
@@ -330,7 +283,7 @@ public:
   
   // #### virtual methods ####
 
-  virtual void setup_ele_type_specific(int in_run_type)=0;
+  virtual void setup_ele_type_specific()=0;
 
   /*! prototype for element reference length calculation */
   virtual double calc_h_ref_specific(int in_eles) = 0;
@@ -450,21 +403,8 @@ protected:
   /*! number of flux points per element */
   int n_fpts_per_ele;
 
+  /*! number of vertices per element */
   int n_verts_per_ele;
-  int n_edges_per_ele;
-
-  array<int> vert_to_ppt;
-  array<int> edge_ppt_to_ppt;
-  array< array<int> > face_ppt_to_ppt;
-  array< array<int> > face2_ppt_to_ppt;
-  array<int> interior_ppt_to_ppt;
-
-  array<int> n_ppts_per_face;
-  array<int> n_ppts_per_face2;
-
-  int max_n_ppts_per_face;
-  int n_ppts_per_edge;
-  int n_interior_ppts;
 
   array<int> connectivity_plot;
 
@@ -621,11 +561,6 @@ protected:
 	filtered solution at solution points for similarity and SVV LES models
 	*/
 	array<double> disuf_upts;
-
-	/*!
-	plot data at plot points
-	*/
-	 array<int> ppt_to_pnode;
 
   /*! position at the plot points */
   array< array<double> > pos_ppts;

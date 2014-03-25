@@ -48,7 +48,6 @@ public:
 
   double gamma;
 
-  int run_type;
   int viscous;
   int equation;
 

@@ -40,7 +40,7 @@ public:
   // #### methods ####
 
   /*! setup mpi_inters */
-  void setup(int in_n_inters, int in_inter_type, int in_run_type);
+  void setup(int in_n_inters, int in_inter_type);
 
   void set_nproc(int in_nproc, int in_rank);
 
@@ -56,7 +56,7 @@ public:
 
   void receive_cor_grad_disu_fpts();
 
-  void set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int rot_tag, int in_run_type, struct solution* FlowSol);
+  void set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int rot_tag, struct solution* FlowSol);
 
   void calc_norm_tconinvf_fpts_mpi(void);
   void calc_norm_tconvisf_fpts_mpi(void);
