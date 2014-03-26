@@ -14,7 +14,6 @@
 AC_INIT([HiFiLES], [1.0.0], [HiFiLES-dev@lists.stanford.edu],
         [HiFiLES], [http://hifiles.stanford.edu])
 AC_PREREQ([2.59])
-#AM_INIT_AUTOMAKE([subdir-objects])
 AM_INIT_AUTOMAKE([foreign])
 
 # optional bindings
@@ -78,7 +77,7 @@ if test "$have_CUDA" != "no"
 then
     if test "$with_CUDA_include" != "no"
     then
-        AC_CHECK_FILE([$with_CUDA_include/$CUDAinclude],[have_CUDA="yes"],[have_CUDA="no"])
+        AC_CHECK_FILE([$with_CUDA_include/$CUDAheader],[have_CUDA="yes"],[have_CUDA="no"])
  	    if test "$have_CUDA" == "no"
 	    then
 	    	AC_MSG_ERROR([GPU build requested but CUDA header file not found.])
@@ -92,7 +91,7 @@ if test "$have_CUDA" != "no"
 then
   	AM_CONDITIONAL(BUILD_GPU,true)
 	NVCCFLAGS="-D_GPU -I"$with_CUDA_include	
-	CUDA_CXX="-D_GPU"
+	CUDA_CXX="-D_GPU -I"$with_CUDA_include
     ARCH=`uname -m`
     if [[ $ARCH == "x86_64" ]];
     then
@@ -100,15 +99,18 @@ then
     else
       SUFFIX=""
     fi
-	CUDA_LD="-L$with_CUDA_lib -lcudart -lcublas -lcusparse -lm"
+	CUDA_LDFLAGS="-L$with_CUDA_lib"
+	CUDA_LIBS="-lcudart -lcublas -lcusparse -lm"
     NVCC=$with_CUDA
 else
 	AM_CONDITIONAL(BUILD_GPU,false)
 	CUDA_CXX="-D_CPU"
-	CUDA_LD=
+	CUDA_LDFLAGS=
+	CUDA_LIBS=
 fi
 AC_SUBST([NVCC])
-AC_SUBST([CUDA_LD])
+AC_SUBST([CUDA_LIBS])
+AC_SUBST([CUDA_LDFLAGS])
 AC_SUBST([CUDA_CXX])
 AC_SUBST([NVCCFLAGS])
 
@@ -133,7 +135,7 @@ if test "$have_ParMetis" != "no"
 then
 	if test "$with_ParMetis_include" != "no"
 	then
-		AC_CHECK_FILE([$with_ParMetis_include/$parMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+		AC_CHECK_FILE([$with_ParMetis_include/$ParMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
 		if test "$have_ParMetis" == "no"
 		then
 			AC_MSG_ERROR([ParMETIS requested but header file not found.])
@@ -289,7 +291,8 @@ AC_SUBST([BLAS_LD])
 AC_PROG_CXX
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_PROG_RANLIB
+AM_PROG_LIBTOOL
+#AC_PROG_RANLIB
 AC_OUTPUT(Makefile \
 	obj/Makefile)
 
