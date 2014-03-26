@@ -31,6 +31,10 @@
 #include "mpi_inters.h"
 #endif
 
+#ifdef _GPU
+#include "util.h"
+#endif
+
 /*! write an output file in Tecplot ASCII format */
 void write_tec(int in_file_num, struct solution* FlowSol);
 
@@ -43,8 +47,11 @@ void write_restart(int in_file_num, struct solution* FlowSol);
 /*! compute forces on wall faces*/
 void CalcForces(int in_file_num, struct solution* FlowSol);
 
-/*! compute diagnostics */
-void CalcDiagnostics(int in_file_num, struct solution* FlowSol);
+/*! compute diagnostic fields at solution points */
+void CalcDiagnosticFields(int in_file_num, struct solution* FlowSol);
+
+/*! compute integral diagnostic quantities */
+void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol);
 
 /*! compute error */
 void compute_error(int in_file_num, struct solution* FlowSol);
@@ -57,3 +64,9 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
 
 /*! check if the solution is bounded !*/
 void check_stability(struct solution* FlowSol);
+
+#ifdef _GPU
+/*! copy solution and gradients from GPU to CPU for above routines !*/
+CopyGPUCPU(struct solution* FlowSol);
+#endif
+

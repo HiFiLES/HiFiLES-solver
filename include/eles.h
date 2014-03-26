@@ -251,6 +251,9 @@ public:
   /*! calculate solution at the plot points */
   void calc_disu_ppts(int in_ele, array<double>& out_disu_ppts);
 
+  /*! calculate diagnostic fields at the plot points */
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& out_diag_field_ppts);
+
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
 
@@ -341,8 +344,11 @@ public:
   /*! add body forcing at solution points */
   void add_body_force_upts(array <double>& body_force);
 
+  /*! Compute diagnostic quantities at solution points */
+  void CalcDiagnosticFields(void);
+
   /*! Compute volume integral of diagnostic quantities */
-  void CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array);
+  void CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities);
 
   void compute_wall_forces(array<double>& inv_force, array<double>& vis_force, ofstream& cp_file, bool output);
 
@@ -379,9 +385,12 @@ protected:
 	/*!  number of dimensions */
 	int n_dims;
 	
-	/*!  number of fields */
+	/*!  number of prognostic fields */
 	int n_fields;
 	
+	/*!  number of diagnostic fields */
+	int n_diagnostic_fields;
+
 	/*! order of solution polynomials */
 	int order; 
 
@@ -556,6 +565,11 @@ protected:
         matrix mapping:
         */
   array< array<double> > disu_upts;
+
+	/*!
+	diagnostic quantities at solution points
+	*/
+	array<double> diagnostic_fields_upts;
 
 	/*!
 	filtered solution at solution points for similarity and SVV LES models
