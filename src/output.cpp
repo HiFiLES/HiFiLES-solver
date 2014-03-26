@@ -489,6 +489,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   array<double> pos_ppts_temp;
   /*! Solution data at plot points */
   array<double> disu_ppts_temp;
+  /*! Solution gradient data at plot points */
+  array<double> grad_disu_ppts_temp;
   /*! Diagnostic field data at plot points */
   array<double> diag_ppts_temp;
 
@@ -646,6 +648,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           /*! Temporary solution array at plot points */
           disu_ppts_temp.setup(n_points,n_fields);
 
+          /*! Temporary solution array at plot points */
+          grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
+
           /*! Temporary diagnostic field array at plot points */
           diag_ppts_temp.setup(n_points,n_diag_fields);
 
@@ -660,9 +665,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
               /*! Calculate the prognostic (solution) fields at the plot points */
               FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
 
+              /*! Calculate the gradient of the prognostic fields at the plot points */
+              FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
+
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
-                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,diag_ppts_temp);
+                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
 
               /*! write out solution to file */
               write_vtu << "			<PointData>" << endl;
@@ -930,19 +938,6 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
 
   if (output) cp_file.close();
 
-}
-
-// Calculate diagnostic fields
-void CalcDiagnosticFields(int in_file_num, struct solution* FlowSol) {
-
-  // Loop over element types
-  for(int i=0;i<FlowSol->n_ele_types;i++)
-    {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
-        {
-          FlowSol->mesh_eles(i)->CalcDiagnosticFields();
-        }
-    }
 }
 
 // Calculate integral diagnostic quantities

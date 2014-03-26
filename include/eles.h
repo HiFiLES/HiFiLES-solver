@@ -251,8 +251,11 @@ public:
   /*! calculate solution at the plot points */
   void calc_disu_ppts(int in_ele, array<double>& out_disu_ppts);
 
+  /*! calculate gradient of solution at the plot points */
+  void calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts);
+
   /*! calculate diagnostic fields at the plot points */
-  void calc_diagnostic_fields_ppts(int in_ele, array<double>& out_diag_field_ppts);
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
 
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
@@ -343,9 +346,6 @@ public:
 
   /*! add body forcing at solution points */
   void add_body_force_upts(array <double>& body_force);
-
-  /*! Compute diagnostic quantities at solution points */
-  void CalcDiagnosticFields(void);
 
   /*! Compute volume integral of diagnostic quantities */
   void CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities);
