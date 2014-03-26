@@ -69,6 +69,7 @@ public:
 	int order;
 	int viscous;
 	int LES;
+  int wall_model;
 	int n_inters;
 	int n_fpts_per_inter;
 	int n_fields;
@@ -109,7 +110,9 @@ public:
 
 	// LES and wall model quantities
 	array<double*> sgsf_fpts_l;
+	array<double*> sgsf_fpts_r;
 	array<double> temp_sgsf_l;
+	array<double> temp_sgsf_r;
 
 	array<int> lut;
 

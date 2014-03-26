@@ -43,6 +43,7 @@ bdy_inters::bdy_inters()
   order=run_input.order;
   viscous=run_input.viscous;
   LES=run_input.LES;
+  wall_model = run_input.wall_model;
 }
 
 bdy_inters::~bdy_inters() { }
@@ -792,7 +793,6 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
 #ifdef _CPU
   int bdy_spec, flux_spec;
   array<double> norm(n_dims), fn(n_fields);
-  int wallfn;
 
   for(int i=0;i<n_inters;i++) {
 
@@ -906,8 +906,8 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
       else
         FatalError("ERROR: Invalid number of dimensions ... ");
 
-      // If LES but no model used on this boundary, get SGS flux and add to viscous flux
-      if(LES==1 and wallfn==0) {
+      // If LES (but no model used on this boundary?), get SGS flux and add to viscous flux
+      if(LES==1) { // && wall_model==0) {
         for(int k=0;k<n_dims;k++) {
           for(int l=0;l<n_fields;l++) {
             // pointer to subgrid-scale flux at flux point

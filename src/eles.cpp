@@ -221,7 +221,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
       }
 
       // Allocate SGS flux array if using LES or wall model
-      if(LES || wall_model > 0) {
+      if(LES > 0 || wall_model > 0) {
         temp_sgsf.setup(n_fields,n_dims);
       }
 
@@ -2054,7 +2054,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
         }
 
         // If LES or wall model, calculate SGS viscous flux
-        if(LES || (wall_model > 0)) {
+        if(LES > 0 || (wall_model > 0)) {
 
           calc_sgsf_upts(temp_u,temp_grad_u,detjac,i,j,temp_sgsf);
 
@@ -2066,7 +2066,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
         }
 
         // If LES, add SGS flux to global array (needed for interface flux calc)
-        if(LES) {
+        if(LES > 0) {
 
           for(k=0;k<n_fields;k++) {
             for(l=0;l<n_dims;l++) {
