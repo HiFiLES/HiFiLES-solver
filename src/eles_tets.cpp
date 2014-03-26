@@ -53,7 +53,7 @@ eles_tets::eles_tets()
 // #### methods ####
 
 
-void eles_tets::setup_ele_type_specific(int in_run_type)
+void eles_tets::setup_ele_type_specific()
 {
 #ifndef _MPI
   cout << "Initializing tets" << endl;
@@ -78,6 +78,7 @@ void eles_tets::setup_ele_type_specific(int in_run_type)
 
   n_ppts_per_ele=(p_res+2)*(p_res+1)*p_res/6;
   n_peles_per_ele = (p_res-1)*(p_res)*(p_res+1)/6 + 4*(p_res-2)*(p_res-1)*(p_res)/6 +(p_res-3)*(p_res-2)*(p_res-1)/6;
+  n_verts_per_ele = 4;
 
   set_loc_ppts();
   set_opp_p();
@@ -86,206 +87,43 @@ void eles_tets::setup_ele_type_specific(int in_run_type)
   set_volume_cubpts();
   set_opp_volume_cubpts();
 
-	/*! Run mode */
-  if (in_run_type==0)
+  n_fpts_per_inter.setup(4);
+
+  n_fpts_per_inter(0)=(order+2)*(order+1)/2;
+  n_fpts_per_inter(1)=(order+2)*(order+1)/2;
+  n_fpts_per_inter(2)=(order+2)*(order+1)/2;
+  n_fpts_per_inter(3)=(order+2)*(order+1)/2;
+
+  n_fpts_per_ele=n_inters_per_ele*(order+2)*(order+1)/2;
+
+  fpts_type=run_input.fpts_type_tet;
+
+  set_tloc_fpts();
+
+  //set_loc_spts();
+
+  set_tnorm_fpts();
+
+  set_opp_0(run_input.sparse_tet);
+  set_opp_1(run_input.sparse_tet);
+  set_opp_2(run_input.sparse_tet);
+  set_opp_3(run_input.sparse_tet);
+
+  if(viscous)
     {
-      n_fpts_per_inter.setup(4);
+      set_opp_4(run_input.sparse_tet);
+      set_opp_5(run_input.sparse_tet);
+      set_opp_6(run_input.sparse_tet);
 
-      n_fpts_per_inter(0)=(order+2)*(order+1)/2;
-      n_fpts_per_inter(1)=(order+2)*(order+1)/2;
-      n_fpts_per_inter(2)=(order+2)*(order+1)/2;
-      n_fpts_per_inter(3)=(order+2)*(order+1)/2;
+      temp_grad_u.setup(n_fields,n_dims);
 
-      n_fpts_per_ele=n_inters_per_ele*(order+2)*(order+1)/2;
-
-      fpts_type=run_input.fpts_type_tet;
-
-      set_tloc_fpts();
-
-      //set_loc_spts();
-
-      set_tnorm_fpts();
-
-      set_opp_0(run_input.sparse_tet);
-      set_opp_1(run_input.sparse_tet);
-      set_opp_2(run_input.sparse_tet);
-      set_opp_3(run_input.sparse_tet);
-
-      if(viscous)
-        {
-          set_opp_4(run_input.sparse_tet);
-          set_opp_5(run_input.sparse_tet);
-          set_opp_6(run_input.sparse_tet);
-
-          temp_grad_u.setup(n_fields,n_dims);
-
-          // Compute tet filter matrix
-          if(filter) compute_filter_upts();
-        }
-
-
-      temp_u.setup(n_fields);
-      temp_f.setup(n_fields,n_dims);
-      //}
-      //else
-      //{
-
-      if (viscous==1)
-        {
-          set_opp_4(run_input.sparse_tet);
-        }
-
-      n_verts_per_ele = 4;
-      n_edges_per_ele = 6;
-
-      n_ppts_per_edge = p_res-2;
-
-      // Number of plot points per face, excluding points on vertices or edges
-      n_ppts_per_face.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        n_ppts_per_face(i) = (p_res-3)*(p_res-2)/2;
-
-      n_ppts_per_face2.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        n_ppts_per_face2(i) = (p_res+1)*(p_res)/2;
-
-      max_n_ppts_per_face = n_ppts_per_face(0);
-
-      // Number of plot points not on faces, edges or vertices
-      n_interior_ppts = n_ppts_per_ele-4-4*n_ppts_per_face(0)-6*n_ppts_per_edge;
-
-      vert_to_ppt.setup(n_verts_per_ele);
-      edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
-
-      face_ppt_to_ppt.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
-
-      face2_ppt_to_ppt.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
-
-      interior_ppt_to_ppt.setup(n_interior_ppts);
-
-      create_map_ppt();
-
-      /*
-    cout << "vert_ppt" << endl << endl;
-    vert_to_ppt.print();
-    cout << "edge_ppt" << endl << endl;
-    edge_ppt_to_ppt.print();
-    cout << "face_ppt" << endl << endl;
-    for (int i=0;i<n_inters_per_ele;i++) {
-      cout << "face=" << i<< endl;
-      face_ppt_to_ppt(i).print();
+      // Compute tet filter matrix
+      if(filter) compute_filter_upts();
     }
-    cout << "interior_ppt" << endl << endl;
-    interior_ppt_to_ppt.print();
 
-    loc_ppts.print();
-    */
-    }
+  temp_u.setup(n_fields);
+  temp_f.setup(n_fields,n_dims);
 }
-
-void eles_tets::create_map_ppt(void)
-{
-  int index;
-  int vert_ppt_count = 0;
-  int interior_ppt_count = 0;
-
-  array<int> edge_ppt_count(n_edges_per_ele);
-  array<int> face_ppt_count(n_inters_per_ele);
-  array<int> face2_ppt_count(n_inters_per_ele);
-  for (int i=0;i<n_edges_per_ele;i++)
-    edge_ppt_count(i)=0;
-  for (int i=0;i<n_inters_per_ele;i++) {
-      face_ppt_count(i)=0;
-      face2_ppt_count(i)=0;
-    }
-
-  for(int k=0;k<p_res;k++)
-    {
-      for(int j=0;j<p_res-k;j++)
-        {
-          for(int i=0;i<p_res-k-j;i++)
-            {
-
-              index = (p_res)*(p_res+1)*(p_res+2)/6 -
-                  (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 +
-                  j*(p_res-k)-(j-1)*j/2
-                  + i;
-              //cout << "------------" << endl;
-              //cout << "index=" << index << endl;
-              //cout << "x=" << loc_ppts(0,index) << "y=" << loc_ppts(1,index) << "z=" << loc_ppts(2,index) << endl;
-              if (i==p_res-1 || j==p_res-1 || k==p_res-1 || (i==0 && j==0 && k==0))
-                {
-                  vert_to_ppt(vert_ppt_count++)=index;
-                  //cout << "vert" << endl;
-                }
-              else if (j==0 && k==0) {
-                  edge_ppt_to_ppt(0,edge_ppt_count(0)++) = index;
-                  //cout << "edge 0" << endl;
-                }
-              else if (i==0 && k==0) {
-                  edge_ppt_to_ppt(1,edge_ppt_count(1)++) = index;
-                  //cout << "edge 1" << endl;
-                }
-              else if (i==0 && j==0) {
-                  edge_ppt_to_ppt(2,edge_ppt_count(2)++) = index;
-                  //cout << "edge 2" << endl;
-                }
-              else if (j==0 && i==(p_res-k-1)) {
-                  edge_ppt_to_ppt(3,edge_ppt_count(3)++) = index;
-                  //cout << "edge 3" << endl;
-                }
-              else if (k==0 && i==(p_res-j-1)) {
-                  edge_ppt_to_ppt(4,edge_ppt_count(4)++) = index;
-                  //cout << "edge 4" << endl;
-                }
-              else if (i==0 && j==(p_res-k-1)) {
-                  edge_ppt_to_ppt(5,edge_ppt_count(5)++) = index;
-                  //cout << "edge 5" << endl;
-                }
-              else if (i==p_res-k-j-1) {
-                  face_ppt_to_ppt(0)(face_ppt_count(0)++) = index;
-                  //cout << "face 0" << endl;
-                }
-              else if (i==0) {
-                  face_ppt_to_ppt(1)(face_ppt_count(1)++) = index;
-                  //cout << "face 1" << endl;
-                }
-              else if (j==0) {
-                  face_ppt_to_ppt(2)(face_ppt_count(2)++) = index;
-                  //cout << "face 2" << endl;
-                }
-              else if (k==0) {
-                  face_ppt_to_ppt(3)(face_ppt_count(3)++) = index;
-                  //cout << "face 3" << endl;
-                }
-              else
-                interior_ppt_to_ppt(interior_ppt_count++) = index;
-
-
-              if (i==p_res-k-j-1) {
-                  face2_ppt_to_ppt(0)(face2_ppt_count(0)++) = index;
-                }
-              if (i==0) {
-                  face2_ppt_to_ppt(1)(face2_ppt_count(1)++) = index;
-                }
-              if (j==0) {
-                  face2_ppt_to_ppt(2)(face2_ppt_count(2)++) = index;
-                }
-              if (k==0) {
-                  face2_ppt_to_ppt(3)(face2_ppt_count(3)++) = index;
-                }
-
-
-
-            }
-        }
-    }
-}
-
 
 void eles_tets::set_connectivity_plot()
 {

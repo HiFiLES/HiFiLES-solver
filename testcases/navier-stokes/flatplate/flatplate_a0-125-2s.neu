@@ -343,7 +343,7 @@ ENDOFSECTION
         50    2    2
 ENDOFSECTION
  BOUNDARY CONDITIONS 2.3.16
-                     Adiabat_Fix       1       9       0       6
+                     Isotherm_Fix       1       9       0       6
         60    2    2
         70    2    2
         80    2    2

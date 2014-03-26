@@ -51,13 +51,11 @@ int_inters::~int_inters() { }
 
 // setup inters
 
-void int_inters::setup(int in_n_inters,int in_inter_type,int in_run_type)
+void int_inters::setup(int in_n_inters,int in_inter_type)
 {
 
-  (*this).setup_inters(in_n_inters,in_inter_type,in_run_type);
+  (*this).setup_inters(in_n_inters,in_inter_type);
 
-  if (in_run_type==0)
-    {
       disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
       norm_tconf_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
       detjac_fpts_r.setup(n_fpts_per_inter,n_inters);
@@ -69,18 +67,14 @@ void int_inters::setup(int in_n_inters,int in_inter_type,int in_run_type)
         {
           grad_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
         }
-    }
-
 }
 
 // set interior interface
-void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r, int in_ele_l, int in_ele_r, int in_local_inter_l, int in_local_inter_r, int rot_tag, int in_run_type, struct solution* FlowSol)
+void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r, int in_ele_l, int in_ele_r, int in_local_inter_l, int in_local_inter_r, int rot_tag, struct solution* FlowSol)
 {
   int i,j,k;
   int i_rhs,j_rhs;
 
-  if (in_run_type==0)
-    {
       get_lut(rot_tag);
 
       for(i=0;i<n_fields;i++)
@@ -130,7 +124,6 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
               norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
             }
         }
-    }
 }
 
 // move all from cpu to gpu

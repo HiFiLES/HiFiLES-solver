@@ -37,7 +37,7 @@ public:
   // #### methods ####
 
   /*! setup inters */
-  void setup_inters(int in_n_inters, int in_inter_type, int in_run_type);
+  void setup_inters(int in_n_inters, int in_inter_type);
 
   /*! Set normal flux to be normal * f_r */
   void right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
@@ -60,6 +60,9 @@ public:
 	/*! get look up table for flux point connectivity based on rotation tag */
 	void get_lut(int in_rot_tag);
 	
+    /*! Compute common flux at boundaries using convective flux formulation */
+    void convective_flux_boundary(array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields);
+
 	protected:
 
 	// #### members ####
@@ -88,24 +91,24 @@ public:
   array<double*> grad_disu_fpts_l;
   array<double*> normal_disu_fpts_l;
 
-	array<double> temp_u_l;
-	array<double> temp_u_r;
-	
-	array<double> temp_grad_u_l;
-	array<double> temp_grad_u_r;
-	
+  array<double> temp_u_l;
+  array<double> temp_u_r;
+
+  array<double> temp_grad_u_l;
+  array<double> temp_grad_u_r;
+
   array<double> temp_normal_u_l;
 
   array<double> temp_pos_u_l;
 
-	array<double> temp_f_l;
-	array<double> temp_f_r;
+  array<double> temp_f_l;
+  array<double> temp_f_r;
 
-	array<double> temp_fn_l;
-	array<double> temp_fn_r;
-	
-	array<double> temp_f;
-	
+  array<double> temp_fn_l;
+  array<double> temp_fn_r;
+
+  array<double> temp_f;
+
   array<double> temp_loc;
 
 	// LES and wall model quantities
@@ -114,7 +117,7 @@ public:
 	array<double> temp_sgsf_l;
 	array<double> temp_sgsf_r;
 
-	array<int> lut;
+  array<int> lut;
 
   array<double> v_l, v_r, um, du;
 
