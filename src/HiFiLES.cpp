@@ -28,6 +28,10 @@
 #include "mpi.h"
 #endif
 
+#ifdef _GPU
+#include "util.h"
+#endif
+
 using namespace std;
 
 int main(int argc, char *argv[]) {
@@ -81,7 +85,7 @@ int main(int argc, char *argv[]) {
   
   /*! Read the mesh file from a file. */
   
-  GeoPreprocess(run_input.run_type, &FlowSol);
+  GeoPreprocess(&FlowSol);
   
   InitSolution(&FlowSol);
   
@@ -99,7 +103,7 @@ int main(int argc, char *argv[]) {
   
   /*! Warning about body forcing term for periodic channel. */
 
-  if (run_input.equation == 0 && run_input.run_type == 0 && run_input.forcing == 1) {
+  if (run_input.equation == 0 && run_input.forcing == 1) {
     if(run_input.monitor_force_freq > 100)
       cout<<"WARNING: when running the periodic channel, it is necessary to add a body forcing"<<endl;
       cout<<"term to prevent the flow decaying to zero. Make sure monitor_force_freq is set to a"<<endl;
@@ -108,26 +112,32 @@ int main(int argc, char *argv[]) {
     for (i=0; i<5; i++) FlowSol.body_force(i)=0.0;
   }
   
-  /*! Initialize forces, diagnostics, and residuals. */
+  /*! Initialize forces, integral quantities, and residuals. */
 
   if (FlowSol.rank == 0) {
     
     FlowSol.inv_force.setup(5);
     FlowSol.vis_force.setup(5);
     FlowSol.norm_residual.setup(5);
-    FlowSol.diagnostics.setup(run_input.n_diagnostics);
+    FlowSol.integral_quantities.setup(run_input.n_integral_quantities);
     
     for (i=0; i<5; i++) {
       FlowSol.inv_force(i)=0.0;
       FlowSol.vis_force(i)=0.0;
       FlowSol.norm_residual(i)=0.0;
     }
-    for (i=0; i<run_input.n_diagnostics; i++)
-      FlowSol.diagnostics(i)=0.0;
+    for (i=0; i<run_input.n_integral_quantities; i++)
+      FlowSol.integral_quantities(i)=0.0;
 
   }
   
-  
+  /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
+#ifdef _GPU
+
+  CopyGPUCPU(&FlowSol);
+
+#endif
+
   /*! Dump initial Paraview or tecplot file. */
   
   if (FlowSol.write_type == 0) write_vtu(FlowSol.ini_iter+i_steps, &FlowSol);
@@ -168,7 +178,18 @@ int main(int argc, char *argv[]) {
     FlowSol.time += run_input.dt;
     i_steps++;
     
-    /*! Force, diagnostics, and residual computation and output. */
+    /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
+#ifdef _GPU
+
+    if(i_steps%FlowSol.plot_freq == 0 || i_steps%run_input.monitor_res_freq == 0 || i_steps%FlowSol.restart_dump_freq==0) {
+
+      CopyGPUCPU(&FlowSol);
+
+    }
+
+#endif
+
+    /*! Force, integral quantities, and residual computation and output. */
 
     if(i_steps%run_input.monitor_res_freq == 0 ) {
 
@@ -176,9 +197,9 @@ int main(int argc, char *argv[]) {
       
       CalcForces(FlowSol.ini_iter+i_steps, &FlowSol);
       
-      /*! Compute diagnostics. */
+      /*! Compute integral quantities. */
       
-      CalcDiagnostics(FlowSol.ini_iter+i_steps, &FlowSol);
+      CalcIntegralQuantities(FlowSol.ini_iter+i_steps, &FlowSol);
       
       /*! Compute the norm of the residual. */
       

@@ -31,23 +31,15 @@
 #include "mpi_inters.h"
 #endif
 
+#ifdef _GPU
+#include "util.h"
+#endif
 
-/*! write a continuous plot file */
-void plot_continuous(struct solution* FlowSol);
-
-void plotter_setup(struct solution* FlowSol);
-
-/*! write an output file in Tecplot ASCII format.  Used in run mode. */
+/*! write an output file in Tecplot ASCII format */
 void write_tec(int in_file_num, struct solution* FlowSol);
 
-/*! write an output file in Tecplot binary format.  Used in plot mode.*/
-void write_tec_bin(int in_file_num, struct solution* FlowSol);
-
-/*! write an output file in VTK ASCII format. Used in run mode. */
+/*! write an output file in VTK ASCII format */
 void write_vtu(int in_file_num, struct solution* FlowSol);
-
-/*! write an output file in VTK binary format. Used in plot mode. */
-void write_vtu_bin(int in_file_num, struct solution* FlowSol);
 
 /*! writing a restart file */
 void write_restart(int in_file_num, struct solution* FlowSol);
@@ -55,8 +47,8 @@ void write_restart(int in_file_num, struct solution* FlowSol);
 /*! compute forces on wall faces*/
 void CalcForces(int in_file_num, struct solution* FlowSol);
 
-/*! compute diagnostics */
-void CalcDiagnostics(int in_file_num, struct solution* FlowSol);
+/*! compute integral diagnostic quantities */
+void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol);
 
 /*! compute error */
 void compute_error(int in_file_num, struct solution* FlowSol);
@@ -69,3 +61,9 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
 
 /*! check if the solution is bounded !*/
 void check_stability(struct solution* FlowSol);
+
+#ifdef _GPU
+/*! copy solution and gradients from GPU to CPU for above routines !*/
+void CopyGPUCPU(struct solution* FlowSol);
+#endif
+

@@ -46,12 +46,10 @@ mpi_inters::~mpi_inters() { }
 
 // setup mpi_inters
 
-void mpi_inters::setup(int in_n_inters, int in_inters_type, int in_run_type)
+void mpi_inters::setup(int in_n_inters, int in_inters_type)
 {
-  (*this).setup_inters(in_n_inters,in_inters_type,in_run_type);
+  (*this).setup_inters(in_n_inters,in_inters_type);
 
-  if (in_run_type==0)
-    {
       // Allocate memory for out_buffer etc
       out_buffer_disu.setup(in_n_inters*n_fpts_per_inter*n_fields);
       in_buffer_disu.setup(in_n_inters*n_fpts_per_inter*n_fields);
@@ -77,7 +75,6 @@ void mpi_inters::setup(int in_n_inters, int in_inters_type, int in_run_type)
         {
           grad_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
         }
-    }
 }
 
 void mpi_inters::set_nproc(int in_nproc, int in_rank)
@@ -147,13 +144,11 @@ void mpi_inters::mv_all_cpu_gpu(void)
 }
 
 
-void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int rot_tag, int in_run_type, struct solution* FlowSol)
+void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int rot_tag, struct solution* FlowSol)
 {
   int i,j,k;
   int i_rhs,j_rhs;
 
-  if (in_run_type==0)
-    {
       get_lut(rot_tag);
 
       for(j=0;j<n_fpts_per_inter;j++)
@@ -206,9 +201,6 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
               norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
             }
         }
-
-    }
-
 }
 
 
