@@ -64,6 +64,6 @@ void check_stability(struct solution* FlowSol);
 
 #ifdef _GPU
 /*! copy solution and gradients from GPU to CPU for above routines !*/
-CopyGPUCPU(struct solution* FlowSol);
+void CopyGPUCPU(struct solution* FlowSol);
 #endif
 
