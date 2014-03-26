@@ -24,7 +24,7 @@
 #include "../include/flux.h"
 #include "../include/error.h"
 
-#if defined _GPU
+#ifdef _GPU
 #include "../include/cuda_kernels.h"
 #endif
 
@@ -146,27 +146,27 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
 
       // Get coordinates and solution at closest solution points to boundary
 
-      for(int j=0;j<n_fpts_per_inter;j++)
-      {
+//      for(int j=0;j<n_fpts_per_inter;j++)
+//      {
 
-        // flux point location
+//        // flux point location
 
-        // get CPU ptr regardless of ifdef _CPU or _GPU
-        // - we need a CPU ptr to pass to get_normal_disu_fpts_ptr below
-        for (int k=0;k<n_dims;k++)
-          temp_loc(k) = *get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+//        // get CPU ptr regardless of ifdef _CPU or _GPU
+//        // - we need a CPU ptr to pass to get_normal_disu_fpts_ptr below
+//        for (int k=0;k<n_dims;k++)
+//          temp_loc(k) = *get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 
-        // location of the closest solution point
-        double temp_pos[3];
+//        // location of the closest solution point
+//        double temp_pos[3];
 
-        if(viscous) {
-          for(int i=0;i<n_fields;i++)
-            normal_disu_fpts_l(j,in_inter,i) = get_normal_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol, temp_loc, temp_pos);
+//        if(viscous) {
+//          for(int i=0;i<n_fields;i++)
+//            normal_disu_fpts_l(j,in_inter,i) = get_normal_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol, temp_loc, temp_pos);
 
-          for(int i=0;i<n_dims;i++)
-              pos_disu_fpts_l(j,in_inter,i) = temp_pos[i];
-        }
-      }
+//          for(int i=0;i<n_dims;i++)
+//              pos_disu_fpts_l(j,in_inter,i) = temp_pos[i];
+//        }
+//      }
 }
 
 // move all from cpu to gpu
@@ -186,8 +186,8 @@ void bdy_inters::mv_all_cpu_gpu(void)
   if(viscous)
     {
       grad_disu_fpts_l.mv_cpu_gpu();
-      normal_disu_fpts_l.mv_cpu_gpu();
-      pos_disu_fpts_l.mv_cpu_gpu();
+      //normal_disu_fpts_l.mv_cpu_gpu();
+      //pos_disu_fpts_l.mv_cpu_gpu();
       //norm_tconvisf_fpts_l.mv_cpu_gpu();
     }
   //detjac_fpts_l.mv_cpu_gpu();

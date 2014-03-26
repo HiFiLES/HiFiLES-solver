@@ -77,12 +77,12 @@ void SetInput(struct solution* FlowSol) {
 
   /*! Associate a GPU to each rank. */
   // Cluster:
-  //if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
-  //if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+  if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
+  if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
   // Enrico:
-  if (FlowSol->rank==0) { cudaSetDevice(2); }
-  else if (FlowSol->rank==1) { cudaSetDevice(0); }
-  else if (FlowSol->rank==2) { cudaSetDevice(3); }
+//  if (FlowSol->rank==0) { cudaSetDevice(2); }
+//  else if (FlowSol->rank==1) { cudaSetDevice(0); }
+//  else if (FlowSol->rank==2) { cudaSetDevice(3); }
 
 #endif
 
