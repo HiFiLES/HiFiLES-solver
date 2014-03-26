@@ -3608,7 +3608,7 @@ void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
                   out_grad_disu_ppts(i,k,l) = 0.;
                   for(j=0;j<n_upts_per_ele;j++)
                     {
-                      out_grad_disu_ppts(i,k,l) += opp_p(i,j)*disu_upts_plot(j,k,l);
+                      out_grad_disu_ppts(i,k,l) += opp_p(i,j)*grad_disu_upts_temp(j,k,l);
                     }
                 }
             }
