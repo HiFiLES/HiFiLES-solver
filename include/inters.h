@@ -43,10 +43,10 @@ public:
   void right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Rusanov flux */
-  void rusanov_flux(array<double> &q_l, array<double> &q_r, array<double> &f_l, array<double> &f_r, array<double> v_g, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
+  void rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Roe flux */
-  void roe_flux(array<double> &q_l, array<double> &q_r, array<double> v_g, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
+  void roe_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Lax-Friedrich flux (works only for wave equation) */
   void lax_friedrich(array<double> &u_l, array<double> &u_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double lambda, array<double>& wave_speed);

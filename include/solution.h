@@ -79,13 +79,13 @@ struct solution {
 
 	array< array<double> > loc_noslip_bdy;
 
-  /*! Diagnostics. */
+  /*! Diagnostic output quantities. */
   
   array<double> body_force;
   array<double> inv_force;
   array<double> vis_force;
   array<double> norm_residual;
-  array<double> diagnostics;
+  array<double> integral_quantities;
 
   /*! Plotting resolution. */
   

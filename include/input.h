@@ -51,10 +51,10 @@ public:
   int viscous;
   int equation;
 
-  int n_plot_quantities;
-  array<string> plot_quantities;
-  int n_diagnostics;
-  array<string> diagnostics;
+  int n_diagnostic_fields;
+  array<string> diagnostic_fields;
+  int n_integral_quantities;
+  array<string> integral_quantities;
 
   double prandtl;
 
@@ -89,7 +89,7 @@ public:
 
   int monitor_res_freq;
   int monitor_force_freq;
-  int diagnostics_freq;
+  int monitor_integrals_freq;
   int res_norm_type; // 0:infinity norm, 1:L1 norm, 2:L2 norm
   int error_norm_type; // 0:infinity norm, 1:L1 norm, 2:L2 norm
   int res_norm_field;

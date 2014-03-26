@@ -151,6 +151,12 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
             for (int k=0;k<n_fields;k++)
               disu_upts(m)(i,j,k) = 0.;
 
+      // Allocate storage for diagnostic fields
+      n_diagnostic_fields = run_input.n_diagnostic_fields;
+
+      if(n_diagnostic_fields > 0)
+        diagnostic_fields_upts.setup(n_upts_per_ele,n_eles,n_diagnostic_fields);
+
       // Allocate extra arrays for LES models
       if(LES) {
 
@@ -2915,7 +2921,7 @@ int eles::get_n_dims(void)
   return n_dims;
 }
 
-// get number of elements
+// get number of solution fields
 
 int eles::get_n_fields(void)
 {
@@ -3598,6 +3604,47 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 #endif
 
     }
+}
+
+// calculate diagnostic fields at the plot points
+void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& out_diag_field_ppts)
+{
+
+  int i,j,k;
+
+  array<double> diag_upts_plot(n_upts_per_ele,n_diagnostic_fields);
+
+  for(i=0;i<n_diagnostic_fields;i++)
+    {
+      for(j=0;j<n_upts_per_ele;j++)
+        {
+          diag_upts_plot(j,i)=diagnostic_fields_upts(j,in_ele,i);
+        }
+    }
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_diagnostic_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,diag_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_diag_field_ppts.get_ptr_cpu(),n_ppts_per_ele);
+
+#else
+
+  //HACK (inefficient, but useful if cblas is unavailible)
+
+  for(i=0;i<n_ppts_per_ele;i++)
+    {
+      for(k=0;k<n_diagnostic_fields;k++)
+        {
+          out_diag_field_ppts(i,k) = 0.;
+
+          for(j=0;j<n_upts_per_ele;j++)
+            {
+              out_diag_field_ppts(i,k) += opp_p(i,j)*diag_upts_plot(j,k);
+            }
+        }
+    }
+
+#endif
+
 }
 
 // calculate position of solution point
@@ -5172,8 +5219,156 @@ void eles::add_body_force_upts(array <double>& body_force)
     }
 }
 
-// Compute diagnostic quantities
-void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
+// Compute diagnostic fields at solution points
+void eles::CalcDiagnosticFields(void)
+{
+  int i,j,k,m;
+  double diagfield_upt;
+  double u,v,w;
+  double irho,pressure,v_sq;
+  double wx,wy,wz;
+  double dudx, dudy, dudz;
+  double dvdx, dvdy, dvdz;
+  double dwdx, dwdy, dwdz;
+
+  for(i=0;i<n_eles;i++)
+  {
+    for(j=0;j<n_upts_per_ele;j++)
+    {
+      //physical solution
+      for(k=0;k<n_fields;k++)
+      {
+        temp_u(k)=disu_upts(0)(j,i,k);
+
+        //physical gradient
+        for (m=0;m<n_dims;m++)
+        {
+          temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
+        }
+      }
+
+      // Compute velocity square
+      v_sq = 0.;
+      for (m=0;m<n_dims;m++)
+        v_sq += (temp_u(m+1)*temp_u(m+1));
+      v_sq /= temp_u(0)*temp_u(0);
+
+      // Compute pressure
+      pressure = (run_input.gamma-1.0)*( temp_u(n_dims+1) - 0.5*temp_u(0)*v_sq);
+
+      // compute diagnostic fields
+      for (k=0;k<n_diagnostic_fields;k++)
+      {
+        // primitive variables
+        if (run_input.diagnostic_fields(k)=="rho")
+          diagfield_upt = temp_u(0);
+        else if (run_input.diagnostic_fields(k)=="u")
+          diagfield_upt = temp_u(1)/temp_u(0);
+        else if (run_input.diagnostic_fields(k)=="v")
+          diagfield_upt = temp_u(2)/temp_u(0);
+        else if (run_input.diagnostic_fields(k)=="w")
+        {
+          if (n_dims==2)
+            diagfield_upt = 0.;
+          else if (n_dims==3)
+            diagfield_upt = temp_u(3)/temp_u(0);
+        }
+        else if (run_input.diagnostic_fields(k)=="energy")
+        {
+          if (n_dims==2)
+            diagfield_upt = temp_u(3);
+          else if (n_dims==3)
+            diagfield_upt = temp_u(4);
+        }
+        // flow properties
+        else if (run_input.diagnostic_fields(k)=="mach")
+        {
+          diagfield_upt = sqrt( v_sq / (run_input.gamma*pressure/temp_u(0)) );
+        }
+        else if (run_input.diagnostic_fields(k)=="pressure")
+        {
+          diagfield_upt = pressure;
+        }
+        // turbulence metrics
+        else if (run_input.diagnostic_fields(k)=="vorticity" || run_input.diagnostic_fields(k)=="q_criterion")
+        {
+          irho = 1./temp_u(0);
+          u = temp_u(1)*irho;
+          v = temp_u(2)*irho;
+
+          dudx = irho*(temp_grad_u(1,0) - u*temp_grad_u(0,0));
+          dudy = irho*(temp_grad_u(1,1) - u*temp_grad_u(0,1));
+          dvdx = irho*(temp_grad_u(2,0) - v*temp_grad_u(0,0));
+          dvdy = irho*(temp_grad_u(2,1) - v*temp_grad_u(0,1));
+
+          if (n_dims==2)
+          {
+            if (run_input.diagnostic_fields(k) == "vorticity")
+            {
+              diagfield_upt = abs(dvdx-dudy);
+            }
+            else if (run_input.diagnostic_fields(k) == "q_criterion")
+            {
+              FatalError("Not implemented in 2D");
+            }
+          }
+          else if (n_dims==3)
+          {
+            w = temp_u(3)*irho;
+
+            dudz = irho*(temp_grad_u(1,2) - u*temp_grad_u(0,2));
+            dvdz = irho*(temp_grad_u(2,2) - v*temp_grad_u(0,2));
+
+            dwdx = irho*(temp_grad_u(3,0) - w*temp_grad_u(0,0));
+            dwdy = irho*(temp_grad_u(3,1) - w*temp_grad_u(0,1));
+            dwdz = irho*(temp_grad_u(3,2) - w*temp_grad_u(0,2));
+
+            wx = dwdy - dvdz;
+            wy = dudz - dwdx;
+            wz = dvdx - dudy;
+
+            if (run_input.diagnostic_fields(k) == "vorticity")
+            {
+              diagfield_upt = sqrt(wx*wx+wy*wy+wz*wz);
+            }
+            else if (run_input.diagnostic_fields(k) == "q_criterion")
+            {
+
+              wx *= 0.5;
+              wy *= 0.5;
+              wz *= 0.5;
+
+              double Sxx,Syy,Szz,Sxy,Sxz,Syz,SS,OO;
+              Sxx = dudx;
+              Syy = dvdy;
+              Szz = dwdz;
+              Sxy = 0.5*(dudy+dvdx);
+              Sxz = 0.5*(dudz+dwdx);
+              Syz = 0.5*(dvdz+dwdy);
+
+              SS = Sxx*Sxx + Syy*Syy + Szz*Szz + 2*Sxy*Sxy + 2*Sxz*Sxz + 2*Syz*Syz;
+              OO = 2*wx*wx + 2*wy*wy + 2*wz*wz;
+
+              diagfield_upt = 0.5*(OO-SS);
+
+            }
+          }
+        }
+        else
+          FatalError("plot_quantity not recognized");
+
+        if (isnan(diagfield_upt))
+          FatalError("NaN");
+
+        // set array with solution point value
+        diagnostic_fields_upts(j,i,k) = diagfield_upt;
+      }
+    }
+  }
+}
+
+// Compute integral quantities
+void eles::CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities)
 {
   array<double> disu_cubpt(n_fields);
   array<double> grad_disu_cubpt(n_fields,n_dims);
@@ -5228,11 +5423,11 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
         dwdz = irho*(grad_disu_cubpt(3,2) - disu_cubpt(3)*irho*grad_disu_cubpt(0,2));
       }
 
-      // Now calculate diagnostic quantities
-      for (int m=0;m<n_diagnostics;++m)
+      // Now calculate integral quantities
+      for (int m=0;m<n_integral_quantities;++m)
       {
         diagnostic = 0.0;
-        if (run_input.diagnostics(m)=="kineticenergy")
+        if (run_input.integral_quantities(m)=="kineticenergy")
         {
           // Compute kinetic energy
           tke = 0.0;
@@ -5241,7 +5436,7 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
 
           diagnostic = irho*tke;
         }
-        else if (run_input.diagnostics(m)=="vorticity")
+        else if (run_input.integral_quantities(m)=="vorticity")
         {
           // Compute vorticity squared
            wz = dvdx - dudy;
@@ -5254,7 +5449,7 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
           }
           diagnostic *= 0.5/irho;
         }
-        else if (run_input.diagnostics(m)=="pressuredilatation")
+        else if (run_input.integral_quantities(m)=="pressuredilatation")
         {
           // Kinetic energy
           tke = 0.0;
@@ -5272,7 +5467,7 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
             diagnostic = pressure*(dudx+dvdy+dwdz);
           }
         }
-        else if (run_input.diagnostics(m)=="straincolonproduct" || run_input.diagnostics(m)=="devstraincolonproduct")
+        else if (run_input.integral_quantities(m)=="straincolonproduct" || run_input.integral_quantities(m)=="devstraincolonproduct")
         {
           // Rate of strain tensor
           S(0,0) = dudx;
@@ -5292,7 +5487,7 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
           }
 
           // Subtract diag if deviatoric strain
-          if (run_input.diagnostics(m)=="devstraincolonproduct") {
+          if (run_input.integral_quantities(m)=="devstraincolonproduct") {
             for (int i=0;i<n_dims;i++)
               S(i,i) -= diag;
           }
@@ -5304,11 +5499,11 @@ void eles::CalcDiagnostics(int n_diagnostics, array <double>& diagnostic_array)
         }
         else
         {
-          cout<<"Error: diagnostic quantity not recognized"<<endl;
+          cout<<"Error: integral diagnostic quantity not recognized"<<endl;
           exit(1);
         }
         // Add contribution to global integral
-        diagnostic_array(m) += diagnostic*weight_volume_cubpts(j)*detjac;
+        integral_quantities(m) += diagnostic*weight_volume_cubpts(j)*detjac;
       }
     }
   }
@@ -5718,7 +5913,7 @@ void eles::initialize_grid_vel(void)
     // at shape points
         vel_spts.setup(n_eles);
         for (int i=0;i<n_eles; i++) {
-                vel_spts(i).setup(n_spts_per_ele(i),n_dims);
+          vel_spts(i).setup(n_spts_per_ele(i),n_dims);
         vel_spts(i).initialize_to_zero();
         }
 }

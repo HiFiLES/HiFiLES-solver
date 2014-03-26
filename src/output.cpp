@@ -56,17 +56,6 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 {
   int i,j,k,l,m;
 
-  // copy solution to cpu
-#ifdef _GPU
-  for(i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-
-          FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-
-        }
-    }
-#endif
-
   int vertex_0, vertex_1, vertex_2, vertex_3, vertex_4, vertex_5, vertex_6, vertex_7;
 
   int p_res=run_input.p_res; // HACK
@@ -479,8 +468,10 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   int my_rank = 0;
   /*! No. of processes */
   int n_proc = 1;
-  /*! No. of output fields */
+  /*! No. of solution fields */
   int n_fields;
+  /*! No. of optional diagnostic fields */
+  int n_diag_fields;
   /*! No. of dimensions */
   int n_dims;
   /*! No. of elements */
@@ -498,6 +489,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   array<double> pos_ppts_temp;
   /*! Solution data at plot points */
   array<double> disu_ppts_temp;
+  /*! Diagnostic field data at plot points */
+  array<double> diag_ppts_temp;
 
   /*! Grid velocity at plot points */
   array<double> grid_vel_ppts_temp;
@@ -508,7 +501,6 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! VTK element types (different to HiFiLES element type) */
   /*! tri, quad, tet, prism (undefined), hex */
   /*! See vtkCellType.h for full list */
-
   int vtktypes[5] = {5,9,10,0,12};
 
   /*! File names */
@@ -526,13 +518,11 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   ofstream write_pvtu;
   write_pvtu.precision(15);
 
-  /*! copy solution to cpu before beginning */
-#ifdef _GPU
-  for(i=0;i<FlowSol->n_ele_types;i++)
-    FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-#endif
+  /*! no. of optional diagnostic fields */
+  n_diag_fields = run_input.n_diagnostic_fields;
 
 #ifdef _MPI
+
   /*! Get rank of each process */
   my_rank = FlowSol->rank;
   n_proc   = FlowSol->nproc;
@@ -542,10 +532,13 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   sprintf(vtu_s,"Mesh_%.09d/Mesh_%.09d_%d.vtu",in_file_num,in_file_num,my_rank,my_rank);
   /*! On rank 0, write a .pvtu file to gather data from all .vtu files */
   sprintf(pvtu_s,"Mesh_%.09d.pvtu",in_file_num,0);
+
 #else
+
   /*! Only write a vtu file in serial */
   sprintf(dumpnum_s,"Mesh_%.09d",in_file_num,0);
   sprintf(vtu_s,"Mesh_%.09d.vtu",in_file_num,0);
+
 #endif
 
   /*! Point to names */
@@ -554,6 +547,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   dumpnum = &dumpnum_s[0];
 
 #ifdef _MPI
+
   /*! Master node creates a subdirectory to store .vtu files */
   if (my_rank == 0) {
       struct stat st = {0};
@@ -578,6 +572,13 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Density\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
+
+      // Optional diagnostic fields
+      for(m=0;m<n_diag_fields;m++)
+        {
+          write_pvtu << "			<PDataArray type=\"Float32\" Name=\"" << run_input.diagnostic_fields(m) << "\" />" << endl;
+        }
+
       write_pvtu << "		</PPointData>" << endl;
 
       /*! Write points */
@@ -595,14 +596,19 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
       write_pvtu << "</VTKFile>" << endl;
       write_pvtu.close();
     }
+
 #else
+
   /*! In serial, don't write a .pvtu file. */
   cout << "Writing Paraview dump number " << dumpnum << " ...." << endl;
+
 #endif
 
 #ifdef _MPI
+
   /*! Wait for all processes to get to this point, otherwise there won't be a directory to put .vtus into */
   MPI_Barrier(MPI_COMM_WORLD);
+
 #endif
 
   /*! Each process writes its own .vtu file */
@@ -631,7 +637,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           /*! no. of vertices per ele */
           n_verts  = FlowSol->mesh_eles(i)->get_n_verts_per_ele();
 
-          /*! no. of fields */
+          /*! no. of solution fields */
           n_fields = FlowSol->mesh_eles(i)->get_n_fields();
 
           /*! no. of dimensions */
@@ -647,6 +653,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           FlowSol->mesh_eles(i)->set_grid_vel_ppts();
           grid_vel_ppts_temp = FlowSol->mesh_eles(i)->get_grid_vel_ppts();
 
+          /*! Temporary diagnostic field array at plot points */
+          diag_ppts_temp.setup(n_points,n_diag_fields);
+
           con.setup(n_verts,n_cells);
           con = FlowSol->mesh_eles(i)->get_connectivity_plot();
 
@@ -655,8 +664,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
             {
               write_vtu << "		<Piece NumberOfPoints=\"" << n_points << "\" NumberOfCells=\"" << n_cells << "\">" << endl;
 
-              /*! Calculate the solution at the plot points */
+              /*! Calculate the prognostic (solution) fields at the plot points */
               FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
+
+              /*! Calculate the diagnostic fields at the plot points */
+              if(n_diag_fields > 0)
+                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,diag_ppts_temp);
 
               /*! write out solution to file */
               write_vtu << "			<PointData>" << endl;
@@ -726,9 +739,24 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                       write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
                     }
                 }
-              /*! End the line and finish writing DataArray and PointData objects */
               write_vtu << endl;
               write_vtu << "				</DataArray>" << endl;
+
+              /*! Write out optional diagnostic fields */
+              for(m=0;m<n_diag_fields;m++)
+                {
+                  write_vtu << "				<DataArray type= \"Float32\" Name=\"" << run_input.diagnostic_fields(m) << "\" format=\"ascii\">" << endl;
+                  for(k=0;k<n_points;k++)
+                    {
+                      write_vtu << diag_ppts_temp(k,m) << " ";
+                    }
+
+                  /*! End the line and finish writing DataArray object */
+                  write_vtu << endl;
+                  write_vtu << "				</DataArray>" << endl;
+                }
+
+              /*! finish writing PointData object */
               write_vtu << "			</PointData>" << endl;
 
               /*! Calculate the plot coordinates */
@@ -809,17 +837,6 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 void write_restart(int in_file_num, struct solution* FlowSol)
 {
 
-  // copy solution to cpu
-#ifdef _GPU
-  for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-
-          FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-
-        }
-    }
-#endif
-
   char file_name_s[50];
   char *file_name;
   ofstream restart_file;
@@ -869,20 +886,6 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
     file_name = &file_name_s[0];
     cp_file.open(file_name);
   }
-
-  // copy solution to cpu
-#ifdef _GPU
-  for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-
-          FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-          if (FlowSol->viscous==1)
-            {
-              FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
-            }
-        }
-    }
-#endif
 
   array<double> temp_inv_force(FlowSol->n_dims);
   array<double> temp_vis_force(FlowSol->n_dims);
@@ -956,45 +959,46 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
 
 }
 
-// Calculate global diagnostic quantities
-void CalcDiagnostics(int in_file_num, struct solution* FlowSol) {
-
-  // copy solution to cpu
-#ifdef _GPU
-
-  for(int i=0;i<FlowSol->n_ele_types;i++)
-    {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
-        {
-          FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-          if (FlowSol->viscous==1)
-            {
-              FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
-            }
-        }
-    }
-
-#endif
-
-  int ndiags = run_input.n_diagnostics;
+// Calculate diagnostic fields
+void CalcDiagnosticFields(int in_file_num, struct solution* FlowSol) {
 
   // Loop over element types
   for(int i=0;i<FlowSol->n_ele_types;i++)
     {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
         {
-          FlowSol->mesh_eles(i)->CalcDiagnostics(ndiags, FlowSol->diagnostics);
+          FlowSol->mesh_eles(i)->CalcDiagnosticFields();
+        }
+    }
+}
+
+// Calculate integral diagnostic quantities
+void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol) {
+
+  int nintq = run_input.n_integral_quantities;
+
+  // Loop over element types
+  for(int i=0;i<FlowSol->n_ele_types;i++)
+    {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
+        {
+          // initialize to zero
+          for(int j=0;j<nintq;++j)
+            {
+              FlowSol->integral_quantities(j) = 0.0;
+            }
+          FlowSol->mesh_eles(i)->CalcIntegralQuantities(nintq, FlowSol->integral_quantities);
         }
     }
 
 #ifdef _MPI
 
-  array<double> diagnostics_global(ndiags);
-  for(int j=0;j<ndiags;++j)
+  array<double> integral_quantities_global(nintq);
+  for(int j=0;j<nintq;++j)
     {
-      diagnostics_global(j) = 0.0;
-      MPI_Reduce(&FlowSol->diagnostics(j),&diagnostics_global(j),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      FlowSol->diagnostics(j) = diagnostics_global(j);
+      integral_quantities_global(j) = 0.0;
+      MPI_Reduce(&FlowSol->integral_quantities(j),&integral_quantities_global(j),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      FlowSol->integral_quantities(j) = integral_quantities_global(j);
     }
 #endif
   
@@ -1019,21 +1023,6 @@ void compute_error(int in_file_num, struct solution* FlowSol)
       error(0,i) = 0.;
       error(1,i) = 0.;
     }
-
-  // copy solution to cpu
-#ifdef _GPU
-  for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-
-          FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-          if (FlowSol->viscous==1)
-            {
-              FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
-            }
-        }
-    }
-#endif
-
 
   //Compute the error
   for(int i=0;i<FlowSol->n_ele_types;i++) {
@@ -1190,17 +1179,6 @@ void CalcNormResidual(struct solution* FlowSol) {
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
   
-  
-  
-#ifdef _GPU
-  // copy residual to cpu
-  for(i=0; i<FlowSol->n_ele_types; i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
-    }
-  }
-#endif
-  
   for(i=0; i<FlowSol->n_ele_types; i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
       n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
@@ -1244,7 +1222,7 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
   clock_t final;
 
   bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
-  int n_diags = run_input.n_diagnostics;
+  int n_diags = run_input.n_integral_quantities;
   double in_time = FlowSol->time;
   
   if (FlowSol->n_dims==2) n_fields = 4;
@@ -1264,7 +1242,7 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
       if (FlowSol->n_dims==2) write_hist[0] << ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\"";
       else write_hist[0] <<  ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"F<sub>z</sub>(Total)\"";
       
-      // Add diagnostics
+      // Add integral diagnostics
       for(i=0; i<n_diags; i++)
         write_hist[0] << ",\"Diagnostics[" << i << "]\"";
   
@@ -1296,9 +1274,9 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
       write_hist[0] <<", " << FlowSol->inv_force(i) + FlowSol->vis_force(i);
     }
     
-    // Output diagnostics
+    // Output integral diagnostic quantities
     for(i=0; i<n_diags; i++)
-      write_hist[0] <<", " << FlowSol->diagnostics(i);
+      write_hist[0] <<", " << FlowSol->integral_quantities(i);
 
     // Output physical time
     write_hist[0] << ", " << in_time << endl;
@@ -1327,17 +1305,6 @@ void check_stability(struct solution* FlowSol)
 
   bisect_ind = run_input.bis_ind;
   file_lines = run_input.file_lines;
-
-  // copy solution to cpu
-#ifdef _GPU
-  for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-
-          FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-
-        }
-    }
-#endif
 
   // check element specific data
 
@@ -1444,4 +1411,23 @@ void check_stability(struct solution* FlowSol)
     exit(0);
 
 }
+
+#ifdef _GPU
+void CopyGPUCPU(struct solution* FlowSol)
+{
+  // copy solution to cpu
+
+  for(int i=0;i<FlowSol->n_ele_types;i++)
+    {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
+        {
+          FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+          if (FlowSol->viscous==1)
+            {
+              FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
+            }
+        }
+    }
+}
+#endif
 

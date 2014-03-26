@@ -78,12 +78,12 @@ void SetInput(struct solution* FlowSol) {
 
   /*! Associate a GPU to each rank. */
   // Cluster:
-  //if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
-  //if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+  if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
+  if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
   // Enrico:
-  if (FlowSol->rank==0) { cudaSetDevice(2); }
-  else if (FlowSol->rank==1) { cudaSetDevice(0); }
-  else if (FlowSol->rank==2) { cudaSetDevice(3); }
+//  if (FlowSol->rank==0) { cudaSetDevice(2); }
+//  else if (FlowSol->rank==1) { cudaSetDevice(0); }
+//  else if (FlowSol->rank==2) { cudaSetDevice(3); }
 
 #endif
 
@@ -413,8 +413,8 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
         }
     }
 
-  // Set metrics at volume cubpts. Only needed for computing error and diagnostics.
-  if (run_input.test_case != 0 || run_input.diagnostics_freq!=0) {
+  // Set metrics at volume cubpts. Only needed for computing error and integral diagnostic quantities.
+  if (run_input.test_case != 0 || run_input.monitor_integrals_freq!=0) {
     if (FlowSol->rank==0) cout << "setting element transforms at volume cubpts ... " << endl;
     for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
