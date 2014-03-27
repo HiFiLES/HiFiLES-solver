@@ -771,15 +771,6 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
 #ifdef _CPU
   int bdy_spec, flux_spec;
   array<double> norm(n_dims), fn(n_fields);
-<<<<<<< HEAD
-
-  for(int i=0;i<n_inters;i++) {
-
-    /*! Boundary specification. */
-
-    bdy_spec = boundary_type(i);
-=======
->>>>>>> 4ebaf37273f069fae129e1f282468cb949e6e5cd
 
   for(int i=0;i<n_inters;i++)
     {

@@ -219,7 +219,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       }
 
       // Allocate SGS flux array if using LES or wall model
-      if(LES > 0 || wall_model > 0) {
+      if(LES != 0 || wall_model != 0) {
         temp_sgsf.setup(n_fields,n_dims);
       }
 
@@ -1921,6 +1921,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
       for(j=0;j<n_upts_per_ele;j++)
       {
         detjac = detjac_upts(j,i);
+
         //physical solution
         for(k=0;k<n_fields;k++)
         {
@@ -1946,7 +1947,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
         }
 
         // If LES or wall model, calculate SGS viscous flux
-        if(LES > 0 || (wall_model > 0)) {
+        if(LES != 0 || wall_model != 0) {
 
           calc_sgsf_upts(temp_u,temp_grad_u,detjac,i,j,temp_sgsf);
 
@@ -2038,7 +2039,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   // Compute SGS flux using wall model if sufficiently close to solid boundary
   wall = 0;
 
-  if(wall_model > 0) {
+  if(wall_model != 0) {
 
     // Magnitude of wall distance vector
     y = 0.0;
@@ -2138,8 +2139,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   else {
 
     // Set wall shear stress to 0 to prevent NaNs
-    for(i=0;i<n_dims;++i)
-      twall(upt,ele,i) = 0.0;
+    if(wall_model != 0) for(i=0;i<n_dims;++i) twall(upt,ele,i) = 0.0;
 
     // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
     if(sgs_model==0) {
