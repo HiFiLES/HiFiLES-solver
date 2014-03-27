@@ -57,7 +57,7 @@ void CalcResidual(struct solution* FlowSol) {
   int i;                            /*!< Loop iterator */
 
   /*! If at first RK step and using certain LES models, compute some model-related quantities. */
-  if(run_input.LES==1 and in_disu_upts_from==0) {
+  if(run_input.LES==1 && in_disu_upts_from==0) {
       if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
           for(i=0; i<FlowSol->n_ele_types; i++)
             FlowSol->mesh_eles(i)->calc_sgs_terms(in_disu_upts_from);
@@ -119,10 +119,15 @@ void CalcResidual(struct solution* FlowSol) {
         FlowSol->mesh_eles(i)->calc_cor_grad_disu_fpts();
 
 #ifdef _MPI
-      /*! Send the corrected value across the MPI interface. */
+      /*! Send the corrected value and SGS flux across the MPI interface. */
       if (FlowSol->nproc>1) {
           for(i=0; i<FlowSol->n_mpi_inter_types; i++)
             FlowSol->mesh_mpi_inters(i).send_cor_grad_disu_fpts();
+
+          if (run_input.LES) {
+            for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+              FlowSol->mesh_mpi_inters(i).send_sgsf_fpts();
+          }
         }
 #endif
 
@@ -158,6 +163,11 @@ void CalcResidual(struct solution* FlowSol) {
       if (FlowSol->nproc>1) {
           for(i=0; i<FlowSol->n_mpi_inter_types; i++)
             FlowSol->mesh_mpi_inters(i).receive_cor_grad_disu_fpts();
+
+          if (run_input.LES) {
+            for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+            FlowSol->mesh_mpi_inters(i).receive_sgsf_fpts();
+          }
 
           for(i=0; i<FlowSol->n_mpi_inter_types; i++)
             FlowSol->mesh_mpi_inters(i).calc_norm_tconvisf_fpts_mpi();

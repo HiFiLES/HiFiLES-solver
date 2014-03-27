@@ -89,25 +89,25 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
               norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
               norm_tconf_fpts_r(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
 
-              if(viscous)
+              for (int k=0;k<n_dims;k++)
                 {
+                  if(viscous)
+                    {
 
-                  delta_disu_fpts_l(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-                  delta_disu_fpts_r(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
+                      delta_disu_fpts_l(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+                      delta_disu_fpts_r(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
 
-                  for (int k=0;k<n_dims;k++) {
                       grad_disu_fpts_l(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
                       grad_disu_fpts_r(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
                     }
 
+                  // Subgrid-scale flux
+                  if(LES)
+                    {
+                      sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+                      sgsf_fpts_r(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
+                    }
                 }
-
-              // Subgrid-scale flux
-              if(LES) {
-                for (int k=0;k<n_dims;k++) {
-                  sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
-                }
-              }
             }
         }
 
@@ -156,6 +156,7 @@ void int_inters::mv_all_cpu_gpu(void)
     }
 
   sgsf_fpts_l.mv_cpu_gpu();
+  sgsf_fpts_r.mv_cpu_gpu();
 
 #endif
 }
@@ -301,13 +302,15 @@ void int_inters::calc_norm_tconvisf_fpts(void)
 
           // If LES, get SGS flux and add to viscous flux
           if(LES) {
-            // pointer to subgrid-scale flux at flux point
             for(int k=0;k<n_dims;k++) {
               for(int l=0;l<n_fields;l++) {
+                // pointers to subgrid-scale fluxes
                 temp_sgsf_l(l,k) = *sgsf_fpts_l(j,i,l,k);
+                temp_sgsf_r(l,k) = *sgsf_fpts_r(j,i,l,k);
 
-                // Add SGS flux to viscous flux
+                // Add SGS fluxes to viscous fluxes
                 temp_f_l(l,k) += temp_sgsf_l(l,k);
+                temp_f_r(l,k) += temp_sgsf_r(l,k);
               }
             }
           }
@@ -335,7 +338,7 @@ void int_inters::calc_norm_tconvisf_fpts(void)
 
 #ifdef _GPU
   if (n_inters!=0)
-    calc_norm_tconvisf_fpts_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff);
+    calc_norm_tconvisf_fpts_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),sgsf_fpts_r.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff,LES);
 #endif
 }
 

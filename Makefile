@@ -14,7 +14,7 @@
 # TODO: add config script to build parmetis and look for BLAS, parmetis, CUDA, MPI and TECIO libraries
 
 # TODO: include makefile.machine.in by looking for current machine name
-include makefiles/makefile.cluster.in
+include makefile.in
 
 # Compiler
 
