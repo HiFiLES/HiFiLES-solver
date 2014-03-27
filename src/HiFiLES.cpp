@@ -191,14 +191,6 @@ int main(int argc, char *argv[]) {
 
 #endif
 
-    /*! Compute the optional diagnostic fields. */
-
-    if(i_steps%FlowSol.plot_freq == 0 and run_input.n_diagnostic_fields > 0) {
-      
-      CalcDiagnosticFields(FlowSol.ini_iter+i_steps, &FlowSol);
-
-    }
-
     /*! Force, integral quantities, and residual computation and output. */
 
     if(i_steps%run_input.monitor_res_freq == 0 ) {

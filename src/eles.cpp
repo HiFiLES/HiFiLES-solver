@@ -3606,45 +3606,188 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
     }
 }
 
-// calculate diagnostic fields at the plot points
-void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& out_diag_field_ppts)
+// calculate gradient of solution at the plot points
+void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
 {
-
-  int i,j,k;
-
-  array<double> diag_upts_plot(n_upts_per_ele,n_diagnostic_fields);
-
-  for(i=0;i<n_diagnostic_fields;i++)
+  if (n_eles!=0)
     {
-      for(j=0;j<n_upts_per_ele;j++)
+
+      int i,j,k,l;
+
+      array<double> grad_disu_upts_temp(n_upts_per_ele,n_fields,n_dims);
+
+      for(i=0;i<n_fields;i++)
         {
-          diag_upts_plot(j,i)=diagnostic_fields_upts(j,in_ele,i);
+          for(j=0;j<n_upts_per_ele;j++)
+            {
+              for(k=0;k<n_dims;k++)
+                {
+                  grad_disu_upts_temp(j,i,k)=grad_disu_upts(j,in_ele,i,k);
+                }
+            }
         }
-    }
 
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_diagnostic_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,diag_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_diag_field_ppts.get_ptr_cpu(),n_ppts_per_ele);
+      for (i=0;i<n_dims;i++) {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,grad_disu_upts_temp.get_ptr_cpu(0,0,i),n_upts_per_ele,0.0,out_grad_disu_ppts.get_ptr_cpu(0,0,i),n_ppts_per_ele);
+      }
 
 #else
 
-  //HACK (inefficient, but useful if cblas is unavailible)
+      //HACK (inefficient, but useful if cblas is unavailible)
 
-  for(i=0;i<n_ppts_per_ele;i++)
-    {
-      for(k=0;k<n_diagnostic_fields;k++)
+      for(i=0;i<n_ppts_per_ele;i++)
         {
-          out_diag_field_ppts(i,k) = 0.;
-
-          for(j=0;j<n_upts_per_ele;j++)
+          for(k=0;k<n_fields;k++)
             {
-              out_diag_field_ppts(i,k) += opp_p(i,j)*diag_upts_plot(j,k);
+              for(l=0;l<n_dims;l++)
+                {
+                  out_grad_disu_ppts(i,k,l) = 0.;
+                  for(j=0;j<n_upts_per_ele;j++)
+                    {
+                      out_grad_disu_ppts(i,k,l) += opp_p(i,j)*grad_disu_upts_temp(j,k,l);
+                    }
+                }
             }
         }
-    }
 
 #endif
 
+    }
+}
+
+// calculate diagnostic fields at the plot points
+void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts)
+{
+  int i,j,k,m;
+  double diagfield_upt;
+  double u,v,w;
+  double irho,pressure,v_sq;
+  double wx,wy,wz;
+  double dudx, dudy, dudz;
+  double dvdx, dvdy, dvdz;
+  double dwdx, dwdy, dwdz;
+
+  for(j=0;j<n_ppts_per_ele;j++)
+    {
+      // Compute velocity square
+      v_sq = 0.;
+      for (m=0;m<n_dims;m++)
+        v_sq += (in_disu_ppts(j,m+1)*in_disu_ppts(j,m+1));
+      v_sq /= in_disu_ppts(j,0)*in_disu_ppts(j,0);
+
+      // Compute pressure
+      pressure = (run_input.gamma-1.0)*( in_disu_ppts(j,n_dims+1) - 0.5*in_disu_ppts(j,0)*v_sq);
+
+      // compute diagnostic fields
+      for (k=0;k<n_diagnostic_fields;k++)
+      {
+        irho = 1./in_disu_ppts(j,0);
+
+        if (run_input.diagnostic_fields(k)=="rho")
+          diagfield_upt = in_disu_ppts(j,0);
+        else if (run_input.diagnostic_fields(k)=="u")
+          diagfield_upt = in_disu_ppts(j,1)*irho;
+        else if (run_input.diagnostic_fields(k)=="v")
+          diagfield_upt = in_disu_ppts(j,2)*irho;
+        else if (run_input.diagnostic_fields(k)=="w")
+        {
+          if (n_dims==2)
+            diagfield_upt = 0.;
+          else if (n_dims==3)
+            diagfield_upt = in_disu_ppts(j,3)*irho;
+        }
+        else if (run_input.diagnostic_fields(k)=="energy")
+        {
+          if (n_dims==2)
+            diagfield_upt = in_disu_ppts(j,3);
+          else if (n_dims==3)
+            diagfield_upt = in_disu_ppts(j,4);
+        }
+        // flow properties
+        else if (run_input.diagnostic_fields(k)=="mach")
+        {
+          diagfield_upt = sqrt( v_sq / (run_input.gamma*pressure/in_disu_ppts(j,0)) );
+        }
+        else if (run_input.diagnostic_fields(k)=="pressure")
+        {
+          diagfield_upt = pressure;
+        }
+        // turbulence metrics
+        else if (run_input.diagnostic_fields(k)=="vorticity" || run_input.diagnostic_fields(k)=="q_criterion")
+        {
+          u = in_disu_ppts(j,1)*irho;
+          v = in_disu_ppts(j,2)*irho;
+
+          dudx = irho*(in_grad_disu_ppts(j,1,0) - u*in_grad_disu_ppts(j,0,0));
+          dudy = irho*(in_grad_disu_ppts(j,1,1) - u*in_grad_disu_ppts(j,0,1));
+          dvdx = irho*(in_grad_disu_ppts(j,2,0) - v*in_grad_disu_ppts(j,0,0));
+          dvdy = irho*(in_grad_disu_ppts(j,2,1) - v*in_grad_disu_ppts(j,0,1));
+
+          if (n_dims==2)
+          {
+            if (run_input.diagnostic_fields(k) == "vorticity")
+            {
+              diagfield_upt = abs(dvdx-dudy);
+            }
+            else if (run_input.diagnostic_fields(k) == "q_criterion")
+            {
+              FatalError("Not implemented in 2D");
+            }
+          }
+          else if (n_dims==3)
+          {
+            w = in_disu_ppts(j,3)*irho;
+
+            dudz = irho*(in_grad_disu_ppts(j,1,2) - u*in_grad_disu_ppts(j,0,2));
+            dvdz = irho*(in_grad_disu_ppts(j,2,2) - v*in_grad_disu_ppts(j,0,2));
+
+            dwdx = irho*(in_grad_disu_ppts(j,3,0) - w*in_grad_disu_ppts(j,0,0));
+            dwdy = irho*(in_grad_disu_ppts(j,3,1) - w*in_grad_disu_ppts(j,0,1));
+            dwdz = irho*(in_grad_disu_ppts(j,3,2) - w*in_grad_disu_ppts(j,0,2));
+
+            wx = dwdy - dvdz;
+            wy = dudz - dwdx;
+            wz = dvdx - dudy;
+
+            if (run_input.diagnostic_fields(k) == "vorticity")
+            {
+              diagfield_upt = sqrt(wx*wx+wy*wy+wz*wz);
+            }
+            else if (run_input.diagnostic_fields(k) == "q_criterion")
+            {
+
+              wx *= 0.5;
+              wy *= 0.5;
+              wz *= 0.5;
+
+              double Sxx,Syy,Szz,Sxy,Sxz,Syz,SS,OO;
+              Sxx = dudx;
+              Syy = dvdy;
+              Szz = dwdz;
+              Sxy = 0.5*(dudy+dvdx);
+              Sxz = 0.5*(dudz+dwdx);
+              Syz = 0.5*(dvdz+dwdy);
+
+              SS = Sxx*Sxx + Syy*Syy + Szz*Szz + 2*Sxy*Sxy + 2*Sxz*Sxz + 2*Syz*Syz;
+              OO = 2*wx*wx + 2*wy*wy + 2*wz*wz;
+
+              diagfield_upt = 0.5*(OO-SS);
+
+            }
+          }
+        }
+        else
+          FatalError("plot_quantity not recognized");
+
+        if (isnan(diagfield_upt))
+          FatalError("NaN");
+
+        // set array with solution point value
+        out_diag_field_ppts(j,k) = diagfield_upt;
+      }
+    }
 }
 
 // calculate position of solution point
@@ -5217,154 +5360,6 @@ void eles::add_body_force_upts(array <double>& body_force)
               for(m=0;m<n_dims;m++)
                 tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*body_force(k);
     }
-}
-
-// Compute diagnostic fields at solution points
-void eles::CalcDiagnosticFields(void)
-{
-  int i,j,k,m;
-  double diagfield_upt;
-  double u,v,w;
-  double irho,pressure,v_sq;
-  double wx,wy,wz;
-  double dudx, dudy, dudz;
-  double dvdx, dvdy, dvdz;
-  double dwdx, dwdy, dwdz;
-
-  for(i=0;i<n_eles;i++)
-  {
-    for(j=0;j<n_upts_per_ele;j++)
-    {
-      //physical solution
-      for(k=0;k<n_fields;k++)
-      {
-        temp_u(k)=disu_upts(0)(j,i,k);
-
-        //physical gradient
-        for (m=0;m<n_dims;m++)
-        {
-          temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
-        }
-      }
-
-      // Compute velocity square
-      v_sq = 0.;
-      for (m=0;m<n_dims;m++)
-        v_sq += (temp_u(m+1)*temp_u(m+1));
-      v_sq /= temp_u(0)*temp_u(0);
-
-      // Compute pressure
-      pressure = (run_input.gamma-1.0)*( temp_u(n_dims+1) - 0.5*temp_u(0)*v_sq);
-
-      // compute diagnostic fields
-      for (k=0;k<n_diagnostic_fields;k++)
-      {
-        // primitive variables
-        if (run_input.diagnostic_fields(k)=="rho")
-          diagfield_upt = temp_u(0);
-        else if (run_input.diagnostic_fields(k)=="u")
-          diagfield_upt = temp_u(1)/temp_u(0);
-        else if (run_input.diagnostic_fields(k)=="v")
-          diagfield_upt = temp_u(2)/temp_u(0);
-        else if (run_input.diagnostic_fields(k)=="w")
-        {
-          if (n_dims==2)
-            diagfield_upt = 0.;
-          else if (n_dims==3)
-            diagfield_upt = temp_u(3)/temp_u(0);
-        }
-        else if (run_input.diagnostic_fields(k)=="energy")
-        {
-          if (n_dims==2)
-            diagfield_upt = temp_u(3);
-          else if (n_dims==3)
-            diagfield_upt = temp_u(4);
-        }
-        // flow properties
-        else if (run_input.diagnostic_fields(k)=="mach")
-        {
-          diagfield_upt = sqrt( v_sq / (run_input.gamma*pressure/temp_u(0)) );
-        }
-        else if (run_input.diagnostic_fields(k)=="pressure")
-        {
-          diagfield_upt = pressure;
-        }
-        // turbulence metrics
-        else if (run_input.diagnostic_fields(k)=="vorticity" || run_input.diagnostic_fields(k)=="q_criterion")
-        {
-          irho = 1./temp_u(0);
-          u = temp_u(1)*irho;
-          v = temp_u(2)*irho;
-
-          dudx = irho*(temp_grad_u(1,0) - u*temp_grad_u(0,0));
-          dudy = irho*(temp_grad_u(1,1) - u*temp_grad_u(0,1));
-          dvdx = irho*(temp_grad_u(2,0) - v*temp_grad_u(0,0));
-          dvdy = irho*(temp_grad_u(2,1) - v*temp_grad_u(0,1));
-
-          if (n_dims==2)
-          {
-            if (run_input.diagnostic_fields(k) == "vorticity")
-            {
-              diagfield_upt = abs(dvdx-dudy);
-            }
-            else if (run_input.diagnostic_fields(k) == "q_criterion")
-            {
-              FatalError("Not implemented in 2D");
-            }
-          }
-          else if (n_dims==3)
-          {
-            w = temp_u(3)*irho;
-
-            dudz = irho*(temp_grad_u(1,2) - u*temp_grad_u(0,2));
-            dvdz = irho*(temp_grad_u(2,2) - v*temp_grad_u(0,2));
-
-            dwdx = irho*(temp_grad_u(3,0) - w*temp_grad_u(0,0));
-            dwdy = irho*(temp_grad_u(3,1) - w*temp_grad_u(0,1));
-            dwdz = irho*(temp_grad_u(3,2) - w*temp_grad_u(0,2));
-
-            wx = dwdy - dvdz;
-            wy = dudz - dwdx;
-            wz = dvdx - dudy;
-
-            if (run_input.diagnostic_fields(k) == "vorticity")
-            {
-              diagfield_upt = sqrt(wx*wx+wy*wy+wz*wz);
-            }
-            else if (run_input.diagnostic_fields(k) == "q_criterion")
-            {
-
-              wx *= 0.5;
-              wy *= 0.5;
-              wz *= 0.5;
-
-              double Sxx,Syy,Szz,Sxy,Sxz,Syz,SS,OO;
-              Sxx = dudx;
-              Syy = dvdy;
-              Szz = dwdz;
-              Sxy = 0.5*(dudy+dvdx);
-              Sxz = 0.5*(dudz+dwdx);
-              Syz = 0.5*(dvdz+dwdy);
-
-              SS = Sxx*Sxx + Syy*Syy + Szz*Szz + 2*Sxy*Sxy + 2*Sxz*Sxz + 2*Syz*Syz;
-              OO = 2*wx*wx + 2*wy*wy + 2*wz*wz;
-
-              diagfield_upt = 0.5*(OO-SS);
-
-            }
-          }
-        }
-        else
-          FatalError("plot_quantity not recognized");
-
-        if (isnan(diagfield_upt))
-          FatalError("NaN");
-
-        // set array with solution point value
-        diagnostic_fields_upts(j,i,k) = diagfield_upt;
-      }
-    }
-  }
 }
 
 // Compute integral quantities

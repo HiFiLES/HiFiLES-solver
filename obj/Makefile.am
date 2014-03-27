@@ -67,13 +67,19 @@ if BUILD_GPU
 #   compute_13	 + double precision floating point support
 #   compute_20	 + Fermi support
 #   compute_30	 + Kepler support
-.cu.o:
+cuda_kernels.o:
 	$(NVCC) $(NVCCFLAGS) -gencode=arch=compute_20,code=sm_20 --ptxas-options=-v -o $@ -c $<
+
+.cu.lo:
+	../cudalt.py $@ $(NVCC) -gencode=arch=compute_13,code=sm_13 --compiler-options=\" $(CFLAGS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \" -c $<
+
+libcudafiles_a_LINK= $(LIBTOOL) --mode=link $(CC) -o %@ $(CUDA_LDFLAGS) $(CUDA_LIBS)
 
 noinst_LIBRARIES = libcudafiles.a
 libcudafiles_a_SOURCES = ../src/cuda_kernels.cu
-libcudafiles_a_LIBADD = $(CUDA_LD)
-libcudafiles_a_CFLAGS = $(NVCCFLAGS)
+#libcudafiles_a_LIBADD = @CUDA_LIBS@
+#libcudafiles_a_LDFLAGS = @CUDA_LDFLAGS@ -static
+libcudafiles_a_CFLAGS = @NVCCFLAGS@
 ___bin_HiFiLES_LDADD += libcudafiles.a
 endif
 # ------------ END GPU ------------
@@ -88,8 +94,8 @@ ___bin_HiFiLES_LDADD += @TECIO_LD@
 
 # CUDA
 ___bin_HiFiLES_CXXFLAGS += @CUDA_CXX@
-___bin_HiFiLES_LDFLAGS += @CUDA_LD@
-___bin_HiFiLES_LDADD += @CUDA_LD@
+___bin_HiFiLES_LDFLAGS += @CUDA_LDFLAGS@
+___bin_HiFiLES_LDADD += @CUDA_LIBS@
 
 # BLAS
 ___bin_HiFiLES_CXXFLAGS += @BLAS_CXX@

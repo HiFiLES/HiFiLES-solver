@@ -47,9 +47,6 @@ void write_restart(int in_file_num, struct solution* FlowSol);
 /*! compute forces on wall faces*/
 void CalcForces(int in_file_num, struct solution* FlowSol);
 
-/*! compute diagnostic fields at solution points */
-void CalcDiagnosticFields(int in_file_num, struct solution* FlowSol);
-
 /*! compute integral diagnostic quantities */
 void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol);
 
