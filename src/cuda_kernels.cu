@@ -2671,6 +2671,8 @@ __global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
   double q_r[in_n_fields];
   double f_l[in_n_fields][in_n_dims];
   double f_r[in_n_fields][in_n_dims];
+  double sgsf_l[in_n_fields][in_n_dims];
+  double sgsf_r[in_n_fields][in_n_dims];
   double f_c[in_n_fields][in_n_dims];
 
   double fn[in_n_fields];
@@ -2692,13 +2694,16 @@ __global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
       for (int i=0;i<in_n_fields;i++)
         q_l[i]=(*(in_disu_fpts_l_ptr[thread_id+i*stride]));
 
-      // Left solution gradient
+      // Left solution gradient and SGS flux
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         {
 #pragma unroll
           for(int j=0;j<in_n_dims;j++)
-            grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_l_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            {
+              grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_l_ptr[thread_id + (j*in_n_fields + i)*stride]);
+              sgsf_l[i][j] = *(in_sgsf_fpts_l_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            }
         }
 
       // Normal vector
@@ -2720,13 +2725,16 @@ __global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
       for (int i=0;i<in_n_fields;i++)
         q_r[i]=(*(in_disu_fpts_r_ptr[thread_id+i*stride]));
 
-      // Right solution gradient
+      // Right solution gradient and SGS flux
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         {
 #pragma unroll
           for(int j=0;j<in_n_dims;j++)
-            grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            {
+              grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
+              sgsf_r[i][j] = *(in_sgsf_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            }
         }
 
       // Right flux prep
@@ -2746,8 +2754,8 @@ __global__ void calc_norm_tconvisf_fpts_NS_gpu_kernel(int in_n_fpts_per_inter, i
 #pragma unroll
               for (int j=0;j<in_n_dims;j++)
                 {
-                  f_l[i][j] += *(in_sgsf_fpts_l_ptr[thread_id + (j*in_n_fields + i)*stride]);
-                  f_r[i][j] += *(in_sgsf_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
+                  f_l[i][j] += sgsf_l[i][j];
+                  f_r[i][j] += sgsf_r[i][j];
                 }
             }
         }
@@ -2876,6 +2884,7 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
   double q_r[in_n_fields];
 
   double f[in_n_fields][in_n_dims];
+  double sgsf[in_n_fields][in_n_dims];
   double f_c[in_n_fields][in_n_dims];
 
   double fn[in_n_fields];
@@ -2898,13 +2907,16 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
       for (int i=0;i<in_n_fields;i++)
         q_l[i]=(*(in_disu_fpts_l_ptr[thread_id+i*stride]));
 
-      // Left solution gradient
+      // Left solution gradient and SGS flux
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         {
 #pragma unroll
           for(int j=0;j<in_n_dims;j++)
-            grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_l_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            {
+              grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_l_ptr[thread_id + (j*in_n_fields + i)*stride]);
+              sgsf[i][j] = *(in_sgsf_fpts_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            }
         }
 
       // Normal vector
@@ -2975,7 +2987,7 @@ __global__ void calc_norm_tconvisf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
 #pragma unroll
                       for (int j=0;j<in_n_dims;j++)
                         {
-                          f[i][j] += *(in_sgsf_fpts_ptr[thread_id + (j*in_n_fields + i)*stride]);
+                          f[i][j] += sgsf[i][j];
                         }
                     }
                 }
@@ -3091,6 +3103,8 @@ __global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
   double q_r[in_n_fields];
   double f_l[in_n_fields][in_n_dims];
   double f_r[in_n_fields][in_n_dims];
+  double sgsf_l[in_n_fields][in_n_dims];
+  double sgsf_r[in_n_fields][in_n_dims];
   double f_c[in_n_fields][in_n_dims];
 
   double fn[in_n_fields];
@@ -3112,13 +3126,16 @@ __global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
       for (int i=0;i<in_n_fields;i++)
         q_l[i]=(*(in_disu_fpts_l_ptr[thread_id+i*stride]));
 
-      // Left solution gradient
+      // Left solution gradient and SGS flux
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         {
 #pragma unroll
           for(int j=0;j<in_n_dims;j++)
-            grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_l_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            {
+              grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_l_ptr[thread_id + (j*in_n_fields + i)*stride]);
+              sgsf_l[i][j] = *(in_sgsf_fpts_l_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            }
         }
 
       // Normal vector
@@ -3140,13 +3157,16 @@ __global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
       for (int i=0;i<in_n_fields;i++)
         q_r[i]=(*(in_disu_fpts_r_ptr[thread_id+i*stride]));// don't divide by jac, since points to buffer
 
-      // Right solution gradient
+      // Right solution gradientand SGS flux
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         {
 #pragma unroll
           for(int j=0;j<in_n_dims;j++)
-            grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            {
+              grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
+              sgsf_r[i][j] = *(in_sgsf_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            }
         }
 
       // Right flux prep
@@ -3166,8 +3186,8 @@ __global__ void calc_norm_tconvisf_fpts_NS_mpi_gpu_kernel(int in_n_fpts_per_inte
 #pragma unroll
               for (int j=0;j<in_n_dims;j++)
                 {
-                  f_l[i][j] += *(in_sgsf_fpts_l_ptr[thread_id + (j*in_n_fields + i)*stride]);
-                  f_r[i][j] += *(in_sgsf_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
+                  f_l[i][j] += sgsf_l[i][j];
+                  f_r[i][j] += sgsf_r[i][j];
                 }
             }
         }
