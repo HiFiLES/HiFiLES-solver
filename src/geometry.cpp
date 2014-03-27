@@ -230,7 +230,7 @@ void GeoPreprocess(struct solution* FlowSol) {
   if (FlowSol->rank==0) cout << "initializing elements" << endl;
   if (FlowSol->rank==0) cout << "tris" << endl;
   FlowSol->mesh_eles_tris.setup(num_tris,max_n_spts_per_tri);
-  if (FlowSol->rank==0) cout << "quads, num_quads" << num_quads << endl;
+  if (FlowSol->rank==0) cout << "quads" << endl;
   FlowSol->mesh_eles_quads.setup(num_quads,max_n_spts_per_quad);
   if (FlowSol->rank==0) cout << "tets" << endl;
   FlowSol->mesh_eles_tets.setup(num_tets,max_n_spts_per_tet);
