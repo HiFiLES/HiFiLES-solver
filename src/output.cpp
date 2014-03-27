@@ -488,20 +488,13 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! Plot point coordinates */
   array<double> pos_ppts_temp;
   /*! Solution data at plot points */
-  array<double> disu_ppts_temp;
-<<<<<<< HEAD
-  /*! Diagnostic field data at plot points */
-  array<double> diag_ppts_temp;
-
-  /*! Grid velocity at plot points */
-  array<double> grid_vel_ppts_temp;
-=======
+  array<double> disu_ppts_temp;  
   /*! Solution gradient data at plot points */
   array<double> grad_disu_ppts_temp;
   /*! Diagnostic field data at plot points */
   array<double> diag_ppts_temp;
->>>>>>> 950d877aa71d395403a3d8b26f0a675be765fe2d
-
+  /*! Grid velocity at plot points */
+  array<double> grid_vel_ppts_temp;
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
 
