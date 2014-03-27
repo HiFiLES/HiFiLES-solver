@@ -488,20 +488,13 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! Plot point coordinates */
   array<double> pos_ppts_temp;
   /*! Solution data at plot points */
-  array<double> disu_ppts_temp;
-<<<<<<< HEAD
-  /*! Diagnostic field data at plot points */
-  array<double> diag_ppts_temp;
-
-  /*! Grid velocity at plot points */
-  array<double> grid_vel_ppts_temp;
-=======
+  array<double> disu_ppts_temp;  
   /*! Solution gradient data at plot points */
   array<double> grad_disu_ppts_temp;
   /*! Diagnostic field data at plot points */
   array<double> diag_ppts_temp;
->>>>>>> 950d877aa71d395403a3d8b26f0a675be765fe2d
-
+  /*! Grid velocity at plot points */
+  array<double> grid_vel_ppts_temp;
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
 
@@ -656,14 +649,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           /*! Temporary solution array at plot points */
           disu_ppts_temp.setup(n_points,n_fields);
 
-<<<<<<< HEAD
+          /*! Temporary solution array at plot points */
+          grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
+
           /*! Temporary grid velocity array at plot points */
           FlowSol->mesh_eles(i)->set_grid_vel_ppts();
           grid_vel_ppts_temp = FlowSol->mesh_eles(i)->get_grid_vel_ppts();
-=======
-          /*! Temporary solution array at plot points */
-          grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
->>>>>>> 950d877aa71d395403a3d8b26f0a675be765fe2d
 
           /*! Temporary diagnostic field array at plot points */
           diag_ppts_temp.setup(n_points,n_diag_fields);
@@ -679,18 +670,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
               /*! Calculate the prognostic (solution) fields at the plot points */
               FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
 
-<<<<<<< HEAD
-              /*! Calculate the diagnostic fields at the plot points */
-              if(n_diag_fields > 0)
-                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,diag_ppts_temp);
-=======
               /*! Calculate the gradient of the prognostic fields at the plot points */
               FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
 
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
                 FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
->>>>>>> 950d877aa71d395403a3d8b26f0a675be765fe2d
 
               /*! write out solution to file */
               write_vtu << "			<PointData>" << endl;

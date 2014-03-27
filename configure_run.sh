@@ -40,7 +40,7 @@ TECIO_LIB="lib/tecio-2008/lib"
 TECIO_INCLUDE="lib/tecio-2008/include"
 
 CUDA_LIB="/usr/local/cuda/lib64"
-CUDA_INCLUE="/usr/local/cuda/include"
+CUDA_INCLUDE="/usr/local/cuda/include"
 # ---------------------------------------------------------------
 # Run configure using the chosen options [Should not change this]
 if [[ "$NODE" == "GPU" ]]
