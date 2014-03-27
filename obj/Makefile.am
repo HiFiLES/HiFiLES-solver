@@ -17,7 +17,6 @@ BUILD_MPI =      @BUILD_MPI@
 BUILD_GPU =      @BUILD_GPU@
 
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
-AM_CXXFLAGS = -g o0
 AM_CPPFLAGS = -I../include/
 
 bin_PROGRAMS = ../bin/HiFiLES

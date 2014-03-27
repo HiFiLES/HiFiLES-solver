@@ -52,7 +52,7 @@ eles_hexas::eles_hexas()
 
 }
 
-void eles_hexas::setup_ele_type_specific(int in_run_type)
+void eles_hexas::setup_ele_type_specific()
 {
 #ifndef _MPI
   cout << "Initializing hexas" << endl;
@@ -82,105 +82,45 @@ void eles_hexas::setup_ele_type_specific(int in_run_type)
 
   n_ppts_per_ele=p_res*p_res*p_res;
   n_peles_per_ele=(p_res-1)*(p_res-1)*(p_res-1);
+  n_verts_per_ele = 8;
+
   set_loc_ppts();
   set_opp_p();
 
-	/*! Run mode */
-  if (in_run_type==0)
+  n_fpts_per_inter.setup(6);
+
+  n_fpts_per_inter(0)=(order+1)*(order+1);
+  n_fpts_per_inter(1)=(order+1)*(order+1);
+  n_fpts_per_inter(2)=(order+1)*(order+1);
+  n_fpts_per_inter(3)=(order+1)*(order+1);
+  n_fpts_per_inter(4)=(order+1)*(order+1);
+  n_fpts_per_inter(5)=(order+1)*(order+1);
+
+  n_fpts_per_ele=n_inters_per_ele*(order+1)*(order+1);
+
+  set_tloc_fpts();
+
+  set_tnorm_fpts();
+
+  set_opp_0(run_input.sparse_hexa);
+  set_opp_1(run_input.sparse_hexa);
+  set_opp_2(run_input.sparse_hexa);
+  set_opp_3(run_input.sparse_hexa);
+
+  if(viscous)
     {
-      n_fpts_per_inter.setup(6);
+      // Compute hex filter matrix
+      if(filter) compute_filter_upts();
 
-      n_fpts_per_inter(0)=(order+1)*(order+1);
-      n_fpts_per_inter(1)=(order+1)*(order+1);
-      n_fpts_per_inter(2)=(order+1)*(order+1);
-      n_fpts_per_inter(3)=(order+1)*(order+1);
-      n_fpts_per_inter(4)=(order+1)*(order+1);
-      n_fpts_per_inter(5)=(order+1)*(order+1);
+      set_opp_4(run_input.sparse_hexa);
+      set_opp_5(run_input.sparse_hexa);
+      set_opp_6(run_input.sparse_hexa);
 
-      n_fpts_per_ele=n_inters_per_ele*(order+1)*(order+1);
-
-      set_tloc_fpts();
-
-      set_tnorm_fpts();
-
-      set_opp_0(run_input.sparse_hexa);
-      set_opp_1(run_input.sparse_hexa);
-      set_opp_2(run_input.sparse_hexa);
-      set_opp_3(run_input.sparse_hexa);
-
-      if(viscous)
-        {
-
-          // Compute hex filter matrix
-          if(filter) compute_filter_upts();
-
-          set_opp_4(run_input.sparse_hexa);
-          set_opp_5(run_input.sparse_hexa);
-          set_opp_6(run_input.sparse_hexa);
-
-          temp_grad_u.setup(n_fields,n_dims);
-        }
-
-      temp_u.setup(n_fields);
-      temp_f.setup(n_fields,n_dims);
-      //}
-      //else
-      //{
-      if (viscous==1)
-        {
-          set_opp_4(run_input.sparse_hexa);
-        }
-
-      n_verts_per_ele = 8;
-      n_edges_per_ele = 12;
-      n_ppts_per_edge = p_res-2;
-
-      // Number of plot points per face, excluding points on vertices or edges
-      n_ppts_per_face.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;++i)
-        n_ppts_per_face(i) = (p_res-2)*(p_res-2);
-
-      n_ppts_per_face2.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;++i)
-        n_ppts_per_face2(i) = (p_res)*(p_res);
-
-      max_n_ppts_per_face = n_ppts_per_face(0);
-
-      // Number of plot points not on faces, edges or vertices
-      n_interior_ppts = (p_res-2)*(p_res-2)*(p_res-2);
-
-      vert_to_ppt.setup(n_verts_per_ele);
-      edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
-
-      face_ppt_to_ppt.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;++i)
-        face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
-
-      face2_ppt_to_ppt.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;++i)
-        face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
-
-      interior_ppt_to_ppt.setup(n_interior_ppts);
-
-      create_map_ppt();
-
-      /*
-    cout << "vert_ppt" << endl << endl;
-    vert_to_ppt.print();
-    cout << "edge_ppt" << endl << endl;
-    edge_ppt_to_ppt.print();
-    cout << "face_ppt" << endl << endl;
-    for (int i=0;i<n_inters_per_ele;++i) {
-      cout << "face=" << i<< endl;
-      face_ppt_to_ppt(i).print();
+      temp_grad_u.setup(n_fields,n_dims);
     }
-    cout << "interior_ppt" << endl << endl;
-    interior_ppt_to_ppt.print();
 
-    loc_ppts.print();
-    */
-
-    }
+  temp_u.setup(n_fields);
+  temp_f.setup(n_fields,n_dims);
 }
 
 // #### methods ####
@@ -202,145 +142,6 @@ void eles_hexas::setup_ele_type_specific(int in_run_type)
     shape.setup(n_dims,max_n_spts_per_ele,n_eles);
 }
 */
-
-void eles_hexas::create_map_ppt(void)
-{
-  int i,j,k;
-  int index;
-  int vert_ppt_count = 0;
-  int interior_ppt_count = 0;
-
-  array<int> edge_ppt_count(n_edges_per_ele);
-  array<int> face_ppt_count(n_inters_per_ele);
-  array<int> face2_ppt_count(n_inters_per_ele);
-
-  for (i=0;i<n_edges_per_ele;++i)
-    edge_ppt_count(i)=0;
-  for (i=0;i<n_inters_per_ele;++i) {
-      face_ppt_count(i)=0;
-      face2_ppt_count(i)=0;
-    }
-
-  for(k=0;k<p_res;++k)
-    {
-      for(j=0;j<p_res;++j)
-        {
-          for(i=0;i<p_res;++i)
-            {
-              index=i+(p_res*j)+(p_res*p_res*k);
-
-              if (i==0 && j==0 && k==0)
-                vert_to_ppt(0)=index;
-              else if (i==p_res-1 && j==0 && k==0)
-                vert_to_ppt(1)=index;
-              else if (i==p_res-1 && j==p_res-1 && k==0)
-                vert_to_ppt(2)=index;
-              else if (i==0 && j==p_res-1 && k==0)
-                vert_to_ppt(3)=index;
-              else if (i==0 && j==0 && k==p_res-1)
-                vert_to_ppt(4)=index;
-              else if (i==p_res-1 && j==0 && k==p_res-1)
-                vert_to_ppt(5)=index;
-              else if (i==p_res-1 && j==p_res-1 && k==p_res-1)
-                vert_to_ppt(6)=index;
-              else if (i==0 && j==p_res-1 && k==p_res-1)
-                vert_to_ppt(7)=index;
-              else if (k==0 && j==0) {
-                  edge_ppt_to_ppt(0,edge_ppt_count(0)++) = index;
-                }
-              else if (k==0 && i==p_res-1) {
-                  edge_ppt_to_ppt(1,edge_ppt_count(1)++) = index;
-                }
-              else if (k==0 && j==p_res-1) {
-                  edge_ppt_to_ppt(2,edge_ppt_count(2)++) = index;
-                }
-              else if (k==0 && i==0) {
-                  edge_ppt_to_ppt(3,edge_ppt_count(3)++) = index;
-                }
-              else if (i==0 && j==0) {
-                  edge_ppt_to_ppt(4,edge_ppt_count(4)++) = index;
-                }
-              else if (i==p_res-1 && j==0) {
-                  edge_ppt_to_ppt(5,edge_ppt_count(5)++) = index;
-                }
-              else if (i==p_res-1 && j==p_res-1) {
-                  edge_ppt_to_ppt(6,edge_ppt_count(6)++) = index;
-                }
-              else if (i==0 && j==p_res-1) {
-                  edge_ppt_to_ppt(7,edge_ppt_count(7)++) = index;
-                }
-              else if (k==p_res-1 && j==0) {
-                  edge_ppt_to_ppt(8,edge_ppt_count(8)++) = index;
-                }
-              else if (k==p_res-1 && i==p_res-1) {
-                  edge_ppt_to_ppt(9,edge_ppt_count(9)++) = index;
-                }
-              else if (k==p_res-1 && j==p_res-1) {
-                  edge_ppt_to_ppt(10,edge_ppt_count(10)++) = index;
-                }
-              else if (k==p_res-1 && i==0) {
-                  edge_ppt_to_ppt(11,edge_ppt_count(11)++) = index;
-                }
-              else if (k==0) {
-                  face_ppt_to_ppt(0)(face_ppt_count(0)++) = index;
-                  //cout << "face 0" << endl;
-                }
-              else if (j==0) {
-                  face_ppt_to_ppt(1)(face_ppt_count(1)++) = index;
-                  //cout << "face 1" << endl;
-                }
-              else if (i==p_res-1) {
-                  face_ppt_to_ppt(2)(face_ppt_count(2)++) = index;
-                  //cout << "face 2" << endl;
-                }
-              else if (j==p_res-1) {
-                  face_ppt_to_ppt(3)(face_ppt_count(3)++) = index;
-                  //cout << "face 3" << endl;
-                }
-              else if (i==0) {
-                  face_ppt_to_ppt(4)(face_ppt_count(4)++) = index;
-                  //cout << "face 3" << endl;
-                }
-              else if (k==p_res-1) {
-                  face_ppt_to_ppt(5)(face_ppt_count(5)++) = index;
-                  //cout << "face 3" << endl;
-                }
-              else
-                interior_ppt_to_ppt(interior_ppt_count++) = index;
-
-
-              // Creating face2 array
-
-              if (k==0) {
-                  face2_ppt_to_ppt(0)(face2_ppt_count(0)++) = index;
-                  //cout << "face 0" << endl;
-                }
-              if (j==0) {
-                  face2_ppt_to_ppt(1)(face2_ppt_count(1)++) = index;
-                  //cout << "face 1" << endl;
-                }
-              if (i==p_res-1) {
-                  face2_ppt_to_ppt(2)(face2_ppt_count(2)++) = index;
-                  //cout << "face 2" << endl;
-                }
-              if (j==(p_res-1)) {
-                  face2_ppt_to_ppt(3)(face2_ppt_count(3)++) = index;
-                  //cout << "face 3" << endl;
-                }
-              if (i==0) {
-                  face2_ppt_to_ppt(4)(face2_ppt_count(4)++) = index;
-                  //cout << "face 3" << endl;
-                }
-              if (k==p_res-1) {
-                  face2_ppt_to_ppt(5)(face2_ppt_count(5)++) = index;
-                  //cout << "face 3" << endl;
-                }
-
-            }
-        }
-    }
-
-}
 
 void eles_hexas::set_connectivity_plot()
 {
