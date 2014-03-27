@@ -287,8 +287,8 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 	zero_array(modal);
 	zero_array(filter_upts);
 
-	// Full form: alpha = Cp*N*dt
-	alpha = Cp*N;
+	// Full form: alpha = Cp*p*dt
+	alpha = Cp*p;
 
 	for(i=0;i<p+1;i++) {
 		// Exponential filter (SVV method) (similar to Meister et al 2009)
@@ -334,8 +334,8 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 	zero_array(modal);
 	zero_array(filter_upts);
 
-	// Full form: alpha = Cp*(N+1)*dt/delta
-	alpha = Cp*N;
+	// Full form: alpha = Cp*(p+1)*dt/delta
+	alpha = Cp*p;
 
 	for(i=0;i<p+1;i++) {
 		for(j=0;j<p-i+1;j++) {
@@ -386,8 +386,8 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
 	zero_array(modal);
 	zero_array(filter_upts);
 
-	// Full form: alpha = Cp*(N+1)*dt/delta
-	alpha = Cp*N;
+	// Full form: alpha = Cp*(p+1)*dt/delta
+	alpha = Cp*p;
 
 	for(i=0;i<p+1;i++) {
 		for(j=0;j<p-i+1;j++) {
@@ -406,8 +406,8 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
 	// Sharp modal cutoff filter
 	//modal(N-1,N-1)=0.0;
 
-	//cout<<"modal coeffs:"<<endl;
-	//modal.print();
+  cout<<"modal coeffs:"<<endl;
+  modal.print();
 
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
