@@ -23,11 +23,12 @@ extern double pi;
 
 /** enumeration for cell type */
 enum CTYPE {
-    TRI   = 0,
-    QUAD  = 1,
-    TET   = 2,
-    WEDGE = 3,
-    BRICK = 4
+    TRI     = 0,
+    QUAD    = 1,
+    TET     = 2,
+    WEDGE   = 3,
+    HEX     = 4,
+    PYRAMID = 5
 };
 
 /** enumeration for mesh motion type */

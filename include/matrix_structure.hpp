@@ -256,14 +256,16 @@ public:
 	 */
 	void DiagonalProduct(CSysVector & vec, unsigned long row_i);
 	
+#ifdef _MPI
   /*!
 	 * \brief Send receive the solution using MPI.
 	 * \param[in] x - Solution..
 	 * \param[in] geometry - Geometrical definition of the problem.
 	 * \param[in] config - Definition of the particular problem.
 	 */
-    //void SendReceive_Solution(CSysVector & x, CGeometry *geometry, CConfig *config);
-  
+    void SendReceive_Solution(CSysVector & x, CGeometry *geometry, CConfig *config);
+#endif
+
   /*!
 	 * \brief Performs the product of i-th row of a sparse matrix by a vector.
 	 * \param[in] vec - Vector to be multiplied by the row of the sparse matrix A.
@@ -272,20 +274,12 @@ public:
 	 */
 	void RowProduct(const CSysVector & vec, unsigned long row_i);
   
-  /*!
-	 * \brief Performs the product of a sparse matrix by a vector.
-	 * \param[in] vec - Vector to be multiplied by the sparse matrix A.
-	 * \param[out] prod - Result of the product.
-	 * \return Result of the product A*vec.
-	 */
-    //void MatrixVectorProduct(const CSysVector & vec, CSysVector & prod);
-  
 	/*!
 	 * \brief Performs the product of a sparse matrix by a CSysVector.
 	 * \param[in] vec - CSysVector to be multiplied by the sparse matrix A.
 	 * \param[out] prod - Result of the product.
 	 */
-    void MatrixVectorProduct(const CSysVector & vec, CSysVector & prod);
+  void MatrixVectorProduct(const CSysVector & vec, CSysVector & prod);
 	
 	/*!
 	 * \brief Performs the product of two block matrices.
@@ -378,7 +372,7 @@ public:
 class CSysMatrixVectorProduct : public CMatrixVectorProduct {
 private:
 	CSysMatrix* sparse_matrix; /*!< \brief pointer to matrix that defines the product. */
-    solution* FlowSol; /*!< \brief pointer to structure containing solution data & configuration. */
+  solution* FlowSol; /*!< \brief pointer to structure containing solution data & configuration. */
   
 public:
   

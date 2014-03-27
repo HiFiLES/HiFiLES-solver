@@ -178,4 +178,94 @@ private:
 
   /** find minimum length in mesh */
   void set_min_length(void);
+
+  /* --- Linear-Elasticy Mesh Deformation Routines Taken from SU^2, 3/26/2014 ---
+   * This version here has been stripped down to the bare essentials needed for HiFiLES
+   * For more details (and additional awesome features), see su2.stanford.edu */
+
+  /* These functions will (eventually) be replaced with pre-existing HiFiLES functions, but
+   * for now, a HUGE THANKS to the SU^2 dev team for making this practically plug & play! */
+
+  /*!
+   * \brief Add the stiffness matrix for a 2-D triangular element to the global stiffness matrix for the entire mesh (node-based).
+   * \param[in] StiffMatrix_Elem - Element stiffness matrix to be filled.
+   * \param[in] PointCornders - Element vertex ID's
+   */
+  void add_FEA_stiffMat(array<double> &stiffMat_ele, array<int> &PointCorners);
+
+  /*!
+   * \brief Build the stiffness matrix for a 3-D hexahedron element. The result will be placed in StiffMatrix_Elem.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] StiffMatrix_Elem - Element stiffness matrix to be filled.
+   * \param[in] CoordCorners[8][3] - Index value for Node 1 of the current hexahedron.
+   */
+  void set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale);
+
+  /*!
+   * \brief Build the stiffness matrix for a 3-D hexahedron element. The result will be placed in StiffMatrix_Elem.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] StiffMatrix_Elem - Element stiffness matrix to be filled.
+   * \param[in] CoordCorners[8][3] - Index value for Node 1 of the current hexahedron.
+   */
+  void set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale);
+
+  /*!
+   * \brief Shape functions and derivative of the shape functions
+   * \param[in] Xi - Local coordinates.
+   * \param[in] Eta - Local coordinates.
+   * \param[in] Mu - Local coordinates.
+   * \param[in] CoordCorners[8][3] - Coordiantes of the corners.
+   * \param[in] shp[8][4] - Shape function information
+   */
+  double ShapeFunc_Hexa(double Xi, double Eta, double Mu, double CoordCorners[8][3], double DShapeFunction[8][4]);
+
+  /*!
+   * \brief Shape functions and derivative of the shape functions
+   * \param[in] Xi - Local coordinates.
+   * \param[in] Eta - Local coordinates.
+   * \param[in] Mu - Local coordinates.
+   * \param[in] CoordCorners[8][3] - Coordiantes of the corners.
+   * \param[in] shp[8][4] - Shape function information
+   */
+  double ShapeFunc_Tetra(double Xi, double Eta, double Mu, double CoordCorners[8][3], double DShapeFunction[8][4]);
+
+  /*!
+   * \brief Shape functions and derivative of the shape functions
+   * \param[in] Xi - Local coordinates.
+   * \param[in] Eta - Local coordinates.
+   * \param[in] Mu - Local coordinates.
+   * \param[in] CoordCorners[8][3] - Coordiantes of the corners.
+   * \param[in] shp[8][4] - Shape function information
+   */
+  double ShapeFunc_Pyram(double Xi, double Eta, double Mu, double CoordCorners[8][3], double DShapeFunction[8][4]);
+
+  /*!
+   * \brief Shape functions and derivative of the shape functions
+   * \param[in] Xi - Local coordinates.
+   * \param[in] Eta - Local coordinates.
+   * \param[in] Mu - Local coordinates.
+   * \param[in] CoordCorners[8][3] - Coordiantes of the corners.
+   * \param[in] shp[8][4] - Shape function information
+   */
+  double ShapeFunc_Wedge(double Xi, double Eta, double Mu, double CoordCorners[8][3], double DShapeFunction[8][4]);
+
+  /*!
+   * \brief Shape functions and derivative of the shape functions
+   * \param[in] Xi - Local coordinates.
+   * \param[in] Eta - Local coordinates.
+   * \param[in] Mu - Local coordinates.
+   * \param[in] CoordCorners[8][3] - Coordiantes of the corners.
+   * \param[in] shp[8][4] - Shape function information
+   */
+  double ShapeFunc_Triangle(double Xi, double Eta, double CoordCorners[8][3], double DShapeFunction[8][4]);
+
+  /*!
+   * \brief Shape functions and derivative of the shape functions
+   * \param[in] Xi - Local coordinates.
+   * \param[in] Eta - Local coordinates.
+   * \param[in] Mu - Local coordinates.
+   * \param[in] CoordCorners[8][3] - Coordiantes of the corners.
+   * \param[in] shp[8][4] - Shape function information
+   */
+  double ShapeFunc_Rectangle(double Xi, double Eta, double CoordCorners[8][3], double DShapeFunction[8][4]);
 };
