@@ -955,7 +955,7 @@ double eles::calc_dt_local(int in_ele)
 
 // calculate the discontinuous solution at the flux points
 
-void eles::calc_disu_fpts(int in_disu_upts_from)
+void eles::extrapolate_solution(int in_disu_upts_from)
 {
   if (n_eles!=0) {
 
@@ -1019,7 +1019,7 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
 
 // calculate the transformed discontinuous inviscid flux at the solution points
 
-void eles::calc_tdisinvf_upts(int in_disu_upts_from)
+void eles::evaluate_invFlux(int in_disu_upts_from)
 {
   if (n_eles!=0)
     {
@@ -1067,7 +1067,7 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 #endif
 
 #ifdef _GPU
-      calc_tdisinvf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
+      evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
 
 
       //tdisinvf_upts.cp_gpu_cpu();
@@ -1085,7 +1085,7 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 
 // calculate the normal transformed discontinuous flux at the flux points
 
-void eles::calc_norm_tdisf_fpts()
+void eles::extrapolate_totalFlux()
 {
   if (n_eles!=0)
     {
@@ -1173,7 +1173,7 @@ void eles::calc_norm_tdisf_fpts()
 
 // calculate the divergence of the transformed discontinuous flux at the solution points
 
-void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
+void eles::calculate_divergence(int in_div_tconf_upts_to)
 {
   if (n_eles!=0)
     {
@@ -1243,7 +1243,7 @@ void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
 
 // calculate divergence of the transformed continuous flux at the solution points
 
-void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
+void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
 {
   if (n_eles!=0)
     {
@@ -1346,7 +1346,7 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 // calculate uncorrected transformed gradient of the discontinuous solution at the solution points
 // (mixed derivative)
 
-void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
+void eles::calculate_gradient(int in_disu_upts_from)
 {
   if (n_eles!=0)
     {
@@ -1425,7 +1425,7 @@ void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
 
 // calculate corrected gradient of the discontinuous solution at solution points
 
-void eles::calc_cor_grad_disu_upts(void)
+void eles::correct_gradient(void)
 {
   if (n_eles!=0)
     {
@@ -1577,7 +1577,7 @@ void eles::calc_cor_grad_disu_upts(void)
 
 // calculate corrected gradient of the discontinuous solution at flux points
 
-void eles::calc_cor_grad_disu_fpts(void)
+void eles::extrapolate_corrected_gradient(void)
 {
   if (n_eles!=0)
     {
@@ -1907,7 +1907,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
 
 // calculate transformed discontinuous viscous flux at solution points
 
-void eles::calc_tdisvisf_upts(int in_disu_upts_from)
+void eles::evaluate_viscFlux(int in_disu_upts_from)
 {
   if (n_eles!=0)
   {
@@ -1988,7 +1988,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 
     #ifdef _GPU
 
-    calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
 
     #endif
 
@@ -2782,7 +2782,7 @@ double eles::wallfn_br(double yplus, double A, double B, double E, double kappa)
 }
 
 /*! Calculate SGS flux at solution points */
-void eles::calc_sgsf_fpts(void)
+void eles::evaluate_sgsFlux(void)
 {
   if (n_eles!=0) {
 
@@ -5072,7 +5072,7 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
 #endif
 }
 
-void eles::add_body_force_upts(array <double>& body_force)
+void eles::evaluate_bodyForce(array <double>& body_force)
 {
   if (n_eles!=0) {
       int i,j,k,l,m;
