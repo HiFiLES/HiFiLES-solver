@@ -3553,7 +3553,11 @@ void eles::calc_pos_ppts(int in_ele, array<double>& out_pos_ppts)
           loc(j)=loc_ppts(j,i);
         }
 
-      calc_pos(loc,in_ele,pos);
+      if (motion) {
+        calc_pos_dyn_ppt(i,in_ele,pos);
+      }else{
+        calc_pos(loc,in_ele,pos);
+      }
 
       for(j=0;j<n_dims;j++)  // TODO: can this be made more efficient/simpler?
         {
@@ -4801,6 +4805,19 @@ void eles::calc_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_pos)
     for(i=0;i<n_dims;i++) {
         for(j=0;j<n_spts_per_ele(in_ele);j++) {
             out_pos(i)+=nodal_s_basis_fpts(j,in_upt,in_ele)*shape_dyn(i,j,in_ele);
+        }
+    }
+}
+
+/** find the physical position of a solution point within the element (using positions in dynamic grid) */
+void eles::calc_pos_dyn_ppt(int in_ppt, int in_ele, array<double>& out_pos)
+{
+    int i,j;
+
+    out_pos.initialize_to_zero();
+    for(i=0;i<n_dims;i++) {
+        for(j=0;j<n_spts_per_ele(in_ele);j++) {
+            out_pos(i)+=nodal_s_basis_ppts(j,in_ppt,in_ele)*shape_dyn(i,j,in_ele);
         }
     }
 }

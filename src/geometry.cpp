@@ -1327,7 +1327,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
           bcflag = get_bc_number(bcname);
           out_bclist(i) = bcflag;
       }
-      cout << "\tout_bclist(" << i << ") = " << bcflag << ", " << bcname << endl;
+      cout << "\tout_bclist(" << i << ") = " << out_bclist(i) << ", " << bcname << endl;
   }
 
   //--- Find boundaries which are moving ---//
@@ -1398,7 +1398,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
           if (vlist_local(j) == -1)
             belong_to_proc = false;
 
-          Bounds(bcid).insert(vlist_local(j));
+          Bounds(bcid-1).insert(vlist_local(j));
         }
 
       if (belong_to_proc)

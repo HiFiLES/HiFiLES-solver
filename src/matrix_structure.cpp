@@ -444,12 +444,12 @@ void CSysMatrix::DiagonalProduct(CSysVector & vec, unsigned long row_i) {
 	}
 }
 
+#ifdef _MPI
 void CSysMatrix::SendReceive_Solution(CSysVector & x, CGeometry *geometry, CConfig *config) {
   unsigned short iVar, iMarker, MarkerS, MarkerR;
     unsigned long iVertex, iPoint, nVertexS, nVertexR, nBufferS_Vector, nBufferR_Vector;
     double *Buffer_Receive = NULL, *Buffer_Send = NULL;
     int send_to, receive_from;
-#ifdef _MPI
 
 #ifdef _MPI
   MPI::Status status;
@@ -524,9 +524,8 @@ void CSysMatrix::SendReceive_Solution(CSysVector & x, CGeometry *geometry, CConf
     }
     
     }
-#endif
 }
-
+#endif
 
 void CSysMatrix::RowProduct(const CSysVector & vec, unsigned long row_i) {
 	unsigned long iVar, index;
@@ -576,7 +575,7 @@ void CSysMatrix::MatrixVectorProduct(const CSysVector & vec, CSysVector & prod) 
 	}
   
   /*--- MPI Parallelization ---*/
-  SendReceive_Solution(prod, geometry, config);
+  //SendReceive_Solution(prod, geometry, config);
 }
 
 void CSysMatrix::GetMultBlockBlock(double *c, double *a, double *b) {
@@ -704,7 +703,7 @@ void CSysMatrix::ComputeLU_SGSPreconditioner(const CSysVector & vec, CSysVector 
     }
 
     /*--- Inner send-receive operation the solution vector ---*/
-    SendReceive_Solution(prod, geometry, config);
+    //SendReceive_Solution(prod, geometry, config);
 
     /*--- Second part of the symmetric iteration: (D+U).x_(1) = D.x* ---*/
     for (iPoint = nPointDomain-1; (int)iPoint >= 0; iPoint--) {
@@ -720,7 +719,7 @@ void CSysMatrix::ComputeLU_SGSPreconditioner(const CSysVector & vec, CSysVector 
     }
 
   /*--- Final send-receive operation the solution vector (redundant in CFD simulations) ---*/
-    SendReceive_Solution(prod, geometry, config);
+    //SendReceive_Solution(prod, geometry, config);
 
 }
 

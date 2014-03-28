@@ -134,8 +134,8 @@ void mesh::deform(struct solution* FlowSol) {
 
     for (int ic=0; ic<n_eles; ic++) {
       //--- NEW ADDITION 3/26/14 ---//
-      nodes.setup(c2nv(ic));
-      for (int iNode=0; iNode<c2nv(ic); iNode++) {
+      nodes.setup(c2n_v(ic));
+      for (int iNode=0; iNode<c2n_v(ic); iNode++) {
         nodes(iNode) = iv2ivg(c2v(ic,iNode)); // will the iv2ivg be needed for MPI?
       }
       if (n_dims == 2) {
@@ -146,33 +146,33 @@ void mesh::deform(struct solution* FlowSol) {
       add_FEA_stiffMat(stiff_mat_ele,nodes);
       //----------------------------//
 
-      switch(ctype(ic))
-      {
-        case TRI:
-          pt_0 = iv2ivg(c2v(ic,0));
-          pt_1 = iv2ivg(c2v(ic,1));
-          pt_2 = iv2ivg(c2v(ic,2));
-          check = set_2D_StiffMat_ele_tri(stiff_mat_ele,ic);
-          add_StiffMat_EleTri(stiff_mat_ele,pt_0,pt_1,pt_2);
-          break;
-        case QUAD:
-          pt_0 = iv2ivg(c2v(ic,0));
-          pt_1 = iv2ivg(c2v(ic,1));
-          pt_2 = iv2ivg(c2v(ic,2));
-          pt_3 = iv2ivg(c2v(ic,3));
-          set_2D_StiffMat_ele_quad(stiff_mat_ele,ic);
-          add_StiffMat_EleQuad(stiff_mat_ele,pt_0,pt_1,pt_2,pt_3);
-          break;
-        default:
-          FatalError("Element type not yet supported for mesh motion - supported types are tris and quads");
-          break;
-      }
-      if (!check) {
-        failedIts++;
-        if (failedIts > 5) FatalError("ERROR: negative volumes encountered during mesh motion.");
-      }else{
-        failedIts=0;
-      }
+//      switch(ctype(ic))
+//      {
+//        case TRI:
+//          pt_0 = iv2ivg(c2v(ic,0));
+//          pt_1 = iv2ivg(c2v(ic,1));
+//          pt_2 = iv2ivg(c2v(ic,2));
+//          check = set_2D_StiffMat_ele_tri(stiff_mat_ele,ic);
+//          add_StiffMat_EleTri(stiff_mat_ele,pt_0,pt_1,pt_2);
+//          break;
+//        case QUAD:
+//          pt_0 = iv2ivg(c2v(ic,0));
+//          pt_1 = iv2ivg(c2v(ic,1));
+//          pt_2 = iv2ivg(c2v(ic,2));
+//          pt_3 = iv2ivg(c2v(ic,3));
+//          set_2D_StiffMat_ele_quad(stiff_mat_ele,ic);
+//          add_StiffMat_EleQuad(stiff_mat_ele,pt_0,pt_1,pt_2,pt_3);
+//          break;
+//        default:
+//          FatalError("Element type not yet supported for mesh motion - supported types are tris and quads");
+//          break;
+//      }
+//      if (!check) {
+//        failedIts++;
+//        if (failedIts > 5) FatalError("ERROR: negative volumes encountered during mesh motion.");
+//      }else{
+//        failedIts=0;
+//      }
     }
 
     /*--- Compute the tolerance of the linear solver using MinLength ---*/
@@ -405,18 +405,20 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale
   unsigned short iNode, iVar, jVar, kVar, iGauss, nGauss;
   double DShapeFunction[8][4] = {{0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0},
     {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};
-  double Location[4][3], Weight[4];
+  double Location[4][3], Weight[4], CoordCorners[8][3];
   unsigned short nVar = (unsigned short)n_dims;
 
   // First, get the ID's & coordinates of the nodes for this element
-  int nNodes = c2nv(ic);
+  int nNodes = c2n_v(ic);
   array<int> nodes(nNodes);
   array<double> coords(nNodes,2);
 
   for (int i=0; i<nNodes; i++) {
-    nodes(i) = iv2ivg(c2v(ic,2));
-    coords(i,0) = xv(nodes(i),0);
-    coords(i,1) = xv(nodes(i),1);
+    nodes(i) = iv2ivg(c2v(ic,i));
+    for (int j=0; j<n_dims; j++) {
+      CoordCorners[i][j] = xv(nodes(i),j);
+      coords(i,j) = xv(nodes(i),j);
+    }
   }
 
   /*--- Each element uses their own stiffness which is inversely
@@ -499,7 +501,7 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale
     for (iVar = 0; iVar < nNodes*nVar; iVar++) {
       for (jVar = 0; jVar < nNodes*nVar; jVar++) {
         for (kVar = 0; kVar < 3; kVar++) {
-          stiffMat_ele(iVar)(jVar) += Weight[iGauss] * Aux_Matrix[iVar][kVar]*B_Matrix[kVar][jVar] * Det;
+          stiffMat_ele(iVar,jVar) += Weight[iGauss] * Aux_Matrix[iVar][kVar]*B_Matrix[kVar][jVar] * Det;
         }
       }
     }
@@ -519,20 +521,13 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale
   unsigned short nVar = (unsigned short)n_dims;
 
   // First, get the ID's & coordinates of the nodes for this element
-  int nNodes = c2nv(ic);
+  int nNodes = c2n_v(ic);
   array<int> nodes(nNodes);
 
   for (int i=0; i<nNodes; i++) {
-    nodes(i) = iv2ivg(c2v(ic,2));
+    nodes(i) = iv2ivg(c2v(ic,i));
     for (int j=0; j<n_dims; j++) {
-      CoordCorners[iNodes][iDim] = xv(nodes(i),j);
-    }
-  }
-
-  for (iNodes = 0; iNodes < nNodes; iNodes++) {
-    PointCorners[iNodes] = geometry->elem[iElem]->GetNode(iNodes);
-    for (iDim = 0; iDim < nDim; iDim++) {
-      CoordCorners[iNodes][iDim] = geometry->node[PointCorners[iNodes]]->GetCoord(iDim);
+      CoordCorners[i][j] = xv(nodes(i),j);
     }
   }
 
@@ -657,7 +652,7 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale
     for (iVar = 0; iVar < nNodes*nVar; iVar++) {
       for (jVar = 0; jVar < nNodes*nVar; jVar++) {
         for (kVar = 0; kVar < 6; kVar++) {
-          stiffMat_ele(iVar)(jVar) += Weight[iGauss] * Aux_Matrix[iVar][kVar]*B_Matrix[kVar][jVar] * Det;
+          stiffMat_ele(iVar,jVar) += Weight[iGauss] * Aux_Matrix[iVar][kVar]*B_Matrix[kVar][jVar] * Det;
         }
       }
     }
@@ -688,7 +683,7 @@ void mesh::add_FEA_stiffMat(array<double> &stiffMat_ele, array<int> &PointCorner
 
       for (iDim = 0; iDim < nVar; iDim++) {
         for (jDim = 0; jDim < nVar; jDim++) {
-          StiffMatrix_Node[iDim][jDim] = stiffMat_ele[(iVar*nVar)+iDim][(jVar*nVar)+jDim];
+          StiffMatrix_Node[iDim][jDim] = stiffMat_ele((iVar*nVar)+iDim,(jVar*nVar)+jDim);
         }
       }
 
@@ -1540,8 +1535,10 @@ void mesh::set_boundary_displacements(solution *FlowSol)
     }*/
 
   array<double> VarCoord(n_dims);
-  VarCoord(0) = run_input.bound_vel_simple(0)*run_input.dt;
-  VarCoord(1) = run_input.bound_vel_simple(1)*run_input.dt;
+  /*VarCoord(0) = run_input.bound_vel_simple(0)*run_input.dt;
+  VarCoord(1) = run_input.bound_vel_simple(1)*run_input.dt;*/
+  VarCoord(0) = 0;
+  VarCoord(1) = run_input.bound_vel_simple(0)*cos(2*run_input.bound_vel_simple(1)*pi*time)*run_input.dt;
   /// cout << "number of boundaries: " << n_bnds << endl;
   /*--- Set the known displacements, note that some points of the moving surfaces
     could be on on the symmetry plane, we should specify DeleteValsRowi again (just in case) ---*/

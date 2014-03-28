@@ -368,7 +368,7 @@ public:
    * \param[in] in_ele - local element ID
    * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
    */
-  void calc_pos_dyn_fpt(int in_upt, int in_ele, array<double> &out_pos);
+  void calc_pos_dyn_fpt(int in_fpt, int in_ele, array<double> &out_pos);
 
   /*!
    * Calculate dynamic position of flux point
@@ -376,7 +376,15 @@ public:
    * \param[in] in_ele - local element ID
    * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
    */
-  void calc_pos_dyn_upt(int in_fpt, int in_ele, array<double> &out_pos);
+  void calc_pos_dyn_upt(int in_upt, int in_ele, array<double> &out_pos);
+
+  /*!
+   * Calculate dynamic position of plot point
+   * \param[in] in_ppt - ID of plot point within element to evaluate at
+   * \param[in] in_ele - local element ID
+   * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+   */
+  void calc_pos_dyn_ppt(int in_ppt, int in_ele, array<double> &out_pos);
 
   /*!
    * Calculate derivative of dynamic position wrt reference (initial,static) position
