@@ -1,4 +1,4 @@
-# Install script for directory: /home/abisheks/HiFiLES-experimental/HiFiLES/lib/parmetis-4.0.2/metis/libmetis
+# Install script for directory: /home/jbull/HiFiLES-dev/lib/parmetis-4.0.2/metis/libmetis
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)

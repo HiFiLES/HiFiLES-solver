@@ -43,6 +43,7 @@ bdy_inters::bdy_inters()
   order=run_input.order;
   viscous=run_input.viscous;
   LES=run_input.LES;
+  wall_model = run_input.wall_model;
 }
 
 bdy_inters::~bdy_inters() { }
@@ -118,8 +119,8 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
                       grad_disu_fpts_l(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
                     }
 
-                    // LES: get subgrid-scale flux
-					if(LES)
+                  // Subgrid-scale flux
+                  if(LES)
                     {
                       sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
                     }
@@ -860,17 +861,50 @@ void bdy_inters::calc_norm_tconvisf_fpts_boundary(double time_bound) {
           else
             FatalError("Viscous Riemann solver not implemented");
 
-          /*! Transform back to reference space */
-          for(int k=0;k<n_fields;k++)
-            (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+      if(n_dims==2) {
+        if(flux_spec == 1) calc_visf_2d(temp_u_l,temp_grad_u_l,temp_f_l);
+        else if(flux_spec == 2)calc_visf_2d(temp_u_r,temp_grad_u_r,temp_f_r);
+        else FatalError("Invalid viscous flux specification");
+      }
+      else if(n_dims==3)  {
+        if(flux_spec == 1) calc_visf_3d(temp_u_l,temp_grad_u_l,temp_f_l);
+        else if(flux_spec == 2)calc_visf_3d(temp_u_r,temp_grad_u_r,temp_f_r);
+        else FatalError("Invalid viscous flux specification");
+      }
+      else
+        FatalError("ERROR: Invalid number of dimensions ... ");
+
+      // If LES (but no wall model?), get SGS flux and add to viscous flux
+      if(LES) {
+        for(int k=0;k<n_dims;k++) {
+          for(int l=0;l<n_fields;l++) {
+            // pointer to subgrid-scale flux
+            temp_sgsf_l(l,k) = *sgsf_fpts_l(j,i,l,k);
+
+            // Add SGS flux to viscous flux
+            temp_f_l(l,k) += temp_sgsf_l(l,k);
+          }
         }
+      }
+
+      /*! Calling viscous riemann solver. */
+
+      if (run_input.vis_riemann_solve_type==0)
+        ldg_flux(flux_spec,temp_u_l,temp_u_r,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.tau,run_input.pen_fact);
+      else
+        FatalError("Viscous Riemann solver not implemented");
+
+      /*! Transform back to reference space. */
+      for(int k=0;k<n_fields;k++)
+        (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
     }
+  }
 
 #endif
 
 #ifdef _GPU
   if (n_inters!=0)
-    calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff);
+    calc_norm_tconvisf_fpts_boundary_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff, LES);
 #endif
 }
 
