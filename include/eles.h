@@ -474,6 +474,15 @@ public:
   /*! Set new position of shape node */
   void set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos);
 
+  void store_nodal_s_basis_vol_cubpts();
+  void store_nodal_s_basis_inters_cubpts();
+  void store_d_nodal_s_basis_vol_cubpts();
+  void store_d_nodal_s_basis_inters_cubpts();
+  void calc_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, array<double> &out_pos);
+  void calc_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double> &out_pos);
+  void calc_d_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, array<double> &out_d_pos);
+  void calc_d_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double> &out_d_pos);
+
 protected:
 
   // #### members ####
@@ -647,11 +656,23 @@ protected:
   /*! nodal shape basis contributions at output plot points */
   array<double> nodal_s_basis_ppts;
 
+  /*! nodal shape basis contributions at output plot points */
+  array<double> nodal_s_basis_vol_cubpts;
+
+  /*! nodal shape basis contributions at output plot points */
+  array<array<double> > nodal_s_basis_inters_cubpts;
+
   /*! nodal shape basis derivative contributions at flux points */
   array<double> d_nodal_s_basis_fpts;
 
   /*! nodal shape basis derivative contributions at solution points */
   array<double> d_nodal_s_basis_upts;
+
+  /*! nodal shape basis contributions at output plot points */
+  array<double> d_nodal_s_basis_vol_cubpts;
+
+  /*! nodal shape basis contributions at output plot points */
+  array<array<double> > d_nodal_s_basis_inters_cubpts;
 
   /*! nodal shape basis 2nd derivative contributions at flux points */
   array<double> dd_nodal_s_basis_fpts;

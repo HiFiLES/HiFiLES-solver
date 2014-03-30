@@ -388,7 +388,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           // Pre-compute shape basis - CRITICAL for deforming mesh performance
           FlowSol->mesh_eles(i)->store_nodal_s_basis_fpts();
           FlowSol->mesh_eles(i)->store_nodal_s_basis_upts();
-          FlowSol->mesh_eles(i)->store_nodal_s_basis_ppts();
+          FlowSol->mesh_eles(i)->store_nodal_s_basis_ppts();          
           FlowSol->mesh_eles(i)->store_d_nodal_s_basis_fpts();
           FlowSol->mesh_eles(i)->store_d_nodal_s_basis_upts();
           FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_fpts();
@@ -409,6 +409,8 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (FlowSol->rank==0) cout << "setting element transforms at interface cubpts ... " << endl;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+        FlowSol->mesh_eles(i)->store_nodal_s_basis_inters_cubpts();
+        FlowSol->mesh_eles(i)->store_d_nodal_s_basis_inters_cubpts();
           FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
         }
     }
@@ -418,6 +420,8 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
     if (FlowSol->rank==0) cout << "setting element transforms at volume cubpts ... " << endl;
     for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+        FlowSol->mesh_eles(i)->store_nodal_s_basis_vol_cubpts();
+        FlowSol->mesh_eles(i)->store_d_nodal_s_basis_vol_cubpts();
         FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
       }
     }

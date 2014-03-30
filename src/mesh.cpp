@@ -1229,7 +1229,7 @@ void mesh::update(solution* FlowSol)
   //if (FlowSol->rank==0) cout << "Deform: setting element transforms at interface cubature points ... " << endl;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
+      //FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
     }
   }
 
@@ -1237,7 +1237,7 @@ void mesh::update(solution* FlowSol)
   //if (FlowSol->rank==0) cout << "Deform: setting element transforms at volume cubature points ... " << endl;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
+      //FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
     }
   }
 }
@@ -1304,7 +1304,8 @@ void mesh::write_mesh_gmsh(double sim_time)
   file << "$EndNodes" << endl;
 
   // write elements
-  file << "$Elements" << endl << n_cells_global << endl;
+  // note: n_cells_global not currently defined.  Fix!!  Needed for MPI.
+  file << "$Elements" << endl << n_eles << endl;
   int gmsh_type, bcid;
   int ele_start = 0; // more setup needed for writing from parallel
   for (int i=ele_start; i<ele_start+n_eles; i++) {
@@ -1564,8 +1565,8 @@ void mesh::rigid_move(solution* FlowSol) {
   time = iter*run_input.dt;
   for (int i=0; i<n_verts; i++) {
     // Useful for simple cases / debugging
-    xv_new(i,0) = xv_0(i,0) + 0.0*cos(2*pi*time/5)*run_input.dt;
-    xv_new(i,1) = xv_0(i,1) + 0.5*cos(2*pi*time/5)*run_input.dt;
+    xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)*cos(2*pi*time/5)*run_input.dt;
+    xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(1)*cos(2*pi*time/5)*run_input.dt;
 
     //xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)*run_input.dt;
     //xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(1)*run_input.dt;
