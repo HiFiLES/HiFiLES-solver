@@ -1225,21 +1225,23 @@ void mesh::update(solution* FlowSol)
     }
   }
 
-  // Set metrics at interface cubpts
-  //if (FlowSol->rank==0) cout << "Deform: setting element transforms at interface cubature points ... " << endl;
-  for(int i=0;i<FlowSol->n_ele_types;i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      //FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
+  /// if (iter%FlowSol->plot_freq == 0 || iter%FlowSol->restart_dump_freq == 0) {
+    // Set metrics at interface cubpts
+    //if (FlowSol->rank==0) cout << "Deform: setting element transforms at interface cubature points ... " << endl;
+    for(int i=0;i<FlowSol->n_ele_types;i++) {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+        FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
+      }
     }
-  }
 
-  // Set metrics at volume cubpts
-  //if (FlowSol->rank==0) cout << "Deform: setting element transforms at volume cubature points ... " << endl;
-  for(int i=0;i<FlowSol->n_ele_types;i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      //FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
+    // Set metrics at volume cubpts
+    //if (FlowSol->rank==0) cout << "Deform: setting element transforms at volume cubature points ... " << endl;
+    for(int i=0;i<FlowSol->n_ele_types;i++) {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+        FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
+      }
     }
-  }
+  /// }
 }
 
 void mesh::write_mesh(int mesh_type,double sim_time)

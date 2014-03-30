@@ -246,6 +246,15 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       dd_nodal_s_basis_fpts.setup(n_comp,in_max_n_spts_per_ele,n_fpts_per_ele,n_eles);
       dd_nodal_s_basis_upts.setup(n_comp,in_max_n_spts_per_ele,n_upts_per_ele,n_eles);
 
+      nodal_s_basis_vol_cubpts.setup(in_max_n_spts_per_ele,n_cubpts_per_ele,n_eles);
+      d_nodal_s_basis_vol_cubpts.setup(n_dims,in_max_n_spts_per_ele,n_cubpts_per_ele,n_eles);
+      nodal_s_basis_inters_cubpts.setup(n_inters_per_ele);
+      d_nodal_s_basis_inters_cubpts.setup(n_inters_per_ele);
+      for (int iface=0; iface<n_inters_per_ele; iface++) {
+        nodal_s_basis_inters_cubpts(iface).setup(in_max_n_spts_per_ele,n_cubpts_per_inter(iface),n_eles);
+        d_nodal_s_basis_inters_cubpts(iface).setup(n_dims,in_max_n_spts_per_ele,n_cubpts_per_inter(iface),n_eles);
+      }
+
       // for mkl sparse blas
       matdescra[0]='G';
       matdescra[3]='F';
@@ -4306,6 +4315,7 @@ void eles::set_transforms_inters_cubpts(void)
       array<double> d_pos(n_dims,n_dims);
       array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
 
+      // TODO: Add "firstTime" boolean like in "set_transforms()" to save time on moving-mesh cases
       inter_detjac_inters_cubpts.setup(n_inters_per_ele);
       norm_inters_cubpts.setup(n_inters_per_ele);
       vol_detjac_inters_cubpts.setup(n_inters_per_ele);
@@ -4333,7 +4343,11 @@ void eles::set_transforms_inters_cubpts(void)
                   // calculate first derivatives of shape functions at the flux points
 
                   // TODO: Need mapping between bdy_interfaces and ele
-                  calc_d_pos(loc,bdy_ele2ele(i),d_pos);
+                  if (motion) {
+                    calc_d_pos_dyn_inters_cubpt(j,l,i,d_pos);
+                  }else{
+                    calc_d_pos(loc,bdy_ele2ele(i),d_pos);
+                  }
 
                   // store quantities at the flux point
 
@@ -4434,8 +4448,13 @@ void eles::set_transforms_vol_cubpts(void)
               for (m=0;m<n_dims;m++)
                 loc(m) = loc_volume_cubpts(m,j);
 
-              calc_pos(loc,i,pos);
-              calc_d_pos(loc,i,d_pos);
+              if (motion) {
+                calc_pos_dyn_vol_cubpt(j,i,pos);
+                calc_d_pos_dyn_vol_cubpt(j,i,d_pos);
+              }else{
+                calc_pos(loc,i,pos);
+                calc_d_pos(loc,i,d_pos);
+              }
 
               if (n_dims==2)
                 {
@@ -4809,7 +4828,7 @@ void eles::calc_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_pos)
     }
 }
 
-/** find the physical position of a solution point within the element (using positions in dynamic grid) */
+/** find the physical position of a plot point within the element (using positions in dynamic grid) */
 void eles::calc_pos_dyn_ppt(int in_ppt, int in_ele, array<double>& out_pos)
 {
     int i,j;
@@ -4818,6 +4837,32 @@ void eles::calc_pos_dyn_ppt(int in_ppt, int in_ele, array<double>& out_pos)
     for(i=0;i<n_dims;i++) {
         for(j=0;j<n_spts_per_ele(in_ele);j++) {
             out_pos(i)+=nodal_s_basis_ppts(j,in_ppt,in_ele)*shape_dyn(i,j,in_ele);
+        }
+    }
+}
+
+/** find the physical position of a volume cubature point within the element (using positions in dynamic grid) */
+void eles::calc_pos_dyn_vol_cubpt(int in_ppt, int in_ele, array<double>& out_pos)
+{
+    int i,j;
+
+    out_pos.initialize_to_zero();
+    for(i=0;i<n_dims;i++) {
+        for(j=0;j<n_spts_per_ele(in_ele);j++) {
+            out_pos(i)+=nodal_s_basis_vol_cubpts(j,in_ppt,in_ele)*shape_dyn(i,j,in_ele);
+        }
+    }
+}
+
+/** find the physical position of a interface cubature point within the element (using positions in dynamic grid) */
+void eles::calc_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double>& out_pos)
+{
+    int i,j;
+
+    out_pos.initialize_to_zero();
+    for(i=0;i<n_dims;i++) {
+        for(j=0;j<n_spts_per_ele(in_ele);j++) {
+            out_pos(i)+=nodal_s_basis_inters_cubpts(in_face)(j,in_cubpt,in_ele)*shape_dyn(i,j,in_ele);
         }
     }
 }
@@ -4893,7 +4938,7 @@ void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
 /**
  * Calculate derivative of dynamic position wrt reference (initial,static) position at upt
  * Uses pre-computed nodal shape basis derivatives for efficiency
- * \param[in] in_fpt - ID of solution point within element to evaluate at
+ * \param[in] in_upt - ID of solution point within element to evaluate at
  * \param[in] in_ele - local element ID
  * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
  */
@@ -4911,6 +4956,52 @@ void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
         }
     }
 }
+
+/**
+ * Calculate derivative of dynamic position wrt reference (initial,static) position at volume cubature point
+ * Uses pre-computed nodal shape basis derivatives for efficiency
+ * \param[in] in_cubpt - ID of solution point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ */
+void eles::calc_d_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, array<double>& out_d_pos)
+{
+    int i,j,k;
+
+    // Calculate dx/d<c>
+    out_d_pos.initialize_to_zero();
+    for(j=0;j<n_dims;j++) {
+        for(k=0;k<n_dims;k++) {
+            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+                out_d_pos(j,k)+=d_nodal_s_basis_vol_cubpts(k,i,in_cubpt,in_ele)*shape_dyn(j,i,in_ele);
+            }
+        }
+    }
+}
+
+/**
+ * Calculate derivative of dynamic position wrt reference (initial,static) position at interface cubature point
+ * Uses pre-computed nodal shape basis derivatives for efficiency
+ * \param[in] in_cubpt - ID of cubature point on selected face within element
+ * \param[in] in_face - ID of face within element
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ */
+void eles::calc_d_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double>& out_d_pos)
+{
+    int i,j,k;
+
+    // Calculate dx/d<c>
+    out_d_pos.initialize_to_zero();
+    for(j=0;j<n_dims;j++) {
+        for(k=0;k<n_dims;k++) {
+            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+                out_d_pos(j,k)+=d_nodal_s_basis_inters_cubpts(in_face)(k,i,in_cubpt,in_ele)*shape_dyn(j,i,in_ele);
+            }
+        }
+    }
+}
+
 
 // calculate second derivative of position
 
@@ -5807,6 +5898,42 @@ void eles::store_nodal_s_basis_ppts(void)
   }
 }
 
+void eles::store_nodal_s_basis_vol_cubpts(void)
+{
+  int ic,cubpt,j,k;
+
+  array<double> loc(n_dims);
+  for(ic=0; ic<n_eles; ic++) {
+    for(cubpt=0; cubpt<n_cubpts_per_ele; cubpt++) {
+      for(k=0; k<n_dims; k++) {
+        loc(k)=loc_volume_cubpts(k,cubpt);
+      }
+      for (j=0; j<n_spts_per_ele(ic); j++) {
+        nodal_s_basis_vol_cubpts(j,cubpt,ic) = eval_nodal_s_basis(j,loc,n_spts_per_ele(ic));
+      }
+    }
+  }
+}
+
+void eles::store_nodal_s_basis_inters_cubpts()
+{
+  int ic,iface,cubpt,j,k;
+
+  array<double> loc(n_dims);
+  for(ic=0; ic<n_eles; ic++) {
+    for(iface=0; iface<n_inters_per_ele; iface++) {
+      for(cubpt=0; cubpt<n_cubpts_per_inter(iface); cubpt++) {
+        for(k=0; k<n_dims; k++) {
+          loc(k)=loc_inters_cubpts(iface)(k,cubpt);
+        }
+        for (j=0; j<n_spts_per_ele(ic); j++) {
+          nodal_s_basis_inters_cubpts(iface)(j,cubpt,ic) = eval_nodal_s_basis(j,loc,n_spts_per_ele(ic));
+        }
+      }
+    }
+  }
+}
+
 
 void eles::store_d_nodal_s_basis_fpts(void)
 {
@@ -5847,6 +5974,52 @@ void eles::store_d_nodal_s_basis_upts(void)
       for (j=0; j<n_spts_per_ele(ic); j++) {
         for (k=0; k<n_dims; k++) {
           d_nodal_s_basis_upts(k,j,upt,ic) = d_nodal_basis(j,k);
+        }
+      }
+    }
+  }
+}
+
+void eles::store_d_nodal_s_basis_vol_cubpts(void)
+{
+  int ic,cubpt,j,k;
+  array<double> loc(n_dims);
+  array<double> d_nodal_basis;
+
+  for (ic=0; ic<n_eles; ic++) {
+    for (cubpt=0; cubpt<n_cubpts_per_ele; cubpt++) {
+      for(k=0;k<n_dims;k++) {
+        loc(k) = loc_volume_cubpts(k,cubpt);
+      }
+      d_nodal_basis.setup(n_spts_per_ele(ic),n_dims);
+      eval_d_nodal_s_basis(d_nodal_basis,loc,n_spts_per_ele(ic));
+      for (j=0; j<n_spts_per_ele(ic); j++) {
+        for (k=0; k<n_dims; k++) {
+          d_nodal_s_basis_vol_cubpts(k,j,cubpt,ic) = d_nodal_basis(j,k);
+        }
+      }
+    }
+  }
+}
+
+void eles::store_d_nodal_s_basis_inters_cubpts(void)
+{
+  int ic,iface,cubpt,j,k;
+  array<double> loc(n_dims);
+  array<double> d_nodal_basis;
+
+  for (ic=0; ic<n_eles; ic++) {
+    for (iface=0; iface<n_inters_per_ele; iface++) {
+      for (cubpt=0; cubpt<n_cubpts_per_inter(iface); cubpt++) {
+        for(k=0;k<n_dims;k++) {
+          loc(k) = loc_inters_cubpts(iface)(k,cubpt);
+        }
+        d_nodal_basis.setup(n_spts_per_ele(ic),n_dims);
+        eval_d_nodal_s_basis(d_nodal_basis,loc,n_spts_per_ele(ic));
+        for (j=0; j<n_spts_per_ele(ic); j++) {
+          for (k=0; k<n_dims; k++) {
+            d_nodal_s_basis_inters_cubpts(iface)(k,j,cubpt,ic) = d_nodal_basis(j,k);
+          }
         }
       }
     }
