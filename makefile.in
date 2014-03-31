@@ -10,7 +10,7 @@
 # Copyright (C) 2013 Aerospace Computing Laboratory.
 
 NODE=     CPU
-CODE=     RELEASE
+CODE=     DEBUG
 BLAS=     ACCELERATE_BLAS
 ATLAS=    NO
 COMP=     GCC
@@ -19,9 +19,9 @@ TECIO=    NO
 
 BLAS_DIR= /usr/local/cblas
 
-PARMETIS_DIR = lib/parmetis-4.0.2
+PARMETIS_DIR = /usr/local/parmetis-4.0.3
 
-PARMETIS_BUILD_DIR = lib/parmetis-4.0.2/build/Darwin-x86_64
+PARMETIS_BUILD_DIR = /usr/local/parmetis-4.0.3/build/Darwin-x86_64
 
 TECIO_DIR = /usr/local/tecio-2013
 

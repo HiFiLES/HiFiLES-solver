@@ -33,6 +33,7 @@
 
 # Binary / run directory
 bin/
+build/
 
 # Temporary Files
 *~
