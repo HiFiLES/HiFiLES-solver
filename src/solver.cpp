@@ -169,6 +169,9 @@ void CalcResidual(struct solution* FlowSol) {
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calc_div_tconf_upts(in_div_tconf_upts_to);
 
+  /*! Compute the divergence of the transformed grid velocity (GCL residual). */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calc_gcl_res();
 }
 
 #ifdef _MPI

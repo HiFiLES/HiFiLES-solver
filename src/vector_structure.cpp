@@ -47,9 +47,9 @@ CSysVector::CSysVector(const unsigned long & size, const double & val) {
     vec_val[i] = val;
   
 #ifdef MPI
-  myrank = MPI::COMM_WORLD.Get_rank();
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
   unsigned long nElmLocal = (unsigned long)nElm;
-  MPI::COMM_WORLD.Allreduce(&nElmLocal, &nElmGlobal, 1, MPI::UNSIGNED_LONG, MPI::SUM);
+  MPI_Allreduce(&nElmLocal, &nElmGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM);
 #endif
   
 }
@@ -73,9 +73,9 @@ CSysVector::CSysVector(const unsigned long & numBlk, const unsigned long & numBl
     vec_val[i] = val;
   
 #ifdef MPI
-  myrank = MPI::COMM_WORLD.Get_rank();
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
   unsigned long nElmLocal = (unsigned long)nElm;
-  MPI::COMM_WORLD.Allreduce(&nElmLocal, &nElmGlobal, 1, MPI::UNSIGNED_LONG, MPI::SUM);
+  MPI_Allreduce(&nElmLocal, &nElmGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM);
 #endif
   
 }
@@ -116,9 +116,9 @@ CSysVector::CSysVector(const unsigned long & size, const double* u_array) {
     vec_val[i] = u_array[i];
   
 #ifdef MPI
-  myrank = MPI::COMM_WORLD.Get_rank();
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
   unsigned long nElmLocal = (unsigned long)nElm;
-  MPI::COMM_WORLD.Allreduce(&nElmLocal, &nElmGlobal, 1, MPI::UNSIGNED_LONG, MPI::SUM);
+  MPI_Allreduce(&nElmLocal, &nElmGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM);
 #endif
   
 }
@@ -142,9 +142,9 @@ CSysVector::CSysVector(const unsigned long & numBlk, const unsigned long & numBl
     vec_val[i] = u_array[i];
   
 #ifdef MPI
-  myrank = MPI::COMM_WORLD.Get_rank();
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
   unsigned long nElmLocal = (unsigned long)nElm;
-  MPI::COMM_WORLD.Allreduce(&nElmLocal, &nElmGlobal, 1, MPI::UNSIGNED_LONG, MPI::SUM);
+  MPI_Allreduce(&nElmLocal, &nElmGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM);
 #endif
   
 }
@@ -184,9 +184,9 @@ void CSysVector::Initialize(const unsigned long & numBlk, const unsigned short &
     vec_val[i] = val;
   
 #ifdef MPI
-  myrank = MPI::COMM_WORLD.Get_rank();
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
   unsigned long nElmLocal = (unsigned long)nElm;
-  MPI::COMM_WORLD.Allreduce(&nElmLocal, &nElmGlobal, 1, MPI::UNSIGNED_LONG, MPI::SUM);
+  MPI_Allreduce(&nElmLocal, &nElmGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM);
 #endif
   
 }
@@ -412,7 +412,7 @@ double dotProd(const CSysVector & u, const CSysVector & v) {
   double prod = 0.0;
   
 #ifdef MPI
-  MPI::COMM_WORLD.Allreduce(&loc_prod, &prod, 1, MPI::DOUBLE, MPI::SUM);
+  MPI_Allreduce(&loc_prod, &prod, 1, MPI_DOUBLE, MPI_SUM);
 #else
   prod = loc_prod;
 #endif

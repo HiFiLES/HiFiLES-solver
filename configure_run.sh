@@ -20,7 +20,7 @@ HIFILES_RUN=$PWD/bin
 NODE="CPU"              # CPU or GPU
 CODE="DEBUG"            # DEBUG or RELEASE
 BLAS="ATLAS_BLAS"       # *_BLAS: ATLAS, STANDARD, ACCLERATE, MKL, or NO
-PARALLEL="no"           # MPI or NO
+PARALLEL="MPI"           # MPI or NO
 TECIO="no"              # YES or NO
 # ---------------------------------------------------------------
 # Compiler Selections [Change compilers or add full filepaths if needed]

@@ -145,7 +145,7 @@ unsigned long CSysSolve::ConjugateGradient(const CSysVector & b, CSysVector & x,
 	
   int rank = 0;
 #ifdef _MPI
-	rank = MPI::COMM_WORLD.Get_rank();
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
   
   /*--- Check the subspace size ---*/
@@ -154,8 +154,8 @@ unsigned long CSysSolve::ConjugateGradient(const CSysVector & b, CSysVector & x,
 #ifndef _MPI
     exit(1);
 #else
-    MPI::COMM_WORLD.Abort(1);
-    MPI::Finalize();
+    MPI_Abort(MPI_COMM_WORLD,1);
+    MPI_Finalize();
 #endif
   }
   
@@ -251,7 +251,7 @@ unsigned long CSysSolve::FGMRES(const CSysVector & b, CSysVector & x, CMatrixVec
     int rank = FlowSol->rank;
 
 #ifdef _MPI
-    rank = MPI::COMM_WORLD.Get_rank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
     /*---  Check the subspace size ---*/
@@ -260,8 +260,8 @@ unsigned long CSysSolve::FGMRES(const CSysVector & b, CSysVector & x, CMatrixVec
 #ifndef _MPI
         exit(1);
 #else
-        MPI::COMM_WORLD.Abort(1);
-        MPI::Finalize();
+        MPI_Abort(MPI_COMM_WORLD,1);
+        MPI_Finalize();
 #endif
     }
     
@@ -271,8 +271,8 @@ unsigned long CSysSolve::FGMRES(const CSysVector & b, CSysVector & x, CMatrixVec
 #ifndef _MPI
         exit(1);
 #else
-        MPI::COMM_WORLD.Abort(1);
-        MPI::Finalize();
+        MPI_Abort(MPI_COMM_WORLD,1);
+        MPI_Finalize();
 #endif
     }
 
@@ -372,7 +372,7 @@ unsigned long CSysSolve::BCGSTAB(const CSysVector & b, CSysVector & x, CMatrixVe
 	
   int rank = 0;
 #ifdef _MPI
-	rank = MPI::COMM_WORLD.Get_rank();
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
   
   /*--- Check the subspace size ---*/
@@ -381,8 +381,8 @@ unsigned long CSysSolve::BCGSTAB(const CSysVector & b, CSysVector & x, CMatrixVe
 #ifndef _MPI
     exit(1);
 #else
-    MPI::COMM_WORLD.Abort(1);
-    MPI::Finalize();
+    MPI_Abort(MPI_COMM_WORLD,1);
+    MPI_Finalize();
 #endif
   }
 	

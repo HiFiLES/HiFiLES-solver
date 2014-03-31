@@ -571,6 +571,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
       write_pvtu << "		<PPointData Scalars=\"Density\" Vectors=\"Velocity\">" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Density\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
+      write_pvtu << "			<PDataArray type=\"Float32\" Name=\"GridVelocity\" NumberOfComponents=\"3\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
 
       // Optional diagnostic fields

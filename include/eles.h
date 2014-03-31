@@ -482,6 +482,9 @@ public:
   void calc_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double> &out_pos);
   void calc_d_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, array<double> &out_d_pos);
   void calc_d_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double> &out_d_pos);
+  void calc_div_vel_upt(int in_upt, int in_ele, array<double> &out_div_vel);
+  double calc_div_vel_upt(int in_upt, int in_ele);
+  void calc_gcl_res(void);
 
 protected:
 
@@ -833,6 +836,12 @@ protected:
 
   /*! transformed gradient of determinant of jacobian at flux points */
   array<double> tgrad_detjac_fpts;
+
+  /*! divergence of grid velocity in reference space (residual of the GCL equation) */
+  array<double> gcl_res;
+
+  /*! GCL-corrected value of the transformation determinant (detjac) */
+  array<double> gbar_upts;
 
   array<double> d_nodal_s_basis;
   array<double> dd_nodal_s_basis;

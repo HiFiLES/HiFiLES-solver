@@ -330,7 +330,7 @@ void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> 
   // calculate the normal transformed continuous flux at the flux points
 
   for(int k=0;k<n_fields;k++)
-    fn(k)=0.5*((fn_l(k)+fn_r(k))-fabs(vn_av_mag-vn_g+c_av)*(u_r(k)-u_l(k)));
+    fn(k)=0.5*((fn_l(k)+fn_r(k))-fabs(vn_av_mag-fabs(vn_g)+c_av)*(u_r(k)-u_l(k)));
 }
 
 // Rusanov inviscid numerical flux at the boundaries

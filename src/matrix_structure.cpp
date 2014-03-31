@@ -444,16 +444,16 @@ void CSysMatrix::DiagonalProduct(CSysVector & vec, unsigned long row_i) {
 	}
 }
 
-#ifdef _MPI
-void CSysMatrix::SendReceive_Solution(CSysVector & x, CGeometry *geometry, CConfig *config) {
+#ifdef foo
+void CSysMatrix::SendReceive_Solution(CSysVector & x, solution *FlowSol) {
   unsigned short iVar, iMarker, MarkerS, MarkerR;
     unsigned long iVertex, iPoint, nVertexS, nVertexR, nBufferS_Vector, nBufferR_Vector;
     double *Buffer_Receive = NULL, *Buffer_Send = NULL;
     int send_to, receive_from;
 
 #ifdef _MPI
-  MPI::Status status;
-  MPI::Request send_request, recv_request;
+  MPI_Status status;
+  MPI_Request send_request, recv_request;
 #endif
   
     for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
@@ -466,37 +466,29 @@ void CSysMatrix::SendReceive_Solution(CSysVector & x, CGeometry *geometry, CConf
       send_to = config->GetMarker_All_SendRecv(MarkerS)-1;
             receive_from = abs(config->GetMarker_All_SendRecv(MarkerR))-1;
 			
-            nVertexS = geometry->nVertex[MarkerS];  nVertexR = geometry->nVertex[MarkerR];
+            nVertexS = FlowSol->nVertex[MarkerS];  nVertexR = FlowSol->nVertex[MarkerR];
             nBufferS_Vector = nVertexS*nVar;        nBufferR_Vector = nVertexR*nVar;
       
       /*--- Allocate Receive and send buffers  ---*/
-      Buffer_Receive = new double [nBufferR_Vector];
+      Buffer_Receive = new double[nBufferR_Vector];
       Buffer_Send = new double[nBufferS_Vector];
       
       /*--- Copy the solution that should be sent ---*/
       for (iVertex = 0; iVertex < nVertexS; iVertex++) {
-        iPoint = geometry->vertex[MarkerS][iVertex]->GetNode();
+        iPoint = FlowSol->vertex[MarkerS][iVertex]->GetNode();
         for (iVar = 0; iVar < nVar; iVar++)
           Buffer_Send[iVertex*nVar+iVar] = x[iPoint*nVar+iVar];
       }
       
-#ifdef _MPI
-      
-      //      /*--- Send/Receive using non-blocking communications ---*/
-      //      send_request = MPI::COMM_WORLD.Isend(Buffer_Send, nBufferS_Vector, MPI::DOUBLE, 0, send_to);
-      //      recv_request = MPI::COMM_WORLD.Irecv(Buffer_Receive, nBufferR_Vector, MPI::DOUBLE, 0, receive_from);
-      //      send_request.Wait(status);
-      //      recv_request.Wait(status);
-      
+#ifdef _MPI     
       /*--- Send/Receive information using Sendrecv ---*/
-      MPI::COMM_WORLD.Sendrecv(Buffer_Send, nBufferS_Vector, MPI::DOUBLE, send_to, 0,
-                               Buffer_Receive, nBufferR_Vector, MPI::DOUBLE, receive_from, 0);
-      
+      MPI_Sendrecv(Buffer_Send, nBufferS_Vector, MPI_DOUBLE, send_to, 0,
+                   Buffer_Receive, nBufferR_Vector, MPI_DOUBLE, receive_from, 0);
 #else
       
       /*--- Receive information without MPI ---*/
       for (iVertex = 0; iVertex < nVertexR; iVertex++) {
-        iPoint = geometry->vertex[MarkerR][iVertex]->GetNode();
+        iPoint = FlowSol->vertex[MarkerR][iVertex]->GetNode();
         for (iVar = 0; iVar < nVar; iVar++)
           Buffer_Receive[iVar*nVertexR+iVertex] = Buffer_Send[iVar*nVertexR+iVertex];
       }
@@ -510,7 +502,7 @@ void CSysMatrix::SendReceive_Solution(CSysVector & x, CGeometry *geometry, CConf
       for (iVertex = 0; iVertex < nVertexR; iVertex++) {
         
         /*--- Find point and its type of transformation ---*/
-        iPoint = geometry->vertex[MarkerR][iVertex]->GetNode();
+        iPoint = FlowSol->vertex[MarkerR][iVertex]->GetNode();
         
         /*--- Copy transformed conserved variables back into buffer. ---*/
         for (iVar = 0; iVar < nVar; iVar++)
@@ -544,8 +536,8 @@ void CSysMatrix::MatrixVectorProduct(const CSysVector & vec, CSysVector & prod) 
 	unsigned long prod_begin, vec_begin, mat_begin, index, iVar, jVar, row_i;
 
 #ifdef MPI
-  MPI::Status status;
-  MPI::Request send_request, recv_request;
+  MPI_Status status;
+  MPI_Request send_request, recv_request;
 #endif
   
 	/*--- Some checks for consistency between CSysMatrix and the CSysVectors ---*/
@@ -646,33 +638,6 @@ void CSysMatrix::InverseDiagonalBlock(unsigned long block_i, double **invBlock) 
 	}
   
 }
-#ifdef PRECONDITIONERS
-void CSysMatrix::BuildJacobiPreconditioner(void) {
-	unsigned long iPoint, iVar, jVar;
-	double **invBlock;
-  
-	/*--- Small nVar x nVar matrix for intermediate computations ---*/
-	invBlock = new double* [nVar];
-	for (iVar = 0; iVar < nVar; iVar++)
-		invBlock[iVar] = new double [nVar];
-  
-	/*--- Compute Jacobi Preconditioner ---*/
-	for (iPoint = 0; iPoint < nPoint; iPoint++) {
-    
-		/*--- Compute the inverse of the diagonal block ---*/
-		InverseDiagonalBlock(iPoint, invBlock);
-    
-		/*--- Set the inverse of the matrix to the invM structure (which is a vector) ---*/
-		for (iVar = 0; iVar < nVar; iVar++)
-			for (jVar = 0; jVar < nVar; jVar++)
-				invM[iPoint*nVar*nVar+iVar*nVar+jVar] = invBlock[iVar][jVar];
-	}
-  
-	for (iVar = 0; iVar < nVar; iVar++)
-		delete [] invBlock[iVar];
-	delete [] invBlock;
-}
-#endif
 
 void CSysMatrix::ComputeLU_SGSPreconditioner(const CSysVector & vec, CSysVector & prod) {
   unsigned long iPoint, iVar;
@@ -722,289 +687,3 @@ void CSysMatrix::ComputeLU_SGSPreconditioner(const CSysVector & vec, CSysVector 
     //SendReceive_Solution(prod, geometry, config);
 
 }
-
-// easiest way to comment out unneeded stuff for now
-#ifdef PRECONDITIONERS
-void CSysMatrix::BuildLineletPreconditioner(CGeometry *geometry, CConfig *config) {
-	
-	/*--- Identify the linelets of the grid ---*/
-	bool *check_Point, add_point;
-	unsigned long iEdge, iPoint, jPoint, index_Point, iLinelet, iVertex, next_Point, counter, iElem;
-	unsigned short iMarker, iNode, ExtraLines = 100;
-	double alpha = 0.9, weight, max_weight, *normal, area, volume_iPoint, volume_jPoint, MeanPoints;
-	
-	check_Point = new bool [geometry->GetnPoint()];
-	for (iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++)
-		check_Point[iPoint] = true;
-	
-	/*--- Memory allocation --*/
-	nLinelet = 0;
-	for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-		if ((config->GetMarker_All_Boundary(iMarker) == HEAT_FLUX)  ||
-        (config->GetMarker_All_Boundary(iMarker) == ISOTHERMAL) ||
-        (config->GetMarker_All_Boundary(iMarker) == EULER_WALL) ||
-        (config->GetMarker_All_Boundary(iMarker) == DISPLACEMENT_BOUNDARY)) {
-			nLinelet += geometry->nVertex[iMarker];
-		}
-	}
-	
-	if (nLinelet == 0) {
-		cout << " No linelet structure. Jacobi preconditioner will be used" << endl;
-    config->SetKind_Linear_Solver_Prec(JACOBI);
-	}
-	else {
-		
-		/*--- Basic initial allocation ---*/
-		LineletPoint = new vector<unsigned long>[nLinelet + ExtraLines];
-		
-		/*--- Define the basic linelets, starting from each vertex ---*/
-		for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-      if ((config->GetMarker_All_Boundary(iMarker) == HEAT_FLUX)  ||
-          (config->GetMarker_All_Boundary(iMarker) == ISOTHERMAL) ||
-          (config->GetMarker_All_Boundary(iMarker) == EULER_WALL) ||
-          (config->GetMarker_All_Boundary(iMarker) == DISPLACEMENT_BOUNDARY)){
-				iLinelet = 0;
-				for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
-					iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-					LineletPoint[iLinelet].push_back(iPoint);
-					check_Point[iPoint] = false;
-					iLinelet++;
-				}
-			}
-		}
-		
-		/*--- Create the linelet structure ---*/
-		iLinelet = 0;
-		do {
-			add_point = true;
-			index_Point = 0;
-			do {
-        
-				/*--- Compute the value of the max weight ---*/
-				iPoint = LineletPoint[iLinelet][index_Point];
-				max_weight = 0.0;
-				for(iNode = 0; iNode < geometry->node[iPoint]->GetnPoint(); iNode++) {
-					jPoint = geometry->node[iPoint]->GetPoint(iNode);
-					if ((check_Point[jPoint]) && geometry->node[jPoint]->GetDomain()){
-						iEdge = geometry->FindEdge(iPoint, jPoint);
-						normal = geometry->edge[iEdge]->GetNormal();
-						if (geometry->GetnDim() == 3) area = sqrt(normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2]);
-						else area = sqrt(normal[0]*normal[0]+normal[1]*normal[1]);
-						volume_iPoint = geometry->node[iPoint]->GetVolume();
-						volume_jPoint = geometry->node[jPoint]->GetVolume();
-						weight = 0.5*area*((1.0/volume_iPoint)+(1.0/volume_jPoint));
-						max_weight = max(max_weight, weight);
-					}
-				}
-				
-				/*--- Verify if any face of the control volume must be added ---*/
-				add_point = false;
-				counter = 0;
-				for(iNode = 0; iNode < geometry->node[iPoint]->GetnPoint(); iNode++) {
-					jPoint = geometry->node[iPoint]->GetPoint(iNode);
-					iEdge = geometry->FindEdge(iPoint, jPoint);
-					normal = geometry->edge[iEdge]->GetNormal();
-					if (geometry->GetnDim() == 3) area = sqrt(normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2]);
-					else area = sqrt(normal[0]*normal[0]+normal[1]*normal[1]);
-					volume_iPoint = geometry->node[iPoint]->GetVolume();
-					volume_jPoint = geometry->node[jPoint]->GetVolume();
-					weight = 0.5*area*((1.0/volume_iPoint)+(1.0/volume_jPoint));
-					if (((check_Point[jPoint]) && (weight/max_weight > alpha) && (geometry->node[jPoint]->GetDomain())) &&
-							((index_Point == 0) || ((index_Point > 0) && (jPoint != LineletPoint[iLinelet][index_Point-1])))) {
-						add_point = true;
-						next_Point = jPoint;
-						counter++;
-					}
-				}
-				
-				/*--- We have arrived to a isotropic zone, the normal linelet is stopped ---*/
-				if (counter > 1) add_point = false;
-				
-				/*--- Add a typical point to the linelet ---*/
-				if (add_point) {
-					LineletPoint[iLinelet].push_back(next_Point);
-					check_Point[next_Point] = false;
-					index_Point++;
-				}
-				
-				/*--- Leading edge... it is necessary to create two linelets ---*/
-				if ((counter == 2) && (index_Point == 0)) {
-					LineletPoint[iLinelet].push_back(next_Point);
-					check_Point[next_Point] = false;
-					index_Point++;
-					add_point = true;
-					LineletPoint[nLinelet].push_back(LineletPoint[iLinelet][0]);
-					nLinelet++;
-				}
-				
-			} while (add_point);
-			iLinelet++;
-		} while (iLinelet < nLinelet);
-		
-		delete [] check_Point;
-		
-		MeanPoints = 0.0;
-		for (iLinelet = 0; iLinelet < nLinelet; iLinelet++)
-			MeanPoints += double (LineletPoint[iLinelet].size());
-    MeanPoints /= double(nLinelet);
-    
-		cout << "Points in the linelet structure: " << MeanPoints << "." << endl;
-		
-		LineletBool = new bool[geometry->GetnPoint()];
-		for (iPoint = 0; iPoint < geometry->GetnPoint(); iPoint ++)
-			LineletBool[iPoint] = false;
-		
-		for (iLinelet = 0; iLinelet < nLinelet; iLinelet++) {
-			for (iElem = 0; iElem < LineletPoint[iLinelet].size(); iElem++) {
-				iPoint = LineletPoint[iLinelet][iElem];
-				LineletBool[iPoint] = true;
-			}
-		}
-	}
-}
-
-void CSysMatrix::ComputeJacobiPreconditioner(const CSysVector & vec, CSysVector & prod, CGeometry *geometry, CConfig *config) {
-	unsigned long iPoint, iVar, jVar;
-  
-	for (iPoint = 0; iPoint < nPoint; iPoint++) {
-		for (iVar = 0; iVar < nVar; iVar++) {
-			prod[(const unsigned int)(iPoint*nVar+iVar)] = 0;
-			for (jVar = 0; jVar < nVar; jVar++)
-				prod[(const unsigned int)(iPoint*nVar+iVar)] += invM[(const unsigned int)(iPoint*nVar*nVar+iVar*nVar+jVar)]*vec[(const unsigned int)(iPoint*nVar+jVar)];
-		}
-	}
-  
-}
-
-void CSysMatrix::ComputeLineletPreconditioner(const CSysVector & vec, CSysVector & prod, CGeometry *geometry, CConfig *config) {
-	unsigned long iVar, jVar, nElem = 0, iLinelet, im1Point, iPoint, ip1Point, iElem;
-	long iElemLoop;
-	
-#ifdef _MPI
-  MPI::Status status;
-  MPI::Request send_request, recv_request;
-#endif
-  
-	nElem = LineletPoint[0].size();
-	for (iLinelet = 1; iLinelet < nLinelet; iLinelet++)
-		if (LineletPoint[iLinelet].size() > nElem)
-			nElem = LineletPoint[iLinelet].size();
-	
-	/*--- Memory allocation, this should be done in the constructor ---*/
-	double **UBlock = new double* [nElem];
-	double **invUBlock = new double* [nElem];
-	double **LBlock = new double* [nElem];
-	double **yVector = new double* [nElem];
-	double **zVector = new double* [nElem];
-	double **rVector = new double* [nElem];
-	for (iElem = 0; iElem < nElem; iElem++) {
-		UBlock[iElem] = new double [nVar*nVar];
-		invUBlock[iElem] = new double [nVar*nVar];
-		LBlock[iElem] = new double [nVar*nVar];
-		yVector[iElem] = new double [nVar];
-		zVector[iElem] = new double [nVar];
-		rVector[iElem] = new double [nVar];
-	}
-	
-	double *LFBlock = new double [nVar*nVar];
-	double *LyVector = new double [nVar];
-	double *FzVector = new double [nVar];
-	double *AuxVector = new double [nVar];
-	
-	/*--- Jacobi preconditioning if there is no linelet ---*/
-	for (iPoint = 0; iPoint < nPoint; iPoint++)
-		if (!LineletBool[iPoint])
-			for (iVar = 0; iVar < nVar; iVar++) {
-				prod[(const unsigned int)(iPoint*nVar+iVar)] = 0;
-				for (jVar = 0; jVar < nVar; jVar++)
-					prod[(const unsigned int)(iPoint*nVar+iVar)] += invM[(const unsigned int)(iPoint*nVar*nVar+iVar*nVar+jVar)]*vec[(const unsigned int)(iPoint*nVar+jVar)];
-			}
-	
-	/*--- Solve linelet using a Thomas algorithm ---*/
-	for (iLinelet = 0; iLinelet < nLinelet; iLinelet++) {
-		
-		nElem = LineletPoint[iLinelet].size();
-		
-		/*--- Copy vec vector to the new structure ---*/
-		for (iElem = 0; iElem < nElem; iElem++) {
-			iPoint = LineletPoint[iLinelet][iElem];
-			for (iVar = 0; iVar < nVar; iVar++)
-				rVector[iElem][iVar] = vec[(const unsigned int)(iPoint*nVar+iVar)];
-		}
-		
-		/*--- Initialization (iElem = 0) ---*/
-		iPoint = LineletPoint[iLinelet][0];
-		GetBlock(iPoint, iPoint);
-		for (iVar = 0; iVar < nVar; iVar++) {
-			yVector[0][iVar] = rVector[0][iVar];
-			for (jVar = 0; jVar < nVar; jVar++)
-				UBlock[0][iVar*nVar+jVar] = block[iVar*nVar+jVar];
-		}
-		
-		/*--- Main loop (without iElem = 0) ---*/
-		for (iElem = 1; iElem < nElem; iElem++) {
-			
-			im1Point = LineletPoint[iLinelet][iElem-1];
-			iPoint = LineletPoint[iLinelet][iElem];
-			
-			InverseBlock(UBlock[iElem-1], invUBlock[iElem-1]);
-			GetBlock(iPoint, im1Point); GetMultBlockBlock(LBlock[iElem], block, invUBlock[iElem-1]);
-			GetBlock(im1Point, iPoint); GetMultBlockBlock(LFBlock, LBlock[iElem], block);
-			GetBlock(iPoint, iPoint); GetSubsBlock(UBlock[iElem], block, LFBlock);
-			
-			/*--- Forward substituton ---*/
-			GetMultBlockVector(LyVector, LBlock[iElem], yVector[iElem-1]);
-			GetSubsVector(yVector[iElem], rVector[iElem], LyVector);
-		}
-		
-		/*--- Backward substituton ---*/
-		im1Point = LineletPoint[iLinelet][nElem-1];
-		InverseBlock(UBlock[nElem-1], invUBlock[nElem-1]);
-		GetMultBlockVector(zVector[nElem-1], invUBlock[nElem-1], yVector[nElem-1]);
-		
-		for (iElemLoop = nElem-2; iElemLoop >= 0; iElemLoop--) {
-			iPoint = LineletPoint[iLinelet][iElemLoop];
-			ip1Point = LineletPoint[iLinelet][iElemLoop+1];
-			GetBlock(iPoint, ip1Point); GetMultBlockVector(FzVector, block, zVector[iElemLoop+1]);
-			GetSubsVector(AuxVector, yVector[iElemLoop], FzVector);
-			GetMultBlockVector(zVector[iElemLoop], invUBlock[iElemLoop], AuxVector);
-		}
-		
-		/*--- Copy zVector to the prod vector ---*/
-		for (iElem = 0; iElem < nElem; iElem++) {
-			iPoint = LineletPoint[iLinelet][iElem];
-			for (iVar = 0; iVar < nVar; iVar++)
-				prod[(const unsigned int)(iPoint*nVar+iVar)] = zVector[iElem][iVar];
-		}
-	}
-  
-  /*--- MPI Parallelization ---*/
-	SendReceive_Solution(prod, geometry, config);
-  
-}
-
-void CSysMatrix::ComputeIdentityPreconditioner(const CSysVector & vec, CSysVector & prod, CGeometry *geometry, CConfig *config) {
-	unsigned long iPoint, iVar;
-  
-	for (iPoint = 0; iPoint < nPoint; iPoint++) {
-		for (iVar = 0; iVar < nVar; iVar++) {
-      prod[(const unsigned int)(iPoint*nVar+iVar)] = vec[(const unsigned int)(iPoint*nVar+iVar)];
-		}
-	}
-  
-  /*--- MPI Parallelization ---*/
-	SendReceive_Solution(prod, geometry, config);
-  
-}
-
-void CSysMatrix::ComputeResidual(const CSysVector & sol, const CSysVector & f, CSysVector & res) {
-	unsigned long iPoint, iVar;
-  
-  for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
-		RowProduct(sol, iPoint);
-		for (iVar = 0; iVar < nVar; iVar++) {
-			res[iPoint*nVar+iVar] = prod_row_vector[iVar] - f[iPoint*nVar+iVar];
-    }
-	}
-}
-#endif // PRECONDITIONERS (not needed for HiFiLES)

@@ -114,19 +114,28 @@ AC_SUBST([CUDA_LDFLAGS])
 AC_SUBST([CUDA_CXX])
 AC_SUBST([NVCCFLAGS])
 
-########################### ParMETIS
+########################### ParMETIS & METIS
 # check for lib
 ParMETISlib=libparmetis.a
 ParMETISheader=parmetis.h
+METISlib=libmetis.a
+METISheader=metis.h
 ParMETISversion=
 have_ParMetis="no"
 
+# check for library
 if test "$with_ParMetis_lib" != "no" 
 then
   	AC_CHECK_FILE([$with_ParMetis_lib/$ParMETISlib],[have_ParMetis="yes"],[have_ParMetis="no"])   
 	if test "$have_ParMetis" == "no"
 	then
-		AC_MSG_ERROR([ParMETIS requested but library file not found.])
+		AC_MSG_ERROR([ParMETIS requested but ParMETIS library file not found.])
+	fi
+	
+	AC_CHECK_FILE([$with_ParMetis_lib/$METISlib],[have_ParMetis="yes"],[have_ParMetis="no"])   
+	if test "$have_ParMetis" == "no"
+	then
+		AC_MSG_ERROR([ParMETIS requested but METIS library file not found.])
 	fi
 fi
 
@@ -138,24 +147,25 @@ then
 		AC_CHECK_FILE([$with_ParMetis_include/$ParMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
 		if test "$have_ParMetis" == "no"
 		then
-			AC_MSG_ERROR([ParMETIS requested but header file not found.])
+			AC_MSG_ERROR([ParMETIS requested but ParMETIS header file not found.])
 		fi
+		
+		AC_CHECK_FILE([$with_ParMetis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+		if test "$have_ParMetis" == "no"
+		then
+			AC_MSG_ERROR([ParMETIS requested but METIS header file not found.])
+		fi
+		
 	else
 		have_ParMetis="no"
 	fi  
 fi
 
-# ParMETIS version check
-if test "$with_ParMetis_version" == "5"
-then
-	ParMETISversion=-DPARMETIS_5
-fi
-
 if test "$have_ParMetis" != "no"
 then
   	AM_CONDITIONAL(BUILD_PARMETIS,true)
-	PARMETIS_CXX="-I"$with_ParMetis_include $ParMETISversion
-	PARMETIS_LD=$with_ParMetis_lib"/"$ParMETISlib
+	PARMETIS_CXX="-I$with_ParMetis_include"
+	PARMETIS_LD="$with_ParMetis_lib/libparmetis.a $with_ParMetis_lib/libmetis.a"
 else
 	AM_CONDITIONAL(BUILD_PARMETIS,false)
 	PARMETIS_CXX=-DNO_PARMETIS
@@ -292,7 +302,6 @@ AC_PROG_CXX
 AC_PROG_CC
 AM_PROG_CC_C_O
 AM_PROG_LIBTOOL
-#AC_PROG_RANLIB
 AC_OUTPUT(Makefile \
 	obj/Makefile)
 

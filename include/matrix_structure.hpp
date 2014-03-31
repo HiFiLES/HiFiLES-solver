@@ -256,15 +256,13 @@ public:
 	 */
 	void DiagonalProduct(CSysVector & vec, unsigned long row_i);
 	
-#ifdef _MPI
   /*!
 	 * \brief Send receive the solution using MPI.
 	 * \param[in] x - Solution..
 	 * \param[in] geometry - Geometrical definition of the problem.
 	 * \param[in] config - Definition of the particular problem.
 	 */
-    void SendReceive_Solution(CSysVector & x, CGeometry *geometry, CConfig *config);
-#endif
+    //void SendReceive_Solution(CSysVector & x, solution *FlowSol);
 
   /*!
 	 * \brief Performs the product of i-th row of a sparse matrix by a vector.
@@ -315,25 +313,6 @@ public:
 	 */
 	void InverseBlock(double *Block, double *invBlock);
   
-	/*!
-	 * \brief Build the Jacobi preconditioner.
-	 */
-    //void BuildJacobiPreconditioner(void);
-  
-	/*!
-	 * \brief Build the Linelet preconditioner.
-	 * \param[in] geometry - Geometrical definition of the problem.
-	 * \param[in] config - Definition of the particular problem.
-	 */
-    //void BuildLineletPreconditioner(CGeometry *geometry, CConfig *config);
-	
-	/*!
-	 * \brief Multiply CSysVector by the preconditioner
-	 * \param[in] vec - CSysVector to be multiplied by the preconditioner.
-	 * \param[out] prod - Result of the product A*vec.
-	 */
-    //void ComputeJacobiPreconditioner(const CSysVector & vec, CSysVector & prod, CGeometry *geometry, CConfig *config);
-	
   /*!
 	 * \brief Multiply CSysVector by the preconditioner
 	 * \param[in] vec - CSysVector to be multiplied by the preconditioner.
@@ -341,20 +320,6 @@ public:
 	 */
     void ComputeLU_SGSPreconditioner(const CSysVector & vec, CSysVector & prod);
   
-	/*!
-	 * \brief Multiply CSysVector by the preconditioner
-	 * \param[in] vec - CSysVector to be multiplied by the preconditioner.
-	 * \param[out] prod - Result of the product A*vec.
-	 */
-    //void ComputeLineletPreconditioner(const CSysVector & vec, CSysVector & prod, CGeometry *geometry, CConfig *config);
-  
-  /*!
-	 * \brief Multiply CSysVector by the preconditioner
-	 * \param[in] vec - CSysVector to be multiplied by the preconditioner.
-	 * \param[out] prod - Result of the product A*vec.
-	 */
-    //void ComputeIdentityPreconditioner(const CSysVector & vec, CSysVector & prod, CGeometry *geometry, CConfig *config);
-	
   /*!
 	 * \brief Compute the residual Ax-b
 	 * \param[in] sol - CSysVector to be multiplied by the preconditioner.
@@ -380,7 +345,7 @@ public:
 	 * \brief constructor of the class
 	 * \param[in] matrix_ref - matrix reference that will be used to define the products
 	 */
-    CSysMatrixVectorProduct(CSysMatrix & matrix_ref,solution* FlowSol);//, CGeometry *geometry_ref, CConfig *config_ref);
+    CSysMatrixVectorProduct(CSysMatrix & matrix_ref,solution* FlowSol);
   
 	/*!
 	 * \brief destructor of the class
@@ -394,40 +359,6 @@ public:
 	 */
 	void operator()(const CSysVector & u, CSysVector & v) const;
 };
-
-#ifdef PRECONDITIONERS
-/*!
- * \class CJacobiPreconditioner
- * \brief specialization of preconditioner that uses CSysMatrix class
- */
-class CJacobiPreconditioner : public CPreconditioner {
-private:
-	CSysMatrix* sparse_matrix; /*!< \brief pointer to matrix that defines the preconditioner. */
-    solution* FlowSol; /*!< \brief pointer to structure containing solution data & configuration. */
-    //CGeometry* geometry; /*!< \brief pointer to matrix that defines the geometry. */
-    //CConfig* config; /*!< \brief pointer to matrix that defines the config. */
-  
-public:
-  
-	/*!
-	 * \brief constructor of the class
-	 * \param[in] matrix_ref - matrix reference that will be used to define the preconditioner
-	 */
-    CJacobiPreconditioner(CSysMatrix & matrix_ref,solution* FlowSol);//, CGeometry *geometry_ref, CConfig *config_ref);
-  
-	/*!
-	 * \brief destructor of the class
-	 */
-	~CJacobiPreconditioner() {}
-  
-	/*!
-	 * \brief operator that defines the preconditioner operation
-	 * \param[in] u - CSysVector that is being preconditioned
-	 * \param[out] v - CSysVector that is the result of the preconditioning
-	 */
-	void operator()(const CSysVector & u, CSysVector & v) const;
-};
-#endif
 
 /*!
  * \class CLU_SGSPreconditioner
@@ -444,7 +375,7 @@ public:
 	 * \brief constructor of the class
 	 * \param[in] matrix_ref - matrix reference that will be used to define the preconditioner
 	 */
-    CLU_SGSPreconditioner(CSysMatrix & matrix_ref,solution* FlowSol);//, CGeometry *geometry_ref, CConfig *config_ref);
+    CLU_SGSPreconditioner(CSysMatrix & matrix_ref,solution* FlowSol);
 	
 	/*!
 	 * \brief destructor of the class
@@ -459,35 +390,4 @@ public:
 	void operator()(const CSysVector & u, CSysVector & v) const;
 };
 
-#ifdef PRECONDITIONERS
-/*!
- * \class CLineletPreconditioner
- * \brief specialization of preconditioner that uses CSysMatrix class
- */
-class CLineletPreconditioner : public CPreconditioner {
-private:
-	CSysMatrix* sparse_matrix; /*!< \brief pointer to matrix that defines the preconditioner. */
-    solution* FlowSol; /*!< \brief pointer to structure containing solution data & configuration. */
-  
-public:
-	
-	/*!
-	 * \brief constructor of the class
-	 * \param[in] matrix_ref - matrix reference that will be used to define the preconditioner
-	 */
-    CLineletPreconditioner(CSysMatrix & matrix_ref,solution* FlowSol);//, CGeometry *geometry_ref, CConfig *config_ref);
-	
-	/*!
-	 * \brief destructor of the class
-	 */
-	~CLineletPreconditioner() {}
-	
-	/*!
-	 * \brief operator that defines the preconditioner operation
-	 * \param[in] u - CSysVector that is being preconditioned
-	 * \param[out] v - CSysVector that is the result of the preconditioning
-	 */
-	void operator()(const CSysVector & u, CSysVector & v) const;
-};
-#endif
 #include "matrix_structure.inl"

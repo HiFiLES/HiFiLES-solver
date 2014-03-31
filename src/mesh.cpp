@@ -80,7 +80,7 @@ mesh::~mesh(void)
   // not currently needed
 }
 
-void mesh::move(int _iter, int time_level, solution *FlowSol) {
+void mesh::move(int _iter, solution *FlowSol) {
   iter = _iter;
 
   if (run_input.motion == 1) {
@@ -262,8 +262,8 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
       if (run_input.adv_type == 0) {
         vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
       }else if (run_input.adv_type == 3) {
-        cout << "Terribly sorry, but RK45 timestepping for mesh velocity has not been implemented yet! ";
-        cout << " Using Forward Euler instead." << endl;
+        /*cout << "Terribly sorry, but RK45 timestepping for mesh velocity has not been implemented yet! ";
+        cout << " Using Forward Euler instead." << endl;*/
         vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
       }
 

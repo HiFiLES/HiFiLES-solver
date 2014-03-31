@@ -60,7 +60,7 @@ public:
   // #### methods ####
 
   /** Mesh motion wrapper */
-  void move(int _iter, int time_level, solution *FlowSol);
+  void move(int _iter, solution *FlowSol);
 
   /** peform prescribed mesh motion using linear elasticity method */
   void deform(solution* FlowSol);

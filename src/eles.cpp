@@ -255,6 +255,9 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
         d_nodal_s_basis_inters_cubpts(iface).setup(n_dims,in_max_n_spts_per_ele,n_cubpts_per_inter(iface),n_eles);
       }
 
+      // Geometric Conservation Law Residual
+      gcl_res.setup(n_upts_per_ele,n_eles);
+
       // for mkl sparse blas
       matdescra[0]='G';
       matdescra[3]='F';
@@ -800,6 +803,25 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
               dt_local(ic) = calc_dt_local(ic);
           }
 
+        // Integrate the GCL forward in time
+        for (int ic=0; ic<n_eles; ic++) {
+          for (int upt=0; upt<n_upts_per_ele; upt++) {
+            switch(run_input.dt_type) {
+              case 0:
+                gbar_upts(upt,ic) += run_input.dt*gcl_res(upt,ic);
+                break;
+
+              case 1:
+                gbar_upts(upt,ic) += dt_local(0)*gcl_res(upt,ic);
+                break;
+
+              case 2:
+                gbar_upts(upt,ic) += dt_local(ic)*gcl_res(upt,ic);
+                break;
+            }
+          }
+        }
+
         for (int i=0;i<n_fields;i++)
         {
           for (int ic=0;ic<n_eles;ic++)
@@ -808,15 +830,15 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
                 {
                   // User supplied timestep
                   if (run_input.dt_type == 0)
-                    disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                    disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic)/detjac_upts(inp,ic)*gbar_upts(inp,ic) - run_input.const_src_term);
 
                   // Global minimum timestep
                   else if (run_input.dt_type == 1)
-                    disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                    disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic)/detjac_upts(inp,ic)*gbar_upts(inp,ic) - run_input.const_src_term);
 
                   // Element local timestep
                   else if (run_input.dt_type == 2)
-                    disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                    disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic)/detjac_upts(inp,ic)*gbar_upts(inp,ic) - run_input.const_src_term);
                   else
                     FatalError("ERROR: dt_type not recognized!")
 
@@ -4098,7 +4120,7 @@ void eles::set_transforms()
                     FatalError("Negative Jacobian at flux points");
                   }
 
-                // store inverse of determinant of jacobian multiplied by jacobian at the flux point
+                // store determinant of jacobian multiplied by inverse of jacobian at the flux point
 
                 inv_detjac_mul_jac_fpts(j,i,0,0)= ys;
                 inv_detjac_mul_jac_fpts(j,i,0,1)= -xs;
@@ -4121,12 +4143,12 @@ void eles::set_transforms()
                     tgrad_detjac_fpts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
                   }
 
-                // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
+                // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
 
                 tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_fpts(0,j)*d_pos(1,1))-(tnorm_fpts(1,j)*d_pos(1,0));
                 tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_fpts(0,j)*d_pos(0,1))+(tnorm_fpts(1,j)*d_pos(0,0));
 
-                // store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
+                // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
 
                 mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
                                                                 tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
@@ -4155,7 +4177,7 @@ void eles::set_transforms()
 
                 detjac_fpts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
 
-                // store inverse of determinant of jacobian multiplied by jacobian at the flux point
+                // store determinant of jacobian multiplied by inverse of jacobian at the flux point
 
                 inv_detjac_mul_jac_fpts(j,i,0,0) = ys*zt - yt*zs;
                 inv_detjac_mul_jac_fpts(j,i,0,1) = xt*zs - xs*zt;
@@ -4200,13 +4222,13 @@ void eles::set_transforms()
                         xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
                   }
 
-                // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
+                // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
 
                 tnorm_dot_inv_detjac_mul_jac(0)=((tnorm_fpts(0,j)*(d_pos(1,1)*d_pos(2,2)-d_pos(1,2)*d_pos(2,1)))+(tnorm_fpts(1,j)*(d_pos(1,2)*d_pos(2,0)-d_pos(1,0)*d_pos(2,2)))+(tnorm_fpts(2,j)*(d_pos(1,0)*d_pos(2,1)-d_pos(1,1)*d_pos(2,0))));
                 tnorm_dot_inv_detjac_mul_jac(1)=((tnorm_fpts(0,j)*(d_pos(0,2)*d_pos(2,1)-d_pos(0,1)*d_pos(2,2)))+(tnorm_fpts(1,j)*(d_pos(0,0)*d_pos(2,2)-d_pos(0,2)*d_pos(2,0)))+(tnorm_fpts(2,j)*(d_pos(0,1)*d_pos(2,0)-d_pos(0,0)*d_pos(2,1))));
                 tnorm_dot_inv_detjac_mul_jac(2)=((tnorm_fpts(0,j)*(d_pos(0,1)*d_pos(1,2)-d_pos(0,2)*d_pos(1,1)))+(tnorm_fpts(1,j)*(d_pos(0,2)*d_pos(1,0)-d_pos(0,0)*d_pos(1,2)))+(tnorm_fpts(2,j)*(d_pos(0,0)*d_pos(1,1)-d_pos(0,1)*d_pos(1,0))));
 
-                // store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
+                // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
 
                 mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
                                                                 tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
@@ -4239,6 +4261,10 @@ void eles::set_transforms()
     }
     */
 #endif
+
+    if (first_time) {
+      gbar_upts = detjac_upts; // initialize GCL-corrected |G|
+    }
 
       if (rank==0 && first_time) cout << endl;
 
@@ -6158,4 +6184,115 @@ void eles::set_grid_vel_ppts(void)
 array<double> eles::get_grid_vel_ppts(void)
 {
   return vel_ppts;
+}
+
+/**
+ * Calculate divergence of transformed velocity vector wrt reference (initial,static) position at upt
+ * (i.e. calculate the residual of the GCL)
+ * Uses pre-computed nodal shape basis derivatives for efficiency
+ * \param[in] in_upt - ID of solution point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_div_vel - array of size (n_dims,n_dims); (i,j) = d/dX_j (dx_i/dt)
+ */
+void eles::calc_div_vel_upt(int in_upt, int in_ele, array<double>& out_div_vel)
+{
+  int i,j,k;
+
+  array<double> vel(n_spts_per_ele(in_ele),n_dims);
+  vel.initialize_to_zero();
+  out_div_vel.initialize_to_zero();
+
+  for(i=0;i<n_spts_per_ele(in_ele);i++) {
+    for (j=0; j<n_dims; j++) {
+      for (k=0; k<n_dims; k++) {
+        vel(i,j) += inv_detjac_mul_jac_upts(in_upt,in_ele,j,k)*vel_spts(in_ele)(i,k);
+      }
+      vel(i,j) *= detjac_upts(in_upt,in_ele);
+    }
+  }
+
+  // Calculate dx/d<c>
+  out_div_vel.initialize_to_zero();
+  for(j=0;j<n_dims;j++) {
+    for(k=0;k<n_dims;k++) {
+      for(i=0;i<n_spts_per_ele(in_ele);i++) {
+        out_div_vel(j,k)+=d_nodal_s_basis_upts(k,i,in_upt,in_ele)*vel(i,k);
+      }
+    }
+  }
+}
+
+/**
+ * Calculate divergence of transformed velocity vector wrt reference (initial,static) position at upt
+ * (i.e. calculate the residual of the GCL)
+ * Uses pre-computed nodal shape basis derivatives for efficiency
+ * \param[in] in_upt - ID of solution point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_div_vel - array of size (n_dims,n_dims); (i,j) = d/dX_j (dx_i/dt)
+ */
+double eles::calc_div_vel_upt(int in_upt, int in_ele)
+{
+  int i,j,k;
+  double out_div_vel = 0;
+
+  array<double> vel(n_spts_per_ele(in_ele),n_dims);
+  vel.initialize_to_zero();
+
+
+  for(i=0;i<n_spts_per_ele(in_ele);i++) {
+    for (j=0; j<n_dims; j++) {
+      for (k=0; k<n_dims; k++) {
+        vel(i,j) += inv_detjac_mul_jac_upts(in_upt,in_ele,j,k)*vel_spts(in_ele)(i,k);
+      }
+      vel(i,j) *= detjac_upts(in_upt,in_ele);
+    }
+  }
+
+  // Calculate dx/d<c>
+  for(j=0;j<n_dims;j++) {
+    for(i=0;i<n_spts_per_ele(in_ele);i++) {
+      out_div_vel+=d_nodal_s_basis_upts(j,i,in_upt,in_ele)*vel(i,j);
+    }
+  }
+
+  return out_div_vel;
+}
+
+void eles::calc_gcl_res(void)
+{
+  int i,j,k,upt,ic;
+  array<double> vel;
+
+  gcl_res.initialize_to_zero();
+
+  for (ic=0; ic<n_eles; ic++) {
+
+    vel.setup(n_spts_per_ele(ic),n_dims);
+
+    for (upt=0; upt<n_upts_per_ele; upt++) {
+
+      vel.initialize_to_zero();
+
+      for(i=0;i<n_spts_per_ele(ic);i++) {
+        for (j=0; j<n_dims; j++) {
+          for (k=0; k<n_dims; k++) {
+
+            vel(i,j) += inv_detjac_mul_jac_upts(upt,ic,j,k)*vel_spts(ic)(i,k);
+
+          }
+          vel(i,j) *= detjac_upts(upt,ic);
+        }
+      }
+
+      for(j=0;j<n_dims;j++) {
+        for(i=0;i<n_spts_per_ele(ic);i++) {
+
+          gcl_res(upt,ic)+=d_nodal_s_basis_upts(j,i,upt,ic)*vel(i,j);
+
+        }
+      }
+
+    }
+  }
+
 }

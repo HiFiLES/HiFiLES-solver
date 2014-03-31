@@ -1331,7 +1331,8 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
           bcflag = get_bc_number(bcname);
           out_bclist(i) = bcflag;
       }
-      cout << "\tout_bclist(" << i << ") = " << out_bclist(i) << ", " << bcname << endl;
+      if(FlowSol->rank==0)
+        cout << "\tout_bclist(" << i << ") = " << out_bclist(i) << ", " << bcname << endl;
   }
 
   //--- Find boundaries which are moving ---//
@@ -1833,11 +1834,13 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   for(int i=0;i<n_bnds;i++)
     {
-      cout << "i "<<i << endl;
       mesh_file.getline(buf,BUFSIZ);
       sscanf(buf,"%d %d %s", &bcdim, &bcid, bc_txt_temp);
       strcpy(bcTXT[bcid],bc_txt_temp);
-      cout << "bc_txt_temp " <<bc_txt_temp<< endl;
+      if(FlowSol->rank==0) {
+        cout << "i "<<i << endl;
+        cout << "bc_txt_temp " <<bc_txt_temp<< endl;
+      }
       if (strcmp(bc_txt_temp,"FLUID")) {
           FlowSol->n_dims=bcdim;
         }

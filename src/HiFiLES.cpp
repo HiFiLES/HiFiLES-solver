@@ -158,10 +158,10 @@ int main(int argc, char *argv[]) {
     if (FlowSol.adv_type == 0) RKSteps = 1;
     if (FlowSol.adv_type == 3) RKSteps = 5;
     
+    // Update the mesh
+    Mesh.move(i_steps,&FlowSol);
+
     for(i=0; i < RKSteps; i++) {
-      
-      // Update the mesh
-      Mesh.move(i_steps,i,&FlowSol);
 
       /*! Spatial integration. */
       CalcResidual(&FlowSol);
