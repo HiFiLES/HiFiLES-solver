@@ -625,7 +625,9 @@ void eles::mv_all_cpu_gpu(void)
           epsilon.mv_cpu_gpu();
           epsilon_upts.mv_cpu_gpu();
           epsilon_fpts.mv_cpu_gpu();
+          inv_vandermonde.cp_cpu_gpu();
           inv_vandermonde2D.cp_cpu_gpu();
+          concentration_array.cp_cpu_gpu();
           ele2global_ele_code.cp_cpu_gpu();
           area_coord_upts.mv_cpu_gpu();
           area_coord_fpts.mv_cpu_gpu();
@@ -2028,7 +2030,7 @@ void eles::calc_artivisc_coeff(int in_disu_upts_from, double* epsilon_global_ele
 {
   if (n_eles!=0){
     #ifdef _GPU
-      calc_artivisc_coeff_gpu_kernel_wrapper(n_eles,n_upts_per_ele, order, ele_type, run_input.epsilon0, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), epsilon.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), epsilon_global_eles, ele2global_ele_code.get_ptr_gpu());
+      calc_artivisc_coeff_gpu_kernel_wrapper(n_eles, n_upts_per_ele, order, ele_type, run_input.artif_type, run_input.epsilon0, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), concentration_array.get_ptr_gpu(), epsilon.get_ptr_gpu(), epsilon_global_eles, ele2global_ele_code.get_ptr_gpu());
     #endif
   }
 }

@@ -2076,7 +2076,7 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
   ifill.setup(n_verts);
   idummy.setup(n_verts);
   // Assumes there won't be more than X cells around 1 vertex
-  int max_cells_per_vert = 50;
+  int max_cells_per_vert = 20;
   out_icvert.setup(max_cells_per_vert*n_verts+1);
   out_icvsta.setup(n_verts+1);
 

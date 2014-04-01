@@ -77,6 +77,7 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
   set_loc_upts();
   set_vandermonde();
   set_vandermonde2D();
+  set_concentration_array();
 
   n_ppts_per_ele=p_res*p_res;
   n_peles_per_ele=(p_res-1)*(p_res-1);
@@ -86,8 +87,6 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
   set_inters_cubpts();
   set_volume_cubpts();
   set_opp_volume_cubpts();
-
-  set_area_coord();
 
   if (in_run_type==0)
     {
@@ -170,6 +169,8 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
       create_map_ppt();
 
     }
+
+    set_area_coord();
 
 }
 
@@ -402,8 +403,8 @@ void eles_quads::set_tloc_fpts(void)
 // Set area co-ordinates/shape functions for bilinear interpolation used in AV routines
 void eles_quads::set_area_coord(void)
 {
-  area_coord_upts.setup(n_dims+1,n_upts_per_ele);
-  area_coord_fpts.setup(n_dims+1,n_fpts_per_ele);
+  area_coord_upts.setup(4,n_upts_per_ele);
+  area_coord_fpts.setup(4,n_fpts_per_ele);
 
   if(n_dims == 2)
   {
@@ -916,17 +917,52 @@ void eles_quads::set_vandermonde2D()
   inv_vandermonde2D.setup(n_upts_per_ele*n_upts_per_ele);
   array <double> loc(n_dims);
 
-        // create the vandermonde matrix
-        for (int i=0;i<n_upts_per_ele;i++){
-                for (int j=0;j<n_upts_per_ele;j++){
-                        loc(0) = loc_upts(0,i);
-                        loc(1) = loc_upts(1,i);
-                        vandermonde2D(i,j) = eval_legendre_basis_2D(j,loc);
-                }
+  // create the vandermonde matrix
+  for (int i=0;i<n_upts_per_ele;i++){
+      loc(0) = loc_upts(0,i);
+      loc(1) = loc_upts(1,i);
+
+      for (int j=0;j<n_upts_per_ele;j++)
+          vandermonde2D(i,j) = eval_legendre_basis_2D_hierarchical(j,loc,order);
+  }
+
+  // Store its inverse
+  inv_vandermonde2D = inv_array(vandermonde2D);
+}
+
+// Set the 1D concentration matrix based on 1D-loc_upts
+void eles_quads::set_concentration_array()
+{
+  int concen_type = 1;
+  array<double> concentration_factor(order+1);
+  array<double> grad_vandermonde;
+  grad_vandermonde.setup(order+1,order+1);
+  concentration_array.setup((order+1)*(order+1));
+
+    // create the vandermonde matrix
+    for (int i=0;i<order+1;i++)
+        for (int j=0;j<order+1;j++)
+            grad_vandermonde(i,j) = eval_d_legendre(loc_1d_upts(i),j);
+
+    // create concentration factor array
+    for(int j=0; j <order+1; j++){
+        if(concen_type == 0){ // exponential
+            if(j==0)
+                concentration_factor(j) = 0;
+            else
+                concentration_factor(j) = exp(1/(6*j*(j+1)));
+        }
+        else if(concen_type == 1) // linear
+            concentration_factor(j) = 1;
+
+        else
+            cout<<"Concentration factor not setup"<<endl;
         }
 
-        // Store its inverse
-        inv_vandermonde2D = inv_array(vandermonde2D);
+
+    for (int i=0;i<order+1;i++)
+                for (int j=0;j<order+1;j++)
+                        concentration_array(j + i*(order+1)) = concentration_factor(j)*sqrt(1 - loc_1d_upts(i)*loc_1d_upts(i))*grad_vandermonde(i,j);
 }
 
 // evaluate nodal basis
@@ -1143,16 +1179,37 @@ void eles_quads::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<do
 }
 
 // Evaluate 2D legendre basis
-double eles_quads::eval_legendre_basis_2D(int in_index, array<double> in_loc)
+double eles_quads::eval_legendre_basis_2D_hierarchical(int in_mode, array<double> in_loc, int in_basis_order)
 {
-        int i,j;
-
         double leg_basis;
 
-        i=in_index/(order+1);
-        j=in_index-((order+1)*i);
+        int n_dof=(in_basis_order+1)*(in_basis_order+1);
 
-        leg_basis=eval_legendre(in_loc(0),j)*eval_legendre(in_loc(1),i);
+        if(in_mode<n_dof)
+          {
+            int i,j,k;
+            int mode;
+
+            mode = 0;
+            for (k=0;k<in_basis_order*in_basis_order+1;k++)
+              {
+                for (j=0;j<k+1;j++)
+                  {
+                    i = k-j;
+                    if(i<=in_basis_order && j<=in_basis_order){
+
+                        if(mode==in_mode) // found the correct mode
+                            leg_basis=eval_legendre(in_loc(0),i)*eval_legendre(in_loc(1),j);
+
+                        mode++;
+                    }
+                  }
+              }
+          }
+        else
+          {
+            cout << "ERROR: Invalid mode when evaluating Legendre basis ...." << endl;
+          }
 
         return leg_basis;
 }

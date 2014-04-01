@@ -793,6 +793,8 @@ protected:
   int rank;
 
   /*! Artificial Viscosity variables */
+  array<double> vandermonde;
+  array<double> inv_vandermonde;
   array<double> vandermonde2D;
   array<double> inv_vandermonde2D;
   array<double> area_coord_upts;
@@ -800,4 +802,5 @@ protected:
   array<double> epsilon;
   array<double> epsilon_upts;
   array<double> epsilon_fpts;
+  array<double> concentration_array;
 };

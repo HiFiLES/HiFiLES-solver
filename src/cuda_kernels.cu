@@ -909,6 +909,53 @@ __device__ __host__ void rusanov_flux(double* q_l, double *q_r, double *norm, do
     }
 }
 
+template<int in_n_fields, int in_n_dims>
+__device__ __host__ void convective_flux_boundary(double* q_l, double *q_r, double *norm, double *fn, double in_gamma)
+{
+  double vn_l, vn_r;
+  double vn_av_mag, c_av;
+  double p_l, p_r,f_l,f_r;
+
+  double f[in_n_dims];
+
+  // Compute normal velocity
+  vn_l = 0.;
+  vn_r = 0.;
+#pragma unroll
+  for (int i=0;i<in_n_dims;i++) {
+      vn_l += q_l[i+1]/q_l[0]*norm[i];
+      vn_r += q_r[i+1]/q_r[0]*norm[i];
+    }
+
+  // Flux prep
+  inv_NS_flux<in_n_dims>(q_l,&p_l,f,in_gamma,-1);
+  inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,-1);
+
+  vn_av_mag=sqrt(0.25*(vn_l+vn_r)*(vn_l+vn_r));
+  c_av=sqrt((in_gamma*(p_l+p_r))/(q_l[0]+q_r[0]));
+
+#pragma unroll
+  for (int i=0;i<in_n_fields;i++)
+    {
+      // Left normal flux
+      inv_NS_flux<in_n_dims>(q_l,&p_l,f,in_gamma,i);
+
+      f_l = f[0]*norm[0] + f[1]*norm[1];
+      if(in_n_dims==3)
+        f_l += f[2]*norm[2];
+
+      // Right normal flux
+      inv_NS_flux<in_n_dims>(q_r,&p_r,f,in_gamma,i);
+
+      f_r = f[0]*norm[0] + f[1]*norm[1];
+      if(in_n_dims==3)
+        f_r += f[2]*norm[2];
+
+      // Common normal flux
+      fn[i] = 0.5*(f_l+f_r);
+    }
+}
+
 
 template<int in_n_fields, int in_n_dims>
 __device__ __host__ void right_flux(double *q_r, double *norm, double *fn, double in_gamma)
@@ -1152,13 +1199,13 @@ __device__ void ldg_solution(double* q_l, double* q_r, double* norm, double* q_c
     {
 #pragma unroll
       for (int i=0;i<n_fields;i++)
-        q_c[i] = q_r[i];
+        q_c[i] = 0.5*(q_l[i]+q_r[i]);
     }
   else if(flux_spec==2) // von Neumann
     {
 #pragma unroll
       for (int i=0;i<n_fields;i++)
-        q_c[i] = q_l[i];
+        q_c[i] = 0.5*(q_l[i]+q_r[i]);
     }
 }
 
@@ -1199,7 +1246,7 @@ __device__ __host__ void ldg_flux(double q_l, double q_r, double* f_l, double* f
     {
 #pragma unroll
       for (int i=0;i<in_n_dims;i++)
-        f_c[i] = f_r[i];
+        f_c[i] = f_r[i] + in_tau*norm[i]*(q_l - q_r);
     }
 }
 
@@ -1560,7 +1607,7 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
       else
         {
           if (in_riemann_solve_type==0)
-            rusanov_flux<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
+            convective_flux_boundary<in_n_fields,in_n_dims> (q_l,q_r,norm,fn,in_gamma);
           else if (in_riemann_solve_type==1)
             lax_friedrichs_flux<in_n_dims> (q_l,q_r,norm,fn,in_wave_speed_x,in_wave_speed_y,in_wave_speed_z,in_lambda);
           else if (in_riemann_solve_type==2)
@@ -1595,66 +1642,140 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
     }
 }
 
-__global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_ele, int in_order, int in_ele_type, double epsilon0, double s0, double kappa, double* in_disu_upts_ptr, double* out_epsilon_ptr, double* in_inv_vandermonde_ptr, double* epsilon_global_eles, int* ele2global_ele_code)
+__global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_ele, int in_order, int in_ele_type, int in_artif_type, double epsilon0, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* concentration_array_ptr, double* out_epsilon_ptr,  double* epsilon_global_eles, int* ele2global_ele_code)
 {
-	const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
+    const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
 
-  if(thread_id < in_n_eles)
-  {
-	int stride = in_n_upts_per_ele*in_n_eles;
-	int global_ele_num = ele2global_ele_code[thread_id];
+    if(thread_id < in_n_eles)
+    {
 
-  double nodal_rho[21];  // Array allocated so it can handle p=5 for tris
-  double modal_rho[21];
-  int n_local;
+        int stride = in_n_upts_per_ele*in_n_eles;
+        int global_ele_num = ele2global_ele_code[thread_id];
 
-  if(in_ele_type == 0) 	 // Tris
-  	n_local = in_order*(in_order + 1)/2 ;
-  else
-	n_local = in_order*in_order;
- 
-  double sensor;
-  double numer,denom;
-  //double epsilon0 = -0.01;
-  //double epsilon0 = 0;
-  //double s0 = -2;
-  //double kappa = 1;
+        if(in_artif_type == 0){    // Persson's method
+            double nodal_rho[21];  // Array allocated so it can handle p=5 for tris
+            double modal_rho[21];
+            int n_local;
 
-	for(int i=0; i<in_n_upts_per_ele; i++)
-		nodal_rho[i] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + i];
-	
-	// Nodal to modal
-	for(int i=0; i<in_n_upts_per_ele; i++){
-	   modal_rho[i] = 0;
-	   for(int j=0; j<in_n_upts_per_ele; j++)
-		modal_rho[i] += in_inv_vandermonde_ptr[j + i*in_n_upts_per_ele]*nodal_rho[j];
-	}
+            if(in_ele_type == 0) 	 // Tris
+                n_local = in_order*(in_order + 1)/2 ;
+            else
+                n_local = in_order*in_order;
 
-	// Compute the numerator of the sensor 
-	numer = 0;
-	for(int i = n_local; i<in_n_upts_per_ele; i++)
-		numer += modal_rho[i]*modal_rho[i];
+            double sensor;
+            double numer,denom;
 
-	// Compute the denominator of the sensor 
-	denom = 0;
-	for(int i=0; i<in_n_upts_per_ele; i++)
-		denom += modal_rho[i]*modal_rho[i];
+            for(int i=0; i<in_n_upts_per_ele; i++)
+                nodal_rho[i] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + i];
 
-	sensor = log10(numer/denom);
+            // Nodal to modal
+            for(int i=0; i<in_n_upts_per_ele; i++){
+                modal_rho[i] = 0;
+                for(int j=0; j<in_n_upts_per_ele; j++)
+                    modal_rho[i] += in_inv_vandermonde2D_ptr[j + i*in_n_upts_per_ele]*nodal_rho[j];
+            }
 
-	if(sensor < s0 - kappa)
-		out_epsilon_ptr[thread_id] = 0;
-	else if(sensor > s0 + kappa)
-		out_epsilon_ptr[thread_id] = epsilon0;
-	else
-		out_epsilon_ptr[thread_id] = (epsilon0/2)*(1 + sin(3.141592*(sensor-s0)/(2*kappa)));
+            // Compute the numerator of the sensor
+            numer = 0;
+            for(int i = n_local; i<in_n_upts_per_ele; i++)
+                numer += modal_rho[i]*modal_rho[i];
 
-	epsilon_global_eles[global_ele_num] = out_epsilon_ptr[thread_id];
+            // Compute the denominator of the sensor
+            denom = 0;
+            for(int i=0; i<in_n_upts_per_ele; i++)
+                denom += modal_rho[i]*modal_rho[i];
 
-	//if(sensor >= -3)
-		//printf("Sensor at %d is: %f and epsilon is: %f \n", thread_id, sensor, out_epsilon_ptr[thread_id]);  
+            sensor = log10(numer/denom);
 
-  }
+            if(sensor < s0 - kappa)
+                out_epsilon_ptr[thread_id] = 0;
+            else if(sensor > s0 + kappa)
+                out_epsilon_ptr[thread_id] = epsilon0;
+            else
+                out_epsilon_ptr[thread_id] = (epsilon0/2)*(1 + sin(3.141592*(sensor-s0)/(2*kappa)));
+
+            epsilon_global_eles[global_ele_num] = out_epsilon_ptr[thread_id];
+
+            //if(sensor > s0 + kappa)
+            //printf("Sensor at %d is: %f and epsilon is: %f \n", thread_id, sensor, out_epsilon_ptr[thread_id]);
+        }
+
+        else    //Concentration Method
+        {
+            double nodal_rho[6];  // Array allocated so that it can handle upto p=5
+            double modal_rho[6];
+            double uE[6];
+            double temp;
+            double maxtemp = 0;
+            double p = 2;	// exponent in concentration method
+            double J = 0.001;
+            int shock_found = 0;
+
+            // X-slices
+            for(int i=0; i<in_order+1; i++)
+            {
+                for(int j=0; j<in_order+1; j++){
+                    nodal_rho[j] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + i*(in_order+1) + j];
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    modal_rho[j] = 0;
+                    for(int k=0; k<in_order+1; k++)
+                         modal_rho[j] += in_inv_vandermonde_ptr[k + j*in_n_upts_per_ele]*nodal_rho[k];
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    uE[j] = 0;
+                    for(int k=0; k<in_order+1; k++)
+                        uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+
+                    uE[j] = abs((3.1415/(in_order+1))*uE[j]);
+                    temp = pow(uE[j],p)*pow(in_order+1,p/2);
+
+                    if(temp >= J)
+                        shock_found++;
+
+                    if(temp > maxtemp)
+                        maxtemp = temp;
+                }
+
+            }
+
+            // Y-slices
+            for(int i=0; i<in_order+1; i++)
+            {
+                for(int j=0; j<in_order+1; j++){
+                    nodal_rho[j] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + j*(in_order+1) + i];
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    modal_rho[j] = 0;
+                    for(int k=0; k<in_order+1; k++)
+                         modal_rho[j] += in_inv_vandermonde_ptr[k + j*in_n_upts_per_ele]*nodal_rho[k];
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    uE[j] = 0;
+                    for(int k=0; k<in_order+1; k++)
+                        uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+
+                    uE[j] = (3.1415/(in_order+1))*uE[j];
+                    temp = pow(abs(uE[j]),p)*pow(in_order+1,p/2);
+
+                    if(temp >= J)
+                        shock_found++;
+
+                    if(temp > maxtemp)
+                        maxtemp = temp;
+                }
+            }
+
+            if(shock_found > 0)
+                out_epsilon_ptr[thread_id] = epsilon0;
+            else
+                out_epsilon_ptr[thread_id] = 0;
+        }
+    }
 
 }
 
@@ -1670,13 +1791,13 @@ __global__ void calc_artivisc_coeff_verts_gpu_kernel(int in_n_verts, int* in_icv
 	for(int i=in_icvsta[thread_id]; i<in_icvsta[thread_id+1]; i++)
 	{
 		ele_num = in_icvert[i];
-		if(in_epsilon_global_eles[ele_num] < eps_max)
+        if(in_epsilon_global_eles[ele_num] <= eps_max)
 			eps_max = in_epsilon_global_eles[ele_num];
 	}
 
 	out_epsilon_verts[thread_id] = eps_max;
-	//if(eps_max <= -0.0001)
-		//printf(" Vertex id: %d, epsilon: %f \n", thread_id, eps_max);
+    //if(eps_max > 0)
+        //printf(" Vertex id: %d, epsilon: %f \n", thread_id, eps_max);
   }
 
 }
@@ -1702,8 +1823,8 @@ __global__ void calc_artivisc_coeff_upts_gpu_kernel(int in_n_eles, int in_n_upts
 
 	out_epsilon_upts[thread_id] = eps_upt;
 
-	//if(out_epsilon_upts[thread_id] <= -0.0001)
-		//printf(" Vertex id: %d, epsilon: %f \n", thread_id, out_epsilon_upts[thread_id]);
+//    if(out_epsilon_upts[thread_id] <= -0.0001)
+//        printf(" Vertex id: %d, epsilon: %f \n", thread_id, out_epsilon_upts[thread_id]);
   }
 }
 
@@ -1722,13 +1843,13 @@ __global__ void calc_artivisc_coeff_fpts_gpu_kernel(int in_n_eles, int in_n_fpts
 	for(int k=0; k<in_n_spts_per_ele[ele_num]; k++)
 	{
 		vert_num = in_c2v[k*in_num_eles_total + global_ele_num];
-		eps_fpt += in_area_coord_fpts[fpt_num*in_num_area_coords + k]*in_epsilon_verts[vert_num];
+        eps_fpt += in_area_coord_fpts[fpt_num*in_num_area_coords + k]*in_epsilon_verts[vert_num];
 	}
 
 	out_epsilon_fpts[thread_id] = eps_fpt;
 
-	//if(eps_fpt > 0.0000001)
-	//	printf("Epsilon at thread id %d is %f \n", thread_id, eps_fpt);
+//    if(eps_fpt < -0.0001)
+//      printf("Epsilon at thread id %d is %f \n", thread_id, eps_fpt);
   }
 }
 
@@ -2964,7 +3085,7 @@ void transform_grad_disu_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_dim
 }
 
 // Wrapper for gpu kernel to compute element-wise artificial viscosity co-efficients
-void calc_artivisc_coeff_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_order, int in_ele_type, double epsilon0, double s0, double kappa, double* in_disu_upts_ptr, double* out_epsilon_ptr, double* in_vandermonde_ptr, double* epsilon_global_eles, int* ele2global_ele_code)
+void calc_artivisc_coeff_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_order, int in_ele_type, int in_artif_type, double epsilon0, double s0, double kappa, double* in_disu_upts_ptr, double* in_vandermonde_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_epsilon_ptr, double* epsilon_global_eles, int* ele2global_ele_code)
 {
 	cudaError_t err;
 
@@ -2973,7 +3094,7 @@ void calc_artivisc_coeff_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
-	calc_artivisc_coeff_gpu_kernel <<<n_blocks,256>>>(in_n_eles, in_n_upts_per_ele, in_order, in_ele_type, epsilon0, s0, kappa, in_disu_upts_ptr, out_epsilon_ptr, in_vandermonde_ptr, epsilon_global_eles, ele2global_ele_code);
+    calc_artivisc_coeff_gpu_kernel <<<n_blocks,256>>>(in_n_eles, in_n_upts_per_ele, in_order, in_ele_type, in_artif_type, epsilon0, s0, kappa, in_disu_upts_ptr, in_vandermonde_ptr, in_vandermonde2D_ptr, concentration_array_ptr, out_epsilon_ptr, epsilon_global_eles, ele2global_ele_code);
 
 	// This thread synchronize may not be necessary
 	err=cudaThreadSynchronize();

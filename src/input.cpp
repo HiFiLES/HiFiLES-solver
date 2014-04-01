@@ -95,6 +95,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
 
   // Set AV parameters to 0 in case they are not used
   artif_only = 0;
+  artif_type = 0;
   epsilon0 = 0;
   s0 = 0;
   kappa = 0;
@@ -559,6 +560,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
       else if (!param_name.compare("artif_only"))
         {
           in_run_input_file >> artif_only;
+        }
+      else if (!param_name.compare("artif_type"))
+        {
+          in_run_input_file >> artif_type;
         }
       else if (!param_name.compare("epsilon0"))
         {
