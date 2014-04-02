@@ -19,7 +19,7 @@ HIFILES_RUN=$PWD/bin
 # Basic User-Modifiable Build Settings [Change these as desired]
 NODE="CPU"              # CPU or GPU
 CODE="DEBUG"            # DEBUG or RELEASE
-BLAS="ATLAS_BLAS"       # *_BLAS: ATLAS, STANDARD, ACCLERATE, MKL, or NO
+BLAS="ATLAS"            # ATLAS, STANDARD, ACCLERATE, MKL, or NO
 PARALLEL="no"           # MPI or NO
 TECIO="no"              # YES or NO
 # ---------------------------------------------------------------
@@ -29,18 +29,20 @@ NVCC="nvcc"             # NVidia CUDA compiler
 MPICC="mpicxx"          # MPI compiler
 # ---------------------------------------------------------------
 # Library Locations [Change filepaths as needed]
-#BLAS_LIB="/usr/local/atlas/lib"
+BLAS_LIB="/usr/local/atlas/lib"
 BLAS_INCLUDE="/usr/local/atlas/include"
-BLAS_LIB="/usr/lib/atlas-base"
 
 PARMETIS_LIB="/usr/local/lib"
 PARMETIS_INCLUDE="/usr/local/include"
+
+METIS_LIB="/usr/local/lib"
+METIS_INCLUDE="/usr/local/include"
 
 TECIO_LIB="lib/tecio-2008/lib"
 TECIO_INCLUDE="lib/tecio-2008/include"
 
 CUDA_LIB="/usr/local/cuda/lib64"
-CUDA_INCLUE="/usr/local/cuda/include"
+CUDA_INCLUDE="/usr/local/cuda/include"
 # ---------------------------------------------------------------
 # Run configure using the chosen options [Should not change this]
 if [[ "$NODE" == "GPU" ]]
