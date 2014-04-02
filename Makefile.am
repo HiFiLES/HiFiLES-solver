@@ -14,4 +14,4 @@
 
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
-SUBDIRS = obj/
+SUBDIRS = obj/ lib/

@@ -1207,11 +1207,9 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   for (int i=0;i<n_entities;i++)
     {
       mesh_file >> id >> elmtype >> ntags;
-
-      if (ntags!=2)
-        FatalError("ntags != 2,exiting");
-
-      mesh_file >> bcid >> dummy;
+      mesh_file >> bcid;
+      for (int tag=0; tag<ntags-1; tag++)
+        mesh_file >> dummy;
 
       if (strstr(bcTXT[bcid],"FLUID"))
         {
@@ -1728,10 +1726,10 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   for (int i=0;i<n_entities;i++)
     {
       mesh_file >> id >> elmtype >> ntags;
-      if (ntags!=2)
-        FatalError("ntags != 2,exiting");
+      mesh_file >> bcid;
+      for (int tag=0; tag<ntags-1; tag++)
+        mesh_file >> dummy;
 
-      mesh_file >> bcid >> dummy;
       if (strstr(bcTXT[bcid],"FLUID"))
         icount++;
 
@@ -1790,14 +1788,10 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   for (int k=0;k<n_entities;k++)
     {
       mesh_file >> id >> elmtype >> ntags;
+      mesh_file >> bcid;
+      for (int tag=0; tag<ntags-1; tag++)
+        mesh_file >> dummy;
 
-      if (ntags!=2)
-        {
-          cout << "ntags=" << ntags << endl;
-          FatalError("ntags != 2,exiting");
-        }
-
-      mesh_file >> bcid >> dummy;
       if (strstr(bcTXT[bcid],"FLUID"))
         {
           if (icount>=kstart && i< out_n_cells) // Read this cell

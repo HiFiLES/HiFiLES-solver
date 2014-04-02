@@ -1,7 +1,19 @@
+# HiFiLES - High Fidelity Large Eddy Simulation
+# Aerospace Computing Lab, Stanford University
+#
+# .gitignore - files & folders to be ignored when commiting
+# to your local or web repository
+#
+# Note that you can still 'git add <file>' any ignored file
+# if desired
+
 # Compiled Object files
 *.slo
 *.lo
 *.o
+
+# External Libraries Folder (in order to compile in place)
+lib/
 
 # Compiled Dynamic libraries
 *.so
