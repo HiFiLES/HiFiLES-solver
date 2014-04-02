@@ -225,7 +225,7 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
 }
 
 
-void mpi_inters::send_disu_fpts()
+void mpi_inters::send_solution()
 {
 
   if (n_inters!=0)
@@ -268,7 +268,7 @@ void mpi_inters::send_disu_fpts()
     }
 }
 
-void mpi_inters::receive_disu_fpts()
+void mpi_inters::receive_solution()
 {
 
   if (n_inters!=0) {
@@ -285,7 +285,7 @@ void mpi_inters::receive_disu_fpts()
 
 }
 
-void mpi_inters::send_cor_grad_disu_fpts()
+void mpi_inters::send_corrected_gradient()
 {
   if (n_inters!=0)
     {
@@ -330,7 +330,7 @@ void mpi_inters::send_cor_grad_disu_fpts()
 
 }
 
-void mpi_inters::receive_cor_grad_disu_fpts()
+void mpi_inters::receive_corrected_gradient()
 {
   if (n_inters!=0)
     {
@@ -407,7 +407,7 @@ void mpi_inters::receive_sgsf_fpts()
 }
 
 // calculate normal transformed continuous inviscid flux at the flux points at mpi faces
-void mpi_inters::calc_norm_tconinvf_fpts_mpi(void)
+void mpi_inters::calculate_common_invFlux(void)
 {
 
 #ifdef _CPU
@@ -492,13 +492,13 @@ void mpi_inters::calc_norm_tconinvf_fpts_mpi(void)
 
 #ifdef _GPU
   if (n_inters!=0) {
-      calc_norm_tconinvf_fpts_mpi_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type, delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.pen_fact, run_input.viscous, run_input.vis_riemann_solve_type, run_input.wave_speed(0), run_input.wave_speed(1), run_input.wave_speed(2), run_input.lambda);
+      calculate_common_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type, delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.pen_fact, run_input.viscous, run_input.vis_riemann_solve_type, run_input.wave_speed(0), run_input.wave_speed(1), run_input.wave_speed(2), run_input.lambda);
     }
 #endif
 
 }
 
-void mpi_inters::calc_norm_tconvisf_fpts_mpi(void)
+void mpi_inters::calculate_common_viscFlux(void)
 {
 
 #ifdef _CPU
@@ -585,7 +585,7 @@ void mpi_inters::calc_norm_tconvisf_fpts_mpi(void)
 
 #ifdef _GPU
   if (n_inters!=0)
-    calc_norm_tconvisf_fpts_mpi_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),sgsf_fpts_r.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.diff_coeff,LES);
+    calculate_common_viscFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),sgsf_fpts_r.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.diff_coeff,LES);
 #endif
 }
 
