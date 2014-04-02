@@ -25,16 +25,16 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
 hifiles_externals_INCLUDES=""
 hifiles_externals_LIBS=""
 
-Tecplot
-CONFIGURE_TECIO
-if (test $enabletecio = yes); then
-  hifiles_externals_INCLUDES="$TECIO_INCLUDE $hifiles_externals_INCLUDES"
-  hifiles_externals_LIBS="$TECIO_LIB $hifiles_externals_LIBS"
-else
-  hifiles_externals_INCLUDES="-DNO_TECIO $hifiles_externals_INCLUDES"
-fi
-AM_CONDITIONAL(BUILD_TECIO, test x$enabletecio = xyes)
-AC_CONFIG_FILES([externals/tecio/Makefile])
+# Tecplot
+# CONFIGURE_TECIO
+# if (test $enabletecio = yes); then
+#   hifiles_externals_INCLUDES="$TECIO_INCLUDE $hifiles_externals_INCLUDES"
+#   hifiles_externals_LIBS="$TECIO_LIB $hifiles_externals_LIBS"
+# else
+#   hifiles_externals_INCLUDES="-DNO_TECIO $hifiles_externals_INCLUDES"
+# fi
+# AM_CONDITIONAL(BUILD_TECIO, test x$enabletecio = xyes)
+# AC_CONFIG_FILES([externals/tecio/Makefile])
 
 # Metis
 # CONFIGURE_METIS
@@ -48,8 +48,8 @@ AC_CONFIG_FILES([externals/tecio/Makefile])
 # AC_CONFIG_FILES([externals/metis/Makefile])
 # 
 # 
-AC_SUBST([hifiles_externals_INCLUDES])
-AC_SUBST([hifiles_externals_LIBS])
+# AC_SUBST([hifiles_externals_INCLUDES])
+# AC_SUBST([hifiles_externals_LIBS])
 
 # --------------------------------------------------------------
 # optional bindings
