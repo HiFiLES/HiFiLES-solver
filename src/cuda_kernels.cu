@@ -2743,7 +2743,17 @@ __global__ void calculate_common_viscFlux_NS_gpu_kernel(int in_n_fpts_per_inter,
           for(int j=0;j<in_n_dims;j++)
             {
               grad_q[i*in_n_dims + j] = *(in_grad_disu_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
-              sgsf_r[i][j] = *(in_sgsf_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
+            }
+        }
+      if(in_LES){
+#pragma unroll
+          for (int i=0;i<in_n_fields;i++)
+            {
+#pragma unroll
+              for(int j=0;j<in_n_dims;j++)
+                {
+                  sgsf_r[i][j] = *(in_sgsf_fpts_r_ptr[thread_id + (j*in_n_fields + i)*stride]);
+                }
             }
         }
 
