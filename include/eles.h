@@ -93,6 +93,9 @@ public:
   /*! copy divergence at solution points to cpu */
   void cp_div_tconf_upts_gpu_cpu(void);
 
+  /*! copy elemental sensor values to cpu */
+  void cp_sensor_gpu_cpu(void);
+
   /*! remove transformed discontinuous solution at solution points from cpu */
   void rm_disu_upts_cpu(void);
 
@@ -182,6 +185,9 @@ public:
 
   /*! get number of fields */
   int get_n_fields(void);
+
+  /*!  number of diagnostic fields */
+  int n_diagnostic_fields;
   
   /*! set shape */
   void set_shape(int in_max_n_spts_per_ele);
@@ -299,6 +305,15 @@ public:
 
   /*! calculate solution at the plot points */
   void calc_disu_ppts(int in_ele, array<double>& out_disu_ppts);
+
+  /*! calculate gradient of solution at the plot points */
+  void calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts);
+
+  /*! calculate sensor at the plot points */
+  void calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts);
+
+  /*! calculate diagnostic fields at the plot points */
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double>& out_diag_field_ppts);
 
   /*! calculate solution at the plot points and store it*/
   void add_contribution_to_pnodes(array<double> &plotq_pnodes);
@@ -591,6 +606,9 @@ protected:
         */
   array< array<double> > disu_upts;
 
+  /*!  diagnostic quantities at solution points  */
+  array<double> diagnostic_fields_upts;
+
   /*!
         plot data at plot points
         */
@@ -803,4 +821,5 @@ protected:
   array<double> epsilon_upts;
   array<double> epsilon_fpts;
   array<double> concentration_array;
+  array<double> sensor;
 };

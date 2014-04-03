@@ -57,6 +57,10 @@ public:
   int n_diagnostics;
   array<string> diagnostics;
 
+  // Used in Paraview output
+  int n_diagnostic_fields;
+  array<string> diagnostic_fields;
+
   double prandtl;
 
   double tau;

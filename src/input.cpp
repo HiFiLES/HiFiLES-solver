@@ -212,12 +212,12 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> diagnostics_freq;
         }
-      else if (!param_name.compare("n_diagnostics"))
+      else if (!param_name.compare("n_diagnostic_fields"))
         {
-          in_run_input_file >> n_diagnostics;
-          diagnostics.setup(n_diagnostics);
-          for (int i=0;i<n_diagnostics;i++)
-            in_run_input_file >> diagnostics(i) ;
+          in_run_input_file >> n_diagnostic_fields;
+          diagnostic_fields.setup(n_diagnostic_fields);
+          for (int i=0;i<n_diagnostic_fields;i++)
+            in_run_input_file >> diagnostic_fields(i);
         }
       else if (!param_name.compare("res_norm_type"))
         {

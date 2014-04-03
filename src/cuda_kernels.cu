@@ -1642,7 +1642,7 @@ __global__ void calc_norm_tconinvf_fpts_boundary_gpu_kernel(int in_n_fpts_per_in
     }
 }
 
-__global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_ele, int in_order, int in_ele_type, int in_artif_type, double epsilon0, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* concentration_array_ptr, double* out_epsilon_ptr,  double* epsilon_global_eles, int* ele2global_ele_code)
+__global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_ele, int in_order, int in_ele_type, int in_artif_type, double epsilon0, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* concentration_array_ptr, double* out_epsilon_ptr, double* out_sensor, double* epsilon_global_eles, int* ele2global_ele_code)
 {
     const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -1695,6 +1695,7 @@ __global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_
                 out_epsilon_ptr[thread_id] = (epsilon0/2)*(1 + sin(3.141592*(sensor-s0)/(2*kappa)));
 
             epsilon_global_eles[global_ele_num] = out_epsilon_ptr[thread_id];
+            out_sensor[thread_id] = sensor;
 
             //if(sensor > s0 + kappa)
             //printf("Sensor at %d is: %f and epsilon is: %f \n", thread_id, sensor, out_epsilon_ptr[thread_id]);
@@ -1708,7 +1709,7 @@ __global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_
             double temp;
             double maxtemp = 0;
             double p = 2;	// exponent in concentration method
-            double J = 0.001;
+            double J = 0.1;
             int shock_found = 0;
 
             // X-slices
@@ -1721,7 +1722,7 @@ __global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_
                 for(int j=0; j<in_order+1; j++){
                     modal_rho[j] = 0;
                     for(int k=0; k<in_order+1; k++)
-                         modal_rho[j] += in_inv_vandermonde_ptr[k + j*in_n_upts_per_ele]*nodal_rho[k];
+                         modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)]*nodal_rho[k];
                 }
 
                 for(int j=0; j<in_order+1; j++){
@@ -1751,7 +1752,7 @@ __global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_
                 for(int j=0; j<in_order+1; j++){
                     modal_rho[j] = 0;
                     for(int k=0; k<in_order+1; k++)
-                         modal_rho[j] += in_inv_vandermonde_ptr[k + j*in_n_upts_per_ele]*nodal_rho[k];
+                         modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)]*nodal_rho[k];
                 }
 
                 for(int j=0; j<in_order+1; j++){
@@ -1766,14 +1767,35 @@ __global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_
                         shock_found++;
 
                     if(temp > maxtemp)
-                        maxtemp = temp;
+                      maxtemp = temp;
                 }
             }
 
-            if(shock_found > 0)
+            if(shock_found > 0){
                 out_epsilon_ptr[thread_id] = epsilon0;
+                //printf("Shock found in element number %d & maxtemp is %f \n", thread_id, maxtemp);
+            }
             else
                 out_epsilon_ptr[thread_id] = 0;
+
+            epsilon_global_eles[global_ele_num] = out_epsilon_ptr[thread_id];
+            out_sensor[thread_id] = maxtemp;
+
+//            if(maxtemp > 0.1)
+//            {
+//                printf("Nodal solution values in element number %d are \n", global_ele_num);
+//                for(int i=0; i<in_n_upts_per_ele; i++)
+//                    printf("%f ",in_disu_upts_ptr[thread_id*in_n_upts_per_ele + i]);
+
+//                printf("Vandermonde 1D values are \n");
+//                for(int i=0; i<in_order+1; i++)
+//                {
+//                    printf("\n");
+//                    for(int j=0; j<in_order+1; j++)
+//                        printf("%f ",in_inv_vandermonde_ptr[j + i*(in_order+1)]);
+//                }
+//                printf("\n Finally maxtemp is %f \n", maxtemp);
+//            }
         }
     }
 
@@ -3085,7 +3107,7 @@ void transform_grad_disu_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_dim
 }
 
 // Wrapper for gpu kernel to compute element-wise artificial viscosity co-efficients
-void calc_artivisc_coeff_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_order, int in_ele_type, int in_artif_type, double epsilon0, double s0, double kappa, double* in_disu_upts_ptr, double* in_vandermonde_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_epsilon_ptr, double* epsilon_global_eles, int* ele2global_ele_code)
+void calc_artivisc_coeff_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_order, int in_ele_type, int in_artif_type, double epsilon0, double s0, double kappa, double* in_disu_upts_ptr, double* in_vandermonde_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_epsilon_ptr, double* out_sensor, double* epsilon_global_eles, int* ele2global_ele_code)
 {
 	cudaError_t err;
 
@@ -3094,7 +3116,7 @@ void calc_artivisc_coeff_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
-    calc_artivisc_coeff_gpu_kernel <<<n_blocks,256>>>(in_n_eles, in_n_upts_per_ele, in_order, in_ele_type, in_artif_type, epsilon0, s0, kappa, in_disu_upts_ptr, in_vandermonde_ptr, in_vandermonde2D_ptr, concentration_array_ptr, out_epsilon_ptr, epsilon_global_eles, ele2global_ele_code);
+    calc_artivisc_coeff_gpu_kernel <<<n_blocks,256>>>(in_n_eles, in_n_upts_per_ele, in_order, in_ele_type, in_artif_type, epsilon0, s0, kappa, in_disu_upts_ptr, in_vandermonde_ptr, in_vandermonde2D_ptr, concentration_array_ptr, out_epsilon_ptr, out_sensor, epsilon_global_eles, ele2global_ele_code);
 
 	// This thread synchronize may not be necessary
 	err=cudaThreadSynchronize();

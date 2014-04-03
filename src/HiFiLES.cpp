@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
           else FatalError("ERROR: Trying to write unrecognized file format ... ");
         }
 
-      /*! Dump restart file. */
+      /*! Dump tt file. */
       if(i_steps%FlowSol.restart_dump_freq==0) {
           write_restart(FlowSol.ini_iter+i_steps, &FlowSol);
         }

@@ -1013,6 +1013,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   int n_proc = 1;
   /*! No. of output fields */
   int n_fields;
+  /*! No. of optional diagnostic fields */
+  int n_diag_fields;
   /*! No. of dimensions */
   int n_dims;
   /*! No. of elements */
@@ -1030,6 +1032,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   array<double> pos_ppts_temp;
   /*! Solution data at plot points */
   array<double> disu_ppts_temp;
+  /*! Solution gradient data at plot points */
+  array<double> grad_disu_ppts_temp;
+  /*! Diagnostic field data at plot points */
+  array<double> diag_ppts_temp;
+  /*! Sensor data for artificial viscosity at plot points */
+  array<double> sensor_ppts_temp;
 
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
@@ -1059,10 +1067,20 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   ofstream write_pvtu;
   write_pvtu.precision(15);
 
+  /*! no. of optional diagnostic fields */
+  n_diag_fields = run_input.n_diagnostic_fields;
+
   /*! copy solution to cpu before beginning */
 #ifdef _GPU
   for(i=0;i<FlowSol->n_ele_types;i++)
-    FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+    {
+      FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+      if(FlowSol->viscous)
+        {
+          FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
+          FlowSol->mesh_eles(i)->cp_sensor_gpu_cpu();
+        }
+    }
 #endif
 
 #ifdef _MPI
@@ -1111,6 +1129,14 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Density\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
+      write_pvtu << "		</PPointData>" << endl;
+
+      /*! Optional diagnostic fields */
+      for(m=0;m<n_diag_fields;m++)
+        {
+          write_pvtu << "			<PDataArray type=\"Float32\" Name=\"" << run_input.diagnostic_fields(m) << "\" />" << endl;
+        }
+
       write_pvtu << "		</PPointData>" << endl;
 
       /*! Write points */
@@ -1176,6 +1202,15 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
           /*! Temporary solution array at plot points */
           disu_ppts_temp.setup(n_points,n_fields);
 
+          /*! Temporary solution array at plot points */
+          grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
+
+          /*! Temporary diagnostic field array at plot points */
+          diag_ppts_temp.setup(n_points,n_diag_fields);
+
+          /*! Temporary field for sensor array at plot points */
+          sensor_ppts_temp.setup(n_points);
+
           con.setup(n_verts,n_cells);
           con = FlowSol->mesh_eles(i)->get_connectivity_plot();
 
@@ -1186,6 +1221,16 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
 
               /*! Calculate the solution at the plot points */
               FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
+
+              /*! Calculate the gradient of the prognostic fields at the plot points */
+              FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
+
+              /*! Calculate the sensor at the plot points */
+              FlowSol->mesh_eles(i)->calc_sensor_ppts(j,sensor_ppts_temp);
+
+              /*! Calculate the diagnostic fields at the plot points */
+              if(n_diag_fields > 0)
+                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,sensor_ppts_temp,diag_ppts_temp);
 
               /*! write out solution to file */
               write_vtu << "			<PointData>" << endl;
@@ -1235,9 +1280,25 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
                       write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
                     }
                 }
-              /*! End the line and finish writing DataArray and PointData objects */
+
               write_vtu << endl;
               write_vtu << "				</DataArray>" << endl;
+
+              /*! Write out optional diagnostic fields */
+              for(m=0;m<n_diag_fields;m++)
+                {
+                  write_vtu << "				<DataArray type= \"Float32\" Name=\"" << run_input.diagnostic_fields(m) << "\" format=\"ascii\">" << endl;
+                  for(k=0;k<n_points;k++)
+                    {
+                      write_vtu << diag_ppts_temp(k,m) << " ";
+                    }
+
+                  /*! End the line and finish writing DataArray object */
+                  write_vtu << endl;
+                  write_vtu << "				</DataArray>" << endl;
+                }
+
+              /*! finish writing PointData object */
               write_vtu << "			</PointData>" << endl;
 
               /*! Calculate the plot coordinates */

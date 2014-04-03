@@ -129,6 +129,12 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
             for (int k=0;k<n_fields;k++)
               disu_upts(m)(i,j,k) = 0.;
 
+      // Allocate storage for diagnostic fields
+      n_diagnostic_fields = run_input.n_diagnostic_fields;
+
+      if(n_diagnostic_fields > 0)
+        diagnostic_fields_upts.setup(n_upts_per_ele,n_eles,n_diagnostic_fields);
+
       // Allocate Leonard tensors if WSM model
       if(run_input.LES==1)
         {
@@ -182,6 +188,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele, int in_run_type)
               epsilon.setup(n_eles);
               epsilon_upts.setup(n_upts_per_ele,n_eles);
               epsilon_fpts.setup(n_fpts_per_ele,n_eles);
+              sensor.setup(n_eles);
             }
           // Set connectivity array. Needed for Paraview output.
           if (ele_type==3) // prism
@@ -625,6 +632,7 @@ void eles::mv_all_cpu_gpu(void)
           epsilon.mv_cpu_gpu();
           epsilon_upts.mv_cpu_gpu();
           epsilon_fpts.mv_cpu_gpu();
+          sensor.cp_cpu_gpu();
           inv_vandermonde.cp_cpu_gpu();
           inv_vandermonde2D.cp_cpu_gpu();
           concentration_array.cp_cpu_gpu();
@@ -701,6 +709,16 @@ void eles::cp_div_tconf_upts_gpu_cpu(void)
     }
 }
 
+// copy sensor in each element to cpu
+void eles::cp_sensor_gpu_cpu(void)
+{
+#ifdef _GPU
+  if (n_eles!=0)
+    {
+      sensor.cp_gpu_cpu();
+    }
+#endif
+}
 
 // remove transformed discontinuous solution at solution points from cpu
 
@@ -2030,7 +2048,7 @@ void eles::calc_artivisc_coeff(int in_disu_upts_from, double* epsilon_global_ele
 {
   if (n_eles!=0){
     #ifdef _GPU
-      calc_artivisc_coeff_gpu_kernel_wrapper(n_eles, n_upts_per_ele, order, ele_type, run_input.artif_type, run_input.epsilon0, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), concentration_array.get_ptr_gpu(), epsilon.get_ptr_gpu(), epsilon_global_eles, ele2global_ele_code.get_ptr_gpu());
+      calc_artivisc_coeff_gpu_kernel_wrapper(n_eles, n_upts_per_ele, order, ele_type, run_input.artif_type, run_input.epsilon0, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), concentration_array.get_ptr_gpu(), epsilon.get_ptr_gpu(), sensor.get_ptr_gpu(), epsilon_global_eles, ele2global_ele_code.get_ptr_gpu());
     #endif
   }
 }
@@ -2825,6 +2843,208 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 
 #endif
 
+    }
+}
+
+// calculate gradient of solution at the plot points
+void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
+{
+  if (n_eles!=0)
+    {
+
+      int i,j,k,l;
+
+      array<double> grad_disu_upts_temp(n_upts_per_ele,n_fields,n_dims);
+
+      for(i=0;i<n_fields;i++)
+        {
+          for(j=0;j<n_upts_per_ele;j++)
+            {
+              for(k=0;k<n_dims;k++)
+                {
+                  grad_disu_upts_temp(j,i,k)=grad_disu_upts(j,in_ele,i,k);
+                }
+            }
+        }
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      for (i=0;i<n_dims;i++) {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,grad_disu_upts_temp.get_ptr_cpu(0,0,i),n_upts_per_ele,0.0,out_grad_disu_ppts.get_ptr_cpu(0,0,i),n_ppts_per_ele);
+      }
+
+#else
+
+      //HACK (inefficient, but useful if cblas is unavailible)
+
+      for(i=0;i<n_ppts_per_ele;i++)
+        {
+          for(k=0;k<n_fields;k++)
+            {
+              for(l=0;l<n_dims;l++)
+                {
+                  out_grad_disu_ppts(i,k,l) = 0.;
+                  for(j=0;j<n_upts_per_ele;j++)
+                    {
+                      out_grad_disu_ppts(i,k,l) += opp_p(i,j)*grad_disu_upts_temp(j,k,l);
+                    }
+                }
+            }
+        }
+
+#endif
+
+    }
+}
+
+// calculate the sensor values at plot points
+void eles::calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts)
+{
+    if (n_eles!=0)
+    {
+      for(int i=0;i<n_ppts_per_ele;i++)
+        out_sensor_ppts(i) = sensor(in_ele);
+    }
+}
+
+// calculate diagnostic fields at the plot points
+void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double>& out_diag_field_ppts)
+{
+  int i,j,k,m;
+  double diagfield_upt;
+  double u,v,w;
+  double irho,pressure,v_sq;
+  double wx,wy,wz;
+  double dudx, dudy, dudz;
+  double dvdx, dvdy, dvdz;
+  double dwdx, dwdy, dwdz;
+
+  for(j=0;j<n_ppts_per_ele;j++)
+    {
+      // Compute velocity square
+      v_sq = 0.;
+      for (m=0;m<n_dims;m++)
+        v_sq += (in_disu_ppts(j,m+1)*in_disu_ppts(j,m+1));
+      v_sq /= in_disu_ppts(j,0)*in_disu_ppts(j,0);
+
+      // Compute pressure
+      pressure = (run_input.gamma-1.0)*( in_disu_ppts(j,n_dims+1) - 0.5*in_disu_ppts(j,0)*v_sq);
+
+      // compute diagnostic fields
+      for (k=0;k<n_diagnostic_fields;k++)
+      {
+        irho = 1./in_disu_ppts(j,0);
+
+        if (run_input.diagnostic_fields(k)=="rho")
+          diagfield_upt = in_disu_ppts(j,0);
+        else if (run_input.diagnostic_fields(k)=="u")
+          diagfield_upt = in_disu_ppts(j,1)*irho;
+        else if (run_input.diagnostic_fields(k)=="v")
+          diagfield_upt = in_disu_ppts(j,2)*irho;
+        else if (run_input.diagnostic_fields(k)=="w")
+        {
+          if (n_dims==2)
+            diagfield_upt = 0.;
+          else if (n_dims==3)
+            diagfield_upt = in_disu_ppts(j,3)*irho;
+        }
+        else if (run_input.diagnostic_fields(k)=="energy")
+        {
+          if (n_dims==2)
+            diagfield_upt = in_disu_ppts(j,3);
+          else if (n_dims==3)
+            diagfield_upt = in_disu_ppts(j,4);
+        }
+        // flow properties
+        else if (run_input.diagnostic_fields(k)=="mach")
+        {
+          diagfield_upt = sqrt( v_sq / (run_input.gamma*pressure/in_disu_ppts(j,0)) );
+        }
+        else if (run_input.diagnostic_fields(k)=="pressure")
+        {
+          diagfield_upt = pressure;
+        }
+        // turbulence metrics
+        else if (run_input.diagnostic_fields(k)=="vorticity" || run_input.diagnostic_fields(k)=="q_criterion")
+        {
+          u = in_disu_ppts(j,1)*irho;
+          v = in_disu_ppts(j,2)*irho;
+
+          dudx = irho*(in_grad_disu_ppts(j,1,0) - u*in_grad_disu_ppts(j,0,0));
+          dudy = irho*(in_grad_disu_ppts(j,1,1) - u*in_grad_disu_ppts(j,0,1));
+          dvdx = irho*(in_grad_disu_ppts(j,2,0) - v*in_grad_disu_ppts(j,0,0));
+          dvdy = irho*(in_grad_disu_ppts(j,2,1) - v*in_grad_disu_ppts(j,0,1));
+
+          if (n_dims==2)
+          {
+            if (run_input.diagnostic_fields(k) == "vorticity")
+            {
+              diagfield_upt = abs(dvdx-dudy);
+            }
+            else if (run_input.diagnostic_fields(k) == "q_criterion")
+            {
+              FatalError("Not implemented in 2D");
+            }
+          }
+          else if (n_dims==3)
+          {
+            w = in_disu_ppts(j,3)*irho;
+
+            dudz = irho*(in_grad_disu_ppts(j,1,2) - u*in_grad_disu_ppts(j,0,2));
+            dvdz = irho*(in_grad_disu_ppts(j,2,2) - v*in_grad_disu_ppts(j,0,2));
+
+            dwdx = irho*(in_grad_disu_ppts(j,3,0) - w*in_grad_disu_ppts(j,0,0));
+            dwdy = irho*(in_grad_disu_ppts(j,3,1) - w*in_grad_disu_ppts(j,0,1));
+            dwdz = irho*(in_grad_disu_ppts(j,3,2) - w*in_grad_disu_ppts(j,0,2));
+
+            wx = dwdy - dvdz;
+            wy = dudz - dwdx;
+            wz = dvdx - dudy;
+
+            if (run_input.diagnostic_fields(k) == "vorticity")
+            {
+              diagfield_upt = sqrt(wx*wx+wy*wy+wz*wz);
+            }
+            else if (run_input.diagnostic_fields(k) == "q_criterion")
+            {
+
+              wx *= 0.5;
+              wy *= 0.5;
+              wz *= 0.5;
+
+              double Sxx,Syy,Szz,Sxy,Sxz,Syz,SS,OO;
+              Sxx = dudx;
+              Syy = dvdy;
+              Szz = dwdz;
+              Sxy = 0.5*(dudy+dvdx);
+              Sxz = 0.5*(dudz+dwdx);
+              Syz = 0.5*(dvdz+dwdy);
+
+              SS = Sxx*Sxx + Syy*Syy + Szz*Szz + 2*Sxy*Sxy + 2*Sxz*Sxz + 2*Syz*Syz;
+              OO = 2*wx*wx + 2*wy*wy + 2*wz*wz;
+
+              diagfield_upt = 0.5*(OO-SS);
+
+            }
+
+          }
+        }
+
+        // Artificial Viscosity diagnostics
+        else if (run_input.diagnostic_fields(k)=="sensor")
+        {
+          diagfield_upt = in_sensor_ppts(j);
+        }
+
+        else
+          FatalError("plot_quantity not recognized");
+
+        if (isnan(diagfield_upt))
+          FatalError("NaN");
+
+        // set array with solution point value
+        out_diag_field_ppts(j,k) = diagfield_upt;
+      }
     }
 }
 
