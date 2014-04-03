@@ -1959,15 +1959,15 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
   for (int i=0;i<klocal;i++)
     {
       if (ctype_temp(i) == 0)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 1)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 2)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 3)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 4)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
     }
 
   int wgtflag = 0;

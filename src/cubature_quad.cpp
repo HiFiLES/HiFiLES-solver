@@ -88,7 +88,7 @@ void cubature_quad::set_rule(int in_rule)
 
 // method to get number of cubature points
 
-double cubature_quad::get_n_pts(void)
+int cubature_quad::get_n_pts(void)
 {
   return n_pts;
 }

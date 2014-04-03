@@ -52,7 +52,7 @@ void input::set_c(double in_c_tri, double in_c_quad)
   c_tri = in_c_tri;
   c_quad = in_c_quad;
 
-  double a_k = eval_gamma(2.*order+1)/( pow(2.,order)*pow(eval_gamma(order+1),2) );
+  double a_k = eval_gamma(2*order+1)/( pow(2.,order)*pow(eval_gamma(order+1),2) );
   eta_quad=in_c_quad*0.5*(2.*order+1.)*a_k*eval_gamma(order+1)*a_k*eval_gamma(order+1);
 }
 

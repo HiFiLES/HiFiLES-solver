@@ -43,7 +43,7 @@ public:
   void set_rule(int in_rule);
 
   // method to get number of cubature points
-  double get_n_pts(void);
+  int get_n_pts(void);
 
   // method to get r location of cubature point
   double get_r(int in_pos);

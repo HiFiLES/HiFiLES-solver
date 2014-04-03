@@ -43,7 +43,7 @@ public:
   void set_order(int in_order);
 
   // method to get number of cubature_tri points
-  double get_n_pts(void);
+  int get_n_pts(void);
 
   // method to get r location of cubature_tri point
   double get_r(int in_pos);

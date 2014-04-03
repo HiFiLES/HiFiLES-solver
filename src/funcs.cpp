@@ -852,7 +852,7 @@ void array_to_ellpack(array<double>& in_array, array<double>& out_data, array<in
 
   for (int i=0;i<nnz_per_row*n_rows;i++) {
       out_data(i) = 0.;
-      out_cols(i) = 0.;
+      out_cols(i) = 0;
     }
 
   //cout << "nnz_per_row*n_rows=" << nnz_per_row*n_rows << endl;
@@ -1364,7 +1364,7 @@ bool is_perfect_cube(int in_a)
   return (in_a == number*number*number);
 }
 
-double compute_eta(int vcjh_scheme, double order)
+double compute_eta(int vcjh_scheme, int order)
 {
   double eta;
   // Check for P=0 compatibility

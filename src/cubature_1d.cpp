@@ -80,7 +80,7 @@ cubature_1d::~cubature_1d()
 
 // method to get number of cubature_1d points
 
-double cubature_1d::get_n_pts(void)
+int cubature_1d::get_n_pts(void)
 {
   return n_pts;
 }

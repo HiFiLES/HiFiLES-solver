@@ -88,7 +88,7 @@ void cubature_tri::set_order(int in_order)
 
 // method to get number of cubature_tri points
 
-double cubature_tri::get_n_pts(void)
+int cubature_tri::get_n_pts(void)
 {
   return n_pts;
 }
