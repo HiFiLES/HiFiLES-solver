@@ -76,5 +76,7 @@ fi
             --with-Metis-include=$METIS_INCLUDE \
             --with-ParMetis-lib=$PARMETIS_LIB \
             --with-ParMetis-include=$PARMETIS_INCLUDE \
+            --with-Metis-lib=$METIS_LIB \
+            --with-Metis-include=$METIS_INCLUDE \
             --with-Tecio-lib=$TECIO_LIB \
             --with-Tecio-include=$TECIO_INCLUDE
