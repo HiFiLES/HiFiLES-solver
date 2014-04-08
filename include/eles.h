@@ -567,9 +567,11 @@ protected:
   array< array<double> > disu_upts;
 
 	/*!
-	diagnostic quantities at solution points
+	time-averaged diagnostic fields at solution points
 	*/
-	array<double> diagnostic_fields_upts;
+	array<double> u_average;
+	array<double> v_average;
+	array<double> w_average;
 
 	/*!
 	filtered solution at solution points for similarity and SVV LES models

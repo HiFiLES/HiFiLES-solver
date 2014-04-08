@@ -150,11 +150,23 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
             for (int k=0;k<n_fields;k++)
               disu_upts(m)(i,j,k) = 0.;
 
-      // Allocate storage for diagnostic fields
+      // Allocate storage for time-averaged diagnostic fields
       n_diagnostic_fields = run_input.n_diagnostic_fields;
 
-      if(n_diagnostic_fields > 0)
-        diagnostic_fields_upts.setup(n_upts_per_ele,n_eles,n_diagnostic_fields);
+      for(int i=0;i<n_diagnostic_fields;++i) {
+        if(run_input.diagnostic_fields(i) == "u_average") {
+          u_average.setup(n_upts_per_ele,n_eles);
+          u_average.initialize_to_zero();
+        }
+        else if(run_input.diagnostic_fields(i) == "v_average") {
+          v_average.setup(n_upts_per_ele,n_eles);
+          v_average.initialize_to_zero();
+        }
+        else if(run_input.diagnostic_fields(i) == "w_average") {
+          w_average.setup(n_upts_per_ele,n_eles);
+          w_average.initialize_to_zero();
+        }
+      }
 
       // Allocate extra arrays for LES models
       if(LES) {
@@ -3739,6 +3751,11 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
 
             }
           }
+        }
+        else if (run_input.diagnostic_fields(k)=="average_u" || run_input.diagnostic_fields(k)=="average_v" || run_input.diagnostic_fields(k)=="average_w")
+        {
+          double av=0.0;
+          diagfield_upt = av;
         }
         else
           FatalError("plot_quantity not recognized");
