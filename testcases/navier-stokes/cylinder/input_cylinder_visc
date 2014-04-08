@@ -52,7 +52,7 @@ p_res                             // Plotting resolution, number of nodes per di
 6
 write_type                        // 0: Paraview, 1: Tecplot
 1
-n_plot_quantities
+n_diagnostic_fields
 5 u v pressure mach vorticity
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 12
