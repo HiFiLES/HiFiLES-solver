@@ -855,22 +855,22 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
             FatalError("ERROR: Invalid number of dimensions ... ");
 
 
-	      // If LES (but no wall model?), get SGS flux and add to viscous flux
-	      if(LES) {
-			  
-	        for(int k=0;k<n_dims;k++)
-			  {
-	            for(int l=0;l<n_fields;l++)
-				  {
-				  
-	                // pointer to subgrid-scale flux
-	                temp_sgsf_l(l,k) = *sgsf_fpts_l(j,i,l,k);
+          // If LES (but no wall model?), get SGS flux and add to viscous flux
+          if(LES) {
 
-	                // Add SGS flux to viscous flux
-	                temp_f_l(l,k) += temp_sgsf_l(l,k);
-	              }
-	          }
-	      }
+            for(int k=0;k<n_dims;k++)
+              {
+                for(int l=0;l<n_fields;l++)
+                  {
+
+                    // pointer to subgrid-scale flux
+                    temp_sgsf_l(l,k) = *sgsf_fpts_l(j,i,l,k);
+
+                    // Add SGS flux to viscous flux
+                    temp_f_l(l,k) += temp_sgsf_l(l,k);
+                  }
+              }
+          }
 
           /*! Calling viscous riemann solver */
           if (run_input.vis_riemann_solve_type==0)
