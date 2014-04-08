@@ -1,4 +1,3 @@
-#!/usr/bin.bash
 #####################################################
 # \file configure_run.sh
 # \brief Configuration script for HiFiLES
@@ -75,5 +74,7 @@ fi
             --with-CUDA-include=$CUDA_INCLUDE \
             --with-ParMetis-lib=$PARMETIS_LIB \
             --with-ParMetis-include=$PARMETIS_INCLUDE \
+            --with-Metis-lib=$METIS_LIB \
+            --with-Metis-include=$METIS_INCLUDE \
             --with-Tecio-lib=$TECIO_LIB \
             --with-Tecio-include=$TECIO_INCLUDE
