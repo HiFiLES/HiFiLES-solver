@@ -220,7 +220,7 @@ fi
 if test "$have_ParMetis" != "no"
 then
   	AM_CONDITIONAL(BUILD_PARMETIS,true)
-	PARMETIS_CXX="-I$with_ParMetis_include $ParMETISversion"
+	PARMETIS_CXX="-I$with_Metis_include -I$with_ParMetis_include"
 	PARMETIS_LD="$with_ParMetis_lib/$ParMETISlib $with_Metis_lib/$METISlib"
 else
 	AM_CONDITIONAL(BUILD_PARMETIS,false)
