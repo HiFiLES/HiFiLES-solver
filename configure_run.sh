@@ -1,4 +1,3 @@
-#!/usr/bin.bash
 #####################################################
 # \file configure_run.sh
 # \brief Configuration script for HiFiLES
@@ -19,8 +18,8 @@ HIFILES_RUN=$PWD/bin
 # Basic User-Modifiable Build Settings [Change these as desired]
 NODE="CPU"              # CPU or GPU
 CODE="DEBUG"            # DEBUG or RELEASE
-BLAS="ATLAS"            # ATLAS, STANDARD, ACCLERATE, MKL, or NO
-PARALLEL="no"           # MPI or NO
+BLAS="ACCELERATE"            # ATLAS, STANDARD, ACCLERATE, MKL, or NO
+PARALLEL="MPI"           # MPI or NO
 TECIO="no"              # YES or NO
 # ---------------------------------------------------------------
 # Compiler Selections [Change compilers or add full filepaths if needed]
@@ -32,11 +31,11 @@ MPICC="mpicxx"          # MPI compiler
 BLAS_LIB="/usr/local/atlas/lib"
 BLAS_INCLUDE="/usr/local/atlas/include"
 
-PARMETIS_LIB="/usr/local/lib"
-PARMETIS_INCLUDE="/usr/local/include"
+PARMETIS_LIB="/usr/local/parmetis-4.0.3/build/Darwin-x86_64/libparmetis"
+PARMETIS_INCLUDE="/usr/local/parmetis-4.0.3/include"
 
-METIS_LIB="/usr/local/lib"
-METIS_INCLUDE="/usr/local/include"
+METIS_LIB="/usr/local/parmetis-4.0.3/build/Darwin-x86_64/libmetis"
+METIS_INCLUDE="/usr/local/parmetis-4.0.3/metis/include"
 
 TECIO_LIB="lib/tecio-2008/lib"
 TECIO_INCLUDE="lib/tecio-2008/include"
@@ -73,6 +72,8 @@ fi
             --with-CUDA=$_GPU \
             --with-CUDA-lib=$CUDA_LIB \
             --with-CUDA-include=$CUDA_INCLUDE \
+            --with-Metis-lib=$METIS_LIB \
+            --with-Metis-include=$METIS_INCLUDE \
             --with-ParMetis-lib=$PARMETIS_LIB \
             --with-ParMetis-include=$PARMETIS_INCLUDE \
             --with-Tecio-lib=$TECIO_LIB \

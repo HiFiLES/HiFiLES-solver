@@ -165,6 +165,7 @@ AC_SUBST([NVCCFLAGS])
 ParMETISlib=libparmetis.a
 ParMETISheader=parmetis.h
 METISlib=libmetis.a
+METISheader=metis.h
 ParMETISversion=
 have_ParMetis="no"
 
