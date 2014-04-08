@@ -62,7 +62,7 @@ plot_freq
 10
 restart_dump_freq
 1000
-diagnostics_freq
+monitor_integrals_freq
 100
 monitor_res_freq
 1
