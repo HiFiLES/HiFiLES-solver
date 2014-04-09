@@ -966,6 +966,14 @@ void eles::extrapolate_solution(int in_disu_upts_from)
       A = opp_0 \n
       B = disu_upts(in_disu_upts_from) \n
       C = disu_fpts
+
+      opp_0 is the polynomial extrapolation matrix;
+          has dimensions n_f_pts_per_ele by n_upts_per_ele
+
+      Recall: opp_0(j,i) = value of the ith nodal basis at the
+          jth flux point location in the reference domain
+
+      (vector of solution values at flux points) = opp_0 * (vector of solution values at nodes)
       */
 
       Arows =  n_fpts_per_ele;
@@ -1350,6 +1358,26 @@ void eles::calculate_gradient(int in_disu_upts_from)
 {
   if (n_eles!=0)
     {
+
+      /*!
+      Performs C = (alpha*A*B) + (beta*C) where: \n
+      alpha = 1.0 \n
+      beta = 0.0 \n
+      A = opp_4 \n
+      B = disu_upts \n
+      C = grad_disu_upts
+
+      opp_4 is the polynomial gradient matrix;
+          has dimensions n_upts_per_ele by n_upts_per_ele
+      Recall: opp_4(i)(k,j) = eval_d_nodal_basis(j,i,loc);
+                = derivative of the jth nodal basis at the
+          kth nodal (solution) point location in the reference domain
+          for the ith dimension
+
+      (vector of gradient values at solution points) = opp_4 *
+            (vector of solution values at solution points in all elements of the same type)
+      */
+
       Arows =  n_upts_per_ele;
       Acols = n_upts_per_ele;
 
