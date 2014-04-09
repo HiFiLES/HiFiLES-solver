@@ -20,3 +20,9 @@ extern input run_input;
 
 /*! double 'pi' has global scope */
 extern double pi;
+
+/*! routine that mimics BLAS dgemm */
+int dgemm(int Arows, int Bcols, int Acols, double alpha, double beta, double* a, double* b, double* c);
+
+/*! routine that mimics BLAS daxpy */
+int daxpy(int n, double alpha, double *x, double *y);
