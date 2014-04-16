@@ -61,4 +61,7 @@ public:
 
   // weight of cubature_1d points
   array<double> weights;
+  
+  // cubature data file
+  ifstream datfile;
 };

@@ -20,3 +20,6 @@ extern input run_input;
 
 /*! double 'pi' has global scope */
 extern double pi;
+
+/*! environment variable specifying location of HiFiLES repository */
+extern const char* HIFILES_DIR;

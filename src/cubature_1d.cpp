@@ -14,7 +14,9 @@
 #include <iostream>
 #include <cmath>
 #include <string>
+#include <sstream>
 
+#include "../include/global.h"
 #include "../include/cubature_1d.h"
 
 using namespace std;
@@ -35,10 +37,76 @@ cubature_1d::cubature_1d()
 
 cubature_1d::cubature_1d(int in_order) // set by number of points
 {	
+  ifstream datfile;
+  char buf[BUFSIZ]={""};
+  char section_TXT[100], param_TXT[100];
+  string filename, param_name, param, ord;
+  istringstream strbuf;
+  int order_file;
+
   order=in_order;
   n_pts = (order+1)/2;
+  locs.setup(n_pts);
+  weights.setup(n_pts);
+  
+  if(order < 13) {
 
-#include "../data/cubature_1d.dat"
+    // get env var specifying location of data directory?
+    //const char* HIFILES_DATADIR = getenv("HIFILES_DATA");
+    //filename = HIFILES_DATADIR;
+    //filename += "/cubature_1d_new.dat";
+    //cout << filename << endl;
+
+    if (HIFILES_DIR == NULL)
+      FatalError("environment variable HIFILES_HOME is undefined");
+
+    filename = HIFILES_DIR;
+    filename += "/data/cubature_1d.dat";
+    datfile.open(filename, ifstream::in);
+    if (!datfile) FatalError("Unable to open cubature file");
+    
+    // read data from file to arrays
+    while(datfile.getline(buf,BUFSIZ))
+    {
+      sscanf(buf,"%s",&section_TXT);
+      param_name.assign(section_TXT,0,99);
+      
+      if(!param_name.compare(0,5,"order"))
+      {
+        // get no. of pts
+        ord = param_name.substr(6);
+        stringstream str(ord);
+        str >> order_file;
+        
+        // if pts matches order, read locs and weights
+        if (order_file == order) {
+          
+          // skip next line
+          datfile.getline(buf,BUFSIZ);
+          
+          for(int i=0;i<n_pts;++i) {
+            datfile.getline(buf,BUFSIZ);
+            sscanf(buf,"%s",&param_TXT);
+            param.assign(param_TXT,0,99);
+            strbuf.str(param);
+            locs(i) = atof(param.c_str());
+          }
+
+          // skip next line
+          datfile.getline(buf,BUFSIZ);
+
+          for(int i=0;i<n_pts;++i) {
+            datfile.getline(buf,BUFSIZ);
+            sscanf(buf,"%s",&param_TXT);
+            param.assign(param_TXT,0,99);
+            strbuf.str(param);
+            weights(i) = atof(param.c_str());
+          }
+          break;
+        }
+      }
+    }
+  }
 }
 
 // copy constructor
