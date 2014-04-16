@@ -966,6 +966,14 @@ void eles::extrapolate_solution(int in_disu_upts_from)
       A = opp_0 \n
       B = disu_upts(in_disu_upts_from) \n
       C = disu_fpts
+
+      opp_0 is the polynomial extrapolation matrix;
+          has dimensions n_f_pts_per_ele by n_upts_per_ele
+
+      Recall: opp_0(j,i) = value of the ith nodal basis at the
+          jth flux point location in the reference domain
+
+      (vector of solution values at flux points) = opp_0 * (vector of solution values at nodes)
       */
 
       Arows =  n_fpts_per_ele;
@@ -984,6 +992,9 @@ void eles::extrapolate_solution(int in_disu_upts_from)
         {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
           cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,disu_fpts.get_ptr_cpu(),Cstride);
+
+#elif defined _NO_BLAS
+          dgemm(Arows,Bcols,Acols,1.0,0.0,opp_0.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),disu_fpts.get_ptr_cpu());
 
 #endif
         }
@@ -1101,6 +1112,12 @@ void eles::extrapolate_totalFlux()
               cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
             }
 
+#elif defined _NO_BLAS
+          dgemm(n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,0.0,opp_1(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),norm_tdisf_fpts.get_ptr_cpu());
+          for (int i=1;i<n_dims;i++)
+            {
+              dgemm(n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,1.0,opp_1(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),norm_tdisf_fpts.get_ptr_cpu());
+            }
 #endif
         }
       else if(opp_1_sparse==1) // mkl blas four-array csr format
@@ -1189,6 +1206,13 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
               cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
             }
 
+#elif defined _NO_BLAS
+          dgemm(n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,0.0,opp_2(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+          for (int i=1;i<n_dims;i++)
+            {
+              dgemm(n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,1.0,opp_2(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+            }
+
 #endif
         }
       else if(opp_2_sparse==1) // mkl blas four-array csr format
@@ -1253,6 +1277,10 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
 
       cblas_daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
 
+#elif defined _NO_BLAS
+
+      daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu());
+
 #endif
 
       if(opp_3_sparse==0) // dense
@@ -1260,6 +1288,9 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
           cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_cpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_cpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+
+#elif defined _NO_BLAS
+          dgemm(n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,1.0,opp_3.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
 
 #endif
         }
@@ -1297,49 +1328,6 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
 #endif
 
     }
-
-  /*
-#ifdef _GPU
-    norm_tconinvf_fpts.cp_gpu_cpu();
-#endif
-
-    for (int i=0;i<n_eles;i++)
-    {
-      for (int j=0;j<n_fpts_per_ele;j++)
-      {
-      for (int k=0;k<n_fields;k++)
-      {
-        cout << "i=" << i << "j=" << j << "k=" << k << "norm=" << setprecision(12) << norm_tconinvf_fpts(j,i,k) << endl;
-      }
-      }
-    }
-  */
-
-  /*
-  for (int j=0;j<n_eles;j++)
-  for (int i=0;i<n_upts_per_ele;i++)
-      //for (int k=0;k<n_fields;k++)
-        cout << scientific << setw(16) << setprecision(12) << div_tconf_upts(0)(i,j,0) << endl;
-        */
-
-  /*
-  cout << "OUTPUT" << endl;
-#ifdef _GPU
-  norm_tconinvf_fpts.cp_gpu_cpu();
-#endif
-
-  for (int i=0;i<n_fpts_per_ele;i++)
-    for (int j=0;j<n_eles;j++)
-      for (int k=0;k<n_fields;k++)
-        cout << setprecision(10)  << i << " " << j<< " " << k << " " << norm_tconinvf_fpts(i,j,k) << endl;
-  */
-
-  /*
-  for (int j=0;j<n_eles;j++)
-  for (int i=0;i<n_upts_per_ele;i++)
-        cout << div_tconf_upts(0)(i,j,1) << endl;
-  */
-
 }
 
 
@@ -1350,6 +1338,26 @@ void eles::calculate_gradient(int in_disu_upts_from)
 {
   if (n_eles!=0)
     {
+
+      /*!
+      Performs C = (alpha*A*B) + (beta*C) where: \n
+      alpha = 1.0 \n
+      beta = 0.0 \n
+      A = opp_4 \n
+      B = disu_upts \n
+      C = grad_disu_upts
+
+      opp_4 is the polynomial gradient matrix;
+          has dimensions n_upts_per_ele by n_upts_per_ele
+      Recall: opp_4(i)(k,j) = eval_d_nodal_basis(j,i,loc);
+                = derivative of the jth nodal basis at the
+          kth nodal (solution) point location in the reference domain
+          for the ith dimension
+
+      (vector of gradient values at solution points) = opp_4 *
+            (vector of solution values at solution points in all elements of the same type)
+      */
+
       Arows =  n_upts_per_ele;
       Acols = n_upts_per_ele;
 
@@ -1365,9 +1373,13 @@ void eles::calculate_gradient(int in_disu_upts_from)
       if(opp_4_sparse==0) // dense
         {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
           for (int i=0;i<n_dims;i++) {
               cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_4(i).get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,grad_disu_upts.get_ptr_cpu(0,0,0,i),Cstride);
+            }
+
+#elif defined _NO_BLAS
+          for (int i=0;i<n_dims;i++) {
+              dgemm(Arows,Bcols,Acols,1.0,0.0,opp_4(i).get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i));
             }
 
 #endif
@@ -1448,6 +1460,11 @@ void eles::correct_gradient(void)
           for (int i=0;i<n_dims;i++)
             {
               cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_5(i).get_ptr_cpu(),Astride,delta_disu_fpts.get_ptr_cpu(),Bstride,1.0,grad_disu_upts.get_ptr_cpu(0,0,0,i),Cstride);
+            }
+
+#elif defined _NO_BLAS
+          for (int i=0;i<n_dims;i++) {
+              dgemm(Arows,Bcols,Acols,1.0,1.0,opp_5(i).get_ptr_cpu(),delta_disu_fpts.get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i));
             }
 
 #endif
@@ -1601,6 +1618,11 @@ void eles::extrapolate_corrected_gradient(void)
             {
               cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_6.get_ptr_cpu(),Astride,grad_disu_upts.get_ptr_cpu(0,0,0,i),Bstride,0.0,grad_disu_fpts.get_ptr_cpu(0,0,0,i),Cstride);
             }
+
+#elif defined _NO_BLAS
+          for (int i=0;i<n_dims;i++) {
+              dgemm(Arows,Bcols,Acols,1.0,0.0,opp_6.get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i),grad_disu_fpts.get_ptr_cpu(0,0,0,i));
+            }
 #endif
         }
       else if(opp_6_sparse==1) // mkl blas four-array csr format
@@ -1682,6 +1704,9 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
     cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,disuf_upts.get_ptr_cpu(),Cstride);
+
+#elif defined _NO_BLAS
+    dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),disuf_upts.get_ptr_cpu());
 
 #else
 
@@ -1772,6 +1797,16 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
       Bcols = n_dims*n_eles;
 
       cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,ue.get_ptr_cpu(),Bstride,0.0,Le.get_ptr_cpu(),Cstride);
+
+#elif defined _NO_BLAS
+
+      Bcols = dim3*n_eles;
+
+      dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),uu.get_ptr_cpu(),Lu.get_ptr_cpu());
+
+      Bcols = n_dims*n_eles;
+
+      dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),ue.get_ptr_cpu(),Le.get_ptr_cpu());
 
 #else
 
@@ -2815,6 +2850,11 @@ void eles::evaluate_sgsFlux(void)
         cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,sgsf_upts.get_ptr_cpu(0,0,0,i),Bstride,0.0,sgsf_fpts.get_ptr_cpu(0,0,0,i),Cstride);
       }
 
+      #elif defined _NO_BLAS
+        for (int i=0;i<n_dims;i++) {
+          dgemm(Arows,Bcols,Acols,1.0,0.0,opp_0.get_ptr_cpu(),sgsf_upts.get_ptr_cpu(0,0,0,i),sgsf_fpts.get_ptr_cpu(0,0,0,i));
+        }
+
       #endif
     }
     else if(opp_0_sparse==1) // mkl blas four-array csr format
@@ -3546,6 +3586,9 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 
       cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,disu_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_ppts.get_ptr_cpu(),n_ppts_per_ele);
 
+#elif defined _NO_BLAS
+      dgemm(n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),disu_upts_plot.get_ptr_cpu(),out_disu_ppts.get_ptr_cpu());
+
 #else
 
       //HACK (inefficient, but useful if cblas is unavailible)
@@ -3593,6 +3636,12 @@ void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
 
       for (i=0;i<n_dims;i++) {
         cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,grad_disu_upts_temp.get_ptr_cpu(0,0,i),n_upts_per_ele,0.0,out_grad_disu_ppts.get_ptr_cpu(0,0,i),n_ppts_per_ele);
+      }
+
+#elif defined _NO_BLAS
+
+      for (i=0;i<n_dims;i++) {
+        dgemm(n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),grad_disu_upts_temp.get_ptr_cpu(0,0,i),out_grad_disu_ppts.get_ptr_cpu(0,0,i));
       }
 
 #else

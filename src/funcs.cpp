@@ -287,8 +287,8 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 	zero_array(modal);
 	zero_array(filter_upts);
 
-	// Full form: alpha = Cp*p*dt
-	alpha = Cp*p;
+	// Full form: alpha = Cp*N*dt
+	alpha = Cp*N;
 
 	for(i=0;i<p+1;i++) {
 		// Exponential filter (SVV method) (similar to Meister et al 2009)
@@ -312,9 +312,9 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
 
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
-	#else // inefficient matrix multiplication
+    #else // inefficient matrix multiplication
 
 	mtemp = mult_arrays(inv_vandermonde,modal);
 	filter_upts = mult_arrays(mtemp,vandermonde);
@@ -334,8 +334,8 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 	zero_array(modal);
 	zero_array(filter_upts);
 
-	// Full form: alpha = Cp*(p+1)*dt/delta
-	alpha = Cp*p;
+	// Full form: alpha = Cp*(N+1)*dt/delta
+	alpha = Cp*N;
 
 	for(i=0;i<p+1;i++) {
 		for(j=0;j<p-i+1;j++) {
@@ -386,8 +386,8 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
 	zero_array(modal);
 	zero_array(filter_upts);
 
-	// Full form: alpha = Cp*(p+1)*dt/delta
-	alpha = Cp*p;
+	// Full form: alpha = Cp*(N+1)*dt/delta
+	alpha = Cp*N;
 
 	for(i=0;i<p+1;i++) {
 		for(j=0;j<p-i+1;j++) {
@@ -406,8 +406,8 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
 	// Sharp modal cutoff filter
 	//modal(N-1,N-1)=0.0;
 
-  cout<<"modal coeffs:"<<endl;
-  modal.print();
+	//cout<<"modal coeffs:"<<endl;
+	//modal.print();
 
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
@@ -853,7 +853,7 @@ void array_to_ellpack(array<double>& in_array, array<double>& out_data, array<in
 
   for (int i=0;i<nnz_per_row*n_rows;i++) {
       out_data(i) = 0.;
-      out_cols(i) = 0;
+      out_cols(i) = 0.;
     }
 
   //cout << "nnz_per_row*n_rows=" << nnz_per_row*n_rows << endl;
