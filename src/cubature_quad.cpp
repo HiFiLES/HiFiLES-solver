@@ -40,6 +40,7 @@ cubature_quad::cubature_quad(int in_rule) // set by rule
   ifstream datfile;
   char buf[BUFSIZ]={""};
   char section_TXT[100], param_TXT[100];
+  char* f;
   string filename, param_name, param, ord;
   istringstream strbuf;
   int rule_file;
@@ -57,7 +58,8 @@ cubature_quad::cubature_quad(int in_rule) // set by rule
     
     filename = HIFILES_DIR;
     filename += "/data/cubature_quad.dat";
-    datfile.open(filename, ifstream::in);
+    f = (char*)filename.c_str();
+    datfile.open(f, ifstream::in);
     if (!datfile) FatalError("Unable to open cubature file");
 
     // read data from file to arrays

@@ -40,6 +40,7 @@ cubature_1d::cubature_1d(int in_order) // set by number of points
   ifstream datfile;
   char buf[BUFSIZ]={""};
   char section_TXT[100], param_TXT[100];
+  char* f;
   string filename, param_name, param, ord;
   istringstream strbuf;
   int order_file;
@@ -62,7 +63,8 @@ cubature_1d::cubature_1d(int in_order) // set by number of points
 
     filename = HIFILES_DIR;
     filename += "/data/cubature_1d.dat";
-    datfile.open(filename, ifstream::in);
+    f = (char*)filename.c_str();
+    datfile.open(f, ifstream::in);
     if (!datfile) FatalError("Unable to open cubature file");
     
     // read data from file to arrays
