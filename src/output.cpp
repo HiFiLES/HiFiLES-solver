@@ -1038,6 +1038,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   array<double> diag_ppts_temp;
   /*! Sensor data for artificial viscosity at plot points */
   array<double> sensor_ppts_temp;
+  /*! Artificial viscosity co-efficient values for artificial viscosity at plot points */
+  array<double> epsilon_ppts_temp;
 
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
@@ -1079,6 +1081,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
         {
           FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
           FlowSol->mesh_eles(i)->cp_sensor_gpu_cpu();
+          FlowSol->mesh_eles(i)->cp_epsilon_upts_gpu_cpu();
         }
     }
 #endif
@@ -1211,6 +1214,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
           /*! Temporary field for sensor array at plot points */
           sensor_ppts_temp.setup(n_points);
 
+          /*! Temporary field for artificial viscosity co-efficients at plot points */
+          epsilon_ppts_temp.setup(n_points);
+
           con.setup(n_verts,n_cells);
           con = FlowSol->mesh_eles(i)->get_connectivity_plot();
 
@@ -1228,9 +1234,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
               /*! Calculate the sensor at the plot points */
               FlowSol->mesh_eles(i)->calc_sensor_ppts(j,sensor_ppts_temp);
 
+              /*! Calculate the artificial viscosity co-efficients at plot points */
+              FlowSol->mesh_eles(i)->calc_epsilon_ppts(j,epsilon_ppts_temp);
+
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
-                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,sensor_ppts_temp,diag_ppts_temp);
+                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp);
 
               /*! write out solution to file */
               write_vtu << "			<PointData>" << endl;

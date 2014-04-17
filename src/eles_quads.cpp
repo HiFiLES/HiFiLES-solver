@@ -411,17 +411,17 @@ void eles_quads::set_area_coord(void)
      for(int i=0;i<n_upts_per_ele;i++)
      {
         area_coord_upts(0,i) = 0.25*(1 - loc_upts(0,i))*(1 - loc_upts(1,i));
-        area_coord_upts(1,i) = 0.25*(1 - loc_upts(0,i))*(1 + loc_upts(1,i));
-        area_coord_upts(2,i) = 0.25*(1 + loc_upts(0,i))*(1 + loc_upts(1,i));
-        area_coord_upts(3,i) = 0.25*(1 + loc_upts(0,i))*(1 - loc_upts(1,i));
+        area_coord_upts(2,i) = 0.25*(1 - loc_upts(0,i))*(1 + loc_upts(1,i));
+        area_coord_upts(3,i) = 0.25*(1 + loc_upts(0,i))*(1 + loc_upts(1,i));
+        area_coord_upts(1,i) = 0.25*(1 + loc_upts(0,i))*(1 - loc_upts(1,i));
      }
 
      for(int i=0;i<n_fpts_per_ele;i++)
      {
         area_coord_fpts(0,i) = 0.25*(1 - loc_fpts(0,i))*(1 - loc_fpts(1,i));
-        area_coord_fpts(1,i) = 0.25*(1 - loc_fpts(0,i))*(1 + loc_fpts(1,i));
-        area_coord_fpts(2,i) = 0.25*(1 + loc_fpts(0,i))*(1 + loc_fpts(1,i));
-        area_coord_fpts(3,i) = 0.25*(1 + loc_fpts(0,i))*(1 - loc_fpts(1,i));
+        area_coord_fpts(2,i) = 0.25*(1 - loc_fpts(0,i))*(1 + loc_fpts(1,i));
+        area_coord_fpts(3,i) = 0.25*(1 + loc_fpts(0,i))*(1 + loc_fpts(1,i));
+        area_coord_fpts(1,i) = 0.25*(1 + loc_fpts(0,i))*(1 - loc_fpts(1,i));
      }
   }
 
@@ -914,7 +914,7 @@ void eles_quads::set_vandermonde(void)
 void eles_quads::set_vandermonde2D()
 {
   vandermonde2D.setup(n_upts_per_ele,n_upts_per_ele);
-  inv_vandermonde2D.setup(n_upts_per_ele*n_upts_per_ele);
+  //inv_vandermonde2D.setup(n_upts_per_ele*n_upts_per_ele);
   array <double> loc(n_dims);
 
   // create the vandermonde matrix

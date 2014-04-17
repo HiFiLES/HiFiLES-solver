@@ -94,6 +94,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
     }
 
   // Set AV parameters to 0 in case they are not used
+  ArtifOn = 0;
   artif_only = 0;
   artif_type = 0;
   epsilon0 = 0;
@@ -556,6 +557,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
       else if (!param_name.compare("perturb_ic"))
         {
           in_run_input_file >> perturb_ic;
+        }
+      else if (!param_name.compare("ArtifOn"))
+        {
+          in_run_input_file >> ArtifOn;
         }
       else if (!param_name.compare("artif_only"))
         {

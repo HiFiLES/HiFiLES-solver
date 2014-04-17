@@ -168,6 +168,13 @@ int main(int argc, char *argv[]) {
       /// Post-processing (visualization)
       /////////////////////////////////////////////////
 
+      /// Before post processing, run the shock capturing routine once after the last update step
+
+#ifdef _GPU
+      for(i=0;i<FlowSol.n_ele_types;i++)
+        FlowSol.mesh_eles(i)->calc_artivisc_coeff(0, FlowSol.epsilon_global_eles.get_ptr_gpu());
+#endif
+
       /*! Dump residual and error. */
       if(i_steps%run_input.monitor_res_freq==0 ) {
 

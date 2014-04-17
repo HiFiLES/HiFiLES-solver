@@ -96,6 +96,9 @@ public:
   /*! copy elemental sensor values to cpu */
   void cp_sensor_gpu_cpu(void);
 
+  /*! copy AV co-eff values at solution points to cpu */
+  void cp_epsilon_upts_gpu_cpu(void);
+
   /*! remove transformed discontinuous solution at solution points from cpu */
   void rm_disu_upts_cpu(void);
 
@@ -312,8 +315,11 @@ public:
   /*! calculate sensor at the plot points */
   void calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts);
 
+  /*! calculate AV-co-efficients at the plot points */
+  void calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts);
+
   /*! calculate diagnostic fields at the plot points */
-  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double>& out_diag_field_ppts);
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double> &in_epsilon_ppts, array<double>& out_diag_field_ppts);
 
   /*! calculate solution at the plot points and store it*/
   void add_contribution_to_pnodes(array<double> &plotq_pnodes);
@@ -401,7 +407,6 @@ public:
   array<double> compute_error(int in_norm_type, double& time);
   
   array<double> get_pointwise_error(array<double>& sol, array<double>& grad_sol, array<double>& loc, double& time, int in_norm_type);
-
 
 protected:
 

@@ -66,6 +66,36 @@ void CalcResidual(struct solution* FlowSol) {
         }
     }
 
+  /*! If using artificial viscosity, setup artificial viscosity parameters and do order-reduction */
+
+  if(run_input.ArtifOn) {
+
+    #ifdef _GPU
+      /*! Compute element-wise artificial viscosity co-efficients */
+      for(i=0;i<FlowSol->n_ele_types;i++)
+        FlowSol->mesh_eles(i)->calc_artivisc_coeff(in_disu_upts_from, FlowSol->epsilon_global_eles.get_ptr_gpu());
+
+//      /*! Compute vertex-wise artificial viscosity co-efficients for enforcing C0-continuity */
+//      calc_artivisc_coeff_verts(FlowSol);
+
+//      /*! Compute artificial viscosity co-efficients at solution and flux points */
+//      for(i=0;i<FlowSol->n_ele_types;i++)
+//        FlowSol->mesh_eles(i)->calc_artivisc_coeff_upts_fpts(FlowSol->epsilon_verts.get_ptr_gpu(), FlowSol->ele2vert.get_ptr_gpu(), FlowSol->num_eles);
+
+//      #ifdef _MPI
+//        /*! Send the solution at the flux points across the MPI interfaces. */
+//        if (FlowSol->nproc>1){
+//          for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+//            FlowSol->mesh_mpi_inters(i).send_epsilon_fpts();
+
+//          for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+//            FlowSol->mesh_mpi_inters(i).receive_epsilon_fpts();
+//        }
+//      #endif
+
+    #endif
+  }
+
   /*! Compute the solution at the flux points. */
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calc_disu_fpts(in_disu_upts_from);
@@ -77,7 +107,7 @@ void CalcResidual(struct solution* FlowSol) {
       FlowSol->mesh_mpi_inters(i).send_disu_fpts();
 #endif
 
-  if (FlowSol->viscous) {
+  if (!FlowSol->viscous) {
       /*! Compute the uncorrected gradient of the solution at the solution points. */
       for(i=0; i<FlowSol->n_ele_types; i++)
         FlowSol->mesh_eles(i)->calc_uncor_tgrad_disu_upts(in_disu_upts_from);
@@ -112,7 +142,7 @@ void CalcResidual(struct solution* FlowSol) {
     }
 #endif
 
-  if (FlowSol->viscous) {
+  if (!FlowSol->viscous) {
       /*! Compute corrected gradient of the solution at the solution and flux points. */
       for(i=0; i<FlowSol->n_ele_types; i++)
         FlowSol->mesh_eles(i)->calc_cor_grad_disu_upts();
@@ -128,32 +158,6 @@ void CalcResidual(struct solution* FlowSol) {
         }
 #endif
 
-#ifdef _GPU
-
-      /*! Compute element-wise artificial viscosity co-efficients */
-      for(i=0;i<FlowSol->n_ele_types;i++)
-        FlowSol->mesh_eles(i)->calc_artivisc_coeff(in_disu_upts_from, FlowSol->epsilon_global_eles.get_ptr_gpu());
-
-      /*! Compute vertex-wise artificial viscosity co-efficients for enforcing C0-continuity */
-      calc_artivisc_coeff_verts(FlowSol);
-
-      /*! Compute artificial viscosity co-efficients at solution and flux points */
-      for(i=0;i<FlowSol->n_ele_types;i++)
-        FlowSol->mesh_eles(i)->calc_artivisc_coeff_upts_fpts(FlowSol->epsilon_verts.get_ptr_gpu(), FlowSol->ele2vert.get_ptr_gpu(), FlowSol->num_eles);
-
-#ifdef _MPI
-  /*! Send the solution at the flux points across the MPI interfaces. */
-  if (FlowSol->nproc>1){
-    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-      FlowSol->mesh_mpi_inters(i).send_epsilon_fpts();
-
-    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-      FlowSol->mesh_mpi_inters(i).receive_epsilon_fpts();
-  }
-#endif
-
-#endif
-
       /*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
       for(i=0; i<FlowSol->n_ele_types; i++)
         FlowSol->mesh_eles(i)->calc_tdisvisf_upts(in_disu_upts_from);
@@ -167,7 +171,9 @@ void CalcResidual(struct solution* FlowSol) {
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calc_norm_tdisf_fpts();
 
-  if (FlowSol->viscous) {
+  if (!FlowSol->viscous) {
+      cout<<"Test"<<endl;
+
       /*! Compute normal interface viscous flux and add to normal inviscid flux. */
       for(i=0; i<FlowSol->n_int_inter_types; i++)
         FlowSol->mesh_int_inters(i).calc_norm_tconvisf_fpts();
@@ -190,7 +196,6 @@ void CalcResidual(struct solution* FlowSol) {
   /*! Compute the divergence of the transformed continuous flux. */
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calc_div_tconf_upts(in_div_tconf_upts_to);
-
 }
 
 #ifdef _MPI

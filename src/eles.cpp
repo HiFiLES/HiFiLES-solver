@@ -630,11 +630,12 @@ void eles::mv_all_cpu_gpu(void)
           
           // Needed for artificial viscosity routines
           epsilon.mv_cpu_gpu();
-          epsilon_upts.mv_cpu_gpu();
-          epsilon_fpts.mv_cpu_gpu();
+          epsilon_upts.cp_cpu_gpu();
+          epsilon_fpts.cp_cpu_gpu();
           sensor.cp_cpu_gpu();
           inv_vandermonde.cp_cpu_gpu();
           inv_vandermonde2D.cp_cpu_gpu();
+          vandermonde2D.cp_cpu_gpu();
           concentration_array.cp_cpu_gpu();
           ele2global_ele_code.cp_cpu_gpu();
           area_coord_upts.mv_cpu_gpu();
@@ -716,6 +717,17 @@ void eles::cp_sensor_gpu_cpu(void)
   if (n_eles!=0)
     {
       sensor.cp_gpu_cpu();
+    }
+#endif
+}
+
+// copy sensor in each element to cpu
+void eles::cp_epsilon_upts_gpu_cpu(void)
+{
+#ifdef _GPU
+  if (n_eles!=0)
+    {
+      epsilon_upts.cp_gpu_cpu();
     }
 #endif
 }
@@ -1207,48 +1219,6 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 #endif
 
     }
-
-  /*
-#ifdef _GPU
-    norm_tconinvf_fpts.cp_gpu_cpu();
-#endif
-
-    for (int i=0;i<n_eles;i++)
-    {
-      for (int j=0;j<n_fpts_per_ele;j++)
-      {
-      for (int k=0;k<n_fields;k++)
-      {
-        cout << "i=" << i << "j=" << j << "k=" << k << "norm=" << setprecision(12) << norm_tconinvf_fpts(j,i,k) << endl;
-      }
-      }
-    }
-  */
-
-  /*
-  for (int j=0;j<n_eles;j++)
-  for (int i=0;i<n_upts_per_ele;i++)
-      //for (int k=0;k<n_fields;k++)
-        cout << scientific << setw(16) << setprecision(12) << div_tconf_upts(0)(i,j,0) << endl;
-        */
-
-  /*
-  cout << "OUTPUT" << endl;
-#ifdef _GPU
-  norm_tconinvf_fpts.cp_gpu_cpu();
-#endif
-
-  for (int i=0;i<n_fpts_per_ele;i++)
-    for (int j=0;j<n_eles;j++)
-      for (int k=0;k<n_fields;k++)
-        cout << setprecision(10)  << i << " " << j<< " " << k << " " << norm_tconinvf_fpts(i,j,k) << endl;
-  */
-
-  /*
-  for (int j=0;j<n_eles;j++)
-  for (int i=0;i<n_upts_per_ele;i++)
-        cout << div_tconf_upts(0)(i,j,1) << endl;
-  */
 
 }
 
@@ -2048,7 +2018,7 @@ void eles::calc_artivisc_coeff(int in_disu_upts_from, double* epsilon_global_ele
 {
   if (n_eles!=0){
     #ifdef _GPU
-      calc_artivisc_coeff_gpu_kernel_wrapper(n_eles, n_upts_per_ele, order, ele_type, run_input.artif_type, run_input.epsilon0, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), concentration_array.get_ptr_gpu(), epsilon.get_ptr_gpu(), sensor.get_ptr_gpu(), epsilon_global_eles, ele2global_ele_code.get_ptr_gpu());
+      calc_artivisc_coeff_gpu_kernel_wrapper(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.epsilon0, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), vandermonde2D.get_ptr_gpu(), concentration_array.get_ptr_gpu(), epsilon.get_ptr_gpu(), sensor.get_ptr_gpu(), epsilon_global_eles, ele2global_ele_code.get_ptr_gpu());
     #endif
   }
 }
@@ -2907,8 +2877,49 @@ void eles::calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts)
     }
 }
 
+// calculate solution at the plot points
+void eles::calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts)
+{
+  if (n_eles!=0)
+  {
+
+      int i,j,k;
+
+      array<double> epsilon_upts_plot(n_upts_per_ele);
+
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        epsilon_upts_plot(j)=epsilon_upts(j,in_ele);
+      }
+
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,1,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,epsilon_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_epsilon_ppts.get_ptr_cpu(),n_ppts_per_ele);
+
+#else
+
+      //HACK (inefficient, but useful if cblas is unavailible)
+
+      for(i=0;i<n_ppts_per_ele;i++)
+      {
+        out_epsilon_ppts(i) = 0.;
+
+        for(j=0;j<n_upts_per_ele;j++)
+        {
+          out_epsilon_ppts(i) += opp_p(i,j)*epsilon_upts_plot(j);
+        }
+
+      }
+
+#endif
+
+  }
+}
+
+
 // calculate diagnostic fields at the plot points
-void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double>& out_diag_field_ppts)
+void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double>& in_epsilon_ppts, array<double>& out_diag_field_ppts)
 {
   int i,j,k,m;
   double diagfield_upt;
@@ -3035,12 +3046,19 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
         {
           diagfield_upt = in_sensor_ppts(j);
         }
+        else if (run_input.diagnostic_fields(k)=="epsilon")
+        {
+          diagfield_upt = in_epsilon_ppts(j);
+        }
 
         else
           FatalError("plot_quantity not recognized");
 
         if (isnan(diagfield_upt))
+        {
+          cout<<run_input.diagnostic_fields(k)<<endl;
           FatalError("NaN");
+        }
 
         // set array with solution point value
         out_diag_field_ppts(j,k) = diagfield_upt;
