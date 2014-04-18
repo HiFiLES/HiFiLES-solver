@@ -227,6 +227,9 @@ void GeoPreprocess(struct solution* FlowSol) {
       FlowSol->mesh_eles(i)->set_rank(FlowSol->rank);
     }
 
+  if (FlowSol->rank==0)
+    cout << endl << "---------------- Flux Reconstruction Preprocessing ----------------" << endl;
+
   if (FlowSol->rank==0) cout << "initializing elements" << endl;
   if (FlowSol->rank==0) cout << "tris" << endl;
   FlowSol->mesh_eles_tris.setup(num_tris,max_n_spts_per_tri);
@@ -895,6 +898,9 @@ void GeoPreprocess(struct solution* FlowSol) {
 }
 
 void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg, array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, struct solution* FlowSol) {
+
+  if (FlowSol->rank==0)
+    cout << endl << "----------------------- Mesh Preprocessing ------------------------" << endl;
 
   if (FlowSol->rank==0) cout << "reading connectivity" << endl;
   if (run_input.mesh_format==0) { // Gambit
