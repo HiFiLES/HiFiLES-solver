@@ -39,9 +39,6 @@ public:
 
   // #### methods ####
 
-  // method to initialize a cubature rule
-  void set_rule(int in_rule);
-
   // method to get number of cubature points
   int get_n_pts(void);
 
@@ -67,4 +64,7 @@ public:
 
   // weight of cubature points
   array<double> weights;
+
+  // cubature data file
+  ifstream datfile;
 };

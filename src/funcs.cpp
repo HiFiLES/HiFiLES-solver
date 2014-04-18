@@ -681,6 +681,8 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   array<double> coeff_gdotn((in_order+1),1);
   array<double> coeff_divg(n_upts_tri,1);
 
+  cubature_1d cub1d(20);  // TODO: CHECK STRENGTH
+
   if (in_edge==0)
     edge_length=2.;
   else if (in_edge==1)
@@ -714,7 +716,6 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   // 2. Perform the edge integrals to obtain coefficients sigma_i
   for (int i=0;i<n_upts_tri;i++)
     {
-      cubature_1d cub1d(20);  // TODO: CHECK STRENGTH
       integral = 0.;
 
       for (int j=0;j<cub1d.get_n_pts();j++)
