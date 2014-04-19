@@ -89,7 +89,7 @@ double eval_dubiner_basis_3d(double in_r, double in_s, double in_t, int in_mode,
 double eval_grad_dubiner_basis_3d(double in_r, double in_s, double in_t, int in_mode, int in_basis_order, int component);
 
 /*! helper method to compute eta for vcjh schemes */
-double compute_eta(int vjch_scheme, double order);
+double compute_eta(int vjch_scheme, int order);
 
 /*! helper method to check if number is a perfect square */
 bool is_perfect_square(int in_a);

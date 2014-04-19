@@ -30,6 +30,7 @@
 		05CCBCBD1824729D0074A979 /* mpi_inters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05CCBCA51824729D0074A979 /* mpi_inters.cpp */; };
 		05E96FA318258403000BE589 /* output.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05E96FA118258403000BE589 /* output.cpp */; };
 		05E96FA418258403000BE589 /* solver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05E96FA218258403000BE589 /* solver.cpp */; };
+		81C26AD718F4760F001F5947 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 81C26AD518F4760F001F5947 /* Makefile */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -111,6 +112,8 @@
 		05E96FA0182583E9000BE589 /* output.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = output.h; path = include/output.h; sourceTree = "<group>"; };
 		05E96FA118258403000BE589 /* output.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = output.cpp; path = src/output.cpp; sourceTree = "<group>"; };
 		05E96FA218258403000BE589 /* solver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = solver.cpp; path = src/solver.cpp; sourceTree = "<group>"; };
+		81C26AD518F4760F001F5947 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		81C26AD618F4760F001F5947 /* Makefile.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.in; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -208,6 +211,8 @@
 		05CCBC761824724D0074A979 = {
 			isa = PBXGroup;
 			children = (
+				81C26AD518F4760F001F5947 /* Makefile */,
+				81C26AD618F4760F001F5947 /* Makefile.in */,
 				05CCBC8E182472890074A979 /* src */,
 				05CCBC8D182472820074A979 /* include */,
 				05CCBC8C1824727E0074A979 /* data */,
@@ -341,6 +346,7 @@
 				05CCBCB71824729D0074A979 /* input.cpp in Sources */,
 				05CCBCA91824729D0074A979 /* cubature_hexa.cpp in Sources */,
 				05CCBCB51824729D0074A979 /* global.cpp in Sources */,
+				81C26AD718F4760F001F5947 /* Makefile in Sources */,
 				05CCBCB21824729D0074A979 /* eles.cpp in Sources */,
 				05CCBCB11824729D0074A979 /* eles_tris.cpp in Sources */,
 				05CCBCA71824729D0074A979 /* bdy_inters.cpp in Sources */,

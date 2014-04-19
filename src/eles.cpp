@@ -220,7 +220,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       }
 
       // Allocate SGS flux array if using LES or wall model
-      if(LES || wall_model > 0) {
+      if(LES != 0 || wall_model != 0) {
         temp_sgsf.setup(n_fields,n_dims);
       }
 
@@ -1005,7 +1005,7 @@ double eles::calc_dt_local(int in_ele)
 
 // calculate the discontinuous solution at the flux points
 
-void eles::calc_disu_fpts(int in_disu_upts_from)
+void eles::extrapolate_solution(int in_disu_upts_from)
 {
   if (n_eles!=0) {
 
@@ -1016,6 +1016,14 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
       A = opp_0 \n
       B = disu_upts(in_disu_upts_from) \n
       C = disu_fpts
+
+      opp_0 is the polynomial extrapolation matrix;
+          has dimensions n_f_pts_per_ele by n_upts_per_ele
+
+      Recall: opp_0(j,i) = value of the ith nodal basis at the
+          jth flux point location in the reference domain
+
+      (vector of solution values at flux points) = opp_0 * (vector of solution values at nodes)
       */
 
       Arows =  n_fpts_per_ele;
@@ -1034,6 +1042,9 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
         {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
           cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,disu_fpts.get_ptr_cpu(),Cstride);
+
+#elif defined _NO_BLAS
+          dgemm(Arows,Bcols,Acols,1.0,0.0,opp_0.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),disu_fpts.get_ptr_cpu());
 
 #endif
         }
@@ -1069,7 +1080,7 @@ void eles::calc_disu_fpts(int in_disu_upts_from)
 
 // calculate the transformed discontinuous inviscid flux at the solution points
 
-void eles::calc_tdisinvf_upts(int in_disu_upts_from)
+void eles::evaluate_invFlux(int in_disu_upts_from)
 {
   if (n_eles!=0)
   {
@@ -1127,7 +1138,7 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 #endif
 
 #ifdef _GPU
-      calc_tdisinvf_upts_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
+      evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
 
 
       //tdisinvf_upts.cp_gpu_cpu();
@@ -1145,7 +1156,7 @@ void eles::calc_tdisinvf_upts(int in_disu_upts_from)
 
 // calculate the normal transformed discontinuous flux at the flux points
 
-void eles::calc_norm_tdisf_fpts()
+void eles::extrapolate_totalFlux()
 {
   if (n_eles!=0)
     {
@@ -1161,6 +1172,12 @@ void eles::calc_norm_tdisf_fpts()
               cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
             }
 
+#elif defined _NO_BLAS
+          dgemm(n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,0.0,opp_1(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),norm_tdisf_fpts.get_ptr_cpu());
+          for (int i=1;i<n_dims;i++)
+            {
+              dgemm(n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,1.0,opp_1(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),norm_tdisf_fpts.get_ptr_cpu());
+            }
 #endif
         }
       else if(opp_1_sparse==1) // mkl blas four-array csr format
@@ -1233,7 +1250,7 @@ void eles::calc_norm_tdisf_fpts()
 
 // calculate the divergence of the transformed discontinuous flux at the solution points
 
-void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
+void eles::calculate_divergence(int in_div_tconf_upts_to)
 {
   if (n_eles!=0)
     {
@@ -1247,6 +1264,13 @@ void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
           for (int i=1;i<n_dims;i++)
             {
               cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+            }
+
+#elif defined _NO_BLAS
+          dgemm(n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,0.0,opp_2(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+          for (int i=1;i<n_dims;i++)
+            {
+              dgemm(n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,1.0,opp_2(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
             }
 
 #endif
@@ -1303,7 +1327,7 @@ void eles::calc_div_tdisf_upts(int in_div_tconf_upts_to)
 
 // calculate divergence of the transformed continuous flux at the solution points
 
-void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
+void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
 {
   if (n_eles!=0)
     {
@@ -1313,6 +1337,10 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 
       cblas_daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
 
+#elif defined _NO_BLAS
+
+      daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu());
+
 #endif
 
       if(opp_3_sparse==0) // dense
@@ -1320,6 +1348,9 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
           cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_cpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_cpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+
+#elif defined _NO_BLAS
+          dgemm(n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,1.0,opp_3.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
 
 #endif
         }
@@ -1357,59 +1388,36 @@ void eles::calc_div_tconf_upts(int in_div_tconf_upts_to)
 #endif
 
     }
-
-  /*
-#ifdef _GPU
-    norm_tconinvf_fpts.cp_gpu_cpu();
-#endif
-
-    for (int i=0;i<n_eles;i++)
-    {
-      for (int j=0;j<n_fpts_per_ele;j++)
-      {
-      for (int k=0;k<n_fields;k++)
-      {
-        cout << "i=" << i << "j=" << j << "k=" << k << "norm=" << setprecision(12) << norm_tconinvf_fpts(j,i,k) << endl;
-      }
-      }
-    }
-  */
-
-  /*
-  for (int j=0;j<n_eles;j++)
-  for (int i=0;i<n_upts_per_ele;i++)
-      //for (int k=0;k<n_fields;k++)
-        cout << scientific << setw(16) << setprecision(12) << div_tconf_upts(0)(i,j,0) << endl;
-        */
-
-  /*
-  cout << "OUTPUT" << endl;
-#ifdef _GPU
-  norm_tconinvf_fpts.cp_gpu_cpu();
-#endif
-
-  for (int i=0;i<n_fpts_per_ele;i++)
-    for (int j=0;j<n_eles;j++)
-      for (int k=0;k<n_fields;k++)
-        cout << setprecision(10)  << i << " " << j<< " " << k << " " << norm_tconinvf_fpts(i,j,k) << endl;
-  */
-
-  /*
-  for (int j=0;j<n_eles;j++)
-  for (int i=0;i<n_upts_per_ele;i++)
-        cout << div_tconf_upts(0)(i,j,1) << endl;
-  */
-
 }
 
 
 // calculate uncorrected transformed gradient of the discontinuous solution at the solution points
 // (mixed derivative)
 
-void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
+void eles::calculate_gradient(int in_disu_upts_from)
 {
   if (n_eles!=0)
     {
+
+      /*!
+      Performs C = (alpha*A*B) + (beta*C) where: \n
+      alpha = 1.0 \n
+      beta = 0.0 \n
+      A = opp_4 \n
+      B = disu_upts \n
+      C = grad_disu_upts
+
+      opp_4 is the polynomial gradient matrix;
+          has dimensions n_upts_per_ele by n_upts_per_ele
+      Recall: opp_4(i)(k,j) = eval_d_nodal_basis(j,i,loc);
+                = derivative of the jth nodal basis at the
+          kth nodal (solution) point location in the reference domain
+          for the ith dimension
+
+      (vector of gradient values at solution points) = opp_4 *
+            (vector of solution values at solution points in all elements of the same type)
+      */
+
       Arows =  n_upts_per_ele;
       Acols = n_upts_per_ele;
 
@@ -1425,9 +1433,13 @@ void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
       if(opp_4_sparse==0) // dense
         {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
           for (int i=0;i<n_dims;i++) {
               cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_4(i).get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,grad_disu_upts.get_ptr_cpu(0,0,0,i),Cstride);
+            }
+
+#elif defined _NO_BLAS
+          for (int i=0;i<n_dims;i++) {
+              dgemm(Arows,Bcols,Acols,1.0,0.0,opp_4(i).get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i));
             }
 
 #endif
@@ -1485,7 +1497,7 @@ void eles::calc_uncor_tgrad_disu_upts(int in_disu_upts_from)
 
 // calculate corrected gradient of the discontinuous solution at solution points
 
-void eles::calc_cor_grad_disu_upts(void)
+void eles::correct_gradient(void)
 {
   if (n_eles!=0)
     {
@@ -1508,6 +1520,11 @@ void eles::calc_cor_grad_disu_upts(void)
           for (int i=0;i<n_dims;i++)
             {
               cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_5(i).get_ptr_cpu(),Astride,delta_disu_fpts.get_ptr_cpu(),Bstride,1.0,grad_disu_upts.get_ptr_cpu(0,0,0,i),Cstride);
+            }
+
+#elif defined _NO_BLAS
+          for (int i=0;i<n_dims;i++) {
+              dgemm(Arows,Bcols,Acols,1.0,1.0,opp_5(i).get_ptr_cpu(),delta_disu_fpts.get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i));
             }
 
 #endif
@@ -1637,7 +1654,7 @@ void eles::calc_cor_grad_disu_upts(void)
 
 // calculate corrected gradient of the discontinuous solution at flux points
 
-void eles::calc_cor_grad_disu_fpts(void)
+void eles::extrapolate_corrected_gradient(void)
 {
   if (n_eles!=0)
     {
@@ -1660,6 +1677,11 @@ void eles::calc_cor_grad_disu_fpts(void)
           for (int i=0;i<n_dims;i++)
             {
               cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_6.get_ptr_cpu(),Astride,grad_disu_upts.get_ptr_cpu(0,0,0,i),Bstride,0.0,grad_disu_fpts.get_ptr_cpu(0,0,0,i),Cstride);
+            }
+
+#elif defined _NO_BLAS
+          for (int i=0;i<n_dims;i++) {
+              dgemm(Arows,Bcols,Acols,1.0,0.0,opp_6.get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i),grad_disu_fpts.get_ptr_cpu(0,0,0,i));
             }
 #endif
         }
@@ -1742,6 +1764,9 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
     cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,disuf_upts.get_ptr_cpu(),Cstride);
+
+#elif defined _NO_BLAS
+    dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),disuf_upts.get_ptr_cpu());
 
 #else
 
@@ -1832,6 +1857,16 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
       Bcols = n_dims*n_eles;
 
       cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,ue.get_ptr_cpu(),Bstride,0.0,Le.get_ptr_cpu(),Cstride);
+
+#elif defined _NO_BLAS
+
+      Bcols = dim3*n_eles;
+
+      dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),uu.get_ptr_cpu(),Lu.get_ptr_cpu());
+
+      Bcols = n_dims*n_eles;
+
+      dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),ue.get_ptr_cpu(),Le.get_ptr_cpu());
 
 #else
 
@@ -1967,7 +2002,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
 
 // calculate transformed discontinuous viscous flux at solution points
 
-void eles::calc_tdisvisf_upts(int in_disu_upts_from)
+void eles::evaluate_viscFlux(int in_disu_upts_from)
 {
   if (n_eles!=0)
   {
@@ -1981,6 +2016,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
       for(j=0;j<n_upts_per_ele;j++)
       {
         detjac = detjac_upts(j,i);
+
         //physical solution
         for(k=0;k<n_fields;k++)
         {
@@ -2006,7 +2042,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
         }
 
         // If LES or wall model, calculate SGS viscous flux
-        if(LES || (wall_model > 0)) {
+        if(LES != 0 || wall_model != 0) {
 
           calc_sgsf_upts(temp_u,temp_grad_u,detjac,i,j,temp_sgsf);
 
@@ -2018,7 +2054,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
         }
 
         // If LES, add SGS flux to global array (needed for interface flux calc)
-        if(LES) {
+        if(LES > 0) {
 
           for(k=0;k<n_fields;k++) {
             for(l=0;l<n_dims;l++) {
@@ -2047,7 +2083,7 @@ void eles::calc_tdisvisf_upts(int in_disu_upts_from)
 
     #ifdef _GPU
 
-    calc_tdisvisf_upts_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
 
     #endif
 
@@ -2098,7 +2134,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   // Compute SGS flux using wall model if sufficiently close to solid boundary
   wall = 0;
 
-  if(wall_model > 0) {
+  if(wall_model != 0) {
 
     // Magnitude of wall distance vector
     y = 0.0;
@@ -2198,8 +2234,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   else {
 
     // Set wall shear stress to 0 to prevent NaNs
-    for(i=0;i<n_dims;++i)
-      twall(upt,ele,i) = 0.0;
+    if(wall_model != 0) for(i=0;i<n_dims;++i) twall(upt,ele,i) = 0.0;
 
     // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
     if(sgs_model==0) {
@@ -2842,7 +2877,7 @@ double eles::wallfn_br(double yplus, double A, double B, double E, double kappa)
 }
 
 /*! Calculate SGS flux at solution points */
-void eles::calc_sgsf_fpts(void)
+void eles::evaluate_sgsFlux(void)
 {
   if (n_eles!=0) {
 
@@ -2874,6 +2909,11 @@ void eles::calc_sgsf_fpts(void)
       for (int i=0;i<n_dims;i++) {
         cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,sgsf_upts.get_ptr_cpu(0,0,0,i),Bstride,0.0,sgsf_fpts.get_ptr_cpu(0,0,0,i),Cstride);
       }
+
+      #elif defined _NO_BLAS
+        for (int i=0;i<n_dims;i++) {
+          dgemm(Arows,Bcols,Acols,1.0,0.0,opp_0.get_ptr_cpu(),sgsf_upts.get_ptr_cpu(0,0,0,i),sgsf_fpts.get_ptr_cpu(0,0,0,i));
+        }
 
       #endif
     }
@@ -3619,6 +3659,9 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 
       cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,disu_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_ppts.get_ptr_cpu(),n_ppts_per_ele);
 
+#elif defined _NO_BLAS
+      dgemm(n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),disu_upts_plot.get_ptr_cpu(),out_disu_ppts.get_ptr_cpu());
+
 #else
 
       //HACK (inefficient, but useful if cblas is unavailible)
@@ -3666,6 +3709,12 @@ void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
 
       for (i=0;i<n_dims;i++) {
         cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,grad_disu_upts_temp.get_ptr_cpu(0,0,i),n_upts_per_ele,0.0,out_grad_disu_ppts.get_ptr_cpu(0,0,i),n_ppts_per_ele);
+      }
+
+#elif defined _NO_BLAS
+
+      for (i=0;i<n_dims;i++) {
+        dgemm(n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),grad_disu_upts_temp.get_ptr_cpu(0,0,i),out_grad_disu_ppts.get_ptr_cpu(0,0,i));
       }
 
 #else
@@ -5482,7 +5531,7 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
 #endif
 }
 
-void eles::add_body_force_upts(array <double>& body_force)
+void eles::evaluate_bodyForce(array <double>& body_force)
 {
   if (n_eles!=0) {
       int i,j,k,l,m;

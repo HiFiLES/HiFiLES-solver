@@ -9,18 +9,18 @@
 # HiFiLES (High Fidelity Large Eddy Simulation).
 # Copyright (C) 2013 Aerospace Computing Laboratory.
 
-NODE=     GPU
+NODE=     CPU
 CODE=     DEBUG
 BLAS=     STANDARD_BLAS
 COMP=     GCC
-PARALLEL= MPI
+PARALLEL= NO
 TECIO=    YES
 
 BLAS_DIR= /usr/local/atlas
 
-PARMETIS_DIR = lib/parmetis-4.0.2
+PARMETIS_DIR = /usr/local
 
-PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/build/Linux-x86_64
+PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/lib
 
 TECIO_DIR = lib/tecio-2008
 

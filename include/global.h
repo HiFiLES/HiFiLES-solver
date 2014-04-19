@@ -33,3 +33,12 @@ enum CTYPE {
 
 /** enumeration for mesh motion type */
 enum {MOTION_DISABLED, MOTION_ENABLED};
+
+/*! environment variable specifying location of HiFiLES repository */
+extern const char* HIFILES_DIR;
+
+/*! routine that mimics BLAS dgemm */
+int dgemm(int Arows, int Bcols, int Acols, double alpha, double beta, double* a, double* b, double* c);
+
+/*! routine that mimics BLAS daxpy */
+int daxpy(int n, double alpha, double *x, double *y);

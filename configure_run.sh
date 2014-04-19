@@ -1,4 +1,3 @@
-#!/usr/bin.bash
 #####################################################
 # \file configure_run.sh
 # \brief Configuration script for HiFiLES
@@ -19,8 +18,8 @@ HIFILES_RUN=$PWD/bin
 # Basic User-Modifiable Build Settings [Change these as desired]
 NODE="CPU"              # CPU or GPU
 CODE="DEBUG"            # DEBUG or RELEASE
-BLAS="ATLAS_BLAS"       # *_BLAS: ATLAS, STANDARD, ACCLERATE, MKL, or NO
-PARALLEL="MPI"           # MPI or NO
+BLAS="ATLAS"            # ATLAS, STANDARD, ACCLERATE, MKL, or NO
+PARALLEL="no"           # MPI or NO
 TECIO="no"              # YES or NO
 # ---------------------------------------------------------------
 # Compiler Selections [Change compilers or add full filepaths if needed]
@@ -29,12 +28,14 @@ NVCC="nvcc"             # NVidia CUDA compiler
 MPICC="mpicxx"          # MPI compiler
 # ---------------------------------------------------------------
 # Library Locations [Change filepaths as needed]
-#BLAS_LIB="/usr/local/atlas/lib"
+BLAS_LIB="/usr/local/atlas/lib"
 BLAS_INCLUDE="/usr/local/atlas/include"
-BLAS_LIB="/usr/lib/atlas-base"
 
 PARMETIS_LIB="/usr/local/lib"
 PARMETIS_INCLUDE="/usr/local/include"
+
+METIS_LIB="/usr/local/lib"
+METIS_INCLUDE="/usr/local/include"
 
 TECIO_LIB="lib/tecio-2008/lib"
 TECIO_INCLUDE="lib/tecio-2008/include"
@@ -73,5 +74,7 @@ fi
             --with-CUDA-include=$CUDA_INCLUDE \
             --with-ParMetis-lib=$PARMETIS_LIB \
             --with-ParMetis-include=$PARMETIS_INCLUDE \
+            --with-Metis-lib=$METIS_LIB \
+            --with-Metis-include=$METIS_INCLUDE \
             --with-Tecio-lib=$TECIO_LIB \
             --with-Tecio-include=$TECIO_INCLUDE

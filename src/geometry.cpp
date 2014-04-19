@@ -95,21 +95,21 @@ int get_bc_number(string& bcname) {
 
   int bcflag;
 
-  if (!bcname.compare("Sub_In_Simp")) bcflag = 1;
-  else if (!bcname.compare("Sub_Out_Simp")) bcflag = 2;
-  else if (!bcname.compare("Sub_In_Char")) bcflag = 3;
-  else if (!bcname.compare("Sub_Out_Char")) bcflag = 4;
-  else if (!bcname.compare("Sup_In")) bcflag = 5;
-  else if (!bcname.compare("Sup_Out")) bcflag = 6;
-  else if (!bcname.compare("Slip_Wall")) bcflag = 7;
+  if (!bcname.compare("Sub_In_Simp")) bcflag = 1;         // Subsonic inflow simple (free pressure) //
+  else if (!bcname.compare("Sub_Out_Simp")) bcflag = 2;   // Subsonic outflow simple (fixed pressure) //
+  else if (!bcname.compare("Sub_In_Char")) bcflag = 3;    // Subsonic inflow characteristic //
+  else if (!bcname.compare("Sub_Out_Char")) bcflag = 4;   // Subsonic outflow characteristic //
+  else if (!bcname.compare("Sup_In")) bcflag = 5;         // Supersonic inflow //
+  else if (!bcname.compare("Sup_Out")) bcflag = 6;        // Supersonic outflow //
+  else if (!bcname.compare("Slip_Wall")) bcflag = 7;      // Slip wall //
   else if (!bcname.compare("Cyclic")) bcflag = 9;
-  else if (!bcname.compare("Isotherm_Fix")) bcflag = 11;
-  else if (!bcname.compare("Adiabat_Fix")) bcflag = 12;
-  else if (!bcname.compare("Isotherm_Move")) bcflag = 13;
-  else if (!bcname.compare("Adiabat_Move")) bcflag = 14;
-  else if (!bcname.compare("Char")) bcflag = 15;
-  else if (!bcname.compare("Slip_Wall_Dual")) bcflag = 16;
-  else if (!bcname.compare("AD_Wall")) bcflag = 50;
+  else if (!bcname.compare("Isotherm_Fix")) bcflag = 11;  // Isothermal, no-slip wall //
+  else if (!bcname.compare("Adiabat_Fix")) bcflag = 12;   // Adiabatic, no-slip wall //
+  else if (!bcname.compare("Isotherm_Move")) bcflag = 13; // Isothermal, no-slip moving wall //
+  else if (!bcname.compare("Adiabat_Move")) bcflag = 14;  // Adiabatic, no-slip moving wall //
+  else if (!bcname.compare("Char")) bcflag = 15;          // Characteristic //
+  else if (!bcname.compare("Slip_Wall_Dual")) bcflag = 16;// Dual consistent BC //
+  else if (!bcname.compare("AD_Wall")) bcflag = 50;       // Advection, Advection-Diffusion Boundary Conditions //
   else
     {
       cout << "Boundary=" << bcname << endl;
@@ -257,6 +257,9 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
     {
       FlowSol->mesh_eles(i)->set_rank(FlowSol->rank);
     }
+
+  if (FlowSol->rank==0)
+    cout << endl << "---------------- Flux Reconstruction Preprocessing ----------------" << endl;
 
   if (FlowSol->rank==0) cout << "initializing elements" << endl;
   if (FlowSol->rank==0) cout << "tris" << endl;
@@ -947,10 +950,14 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
 }
 
+<<<<<<< HEAD
 void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg,
               array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, int& out_n_verts_global, struct solution* FlowSol)
 {
-  if (FlowSol->rank==0) cout << "reading connectivity" << endl;
+
+  if (FlowSol->rank==0)
+    cout << endl << "----------------------- Mesh Preprocessing ------------------------" << endl;
+
   if (run_input.mesh_format==0) { // Gambit
       read_connectivity_gambit(in_file_name, out_n_cells, out_c2v, out_c2n_v, out_ctype, out_ic2icg, FlowSol);
     }
@@ -1351,11 +1358,9 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   for (int i=0;i<n_entities;i++)
     {
       mesh_file >> id >> elmtype >> ntags;
-
-      if (ntags!=2)
-        FatalError("ntags != 2,exiting");
-
-      mesh_file >> bcid >> dummy;
+      mesh_file >> bcid;
+      for (int tag=0; tag<ntags-1; tag++)
+        mesh_file >> dummy;
 
       if (strstr(bcTXT[bcid],"FLUID"))
         {
@@ -1868,14 +1873,14 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   int icount=0;
 
   for (int i=0;i<n_entities;i++)
-  {
-    mesh_file >> id >> elmtype >> ntags;
-    if (ntags!=2)
-      FatalError("ntags != 2,exiting");
+    {
+      mesh_file >> id >> elmtype >> ntags;
+      mesh_file >> bcid;
+      for (int tag=0; tag<ntags-1; tag++)
+        mesh_file >> dummy;
 
-    mesh_file >> bcid >> dummy;
-    if (strstr(bcTXT[bcid],"FLUID"))
-      icount++;
+      if (strstr(bcTXT[bcid],"FLUID"))
+        icount++;
 
     mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
@@ -1929,14 +1934,10 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   for (int k=0;k<n_entities;k++)
     {
       mesh_file >> id >> elmtype >> ntags;
+      mesh_file >> bcid;
+      for (int tag=0; tag<ntags-1; tag++)
+        mesh_file >> dummy;
 
-      if (ntags!=2)
-        {
-          cout << "ntags=" << ntags << endl;
-          FatalError("ntags != 2,exiting");
-        }
-
-      mesh_file >> bcid >> dummy;
       if (strstr(bcTXT[bcid],"FLUID"))
         {
           if (icount>=kstart && i< out_n_cells) // Read this cell
@@ -2104,15 +2105,15 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
   for (int i=0;i<klocal;i++)
     {
       if (ctype_temp(i) == 0)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 1)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 2)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 3)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 4)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
     }
 
   int wgtflag = 0;

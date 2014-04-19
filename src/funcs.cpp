@@ -312,9 +312,9 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
 
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
-	#else // inefficient matrix multiplication
+    #else // inefficient matrix multiplication
 
 	mtemp = mult_arrays(inv_vandermonde,modal);
 	filter_upts = mult_arrays(mtemp,vandermonde);
@@ -681,6 +681,8 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   array<double> coeff_gdotn((in_order+1),1);
   array<double> coeff_divg(n_upts_tri,1);
 
+  cubature_1d cub1d(20);  // TODO: CHECK STRENGTH
+
   if (in_edge==0)
     edge_length=2.;
   else if (in_edge==1)
@@ -714,7 +716,6 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   // 2. Perform the edge integrals to obtain coefficients sigma_i
   for (int i=0;i<n_upts_tri;i++)
     {
-      cubature_1d cub1d(20);  // TODO: CHECK STRENGTH
       integral = 0.;
 
       for (int j=0;j<cub1d.get_n_pts();j++)
@@ -1364,7 +1365,7 @@ bool is_perfect_cube(int in_a)
   return (in_a == number*number*number);
 }
 
-double compute_eta(int vcjh_scheme, double order)
+double compute_eta(int vcjh_scheme, int order)
 {
   double eta;
   // Check for P=0 compatibility

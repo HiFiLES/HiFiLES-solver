@@ -116,10 +116,13 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
 
       if(LES) {
         sgsf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+        sgsf_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
         temp_sgsf_l.setup(n_fields,n_dims);
+        temp_sgsf_r.setup(n_fields,n_dims);
       }
       else {
         sgsf_fpts_l.setup(1);
+        sgsf_fpts_r.setup(1);
       }
 
       temp_u_l.setup(n_fields);

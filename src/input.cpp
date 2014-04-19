@@ -55,7 +55,7 @@ void input::set_c(double in_c_tri, double in_c_quad)
   c_tri = in_c_tri;
   c_quad = in_c_quad;
 
-  double a_k = eval_gamma(2.*order+1)/( pow(2.,order)*pow(eval_gamma(order+1),2) );
+  double a_k = eval_gamma(2*order+1)/( pow(2.,order)*pow(eval_gamma(order+1),2) );
   eta_quad=in_c_quad*0.5*(2.*order+1.)*a_k*eval_gamma(order+1)*a_k*eval_gamma(order+1);
 }
 
@@ -89,7 +89,6 @@ void input::setup(ifstream& in_run_input_file, int rank)
       while(!in_run_input_file.eof())
         {
           in_run_input_file.getline(buf,BUFSIZ);
-          cout << buf << endl;
         }
       // Rewind
       in_run_input_file.clear();
@@ -642,6 +641,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
     if (mesh_output_freq==-1)
       mesh_output_freq = plot_freq;
   }
+  
+  if (rank==0)
+    cout << endl << "---------------------- Non-dimensionalization ---------------------" << endl;
 
   if(viscous)
     {

@@ -56,7 +56,7 @@ p_res                             // Plotting resolution, number of nodes per di
 6
 write_type                        // 0: Paraview, 1: Tecplot
 0
-n_plot_quantities
+n_diagnostic_fields
 7 rho u v w energy pressure mach
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 12
@@ -66,7 +66,7 @@ plot_freq
 100
 restart_dump_freq
 5000
-diagnostics_freq
+monitor_integrals_freq
 100000
 monitor_res_freq
 10

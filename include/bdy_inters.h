@@ -55,13 +55,13 @@ public:
   void mv_all_cpu_gpu(void);
 
   /*! calculate normal transformed continuous inviscid flux at the flux points on boundaries*/
-  void calc_norm_tconinvf_fpts_boundary(double time_bound);
+  void evaluate_boundaryConditions_invFlux(double time_bound);
 
   /*! calculate delta in transformed discontinuous solution at flux points */
   void calc_delta_disu_fpts_boundary(void);
 
   /*! calculate normal transformed continuous viscous flux at the flux points on boundaries*/
-  void calc_norm_tconvisf_fpts_boundary(double time_bound);
+  void evaluate_boundaryConditions_viscFlux(double time_bound);
 
 protected:
 

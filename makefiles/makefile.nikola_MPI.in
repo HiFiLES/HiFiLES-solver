@@ -25,3 +25,5 @@ PARMETIS_BUILD_DIR = lib/parmetis-4.0.2/build/Linux-x86_64
 TECIO_DIR = lib/tecio-2008
 
 CUDA_DIR = /usr/local/cuda
+
+MPI_DIR = /usr/lib/mpich2

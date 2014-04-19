@@ -52,7 +52,7 @@ using namespace std;
 #define MAX_V_PER_C 27
 
 // method to write out a tecplot file
-void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
+void write_tec(int in_file_num, struct solution* FlowSol)
 {
   int i,j,k,l,m;
 
@@ -61,13 +61,24 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   int p_res=run_input.p_res; // HACK
 
   array<double> pos_ppts_temp;
-  array<double> plotq_ppts_temp;
-  int n_plot_data;
+  array<double> disu_ppts_temp;
+  array<double> grad_disu_ppts_temp;
+  array<double> diag_ppts_temp;
+  int n_ppts_per_ele;
+  int n_dims = FlowSol->n_dims;
+  int n_fields;
+  int n_diag_fields;
+  int num_pts, num_elements;
 
   char  file_name_s[50] ;
   char *file_name;
+  string fields("");
+
   ofstream write_tec;
   write_tec.precision(15);
+
+  // number of additional diagnostic fields
+  n_diag_fields = run_input.n_diagnostic_fields;
 
 #ifdef _MPI
   MPI_Barrier(MPI_COMM_WORLD);
@@ -82,18 +93,18 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
   write_tec.open(file_name);
 
   // write header
-  write_tec << "Title = \"SD++ Solution\"" << endl;
+  write_tec << "Title = \"HiFiLES Solution\"" << endl;
 
-  // write variable names
+  // string of field names
   if (run_input.equation==0)
     {
-      if(FlowSol->n_dims==2)
+      if(n_dims==2)
         {
-          write_tec << "Variables = \"x\", \"y\", \"rho\", \"mom_x\", \"mom_y\", \"ene\"" << endl;
+          fields += "Variables = \"x\", \"y\", \"rho\", \"mom_x\", \"mom_y\", \"ene\"";
         }
-      else if(FlowSol->n_dims==3)
+      else if(n_dims==3)
         {
-          write_tec << "Variables = \"x\", \"y\", \"z\", \"rho\", \"mom_x\", \"mom_y\", \"mom_z\", \"ene\"" << endl;
+          fields += "Variables = \"x\", \"y\", \"z\", \"rho\", \"mom_x\", \"mom_y\", \"mom_z\", \"ene\"";
         }
       else
         {
@@ -102,13 +113,13 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
     }
   else if (run_input.equation==1)
     {
-      if(FlowSol->n_dims==2)
+      if(n_dims==2)
         {
-          write_tec << "Variables = \"x\", \"y\", \"rho\"" << endl;
+          fields += "Variables = \"x\", \"y\", \"rho\"";
         }
-      else if(FlowSol->n_dims==3)
+      else if(n_dims==3)
         {
-          write_tec << "Variables = \"x\", \"y\", \"z\", \"rho\"" << endl;
+          fields += "Variables = \"x\", \"y\", \"z\", \"rho\"";
         }
       else
         {
@@ -116,19 +127,35 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
         }
     }
 
+  // append the names of the diagnostic fields
+  if(n_diag_fields>0)
+    {
+      fields += ", ";
+
+      for(m=0;m<n_diag_fields-1;m++)
+        fields += "\"" + run_input.diagnostic_fields(m) + "\", ";
+
+      fields += "\"" + run_input.diagnostic_fields(n_diag_fields-1) + "\"";
+    }
+
+  // write field names to file
+  write_tec << fields << endl;
+
   int time_iter = 0;
 
   for(i=0;i<FlowSol->n_ele_types;i++)
     {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          n_plot_data = FlowSol->mesh_eles(i)->get_n_fields();
+          n_fields = FlowSol->mesh_eles(i)->get_n_fields();
+          n_ppts_per_ele = FlowSol->mesh_eles(i)->get_n_ppts_per_ele();
+          num_pts = (FlowSol->mesh_eles(i)->get_n_eles())*n_ppts_per_ele;
+          num_elements = (FlowSol->mesh_eles(i)->get_n_eles())*(FlowSol->mesh_eles(i)->get_n_peles_per_ele());
 
-          pos_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),FlowSol->mesh_eles(i)->get_n_dims());
-          plotq_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),n_plot_data);
-
-          int num_pts= (FlowSol->mesh_eles(i)->get_n_eles())*(FlowSol->mesh_eles(i)->get_n_ppts_per_ele());
-          int num_elements = (FlowSol->mesh_eles(i)->get_n_eles())*(FlowSol->mesh_eles(i)->get_n_peles_per_ele());
+          pos_ppts_temp.setup(n_ppts_per_ele,n_dims);
+          disu_ppts_temp.setup(n_ppts_per_ele,n_fields);
+          grad_disu_ppts_temp.setup(n_ppts_per_ele,n_fields,n_dims);
+          diag_ppts_temp.setup(n_ppts_per_ele,n_diag_fields);
 
           // write element specific header
           if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
@@ -167,22 +194,40 @@ void write_tec(int in_file_num, struct solution* FlowSol) // TODO: Tidy this up
           for(j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
             {
               FlowSol->mesh_eles(i)->calc_pos_ppts(j,pos_ppts_temp);
-              FlowSol->mesh_eles(i)->calc_disu_ppts(j,plotq_ppts_temp);
+              FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
+              FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
 
-              for(k=0;k<FlowSol->mesh_eles(i)->get_n_ppts_per_ele();k++)
+              /*! Calculate the diagnostic fields at the plot points */
+              if(n_diag_fields > 0)
                 {
-                  for(l=0;l<FlowSol->mesh_eles(i)->get_n_dims();l++)
+                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
+                }
+
+              for(k=0;k<n_ppts_per_ele;k++)
+                {
+                  for(l=0;l<n_dims;l++)
                     {
                       write_tec << pos_ppts_temp(k,l) << " ";
                     }
 
-                  for(l=0;l<n_plot_data;l++)
+                  for(l=0;l<n_fields;l++)
                     {
-                      if ( isnan(plotq_ppts_temp(k,l))) {
+                      if ( isnan(disu_ppts_temp(k,l))) {
                           FatalError("Nan in tecplot file, exiting");
                         }
                       else {
-                          write_tec << plotq_ppts_temp(k,l) << " ";
+                          write_tec << disu_ppts_temp(k,l) << " ";
+                        }
+                    }
+
+                  /*! Write out optional diagnostic fields */
+                  for(l=0;l<n_diag_fields;l++)
+                    {
+                      if ( isnan(diag_ppts_temp(k,l))) {
+                          FatalError("Nan in tecplot file, exiting");
+                        }
+                      else {
+                          write_tec << diag_ppts_temp(k,l) << " ";
                         }
                     }
 
@@ -1175,6 +1220,7 @@ void CalcNormResidual(struct solution* FlowSol) {
   
   for(i=0; i<FlowSol->n_ele_types; i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+      FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
       n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
       for(j=0; j<n_fields; j++)
         sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
@@ -1284,14 +1330,14 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
 
 void check_stability(struct solution* FlowSol)
 {
-  int n_plot_data;
+  int n_fields;
   int bisect_ind, file_lines;
 
   double c_now, dt_now;
   double a_temp, b_temp;
   double c_file, a_file, b_file;
 
-  array<double> plotq_ppts_temp;
+  array<double> disu_ppts_temp;
 
   int r_flag = 0;
   double i_tol    = 1.0e-4;
@@ -1305,19 +1351,19 @@ void check_stability(struct solution* FlowSol)
   for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          n_plot_data = FlowSol->mesh_eles(i)->get_n_fields();
+          n_fields = FlowSol->mesh_eles(i)->get_n_fields();
 
-          plotq_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),n_plot_data);
+          disu_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),n_fields);
 
           for(int j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
             {
-              FlowSol->mesh_eles(i)->calc_disu_ppts(j,plotq_ppts_temp);
+              FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
 
               for(int k=0;k<FlowSol->mesh_eles(i)->get_n_ppts_per_ele();k++)
                 {
-                  for(int l=0;l<n_plot_data;l++)
+                  for(int l=0;l<n_fields;l++)
                     {
-                      if ( isnan(plotq_ppts_temp(k,l)) || (abs(plotq_ppts_temp(k,l))> e_thresh) ) {
+                      if ( isnan(disu_ppts_temp(k,l)) || (abs(disu_ppts_temp(k,l))> e_thresh) ) {
                           r_flag = 1;
                         }
                     }

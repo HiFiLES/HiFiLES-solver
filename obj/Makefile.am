@@ -21,6 +21,39 @@ AM_CPPFLAGS = -I../include/
 
 bin_PROGRAMS = ../bin/HiFiLES
 
+___bin_HiFiLES_LDADD=
+___bin_HiFiLES_LDFLAGS=
+
+# -------------- GPU --------------
+if BUILD_GPU
+# Tell AutoMake how to compile CUDA files
+# See http://www.clusterchimps.org/autotools.php
+# GPU Architechture Selection: -gencode=arch=compute_xx,code=sm_xx
+#   compute_10	 Basic features
+#   compute_11	 + atomic memory operations on global memory
+#   compute_12	 + atomic memory operations on shared memory
+#                + vote instructions
+#   compute_13	 + double precision floating point support
+#   compute_20	 + Fermi support
+#   compute_30	 + Kepler support
+# cuda_kernels.o:
+#	$(NVCC) $(NVCCFLAGS) -gencode=arch=compute_20,code=sm_20 --ptxas-options=-v -o $@ -c $<
+
+cuda_kernals.cu.o:
+	$(NVCC) -gencode=arch=compute_20,code=sm_20 -o $@ -c $<
+
+libcudafiles_la_LINK= $(LIBTOOL) --mode=link $(CXX) -o $@ $(CUDA_LDFLAGS) $(CUDA_LIBS)
+
+noinst_LTLIBRARIES = libcudafiles.la
+libcudafiles_la_SOURCES = ../src/cuda_kernels.cu
+# libcudafiles_a_LIBADD = @CUDA_LIBS@
+# libcudafiles_a_CFLAGS = @NVCCFLAGS@
+___bin_HiFiLES_LDADD += @top_dir@/obj/libcudafiles.la 
+___bin_HiFiLES_LDFLAGS += -static
+# __bin_HiFiLES_LDFLAGS = @CUDA_LDFLAGS@ -lm -static
+endif
+# ------------ END GPU ------------
+
 # NOTE: '___bin_' is due to AM substituting the non-variable-name-friendly 
 # characters in the given expression above with an underscore
 ___bin_HiFiLES_SOURCES = ../src/global.cpp \
@@ -52,37 +85,6 @@ ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/HiFiLES.cpp
 
 ___bin_HiFiLES_CXXFLAGS=@CXXFLAGS@
-___bin_HiFiLES_LDADD=
-___bin_HiFiLES_LDFLAGS=
-
-# -------------- GPU --------------
-if BUILD_GPU
-# Tell AutoMake how to compile CUDA files
-# See http://www.clusterchimps.org/autotools.php
-# GPU Architechture Selection: -gencode=arch=compute_xx,code=sm_xx
-#   compute_10	 Basic features
-#   compute_11	 + atomic memory operations on global memory
-#   compute_12	 + atomic memory operations on shared memory
-#                + vote instructions
-#   compute_13	 + double precision floating point support
-#   compute_20	 + Fermi support
-#   compute_30	 + Kepler support
-cuda_kernels.o:
-	$(NVCC) $(NVCCFLAGS) -gencode=arch=compute_20,code=sm_20 --ptxas-options=-v -o $@ -c $<
-
-.cu.lo:
-	../cudalt.py $@ $(NVCC) -gencode=arch=compute_13,code=sm_13 --compiler-options=\" $(CFLAGS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \" -c $<
-
-libcudafiles_a_LINK= $(LIBTOOL) --mode=link $(CC) -o %@ $(CUDA_LDFLAGS) $(CUDA_LIBS)
-
-noinst_LIBRARIES = libcudafiles.a
-libcudafiles_a_SOURCES = ../src/cuda_kernels.cu
-#libcudafiles_a_LIBADD = @CUDA_LIBS@
-#libcudafiles_a_LDFLAGS = @CUDA_LDFLAGS@ -static
-libcudafiles_a_CFLAGS = @NVCCFLAGS@
-___bin_HiFiLES_LDADD += libcudafiles.a
-endif
-# ------------ END GPU ------------
 
 # ParMETIS
 ___bin_HiFiLES_CXXFLAGS += @PARMETIS_CXX@
@@ -94,8 +96,8 @@ ___bin_HiFiLES_LDADD += @TECIO_LD@
 
 # CUDA
 ___bin_HiFiLES_CXXFLAGS += @CUDA_CXX@
-___bin_HiFiLES_LDFLAGS += @CUDA_LDFLAGS@
-___bin_HiFiLES_LDADD += @CUDA_LIBS@
+#___bin_HiFiLES_LDFLAGS += @CUDA_LDFLAGS@
+#___bin_HiFiLES_LDADD += @CUDA_LIBS@
 
 # BLAS
 ___bin_HiFiLES_CXXFLAGS += @BLAS_CXX@

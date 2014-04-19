@@ -6,7 +6,8 @@
 #         - Current development: Aerospace Computing Laboratory (ACL) directed
 #                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
 # \version 1.0.0
-# \date Modified on 3/14/14
+# \date Created on 3/14/14
+#       Modified on 4/1/14
 #
 # HiFiLES (High Fidelity Large Eddy Simulation).
 # Copyright (C) 2013 Aerospace Computing Laboratory.
@@ -14,9 +15,49 @@
 AC_INIT([HiFiLES], [1.0.0], [HiFiLES-dev@lists.stanford.edu],
         [HiFiLES], [http://hifiles.stanford.edu])
 AC_PREREQ([2.59])
+# AC_CONFIG_MACRO_DIR([m4])
+#AM_INIT_AUTOMAKE([subdir-objects foreign])
 AM_INIT_AUTOMAKE([foreign])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
 
+top_dir=`pwd`
+AC_SUBST([top_dir])
+
+# --------------------------------------------------------------
+# Build up contributed packages that we will build from source
+# --------------------------------------------------------------
+hifiles_externals_INCLUDES=""
+hifiles_externals_LIBS=""
+
+# Tecplot
+# CONFIGURE_TECIO
+# if (test $enabletecio = yes); then
+#   hifiles_externals_INCLUDES="$TECIO_INCLUDE $hifiles_externals_INCLUDES"
+#   hifiles_externals_LIBS="$TECIO_LIB $hifiles_externals_LIBS"
+# else
+#   hifiles_externals_INCLUDES="-DNO_TECIO $hifiles_externals_INCLUDES"
+# fi
+# AM_CONDITIONAL(BUILD_TECIO, test x$enabletecio = xyes)
+# AC_CONFIG_FILES([externals/tecio/Makefile])
+
+# Metis
+# CONFIGURE_METIS
+# if (test $enablemetis = yes); then
+#   su2_externals_INCLUDES="$METIS_INCLUDE $su2_externals_INCLUDES"
+#   su2_externals_LIBS="$METIS_LIB $su2_externals_LIBS"
+# else
+#   su2_externals_INCLUDES="-DNO_METIS $su2_externals_INCLUDES"
+# fi
+# AM_CONDITIONAL(BUILD_METIS, test x$enablemetis = xyes)
+# AC_CONFIG_FILES([externals/metis/Makefile])
+# 
+# 
+# AC_SUBST([hifiles_externals_INCLUDES])
+# AC_SUBST([hifiles_externals_LIBS])
+
+# --------------------------------------------------------------
 # optional bindings
+# --------------------------------------------------------------
 AC_ARG_WITH(CUDA,
     AS_HELP_STRING([--with-CUDA[=ARG]], [Build GPU version with NVidia CUDA compiler, ARG = CUDA compiler]), 
     [with_CUDA=$withval], [with_CUDA="no"])
@@ -26,26 +67,32 @@ AC_ARG_WITH(CUDA-lib,
 AC_ARG_WITH(CUDA-include,
     AS_HELP_STRING([--with-CUDA-include[=ARG]], [CUDA include directory, ARG = path to cuda.h]), 
     [with_CUDA_include=$withval], [with_CUDA_include="no"])
+
 AC_ARG_WITH(MPI,
     AS_HELP_STRING([--with-MPI[=ARG]], [Build parallel version with MPI tools, ARG = MPI C++ compiler]), 
     [with_MPI=$withval], [with_MPI="no"])
+
 AC_ARG_WITH(Tecio-lib,
     AS_HELP_STRING([--with-Tecio-lib[=ARG]], [Tecio library directory, ARG = path to libtecio.a]), 
     [with_Tecio_lib=$withval], [with_Tecio_lib="no"])
 AC_ARG_WITH(Tecio-include,
     AS_HELP_STRING([--with-Tecio-include[=ARG]], [Tecio include directory, ARG = path to TECIO.h]), 
     [with_Tecio_include=$withval], [with_Tecio_include="no"])
+
 AC_ARG_WITH(ParMetis-lib,
    	AS_HELP_STRING([--with-ParMetis-lib[=ARG]], [ParMetis library directory, ARG = path to libparmetis.a]), 
     [with_ParMetis_lib=$withval], [with_ParMetis_lib="no"])
 AC_ARG_WITH(ParMetis-include,
    	AS_HELP_STRING([--with-ParMetis-include[=ARG]], [ParMetis include directory, ARG = path to parmetis.h]), 
     [with_ParMetis_include=$withval], [with_ParMetis_include="no"])
-AC_ARG_WITH(ParMetis-version,
-   	AS_HELP_STRING([--with-ParMetis-version[=ARG]], [ParMetis major version, ARG = 4 (default) or 5]), 
-    [with_ParMetis_version=$withval], [with_ParMetis_version="4"])
-AC_ARG_WITH(CXX,
-    AS_HELP_STRING([--with-CXX[=ARG]], [Optional: Specify C++ compiler, ARG = C++ compiler]), [with_CXX=$withval], [with_CXX="GCC"])
+
+AC_ARG_WITH(Metis-lib,
+   	AS_HELP_STRING([--with-Metis-lib[=ARG]], [Metis library directory, ARG = path to libmetis.a]), 
+    [with_Metis_lib=$withval], [with_Metis_lib="no"])
+AC_ARG_WITH(Metis-include,
+   	AS_HELP_STRING([--with-Metis-include[=ARG]], [Metis include directory, ARG = path to metis.h]), 
+    [with_Metis_include=$withval], [with_Metis_include="no"]) 
+
 AC_ARG_WITH(BLAS,
     AS_HELP_STRING([--with-BLAS[=ARG]], [Build using support for a BLAS variant, ARG = BLAS library to use]), 
     [with_BLAS=$withval], [with_BLAS="no"])
@@ -55,6 +102,9 @@ AC_ARG_WITH(BLAS-lib,
 AC_ARG_WITH(BLAS-include,
     AS_HELP_STRING([--with-BLAS-include[=ARG]], [BLAS include directory, ARG = path to cblas.h]), 
     [with_BLAS_include=$withval], [with_BLAS_include="no"])
+
+AC_ARG_WITH(CXX,
+    AS_HELP_STRING([--with-CXX[=ARG]], [Optional: Specify C++ compiler, ARG = C++ compiler]), [with_CXX=$withval], [with_CXX="GCC"])
     
 ########################### CUDA (GPU-Enabled)
 # check if we're building GPU or CPU version
@@ -126,6 +176,12 @@ have_ParMetis="no"
 # check for library
 if test "$with_ParMetis_lib" != "no" 
 then
+    # Optional value for separate Metis library file location
+    if test "$with_Metis_lib" == "no"
+    then
+        with_Metis_lib=$with_ParMetis_lib
+    fi    
+    
   	AC_CHECK_FILE([$with_ParMetis_lib/$ParMETISlib],[have_ParMetis="yes"],[have_ParMetis="no"])   
 	if test "$have_ParMetis" == "no"
 	then
@@ -137,6 +193,12 @@ then
 	then
 		AC_MSG_ERROR([ParMETIS requested but METIS library file not found.])
 	fi
+		
+	AC_CHECK_FILE([$with_Metis_lib/$METISlib],[have_ParMetis="yes"],[have_ParMetis="no"])   
+	if test "$have_ParMetis" == "no"
+	then
+		AC_MSG_ERROR([ParMETIS requested but METIS library file not found.])
+	fi
 fi
 
 # check for header
@@ -144,18 +206,32 @@ if test "$have_ParMetis" != "no"
 then
 	if test "$with_ParMetis_include" != "no"
 	then
+	    # Optional value for separate Metis header file location
+	    if test "$with_Metis_include" == "no"
+        then
+            with_Metis_include=$with_ParMetis_include
+        fi  
+    
 		AC_CHECK_FILE([$with_ParMetis_include/$ParMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
 		if test "$have_ParMetis" == "no"
 		then
 			AC_MSG_ERROR([ParMETIS requested but ParMETIS header file not found.])
 		fi
+<<<<<<< HEAD
 		
 		AC_CHECK_FILE([$with_ParMetis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+=======
+				
+		AC_CHECK_FILE([$with_Metis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+>>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
 		if test "$have_ParMetis" == "no"
 		then
 			AC_MSG_ERROR([ParMETIS requested but METIS header file not found.])
 		fi
+<<<<<<< HEAD
 		
+=======
+>>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
 	else
 		have_ParMetis="no"
 	fi  
@@ -164,8 +240,13 @@ fi
 if test "$have_ParMetis" != "no"
 then
   	AM_CONDITIONAL(BUILD_PARMETIS,true)
+<<<<<<< HEAD
 	PARMETIS_CXX="-I$with_ParMetis_include"
 	PARMETIS_LD="$with_ParMetis_lib/libparmetis.a $with_ParMetis_lib/libmetis.a"
+=======
+	PARMETIS_CXX="-I$with_Metis_include -I$with_ParMetis_include"
+	PARMETIS_LD="$with_ParMetis_lib/$ParMETISlib $with_Metis_lib/$METISlib"
+>>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
 else
 	AM_CONDITIONAL(BUILD_PARMETIS,false)
 	PARMETIS_CXX=-DNO_PARMETIS
@@ -235,12 +316,12 @@ fi
 
 ########################### BLAS
 # *** still need to implement library & header-file checks ***
-if test "$with_BLAS" == "ACCELERATE_BLAS"
+if test "$with_BLAS" == "ACCELERATE"
 then
     BLAS_CXX=" -flax-vector-conversions -D_ACCELERATE_BLAS"
     BLAS_LDFLAGS=" -framework Accelerate"
     BLAS_LD=
-elif test "$with_BLAS" == "STANDARD_BLAS"
+elif test "$with_BLAS" == "STANDARD"
 then
     AC_CHECK_FILE([$with_BLAS_lib/libcblas.a],[have_BLAS="yes"],[have_BLAS="no"]) 
 	if test "$have_BLAS" != "no"
@@ -251,9 +332,9 @@ then
 	fi
 	if test "$have_BLAS" == "no"
 	then
-		AC_MSG_ERROR([BLAS linking requested but library file not found.])
+		AC_MSG_ERROR([BLAS linking requested but library file not found (libcblas.a).])
 	fi
-elif test "$with_BLAS" == "ATLAS_BLAS"
+elif test "$with_BLAS" == "ATLAS"
 then
     AC_CHECK_FILE([$with_BLAS_lib/libcblas.a],[have_BLAS="yes"],[have_BLAS="no"]) 
 	if test "$have_BLAS" != "no"
@@ -266,10 +347,10 @@ then
         BLAS_LD="$with_BLAS_lib/libcblas.a $with_BLAS_lib/libatlas.a"
         BLAS_LDFLAGS=
 	else
-		AC_MSG_ERROR([BLAS linking requested but library file not found.])
+		AC_MSG_ERROR([BLAS linking requested but library files not found (libcblas.a, libatlas.a).])
 	fi
 # needs more work here (not terribly familiar with our MKL usage)
-elif test "$with_BLAS" == "MKL_BLAS"
+elif test "$with_BLAS" == "MKL"
 then
     if test "$CXX" == "icpc"
     then
@@ -278,13 +359,7 @@ then
         BLAS_INCLUDE=
         BLAS_LDFLAGS=
     fi
-elif test "$with_BLAS" == "NO_BLAS"
-then
-    BLAS_CXX="-DNO_BLAS"
-    BLAS_LD=
-    BLAS_LDFLAGS=
-    have_BLAS="no"
-elif test "$with_BLAS" == "no"
+elif [test "$with_BLAS" == "NO"] || [test "$with_BLAS" == "no"]
 then
     BLAS_CXX="-DNO_BLAS"
     BLAS_LD=
@@ -322,6 +397,7 @@ Build Configuration Summary:
     Linker flags:         ${LDFLAGS}
     BLAS support:         $have_BLAS
     MPI support:          $have_MPI
+    CUDA support:         $have_CUDA
     ParMetis support:     $have_ParMetis
     TecIO support:        $have_Tecio
 

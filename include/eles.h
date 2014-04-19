@@ -76,40 +76,40 @@ public:
   void rm_detjac_upts_cpu(void);
 
   /*! calculate the discontinuous solution at the flux points */
-	void calc_disu_fpts(int in_disu_upts_from);
-	
-	/*! Calculate terms for some LES models */
-	void calc_sgs_terms(int in_disu_upts_from);
+  void extrapolate_solution(int in_disu_upts_from);
 
-	/*! calculate transformed discontinuous inviscid flux at solution points */
-  void calc_tdisinvf_upts(int in_disu_upts_from);
+  /*! Calculate terms for some LES models */
+  void calc_sgs_terms(int in_disu_upts_from);
+
+  /*! calculate transformed discontinuous inviscid flux at solution points */
+  void evaluate_invFlux(int in_disu_upts_from);
   
   /*! calculate divergence of transformed discontinuous flux at solution points */
-  void calc_div_tdisf_upts(int in_div_tconf_upts_to);
+  void calculate_divergence(int in_div_tconf_upts_to);
   
   /*! calculate normal transformed discontinuous flux at flux points */
-  void calc_norm_tdisf_fpts(void);
+  void extrapolate_totalFlux(void);
   
   /*! calculate subgrid-scale flux at flux points */
-  void calc_sgsf_fpts(void);
+  void evaluate_sgsFlux(void);
 
   /*! calculate divergence of transformed continuous flux at solution points */
-  void calc_div_tconf_upts(int in_div_tconf_upts_to);
+  void calculate_corrected_divergence(int in_div_tconf_upts_to);
   
   /*! calculate uncorrected transformed gradient of the discontinuous solution at the solution points */
-  void calc_uncor_tgrad_disu_upts(int in_disu_upts_from);
+  void calculate_gradient(int in_disu_upts_from);
 
   /*! calculate corrected gradient of the discontinuous solution at solution points */
-  void calc_cor_grad_disu_upts(void);
+  void correct_gradient(void);
 
   /*! calculate corrected gradient of the discontinuous solution at flux points */
-  void calc_cor_grad_disu_fpts(void);
+  void extrapolate_corrected_gradient(void);
 
   /*! calculate corrected gradient of solution at flux points */
-  //void calc_cor_grad_disu_fpts(void);
+  //void extrapolate_corrected_gradient(void);
 
   /*! calculate transformed discontinuous viscous flux at solution points */
-  void calc_tdisvisf_upts(int in_disu_upts_from);
+  void evaluate_viscFlux(int in_disu_upts_from);
 
   /*! calculate divergence of transformed discontinuous viscous flux at solution points */
   //void calc_div_tdisvisf_upts(int in_div_tconinvf_upts_to);
@@ -176,10 +176,10 @@ public:
 
   /*! get a pointer to the determinant of the jacobian at a flux point */
   double* get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
-       
+
   /*! get a pointer to the magnitude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points */
-	double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
-        
+  double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
+
   /*! get a pointer to the normal at a flux point */
   double* get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
 
@@ -345,7 +345,7 @@ public:
   void calc_body_force_upts(array <double>& vis_force, array <double>& body_force);
 
   /*! add body forcing at solution points */
-  void add_body_force_upts(array <double>& body_force);
+  void evaluate_bodyForce(array <double>& body_force);
 
   /*! Compute diagnostic quantities at solution points */
   void CalcDiagnosticFields(void);
@@ -519,7 +519,7 @@ protected:
   /*!  number of dimensions */
   int n_dims;
 
-  /*!  number of fields */
+  /*!  number of prognostic fields */
   int n_fields;
 
   /*!  number of diagnostic fields */
@@ -626,8 +626,13 @@ protected:
   /*! number of cubature points per interface */
   int n_cubpts_per_ele;
 
+<<<<<<< HEAD
   /*! element type (0=>quad,1=>tri,2=>tet,3=>pri,4=>hex) */
   int ele_type;
+=======
+	/*! extra arrays for similarity model: Leonard tensors, velocity/energy products */
+	array<double> Lu, Le, uu, ue;
+>>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
 
   /*! order of polynomials defining shapes */
   int s_order;
