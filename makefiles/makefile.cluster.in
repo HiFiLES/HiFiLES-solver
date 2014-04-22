@@ -13,7 +13,7 @@ NODE=     GPU
 CODE=     DEBUG
 BLAS=     STANDARD_BLAS
 COMP=     GCC
-PARALLEL= NO
+PARALLEL= MPI
 TECIO=    YES
 
 BLAS_DIR= /usr/local/atlas
