@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
 #ifdef _GPU
 
     if(i_steps%FlowSol.plot_freq == 0 || i_steps%run_input.monitor_res_freq == 0 ||
-       i_steps%FlowSol.restart_dump_freq==0 || i_steps%FlowSol.monitor_force_freq==0) {
+       i_steps%FlowSol.restart_dump_freq==0 || i_steps%run_input.monitor_force_freq==0) {
 
       CopyGPUCPU(&FlowSol);
 
