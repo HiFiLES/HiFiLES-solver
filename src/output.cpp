@@ -1221,8 +1221,8 @@ void CalcNormResidual(struct solution* FlowSol) {
       else if (run_input.res_norm_type==2) { FlowSol->norm_residual(i) = sqrt(sum[i]) / n_upts; } // L2 norm
       else FatalError("norm_type not recognized");
       
-      if (isnan(norm[i])) {
-        cout << "NaN residual at iteration. Exiting" << endl;
+      if (isnan(FlowSol->norm_residual(i))) {
+        FatalError("NaN residual encountered. Exiting");
       }
     }
     
