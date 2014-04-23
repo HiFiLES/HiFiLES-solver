@@ -404,7 +404,7 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
   // Gaussian filter in modal space (from SD3D)
   for(i=0;i<N;i++) {
     eta = i/N;
-    modal(i,i) = exp(-pow(pi*eta/k_c,2.0)/24.0);
+    modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
   }
 
   // Sharp modal cutoff filter
