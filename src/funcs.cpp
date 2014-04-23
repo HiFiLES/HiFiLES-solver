@@ -375,7 +375,7 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 }
 
 // Compute a modal filter matrix for a tetrahedral element, given Vandermonde matrix and inverse
-void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order)
+void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, double k_c, int N, int order)
 {
 	int i,j,k,ind=0;
 	double Cp=0.1;     // Dubiner SVV filter strength coeff.
@@ -386,25 +386,29 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
 	zero_array(modal);
 	zero_array(filter_upts);
 
-	// Full form: alpha = Cp*(p+1)*dt/delta
-	alpha = Cp*p;
+  // Exponential filter (SVV method) (similar to Meister et al 2009)
 
-	for(i=0;i<p+1;i++) {
-		for(j=0;j<p-i+1;j++) {
-			for(k=0;k<p-i-j+1;k++) {
-				// Exponential filter (SVV method) (similar to Meister et al 2009)
-				eta = (i+j+k)/(p+1.0);
-				modal(ind,ind) = exp(-alpha*pow(eta,2*p));
+  // Full form: alpha = Cp*(p+1)*dt/delta
+  /*alpha = Cp*p;
 
-				// Gaussian filter in modal space (from SD3D)
-				//modal(ind,ind) = exp(-pow(pi*eta*delta,2.0)/24.0)
-				ind++;
-			}
-		}
-	}
+  for(i=0;i<p+1;i++) {
+    for(j=0;j<p-i+1;j++) {
+      for(k=0;k<p-i-j+1;k++) {
+        eta = (i+j+k)/(p+1.0);
+        modal(ind,ind) = exp(-alpha*pow(eta,2*p));
+        ind++;
+      }
+    }
+  }*/
 
-	// Sharp modal cutoff filter
-	//modal(N-1,N-1)=0.0;
+  // Gaussian filter in modal space (from SD3D)
+  for(i=0;i<N;i++) {
+    eta = i/N;
+    modal(i,i) = exp(-pow(pi*eta/k_c,2.0)/24.0);
+  }
+
+  // Sharp modal cutoff filter
+  //modal(N-1,N-1)=0.0;
 
   cout<<"modal coeffs:"<<endl;
   modal.print();
