@@ -161,11 +161,23 @@ class testcase:
   
     # Rewrite the file with a .autotest extension
     self.cfg_file = "%s.autotest"%self.cfg_file
+    file_out = open(self.cfg_file,'w')
+    for line in lines:
+      if line.find("EXT_ITER")==-1:
+        file_out.write(line)
+      else:
+        file_out.write("EXT_ITER=%d\n"%(self.test_iter+1))
+    file_out.close()
 
 if __name__=="__main__":
   '''This program runs HiFiLES and ensures that the output matches specified values. This will be used to do nightly checks to make sure nothing is broken. '''
 
   # Build HiFiLES_CFD in serial using the right Makefile.in
+  # Note that we are hard-coding this for enrico at the moment
+  # This will eventually be a call to the autoconf stuff
+  
+  os.chdir(os.environ['HIFILES_HOME'])
+  os.system('cp makefiles/makefile.enrico_serial.in ./makefile.in')
   os.system('make clean')
   os.system('make')
   
@@ -180,12 +192,12 @@ if __name__=="__main__":
   ###  Compressible N-S  ###
   ##########################
 
-  # Laminar flat plate
+  # Cylinder
   cylinder              = testcase('cylinder')
   cylinder.cfg_dir      = "testcases/navier-stokes/cylinder"
   cylinder.cfg_file     = "input_cylinder_visc"
   cylinder.test_iter    = 25
-  cylinder.test_vals    = [0.19358277,1.35384226,0.20833461,10.48882915]
+  cylinder.test_vals    = [0.17038345,0.75864863,0.23040523,10.05233986,3.42539175,-0.04153506]
   cylinder.HiFiLES_exec = "HiFiLES"
   cylinder.timeout      = 1600
   cylinder.tol          = 0.00001
@@ -193,16 +205,16 @@ if __name__=="__main__":
   
   # Taylor-Green vortex
   tgv              = testcase('tgv')
-  tgv.cfg_dir      = cylinder.HiFiLES_dir+"/testcases/navier-stokes/Taylor_Green_vortex"
+  tgv.cfg_dir      = "testcases/navier-stokes/Taylor_Green_vortex"
   tgv.cfg_file     = "input_TGV_SD_hex"
-  tgv.test_iter    = 30
-  tgv.test_vals    = [0.00017975,0.05079293,0.05079307,0.06456811,0.05711717]
+  tgv.test_iter    = 25
+  tgv.test_vals    = [0.00013215,0.05076817,0.05076814,0.06456282,0.07476870,0.00000000,0.00000000,0.00000000]
   tgv.HiFiLES_exec = "HiFiLES"
   tgv.timeout      = 1600
   tgv.tol          = 0.00001
-  passed1          = tgv.run_test()
+  passed2          = tgv.run_test()
 
-  if (passed1):
+  if (passed1 and passed2):
     sys.exit(0)
   else:
     sys.exit(1)

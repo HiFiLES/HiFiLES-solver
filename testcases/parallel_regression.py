@@ -159,12 +159,23 @@ class testcase:
   
     # Rewrite the file with a .autotest extension
     self.cfg_file = "%s.autotest"%self.cfg_file
+    file_out = open(self.cfg_file,'w')
+    for line in lines:
+      if line.find("EXT_ITER")==-1:
+        file_out.write(line)
+      else:
+        file_out.write("EXT_ITER=%d\n"%(self.test_iter+1))
+    file_out.close()
     
-
 if __name__=="__main__":
   '''This program runs HiFiLES and ensures that the output matches specified values. This will be used to do nightly checks to make sure nothing is broken. '''
 
-  # Build HiFiLES_CFD in parallel using the right Makefile.in
+  # Build HiFiLES_CFD in serial using the right Makefile.in
+  # Note that we are hard-coding this for enrico at the moment
+  # This will eventually be a call to the autoconf stuff
+
+  os.chdir(os.environ['HIFILES_HOME'])
+  os.system('cp makefiles/makefile.enrico_MPI.in ./makefile.in')
   os.system('make clean')
   os.system('make')
 
@@ -183,13 +194,13 @@ if __name__=="__main__":
   ###  Compressible N-S  ###
   ##########################
 
-  # Laminar flat plate
-  cylinder              = testcase('flatplate')
+  # Cylinder
+  cylinder              = testcase('cylinder')
   cylinder.cfg_dir      = "testcases/navier-stokes/cylinder/"
   cylinder.cfg_file     = "input_cylinder_visc"
   cylinder.test_iter    = 25
   cylinder.test_vals    = [0.193583,1.353842,0.208335,10.488829]
-  cylinder.HiFiLES_exec = "mpirun -n 2 HiFiLES"
+  cylinder.HiFiLES_exec = "mpirun -np 2 HiFiLES"
   cylinder.timeout      = 1600
   cylinder.tol          = 0.00001
   passed1               = cylinder.run_test()
