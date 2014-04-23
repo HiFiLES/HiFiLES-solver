@@ -80,8 +80,8 @@ void SetInput(struct solution* FlowSol) {
 #ifdef _GPU
 
   /*! Associate a GPU to each rank. */
-  if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
-  if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+  //if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
+  //if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
 
 #endif
 
