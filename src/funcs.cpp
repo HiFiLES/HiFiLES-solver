@@ -375,7 +375,7 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 }
 
 // Compute a modal filter matrix for a tetrahedral element, given Vandermonde matrix and inverse
-void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, double k_c, int N, int order)
+void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order)
 {
 	int i,j,k,ind=0;
 	double Cp=0.1;     // Dubiner SVV filter strength coeff.
