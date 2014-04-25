@@ -698,8 +698,6 @@ void eles_tets::compute_filter_upts(void)
   for(i=0;i<N;i++)
     for(j=0;j<N;j++)
       sum+=filter_upts(i,j);
-
-  printf("\nLeaving filter computation function\n");
 }
 
 
