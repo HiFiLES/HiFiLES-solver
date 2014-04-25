@@ -184,12 +184,10 @@ void GeoPreprocess(struct solution* FlowSol) {
 
   // Error checking
   if (FlowSol->n_dims == 2 && (num_tets != 0 || num_pris != 0 || num_hexas != 0)) {
-      cout << "Error in mesh reader, n_dims=2 and 3d elements exists" << endl;
-      exit(1);
+      FatalError("Error in mesh reader, n_dims=2 and 3d elements exists");
     }
   if (FlowSol->n_dims == 3 && (num_tris!= 0 || num_quads != 0)) {
-      cout << "Error in mesh reader, n_dims=3 and 2d elements exists" << endl;
-      exit(1);
+      FatalError("Error in mesh reader, n_dims=3 and 2d elements exists");
     }
 
   // For each element type, count the maximum number of shape points per element
@@ -633,8 +631,7 @@ void GeoPreprocess(struct solution* FlowSol) {
             {
               if (ic_r==-1)
                 {
-                  cout << "Error: Interior interface has ic_r=-1. Should not be here, exiting" << endl;
-                  exit(1);
+                  FatalError("Error: Interior interface has i_cell_right=-1. Should not be here, exiting");
                 }
               n_int_inters++;
               if (f2nv(i)==2) n_seg_int_inters++;
@@ -1118,9 +1115,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
             }
           else
             {
-              cout << "ERROR: cannot handle other element type in readbnd" << endl;
-              exit(1);
-
+              FatalError("ERROR: cannot handle other element type in readbnd");
             }
           // Check if cell icg belongs to processor
           index = index_locate_int(icg,cell_list.get_ptr_cpu(),in_n_cells);
@@ -1314,8 +1309,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
               cout << "num_v_per_face=" << num_v_per_f << endl;
               cout << "vlist_boun(0)=" << vlist_boun(0) << " vlist_boun(1)=" << vlist_boun(1) << endl;
               cout << "vlist_boun(2)=" << vlist_boun(2) << " vlist_boun(3)=" << vlist_boun(3) << endl;
-              cout << "Warning, all nodes of boundary face belong to processor but could not find the coresponding faces" << endl;
-              exit(1);
+              FatalError("All nodes of boundary face belong to processor but could not find the coresponding faces");
             }
 
         } // If all vertices belong to processor
@@ -3098,8 +3092,7 @@ void compare_faces(array<int>& vlist1, array<int>& vlist2, int& num_v_per_f, int
     }
   else
     {
-      cout << "ERROR: Haven't implemented this face type in compare_face yet...." << endl;
-      exit(1);
+      FatalError("ERROR: Haven't implemented this face type in compare_face yet....");
     }
 
 }
@@ -3267,8 +3260,7 @@ void compare_cyclic_faces(array<double> &xvert1, array<double> &xvert2, int& num
         }
       else
         {
-          cout << "ERROR: Haven't implemented this face type in compare_cyclic_face yet...." << endl;
-          exit(1);
+          FatalError("ERROR: Haven't implemented this face type in compare_cyclic_face yet....");
         }
     }
 
@@ -3711,8 +3703,7 @@ void compare_mpi_faces(array<double> &xvert1, array<double> &xvert2, int& num_v_
         }
       else
         {
-          cout << "ERROR: Haven't implemented this face type in compare_cyclic_face yet...." << endl;
-          exit(1);
+          FatalError("ERROR: Haven't implemented this face type in compare_cyclic_face yet....");
         }
     }
 
