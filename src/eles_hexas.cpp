@@ -643,7 +643,7 @@ void eles_hexas::compute_filter_upts(void)
   // Only use high-order filters for high enough order
   if(run_input.filter_type==0 and N>=3)
     {
-      cout<<"Building high-order-commuting Vasilyev filter"<<endl;
+      if (rank==0) cout<<"Building high-order-commuting Vasilyev filter"<<endl;
       array<double> C(N);
       array<double> A(N,N);
 
@@ -697,7 +697,7 @@ void eles_hexas::compute_filter_upts(void)
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
-      cout<<"Building discrete Gaussian filter"<<endl;
+      if (rank==0) cout<<"Building discrete Gaussian filter"<<endl;
       int ctype, index;
       double k_R, k_L, coeff;
       double res_0, res_L, res_R;
@@ -774,7 +774,7 @@ void eles_hexas::compute_filter_upts(void)
     }
   else if(run_input.filter_type==2) // Modal coefficient filter
     {
-      cout<<"Building modal filter"<<endl;
+      if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute restriction-prolongation filter
       compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
@@ -786,7 +786,7 @@ void eles_hexas::compute_filter_upts(void)
     }
   else // Simple average for low order
     {
-      cout<<"Building average filter"<<endl;
+      if (rank==0) cout<<"Building average filter"<<endl;
       sum=0;
       for (i=0;i<N;i++)
         {

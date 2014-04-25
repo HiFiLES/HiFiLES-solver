@@ -644,7 +644,7 @@ void eles_tets::compute_filter_upts(void)
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
-      cout<<"Building discrete Gaussian filter"<<endl;
+      if (rank==0) cout<<"Building discrete Gaussian filter"<<endl;
 
       if(N != n_cubpts_per_ele)
         {
@@ -653,7 +653,7 @@ void eles_tets::compute_filter_upts(void)
     }
   else if(run_input.filter_type==2) // Modal coefficient filter
     {
-      cout<<"Building modal filter"<<endl;
+      if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute modal filter
       compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order);
@@ -661,7 +661,7 @@ void eles_tets::compute_filter_upts(void)
     }
   else // Simple average for low order
     {
-      cout<<"Building average filter"<<endl;
+      if (rank==0) cout<<"Building average filter"<<endl;
       sum=0;
       for(i=0;i<N;i++)
         {
@@ -1053,13 +1053,13 @@ void eles_tets::fill_opp_3(array<double>& opp_3)
 
   //cout << "opp_3_dg" << endl;
   //opp_3_dg.print();
-  cout << endl;
+  //cout << endl;
 
   m_temp = mult_arrays(Filt,opp_3_dg);
 
   //cout << "opp_3_vcjh" << endl;
   //m_temp.print();
-  cout << endl;
+  //cout << endl;
   opp_3 = array<double>(m_temp);
 }
 

@@ -461,7 +461,6 @@ void eles_quads::set_tnorm_fpts(void)
 // Filtering operators for use in subgrid-scale modelling
 void eles_quads::compute_filter_upts(void)
 {
-  printf("\nEntering filter computation function\n");
   int i,j,k,l,N,N2;
   double dlt, k_c, sum, norm;
   N = order+1; // order is of basis polynomials NOT truncation error!
@@ -472,8 +471,6 @@ void eles_quads::compute_filter_upts(void)
   filter_upts_1D.setup(N,N);
 
   X = loc_1d_upts;
-  printf("\n1D solution point coordinates:\n");
-  X.print();
 
   N2 = N/2;
   if(N % 2 != 0){N2 += 1;}
@@ -482,22 +479,17 @@ void eles_quads::compute_filter_upts(void)
   // Approx resolution in element (assumes uniform point spacing)
   // Interval is [-1:1]
   dlt = 2.0/order;
-  printf("\nN, N2, dlt, k_c:\n");
-  cout << N << ", " << N2 << ", " << dlt << ", " << k_c << endl;
 
   // Normalised solution point separation
   for (i=0;i<N;i++)
     for (j=0;j<N;j++)
       beta(j,i) = (X(j)-X(i))/dlt;
 
-  printf("\nNormalised solution point separation beta:\n");
-  beta.print();
-
   // Build high-order-commuting Vasilyev filter
   // Only use high-order filters for high enough order
   if(run_input.filter_type==0 and N>=3)
     {
-      printf("\nBuilding high-order-commuting Vasilyev filter\n");
+      if (rank==0) cout<<"Building high-order-commuting Vasilyev filter"<<endl;
       array<double> C(N);
       array<double> A(N,N);
 
@@ -552,6 +544,7 @@ void eles_quads::compute_filter_upts(void)
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
+      if (rank==0) cout<<"Building discrete Gaussian filter"<<endl;
       int ctype,index;
       double k_R, k_L, coeff;
       double res_0, res_L, res_R;
@@ -628,7 +621,7 @@ void eles_quads::compute_filter_upts(void)
     }
   else if(run_input.filter_type==2) // Modal coefficient filter
     {
-      cout<<"Building modal filter"<<endl;
+      if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute modal filter
       compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
@@ -640,7 +633,7 @@ void eles_quads::compute_filter_upts(void)
     }
   else // Simple average
     {
-      cout<<"Building average filter"<<endl;
+      if (rank==0) cout<<"Building average filter"<<endl;
       sum=0;
       for (i=0;i<N;i++)
         {
