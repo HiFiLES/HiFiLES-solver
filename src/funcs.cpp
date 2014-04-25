@@ -312,9 +312,9 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
 
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
-	#else // inefficient matrix multiplication
+    #else // inefficient matrix multiplication
 
 	mtemp = mult_arrays(inv_vandermonde,modal);
 	filter_upts = mult_arrays(mtemp,vandermonde);
@@ -410,21 +410,21 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
   // Sharp modal cutoff filter
   //modal(N-1,N-1)=0.0;
 
-  cout<<"modal coeffs:"<<endl;
-  modal.print();
+  //cout<<"modal coeffs:"<<endl;
+  //modal.print();
 
-	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+  #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
+  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
 
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
-	#else // inefficient matrix multiplication
+  #else // inefficient matrix multiplication
 
-	mtemp = mult_arrays(inv_vandermonde,modal);
-	filter_upts = mult_arrays(mtemp,vandermonde);
+  mtemp = mult_arrays(inv_vandermonde,modal);
+  filter_upts = mult_arrays(mtemp,vandermonde);
 
-	#endif
+  #endif
 }
 
 void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_tri, int order, double c_tri, int vcjh_scheme_tri, array<double>& loc_upts_tri)
@@ -685,6 +685,8 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   array<double> coeff_gdotn((in_order+1),1);
   array<double> coeff_divg(n_upts_tri,1);
 
+  cubature_1d cub1d(20);  // TODO: CHECK STRENGTH
+
   if (in_edge==0)
     edge_length=2.;
   else if (in_edge==1)
@@ -718,7 +720,6 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   // 2. Perform the edge integrals to obtain coefficients sigma_i
   for (int i=0;i<n_upts_tri;i++)
     {
-      cubature_1d cub1d(20);  // TODO: CHECK STRENGTH
       integral = 0.;
 
       for (int j=0;j<cub1d.get_n_pts();j++)
@@ -856,7 +857,7 @@ void array_to_ellpack(array<double>& in_array, array<double>& out_data, array<in
 
   for (int i=0;i<nnz_per_row*n_rows;i++) {
       out_data(i) = 0.;
-      out_cols(i) = 0;
+      out_cols(i) = 0.;
     }
 
   //cout << "nnz_per_row*n_rows=" << nnz_per_row*n_rows << endl;
