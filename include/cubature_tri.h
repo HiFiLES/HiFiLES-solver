@@ -39,9 +39,6 @@ public:
 
   // #### methods ####
 
-  // method to initialize a cubature_tri rule
-  void set_order(int in_order);
-
   // method to get number of cubature_tri points
   int get_n_pts(void);
 
@@ -67,4 +64,7 @@ public:
 
   // weight of cubature_tri points
   array<double> weights;
+  
+  // cubature data file
+  ifstream datfile;
 };
