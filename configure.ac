@@ -217,21 +217,12 @@ then
 		then
 			AC_MSG_ERROR([ParMETIS requested but ParMETIS header file not found.])
 		fi
-<<<<<<< HEAD
-		
-		AC_CHECK_FILE([$with_ParMetis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
-=======
 				
 		AC_CHECK_FILE([$with_Metis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
->>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
 		if test "$have_ParMetis" == "no"
 		then
 			AC_MSG_ERROR([ParMETIS requested but METIS header file not found.])
 		fi
-<<<<<<< HEAD
-		
-=======
->>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
 	else
 		have_ParMetis="no"
 	fi  
@@ -240,13 +231,8 @@ fi
 if test "$have_ParMetis" != "no"
 then
   	AM_CONDITIONAL(BUILD_PARMETIS,true)
-<<<<<<< HEAD
-	PARMETIS_CXX="-I$with_ParMetis_include"
-	PARMETIS_LD="$with_ParMetis_lib/libparmetis.a $with_ParMetis_lib/libmetis.a"
-=======
 	PARMETIS_CXX="-I$with_Metis_include -I$with_ParMetis_include"
 	PARMETIS_LD="$with_ParMetis_lib/$ParMETISlib $with_Metis_lib/$METISlib"
->>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
 else
 	AM_CONDITIONAL(BUILD_PARMETIS,false)
 	PARMETIS_CXX=-DNO_PARMETIS
@@ -400,5 +386,7 @@ Build Configuration Summary:
     CUDA support:         $have_CUDA
     ParMetis support:     $have_ParMetis
     TecIO support:        $have_Tecio
+
+Additionally, don't forget to set environment variable HIFILES_HOME
 
 ])

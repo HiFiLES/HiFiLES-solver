@@ -950,7 +950,6 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
 }
 
-<<<<<<< HEAD
 void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg,
               array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, int& out_n_verts_global, struct solution* FlowSol)
 {
