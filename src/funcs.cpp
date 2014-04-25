@@ -307,8 +307,8 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
   // Sharp cutoff filter
   //modal(N-1,N-1) = 1.0;
 
-	cout<<"modal coeffs:"<<endl;
-	modal.print();
+	//cout<<"modal coeffs:"<<endl;
+	//modal.print();
 
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
@@ -339,7 +339,7 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
   // Exponential filter (SVV method) (similar to Meister et al 2009)
 
   // Full form: alpha = Cp*(p+1)*dt/delta
-  alpha = Cp*p;
+  /*alpha = Cp*p;
 
   for(i=0;i<p+1;i++) {
     for(j=0;j<p-i+1;j++) {
@@ -347,7 +347,7 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
       modal(ind,ind) = exp(-alpha*pow(eta,2*p));
       ind++;
     }
-  }
+  }*/
 
   // Gaussian filter in modal space (from SD3D)
   for(i=0;i<N;i++) {
@@ -358,8 +358,8 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
   // Sharp modal cutoff filter
   //modal(N-1,N-1)=0.0;
 
-	cout<<"modal coeffs:"<<endl;
-	modal.print();
+	//cout<<"modal coeffs:"<<endl;
+	//modal.print();
 
 	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 

@@ -552,7 +552,6 @@ void eles_quads::compute_filter_upts(void)
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
-      printf("\nBuilding discrete Gaussian filter\n");
       int ctype,index;
       double k_R, k_L, coeff;
       double res_0, res_L, res_R;
@@ -563,22 +562,17 @@ void eles_quads::compute_filter_upts(void)
 
       if(N != n_cubpts_1d)
         {
-          cout<<"WARNING: To build Gaussian filter, the interface cubature order must equal solution order, e.g. inters_cub_order=9 if order=4, inters_cub_order=7 if order=3, inters_cub_order=5 if order=2. Exiting"<<endl;
-          cout<<"order: "<<order<<", inters_cub_order: "<<inters_cub_order<<endl;
-          exit(1);
+          FatalError("WARNING: To build Gaussian filter, the interface cubature order must equal solution order, e.g. inters_cub_order=9 if order=4, inters_cub_order=7 if order=3, inters_cub_order=5 if order=2. Exiting");
         }
       for (j=0;j<n_cubpts_1d;++j)
         wf(j) = cub_1d.get_weight(j);
 
-      cout<<setprecision(10)<<"1D weights:"<<endl;
-      wf.print();
       // Determine corrected filter width for skewed quadrature points
       // using iterative constraining procedure
       // ctype options: (-1) no constraining, (0) constrain moment, (1) constrain cutoff frequency
       ctype = -1;
       if(ctype>=0)
         {
-          cout<<"Iterative cutoff procedure"<<endl;
           for (i=0;i<N2;i++)
             {
               for (j=0;j<N;j++)
@@ -616,9 +610,6 @@ void eles_quads::compute_filter_upts(void)
         for (i=0;i<N;i++)
           alpha(i) = k_c;
 
-      cout<<"alpha: "<<endl;
-      alpha.print();
-
       sum = 0.0;
       for (i=0;i<N;i++)
         {
@@ -637,7 +628,7 @@ void eles_quads::compute_filter_upts(void)
     }
   else if(run_input.filter_type==2) // Modal coefficient filter
     {
-      printf("\nBuilding modal filter\n");
+      cout<<"Building modal filter"<<endl;
 
       // Compute modal filter
       compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
@@ -649,7 +640,7 @@ void eles_quads::compute_filter_upts(void)
     }
   else // Simple average
     {
-      printf("\nBuilding average filter\n");
+      cout<<"Building average filter"<<endl;
       sum=0;
       for (i=0;i<N;i++)
         {
@@ -660,10 +651,6 @@ void eles_quads::compute_filter_upts(void)
             }
         }
     }
-
-  printf("\n1D filter:\n");
-  filter_upts_1D.print();
-  cout<<"coeff sum " << sum << endl;
 
   // Build 2D filter on ideal (reference) element.
   int ii=0;
@@ -686,10 +673,6 @@ void eles_quads::compute_filter_upts(void)
           ++ii;
         }
     }
-  printf("\n2D filter:\n");
-  filter_upts.print();
-  cout<<"2D coeff sum " << sum << endl;
-  printf("\nLeaving filter computation function\n");
 }
 
 
