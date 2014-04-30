@@ -18,7 +18,7 @@ order                             // Order of basis polynomials
 dt 
 0.001
 n_steps
-30
+25
 adv_type                          // 0: Forward Euler, 3: RK45
 3
 tau 
