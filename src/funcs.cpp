@@ -298,7 +298,7 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
     ind++;
   }*/
 
-  // Gaussian filter in modal space (from SD3D)
+  // Gaussian filter in modal space
   for(i=0;i<N;i++) {
     eta = i/double(N);
     modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
@@ -349,7 +349,7 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
     }
   }*/
 
-  // Gaussian filter in modal space (from SD3D)
+  // Gaussian filter in modal space
   for(i=0;i<N;i++) {
     eta = i/double(N);
     modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
@@ -402,7 +402,7 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
     }
   }*/
 
-  // Gaussian filter in modal space (from SD3D)
+  // Gaussian filter in modal space
   for(i=0;i<N;i++) {
     eta = i/double(N);
     modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
