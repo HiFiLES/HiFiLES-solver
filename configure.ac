@@ -15,9 +15,13 @@
 AC_INIT([HiFiLES], [1.0.0], [HiFiLES-dev@lists.stanford.edu],
         [HiFiLES], [http://hifiles.stanford.edu])
 AC_PREREQ([2.59])
-AC_CONFIG_MACRO_DIR([m4])
+# AC_CONFIG_MACRO_DIR([m4])
+#AM_INIT_AUTOMAKE([subdir-objects foreign])
 AM_INIT_AUTOMAKE([foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
+
+top_dir=`pwd`
+AC_SUBST([top_dir])
 
 # --------------------------------------------------------------
 # Build up contributed packages that we will build from source
@@ -372,6 +376,7 @@ Build Configuration Summary:
     Linker flags:         ${LDFLAGS}
     BLAS support:         $have_BLAS
     MPI support:          $have_MPI
+    CUDA support:         $have_CUDA
     ParMetis support:     $have_ParMetis
     TecIO support:        $have_Tecio
 

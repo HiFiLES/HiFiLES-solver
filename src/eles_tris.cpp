@@ -643,7 +643,6 @@ void eles_tris::fill_opp_3(array<double>& opp_3)
 // Filtering operators for use in subgrid-scale modelling
 void eles_tris::compute_filter_upts(void)
 {
-  printf("\nEntering filter computation function\n");
   int i,j,k,l,N,N2;
   double dlt, k_c, sum, vol, norm;
   N = n_upts_per_ele;
@@ -658,19 +657,16 @@ void eles_tris::compute_filter_upts(void)
 
   // Approx resolution in element (assumes uniform point spacing)
   dlt = 2.0/order;
-  printf("\nN, N2, dlt, k_c:\n");
-  cout << N << ", " << N2 << ", " << dlt << ", " << k_c << endl;
 
   if(run_input.filter_type==0) // Vasilyev filter
     {
-      printf("Vasilyev filters not implemented for tris. Exiting.");
-      exit(1);
+      FatalError("Vasilyev filters not implemented for tris. Exiting.");
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
       //#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-      printf("\nBuilding discrete Gaussian filter\n");
+      if (rank==0) cout<<"Building discrete Gaussian filter"<<endl;
       int ctype;
       double k_R, k_L, coeff;
       double res_0, res_L, res_R;
@@ -682,14 +678,10 @@ void eles_tris::compute_filter_upts(void)
 
       if(N != n_cubpts_per_ele)
         {
-          cout<<"WARNING: Gaussian filter only currently possible for order 1, 2 or 4. If order 1, set vol_cub_order to 2. If order 2, set vol_cub_order to 3 or 4. If order 4, set vol_cub_order to 7. Exiting"<<endl;
-          cout<<"order: "<<order<<", vol_cub_order: "<<volume_cub_order<<endl;
-          exit(1);
+          FatalError("WARNING: Gaussian filter only currently possible for order 1, 2 or 4. If order 1, set vol_cub_order to 2. If order 2, set vol_cub_order to 3 or 4. If order 4, set vol_cub_order to 7. Exiting");
         }
 
       X = loc_upts;
-      printf("\n2D solution point coordinates:\n");
-      X.print();
 
       // Normalised solution point separation: r = sqrt((x_a-x_b)^2 + (y_a-y_b)^2)
       for (i=0;i<N;i++)
@@ -699,14 +691,8 @@ void eles_tris::compute_filter_upts(void)
         for (j=0;j<i;j++)
           beta(i,j) = beta(j,i);
 
-      printf("\nNormalised cubature point separation beta:\n");
-      beta.print();
-
       for (j=0;j<N;++j)
         wf(j) = weight_volume_cubpts(j);
-
-      cout<<setprecision(10)<<"Tri weights:"<<endl;
-      wf.print();
 
       // Determine corrected filter width for skewed quadrature points
       // using iterative constraining procedure
@@ -714,7 +700,6 @@ void eles_tris::compute_filter_upts(void)
       ctype = -1;
       if(ctype>=0)
         {
-          cout<<"Iterative cutoff procedure"<<endl;
           for(i=0;i<N2;i++)
             {
               for(j=0;j<N;j++)
@@ -753,8 +738,6 @@ void eles_tris::compute_filter_upts(void)
           for(i=0;i<N;i++)
             alpha(i) = k_c;
         }
-      cout<<"alpha: "<<endl;
-      alpha.print();
 
       sum = 0.0;
       for(i=0;i<N;i++)
@@ -771,23 +754,17 @@ void eles_tris::compute_filter_upts(void)
               sum += filter_upts(i,j);
             }
         }
-      printf("filter_upts:\n");
-      filter_upts.print();
     }
   else if(run_input.filter_type==2) // Modal coefficient filter
     {
-      printf("\nBuilding modal filter\n");
+      if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute modal filter
       compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order);
-
-      printf("\nFilter:\n");
-      filter_upts.print();
-
     }
   else // Simple average for low order
     {
-      printf("\nBuilding average filter\n");
+      if (rank==0) cout<<"Building average filter"<<endl;
       for(i=0;i<N;i++)
         for(j=0;j<N;j++)
           filter_upts(i,j) = 1.0/N;
@@ -802,13 +779,12 @@ void eles_tris::compute_filter_upts(void)
           filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
         }
     }
-  printf("\nFilter after symmetrising:\n");
-  filter_upts.print();
+
   for(i=0;i<N2;i++)
     {
       norm = 0.0;
       for(j=0;j<N;j++)
-        norm += filter_upts(i,j); // or abs(filter_upts(i,j))?
+        norm += filter_upts(i,j);
       for(j=0;j<N;j++)
         filter_upts(i,j) /= norm;
       for(j=0;j<N;j++)
@@ -818,12 +794,6 @@ void eles_tris::compute_filter_upts(void)
   for(i=0;i<N;i++)
     for(j=0;j<N;j++)
       sum+=filter_upts(i,j);
-
-  printf("\nFilter after normalising:\n");
-  filter_upts.print();
-  cout<<"coeff sum " << sum << endl;
-
-  printf("\nLeaving filter computation function\n");
 }
 
 

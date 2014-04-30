@@ -287,23 +287,25 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 	zero_array(modal);
 	zero_array(filter_upts);
 
-	// Full form: alpha = Cp*p*dt
-	alpha = Cp*p;
+  // Exponential filter (SVV method) (similar to Meister et al 2009)
 
-	for(i=0;i<p+1;i++) {
-		// Exponential filter (SVV method) (similar to Meister et al 2009)
-		eta = i/(p+1.0);
-		modal(ind,ind) = exp(-alpha*pow(eta,2*p));
+  // Full form: alpha = Cp*p*dt
+  /*alpha = Cp*p;
 
-		// Gaussian filter in modal space (from SD3D)
-		//modal(ind,ind) = exp(-pow(pi*eta,2.0)/24.0);
+  for(i=0;i<p+1;i++) {
+    eta = i/(p+1.0);
+    modal(ind,ind) = exp(-alpha*pow(eta,2*p));
+    ind++;
+  }*/
 
-		// Sharp cutoff filter
-		//if(i+j<order)
-			//modal(ind,ind) = 1.0;
+  // Gaussian filter in modal space (from SD3D)
+  for(i=0;i<N;i++) {
+    eta = i/double(N);
+    modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
+  }
 
-		ind++;
-	}
+  // Sharp cutoff filter
+  //modal(N-1,N-1) = 1.0;
 
 	//cout<<"modal coeffs:"<<endl;
 	//modal.print();
@@ -312,9 +314,9 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
 
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
-	#else // inefficient matrix multiplication
+    #else // inefficient matrix multiplication
 
 	mtemp = mult_arrays(inv_vandermonde,modal);
 	filter_upts = mult_arrays(mtemp,vandermonde);
@@ -334,28 +336,27 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 	zero_array(modal);
 	zero_array(filter_upts);
 
-	// Full form: alpha = Cp*(p+1)*dt/delta
-	alpha = Cp*p;
+  // Exponential filter (SVV method) (similar to Meister et al 2009)
 
-	for(i=0;i<p+1;i++) {
-		for(j=0;j<p-i+1;j++) {
-			// Exponential filter (SVV method) (similar to Meister et al 2009)
-			eta = (i+j)/(p+1.0);
-			modal(ind,ind) = exp(-alpha*pow(eta,2*p));
+  // Full form: alpha = Cp*(p+1)*dt/delta
+  /*alpha = Cp*p;
 
-			// Gaussian filter in modal space (from SD3D)
-			//modal(ind,ind) = exp(-pow(pi*eta,2.0)/24.0);
+  for(i=0;i<p+1;i++) {
+    for(j=0;j<p-i+1;j++) {
+      eta = (i+j)/(p+1.0);
+      modal(ind,ind) = exp(-alpha*pow(eta,2*p));
+      ind++;
+    }
+  }*/
 
-			// Sharp cutoff filter
-			//if(i+j<order)
-				//modal(ind,ind) = 1.0;
+  // Gaussian filter in modal space (from SD3D)
+  for(i=0;i<N;i++) {
+    eta = i/double(N);
+    modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
+  }
 
-			ind++;
-		}
-	}
-
-	// Sharp modal cutoff filter
-	//modal(N-1,N-1)=0.0;
+  // Sharp modal cutoff filter
+  //modal(N-1,N-1)=0.0;
 
 	//cout<<"modal coeffs:"<<endl;
 	//modal.print();
@@ -375,7 +376,7 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 }
 
 // Compute a modal filter matrix for a tetrahedral element, given Vandermonde matrix and inverse
-void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, double k_c, int N, int order)
+void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order)
 {
 	int i,j,k,ind=0;
 	double Cp=0.1;     // Dubiner SVV filter strength coeff.
@@ -403,28 +404,28 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
 
   // Gaussian filter in modal space (from SD3D)
   for(i=0;i<N;i++) {
-    eta = i/N;
+    eta = i/double(N);
     modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
   }
 
   // Sharp modal cutoff filter
   //modal(N-1,N-1)=0.0;
 
-  cout<<"modal coeffs:"<<endl;
-  modal.print();
+  //cout<<"modal coeffs:"<<endl;
+  //modal.print();
 
-	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+  #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
+  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
 
-	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
-	#else // inefficient matrix multiplication
+  #else // inefficient matrix multiplication
 
-	mtemp = mult_arrays(inv_vandermonde,modal);
-	filter_upts = mult_arrays(mtemp,vandermonde);
+  mtemp = mult_arrays(inv_vandermonde,modal);
+  filter_upts = mult_arrays(mtemp,vandermonde);
 
-	#endif
+  #endif
 }
 
 void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_tri, int order, double c_tri, int vcjh_scheme_tri, array<double>& loc_upts_tri)
@@ -685,6 +686,8 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   array<double> coeff_gdotn((in_order+1),1);
   array<double> coeff_divg(n_upts_tri,1);
 
+  cubature_1d cub1d(20);  // TODO: CHECK STRENGTH
+
   if (in_edge==0)
     edge_length=2.;
   else if (in_edge==1)
@@ -718,7 +721,6 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   // 2. Perform the edge integrals to obtain coefficients sigma_i
   for (int i=0;i<n_upts_tri;i++)
     {
-      cubature_1d cub1d(20);  // TODO: CHECK STRENGTH
       integral = 0.;
 
       for (int j=0;j<cub1d.get_n_pts();j++)
@@ -856,7 +858,7 @@ void array_to_ellpack(array<double>& in_array, array<double>& out_data, array<in
 
   for (int i=0;i<nnz_per_row*n_rows;i++) {
       out_data(i) = 0.;
-      out_cols(i) = 0;
+      out_cols(i) = 0.;
     }
 
   //cout << "nnz_per_row*n_rows=" << nnz_per_row*n_rows << endl;
