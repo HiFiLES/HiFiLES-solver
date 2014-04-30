@@ -48,7 +48,7 @@
 /* Begin PBXFileReference section */
 		05CCBC7F1824724D0074A979 /* HiFiLES */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HiFiLES; sourceTree = BUILT_PRODUCTS_DIR; };
 		05CCBC8F1824729C0074A979 /* bdy_inters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = bdy_inters.cpp; path = src/bdy_inters.cpp; sourceTree = "<group>"; };
-		05CCBC901824729C0074A979 /* cubature_1d.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cubature_1d.cpp; path = src/cubature_1d.cpp; sourceTree = "<group>"; };
+		05CCBC901824729C0074A979 /* cubature_1d.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.cpp.cpp; name = cubature_1d.cpp; path = src/cubature_1d.cpp; sourceTree = "<group>"; tabWidth = 2; };
 		05CCBC911824729C0074A979 /* cubature_hexa.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cubature_hexa.cpp; path = src/cubature_hexa.cpp; sourceTree = "<group>"; };
 		05CCBC921824729C0074A979 /* cubature_quad.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cubature_quad.cpp; path = src/cubature_quad.cpp; sourceTree = "<group>"; };
 		05CCBC931824729C0074A979 /* cubature_tet.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cubature_tet.cpp; path = src/cubature_tet.cpp; sourceTree = "<group>"; };
