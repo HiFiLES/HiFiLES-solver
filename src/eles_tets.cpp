@@ -609,7 +609,6 @@ void eles_tets::set_tnorm_fpts(void)
 // Filtering operators for use in subgrid-scale modelling
 void eles_tets::compute_filter_upts(void)
 {
-  printf("\nEntering filter computation function\n");
   int i,j,k,l,N,N2;
   double dlt, k_c, sum, vol, norm;
   N = n_upts_per_ele;
@@ -621,8 +620,6 @@ void eles_tets::compute_filter_upts(void)
   filter_upts.setup(N,N);
 
   X = loc_upts;
-  printf("\n3D solution point coordinates:\n");
-  X.print();
 
   N2 = N/2;
   // If N is odd, round up N/2
@@ -632,8 +629,6 @@ void eles_tets::compute_filter_upts(void)
 
   // Approx resolution in element (assumes uniform point spacing)
   dlt = 2.0/order;
-  printf("\nN, N2, dlt, k_c:\n");
-  cout << N << ", " << N2 << ", " << dlt << ", " << k_c << endl;
 
   // Normalised solution point separation: r = sqrt((x_a-x_b)^2 + (y_a-y_b)^2)
   for (i=0;i<N;i++)
@@ -643,38 +638,30 @@ void eles_tets::compute_filter_upts(void)
     for (j=0;j<i;j++)
       beta(i,j) = beta(j,i);
 
-  printf("\nNormalised solution point separation beta:\n");
-  beta.print();
-
   if(run_input.filter_type==0) // Vasilyev filter
     {
-      printf("Vasilyev filters not implemented for tris. Exiting.");
-      exit(1);
+      FatalError("Vasilyev filters not implemented for tris. Exiting.");
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
-      printf("\nBuilding discrete Gaussian filter\n");
+      if (rank==0) cout<<"Building discrete Gaussian filter"<<endl;
 
       if(N != n_cubpts_per_ele)
         {
-          cout<<"WARNING: Gaussian filter cannot be built for tets since n_upts_per_ele != n_cubpts_per_ele for any order. Exiting"<<endl;
-          exit(1);
+          FatalError("WARNING: Gaussian filter cannot be built for tets since n_upts_per_ele != n_cubpts_per_ele for any order. Exiting");
         }
     }
   else if(run_input.filter_type==2) // Modal coefficient filter
     {
-      printf("\nBuilding modal filter\n");
+      if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute modal filter
       compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order);
 
-      //printf("\nFilter:\n");
-      //filter_upts.print();
-
     }
   else // Simple average for low order
     {
-      printf("\nBuilding average filter\n");
+      if (rank==0) cout<<"Building average filter"<<endl;
       sum=0;
       for(i=0;i<N;i++)
         {
@@ -695,8 +682,7 @@ void eles_tets::compute_filter_upts(void)
           filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
         }
     }
-  //printf("\nFilter after symmetrising:\n");
-  //filter_upts.print();
+
   for(i=0;i<N2;i++)
     {
       norm = 0.0;
@@ -707,16 +693,11 @@ void eles_tets::compute_filter_upts(void)
       for(j=0;j<N;j++)
         filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
     }
+
   sum = 0;
   for(i=0;i<N;i++)
     for(j=0;j<N;j++)
       sum+=filter_upts(i,j);
-
-  printf("\nFilter after normalising:\n");
-  filter_upts.print();
-  cout<<"coeff sum " << sum << endl;
-
-  printf("\nLeaving filter computation function\n");
 }
 
 
@@ -1072,13 +1053,13 @@ void eles_tets::fill_opp_3(array<double>& opp_3)
 
   //cout << "opp_3_dg" << endl;
   //opp_3_dg.print();
-  cout << endl;
+  //cout << endl;
 
   m_temp = mult_arrays(Filt,opp_3_dg);
 
   //cout << "opp_3_vcjh" << endl;
   //m_temp.print();
-  cout << endl;
+  //cout << endl;
   opp_3 = array<double>(m_temp);
 }
 

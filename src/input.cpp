@@ -86,7 +86,6 @@ void input::setup(ifstream& in_run_input_file, int rank)
       while(!in_run_input_file.eof())
         {
           in_run_input_file.getline(buf,BUFSIZ);
-          cout << buf << endl;
         }
       // Rewind
       in_run_input_file.clear();
@@ -602,6 +601,11 @@ void input::setup(ifstream& in_run_input_file, int rank)
         FatalError("Initial condition not supported with Advection-Diffusion equation");
     }
 
+  
+  if (rank==0)
+    cout << endl << "---------------------- Non-dimensionalization ---------------------" << endl;
+
+  
   if(viscous)
     {
       if(ic_form == 0)  {

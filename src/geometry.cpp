@@ -77,8 +77,8 @@ void SetInput(struct solution* FlowSol) {
 
   /*! Associate a GPU to each rank. */
   // Cluster:
-  if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
-  if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+//  if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
+//  if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
   // Enrico:
 //  if (FlowSol->rank==0) { cudaSetDevice(2); }
 //  else if (FlowSol->rank==1) { cudaSetDevice(0); }
@@ -94,21 +94,21 @@ int get_bc_number(string& bcname) {
 
   int bcflag;
 
-  if (!bcname.compare("Sub_In_Simp")) bcflag = 1;
-  else if (!bcname.compare("Sub_Out_Simp")) bcflag = 2;
-  else if (!bcname.compare("Sub_In_Char")) bcflag = 3;
-  else if (!bcname.compare("Sub_Out_Char")) bcflag = 4;
-  else if (!bcname.compare("Sup_In")) bcflag = 5;
-  else if (!bcname.compare("Sup_Out")) bcflag = 6;
-  else if (!bcname.compare("Slip_Wall")) bcflag = 7;
+  if (!bcname.compare("Sub_In_Simp")) bcflag = 1;         // Subsonic inflow simple (free pressure) //
+  else if (!bcname.compare("Sub_Out_Simp")) bcflag = 2;   // Subsonic outflow simple (fixed pressure) //
+  else if (!bcname.compare("Sub_In_Char")) bcflag = 3;    // Subsonic inflow characteristic //
+  else if (!bcname.compare("Sub_Out_Char")) bcflag = 4;   // Subsonic outflow characteristic //
+  else if (!bcname.compare("Sup_In")) bcflag = 5;         // Supersonic inflow //
+  else if (!bcname.compare("Sup_Out")) bcflag = 6;        // Supersonic outflow //
+  else if (!bcname.compare("Slip_Wall")) bcflag = 7;      // Slip wall //
   else if (!bcname.compare("Cyclic")) bcflag = 9;
-  else if (!bcname.compare("Isotherm_Fix")) bcflag = 11;
-  else if (!bcname.compare("Adiabat_Fix")) bcflag = 12;
-  else if (!bcname.compare("Isotherm_Move")) bcflag = 13;
-  else if (!bcname.compare("Adiabat_Move")) bcflag = 14;
-  else if (!bcname.compare("Char")) bcflag = 15;
-  else if (!bcname.compare("Slip_Wall_Dual")) bcflag = 16;
-  else if (!bcname.compare("AD_Wall")) bcflag = 50;
+  else if (!bcname.compare("Isotherm_Fix")) bcflag = 11;  // Isothermal, no-slip wall //
+  else if (!bcname.compare("Adiabat_Fix")) bcflag = 12;   // Adiabatic, no-slip wall //
+  else if (!bcname.compare("Isotherm_Move")) bcflag = 13; // Isothermal, no-slip moving wall //
+  else if (!bcname.compare("Adiabat_Move")) bcflag = 14;  // Adiabatic, no-slip moving wall //
+  else if (!bcname.compare("Char")) bcflag = 15;          // Characteristic //
+  else if (!bcname.compare("Slip_Wall_Dual")) bcflag = 16;// Dual consistent BC //
+  else if (!bcname.compare("AD_Wall")) bcflag = 50;       // Advection, Advection-Diffusion Boundary Conditions //
   else
     {
       cout << "Boundary=" << bcname << endl;
@@ -184,12 +184,10 @@ void GeoPreprocess(struct solution* FlowSol) {
 
   // Error checking
   if (FlowSol->n_dims == 2 && (num_tets != 0 || num_pris != 0 || num_hexas != 0)) {
-      cout << "Error in mesh reader, n_dims=2 and 3d elements exists" << endl;
-      exit(1);
+      FatalError("Error in mesh reader, n_dims=2 and 3d elements exists");
     }
   if (FlowSol->n_dims == 3 && (num_tris!= 0 || num_quads != 0)) {
-      cout << "Error in mesh reader, n_dims=3 and 2d elements exists" << endl;
-      exit(1);
+      FatalError("Error in mesh reader, n_dims=3 and 2d elements exists");
     }
 
   // For each element type, count the maximum number of shape points per element
@@ -226,6 +224,9 @@ void GeoPreprocess(struct solution* FlowSol) {
     {
       FlowSol->mesh_eles(i)->set_rank(FlowSol->rank);
     }
+
+  if (FlowSol->rank==0)
+    cout << endl << "---------------- Flux Reconstruction Preprocessing ----------------" << endl;
 
   if (FlowSol->rank==0) cout << "initializing elements" << endl;
   if (FlowSol->rank==0) cout << "tris" << endl;
@@ -630,8 +631,7 @@ void GeoPreprocess(struct solution* FlowSol) {
             {
               if (ic_r==-1)
                 {
-                  cout << "Error: Interior interface has ic_r=-1. Should not be here, exiting" << endl;
-                  exit(1);
+                  FatalError("Error: Interior interface has i_cell_right=-1. Should not be here, exiting");
                 }
               n_int_inters++;
               if (f2nv(i)==2) n_seg_int_inters++;
@@ -896,6 +896,9 @@ void GeoPreprocess(struct solution* FlowSol) {
 
 void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg, array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, struct solution* FlowSol) {
 
+  if (FlowSol->rank==0)
+    cout << endl << "----------------------- Mesh Preprocessing ------------------------" << endl;
+
   if (FlowSol->rank==0) cout << "reading connectivity" << endl;
   if (run_input.mesh_format==0) { // Gambit
       read_connectivity_gambit(in_file_name, out_n_cells, out_c2v, out_c2n_v, out_ctype, out_ic2icg, FlowSol);
@@ -1112,9 +1115,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
             }
           else
             {
-              cout << "ERROR: cannot handle other element type in readbnd" << endl;
-              exit(1);
-
+              FatalError("ERROR: cannot handle other element type in readbnd");
             }
           // Check if cell icg belongs to processor
           index = index_locate_int(icg,cell_list.get_ptr_cpu(),in_n_cells);
@@ -1308,8 +1309,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
               cout << "num_v_per_face=" << num_v_per_f << endl;
               cout << "vlist_boun(0)=" << vlist_boun(0) << " vlist_boun(1)=" << vlist_boun(1) << endl;
               cout << "vlist_boun(2)=" << vlist_boun(2) << " vlist_boun(3)=" << vlist_boun(3) << endl;
-              cout << "Warning, all nodes of boundary face belong to processor but could not find the coresponding faces" << endl;
-              exit(1);
+              FatalError("All nodes of boundary face belong to processor but could not find the coresponding faces");
             }
 
         } // If all vertices belong to processor
@@ -3092,8 +3092,7 @@ void compare_faces(array<int>& vlist1, array<int>& vlist2, int& num_v_per_f, int
     }
   else
     {
-      cout << "ERROR: Haven't implemented this face type in compare_face yet...." << endl;
-      exit(1);
+      FatalError("ERROR: Haven't implemented this face type in compare_face yet....");
     }
 
 }
@@ -3261,8 +3260,7 @@ void compare_cyclic_faces(array<double> &xvert1, array<double> &xvert2, int& num
         }
       else
         {
-          cout << "ERROR: Haven't implemented this face type in compare_cyclic_face yet...." << endl;
-          exit(1);
+          FatalError("ERROR: Haven't implemented this face type in compare_cyclic_face yet....");
         }
     }
 
@@ -3705,8 +3703,7 @@ void compare_mpi_faces(array<double> &xvert1, array<double> &xvert2, int& num_v_
         }
       else
         {
-          cout << "ERROR: Haven't implemented this face type in compare_cyclic_face yet...." << endl;
-          exit(1);
+          FatalError("ERROR: Haven't implemented this face type in compare_cyclic_face yet....");
         }
     }
 

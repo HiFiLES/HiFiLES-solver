@@ -855,50 +855,34 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
             FatalError("ERROR: Invalid number of dimensions ... ");
 
 
+          // If LES (but no wall model?), get SGS flux and add to viscous flux
+          if(LES) {
+
+            for(int k=0;k<n_dims;k++)
+              {
+                for(int l=0;l<n_fields;l++)
+                  {
+
+                    // pointer to subgrid-scale flux
+                    temp_sgsf_l(l,k) = *sgsf_fpts_l(j,i,l,k);
+
+                    // Add SGS flux to viscous flux
+                    temp_f_l(l,k) += temp_sgsf_l(l,k);
+                  }
+              }
+          }
+
           /*! Calling viscous riemann solver */
           if (run_input.vis_riemann_solve_type==0)
             ldg_flux(flux_spec,temp_u_l,temp_u_r,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.tau,run_input.pen_fact);
           else
             FatalError("Viscous Riemann solver not implemented");
 
-      if(n_dims==2) {
-        if(flux_spec == 1) calc_visf_2d(temp_u_l,temp_grad_u_l,temp_f_l);
-        else if(flux_spec == 2)calc_visf_2d(temp_u_r,temp_grad_u_r,temp_f_r);
-        else FatalError("Invalid viscous flux specification");
-      }
-      else if(n_dims==3)  {
-        if(flux_spec == 1) calc_visf_3d(temp_u_l,temp_grad_u_l,temp_f_l);
-        else if(flux_spec == 2)calc_visf_3d(temp_u_r,temp_grad_u_r,temp_f_r);
-        else FatalError("Invalid viscous flux specification");
-      }
-      else
-        FatalError("ERROR: Invalid number of dimensions ... ");
-
-      // If LES (but no wall model?), get SGS flux and add to viscous flux
-      if(LES) {
-        for(int k=0;k<n_dims;k++) {
-          for(int l=0;l<n_fields;l++) {
-            // pointer to subgrid-scale flux
-            temp_sgsf_l(l,k) = *sgsf_fpts_l(j,i,l,k);
-
-            // Add SGS flux to viscous flux
-            temp_f_l(l,k) += temp_sgsf_l(l,k);
-          }
+          /*! Transform back to reference space. */
+          for(int k=0;k<n_fields;k++)
+            (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
         }
-      }
-
-      /*! Calling viscous riemann solver. */
-
-      if (run_input.vis_riemann_solve_type==0)
-        ldg_flux(flux_spec,temp_u_l,temp_u_r,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.tau,run_input.pen_fact);
-      else
-        FatalError("Viscous Riemann solver not implemented");
-
-      /*! Transform back to reference space. */
-      for(int k=0;k<n_fields;k++)
-        (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
     }
-  }
 
 #endif
 
