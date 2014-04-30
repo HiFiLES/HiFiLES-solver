@@ -211,7 +211,7 @@ if __name__=="__main__":
   sqcyl.cfg_dir      = "testcases/navier-stokes/square_cylinder/"
   sqcyl.cfg_file     = "input_sqcyl_wsm_tet"
   sqcyl.test_iter    = 10
-  sqcyl.test_vals    = [0.64342501,2.70244090,0.24179514,0.13909374,16.76245707,20.07329013,0.03611202,0.00010632]
+  sqcyl.test_vals    = [0.64471221,2.70391512,0.24385134,0.14111932,16.79818472,20.05215009,0.03604174,0.00009637]
   sqcyl.mpi_cmd      = "mpirun -np 8"
   sqcyl.HiFiLES_exec = "HiFiLES"
   sqcyl.timeout      = 1600
