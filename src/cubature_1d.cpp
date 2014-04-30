@@ -40,16 +40,17 @@ cubature_1d::cubature_1d(int in_order) // set by number of points
   ifstream datfile;
   char buf[BUFSIZ]={""};
   char section_TXT[100], param_TXT[100];
+  char* f;
   string filename, param_name, param, ord;
   istringstream strbuf;
-  int order_file;
+  int n_pts_file;
 
   order=in_order;
   n_pts = (order+1)/2;
   locs.setup(n_pts);
   weights.setup(n_pts);
   
-  if(order < 13) {
+  if(n_pts < 13) {
 
     // get env var specifying location of data directory?
     //const char* HIFILES_DATADIR = getenv("HIFILES_DATA");
@@ -62,7 +63,8 @@ cubature_1d::cubature_1d(int in_order) // set by number of points
 
     filename = HIFILES_DIR;
     filename += "/data/cubature_1d.dat";
-    datfile.open(filename, ifstream::in);
+    f = (char*)filename.c_str();
+    datfile.open(f, ifstream::in);
     if (!datfile) FatalError("Unable to open cubature file");
     
     // read data from file to arrays
@@ -71,15 +73,15 @@ cubature_1d::cubature_1d(int in_order) // set by number of points
       sscanf(buf,"%s",&section_TXT);
       param_name.assign(section_TXT,0,99);
       
-      if(!param_name.compare(0,5,"order"))
+      if(!param_name.compare(0,5,"n_pts"))
       {
         // get no. of pts
         ord = param_name.substr(6);
         stringstream str(ord);
-        str >> order_file;
+        str >> n_pts_file;
         
         // if pts matches order, read locs and weights
-        if (order_file == order) {
+        if (n_pts_file == n_pts) {
           
           // skip next line
           datfile.getline(buf,BUFSIZ);

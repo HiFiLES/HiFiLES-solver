@@ -1194,6 +1194,7 @@ void CalcNormResidual(struct solution* FlowSol) {
   
   for(i=0; i<FlowSol->n_ele_types; i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+      FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
       n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
       for(j=0; j<n_fields; j++)
         sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
@@ -1220,8 +1221,8 @@ void CalcNormResidual(struct solution* FlowSol) {
       else if (run_input.res_norm_type==2) { FlowSol->norm_residual(i) = sqrt(sum[i]) / n_upts; } // L2 norm
       else FatalError("norm_type not recognized");
       
-      if (isnan(norm[i])) {
-        cout << "NaN residual at iteration. Exiting" << endl;
+      if (isnan(FlowSol->norm_residual(i))) {
+        FatalError("NaN residual encountered. Exiting");
       }
     }
     

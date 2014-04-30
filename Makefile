@@ -13,8 +13,9 @@
 
 # TODO: add config script to build parmetis and look for BLAS, parmetis, CUDA, MPI and TECIO libraries
 
-# TODO: include makefile.machine.in by looking for current machine name
-include makefiles/makefile.cluster.in
+# Copy the appropriate file from makefiles/makefile.machine.in to HIFILES_HOME as makefile.in
+# Note that this is the cluster makefile by default.
+include makefile.in
 
 # Compiler
 
