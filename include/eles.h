@@ -626,13 +626,8 @@ protected:
   /*! number of cubature points per interface */
   int n_cubpts_per_ele;
 
-<<<<<<< HEAD
   /*! element type (0=>quad,1=>tri,2=>tet,3=>pri,4=>hex) */
   int ele_type;
-=======
-	/*! extra arrays for similarity model: Leonard tensors, velocity/energy products */
-	array<double> Lu, Le, uu, ue;
->>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
 
   /*! order of polynomials defining shapes */
   int s_order;

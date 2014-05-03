@@ -12,8 +12,8 @@
 # Copyright (C) 2013 Aerospace Computing Laboratory.
 #####################################################
 # Standard (Helpful) Settings [Should not need to change these]
-HIFILES_HOME=$PWD
-HIFILES_RUN=$PWD/bin
+HIFILES_HOME=$(pwd)
+HIFILES_RUN=$(pwd)/bin
 # ---------------------------------------------------------------
 # Basic User-Modifiable Build Settings [Change these as desired]
 NODE="CPU"              # CPU or GPU

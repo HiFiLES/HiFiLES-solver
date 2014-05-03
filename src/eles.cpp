@@ -829,8 +829,10 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
               for (int inp=0;inp<n_upts_per_ele;inp++)
                 {
                   // User supplied timestep
-                  if (run_input.dt_type == 0)
+                  if (run_input.dt_type == 0) {
                     disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic)/detjac_upts(inp,ic)*gbar_upts(inp,ic) - run_input.const_src_term);
+                    //disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                  }
 
                   // Global minimum timestep
                   else if (run_input.dt_type == 1)

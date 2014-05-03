@@ -27,6 +27,7 @@ void displayMatrix(array<T> matrix) {
 
 mesh::mesh(void)
 {
+  start = true;
   n_eles = 0;
   n_verts = 0;
   n_dims = 2;
@@ -1565,10 +1566,21 @@ void mesh::set_boundary_displacements(solution *FlowSol)
 
 void mesh::rigid_move(solution* FlowSol) {
   time = iter*run_input.dt;
+
+  if(start) {
+    for (int i=0; i<n_verts; i++) {
+      xv(i,0) = xv(i,0) + run_input.bound_vel_simple(0)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
+      xv(i,1) = xv(i,1) + run_input.bound_vel_simple(1)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
+      //xv_new(i,0) = xv(i,0);
+      //xv_new(i,1) = xv(i,1);
+    }
+    start = false;
+  }
+
   for (int i=0; i<n_verts; i++) {
     // Useful for simple cases / debugging
-    xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)*cos(2*pi*time/5)*run_input.dt;
-    xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(1)*cos(2*pi*time/5)*run_input.dt;
+    xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)*cos(0.2*pi*time)*run_input.dt;
+    xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(1)*cos(0.2*pi*time)*run_input.dt;
 
     //xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)*run_input.dt;
     //xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(1)*run_input.dt;
@@ -1577,7 +1589,7 @@ void mesh::rigid_move(solution* FlowSol) {
   update(FlowSol);
 
   xv = xv_new;
-  iter++;
+  //iter++; // does nothing - iter given in Mesh.move(iter,&FlowSol)
 }
 
 void mesh::perturb(solution* FlowSol) {

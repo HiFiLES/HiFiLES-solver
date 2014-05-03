@@ -950,7 +950,6 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
 }
 
-<<<<<<< HEAD
 void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg,
               array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, int& out_n_verts_global, struct solution* FlowSol)
 {
@@ -1010,9 +1009,10 @@ void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, a
   out_bctype.initialize_to_zero();
 
   if (run_input.mesh_format==0) {
-    array<array<int> > bccells, bcfaces;
+    array<array<int> > bccells;
+    array<array<int> > bcfaces;
     read_boundary_gambit(in_file_name, in_n_cells, in_ic2icg, out_bctype, out_bc_list, bccells, bcfaces);
-    if (run_input.motion)
+    if (run_input.motion != 0)
       create_boundpts(out_boundpts, out_bc_list, out_bound_flag, bccells, bcfaces, in_c2f, in_f2v, in_f2nv);
   }
   else if (run_input.mesh_format==1) {
@@ -1164,6 +1164,9 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
   int bcNF, bcID, bcflag,icg,k, real_k, index;
   string bcname;
   char bcTXT[100];
+
+  out_bcfaces.setup(n_bcs);
+  out_bccells.setup(n_bcs);
 
   for (int i=0;i<n_bcs;i++)
     {

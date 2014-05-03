@@ -212,45 +212,33 @@ then
             with_Metis_include=$with_ParMetis_include
         fi  
     
-		AC_CHECK_FILE([$with_ParMetis_include/$ParMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
-		if test "$have_ParMetis" == "no"
-		then
-			AC_MSG_ERROR([ParMETIS requested but ParMETIS header file not found.])
-		fi
-<<<<<<< HEAD
+	AC_CHECK_FILE([$with_ParMetis_include/$ParMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+  	if test "$have_ParMetis" == "no"
+	then
+	    AC_MSG_ERROR([ParMETIS requested but ParMETIS header file not found.])
+	fi
 		
-		AC_CHECK_FILE([$with_ParMetis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
-=======
+	AC_CHECK_FILE([$with_ParMetis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
 				
-		AC_CHECK_FILE([$with_Metis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
->>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
-		if test "$have_ParMetis" == "no"
-		then
-			AC_MSG_ERROR([ParMETIS requested but METIS header file not found.])
-		fi
-<<<<<<< HEAD
-		
-=======
->>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
+	AC_CHECK_FILE([$with_Metis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+	if test "$have_ParMetis" == "no"
+	then
+	    AC_MSG_ERROR([ParMETIS requested but METIS header file not found.])
+	fi
 	else
-		have_ParMetis="no"
+  	    have_ParMetis="no"
 	fi  
 fi
 
 if test "$have_ParMetis" != "no"
 then
-  	AM_CONDITIONAL(BUILD_PARMETIS,true)
-<<<<<<< HEAD
-	PARMETIS_CXX="-I$with_ParMetis_include"
-	PARMETIS_LD="$with_ParMetis_lib/libparmetis.a $with_ParMetis_lib/libmetis.a"
-=======
-	PARMETIS_CXX="-I$with_Metis_include -I$with_ParMetis_include"
-	PARMETIS_LD="$with_ParMetis_lib/$ParMETISlib $with_Metis_lib/$METISlib"
->>>>>>> 2cccc7ab777b8de73fad0e178ad2b96a0771e36a
+  AM_CONDITIONAL(BUILD_PARMETIS,true)	
+  PARMETIS_CXX="-I$with_Metis_include -I$with_ParMetis_include"
+  PARMETIS_LD="$with_ParMetis_lib/$ParMETISlib $with_Metis_lib/$METISlib"
 else
-	AM_CONDITIONAL(BUILD_PARMETIS,false)
-	PARMETIS_CXX=-DNO_PARMETIS
-	PARMETIS_LD=
+  AM_CONDITIONAL(BUILD_PARMETIS,false)
+  PARMETIS_CXX=-DNO_PARMETIS
+  PARMETIS_LD=
 fi
 AC_SUBST([PARMETIS_CXX])
 AC_SUBST([PARMETIS_LD])

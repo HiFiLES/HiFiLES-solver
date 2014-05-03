@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
     if (FlowSol.adv_type == 3) RKSteps = 5;
     
     // Update the mesh
-    Mesh.move(i_steps,&FlowSol);
+    Mesh.move(FlowSol.ini_iter+i_steps,&FlowSol);
 
     for(i=0; i < RKSteps; i++) {
 

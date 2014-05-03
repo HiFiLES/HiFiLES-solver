@@ -128,7 +128,7 @@ public:
 
   array<double> vel_old, vel_new, xv_new;
 private:
-
+  bool start;
   array<double> xv_nm1, xv_nm2, xv_nm3;//, xv_new, vel_old, vel_new;
 
   /** Global stiffness matrix for linear elasticity solution */

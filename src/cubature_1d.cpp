@@ -65,7 +65,10 @@ cubature_1d::cubature_1d(int in_order) // set by number of points
     filename += "/data/cubature_1d.dat";
     f = (char*)filename.c_str();
     datfile.open(f, ifstream::in);
-    if (!datfile) FatalError("Unable to open cubature file");
+    if (!datfile) {
+        cout << "Cubature file name: " << filename << endl;
+        FatalError("Unable to open cubature file");
+    }
     
     // read data from file to arrays
     while(datfile.getline(buf,BUFSIZ))
