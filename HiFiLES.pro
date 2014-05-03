@@ -90,4 +90,5 @@ OTHER_FILES += \
     $$DATA_DIR/cubature_hexa.dat \
     $$DATA_DIR/cubature_1d.dat \
     $$TOP_DIR/makefile.in \
-    $$TOP_DIR/Makefile
+    $$TOP_DIR/Makefile \
+    configure.ac

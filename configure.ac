@@ -204,30 +204,31 @@ fi
 # check for header
 if test "$have_ParMetis" != "no"
 then
-	if test "$with_ParMetis_include" != "no"
-	then
-	    # Optional value for separate Metis header file location
-	    if test "$with_Metis_include" == "no"
-        then
-            with_Metis_include=$with_ParMetis_include
-        fi  
+  if test "$with_ParMetis_include" != "no"
+  then
+    # Optional value for separate Metis header file location
+    if test "$with_Metis_include" == "no"
+    then
+      with_Metis_include=$with_ParMetis_include
+    fi  
     
-	AC_CHECK_FILE([$with_ParMetis_include/$ParMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
-  	if test "$have_ParMetis" == "no"
-	then
-	    AC_MSG_ERROR([ParMETIS requested but ParMETIS header file not found.])
-	fi
+    AC_CHECK_FILE([$with_ParMetis_include/$ParMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+    if test "$have_ParMetis" == "no"
+    then
+      AC_MSG_ERROR([ParMETIS requested but ParMETIS header file not found.])
+    fi
 		
-	AC_CHECK_FILE([$with_ParMetis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
-				
-	AC_CHECK_FILE([$with_Metis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
-	if test "$have_ParMetis" == "no"
-	then
-	    AC_MSG_ERROR([ParMETIS requested but METIS header file not found.])
-	fi
-	else
-  	    have_ParMetis="no"
-	fi  
+    AC_CHECK_FILE([$with_ParMetis_include/$ParMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+
+    AC_CHECK_FILE([$with_Metis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+    if test "$have_ParMetis" == "no"
+    then
+      AC_MSG_ERROR([ParMETIS requested but METIS header file not found.])
+    fi
+
+  else
+    have_ParMetis="no"
+  fi  
 fi
 
 if test "$have_ParMetis" != "no"
@@ -388,5 +389,7 @@ Build Configuration Summary:
     CUDA support:         $have_CUDA
     ParMetis support:     $have_ParMetis
     TecIO support:        $have_Tecio
+
+Additionally, don't forget to set environment variable HIFILES_HOME
 
 ])
