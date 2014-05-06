@@ -1421,6 +1421,87 @@ void eval_isentropic_vortex(array<double>& pos, double time, double& rho, double
 
 }
 
+// Initial condition to study shock vortex interaction
+void eval_shock_vortex(array<double>& pos, double time, double& rho, double& vx, double& vy, double& vz, double& p, int n_dims)
+{
+  double gamma=run_input.gamma;
+  double ev_eps_ic= 0.5;
+  double rho_bg, u_bg, v_bg, p_bg;
+
+  double R = 4;
+//  double Re = 800;
+//  double Pr = run_input.prandtl;
+  double R_gas = run_input.R_gas;
+
+  double T_up = 298;
+  double rho_up = 1;
+  double M_up = 1.2;
+  double M_dn = 0.8422;
+  double rho_dn = 1.3416;
+  double T_dn = 1.128;
+
+  // Get upstream background flow conditions to add pertubations to
+  double a_up = sqrt(gamma*R_gas*T_up);
+  double u_up = M_up*a_up;
+  double v_up = 0;
+  double p_up = rho_up*R_gas*T_up;
+
+  // Get downstream background flow conditions to add pertubations to
+  double a_dn = sqrt(gamma*R_gas*T_dn);
+  double u_dn = M_dn*a_dn;
+  double v_dn = 0;
+  double p_dn = rho_dn*R_gas*T_dn;
+
+  double x = pos(0) + 2;
+  double y = pos(1);
+
+  if(pos(0) >= 0.05)
+    {
+      rho_bg = rho_dn;
+      u_bg = u_dn;
+      v_bg = v_dn;
+      p_bg = p_dn;
+    }
+  else
+    {
+      rho_bg = rho_up;
+      u_bg = u_up;
+      v_bg = v_up;
+      p_bg = p_up;
+    }
+
+
+  double f=1.0-(x*x+y*y);
+
+  rho = rho_bg*pow(1.0-ev_eps_ic*ev_eps_ic*(gamma-1.0)/(8.0*gamma*pi*pi)*exp(f),1.0/(gamma-1.0));
+  vx = u_bg - ev_eps_ic*y/(2.0*pi)*exp(f/2.0);
+  vy = v_bg + ev_eps_ic*x/(2.0*pi)*exp(f/2.0);
+  p =  p_bg*pow(rho/rho_bg,gamma);
+}
+
+// Adds a vortex impinging onto a stabilized shock/any run (after reading from restart file)
+void eval_shock_vortex_restart(array<double>& pos, double time, double& rho, double& vx, double& vy, double& vz, double& p, array<double>& temp_q, int n_dims)
+{
+  double gamma=run_input.gamma;
+  double ev_eps_ic= 5.0;
+
+  // Get background flow conditions to add pertubations to
+  double rho_bg = temp_q(0);
+  double u_bg = temp_q(1)/temp_q(0);
+  double v_bg = temp_q(2)/temp_q(0);
+  double p_bg = (gamma - 1)*(temp_q(3) - 0.5*rho_bg*(u_bg*u_bg + v_bg*v_bg));
+
+  double x = pos(0) + 2;
+  double y = pos(1);
+
+  double f=1.0-(x*x+y*y);
+
+  rho = rho_bg*pow(1.0-ev_eps_ic*ev_eps_ic*(gamma-1.0)/(8.0*gamma*pi*pi)*exp(f),1.0/(gamma-1.0));
+  vx = u_bg - ev_eps_ic*y/(2.0*pi)*exp(f/2.0);
+  vy = v_bg + ev_eps_ic*x/(2.0*pi)*exp(f/2.0);
+  p =  p_bg*pow(rho/rho_bg,gamma);
+}
+
 
 void eval_sine_wave_single(array<double>& pos, array<double>& wave_speed, double diff_coeff, double time, double& rho, array<double>& grad_rho, int n_dims)
 {

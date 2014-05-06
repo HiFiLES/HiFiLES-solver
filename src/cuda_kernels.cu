@@ -652,43 +652,26 @@ __device__ void inv_NS_flux(double* q, double *p, double* f, double in_gamma, in
 {
   if(in_n_dims==2) {
 
-      double temp_p;
-      double tol = 0.01;
-
-      temp_p = (in_gamma-1.0)*(q[3]-0.5*(q[1]*q[1]+q[2]*q[2])/q[0]);
-
-      if(q[0] < tol || temp_p < tol){
-
-          if(in_field == -1)
-              (*p) = 0;
-
-          else {
-              f[0] = 0;
-              f[1] = 0;
-          }
+      if (in_field==-1) {
+          (*p) = (in_gamma-1.0)*(q[3]-0.5*(q[1]*q[1]+q[2]*q[2])/q[0]);
+      }
+      else if (in_field==0) {
+          f[0] = q[1];
+          f[1] = q[2];
+      }
+      else if (in_field==1) {
+          f[0]  = (*p)+(q[1]*q[1]/q[0]);
+          f[1]  = q[2]*q[1]/q[0];
+      }
+      else if (in_field==2) {
+          f[0]  = q[1]*q[2]/q[0];
+          f[1]  = (*p) + (q[2]*q[2]/q[0]);
+      }
+      else if (in_field==3) {
+          f[0]  = q[1]/q[0]*(q[3]+(*p));
+          f[1]  = q[2]/q[0]*(q[3]+(*p));
       }
 
-      else{
-          if (in_field==-1) {
-              (*p) = (in_gamma-1.0)*(q[3]-0.5*(q[1]*q[1]+q[2]*q[2])/q[0]);
-          }
-          else if (in_field==0) {
-              f[0] = q[1];
-              f[1] = q[2];
-          }
-          else if (in_field==1) {
-              f[0]  = (*p)+(q[1]*q[1]/q[0]);
-              f[1]  = q[2]*q[1]/q[0];
-          }
-          else if (in_field==2) {
-              f[0]  = q[1]*q[2]/q[0];
-              f[1]  = (*p) + (q[2]*q[2]/q[0]);
-          }
-          else if (in_field==3) {
-              f[0]  = q[1]/q[0]*(q[3]+(*p));
-              f[1]  = q[2]/q[0]*(q[3]+(*p));
-          }
-      }
     }
   else if(in_n_dims==3)
     {
@@ -1928,9 +1911,9 @@ __global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_
 
         else    //Concentration Method
         {
-            double nodal_rho[6];  // Array allocated so that it can handle upto p=5
-            double modal_rho[6];
-            double uE[6];
+            double nodal_rho[8];  // Array allocated so that it can handle upto p=7
+            double modal_rho[8];
+            double uE[8];
             double temp;
             double p = 2;	// exponent in concentration method
             double J = 0.15;
@@ -2010,10 +1993,10 @@ __global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_
                                   /* Order Reduction */
 
         if(sensor > s0) {
-            //printf("Sensor activated in %d \n", thread_id);
-            double nodal_sol[10];  // Array allocated so it can handle p=5 for tris
-            double modal_sol[10];
+            double nodal_sol[36];
+            double modal_sol[36];
             int n_trun_modes = 1;
+            //printf("Sensor value is %f in thread %d \n",sensor, thread_id);
 
             for(int k=0; k<in_n_fields; k++) {
 
@@ -2036,7 +2019,6 @@ __global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_
                         nodal_sol[i] += in_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*modal_sol[j];
 
                     in_disu_upts_ptr[thread_id*in_n_upts_per_ele + k*stride + i] = nodal_sol[i];
-                    //printf("The reduced order solution for field %d is %f \n",k,nodal_sol[i]);
                 }
             }
         }

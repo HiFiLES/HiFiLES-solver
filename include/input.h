@@ -90,6 +90,7 @@ public:
 
   int artif_only, artif_type, ArtifOn; // Required for artificial viscosity
   double epsilon0, s0, kappa;
+  int shock_vortex_restart;
 
   int monitor_res_freq;
   int monitor_force_freq;

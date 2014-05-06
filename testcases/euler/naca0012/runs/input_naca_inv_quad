@@ -170,7 +170,7 @@ ny_free_stream
 nz_free_stream
 0.
 Re_free_stream 
-20000.
+10000.
 L_free_stream 
 1.
 T_free_stream 
@@ -203,7 +203,7 @@ Inviscid
 rho_c_ic
 1.0
 u_c_ic
-12.5
+6.0
 v_c_ic
 0.0
 w_c_ic
@@ -213,7 +213,7 @@ p_c_ic
 rho_bound 
 1.
 u_bound  
-12.5
+6.0
 v_bound 
 0.0
 w_bound 
@@ -232,6 +232,6 @@ ArtifOn
 epsilon0                          // Set this to 0 if you don't want artificial viscosity at all
 -0.000
 s0
-4.0
+0.8
 kappa
 0.1

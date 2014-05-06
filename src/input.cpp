@@ -100,6 +100,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
   epsilon0 = 0;
   s0 = 0;
   kappa = 0;
+  shock_vortex_restart = 0;
 
   // Now read in parameters
   while(!in_run_input_file.eof() )
@@ -582,6 +583,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> kappa;
         }
+      else if (!param_name.compare("shock_vortex_restart"))
+        {
+          in_run_input_file >> shock_vortex_restart;
+        }
       else
         {
           cout << "input parameter =" << param_name << endl;
@@ -626,7 +631,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
 
   if(viscous)
     {
-      if(ic_form == 0 || artif_only)  {
+      if(ic_form == 0 || artif_only || ic_form == 8)  {
 
           fix_vis  = 1.;
           R_ref     = 1.;

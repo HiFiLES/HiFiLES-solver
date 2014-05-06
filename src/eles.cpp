@@ -465,6 +465,27 @@ void eles::set_ics(double& time)
                   ics(4)=p/(gamma-1.0)+0.5*rho*(ics(1)*ics(1)+ics(2)*ics(2)+ics(3)*ics(3));
                 }
             }
+          else if (run_input.ic_form==8) // Shock Vortex interaction initial conditions (Inoue & Hattori)
+            {
+              eval_shock_vortex(pos,time,rho,vx,vy,vz,p,n_dims);
+
+              ics(0)=rho;
+              ics(1)=rho*vx;
+              ics(2)=rho*vy;
+              if(n_dims==2)
+                {
+                  ics(3)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)));
+                }
+              else if(n_dims==3)
+                {
+                  ics(3)=rho*vz;
+                  ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));
+                }
+              else
+                {
+                  cout << "ERROR: Invalid number of dimensions ... " << endl;
+                }
+            }
           else
             {
               cout << "ERROR: Invalid form of initial condition ... (File: " << __FILE__ << ", Line: " << __LINE__ << ")" << endl;
@@ -495,6 +516,62 @@ void eles::set_ics(double& time)
     }
 }
 
+// Add a vortex to restart data
+
+void eles::set_ic_shock_vortex_restart(double& time)
+{
+  int i,j,k;
+
+  double rho,vx,vy,vz,p;
+  double gamma=run_input.gamma;
+  time = 0.;
+
+  array<double> loc(n_dims);
+  array<double> pos(n_dims);
+  array<double> ics(n_fields);
+  array<double> temp_q(n_fields);
+
+  for(i=0;i<n_eles;i++)
+    {
+      for(j=0;j<n_upts_per_ele;j++)
+        {
+          for(k=0;k<n_dims;k++)
+            {
+              loc(k)=loc_upts(k,j);
+            }
+
+          // Get the current solution to add the disturbances to
+          for(k=0;k<n_fields;k++)
+            {
+              temp_q(k) = disu_upts(0)(j,i,k) ;
+            }
+
+          // calculate position of solution point
+
+          calc_pos(loc,i,pos);
+
+          // evaluate solution at solution point
+          eval_shock_vortex_restart(pos,time,rho,vx,vy,vz,p,temp_q,n_dims);
+
+          ics(0)=rho;
+          ics(1)=rho*vx;
+          ics(2)=rho*vy;
+          if(n_dims==2)
+            {
+              ics(3)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)));
+            }
+          else
+            {
+              cout << "ERROR: Invalid number of dimensions ... " << endl;
+            }
+
+          for(k=0;k<n_fields;k++)
+            {
+              disu_upts(0)(j,i,k) = ics(k);
+            }
+      }
+  }
+}
 
 // set initial conditions
 

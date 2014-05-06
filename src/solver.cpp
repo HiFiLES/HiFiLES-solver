@@ -107,7 +107,7 @@ void CalcResidual(struct solution* FlowSol) {
       FlowSol->mesh_mpi_inters(i).send_disu_fpts();
 #endif
 
-  if (!FlowSol->viscous) {
+  if (FlowSol->viscous) {
       /*! Compute the uncorrected gradient of the solution at the solution points. */
       for(i=0; i<FlowSol->n_ele_types; i++)
         FlowSol->mesh_eles(i)->calc_uncor_tgrad_disu_upts(in_disu_upts_from);
@@ -142,7 +142,7 @@ void CalcResidual(struct solution* FlowSol) {
     }
 #endif
 
-  if (!FlowSol->viscous) {
+  if (FlowSol->viscous) {
       /*! Compute corrected gradient of the solution at the solution and flux points. */
       for(i=0; i<FlowSol->n_ele_types; i++)
         FlowSol->mesh_eles(i)->calc_cor_grad_disu_upts();
@@ -171,8 +171,7 @@ void CalcResidual(struct solution* FlowSol) {
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calc_norm_tdisf_fpts();
 
-  if (!FlowSol->viscous) {
-      cout<<"Test"<<endl;
+  if (FlowSol->viscous) {
 
       /*! Compute normal interface viscous flux and add to normal inviscid flux. */
       for(i=0; i<FlowSol->n_int_inter_types; i++)
@@ -300,6 +299,14 @@ void InitSolution(struct solution* FlowSol)
     {
       FlowSol->ini_iter = run_input.restart_iter;
       read_restart(run_input.restart_iter,run_input.n_restart_files,FlowSol);
+
+      if(run_input.shock_vortex_restart){
+          for(int i=0;i<FlowSol->n_ele_types;i++) {
+              if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
+
+                FlowSol->mesh_eles(i)->set_ic_shock_vortex_restart(FlowSol->time);
+            }
+      }
     }
 
   for (int i=0;i<FlowSol->n_ele_types;i++) {

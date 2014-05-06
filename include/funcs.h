@@ -99,6 +99,11 @@ int index_locate_int(int value, int* array, int size);
 
 void eval_isentropic_vortex(array<double>& pos, double time, double& rho, double& vx, double& vy, double& vz, double& p, int n_dims);
 
+// Initial condition to study shock vortex interaction
+void eval_shock_vortex(array<double>& pos, double time, double& rho, double& vx, double& vy, double& vz, double& p, int n_dims);
+
+void eval_shock_vortex_restart(array<double>& pos, double time, double& rho, double& vx, double& vy, double& vz, double& p, array<double>& temp_q, int n_dims);
+
 void eval_sine_wave_single(array<double>& pos, array<double>& wave_speed, double diff_coeff, double time, double& rho, array<double>& grad_rho, int n_dims);
 
 void eval_sine_wave_group(array<double>& pos, array<double>& wave_speed, double diff_coeff, double time, double& rho, array<double>& grad_rho, int n_dims);
