@@ -15,7 +15,7 @@
 
 # Copy the appropriate file from makefiles/makefile.machine.in to HIFILES_HOME as makefile.in
 # Note that this is the cluster makefile by default.
-include makefile.in
+include makefiles/makefile.enrico_GPU.in
 
 # Compiler
 
@@ -60,7 +60,7 @@ ifeq ($(TECIO),YES)
 endif
 
 ifeq ($(PARALLEL),MPI)
-	OPTS	+= -I $(MPI_DIR)/include
+	OPTS	+= -I $(MPI_DIR)
 	OPTS += -I $(PARMETIS_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/metis/include
 endif
@@ -99,10 +99,6 @@ endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
   LIBS    += -L $(BLAS_DIR)/lib -lcblas
-endif
-
-ifneq ($(ATLAS),NO)
-  LIBS    += -latlas
 endif
 
 ifeq ($(NODE),GPU)

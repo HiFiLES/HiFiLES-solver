@@ -26,4 +26,4 @@ TECIO_DIR = lib/tecio-2008
 
 CUDA_DIR = /usr/local/cuda
 
-MPI_DIR= /usr/lib64/openmpi
+MPI_DIR= /usr/include/openmpi-x86_64/
