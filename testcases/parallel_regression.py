@@ -46,8 +46,8 @@ class testcase:
     self.do_adjust_iter()
 
     # Assemble the shell command to run HiFiLES
-    self.HiFiLES_exec = os.path.join("", self.HiFiLES_exec)
-    command_base = "%s %s > outputfile"%(self.HiFiLES_exec, self.cfg_file)
+    self.HiFiLES_exec = os.path.join("$HIFILES_RUN", self.HiFiLES_exec)
+    command_base = "%s %s %s > outputfile"%(self.mpi_cmd, self.HiFiLES_exec, self.cfg_file)
     command      = "%s"%(command_base)
 
     # Run HiFiLES
@@ -159,12 +159,23 @@ class testcase:
   
     # Rewrite the file with a .autotest extension
     self.cfg_file = "%s.autotest"%self.cfg_file
+    file_out = open(self.cfg_file,'w')
+    for line in lines:
+      if line.find("EXT_ITER")==-1:
+        file_out.write(line)
+      else:
+        file_out.write("EXT_ITER=%d\n"%(self.test_iter+1))
+    file_out.close()
     
-
 if __name__=="__main__":
   '''This program runs HiFiLES and ensures that the output matches specified values. This will be used to do nightly checks to make sure nothing is broken. '''
 
-  # Build HiFiLES_CFD in parallel using the right Makefile.in
+  # Build HiFiLES_CFD in serial using the right Makefile.in
+  # Note that we are hard-coding this for enrico at the moment
+  # This will eventually be a call to the autoconf stuff
+
+  os.chdir(os.environ['HIFILES_HOME'])
+  os.system('cp makefiles/makefile.enrico_MPI.in ./makefile.in')
   os.system('make clean')
   os.system('make')
 
@@ -183,19 +194,32 @@ if __name__=="__main__":
   ###  Compressible N-S  ###
   ##########################
 
-  # Laminar flat plate
-  cylinder              = testcase('flatplate')
+  # Cylinder
+  cylinder              = testcase('cylinder')
   cylinder.cfg_dir      = "testcases/navier-stokes/cylinder/"
   cylinder.cfg_file     = "input_cylinder_visc"
   cylinder.test_iter    = 25
-  cylinder.test_vals    = [0.193583,1.353842,0.208335,10.488829]
-  cylinder.HiFiLES_exec = "mpirun -n 2 HiFiLES"
+  cylinder.test_vals    = [0.17038345,0.75864863,0.23040523,10.05233986,3.42539175,-0.04153506]
+  cylinder.mpi_cmd      = "mpirun -np 2"
+  cylinder.HiFiLES_exec = "HiFiLES"
   cylinder.timeout      = 1600
   cylinder.tol          = 0.00001
   passed1               = cylinder.run_test()
 
+  # 3D Square Cylinder
+  sqcyl              = testcase('sqcyl')
+  sqcyl.cfg_dir      = "testcases/navier-stokes/square_cylinder/"
+  sqcyl.cfg_file     = "input_sqcyl_wsm_tet"
+  sqcyl.test_iter    = 10
+  sqcyl.test_vals    = [0.64471221,2.70391512,0.24385134,0.14111932,16.79818472,20.05215009,0.03604174,0.00009637]
+  sqcyl.mpi_cmd      = "mpirun -np 8"
+  sqcyl.HiFiLES_exec = "HiFiLES"
+  sqcyl.timeout      = 1600
+  sqcyl.tol          = 0.00001
+  passed2            = sqcyl.run_test()
 
-  if (passed1):
+
+  if (passed1 and passed2):
     sys.exit(0)
   else:
     sys.exit(1)

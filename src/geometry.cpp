@@ -46,10 +46,6 @@ using namespace std;
 #define MAX_E_PER_C 12
 #define MAX_V_PER_C 27
 
-// used to switch between single- and multi-zone tecplot binary output
-#define MULTI_ZONE
-//#define SINGLE_ZONE
-
 void SetInput(struct solution* FlowSol) {
 
   /*! Basic allocation using the input file. */
@@ -80,8 +76,13 @@ void SetInput(struct solution* FlowSol) {
 #ifdef _GPU
 
   /*! Associate a GPU to each rank. */
-  //if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
-  //if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+  // Cluster:
+//  if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
+//  if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
+  // Enrico:
+//  if (FlowSol->rank==0) { cudaSetDevice(2); }
+//  else if (FlowSol->rank==1) { cudaSetDevice(0); }
+//  else if (FlowSol->rank==2) { cudaSetDevice(3); }
 
 #endif
 
@@ -93,21 +94,21 @@ int get_bc_number(string& bcname) {
 
   int bcflag;
 
-  if (!bcname.compare("Sub_In_Simp")) bcflag = 1;
-  else if (!bcname.compare("Sub_Out_Simp")) bcflag = 2;
-  else if (!bcname.compare("Sub_In_Char")) bcflag = 3;
-  else if (!bcname.compare("Sub_Out_Char")) bcflag = 4;
-  else if (!bcname.compare("Sup_In")) bcflag = 5;
-  else if (!bcname.compare("Sup_Out")) bcflag = 6;
-  else if (!bcname.compare("Slip_Wall")) bcflag = 7;
+  if (!bcname.compare("Sub_In_Simp")) bcflag = 1;         // Subsonic inflow simple (free pressure) //
+  else if (!bcname.compare("Sub_Out_Simp")) bcflag = 2;   // Subsonic outflow simple (fixed pressure) //
+  else if (!bcname.compare("Sub_In_Char")) bcflag = 3;    // Subsonic inflow characteristic //
+  else if (!bcname.compare("Sub_Out_Char")) bcflag = 4;   // Subsonic outflow characteristic //
+  else if (!bcname.compare("Sup_In")) bcflag = 5;         // Supersonic inflow //
+  else if (!bcname.compare("Sup_Out")) bcflag = 6;        // Supersonic outflow //
+  else if (!bcname.compare("Slip_Wall")) bcflag = 7;      // Slip wall //
   else if (!bcname.compare("Cyclic")) bcflag = 9;
-  else if (!bcname.compare("Isotherm_Fix")) bcflag = 11;
-  else if (!bcname.compare("Adiabat_Fix")) bcflag = 12;
-  else if (!bcname.compare("Isotherm_Move")) bcflag = 13;
-  else if (!bcname.compare("Adiabat_Move")) bcflag = 14;
-  else if (!bcname.compare("Char")) bcflag = 15;
-  else if (!bcname.compare("Slip_Wall_Dual")) bcflag = 16;
-  else if (!bcname.compare("AD_Wall")) bcflag = 50;
+  else if (!bcname.compare("Isotherm_Fix")) bcflag = 11;  // Isothermal, no-slip wall //
+  else if (!bcname.compare("Adiabat_Fix")) bcflag = 12;   // Adiabatic, no-slip wall //
+  else if (!bcname.compare("Isotherm_Move")) bcflag = 13; // Isothermal, no-slip moving wall //
+  else if (!bcname.compare("Adiabat_Move")) bcflag = 14;  // Adiabatic, no-slip moving wall //
+  else if (!bcname.compare("Char")) bcflag = 15;          // Characteristic //
+  else if (!bcname.compare("Slip_Wall_Dual")) bcflag = 16;// Dual consistent BC //
+  else if (!bcname.compare("AD_Wall")) bcflag = 50;       // Advection, Advection-Diffusion Boundary Conditions //
   else
     {
       cout << "Boundary=" << bcname << endl;
@@ -117,20 +118,12 @@ int get_bc_number(string& bcname) {
   return bcflag;
 }
 
-void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
+void GeoPreprocess(struct solution* FlowSol) {
   array<double> xv;
   array<int> c2v,c2n_v,ctype,bctype_c,ic2icg,iv2ivg;
 
   /*! Reading vertices and cells. */
   ReadMesh(run_input.mesh_file, xv, c2v, c2n_v, ctype, ic2icg, iv2ivg, FlowSol->num_eles, FlowSol->num_verts, FlowSol);
-
-  if (in_run_type==1) // Plotting mode
-    {
-      /*! Store c2v, c2n_v, ctype. */
-      FlowSol->ele2vert = c2v;
-      FlowSol->ele2n_vert = c2n_v;
-      FlowSol->ele_type = ctype;
-    }
 
   /////////////////////////////////////////////////
   /// Set connectivity
@@ -169,14 +162,6 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
   // Reading boundaries
   ReadBound(run_input.mesh_file,c2v,c2n_v,ctype,bctype_c,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts, FlowSol);
-  if (in_run_type==1)
-    {
-      // Store ele2face
-      FlowSol->ele2face = c2f;
-      FlowSol->ele2edge = c2e;
-      FlowSol->inter2loc_inter = f2loc_f;
-      FlowSol->inter2ele = f2c;
-    }
 
   /////////////////////////////////////////////////
   /// Initializing Elements
@@ -199,12 +184,10 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
   // Error checking
   if (FlowSol->n_dims == 2 && (num_tets != 0 || num_pris != 0 || num_hexas != 0)) {
-      cout << "Error in mesh reader, n_dims=2 and 3d elements exists" << endl;
-      exit(1);
+      FatalError("Error in mesh reader, n_dims=2 and 3d elements exists");
     }
   if (FlowSol->n_dims == 3 && (num_tris!= 0 || num_quads != 0)) {
-      cout << "Error in mesh reader, n_dims=3 and 2d elements exists" << endl;
-      exit(1);
+      FatalError("Error in mesh reader, n_dims=3 and 2d elements exists");
     }
 
   // For each element type, count the maximum number of shape points per element
@@ -242,17 +225,20 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
       FlowSol->mesh_eles(i)->set_rank(FlowSol->rank);
     }
 
+  if (FlowSol->rank==0)
+    cout << endl << "---------------- Flux Reconstruction Preprocessing ----------------" << endl;
+
   if (FlowSol->rank==0) cout << "initializing elements" << endl;
   if (FlowSol->rank==0) cout << "tris" << endl;
-  FlowSol->mesh_eles_tris.setup(num_tris,max_n_spts_per_tri,in_run_type);
+  FlowSol->mesh_eles_tris.setup(num_tris,max_n_spts_per_tri);
   if (FlowSol->rank==0) cout << "quads" << endl;
-  FlowSol->mesh_eles_quads.setup(num_quads,max_n_spts_per_quad,in_run_type);
+  FlowSol->mesh_eles_quads.setup(num_quads,max_n_spts_per_quad);
   if (FlowSol->rank==0) cout << "tets" << endl;
-  FlowSol->mesh_eles_tets.setup(num_tets,max_n_spts_per_tet,in_run_type);
+  FlowSol->mesh_eles_tets.setup(num_tets,max_n_spts_per_tet);
   if (FlowSol->rank==0) cout << "pris" << endl;
-  FlowSol->mesh_eles_pris.setup(num_pris,max_n_spts_per_pri,in_run_type);
+  FlowSol->mesh_eles_pris.setup(num_pris,max_n_spts_per_pri);
   if (FlowSol->rank==0) cout << "hexas" << endl;
-  FlowSol->mesh_eles_hexas.setup(num_hexas,max_n_spts_per_hexa,in_run_type);
+  FlowSol->mesh_eles_hexas.setup(num_hexas,max_n_spts_per_hexa);
   if (FlowSol->rank==0) cout << "done initializing elements" << endl;
 
   // Set shape for each cell
@@ -369,7 +355,7 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
   if (FlowSol->rank==0) cout << "setting element transforms ... " << endl;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          FlowSol->mesh_eles(i)->set_transforms(in_run_type);
+          FlowSol->mesh_eles(i)->set_transforms();
         }
     }
 
@@ -381,18 +367,18 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
         }
     }
 
-  // Set metrics at volume cubpts
-  if (FlowSol->rank==0) cout << "setting element transforms at volume cubpts ... " << endl;
-  for(int i=0;i<FlowSol->n_ele_types;i++) {
+  // Set metrics at volume cubpts. Only needed for computing error and integral diagnostic quantities.
+  if (run_input.test_case != 0 || run_input.monitor_integrals_freq!=0) {
+    if (FlowSol->rank==0) cout << "setting element transforms at volume cubpts ... " << endl;
+    for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
-        }
+        FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
+      }
     }
+  }
 
   // set on gpu (important - need to do this before we set connectivity, so that pointers point to GPU memory)
 #ifdef _GPU
-  if (in_run_type==0)
-    {
       for(int i=0;i<FlowSol->n_ele_types;i++) {
           if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
@@ -400,7 +386,6 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
               FlowSol->mesh_eles(i)->mv_all_cpu_gpu();
             }
         }
-    }
 #endif
 
   // ------------------------------------
@@ -530,9 +515,9 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
   for (int i=0;i<FlowSol->n_mpi_inter_types;i++)
     FlowSol->mesh_mpi_inters(i).set_nproc(FlowSol->nproc,FlowSol->rank);
 
-  FlowSol->mesh_mpi_inters(0).setup(n_seg_mpi_inters,0,in_run_type);
-  FlowSol->mesh_mpi_inters(1).setup(n_tri_mpi_inters,1,in_run_type);
-  FlowSol->mesh_mpi_inters(2).setup(n_quad_mpi_inters,2,in_run_type);
+  FlowSol->mesh_mpi_inters(0).setup(n_seg_mpi_inters,0);
+  FlowSol->mesh_mpi_inters(1).setup(n_tri_mpi_inters,1);
+  FlowSol->mesh_mpi_inters(2).setup(n_quad_mpi_inters,2);
 
   array<int> mpifaces_part(FlowSol->nproc);
 
@@ -541,11 +526,6 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
   // the new array f_mpi2f is in good order i.e. proc1,proc2,....
 
   match_mpifaces(f2v,f2nv,xv,f_mpi2f,mpifaces_part,delta_cyclic,FlowSol->n_mpi_inters,tol,FlowSol);
-
-  if (in_run_type==1)
-    {
-      FlowSol->inter_mpi2inter = f_mpi2f;
-    }
 
   array<int> rot_tag_mpi(FlowSol->n_mpi_inters);
   find_rot_mpifaces(f2v,f2nv,xv,f_mpi2f,rot_tag_mpi,mpifaces_part,delta_cyclic,FlowSol->n_mpi_inters,tol,FlowSol);
@@ -563,15 +543,15 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
       ic_l = f2c(i,0);
 
       if (f2nv(i)==2) {
-          FlowSol->mesh_mpi_inters(0).set_mpi(i_seg_mpi,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),rot_tag_mpi(i_mpi),in_run_type,FlowSol);
+          FlowSol->mesh_mpi_inters(0).set_mpi(i_seg_mpi,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),rot_tag_mpi(i_mpi),FlowSol);
           i_seg_mpi++;
         }
       else if (f2nv(i)==3) {
-          FlowSol->mesh_mpi_inters(1).set_mpi(i_tri_mpi,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),rot_tag_mpi(i_mpi),in_run_type,FlowSol);
+          FlowSol->mesh_mpi_inters(1).set_mpi(i_tri_mpi,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),rot_tag_mpi(i_mpi),FlowSol);
           i_tri_mpi++;
         }
       else if (f2nv(i)==4) {
-          FlowSol->mesh_mpi_inters(2).set_mpi(i_quad_mpi,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),rot_tag_mpi(i_mpi),in_run_type,FlowSol);
+          FlowSol->mesh_mpi_inters(2).set_mpi(i_quad_mpi,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),rot_tag_mpi(i_mpi),FlowSol);
           i_quad_mpi++;
         }
     }
@@ -619,11 +599,8 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
   FlowSol->mesh_mpi_inters(2).set_mpi_requests(request_quad);
 
 #ifdef _GPU
-  if (in_run_type==0)
-    {
       for(int i=0;i<FlowSol->n_mpi_inter_types;i++)
         FlowSol->mesh_mpi_inters(i).mv_all_cpu_gpu();
-    }
 #endif
 
 #endif
@@ -650,12 +627,11 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
       if (bctype_f!=10)
         {
-          if (bctype_f==0)	// internal interface
+          if (bctype_f==0)  // internal interface
             {
               if (ic_r==-1)
                 {
-                  cout << "Error: Interior interface has ic_r=-1. Should not be here, exiting" << endl;
-                  exit(1);
+                  FatalError("Error: Interior interface has i_cell_right=-1. Should not be here, exiting");
                 }
               n_int_inters++;
               if (f2nv(i)==2) n_seg_int_inters++;
@@ -677,15 +653,15 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
 
   FlowSol->n_int_inter_types=3;
   FlowSol->mesh_int_inters.setup(FlowSol->n_int_inter_types);
-  FlowSol->mesh_int_inters(0).setup(n_seg_int_inters,0,in_run_type);
-  FlowSol->mesh_int_inters(1).setup(n_tri_int_inters,1,in_run_type);
-  FlowSol->mesh_int_inters(2).setup(n_quad_int_inters,2,in_run_type);
+  FlowSol->mesh_int_inters(0).setup(n_seg_int_inters,0);
+  FlowSol->mesh_int_inters(1).setup(n_tri_int_inters,1);
+  FlowSol->mesh_int_inters(2).setup(n_quad_int_inters,2);
 
   FlowSol->n_bdy_inter_types=3;
   FlowSol->mesh_bdy_inters.setup(FlowSol->n_bdy_inter_types);
-  FlowSol->mesh_bdy_inters(0).setup(n_seg_bdy_inters,0,in_run_type);
-  FlowSol->mesh_bdy_inters(1).setup(n_tri_bdy_inters,1,in_run_type);
-  FlowSol->mesh_bdy_inters(2).setup(n_quad_bdy_inters,2,in_run_type);
+  FlowSol->mesh_bdy_inters(0).setup(n_seg_bdy_inters,0);
+  FlowSol->mesh_bdy_inters(1).setup(n_tri_bdy_inters,1);
+  FlowSol->mesh_bdy_inters(2).setup(n_quad_bdy_inters,2);
 
   int i_seg_int=0;
   int i_tri_int=0;
@@ -706,15 +682,15 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
           if(bctype_f==0)
             {
               if (f2nv(i)==2) {
-                  FlowSol->mesh_int_inters(0).set_interior(i_seg_int,ctype(ic_l),ctype(ic_r),local_c(ic_l),local_c(ic_r),f2loc_f(i,0),f2loc_f(i,1),rot_tag(i),in_run_type,FlowSol);
+                  FlowSol->mesh_int_inters(0).set_interior(i_seg_int,ctype(ic_l),ctype(ic_r),local_c(ic_l),local_c(ic_r),f2loc_f(i,0),f2loc_f(i,1),rot_tag(i),FlowSol);
                   i_seg_int++;
                 }
               if (f2nv(i)==3) {
-                  FlowSol->mesh_int_inters(1).set_interior(i_tri_int,ctype(ic_l),ctype(ic_r),local_c(ic_l),local_c(ic_r),f2loc_f(i,0),f2loc_f(i,1),rot_tag(i),in_run_type,FlowSol);
+                  FlowSol->mesh_int_inters(1).set_interior(i_tri_int,ctype(ic_l),ctype(ic_r),local_c(ic_l),local_c(ic_r),f2loc_f(i,0),f2loc_f(i,1),rot_tag(i),FlowSol);
                   i_tri_int++;
                 }
               if (f2nv(i)==4) {
-                  FlowSol->mesh_int_inters(2).set_interior(i_quad_int,ctype(ic_l),ctype(ic_r),local_c(ic_l),local_c(ic_r),f2loc_f(i,0),f2loc_f(i,1),rot_tag(i),in_run_type,FlowSol);
+                  FlowSol->mesh_int_inters(2).set_interior(i_quad_int,ctype(ic_l),ctype(ic_r),local_c(ic_l),local_c(ic_r),f2loc_f(i,0),f2loc_f(i,1),rot_tag(i),FlowSol);
                   i_quad_int++;
                 }
             }
@@ -723,15 +699,15 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
               if (bctype_f!=99) //  Not a deleted cyclic face
                 {
                   if (f2nv(i)==2){
-                      FlowSol->mesh_bdy_inters(0).set_boundary(i_seg_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),in_run_type,FlowSol);
+                      FlowSol->mesh_bdy_inters(0).set_boundary(i_seg_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),FlowSol);
                       i_seg_bdy++;
                     }
                   else if (f2nv(i)==3){
-                      FlowSol->mesh_bdy_inters(1).set_boundary(i_tri_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),in_run_type,FlowSol);
+                      FlowSol->mesh_bdy_inters(1).set_boundary(i_tri_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),FlowSol);
                       i_tri_bdy++;
                     }
                   else if (f2nv(i)==4){
-                      FlowSol->mesh_bdy_inters(2).set_boundary(i_quad_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),in_run_type,FlowSol);
+                      FlowSol->mesh_bdy_inters(2).set_boundary(i_quad_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),FlowSol);
                       i_quad_bdy++;
                     }
                 }
@@ -739,22 +715,189 @@ void GeoPreprocess(int in_run_type, struct solution* FlowSol) {
         }
     }
 
+  // Flag interfaces for calculating LES wall model
+  if(run_input.wall_model>0) {
+
+    if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
+
+    int n_seg_noslip_inters = 0;
+    int n_tri_noslip_inters = 0;
+    int n_quad_noslip_inters = 0;
+    int order = run_input.order;
+    int n_fpts_per_inter_seg = order+1;
+    int n_fpts_per_inter_tri = (order+2)*(order+1)/2;
+    int n_fpts_per_inter_quad = (order+1)*(order+1);
+
+    for(int i=0;i<FlowSol->num_inters;i++) {
+
+      bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0) );
+
+      // All types of no-slip wall
+      if(bctype_f == 11 || bctype_f == 12 || bctype_f == 13 || bctype_f == 14) {
+
+        // segs
+        if (f2nv(i)==2) n_seg_noslip_inters++;
+
+        // tris
+        if (f2nv(i)==3) n_tri_noslip_inters++;
+
+        // quads
+        if (f2nv(i)==4) n_quad_noslip_inters++;
+      }
+    }
+
+#ifdef _MPI
+
+    /*! Code paraphrased from SU2 */
+
+    array<int> n_seg_inters_array(FlowSol->nproc);
+    array<int> n_tri_inters_array(FlowSol->nproc);
+    array<int> n_quad_inters_array(FlowSol->nproc);
+    int n_global_seg_noslip_inters = 0;
+    int n_global_tri_noslip_inters = 0;
+    int n_global_quad_noslip_inters = 0;
+    int max_seg_noslip_inters = 0;
+    int max_tri_noslip_inters = 0;
+    int max_quad_noslip_inters = 0;
+    int buf;
+
+    /*! Communicate to all processors the total number of no-slip boundary
+    inters, the maximum number of no-slip boundary inters on any single
+    partition, and the number of no-slip inters on each partition. */
+
+    MPI_Allreduce(&n_seg_noslip_inters, &n_global_seg_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_tri_noslip_inters, &n_global_tri_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_quad_noslip_inters, &n_global_quad_noslip_inters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+    MPI_Allreduce(&n_seg_noslip_inters, &max_seg_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_tri_noslip_inters, &max_tri_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_quad_noslip_inters, &max_quad_noslip_inters, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+    MPI_Allgather(&n_seg_noslip_inters, 1, MPI_INT, n_seg_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgather(&n_tri_noslip_inters, 1, MPI_INT, n_tri_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgather(&n_quad_noslip_inters, 1, MPI_INT, n_quad_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
+
+    // Set loop counters to max. inters on any partition
+    n_seg_noslip_inters = max_seg_noslip_inters;
+    n_tri_noslip_inters = max_tri_noslip_inters;
+    n_quad_noslip_inters = max_quad_noslip_inters;
+
+#endif
+
+    // Allocate arrays for coordinates of points on no-slip boundaries
+    FlowSol->loc_noslip_bdy.setup(FlowSol->n_bdy_inter_types);
+    FlowSol->loc_noslip_bdy(0).setup(n_fpts_per_inter_seg,n_seg_noslip_inters,FlowSol->n_dims);
+    FlowSol->loc_noslip_bdy(1).setup(n_fpts_per_inter_tri,n_tri_noslip_inters,FlowSol->n_dims);
+    FlowSol->loc_noslip_bdy(2).setup(n_fpts_per_inter_quad,n_quad_noslip_inters,FlowSol->n_dims);
+
+    n_seg_noslip_inters = 0;
+    n_tri_noslip_inters = 0;
+    n_quad_noslip_inters = 0;
+
+    // Get coordinates
+    for(int i=0;i<FlowSol->num_inters;i++) {
+
+      ic_l = f2c(i,0);
+      bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0) );
+
+      // All types of no-slip wall
+      if(bctype_f == 11 || bctype_f == 12 || bctype_f == 13 || bctype_f == 14) {
+
+        // segs
+        if (f2nv(i)==2) {
+          for(int j=0;j<n_fpts_per_inter_seg;j++) {
+            for(int k=0;k<FlowSol->n_dims;k++) {
+
+              // find coordinates
+              FlowSol->loc_noslip_bdy(0)(j,n_seg_noslip_inters,k) = *get_loc_fpts_ptr_cpu(ctype(ic_l), local_c(ic_l), f2loc_f(i,0), j, k, FlowSol);
+            }
+          }
+          n_seg_noslip_inters++;
+        }
+        // tris
+        if (f2nv(i)==3) {
+          for(int j=0;j<n_fpts_per_inter_tri;j++) {
+            for(int k=0;k<FlowSol->n_dims;k++) {
+
+              FlowSol->loc_noslip_bdy(1)(j,n_tri_noslip_inters,k) = *get_loc_fpts_ptr_cpu(ctype(ic_l), local_c(ic_l), f2loc_f(i,0), j, k, FlowSol);
+
+            }
+          }
+          n_tri_noslip_inters++;
+        }
+        // quads
+        if (f2nv(i)==4) {
+          for(int j=0;j<n_fpts_per_inter_quad;j++) {
+            for(int k=0;k<FlowSol->n_dims;k++) {
+
+              FlowSol->loc_noslip_bdy(2)(j,n_quad_noslip_inters,k) = *get_loc_fpts_ptr_cpu(ctype(ic_l), local_c(ic_l), f2loc_f(i,0), j, k, FlowSol);
+
+            }
+          }
+
+          n_quad_noslip_inters++;
+        }
+      }
+    }
+
+#ifdef _MPI
+
+    // Allocate global arrays for coordinates of points on no-slip boundaries
+    FlowSol->loc_noslip_bdy_global.setup(FlowSol->n_bdy_inter_types);
+
+    FlowSol->loc_noslip_bdy_global(0).setup(n_fpts_per_inter_seg,max_seg_noslip_inters,FlowSol->nproc*FlowSol->n_dims);
+
+    FlowSol->loc_noslip_bdy_global(1).setup(n_fpts_per_inter_tri,max_tri_noslip_inters,FlowSol->nproc*FlowSol->n_dims);
+
+    FlowSol->loc_noslip_bdy_global(2).setup(n_fpts_per_inter_quad,max_quad_noslip_inters,FlowSol->nproc*FlowSol->n_dims);
+
+    // Broadcast coordinates of interface points to all partitions
+
+    buf = max_seg_noslip_inters*n_fpts_per_inter_seg*FlowSol->n_dims;
+
+    MPI_Allgather(FlowSol->loc_noslip_bdy(0).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(0).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+    buf = max_tri_noslip_inters*n_fpts_per_inter_tri*FlowSol->n_dims;
+
+    MPI_Allgather(FlowSol->loc_noslip_bdy(1).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(1).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+    buf = max_quad_noslip_inters*n_fpts_per_inter_quad*FlowSol->n_dims;
+
+    MPI_Allgather(FlowSol->loc_noslip_bdy(2).get_ptr_cpu(), buf, MPI_DOUBLE, FlowSol->loc_noslip_bdy_global(2).get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+    // Calculate distance of every solution point to nearest point on no-slip boundary for every partition
+    for(int i=0;i<FlowSol->n_ele_types;i++)
+      FlowSol->mesh_eles(i)->calc_wall_distance_parallel(n_seg_inters_array,n_tri_inters_array,n_quad_inters_array,FlowSol->loc_noslip_bdy_global,FlowSol->nproc);
+
+#else // serial
+
+    // Calculate distance of every solution point to nearest point on no-slip boundary
+    for(int i=0;i<FlowSol->n_ele_types;i++)
+      FlowSol->mesh_eles(i)->calc_wall_distance(n_seg_noslip_inters,n_tri_noslip_inters,n_quad_noslip_inters,FlowSol->loc_noslip_bdy);
+
+#endif
+  }
+
   // set on GPU
 #ifdef _GPU
-  if (in_run_type==0)
-    {
       if (FlowSol->rank==0) cout << "Moving interfaces to GPU ... " << endl;
       for(int i=0;i<FlowSol->n_int_inter_types;i++)
         FlowSol->mesh_int_inters(i).mv_all_cpu_gpu();
 
       for(int i=0;i<FlowSol->n_bdy_inter_types;i++)
         FlowSol->mesh_bdy_inters(i).mv_all_cpu_gpu();
-    }
+
+      if (FlowSol->rank==0) cout << "Moving wall_distance to GPU ... " << endl;
+      for(int i=0;i<FlowSol->n_ele_types;i++)
+        FlowSol->mesh_eles(i)->mv_wall_distance_cpu_gpu();
 #endif
 
 }
 
 void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg, array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, struct solution* FlowSol) {
+
+  if (FlowSol->rank==0)
+    cout << endl << "----------------------- Mesh Preprocessing ------------------------" << endl;
 
   if (FlowSol->rank==0) cout << "reading connectivity" << endl;
   if (run_input.mesh_format==0) { // Gambit
@@ -911,7 +1054,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
 
   for (int i=0;i<n_bcs;i++)
     {
-      mesh_file.getline(buf,BUFSIZ);	// Load ith boundary group
+      mesh_file.getline(buf,BUFSIZ);  // Load ith boundary group
       if (strstr(buf,"ENDOFSECTION")){
           continue; // may not have a boundary section
         }
@@ -972,9 +1115,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
             }
           else
             {
-              cout << "ERROR: cannot handle other element type in readbnd" << endl;
-              exit(1);
-
+              FatalError("ERROR: cannot handle other element type in readbnd");
             }
           // Check if cell icg belongs to processor
           index = index_locate_int(icg,cell_list.get_ptr_cpu(),in_n_cells);
@@ -1033,7 +1174,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   char bc_txt_temp[100];
 
   mesh_file >> dummy;
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   for(int i=0;i<dummy;i++)
     {
       mesh_file.getline(buf,BUFSIZ);
@@ -1050,8 +1191,8 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   // Each processor reads number of entities
   int n_entities;
   // Read number of elements and bdys
-  mesh_file 	>> n_entities; 	// num cells in mesh
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+  mesh_file   >> n_entities;   // num cells in mesh
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
   array<int> vlist_boun(4), vlist_cell(4);
   array<int> vlist_local(4);
@@ -1067,15 +1208,13 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   for (int i=0;i<n_entities;i++)
     {
       mesh_file >> id >> elmtype >> ntags;
-
-      if (ntags!=2)
-        FatalError("ntags != 2,exiting");
-
-      mesh_file >> bcid >> dummy;
+      mesh_file >> bcid;
+      for (int tag=0; tag<ntags-1; tag++)
+        mesh_file >> dummy;
 
       if (strstr(bcTXT[bcid],"FLUID"))
         {
-          mesh_file.getline(buf,BUFSIZ);	// skip line
+          mesh_file.getline(buf,BUFSIZ);  // skip line
           continue;
         }
       else
@@ -1109,7 +1248,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
           vlist_boun(j)--;
         }
 
-      mesh_file.getline(buf,BUFSIZ);	// Get rest of line
+      mesh_file.getline(buf,BUFSIZ);  // Get rest of line
 
       // Check if two vertices belong to processor
       bool belong_to_proc = 1;
@@ -1170,8 +1309,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
               cout << "num_v_per_face=" << num_v_per_f << endl;
               cout << "vlist_boun(0)=" << vlist_boun(0) << " vlist_boun(1)=" << vlist_boun(1) << endl;
               cout << "vlist_boun(2)=" << vlist_boun(2) << " vlist_boun(3)=" << vlist_boun(3) << endl;
-              cout << "Warning, all nodes of boundary face belong to processor but could not find the coresponding faces" << endl;
-              exit(1);
+              FatalError("All nodes of boundary face belong to processor but could not find the coresponding faces");
             }
 
         } // If all vertices belong to processor
@@ -1209,9 +1347,9 @@ void read_vertices_gambit(string& in_file_name, int in_n_verts, array<int> &in_i
   // Find number of vertices and number of cells
   int n_verts_global, dummy;
   mesh_file       >> n_verts_global // num vertices in mesh
-                  >> dummy 	// num elements
-                  >> dummy 	// num material groups
-                  >> dummy 	// num boundary groups
+                  >> dummy   // num elements
+                  >> dummy   // num material groups
+                  >> dummy   // num boundary groups
                   >> FlowSol->n_dims;        // num space dimensions
 
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
@@ -1371,18 +1509,18 @@ void read_connectivity_gambit(string& in_file_name, int &out_n_cells, array<int>
     mesh_file.getline(buf,BUFSIZ);
 
   // Find number of vertices and number of cells
-  mesh_file >> n_verts_global 	// num vertices in mesh
+  mesh_file >> n_verts_global   // num vertices in mesh
             >> n_cells_global     // num elements
             >> dummy              // num material groups
             >> dummy              // num boundary groups
-            >> FlowSol->n_dims;	// num space dimensions
+            >> FlowSol->n_dims;  // num space dimensions
 
   if (FlowSol->n_dims != 2 && FlowSol->n_dims != 3) {
       FatalError("Invalid mesh dimensionality. Expected 2D or 3D.");
     }
 
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
-  mesh_file.getline(buf,BUFSIZ);	// Skip 2 lines
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
+  mesh_file.getline(buf,BUFSIZ);  // Skip 2 lines
   mesh_file.getline(buf,BUFSIZ);
 
   // Skip the x,y,z location of vertices
@@ -1438,7 +1576,7 @@ void read_connectivity_gambit(string& in_file_name, int &out_n_cells, array<int>
   // Start reading elements
   for (int i=0;i<out_n_cells;i++)
     {
-      //  ctype is the element type:	1=edge, 2=quad, 3=tri, 4=brick, 5=wedge, 6=tet, 7=pyramid
+      //  ctype is the element type:  1=edge, 2=quad, 3=tri, 4=brick, 5=wedge, 6=tet, 7=pyramid
       mesh_file >> out_ic2icg(i) >> dummy >> out_c2n_v(i);
 
       if (dummy==3) out_ctype(i)=0;
@@ -1551,7 +1689,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
 
   // Read number of boundaries and fields defined
   mesh_file >> n_bnds;
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   for(int i=0;i<n_bnds;i++)
     {
       cout << "i "<<i << endl;
@@ -1580,22 +1718,22 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   // Each processor first reads number of global cells
   int n_entities;
   // Read number of elements and bdys
-  mesh_file >> n_entities; 	// num cells in mesh
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+  mesh_file >> n_entities;   // num cells in mesh
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
   int icount=0;
 
   for (int i=0;i<n_entities;i++)
     {
       mesh_file >> id >> elmtype >> ntags;
-      if (ntags!=2)
-        FatalError("ntags != 2,exiting");
+      mesh_file >> bcid;
+      for (int tag=0; tag<ntags-1; tag++)
+        mesh_file >> dummy;
 
-      mesh_file >> bcid >> dummy;
       if (strstr(bcTXT[bcid],"FLUID"))
         icount++;
 
-      mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+      mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
     }
   n_cells_global=icount;
@@ -1640,8 +1778,8 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
       if (str=="$Elements") break;
     }
 
-  mesh_file >> n_entities; 	// num cells in mesh
-  mesh_file.getline(buf,BUFSIZ);	// clear rest of line
+  mesh_file >> n_entities;   // num cells in mesh
+  mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
   // Skip elements being read by other processors
   icount=0;
@@ -1650,14 +1788,10 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   for (int k=0;k<n_entities;k++)
     {
       mesh_file >> id >> elmtype >> ntags;
+      mesh_file >> bcid;
+      for (int tag=0; tag<ntags-1; tag++)
+        mesh_file >> dummy;
 
-      if (ntags!=2)
-        {
-          cout << "ntags=" << ntags << endl;
-          FatalError("ntags != 2,exiting");
-        }
-
-      mesh_file >> bcid >> dummy;
       if (strstr(bcTXT[bcid],"FLUID"))
         {
           if (icount>=kstart && i< out_n_cells) // Read this cell
@@ -1825,15 +1959,15 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
   for (int i=0;i<klocal;i++)
     {
       if (ctype_temp(i) == 0)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 1)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 2)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 3)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
       else if (ctype_temp(i) == 4)
-        elmwgt[i] = 1.;
+        elmwgt[i] = 1;
     }
 
   int wgtflag = 0;
@@ -1896,7 +2030,7 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
   //array<int> part_array(klocal);
   //for (i=0;i<klocal;i++)
   //{
-  //	part_array(i) = part[i];
+  //  part_array(i) = part[i];
   //}
   //part_array.print_to_file(FlowSol->rank);
   //cout << "After print" << endl;
@@ -2028,8 +2162,8 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
 void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e, array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv, array<int>& out_rot_tag, array<int>& out_unmatched_faces, int& out_n_unmatched_faces, array<int>& out_icvsta, array<int>& out_icvert, int& out_n_faces, int& out_n_edges, struct solution* FlowSol)
 {
 
-  // inputs: 	in_c2v (clls to vertex) , in_ctype (type of cell)
-  // outputs:	f2c (face to cell), c2f (cell to face), f2loc_f (face to local face index of right and left cells), rot_tag,  n_faces (number of faces in the mesh)
+  // inputs:   in_c2v (clls to vertex) , in_ctype (type of cell)
+  // outputs:  f2c (face to cell), c2f (cell to face), f2loc_f (face to local face index of right and left cells), rot_tag,  n_faces (number of faces in the mesh)
   // assumes that array f2c,f2f
 
   int sta_ind,end_ind;
@@ -2284,7 +2418,7 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
                 }
             }
 
-        }	// end of loop over k
+        }  // end of loop over k
     } // end of loop over ic
 
   out_n_faces = iface;
@@ -2871,17 +3005,6 @@ void get_vlist_loc_face(int& in_ctype, int& in_n_spts, int& in_face, array<int>&
 
 }
 
-double compute_distance(array<double>& pos_0, array<double>& pos_1, int in_dims, struct solution* FlowSol)
-{
-  double dist = 0.;
-  for (int m=0;m<FlowSol->n_dims;m++)
-    {
-      dist += (pos_0(m)-pos_1(m))*(pos_0(m)-pos_1(m));
-    }
-  dist = sqrt(dist);
-  return dist;
-}
-
 void compare_faces(array<int>& vlist1, array<int>& vlist2, int& num_v_per_f, int& found, int& rtag)
 {
 
@@ -2969,8 +3092,7 @@ void compare_faces(array<int>& vlist1, array<int>& vlist2, int& num_v_per_f, int
     }
   else
     {
-      cout << "ERROR: Haven't implemented this face type in compare_face yet...." << endl;
-      exit(1);
+      FatalError("ERROR: Haven't implemented this face type in compare_face yet....");
     }
 
 }
@@ -3138,8 +3260,7 @@ void compare_cyclic_faces(array<double> &xvert1, array<double> &xvert2, int& num
         }
       else
         {
-          cout << "ERROR: Haven't implemented this face type in compare_cyclic_face yet...." << endl;
-          exit(1);
+          FatalError("ERROR: Haven't implemented this face type in compare_cyclic_face yet....");
         }
     }
 
@@ -3181,294 +3302,6 @@ bool check_cyclic(array<double> &delta_cyclic, array<double> &loc_center_inter_0
 }
 
 #ifdef _MPI
-
-void exchange_plotq(struct solution* FlowSol)
-{
-  int counter=0;
-  for (int i=0;i<FlowSol->n_mpi_pnodes;i++)
-    {
-      for (int j=0;j<run_input.n_plot_quantities;j++)
-        {
-          FlowSol->out_buffer_plotq(counter++) = FlowSol->plotq_pnodes(FlowSol->mpi_pnode2pnode(i),j);
-        }
-    }
-
-  // Count the number of messages to send
-  int request_count = 0;
-  for (int p=0;p<FlowSol->nproc;p++) {
-      if (FlowSol->mpi_pnodes_part(p)!=0) request_count++;
-    }
-
-  MPI_Request* mpi_in_requests = (MPI_Request*) malloc(request_count*sizeof(MPI_Request));
-  MPI_Request* mpi_out_requests = (MPI_Request*) malloc(request_count*sizeof(MPI_Request));
-
-  // Initiate mpi_send
-  int Nmess = 0;
-  int sk = 0;
-  int Nout;
-  request_count=0;
-  for (int p=0;p<FlowSol->nproc;p++) {
-      Nout = FlowSol->mpi_pnodes_part(p)*run_input.n_plot_quantities;
-      if (Nout) {
-          MPI_Isend(FlowSol->out_buffer_plotq.get_ptr_cpu(sk),Nout,MPI_DOUBLE,p,p   ,MPI_COMM_WORLD,&mpi_out_requests[request_count]);
-          MPI_Irecv(FlowSol->in_buffer_plotq.get_ptr_cpu(sk),Nout,MPI_DOUBLE,p,FlowSol->rank,MPI_COMM_WORLD,&mpi_in_requests[request_count]);
-          sk+=Nout;
-          Nmess++;
-          request_count++;
-        }
-    }
-
-  MPI_Waitall(Nmess,mpi_in_requests,MPI_STATUSES_IGNORE);
-  MPI_Waitall(Nmess,mpi_out_requests,MPI_STATUSES_IGNORE);
-
-  int count=0;
-  for (int i=0;i<FlowSol->n_mpi_pnodes;i++)
-    {
-      for (int j=0;j<run_input.n_plot_quantities;j++)
-        {
-          FlowSol->plotq_pnodes(FlowSol->mpi_pnode2pnode(i),j) += FlowSol->in_buffer_plotq(count++);
-        }
-    }
-
-}
-
-void update_factor_pnodes(struct solution* FlowSol)
-{
-  int counter=0;
-  for (int i=0;i<FlowSol->n_mpi_pnodes;i++)
-    {
-      FlowSol->out_buffer_pnode(counter++) = FlowSol->factor_pnode(FlowSol->mpi_pnode2pnode(i));
-    }
-
-  // Count the number of messages to send
-  int request_count = 0;
-  for (int p=0;p<FlowSol->nproc;p++) {
-      if (FlowSol->mpi_pnodes_part(p)!=0) request_count++;
-    }
-
-  MPI_Request* mpi_in_requests = (MPI_Request*) malloc(request_count*sizeof(MPI_Request));
-  MPI_Request* mpi_out_requests = (MPI_Request*) malloc(request_count*sizeof(MPI_Request));
-
-  // Initiate mpi_send
-  int Nmess = 0;
-  int sk = 0;
-  int Nout;
-  request_count=0;
-  for (int p=0;p<FlowSol->nproc;p++) {
-      Nout = FlowSol->mpi_pnodes_part(p);;
-      if (Nout) {
-          MPI_Isend(FlowSol->out_buffer_pnode.get_ptr_cpu(sk),Nout,MPI_INT,p,p   ,MPI_COMM_WORLD,&mpi_out_requests[request_count]);
-          MPI_Irecv(FlowSol->in_buffer_pnode.get_ptr_cpu(sk),Nout,MPI_INT,p,FlowSol->rank,MPI_COMM_WORLD,&mpi_in_requests[request_count]);
-          sk+=Nout;
-          Nmess++;
-          request_count++;
-        }
-    }
-
-  MPI_Waitall(Nmess,mpi_in_requests,MPI_STATUSES_IGNORE);
-  MPI_Waitall(Nmess,mpi_out_requests,MPI_STATUSES_IGNORE);
-
-  for (int i=0;i<FlowSol->n_mpi_pnodes;i++)
-    {
-      FlowSol->factor_pnode(FlowSol->mpi_pnode2pnode(i)) += FlowSol->in_buffer_pnode(i);
-    }
-
-}
-
-void match_mpipnodes(array<int>& in_out_mpi_pnode2pnode, int& in_out_n_mpi_pnodes, array<int> &out_mpi_pnodes_part, array<double>& delta_cyclic, double tol, struct solution* FlowSol)
-{
-
-  // Copying inputs
-  array<int> old_mpi_pnode2pnode;
-  old_mpi_pnode2pnode = in_out_mpi_pnode2pnode;
-  int old_n_mpi_pnodes = in_out_n_mpi_pnodes;
-
-  // Allocate storage for twice as many nodes
-  in_out_mpi_pnode2pnode.setup(2*FlowSol->n_mpi_pnodes);
-
-  MPI_Status instatus;
-  array<double> delta_zero(FlowSol->n_dims);
-  for (int m=0;m<FlowSol->n_dims;m++)
-    delta_zero(m) = 0.;
-
-  for(int i=0;i<FlowSol->nproc;i++)
-    out_mpi_pnodes_part(i)=0;
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  // Exchange number of mpi_pnodes to receive
-  array<int> mpi_pnodes_from(FlowSol->nproc);
-  MPI_Allgather( &old_n_mpi_pnodes,1,MPI_INT,mpi_pnodes_from.get_ptr_cpu(),1,MPI_INT,MPI_COMM_WORLD);
-
-  int max_mpi_pnodes=0;
-  for (int i=0;i<FlowSol->nproc;i++)
-    if (mpi_pnodes_from(i) >= max_mpi_pnodes) max_mpi_pnodes=mpi_pnodes_from(i);
-
-  array<double> in_loc_mpi_pnodes(FlowSol->n_dims,max_mpi_pnodes);
-  array<double> loc_mpi_pnodes(FlowSol->n_dims,max_mpi_pnodes);
-
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  for (int i=0;i<old_n_mpi_pnodes;i++) {
-      for (int j=0;j<FlowSol->n_dims;j++)
-        {
-          int node = old_mpi_pnode2pnode(i);
-          loc_mpi_pnodes(j,i) = FlowSol->pos_pnode(old_mpi_pnode2pnode(i))(j);
-        }
-    }
-
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  array<double> loc_1(FlowSol->n_dims);
-  array<double> loc_2(FlowSol->n_dims);
-  array<int> matched(old_n_mpi_pnodes);
-  for (int i=0;i<old_n_mpi_pnodes;i++)
-    matched(i) = 0;
-
-  int i;
-
-  // Begin the exchange
-  int icount = 0;
-  int p,p2;
-  for(p=0;p<FlowSol->nproc;p++) {
-      if(p==FlowSol->rank) { // Send data
-          for (p2=0;p2<FlowSol->nproc;p2++) {
-              if (p2!=FlowSol->rank)  {
-                  //MPI_Send to processor p2
-                  MPI_Send(loc_mpi_pnodes.get_ptr_cpu(),FlowSol->n_dims*old_n_mpi_pnodes,MPI_DOUBLE,p2,100000*p+1000*p2,MPI_COMM_WORLD);
-                }
-            }
-          out_mpi_pnodes_part(p) = 0; // Processor p won't send any edges to himself
-        }
-      else // Receive data
-        {
-          //MPI_Recv from processor p
-          MPI_Recv(in_loc_mpi_pnodes.get_ptr_cpu(),FlowSol->n_dims*mpi_pnodes_from(p),MPI_DOUBLE,p,100000*p+1000*FlowSol->rank,MPI_COMM_WORLD,&instatus);
-
-          if (p<FlowSol->rank)
-            {
-              // Loop over local mpi_edges
-              for (int iloc=0;iloc<old_n_mpi_pnodes;iloc++) {
-                  // Loop over remote edges just received
-                  for(int irem=0;irem<mpi_pnodes_from(p);irem++)
-                    {
-                      for (int m=0;m<FlowSol->n_dims;m++) {
-                          loc_1(m) = in_loc_mpi_pnodes(m,irem);
-                          loc_2(m) = loc_mpi_pnodes(m,iloc);
-                        }
-                      if (check_cyclic(delta_cyclic,loc_1,loc_2,tol,FlowSol) ||
-                          check_cyclic(delta_zero  ,loc_1,loc_2,tol,FlowSol) )
-                        {
-                          out_mpi_pnodes_part(p)++;
-                          i = old_mpi_pnode2pnode(iloc);
-                          in_out_mpi_pnode2pnode(icount) = i;
-
-
-                          matched(iloc)=1;
-                          icount++;
-                          //break;
-                        }
-                    }
-                }
-            }
-          else // if p >= FlowSol->rank
-            {
-              // Loop over remote edges
-              for (int irem=0;irem<mpi_pnodes_from(p);irem++)
-                {
-                  for (int iloc=0;iloc<old_n_mpi_pnodes;iloc++)
-                    {
-                      for (int m=0;m<FlowSol->n_dims;m++) {
-                          loc_1(m) = in_loc_mpi_pnodes(m,irem);
-                          loc_2(m) = loc_mpi_pnodes(m,iloc);
-                        }
-
-                      // Check if it matches vertex iloc
-                      if (check_cyclic(delta_cyclic,loc_1,loc_2,tol,FlowSol) ||
-                          check_cyclic(delta_zero  ,loc_1,loc_2,tol,FlowSol))
-                        {
-                          out_mpi_pnodes_part(p)++;
-                          i = old_mpi_pnode2pnode(iloc);
-                          in_out_mpi_pnode2pnode(icount) = i;
-
-
-                          matched(iloc)=1;
-                          icount++;
-                          //break;
-                        }
-                    }
-                }
-            }
-        }
-      MPI_Barrier(MPI_COMM_WORLD);
-    }
-
-  for (int i=0;i<old_n_mpi_pnodes;i++)
-    {
-      if (matched(i)!=1)
-        {
-          FatalError("Problem in match_mpipnodes, one plotnode has not been matched");
-        }
-    }
-
-  in_out_n_mpi_pnodes=icount;
-
-}
-
-
-
-
-void create_mpi_pnode2pnode(array<int>& in_out_mpi_pnode2pnode, int& out_n_mpi_pnodes, array<int>& in_f_mpi2f, array<int>& in_f2loc_f, array<int>& in_f2c, array<int>& in_ctype, int& n_mpi_inters, struct solution* FlowSol)
-{
-  int max_pnodes_per_inter = (FlowSol->p_res)*(FlowSol->p_res);
-  int max_mpi_pnodes = n_mpi_inters*max_pnodes_per_inter;
-
-  array<int> mpi_pnode_list(max_mpi_pnodes);
-  array<int> inter_pnodes(max_pnodes_per_inter);
-
-  int n_inter_pnodes;
-  out_n_mpi_pnodes=0;
-
-  //cout << "n_mpi_inters=" << FlowSol->n_mpi_inters << endl;
-  for (int i=0;i<n_mpi_inters;i++)
-    {
-      int f = in_f_mpi2f(i);
-      int loc_f = in_f2loc_f(f,0);
-      int ic_l = in_f2c(f,0);
-      int ctype = in_ctype(ic_l);
-
-      // Get the list of pnodes and the number of pnodes for that face
-      FlowSol->mesh_eles(ctype)->get_face_pnode_list(inter_pnodes,FlowSol->c2ctype_c(ic_l),loc_f,n_inter_pnodes);
-
-      // Check if they have already been counted
-      for (int j=0;j<n_inter_pnodes;j++)
-        {
-
-          int found =0;
-          for (int k=0;k<out_n_mpi_pnodes;k++)
-            {
-              if (mpi_pnode_list(k)==inter_pnodes(j))
-                {
-                  found=1;
-                  break;
-                }
-            }
-          if (found==0) {
-              mpi_pnode_list(out_n_mpi_pnodes)=inter_pnodes(j);
-              out_n_mpi_pnodes++;
-            }
-
-
-        }
-    }
-
-  in_out_mpi_pnode2pnode.setup(out_n_mpi_pnodes);
-  for (int i=0;i<out_n_mpi_pnodes;i++)
-    {
-      in_out_mpi_pnode2pnode(i) = mpi_pnode_list(i);
-    }
-
-}
-
 
 void match_mpifaces(array<int> &in_f2v, array<int> &in_f2nv, array<double>& in_xv, array<int>& inout_f_mpi2f, array<int>& out_mpifaces_part, array<double> &delta_cyclic, int n_mpi_faces, double tol, struct solution* FlowSol)
 {
@@ -3870,8 +3703,7 @@ void compare_mpi_faces(array<double> &xvert1, array<double> &xvert2, int& num_v_
         }
       else
         {
-          cout << "ERROR: Haven't implemented this face type in compare_cyclic_face yet...." << endl;
-          exit(1);
+          FatalError("ERROR: Haven't implemented this face type in compare_cyclic_face yet....");
         }
     }
 

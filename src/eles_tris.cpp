@@ -51,7 +51,7 @@ eles_tris::eles_tris()
 
 // #### methods ####
 
-void eles_tris::setup_ele_type_specific(int in_run_type)
+void eles_tris::setup_ele_type_specific()
 {
 
 #ifndef _MPI
@@ -79,6 +79,8 @@ void eles_tris::setup_ele_type_specific(int in_run_type)
 
   n_ppts_per_ele=(p_res+1)*p_res/2;
   n_peles_per_ele=(p_res-1)*(p_res-1);
+  n_verts_per_ele = 3;
+
   set_loc_ppts();
   set_opp_p();
 
@@ -86,148 +88,38 @@ void eles_tris::setup_ele_type_specific(int in_run_type)
   set_volume_cubpts();
   set_opp_volume_cubpts();
 
-  if (in_run_type==0)
+  n_fpts_per_inter.setup(3);
+  n_fpts_per_inter(0)=(order+1);
+  n_fpts_per_inter(1)=(order+1);
+  n_fpts_per_inter(2)=(order+1);
+
+  n_fpts_per_ele=n_inters_per_ele*(order+1);
+
+  fpts_type=run_input.fpts_type_tri;
+
+  set_tloc_fpts();
+
+  set_tnorm_fpts();
+
+  set_opp_0(run_input.sparse_tri);
+  set_opp_1(run_input.sparse_tri);
+  set_opp_2(run_input.sparse_tri);
+  set_opp_3(run_input.sparse_tri);
+
+  if(viscous)
     {
-      n_fpts_per_inter.setup(3);
-      n_fpts_per_inter(0)=(order+1);
-      n_fpts_per_inter(1)=(order+1);
-      n_fpts_per_inter(2)=(order+1);
+      set_opp_4(run_input.sparse_tri);
+      set_opp_5(run_input.sparse_tri);
+      set_opp_6(run_input.sparse_tri);
 
-      n_fpts_per_ele=n_inters_per_ele*(order+1);
+      temp_grad_u.setup(n_fields,n_dims);
 
-      fpts_type=run_input.fpts_type_tri;
-
-      set_tloc_fpts();
-
-      set_tnorm_fpts();
-
-      set_opp_0(run_input.sparse_tri);
-      set_opp_1(run_input.sparse_tri);
-      set_opp_2(run_input.sparse_tri);
-      set_opp_3(run_input.sparse_tri);
-
-      if(viscous)
-        {
-          set_opp_4(run_input.sparse_tri);
-          set_opp_5(run_input.sparse_tri);
-          set_opp_6(run_input.sparse_tri);
-
-          temp_grad_u.setup(n_fields,n_dims);
-          if(run_input.LES)
-            {
-              temp_sgsf.setup(n_fields,n_dims);
-
-              // Compute tri filter matrix
-              compute_filter_upts();
-            }
-        }
-
-      temp_u.setup(n_fields);
-      temp_f.setup(n_fields,n_dims);
-
-      //}
-      //else
-      //{
-      if (viscous==1)
-        {
-          set_opp_4(run_input.sparse_tri);
-        }
-      n_verts_per_ele = 3;
-      n_edges_per_ele = 0;
-      n_ppts_per_edge = 0;
-
-      // Number of plot points per face, excluding points on vertices or edges
-      n_ppts_per_face.setup(n_inters_per_ele);
-      n_ppts_per_face(0) = (p_res-2);
-      n_ppts_per_face(1) = (p_res-2);
-      n_ppts_per_face(2) = (p_res-2);
-
-      // Number of plot points per face, including points on vertices or edges
-      n_ppts_per_face2.setup(n_inters_per_ele);
-      n_ppts_per_face2(0) = (p_res);
-      n_ppts_per_face2(1) = (p_res);
-      n_ppts_per_face2(2) = (p_res);
-
-      max_n_ppts_per_face = n_ppts_per_face(0);
-
-      // Number of plot points not on faces, edges or vertices
-      n_interior_ppts = n_ppts_per_ele-3-3*n_ppts_per_face(0);
-
-      vert_to_ppt.setup(n_verts_per_ele);
-      edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
-
-      face_ppt_to_ppt.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
-
-      face2_ppt_to_ppt.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
-
-      interior_ppt_to_ppt.setup(n_interior_ppts);
-
-      create_map_ppt();
-
+      // Compute tri filter matrix
+      if(filter) compute_filter_upts();
     }
 
-}
-
-void eles_tris::create_map_ppt(void)
-{
-  int index;
-  int vert_ppt_count = 0;
-  int interior_ppt_count = 0;
-  array<int> face_ppt_count(n_inters_per_ele);
-  array<int> face2_ppt_count(n_inters_per_ele);
-  for (int i=0;i<n_inters_per_ele;i++)
-    {
-      face_ppt_count(i)=0;
-      face2_ppt_count(i)=0;
-    }
-
-  for(int j=0;j<p_res;j++)
-    {
-      for(int i=0;i<p_res-j;i++)
-        {
-          index = i+(j*(p_res+1))-((j*(j+1))/2);
-
-
-          if ( (i==0 && j==0) || i==p_res-1 || j==p_res-1 )
-            {
-              vert_to_ppt(vert_ppt_count++)=index;
-            }
-          else if (j==0) {
-              face_ppt_to_ppt(0)(face_ppt_count(0)++) = index;
-              //cout << "face 0" << endl;
-            }
-          else if (i==p_res-j-1) {
-              face_ppt_to_ppt(1)(face_ppt_count(1)++) = index;
-              //cout << "face 1" << endl;
-            }
-          else if (i==0) {
-              face_ppt_to_ppt(2)(face_ppt_count(2)++) = index;
-              //cout << "face 2" << endl;
-            }
-          else
-            interior_ppt_to_ppt(interior_ppt_count++) = index;
-
-          // Creating face2 array
-          if (j==0) {
-              face2_ppt_to_ppt(0)(face2_ppt_count(0)++) = index;
-              //cout << "face 0" << endl;
-            }
-          if (i==p_res-j-1) {
-              face2_ppt_to_ppt(1)(face2_ppt_count(1)++) = index;
-              //cout << "face 1" << endl;
-            }
-          if (i==0) {
-              face2_ppt_to_ppt(2)(face2_ppt_count(2)++) = index;
-              //cout << "face 2" << endl;
-            }
-
-
-        }
-    }
+  temp_u.setup(n_fields);
+  temp_f.setup(n_fields,n_dims);
 }
 
 void eles_tris::set_connectivity_plot()
@@ -751,7 +643,6 @@ void eles_tris::fill_opp_3(array<double>& opp_3)
 // Filtering operators for use in subgrid-scale modelling
 void eles_tris::compute_filter_upts(void)
 {
-  printf("\nEntering filter computation function\n");
   int i,j,k,l,N,N2;
   double dlt, k_c, sum, vol, norm;
   N = n_upts_per_ele;
@@ -766,19 +657,16 @@ void eles_tris::compute_filter_upts(void)
 
   // Approx resolution in element (assumes uniform point spacing)
   dlt = 2.0/order;
-  printf("\nN, N2, dlt, k_c:\n");
-  cout << N << ", " << N2 << ", " << dlt << ", " << k_c << endl;
 
   if(run_input.filter_type==0) // Vasilyev filter
     {
-      printf("Vasilyev filters not implemented for tris. Exiting.");
-      exit(1);
+      FatalError("Vasilyev filters not implemented for tris. Exiting.");
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
       //#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-      printf("\nBuilding discrete Gaussian filter\n");
+      if (rank==0) cout<<"Building discrete Gaussian filter"<<endl;
       int ctype;
       double k_R, k_L, coeff;
       double res_0, res_L, res_R;
@@ -790,14 +678,10 @@ void eles_tris::compute_filter_upts(void)
 
       if(N != n_cubpts_per_ele)
         {
-          cout<<"WARNING: Gaussian filter only currently possible for order 1, 2 or 4. If order 1, set vol_cub_order to 2. If order 2, set vol_cub_order to 3 or 4. If order 4, set vol_cub_order to 7. Exiting"<<endl;
-          cout<<"order: "<<order<<", vol_cub_order: "<<volume_cub_order<<endl;
-          exit(1);
+          FatalError("WARNING: Gaussian filter only currently possible for order 1, 2 or 4. If order 1, set vol_cub_order to 2. If order 2, set vol_cub_order to 3 or 4. If order 4, set vol_cub_order to 7. Exiting");
         }
 
       X = loc_upts;
-      printf("\n2D solution point coordinates:\n");
-      X.print();
 
       // Normalised solution point separation: r = sqrt((x_a-x_b)^2 + (y_a-y_b)^2)
       for (i=0;i<N;i++)
@@ -807,14 +691,8 @@ void eles_tris::compute_filter_upts(void)
         for (j=0;j<i;j++)
           beta(i,j) = beta(j,i);
 
-      printf("\nNormalised cubature point separation beta:\n");
-      beta.print();
-
       for (j=0;j<N;++j)
         wf(j) = weight_volume_cubpts(j);
-
-      cout<<setprecision(10)<<"Tri weights:"<<endl;
-      wf.print();
 
       // Determine corrected filter width for skewed quadrature points
       // using iterative constraining procedure
@@ -822,7 +700,6 @@ void eles_tris::compute_filter_upts(void)
       ctype = -1;
       if(ctype>=0)
         {
-          cout<<"Iterative cutoff procedure"<<endl;
           for(i=0;i<N2;i++)
             {
               for(j=0;j<N;j++)
@@ -861,8 +738,6 @@ void eles_tris::compute_filter_upts(void)
           for(i=0;i<N;i++)
             alpha(i) = k_c;
         }
-      cout<<"alpha: "<<endl;
-      alpha.print();
 
       sum = 0.0;
       for(i=0;i<N;i++)
@@ -879,23 +754,17 @@ void eles_tris::compute_filter_upts(void)
               sum += filter_upts(i,j);
             }
         }
-      printf("filter_upts:\n");
-      filter_upts.print();
     }
   else if(run_input.filter_type==2) // Modal coefficient filter
     {
-      printf("\nBuilding modal filter\n");
+      if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute modal filter
-      compute_modal_filter(filter_upts, vandermonde, inv_vandermonde, N);
-
-      printf("\nFilter:\n");
-      filter_upts.print();
-
+      compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order);
     }
   else // Simple average for low order
     {
-      printf("\nBuilding average filter\n");
+      if (rank==0) cout<<"Building average filter"<<endl;
       for(i=0;i<N;i++)
         for(j=0;j<N;j++)
           filter_upts(i,j) = 1.0/N;
@@ -910,13 +779,12 @@ void eles_tris::compute_filter_upts(void)
           filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
         }
     }
-  printf("\nFilter after symmetrising:\n");
-  filter_upts.print();
+
   for(i=0;i<N2;i++)
     {
       norm = 0.0;
       for(j=0;j<N;j++)
-        norm += filter_upts(i,j); // or abs(filter_upts(i,j))?
+        norm += filter_upts(i,j);
       for(j=0;j<N;j++)
         filter_upts(i,j) /= norm;
       for(j=0;j<N;j++)
@@ -926,12 +794,6 @@ void eles_tris::compute_filter_upts(void)
   for(i=0;i<N;i++)
     for(j=0;j<N;j++)
       sum+=filter_upts(i,j);
-
-  printf("\nFilter after normalising:\n");
-  filter_upts.print();
-  cout<<"coeff sum " << sum << endl;
-
-  printf("\nLeaving filter computation function\n");
 }
 
 
@@ -943,4 +805,22 @@ double eles_tris::calc_ele_vol(double& detjac)
   vol = detjac*4./2.;
   return vol;
 }
+
+/*! Calculate element reference length for timestep calculation */
+double eles_tris::calc_h_ref_specific(int in_ele)
+  {
+    double a,b,c,s;
+    double out_h_ref;
+
+    // Compute edge lengths
+    a = sqrt(pow(shape(0,0,in_ele) - shape(0,1,in_ele),2.0) + pow(shape(1,0,in_ele) - shape(1,1,in_ele),2.0));
+    b = sqrt(pow(shape(0,1,in_ele) - shape(0,2,in_ele),2.0) + pow(shape(1,1,in_ele) - shape(1,2,in_ele),2.0));
+    c = sqrt(pow(shape(0,2,in_ele) - shape(0,0,in_ele),2.0) + pow(shape(1,2,in_ele) - shape(1,0,in_ele),2.0));
+
+    // Compute diameter of incircle
+    s = 0.5*(a+b+c);
+    out_h_ref = sqrt(((s-a)*(s-b)*(s-c))/s);
+
+    return out_h_ref;
+  }
 

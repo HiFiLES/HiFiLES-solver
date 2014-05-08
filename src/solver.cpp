@@ -56,113 +56,128 @@ void CalcResidual(struct solution* FlowSol) {
   int in_div_tconf_upts_to = 0;     /*!< Define... */
   int i;                            /*!< Loop iterator */
 
-  /*! If using LES, filter the solution prior to everything else. If using Similarity
-   LES model or explicit SVV filtering as a 'model'. */
-  if(run_input.LES==1) {
+  /*! If at first RK step and using certain LES models, compute some model-related quantities. */
+  if(run_input.LES==1 && in_disu_upts_from==0) {
       if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
           for(i=0; i<FlowSol->n_ele_types; i++)
-            FlowSol->mesh_eles(i)->calc_disuf_upts(in_disu_upts_from);
+            FlowSol->mesh_eles(i)->calc_sgs_terms(in_disu_upts_from);
         }
     }
 
   /*! Compute the solution at the flux points. */
   for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calc_disu_fpts(in_disu_upts_from);
+    FlowSol->mesh_eles(i)->extrapolate_solution(in_disu_upts_from);
 
 #ifdef _MPI
   /*! Send the solution at the flux points across the MPI interfaces. */
   if (FlowSol->nproc>1)
     for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-      FlowSol->mesh_mpi_inters(i).send_disu_fpts();
+      FlowSol->mesh_mpi_inters(i).send_solution();
 #endif
 
   if (FlowSol->viscous) {
       /*! Compute the uncorrected gradient of the solution at the solution points. */
       for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->calc_uncor_tgrad_disu_upts(in_disu_upts_from);
+        FlowSol->mesh_eles(i)->calculate_gradient(in_disu_upts_from);
     }
 
   /*! Compute the inviscid flux at the solution points and store in total flux storage. */
   for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calc_tdisinvf_upts(in_disu_upts_from);
+    FlowSol->mesh_eles(i)->evaluate_invFlux(in_disu_upts_from);
 
   /*! Calculate body forcing, if switched on, and add to flux. */
-  if(run_input.equation==0 && run_input.run_type==0 && run_input.forcing==1) {
+  if(run_input.equation==0 && run_input.forcing==1) {
       for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->add_body_force_upts(FlowSol->body_force);
+        FlowSol->mesh_eles(i)->evaluate_bodyForce(FlowSol->body_force);
     }
 
   /*! Compute the inviscid numerical fluxes.
    Compute the common solution and solution corrections (viscous only). */
   for(i=0; i<FlowSol->n_int_inter_types; i++)
-    FlowSol->mesh_int_inters(i).calc_norm_tconinvf_fpts();
+    FlowSol->mesh_int_inters(i).calculate_common_invFlux();
 
   for(i=0; i<FlowSol->n_bdy_inter_types; i++)
-    FlowSol->mesh_bdy_inters(i).calc_norm_tconinvf_fpts_boundary(FlowSol->time);
+    FlowSol->mesh_bdy_inters(i).evaluate_boundaryConditions_invFlux(FlowSol->time);
 
 #ifdef _MPI
   /*! Send the previously computed values across the MPI interfaces. */
   if (FlowSol->nproc>1) {
       for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-        FlowSol->mesh_mpi_inters(i).receive_disu_fpts();
+        FlowSol->mesh_mpi_inters(i).receive_solution();
 
       for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-        FlowSol->mesh_mpi_inters(i).calc_norm_tconinvf_fpts_mpi();
+        FlowSol->mesh_mpi_inters(i).calculate_common_invFlux();
     }
 #endif
 
   if (FlowSol->viscous) {
       /*! Compute corrected gradient of the solution at the solution and flux points. */
       for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->calc_cor_grad_disu_upts();
+        FlowSol->mesh_eles(i)->correct_gradient();
 
       for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->calc_cor_grad_disu_fpts();
+        FlowSol->mesh_eles(i)->extrapolate_corrected_gradient();
 
 #ifdef _MPI
-      /*! Send the corrected value across the MPI interface. */
+      /*! Send the corrected value and SGS flux across the MPI interface. */
       if (FlowSol->nproc>1) {
           for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-            FlowSol->mesh_mpi_inters(i).send_cor_grad_disu_fpts();
+            FlowSol->mesh_mpi_inters(i).send_corrected_gradient();
+
+          if (run_input.LES) {
+            for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+              FlowSol->mesh_mpi_inters(i).send_sgsf_fpts();
+          }
         }
 #endif
 
       /*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
       for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->calc_tdisvisf_upts(in_disu_upts_from);
+        FlowSol->mesh_eles(i)->evaluate_viscFlux(in_disu_upts_from);
     }
 
-  /*! For viscous or inviscid, compute the divergence of flux at solution points. */
-  for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calc_div_tdisf_upts(in_div_tconf_upts_to);
+  /*! If using LES, compute the SGS flux at flux points. */
+  if (run_input.LES) {
+	  for(i=0; i<FlowSol->n_ele_types; i++)
+			FlowSol->mesh_eles(i)->evaluate_sgsFlux();
+  }
 
   /*! For viscous or inviscid, compute the normal discontinuous flux at flux points. */
   for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calc_norm_tdisf_fpts();
+    FlowSol->mesh_eles(i)->extrapolate_totalFlux();
+
+  /*! For viscous or inviscid, compute the divergence of flux at solution points. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calculate_divergence(in_div_tconf_upts_to);
 
   if (FlowSol->viscous) {
       /*! Compute normal interface viscous flux and add to normal inviscid flux. */
       for(i=0; i<FlowSol->n_int_inter_types; i++)
-        FlowSol->mesh_int_inters(i).calc_norm_tconvisf_fpts();
+        FlowSol->mesh_int_inters(i).calculate_common_viscFlux();
 
       for(i=0; i<FlowSol->n_bdy_inter_types; i++)
-        FlowSol->mesh_bdy_inters(i).calc_norm_tconvisf_fpts_boundary(FlowSol->time);
+        FlowSol->mesh_bdy_inters(i).evaluate_boundaryConditions_viscFlux(FlowSol->time);
 
 #if _MPI
       /*! Evaluate the MPI interfaces. */
       if (FlowSol->nproc>1) {
           for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-            FlowSol->mesh_mpi_inters(i).receive_cor_grad_disu_fpts();
+            FlowSol->mesh_mpi_inters(i).receive_corrected_gradient();
+
+          if (run_input.LES) {
+            for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+            FlowSol->mesh_mpi_inters(i).receive_sgsf_fpts();
+          }
 
           for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-            FlowSol->mesh_mpi_inters(i).calc_norm_tconvisf_fpts_mpi();
+            FlowSol->mesh_mpi_inters(i).calculate_common_viscFlux();
         }
 #endif
     }
 
   /*! Compute the divergence of the transformed continuous flux. */
   for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calc_div_tconf_upts(in_div_tconf_upts_to);
+    FlowSol->mesh_eles(i)->calculate_corrected_divergence(in_div_tconf_upts_to);
 
 }
 
@@ -189,6 +204,13 @@ double* get_norm_tconf_fpts_ptr(int in_ele_type, int in_ele, int in_field, int i
   return FlowSol->mesh_eles(in_ele_type)->get_norm_tconf_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
 }
 
+// get pointer to subgrid-scale flux at a flux point
+
+double* get_sgsf_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol)
+{
+	return FlowSol->mesh_eles(in_ele_type)->get_sgsf_fpts_ptr(in_fpt,in_local_inter,in_field,in_dim,in_ele);
+}
+
 // get pointer to determinant of jacobian at a flux point
 
 double* get_detjac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol)
@@ -210,11 +232,19 @@ double* get_norm_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int i
   return FlowSol->mesh_eles(in_ele_type)->get_norm_fpts_ptr(in_fpt,in_local_inter,in_dim,in_ele);
 }
 
-// get pointer to the coordinates at a flux point
+// get CPU pointer to the coordinates at a flux point.
+// See bdy_inters for reasons for this CPU/GPU split.
 
-double* get_loc_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
+double* get_loc_fpts_ptr_cpu(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
 {
-  return FlowSol->mesh_eles(in_ele_type)->get_loc_fpts_ptr(in_fpt,in_local_inter,in_dim,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_loc_fpts_ptr_cpu(in_fpt,in_local_inter,in_dim,in_ele);
+}
+
+// get GPU pointer to the coordinates at a flux point
+
+double* get_loc_fpts_ptr_gpu(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_loc_fpts_ptr_gpu(in_fpt,in_local_inter,in_dim,in_ele);
 }
 
 // get pointer to normal continuous transformed viscous flux at a flux point

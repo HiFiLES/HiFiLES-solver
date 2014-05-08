@@ -48,14 +48,13 @@ public:
 
   double gamma;
 
-  int run_type;
   int viscous;
   int equation;
 
-  int n_plot_quantities;
-  array<string> plot_quantities;
-  int n_diagnostics;
-  array<string> diagnostics;
+  int n_diagnostic_fields;
+  array<string> diagnostic_fields;
+  int n_integral_quantities;
+  array<string> integral_quantities;
 
   double prandtl;
 
@@ -74,6 +73,8 @@ public:
   double lambda;
 
   double dt;
+  int dt_type;
+  double CFL;
   int n_steps;
   int plot_freq;
   int restart_dump_freq;
@@ -81,12 +82,14 @@ public:
 
   int LES;
   int filter_type;
-  double filter_ratio;
-  int SGS_model;
+	double filter_ratio;
+	int SGS_model;
+	int wall_model;
+	double wall_layer_t;
 
   int monitor_res_freq;
   int monitor_force_freq;
-  int diagnostics_freq;
+  int monitor_integrals_freq;
   int res_norm_type; // 0:infinity norm, 1:L1 norm, 2:L2 norm
   int error_norm_type; // 0:infinity norm, 1:L1 norm, 2:L2 norm
   int res_norm_field;

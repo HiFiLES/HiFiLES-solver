@@ -52,7 +52,7 @@ eles_quads::eles_quads()
 
 // #### methods ####
 
-void eles_quads::setup_ele_type_specific(int in_run_type)
+void eles_quads::setup_ele_type_specific()
 {
 
 #ifndef _MPI
@@ -70,6 +70,7 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
     FatalError("Equation not supported");
 
   n_inters_per_ele=4;
+  length.setup(4);
 
   n_upts_per_ele=(order+1)*(order+1);
   upts_type=run_input.upts_type_quad;
@@ -79,6 +80,8 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
 
   n_ppts_per_ele=p_res*p_res;
   n_peles_per_ele=(p_res-1)*(p_res-1);
+  n_verts_per_ele = 4;
+
   set_loc_ppts();
   set_opp_p();
 
@@ -86,161 +89,38 @@ void eles_quads::setup_ele_type_specific(int in_run_type)
   set_volume_cubpts();
   set_opp_volume_cubpts();
 
-  if (in_run_type==0)
+  n_fpts_per_inter.setup(4);
+
+  n_fpts_per_inter(0)=(order+1);
+  n_fpts_per_inter(1)=(order+1);
+  n_fpts_per_inter(2)=(order+1);
+  n_fpts_per_inter(3)=(order+1);
+
+  n_fpts_per_ele=n_inters_per_ele*(order+1);
+
+  set_tloc_fpts();
+
+  set_tnorm_fpts();
+
+  set_opp_0(run_input.sparse_quad);
+  set_opp_1(run_input.sparse_quad);
+  set_opp_2(run_input.sparse_quad);
+  set_opp_3(run_input.sparse_quad);
+
+  if(viscous)
     {
-      n_fpts_per_inter.setup(4);
+      set_opp_4(run_input.sparse_quad);
+      set_opp_5(run_input.sparse_quad);
+      set_opp_6(run_input.sparse_quad);
 
-      n_fpts_per_inter(0)=(order+1);
-      n_fpts_per_inter(1)=(order+1);
-      n_fpts_per_inter(2)=(order+1);
-      n_fpts_per_inter(3)=(order+1);
+      temp_grad_u.setup(n_fields,n_dims);
 
-      n_fpts_per_ele=n_inters_per_ele*(order+1);
-
-      set_tloc_fpts();
-
-      set_tnorm_fpts();
-
-      set_opp_0(run_input.sparse_quad);
-      set_opp_1(run_input.sparse_quad);
-      set_opp_2(run_input.sparse_quad);
-      set_opp_3(run_input.sparse_quad);
-
-      if(viscous)
-        {
-          set_opp_4(run_input.sparse_quad);
-          set_opp_5(run_input.sparse_quad);
-          set_opp_6(run_input.sparse_quad);
-
-          temp_grad_u.setup(n_fields,n_dims);
-          if(run_input.LES)
-            {
-              temp_sgsf.setup(n_fields,n_dims);
-
-              // Compute quad filter matrix
-              compute_filter_upts();
-            }
-        }
-
-      temp_u.setup(n_fields);
-      temp_f.setup(n_fields,n_dims);
-      //}
-      //else
-      //{
-
-      if (viscous==1)
-        {
-          set_opp_4(run_input.sparse_quad);
-        }
-
-      n_verts_per_ele = 4;
-      n_edges_per_ele = 0;
-      n_ppts_per_edge = 0;
-
-      // Number of plot points per face, excluding points on vertices or edges
-      n_ppts_per_face.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        n_ppts_per_face(i) = (p_res-2);
-
-      n_ppts_per_face2.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        n_ppts_per_face2(i) = (p_res);
-
-      max_n_ppts_per_face = n_ppts_per_face(0);
-
-      // Number of plot points not on faces, edges or vertices
-      n_interior_ppts = n_ppts_per_ele-4-4*n_ppts_per_face(0);
-
-      vert_to_ppt.setup(n_verts_per_ele);
-      edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
-
-      face_ppt_to_ppt.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
-
-      face2_ppt_to_ppt.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
-
-      interior_ppt_to_ppt.setup(n_interior_ppts);
-
-      create_map_ppt();
-
+      // Compute quad filter matrix
+      if(filter) compute_filter_upts();
     }
 
-}
-
-void eles_quads::create_map_ppt(void)
-{
-
-  int i,j;
-  int index;
-  int vert_ppt_count = 0;
-  int interior_ppt_count = 0;
-  array<int> face_ppt_count(n_inters_per_ele);
-  array<int> face2_ppt_count(n_inters_per_ele);
-
-  for (i=0;i<n_inters_per_ele;i++) {
-      face_ppt_count(i)=0;
-      face2_ppt_count(i)=0;
-    }
-
-  for(j=0;j<p_res;j++)
-    {
-      for(i=0;i<p_res;i++)
-        {
-          index=i+(p_res*j);
-
-          if (i==0 && j==0)
-            vert_to_ppt(0)=index;
-          else if (i==p_res-1 && j==0)
-            vert_to_ppt(1)=index;
-          else if (i==p_res-1 && j==p_res-1)
-            vert_to_ppt(2)=index;
-          else if (i==0 && j==p_res-1)
-            vert_to_ppt(3)=index;
-          else if (j==0) {
-              face_ppt_to_ppt(0)(face_ppt_count(0)++) = index;
-              //cout << "face 0" << endl;
-            }
-          else if (i==p_res-1) {
-              face_ppt_to_ppt(1)(face_ppt_count(1)++) = index;
-              //cout << "face 1" << endl;
-            }
-          else if (j==p_res-1) {
-              face_ppt_to_ppt(2)(face_ppt_count(2)++) = index;
-              //cout << "face 2" << endl;
-            }
-          else if (i==0) {
-              face_ppt_to_ppt(3)(face_ppt_count(3)++) = index;
-              //cout << "face 3" << endl;
-            }
-          else
-            interior_ppt_to_ppt(interior_ppt_count++) = index;
-
-          // Creating face 2 array
-          if (j==0) {
-              face2_ppt_to_ppt(0)(face2_ppt_count(0)++) = index;
-              //cout << "face 0" << endl;
-            }
-          if (i==p_res-1) {
-              face2_ppt_to_ppt(1)(face2_ppt_count(1)++) = index;
-              //cout << "face 1" << endl;
-            }
-          if (j==p_res-1) {
-              face2_ppt_to_ppt(2)(face2_ppt_count(2)++) = index;
-              //cout << "face 2" << endl;
-            }
-          if (i==0) {
-              face2_ppt_to_ppt(3)(face2_ppt_count(3)++) = index;
-              //cout << "face 3" << endl;
-            }
-
-
-
-        }
-    }
-
+  temp_u.setup(n_fields);
+  temp_f.setup(n_fields,n_dims);
 }
 
 void eles_quads::set_connectivity_plot()
@@ -581,7 +461,6 @@ void eles_quads::set_tnorm_fpts(void)
 // Filtering operators for use in subgrid-scale modelling
 void eles_quads::compute_filter_upts(void)
 {
-  printf("\nEntering filter computation function\n");
   int i,j,k,l,N,N2;
   double dlt, k_c, sum, norm;
   N = order+1; // order is of basis polynomials NOT truncation error!
@@ -592,8 +471,6 @@ void eles_quads::compute_filter_upts(void)
   filter_upts_1D.setup(N,N);
 
   X = loc_1d_upts;
-  printf("\n1D solution point coordinates:\n");
-  X.print();
 
   N2 = N/2;
   if(N % 2 != 0){N2 += 1;}
@@ -602,22 +479,17 @@ void eles_quads::compute_filter_upts(void)
   // Approx resolution in element (assumes uniform point spacing)
   // Interval is [-1:1]
   dlt = 2.0/order;
-  printf("\nN, N2, dlt, k_c:\n");
-  cout << N << ", " << N2 << ", " << dlt << ", " << k_c << endl;
 
   // Normalised solution point separation
   for (i=0;i<N;i++)
     for (j=0;j<N;j++)
       beta(j,i) = (X(j)-X(i))/dlt;
 
-  printf("\nNormalised solution point separation beta:\n");
-  beta.print();
-
   // Build high-order-commuting Vasilyev filter
   // Only use high-order filters for high enough order
   if(run_input.filter_type==0 and N>=3)
     {
-      printf("\nBuilding high-order-commuting Vasilyev filter\n");
+      if (rank==0) cout<<"Building high-order-commuting Vasilyev filter"<<endl;
       array<double> C(N);
       array<double> A(N,N);
 
@@ -672,7 +544,7 @@ void eles_quads::compute_filter_upts(void)
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
-      printf("\nBuilding discrete Gaussian filter\n");
+      if (rank==0) cout<<"Building discrete Gaussian filter"<<endl;
       int ctype,index;
       double k_R, k_L, coeff;
       double res_0, res_L, res_R;
@@ -683,22 +555,17 @@ void eles_quads::compute_filter_upts(void)
 
       if(N != n_cubpts_1d)
         {
-          cout<<"WARNING: To build Gaussian filter, the interface cubature order must equal solution order, e.g. inters_cub_order=9 if order=4, inters_cub_order=7 if order=3, inters_cub_order=5 if order=2. Exiting"<<endl;
-          cout<<"order: "<<order<<", inters_cub_order: "<<inters_cub_order<<endl;
-          exit(1);
+          FatalError("WARNING: To build Gaussian filter, the interface cubature order must equal solution order, e.g. inters_cub_order=9 if order=4, inters_cub_order=7 if order=3, inters_cub_order=5 if order=2. Exiting");
         }
       for (j=0;j<n_cubpts_1d;++j)
         wf(j) = cub_1d.get_weight(j);
 
-      cout<<setprecision(10)<<"1D weights:"<<endl;
-      wf.print();
       // Determine corrected filter width for skewed quadrature points
       // using iterative constraining procedure
       // ctype options: (-1) no constraining, (0) constrain moment, (1) constrain cutoff frequency
       ctype = -1;
       if(ctype>=0)
         {
-          cout<<"Iterative cutoff procedure"<<endl;
           for (i=0;i<N2;i++)
             {
               for (j=0;j<N;j++)
@@ -736,9 +603,6 @@ void eles_quads::compute_filter_upts(void)
         for (i=0;i<N;i++)
           alpha(i) = k_c;
 
-      cout<<"alpha: "<<endl;
-      alpha.print();
-
       sum = 0.0;
       for (i=0;i<N;i++)
         {
@@ -757,10 +621,10 @@ void eles_quads::compute_filter_upts(void)
     }
   else if(run_input.filter_type==2) // Modal coefficient filter
     {
-      printf("\nBuilding modal filter\n");
+      if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute modal filter
-      compute_modal_filter(filter_upts_1D, vandermonde, inv_vandermonde, N);
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
 
       sum = 0;
       for(i=0;i<N;i++)
@@ -769,7 +633,7 @@ void eles_quads::compute_filter_upts(void)
     }
   else // Simple average
     {
-      printf("\nBuilding average filter\n");
+      if (rank==0) cout<<"Building average filter"<<endl;
       sum=0;
       for (i=0;i<N;i++)
         {
@@ -780,10 +644,6 @@ void eles_quads::compute_filter_upts(void)
             }
         }
     }
-
-  printf("\n1D filter:\n");
-  filter_upts_1D.print();
-  cout<<"coeff sum " << sum << endl;
 
   // Build 2D filter on ideal (reference) element.
   int ii=0;
@@ -806,10 +666,6 @@ void eles_quads::compute_filter_upts(void)
           ++ii;
         }
     }
-  printf("\n2D filter:\n");
-  filter_upts.print();
-  cout<<"2D coeff sum " << sum << endl;
-  printf("\nLeaving filter computation function\n");
 }
 
 
@@ -1184,3 +1040,19 @@ double eles_quads::calc_ele_vol(double& detjac)
   return vol;
 }
 
+/*! Calculate element reference length for timestep calculation */
+double eles_quads::calc_h_ref_specific(int in_ele)
+  {
+    double out_h_ref;
+
+    // Compute edge lengths
+    length(0) = sqrt(pow(shape(0,0,in_ele) - shape(0,1,in_ele),2.0) + pow(shape(1,0,in_ele) - shape(1,1,in_ele),2.0));
+    length(1) = sqrt(pow(shape(0,1,in_ele) - shape(0,2,in_ele),2.0) + pow(shape(1,1,in_ele) - shape(1,2,in_ele),2.0));
+    length(2) = sqrt(pow(shape(0,2,in_ele) - shape(0,3,in_ele),2.0) + pow(shape(1,2,in_ele) - shape(1,3,in_ele),2.0));
+    length(3) = sqrt(pow(shape(0,3,in_ele) - shape(0,0,in_ele),2.0) + pow(shape(1,3,in_ele) - shape(1,0,in_ele),2.0));
+
+    // Get minimum edge length
+    out_h_ref = length.get_min();
+
+    return out_h_ref;
+  }

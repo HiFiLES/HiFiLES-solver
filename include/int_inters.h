@@ -37,19 +37,19 @@ public:
   // #### methods ####
 
   /*! setup inters */
-  void setup(int in_n_inters, int in_inter_type, int in_run_type);
+  void setup(int in_n_inters, int in_inter_type);
 
   /*! set interior interface */
-  void set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r, int in_ele_l, int in_ele_r, int in_local_inter_l, int in_local_inter_r, int rot_tag, int in_run_type, struct solution* FlowSol);
+  void set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r, int in_ele_l, int in_ele_r, int in_local_inter_l, int in_local_inter_r, int rot_tag, struct solution* FlowSol);
 
   /*! move all from cpu to gpu */
   void mv_all_cpu_gpu(void);
 
   /*! calculate normal transformed continuous inviscid flux at the flux points */
-  void calc_norm_tconinvf_fpts(void);
+  void calculate_common_invFlux(void);
 
   /*! calculate normal transformed continuous viscous flux at the flux points */
-  void calc_norm_tconvisf_fpts(void);
+  void calculate_common_viscFlux(void);
 
   /*! calculate delta in transformed discontinuous solution at flux points */
   void calc_delta_disu_fpts(void);

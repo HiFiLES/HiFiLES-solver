@@ -49,7 +49,11 @@ void get_opp_3_tri(array<double>& opp_3, array<double>& loc_upts_tri, array<doub
 
 void get_opp_3_dg(array<double>& opp_3_dg, array<double>& loc_upts_tri, array<double>& loc_fpts_tri, int n_upts_per_tri, int order);
 
-void compute_modal_filter(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N);
+void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order);
+
+void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order);
+
+void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order);
 
 void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_per_ele, int order, double c_tri, int vcjh_scheme_tri, array<double>& loc_upts_tri);
 
@@ -91,7 +95,7 @@ double eval_dubiner_basis_3d(double in_r, double in_s, double in_t, int in_mode,
 double eval_grad_dubiner_basis_3d(double in_r, double in_s, double in_t, int in_mode, int in_basis_order, int component);
 
 /*! helper method to compute eta for vcjh schemes */
-double compute_eta(int vjch_scheme, double order);
+double compute_eta(int vjch_scheme, int order);
 
 /*! helper method to check if number is a perfect square */
 bool is_perfect_square(int in_a);

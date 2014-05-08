@@ -74,24 +74,21 @@ struct solution {
   
   int rank;
   
-  /*! Diagnostics. */
+  /*! No-slip wall flux point coordinates for wall models. */
+
+	array< array<double> > loc_noslip_bdy;
+
+  /*! Diagnostic output quantities. */
   
   array<double> body_force;
-  
-  /*! Plotting related. */
+  array<double> inv_force;
+  array<double> vis_force;
+  array<double> norm_residual;
+  array<double> integral_quantities;
+
+  /*! Plotting resolution. */
   
   int p_res;
-  int num_pnodes;
-  
-  array<int> ele2vert, ele2n_vert, ele_type;
-  array<int> ele2face, ele2edge;
-  array<int> inter2loc_inter, inter2ele;
-  
-  array< array<double> >  pos_pnode;
-  array<double> plotq_pnodes;
-  array<int> factor_pnode;
-  
-  array<int> c2ctype_c;
   
 #ifdef _MPI
   
@@ -102,15 +99,11 @@ struct solution {
   array<int> error_states;
   
   int n_mpi_inters;
-  int n_mpi_pnodes;
-  array<int> inter_mpi2inter;
-  
-  array<int> mpi_pnode2pnode;
-  array<int> mpi_pnodes_part;
-  
-  array<double> out_buffer_plotq, in_buffer_plotq;
-  array<int> out_buffer_pnode, in_buffer_pnode;
-  
+    
+  /*! No-slip wall flux point coordinates for wall models. */
+
+	array< array<double> > loc_noslip_bdy_global;
+
 #endif
   
 };

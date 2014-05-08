@@ -37,8 +37,7 @@ public:
   // #### methods ####
 
   /*! setup inters */
-  void setup_inters(int in_n_inters, int in_inter_type, int in_run_type);
-
+  void setup_inters(int in_n_inters, int in_inter_type);
 
   /*! Set normal flux to be normal * f_r */
   void right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
@@ -58,30 +57,35 @@ public:
   /*! Compute common solution using LDG formulation */
   void ldg_solution(int flux_spec, array<double> &u_l, array<double> &u_r, array<double> &u_c, double pen_fact, array<double>& norm);
 
-  /*! get look up table for flux point connectivity based on rotation tag */
-  void get_lut(int in_rot_tag);
+	/*! get look up table for flux point connectivity based on rotation tag */
+	void get_lut(int in_rot_tag);
+	
+    /*! Compute common flux at boundaries using convective flux formulation */
+    void convective_flux_boundary(array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields);
 
-protected:
+	protected:
 
-  // #### members ####
+	// #### members ####
 
-  int inters_type; // segment, quad or tri
+	int inters_type; // segment, quad or tri
 
-  int order;
-  int viscous;
-  int n_inters;
-  int n_fpts_per_inter;
-  int n_fields;
-  int n_dims;
-
-  array<double*> disu_fpts_l;
-  array<double*> delta_disu_fpts_l;
-  array<double*> norm_tconf_fpts_l;
-  //array<double*> norm_tconvisf_fpts_l;
-  array<double*> detjac_fpts_l;
-  array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_l;
-  array<double*> norm_fpts;
-  array<double*> loc_fpts;
+	int order;
+	int viscous;
+	int LES;
+  int wall_model;
+	int n_inters;
+	int n_fpts_per_inter;
+	int n_fields;
+	int n_dims;
+	
+	array<double*> disu_fpts_l;
+	array<double*> delta_disu_fpts_l;
+	array<double*> norm_tconf_fpts_l;
+	//array<double*> norm_tconvisf_fpts_l;
+	array<double*> detjac_fpts_l;
+	array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_l;
+	array<double*> norm_fpts;
+	array<double*> loc_fpts;
 
   array<double> pos_disu_fpts_l;
   array<double*> grad_disu_fpts_l;
@@ -106,6 +110,12 @@ protected:
   array<double> temp_f;
 
   array<double> temp_loc;
+
+	// LES and wall model quantities
+	array<double*> sgsf_fpts_l;
+	array<double*> sgsf_fpts_r;
+	array<double> temp_sgsf_l;
+	array<double> temp_sgsf_r;
 
   array<int> lut;
 

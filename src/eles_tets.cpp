@@ -47,13 +47,13 @@ using namespace std;
 // default constructor
 
 eles_tets::eles_tets()
-{	
+{
 }
 
 // #### methods ####
 
 
-void eles_tets::setup_ele_type_specific(int in_run_type)
+void eles_tets::setup_ele_type_specific()
 {
 #ifndef _MPI
   cout << "Initializing tets" << endl;
@@ -78,6 +78,7 @@ void eles_tets::setup_ele_type_specific(int in_run_type)
 
   n_ppts_per_ele=(p_res+2)*(p_res+1)*p_res/6;
   n_peles_per_ele = (p_res-1)*(p_res)*(p_res+1)/6 + 4*(p_res-2)*(p_res-1)*(p_res)/6 +(p_res-3)*(p_res-2)*(p_res-1)/6;
+  n_verts_per_ele = 4;
 
   set_loc_ppts();
   set_opp_p();
@@ -86,208 +87,43 @@ void eles_tets::setup_ele_type_specific(int in_run_type)
   set_volume_cubpts();
   set_opp_volume_cubpts();
 
-  if (in_run_type==0)
+  n_fpts_per_inter.setup(4);
+
+  n_fpts_per_inter(0)=(order+2)*(order+1)/2;
+  n_fpts_per_inter(1)=(order+2)*(order+1)/2;
+  n_fpts_per_inter(2)=(order+2)*(order+1)/2;
+  n_fpts_per_inter(3)=(order+2)*(order+1)/2;
+
+  n_fpts_per_ele=n_inters_per_ele*(order+2)*(order+1)/2;
+
+  fpts_type=run_input.fpts_type_tet;
+
+  set_tloc_fpts();
+
+  //set_loc_spts();
+
+  set_tnorm_fpts();
+
+  set_opp_0(run_input.sparse_tet);
+  set_opp_1(run_input.sparse_tet);
+  set_opp_2(run_input.sparse_tet);
+  set_opp_3(run_input.sparse_tet);
+
+  if(viscous)
     {
-      n_fpts_per_inter.setup(4);
+      set_opp_4(run_input.sparse_tet);
+      set_opp_5(run_input.sparse_tet);
+      set_opp_6(run_input.sparse_tet);
 
-      n_fpts_per_inter(0)=(order+2)*(order+1)/2;
-      n_fpts_per_inter(1)=(order+2)*(order+1)/2;
-      n_fpts_per_inter(2)=(order+2)*(order+1)/2;
-      n_fpts_per_inter(3)=(order+2)*(order+1)/2;
+      temp_grad_u.setup(n_fields,n_dims);
 
-      n_fpts_per_ele=n_inters_per_ele*(order+2)*(order+1)/2;
-
-      fpts_type=run_input.fpts_type_tet;
-
-      set_tloc_fpts();
-
-      //set_loc_spts();
-
-      set_tnorm_fpts();
-
-      set_opp_0(run_input.sparse_tet);
-      set_opp_1(run_input.sparse_tet);
-      set_opp_2(run_input.sparse_tet);
-      set_opp_3(run_input.sparse_tet);
-
-      if(viscous)
-        {
-          set_opp_4(run_input.sparse_tet);
-          set_opp_5(run_input.sparse_tet);
-          set_opp_6(run_input.sparse_tet);
-
-          temp_grad_u.setup(n_fields,n_dims);
-          if(run_input.LES)
-            {
-              temp_sgsf.setup(n_fields,n_dims);
-              // Compute tri filter matrix
-              compute_filter_upts();
-            }
-        }
-
-
-      temp_u.setup(n_fields);
-      temp_f.setup(n_fields,n_dims);
-      //}
-      //else
-      //{
-
-      if (viscous==1)
-        {
-          set_opp_4(run_input.sparse_tet);
-        }
-
-      n_verts_per_ele = 4;
-      n_edges_per_ele = 6;
-
-      n_ppts_per_edge = p_res-2;
-
-      // Number of plot points per face, excluding points on vertices or edges
-      n_ppts_per_face.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        n_ppts_per_face(i) = (p_res-3)*(p_res-2)/2;
-
-      n_ppts_per_face2.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        n_ppts_per_face2(i) = (p_res+1)*(p_res)/2;
-
-      max_n_ppts_per_face = n_ppts_per_face(0);
-
-      // Number of plot points not on faces, edges or vertices
-      n_interior_ppts = n_ppts_per_ele-4-4*n_ppts_per_face(0)-6*n_ppts_per_edge;
-
-      vert_to_ppt.setup(n_verts_per_ele);
-      edge_ppt_to_ppt.setup(n_edges_per_ele,n_ppts_per_edge);
-
-      face_ppt_to_ppt.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        face_ppt_to_ppt(i).setup(n_ppts_per_face(i));
-
-      face2_ppt_to_ppt.setup(n_inters_per_ele);
-      for (int i=0;i<n_inters_per_ele;i++)
-        face2_ppt_to_ppt(i).setup(n_ppts_per_face2(i));
-
-      interior_ppt_to_ppt.setup(n_interior_ppts);
-
-      create_map_ppt();
-
-      /*
-    cout << "vert_ppt" << endl << endl;
-    vert_to_ppt.print();
-    cout << "edge_ppt" << endl << endl;
-    edge_ppt_to_ppt.print();
-    cout << "face_ppt" << endl << endl;
-    for (int i=0;i<n_inters_per_ele;i++) {
-      cout << "face=" << i<< endl;
-      face_ppt_to_ppt(i).print();
+      // Compute tet filter matrix
+      if(filter) compute_filter_upts();
     }
-    cout << "interior_ppt" << endl << endl;
-    interior_ppt_to_ppt.print();
 
-    loc_ppts.print();
-    */
-    }
+  temp_u.setup(n_fields);
+  temp_f.setup(n_fields,n_dims);
 }
-
-void eles_tets::create_map_ppt(void)
-{
-  int index;
-  int vert_ppt_count = 0;
-  int interior_ppt_count = 0;
-
-  array<int> edge_ppt_count(n_edges_per_ele);
-  array<int> face_ppt_count(n_inters_per_ele);
-  array<int> face2_ppt_count(n_inters_per_ele);
-  for (int i=0;i<n_edges_per_ele;i++)
-    edge_ppt_count(i)=0;
-  for (int i=0;i<n_inters_per_ele;i++) {
-      face_ppt_count(i)=0;
-      face2_ppt_count(i)=0;
-    }
-
-  for(int k=0;k<p_res;k++)
-    {
-      for(int j=0;j<p_res-k;j++)
-        {
-          for(int i=0;i<p_res-k-j;i++)
-            {
-
-              index = (p_res)*(p_res+1)*(p_res+2)/6 -
-                  (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 +
-                  j*(p_res-k)-(j-1)*j/2
-                  + i;
-              //cout << "------------" << endl;
-              //cout << "index=" << index << endl;
-              //cout << "x=" << loc_ppts(0,index) << "y=" << loc_ppts(1,index) << "z=" << loc_ppts(2,index) << endl;
-              if (i==p_res-1 || j==p_res-1 || k==p_res-1 || (i==0 && j==0 && k==0))
-                {
-                  vert_to_ppt(vert_ppt_count++)=index;
-                  //cout << "vert" << endl;
-                }
-              else if (j==0 && k==0) {
-                  edge_ppt_to_ppt(0,edge_ppt_count(0)++) = index;
-                  //cout << "edge 0" << endl;
-                }
-              else if (i==0 && k==0) {
-                  edge_ppt_to_ppt(1,edge_ppt_count(1)++) = index;
-                  //cout << "edge 1" << endl;
-                }
-              else if (i==0 && j==0) {
-                  edge_ppt_to_ppt(2,edge_ppt_count(2)++) = index;
-                  //cout << "edge 2" << endl;
-                }
-              else if (j==0 && i==(p_res-k-1)) {
-                  edge_ppt_to_ppt(3,edge_ppt_count(3)++) = index;
-                  //cout << "edge 3" << endl;
-                }
-              else if (k==0 && i==(p_res-j-1)) {
-                  edge_ppt_to_ppt(4,edge_ppt_count(4)++) = index;
-                  //cout << "edge 4" << endl;
-                }
-              else if (i==0 && j==(p_res-k-1)) {
-                  edge_ppt_to_ppt(5,edge_ppt_count(5)++) = index;
-                  //cout << "edge 5" << endl;
-                }
-              else if (i==p_res-k-j-1) {
-                  face_ppt_to_ppt(0)(face_ppt_count(0)++) = index;
-                  //cout << "face 0" << endl;
-                }
-              else if (i==0) {
-                  face_ppt_to_ppt(1)(face_ppt_count(1)++) = index;
-                  //cout << "face 1" << endl;
-                }
-              else if (j==0) {
-                  face_ppt_to_ppt(2)(face_ppt_count(2)++) = index;
-                  //cout << "face 2" << endl;
-                }
-              else if (k==0) {
-                  face_ppt_to_ppt(3)(face_ppt_count(3)++) = index;
-                  //cout << "face 3" << endl;
-                }
-              else
-                interior_ppt_to_ppt(interior_ppt_count++) = index;
-
-
-              if (i==p_res-k-j-1) {
-                  face2_ppt_to_ppt(0)(face2_ppt_count(0)++) = index;
-                }
-              if (i==0) {
-                  face2_ppt_to_ppt(1)(face2_ppt_count(1)++) = index;
-                }
-              if (j==0) {
-                  face2_ppt_to_ppt(2)(face2_ppt_count(2)++) = index;
-                }
-              if (k==0) {
-                  face2_ppt_to_ppt(3)(face2_ppt_count(3)++) = index;
-                }
-
-
-
-            }
-        }
-    }
-}
-
 
 void eles_tets::set_connectivity_plot()
 {
@@ -697,14 +533,14 @@ void eles_tets::set_loc_spts(void)
     // Node 2 at (-1,1,-1)
     // Node 3 at (-1,-1,1)
 
-// 	z	
+// 	z
 //	|      y
 // 	      /
 //  3
 //  |   2
-//  |  / 
-//	| /   
-//	|/        
+//  |  /
+//	| /
+//	|/
 //  0--------1    ----> x
 
 // Second order
@@ -720,14 +556,14 @@ void eles_tets::set_loc_spts(void)
 // Node 8 at (-1,0,0)
 // Node 9 at (0,-1,0)
 
-// 	z	
+// 	z
 //	|      y
 // 	      /
 //  3
 //  |   2
-//  6  / \ 
-//	| 5   7  
-//	|/     \    
+//  6  / \
+//	| 5   7
+//	|/     \
 //  0---4----1    ----> x
 
 }
@@ -773,7 +609,6 @@ void eles_tets::set_tnorm_fpts(void)
 // Filtering operators for use in subgrid-scale modelling
 void eles_tets::compute_filter_upts(void)
 {
-  printf("\nEntering filter computation function\n");
   int i,j,k,l,N,N2;
   double dlt, k_c, sum, vol, norm;
   N = n_upts_per_ele;
@@ -785,8 +620,6 @@ void eles_tets::compute_filter_upts(void)
   filter_upts.setup(N,N);
 
   X = loc_upts;
-  printf("\n3D solution point coordinates:\n");
-  X.print();
 
   N2 = N/2;
   // If N is odd, round up N/2
@@ -796,8 +629,6 @@ void eles_tets::compute_filter_upts(void)
 
   // Approx resolution in element (assumes uniform point spacing)
   dlt = 2.0/order;
-  printf("\nN, N2, dlt, k_c:\n");
-  cout << N << ", " << N2 << ", " << dlt << ", " << k_c << endl;
 
   // Normalised solution point separation: r = sqrt((x_a-x_b)^2 + (y_a-y_b)^2)
   for (i=0;i<N;i++)
@@ -807,38 +638,30 @@ void eles_tets::compute_filter_upts(void)
     for (j=0;j<i;j++)
       beta(i,j) = beta(j,i);
 
-  printf("\nNormalised solution point separation beta:\n");
-  beta.print();
-
   if(run_input.filter_type==0) // Vasilyev filter
     {
-      printf("Vasilyev filters not implemented for tris. Exiting.");
-      exit(1);
+      FatalError("Vasilyev filters not implemented for tris. Exiting.");
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
-      printf("\nBuilding discrete Gaussian filter\n");
+      if (rank==0) cout<<"Building discrete Gaussian filter"<<endl;
 
       if(N != n_cubpts_per_ele)
         {
-          cout<<"WARNING: Gaussian filter cannot be built for tets since n_upts_per_ele != n_cubpts_per_ele for any order. Exiting"<<endl;
-          exit(1);
+          FatalError("WARNING: Gaussian filter cannot be built for tets since n_upts_per_ele != n_cubpts_per_ele for any order. Exiting");
         }
     }
   else if(run_input.filter_type==2) // Modal coefficient filter
     {
-      printf("\nBuilding modal filter\n");
+      if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute modal filter
-      compute_modal_filter(filter_upts, vandermonde, inv_vandermonde, N);
-
-      printf("\nFilter:\n");
-      filter_upts.print();
+      compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order);
 
     }
   else // Simple average for low order
     {
-      printf("\nBuilding average filter\n");
+      if (rank==0) cout<<"Building average filter"<<endl;
       sum=0;
       for(i=0;i<N;i++)
         {
@@ -859,8 +682,7 @@ void eles_tets::compute_filter_upts(void)
           filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
         }
     }
-  printf("\nFilter after symmetrising:\n");
-  filter_upts.print();
+
   for(i=0;i<N2;i++)
     {
       norm = 0.0;
@@ -871,16 +693,11 @@ void eles_tets::compute_filter_upts(void)
       for(j=0;j<N;j++)
         filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
     }
+
   sum = 0;
   for(i=0;i<N;i++)
     for(j=0;j<N;j++)
       sum+=filter_upts(i,j);
-
-  printf("\nFilter after normalising:\n");
-  filter_upts.print();
-  cout<<"coeff sum " << sum << endl;
-
-  printf("\nLeaving filter computation function\n");
 }
 
 
@@ -947,7 +764,7 @@ int eles_tets::read_restart_info(ifstream& restart_file)
 }
 
 // write restart info
-void eles_tets::write_restart_info(ofstream& restart_file)        
+void eles_tets::write_restart_info(ofstream& restart_file)
 {
   restart_file << "TETS" << endl;
 
@@ -1236,13 +1053,13 @@ void eles_tets::fill_opp_3(array<double>& opp_3)
 
   //cout << "opp_3_dg" << endl;
   //opp_3_dg.print();
-  cout << endl;
+  //cout << endl;
 
   m_temp = mult_arrays(Filt,opp_3_dg);
 
   //cout << "opp_3_vcjh" << endl;
   //m_temp.print();
-  cout << endl;
+  //cout << endl;
   opp_3 = array<double>(m_temp);
 }
 
@@ -1676,3 +1493,8 @@ double eles_tets::calc_ele_vol(double& detjac)
   return vol;
 }
 
+/*! Calculate element reference length for timestep calculation */
+double eles_tets::calc_h_ref_specific(int in_ele)
+  {
+    FatalError("Reference length calculation not implemented for this element!")
+  }

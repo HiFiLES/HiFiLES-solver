@@ -52,7 +52,7 @@ void input::set_c(double in_c_tri, double in_c_quad)
   c_tri = in_c_tri;
   c_quad = in_c_quad;
 
-  double a_k = eval_gamma(2.*order+1)/( pow(2.,order)*pow(eval_gamma(order+1),2) );
+  double a_k = eval_gamma(2*order+1)/( pow(2.,order)*pow(eval_gamma(order+1),2) );
   eta_quad=in_c_quad*0.5*(2.*order+1.)*a_k*eval_gamma(order+1)*a_k*eval_gamma(order+1);
 }
 
@@ -86,7 +86,6 @@ void input::setup(ifstream& in_run_input_file, int rank)
       while(!in_run_input_file.eof())
         {
           in_run_input_file.getline(buf,BUFSIZ);
-          cout << buf << endl;
         }
       // Rewind
       in_run_input_file.clear();
@@ -134,16 +133,12 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> test_case;
         }
-      else if (!param_name.compare("run_type"))
+      else if (!param_name.compare("n_diagnostic_fields"))
         {
-          in_run_input_file >> run_type;
-        }
-      else if (!param_name.compare("n_plot_quantities"))
-        {
-          in_run_input_file >> n_plot_quantities;
-          plot_quantities.setup(n_plot_quantities);
-          for (int i=0;i<n_plot_quantities;i++)
-            in_run_input_file >> plot_quantities(i) ;
+          in_run_input_file >> n_diagnostic_fields;
+          diagnostic_fields.setup(n_diagnostic_fields);
+          for (int i=0;i<n_diagnostic_fields;i++)
+            in_run_input_file >> diagnostic_fields(i);
         }
       else if (!param_name.compare("inters_cub_order"))
         {
@@ -153,9 +148,17 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> volume_cub_order;
         }
+      else if (!param_name.compare("dt_type"))
+        {
+          in_run_input_file >> dt_type;
+        }
       else if (!param_name.compare("dt"))
         {
           in_run_input_file >> dt;
+        }
+      else if (!param_name.compare("CFL"))
+        {
+          in_run_input_file >> CFL;
         }
       else if (!param_name.compare("n_steps"))
         {
@@ -176,6 +179,14 @@ void input::setup(ifstream& in_run_input_file, int rank)
       else if (!param_name.compare("SGS_model"))
         {
           in_run_input_file >> SGS_model;
+        }
+      else if (!param_name.compare("wall_model"))
+        {
+          in_run_input_file >> wall_model;
+        }
+      else if (!param_name.compare("wall_layer_thickness"))
+        {
+          in_run_input_file >> wall_layer_t;
         }
       else if (!param_name.compare("plot_freq"))
         {
@@ -201,16 +212,16 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> monitor_force_freq;
         }
-      else if (!param_name.compare("diagnostics_freq"))
+      else if (!param_name.compare("monitor_integrals_freq"))
         {
-          in_run_input_file >> diagnostics_freq;
+          in_run_input_file >> monitor_integrals_freq;
         }
-      else if (!param_name.compare("n_diagnostics"))
+      else if (!param_name.compare("n_integral_quantities"))
         {
-          in_run_input_file >> n_diagnostics;
-          diagnostics.setup(n_diagnostics);
-          for (int i=0;i<n_diagnostics;i++)
-            in_run_input_file >> diagnostics(i) ;
+          in_run_input_file >> n_integral_quantities;
+          integral_quantities.setup(n_integral_quantities);
+          for (int i=0;i<n_integral_quantities;i++)
+            in_run_input_file >> integral_quantities(i) ;
         }
       else if (!param_name.compare("res_norm_type"))
         {
@@ -566,7 +577,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
 
   if (monitor_res_freq == 0) monitor_res_freq = 1000;
   if (monitor_force_freq == 0) monitor_force_freq = 1000;
-  if (diagnostics_freq == 0) diagnostics_freq = 1000;
+  if (monitor_integrals_freq == 0) monitor_integrals_freq = 1000;
 
   if (!mesh_file.compare(mesh_file.size()-3,3,"neu"))
     mesh_format=0;
@@ -588,10 +599,13 @@ void input::setup(ifstream& in_run_input_file, int rank)
         FatalError("Rusanov flux not supported with Advection-Diffusion equation");
       if (ic_form==0 || ic_form==1)
         FatalError("Initial condition not supported with Advection-Diffusion equation");
-      if (run_type==1)
-        FatalError("Run type not supported with Advection-Diffusion equation");
     }
 
+  
+  if (rank==0)
+    cout << endl << "---------------------- Non-dimensionalization ---------------------" << endl;
+
+  
   if(viscous)
     {
       if(ic_form == 0)  {

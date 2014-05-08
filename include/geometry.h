@@ -13,8 +13,9 @@
 
 #pragma once
 
-#include "array.h"
 #include <string>
+
+#include "array.h"
 #include "input.h"
 #include "eles.h"
 #include "eles_tris.h"
@@ -39,18 +40,9 @@ void SetInput(struct solution* FlowSol);
 
 /*!
  * \brief Read the computational mesh.
- * \param[in] in_run_type - Kind of run.
  * \param[in] FlowSol - Structure with the entire solution and mesh information.
  */
-void GeoPreprocess(int in_run_type, struct solution* FlowSol);
-
-void update_factor_pnodes(struct solution* FlowSol);
-
-void exchange_plotq(struct solution* FlowSol);
-
-void create_mpi_pnode2pnode(array<int>& in_out_mpi_pnode2pnode, int& out_n_mpi_pnodes, array<int>& in_f_mpi2f, array<int>& in_f2loc_f, array<int>& in_f2c, array<int>& in_ctype, int& n_mpi_inters, struct solution* FlowSol);
-
-void match_mpipnodes(array<int>& in_out_mpi_pnode2pnode, int& in_out_n_mpi_pnodes, array<int> &out_mpi_pnodes_part, array<double>& delta_cyclic, double delta, struct solution* FlowSol);
+void GeoPreprocess(struct solution* FlowSol);
 
 /*!
  * \brief Method to read a mesh.
@@ -99,9 +91,6 @@ void get_vlist_loc_edge(int& in_ctype, int& in_nspt, int& in_edge, array<int>& o
 
 /*! Method that return the shape point number associated with a vertex */
 void get_vert_loc(int& in_ctype, int& in_nspts, int& in_vert, int& out_v);
-
-/*!5Method to compute distance between two points */
-double compute_distance(array<double>& pos_0, array<double>& pos_1, int in_dims, struct solution* FlowSol);
 
 /*! Method that compares the vertices from two faces to check if they match */
 void compare_faces(array<int>& vlist1, array<int>& vlist2, int& num_v_per_f, int& found, int& rtag);

@@ -40,7 +40,7 @@ public:
   // #### methods ####
 
   // method to get number of cubature_1d points
-  double get_n_pts(void);
+  int get_n_pts(void);
 
   // method to get r location of cubature_1d point
   double get_r(int in_pos);
@@ -61,4 +61,7 @@ public:
 
   // weight of cubature_1d points
   array<double> weights;
+  
+  // cubature data file
+  ifstream datfile;
 };

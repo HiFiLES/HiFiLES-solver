@@ -13,8 +13,9 @@
 
 # TODO: add config script to build parmetis and look for BLAS, parmetis, CUDA, MPI and TECIO libraries
 
-# TODO: include makefile.machine.in by looking for current machine name
-include makefiles/makefile.fpalacios_OSX_MPI.in
+# Copy the appropriate file from makefiles/makefile.machine.in to HIFILES_HOME as makefile.in
+# Note that this is the cluster makefile by default.
+include makefiles/makefile.enrico_GPU.in
 
 # Compiler
 
@@ -59,7 +60,7 @@ ifeq ($(TECIO),YES)
 endif
 
 ifeq ($(PARALLEL),MPI)
-	OPTS	+= -I $(MPI_DIR)/include
+	OPTS	+= -I $(MPI_DIR)
 	OPTS += -I $(PARMETIS_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/metis/include
 endif
@@ -100,10 +101,6 @@ ifeq ($(BLAS),STANDARD_BLAS)
   LIBS    += -L $(BLAS_DIR)/lib -lcblas
 endif
 
-ifneq ($(ATLAS),NO)
-  LIBS    += -latlas
-endif
-
 ifeq ($(NODE),GPU)
 	LIBS	+= -L $(CUDA_DIR)/lib64 -lcudart -lcublas -lcusparse -lm
 endif
@@ -127,7 +124,7 @@ endif
 
 ifeq ($(PARALLEL),MPI)
 	OBJS += $(OBJ)mpi_inters.o
-	OBJS += $(PARMETIS_BUILD_DIR)/libparmetis/libparmetis.a $(PARMETIS_BUILD_DIR)/libmetis/libmetis.a
+	OBJS += $(PARMETIS_BUILD_DIR)/libparmetis.a $(PARMETIS_BUILD_DIR)/libmetis.a
 endif
 	
 ifeq ($(TECIO),YES)

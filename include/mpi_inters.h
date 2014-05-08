@@ -14,7 +14,6 @@
 #pragma once
 
 #include "inters.h"
-#include "mpi_inters.h"
 #include "array.h"
 #include "solution.h"
 
@@ -41,7 +40,7 @@ public:
   // #### methods ####
 
   /*! setup mpi_inters */
-  void setup(int in_n_inters, int in_inter_type, int in_run_type);
+  void setup(int in_n_inters, int in_inter_type);
 
   void set_nproc(int in_nproc, int in_rank);
 
@@ -49,18 +48,22 @@ public:
 
   void set_mpi_requests(int in_number_of_request);
 
-  void send_disu_fpts();
+  void send_solution();
 
-  void receive_disu_fpts();
+  void receive_solution();
 
-  void send_cor_grad_disu_fpts();
+  void send_corrected_gradient();
 
-  void receive_cor_grad_disu_fpts();
+  void receive_corrected_gradient();
 
-  void set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int rot_tag, int in_run_type, struct solution* FlowSol);
+  void send_sgsf_fpts();
 
-  void calc_norm_tconinvf_fpts_mpi(void);
-  void calc_norm_tconvisf_fpts_mpi(void);
+  void receive_sgsf_fpts();
+
+  void set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int rot_tag, struct solution* FlowSol);
+
+  void calculate_common_invFlux(void);
+  void calculate_common_viscFlux(void);
 
   /*! move all from cpu to gpu */
   void mv_all_cpu_gpu(void);
@@ -82,11 +85,16 @@ protected:
   // Viscous
   array<double> out_buffer_grad_disu, in_buffer_grad_disu;
 
+  // LES
+  array<double> out_buffer_sgsf, in_buffer_sgsf;
+
 #ifdef _MPI
   MPI_Request *mpi_out_requests;
   MPI_Request *mpi_in_requests;
   MPI_Request *mpi_out_requests_grad;
   MPI_Request *mpi_in_requests_grad;
+  MPI_Request *mpi_out_requests_sgsf;
+  MPI_Request *mpi_in_requests_sgsf;
 
   MPI_Status *mpi_instatus;
   MPI_Status *mpi_outstatus;

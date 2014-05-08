@@ -14,7 +14,9 @@
 #include <iostream>
 #include <cmath>
 #include <string>
+#include <sstream>
 
+#include "../include/global.h"
 #include "../include/cubature_tri.h"
 
 using namespace std;
@@ -34,10 +36,132 @@ cubature_tri::cubature_tri()
 // constructor 1
 
 cubature_tri::cubature_tri(int in_order) // set by order
-{	
+{
+  ifstream datfile;
+  char buf[BUFSIZ]={""};
+  char section_TXT[100], param_TXT[100];
+  char* f;
+  string filename, param_name, param, ord;
+  istringstream strbuf;
+  int order_file;
+  
   order=in_order;
 
-#include "../data/cubature_tri.dat"
+  if (order==2)
+    n_pts=3;
+  else if (order==3)
+    n_pts=6;
+  else if (order==4)
+    n_pts=6;
+  else if (order==5)
+    n_pts=7;
+  else if (order==6)
+    n_pts=12;
+  else if (order==7)
+    n_pts=15;
+  else if (order==8)
+    n_pts=16;
+  else if (order==9)
+    n_pts=19;
+  else if (order==10)
+    n_pts=25;
+  else if (order==11)
+    n_pts=28;
+  else if (order==12)
+    n_pts=36;
+  else if (order==13)
+    n_pts=40;
+  else if (order==14)
+    n_pts=46;
+  else if (order==15)
+    n_pts=54;
+  else if (order==16)
+    n_pts=58;
+  else if (order==17)
+    n_pts=66;
+  else if (order==18)
+    n_pts=73;
+  else if (order==19)
+    n_pts=82;
+  else if (order==20)
+    n_pts=85;
+  else {
+    order=0;
+    n_pts=0;
+    locs.setup(0,0);
+    weights.setup(0);
+    
+    FatalError("ERROR: Order of cubature rule currently not implemented ....");
+  }
+  
+  locs.setup(n_pts,2);
+  weights.setup(n_pts);
+  
+  
+  if(order < 21) {
+    
+    if (HIFILES_DIR == NULL)
+      FatalError("environment variable HIFILES_HOME is undefined");
+    
+    filename = HIFILES_DIR;
+    filename += "/data/cubature_tri.dat";
+    f = (char*)filename.c_str();
+    datfile.open(f, ifstream::in);
+    if (!datfile) FatalError("Unable to open cubature file");
+    
+    // read data from file to arrays
+    while(datfile.getline(buf,BUFSIZ))
+    {
+      sscanf(buf,"%s",&section_TXT);
+      param_name.assign(section_TXT,0,99);
+      
+      if(!param_name.compare(0,5,"order"))
+      {
+        // get no. of pts
+        ord = param_name.substr(6);
+        stringstream str(ord);
+        str >> order_file;
+        
+        // if pts matches order, read locs and weights
+        if (order_file == order) {
+          
+          // skip next line
+          datfile.getline(buf,BUFSIZ);
+          
+          for(int i=0;i<n_pts;++i) {
+            datfile.getline(buf,BUFSIZ);
+            sscanf(buf,"%s",&param_TXT);
+            param.assign(param_TXT,0,99);
+            strbuf.str(param);
+            locs(i,0) = atof(param.c_str());
+          }
+          
+          // skip next line
+          datfile.getline(buf,BUFSIZ);
+          
+          for(int i=0;i<n_pts;++i) {
+            datfile.getline(buf,BUFSIZ);
+            sscanf(buf,"%s",&param_TXT);
+            param.assign(param_TXT,0,99);
+            strbuf.str(param);
+            locs(i,1) = atof(param.c_str());
+          }
+          
+          // skip next line
+          datfile.getline(buf,BUFSIZ);
+          
+          for(int i=0;i<n_pts;++i) {
+            datfile.getline(buf,BUFSIZ);
+            sscanf(buf,"%s",&param_TXT);
+            param.assign(param_TXT,0,99);
+            strbuf.str(param);
+            weights(i) = atof(param.c_str());
+          }
+          break;
+        }
+      }
+    }
+  }
 }
 
 // copy constructor
@@ -77,18 +201,9 @@ cubature_tri::~cubature_tri()
 
 // #### methods ####
 
-// method to set a cubature_tri rule
-
-void cubature_tri::set_order(int in_order)
-{
-  order=in_order;
-
-#include "../data/cubature_tri.dat"
-}
-
 // method to get number of cubature_tri points
 
-double cubature_tri::get_n_pts(void)
+int cubature_tri::get_n_pts(void)
 {
   return n_pts;
 }

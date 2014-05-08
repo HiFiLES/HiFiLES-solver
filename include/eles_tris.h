@@ -56,9 +56,7 @@ public:
 
   //#### helper methods ####
 
-  void setup_ele_type_specific(int in_run_type);
-
-  void create_map_ppt(void);
+  void setup_ele_type_specific(void);
 
   /*! read restart info */
   int read_restart_info(ifstream& restart_file);
@@ -97,6 +95,9 @@ public:
 
   /*! Calculate element volume */
   double calc_ele_vol(double& detjac);
+
+  /*! Element reference length calculation */
+  double calc_h_ref_specific(int in_ele);
 
 protected:
 
