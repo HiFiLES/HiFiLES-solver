@@ -822,7 +822,12 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 #endif
 
 #ifdef _GPU
-      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
+        if(run_input.test_case == 8) {
+            RK11_MMS_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,pos_upts.get_ptr_gpu(), time, run_input.k_source, run_input.c_source, run_input.omega, run_input.gamma, run_input.mu_inf, run_input.prandtl);
+          }
+        else {
+            RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
+          }
 #endif
 
     }
@@ -919,8 +924,12 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 #endif
 
 #ifdef _GPU
-
-      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
+      if(run_input.test_case == 8) {
+          RK45_MMS_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,rk4c, run_input.dt, pos_upts.get_ptr_gpu(), time, run_input.k_source, run_input.c_source, run_input.omega, run_input.gamma, run_input.mu_inf, run_input.prandtl);
+        }
+      else {
+          RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
+        }
 
 #endif
 
@@ -5165,20 +5174,6 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
 }
 
 void eles::evaluate_bodyForce(array <double>& body_force)
-{
-  if (n_eles!=0) {
-      int i,j,k,l,m;
-      // Add to viscous flux at solution points
-      for (i=0;i<n_eles;i++)
-        for (j=0;j<n_upts_per_ele;j++)
-          for(k=0;k<n_fields;k++)
-            for(l=0;l<n_dims;l++)
-              for(m=0;m<n_dims;m++)
-                tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*body_force(k);
-    }
-}
-
-void eles::evaluate_MMS_bodyForce(array <double>& body_force)
 {
   if (n_eles!=0) {
       int i,j,k,l,m;

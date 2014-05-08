@@ -17,6 +17,10 @@ void RK45_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fie
 
 void RK11_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_dt, double in_const_src_term);
 
+void RK45_MMS_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_disu1_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_rk4a, double in_rk4b, double in_rk4c, double in_dt, double* in_pos_upts_ptr, double in_time, double in_k_source, double in_c_source, double in_omega, double in_gamma, double in_mu_inf, double in_prandtl);
+
+void RK11_MMS_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_dt, double* in_pos_upts_ptr, double in_time, double in_k_source, double in_c_source, double in_omega, double in_gamma, double in_mu_inf, double in_prandtl);
+
 /*! wrapper for gpu kernel to calculate transformed discontinuous inviscid flux at solution points */
 void evaluate_invFlux_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, double* in_disu_upts_ptr, double* out_tdisinvf_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr,double in_gamma, int equation, double wave_speed_x, double wave_speed_y, double wave_speed_z);
 

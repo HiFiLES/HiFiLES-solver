@@ -3605,7 +3605,7 @@ void RK11_MMS_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n
 
 
 template< int n_fields >
-__global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts,
+__global__ void RK11_MMS_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts,
 				   const int n_cells, const int n_qpts, const double dt, int n_dims, double *g_pos_qpts,
 				   double t, double k, double c, double omega, double gamma, double mu, double Pr)
 {
@@ -3800,7 +3800,7 @@ __global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts,
 
 
 template< int n_fields >
-__global__ void RK45_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_res_qpts, double *g_jac_det_qpts,
+__global__ void RK45_MMS_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_res_qpts, double *g_jac_det_qpts,
 				   const int n_cells, const int n_qpts, const double fa, const double fb, const double fc, const double dt, int n_dims, double *g_pos_qpts,
 				   double ttime, double k, double c, double omega, double gamma, double mu, double Pr)
 {
