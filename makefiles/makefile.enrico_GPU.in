@@ -15,6 +15,7 @@ BLAS=     NO
 COMP=     GCC
 PARALLEL= MPI
 TECIO=    NO
+MACHINE=  ENRICO
 
 BLAS_DIR= /usr/local/atlas
 

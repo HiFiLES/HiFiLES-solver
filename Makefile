@@ -37,7 +37,7 @@ endif
 
 # Pre-processing macros
 
-OPTS    = -D_$(NODE)
+OPTS    = -D_$(NODE) -D_$(MACHINE)
 
 ifeq ($(PARALLEL),MPI)
 	OPTS    += -D_$(PARALLEL) 
