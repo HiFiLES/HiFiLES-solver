@@ -57,7 +57,7 @@ p_res                             // Plotting resolution, number of nodes per di
 write_type                        // 0: Paraview, 1: Tecplot
 0
 n_diagnostic_fields
-7 rho u v w energy pressure mach
+6 u v w energy pressure mach
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 12
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
