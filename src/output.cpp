@@ -693,11 +693,13 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           /*! Temporary solution array at plot points */
           disu_ppts_temp.setup(n_points,n_fields);
 
-          /*! Temporary solution array at plot points */
-          grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
+          if(n_diag_fields > 0) {
+            /*! Temporary solution array at plot points */
+            grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
 
-          /*! Temporary diagnostic field array at plot points */
-          diag_ppts_temp.setup(n_points,n_diag_fields);
+            /*! Temporary diagnostic field array at plot points */
+            diag_ppts_temp.setup(n_points,n_diag_fields);
+          }
 
           con.setup(n_verts,n_cells);
           con = FlowSol->mesh_eles(i)->get_connectivity_plot();
@@ -710,12 +712,13 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
               /*! Calculate the prognostic (solution) fields at the plot points */
               FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
 
-              /*! Calculate the gradient of the prognostic fields at the plot points */
-              FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
+              if(n_diag_fields > 0) {
+                /*! Calculate the gradient of the prognostic fields at the plot points */
+                FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
 
-              /*! Calculate the diagnostic fields at the plot points */
-              if(n_diag_fields > 0)
+                /*! Calculate the diagnostic fields at the plot points */
                 FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
+              }
 
               /*! write out solution to file */
               write_vtu << "			<PointData>" << endl;
@@ -737,7 +740,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                   write_vtu << disu_ppts_temp(k,1)/disu_ppts_temp(k,0) << " " << disu_ppts_temp(k,2)/disu_ppts_temp(k,0) << " ";
 
                   /*! In 2D the z-component of velocity is not stored, but Paraview needs it so write a 0. */
-                  if(n_fields==4)
+                  if(n_dims==2)
                     {
                       write_vtu << 0.0 << " ";
                     }
@@ -755,7 +758,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
               for(k=0;k<n_points;k++)
                 {
                   /*! In 2D energy is the 4th solution component */
-                  if(n_fields==4)
+                  if(n_dims==2)
                     {
                       write_vtu << disu_ppts_temp(k,3)/disu_ppts_temp(k,0) << " ";
                     }
