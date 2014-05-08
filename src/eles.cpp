@@ -3708,9 +3708,7 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
       {
         irho = 1./in_disu_ppts(j,0);
 
-        if (run_input.diagnostic_fields(k)=="rho")
-          diagfield_upt = in_disu_ppts(j,0);
-        else if (run_input.diagnostic_fields(k)=="u")
+        if (run_input.diagnostic_fields(k)=="u")
           diagfield_upt = in_disu_ppts(j,1)*irho;
         else if (run_input.diagnostic_fields(k)=="v")
           diagfield_upt = in_disu_ppts(j,2)*irho;
