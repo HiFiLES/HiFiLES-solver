@@ -608,13 +608,20 @@ void input::setup(ifstream& in_run_input_file, int rank)
   
   if(viscous)
     {
-      if(ic_form == 0)  {
+      if(ic_form == 0 || ic_form == 8)  {
 
           fix_vis  = 1.;
           R_ref     = 1.;
           c_sth     = 1.;
           rt_inf    = 1.;
           mu_inf    = 0.1;
+          if (ic_form == 8){ // ic_form ==8 is used for the method of manufactured solutions
+              omega = pi;
+              k_source = pi;
+              c_source = 3.0;
+              gamma = 1.4;
+              prandtl = 0.72;
+            }
         }
       else {
 

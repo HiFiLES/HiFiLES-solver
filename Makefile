@@ -15,7 +15,7 @@
 
 # Copy the appropriate file from makefiles/makefile.machine.in to HIFILES_HOME as makefile.in
 # Note that this is the cluster makefile by default.
-include makefile.in
+include makefiles/makefile.cluster.in
 
 # Compiler
 

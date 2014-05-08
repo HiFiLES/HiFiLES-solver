@@ -1597,6 +1597,232 @@ void eval_sphere_wave(array<double>& pos, array<double>& wave_speed, double time
                     relative_pos(2)*relative_pos(2) ));
 }
 
+void eval_source(array<double>& pos, double t, double k, double c, double omega, double& ics, array<double>& grad_ics, int n_dims, int field_flag)
+{
+  double x, y ,z;
+  double Beta, Aconst, Bconst, dconst;
+
+  x = pos(0);
+  y = pos(1);
+  if(n_dims==3)
+    z = pos(2);
+
+  if(n_dims==2)
+    {
+      if(field_flag==0)
+        {
+          ics = sin(k*(x + y) - omega*t) + c;
+          grad_ics(0) = k*cos(omega*t - k*(x + y));
+          grad_ics(1) = k*cos(omega*t - k*(x + y));
+        }
+      if(field_flag==1)
+        {
+          ics = sin(k*(x + y) - omega*t) + c;
+          grad_ics(0) = k*cos(omega*t - k*(x + y));
+          grad_ics(1) = k*cos(omega*t - k*(x + y));
+        }
+      if(field_flag==2)
+        {
+          ics = sin(k*(x + y) - omega*t) + c;
+          grad_ics(0) = k*cos(omega*t - k*(x + y));
+          grad_ics(1) = k*cos(omega*t - k*(x + y));
+        }
+      if(field_flag==3)
+        {
+          ics = pow(sin(k*(x + y) - omega*t) + c, 2.0);
+          grad_ics(0) = 2.0*k*cos(omega*t - k*(x + y))*pow(c - sin(omega*t - k*(x + y)),1.0);
+          grad_ics(1) = 2.0*k*cos(omega*t - k*(x + y))*pow(c - sin(omega*t - k*(x + y)),1.0);
+        }
+    }
+  if(n_dims==3)
+    {
+      if(field_flag==0)
+        {
+          ics = sin(k*(x + y + z) - omega*t) + c;
+          grad_ics(0) = k*cos(omega*t - k*(x + y + z));
+          grad_ics(1) = k*cos(omega*t - k*(x + y + z));
+          grad_ics(2) = k*cos(omega*t - k*(x + y + z));
+        }
+      if(field_flag==1)
+        {
+          ics = sin(k*(x + y + z) - omega*t) + c;
+          grad_ics(0) = k*cos(omega*t - k*(x + y + z));
+          grad_ics(1) = k*cos(omega*t - k*(x + y + z));
+          grad_ics(2) = k*cos(omega*t - k*(x + y + z));
+        }
+      if(field_flag==2)
+        {
+          ics = sin(k*(x + y + z) - omega*t) + c;
+          grad_ics(0) = k*cos(omega*t - k*(x + y + z));
+          grad_ics(1) = k*cos(omega*t - k*(x + y + z));
+          grad_ics(2) = k*cos(omega*t - k*(x + y + z));
+        }
+      if(field_flag==3)
+        {
+          ics = sin(k*(x + y + z) - omega*t) + c;
+          grad_ics(0) = k*cos(omega*t - k*(x + y + z));
+          grad_ics(1) = k*cos(omega*t - k*(x + y + z));
+          grad_ics(2) = k*cos(omega*t - k*(x + y + z));
+        }
+      if(field_flag==4)
+        {
+          ics = pow(sin(k*(x + y + z) - omega*t) + c, 2.0);
+          grad_ics(0) = 2.0*k*cos(omega*t - k*(x + y + z))*pow(c - sin(omega*t - k*(x + y + z)),1.0);
+          grad_ics(1) = 2.0*k*cos(omega*t - k*(x + y + z))*pow(c - sin(omega*t - k*(x + y + z)),1.0);
+          grad_ics(2) = 2.0*k*cos(omega*t - k*(x + y + z))*pow(c - sin(omega*t - k*(x + y + z)),1.0);
+        }
+    }
+
+  /*
+        if(n_dims==2)
+        {
+                Beta = k*(x+y) - omega*t;
+                dconst = 2.0;
+        }
+        if(n_dims==3)
+        {
+                Beta = k*(x+y+z) - omega*t;
+                dconst = 3.0;
+        }
+
+        if(n_dims==2)
+        {
+                if(field_flag==0)
+                {
+                        ics = sin(Beta)*c + 2.0;
+                        grad_ics(0) = k*cos(Beta)*c;
+                        grad_ics(1) = k*cos(Beta)*c;
+                }
+                if(field_flag==1)
+                {
+                        ics = sin(Beta)*c + 2.0;
+                        grad_ics(0) = k*cos(Beta)*c;
+                        grad_ics(1) = k*cos(Beta)*c;
+                }
+                if(field_flag==2)
+                {
+                        ics = sin(Beta)*c + 2.0;
+                        grad_ics(0) = k*cos(Beta)*c;
+                        grad_ics(1) = k*cos(Beta)*c;
+                }
+                if(field_flag==3)
+                {
+                        ics = pow(sin(Beta)*c + 2.0,2.0);
+                        grad_ics(0) = 2*(sin(Beta)*c + 2.0)*k*cos(Beta)*c;
+                        grad_ics(1) = 2*(sin(Beta)*c + 2.0)*k*cos(Beta)*c;
+                }
+        }
+        if(n_dims==3)
+        {
+                if(field_flag==0)
+                {
+                        ics = sin(Beta)*c + 2.0;
+                        grad_ics(0) = k*cos(Beta)*c;
+                        grad_ics(1) = k*cos(Beta)*c;
+                        grad_ics(2) = k*cos(Beta)*c;
+                }
+                if(field_flag==1)
+                {
+                        ics = sin(Beta)*c + 2.0;
+                        grad_ics(0) = k*cos(Beta)*c;
+                        grad_ics(1) = k*cos(Beta)*c;
+                        grad_ics(2) = k*cos(Beta)*c;
+                }
+                if(field_flag==2)
+                {
+                        ics = sin(Beta)*c + 2.0;
+                        grad_ics(0) = k*cos(Beta)*c;
+                        grad_ics(1) = k*cos(Beta)*c;
+                        grad_ics(2) = k*cos(Beta)*c;
+                }
+                if(field_flag==3)
+                {
+                        ics = sin(Beta)*c + 2.0;
+                        grad_ics(0) = k*cos(Beta)*c;
+                        grad_ics(1) = k*cos(Beta)*c;
+                        grad_ics(2) = k*cos(Beta)*c;
+                }
+                if(field_flag==4)
+                {
+                        ics = pow(sin(Beta)*c + 2.0,2.0);
+                        grad_ics(0) = 2*(sin(Beta)*c + 2.0)*k*cos(Beta)*c;
+                        grad_ics(1) = 2*(sin(Beta)*c + 2.0)*k*cos(Beta)*c;
+                        grad_ics(2) = 2*(sin(Beta)*c + 2.0)*k*cos(Beta)*c;
+                }
+        }
+        */
+
+
+  /*
+        if(n_dims==2)
+        {
+
+                if(field_flag==0)
+                {
+                        ics = sin(k*(x + y) - omega*t) + c;
+                        grad_ics(0) = k*cos(omega*t - k*(x + y));
+                        grad_ics(1) = k*cos(omega*t - k*(x + y));
+                }
+                if(field_flag==1)
+                {
+                        ics = pow(sin(k*(x + y) - omega*t) + c, 2.0);
+                        grad_ics(0) = 2*k*cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)));
+                        grad_ics(1) = 2*k*cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)));
+                }
+                if(field_flag==2)
+                {
+                        ics = pow(sin(k*(x + y) - omega*t) + c, 2.0);
+                        grad_ics(0) = 2*k*cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)));
+                        grad_ics(1) = 2*k*cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)));
+                }
+                if(field_flag==3)
+                {
+                        ics = pow(sin(k*(x + y) - omega*t) + c, 4.0);
+                        grad_ics(0) = 4*k*cos(omega*t - k*(x + y))*pow(c - sin(omega*t - k*(x + y)),3.0);
+                        grad_ics(1) = 4*k*cos(omega*t - k*(x + y))*pow(c - sin(omega*t - k*(x + y)),3.0);
+                }
+        }
+        if(n_dims==3)
+        {
+                if(field_flag==0)
+                {
+                        ics = sin(k*(x + y + z) - omega*t) + c;
+                        grad_ics(0) = k*cos(omega*t - k*(x + y + z));
+                        grad_ics(1) = k*cos(omega*t - k*(x + y + z));
+                        grad_ics(2) = k*cos(omega*t - k*(x + y + z));
+                }
+                if(field_flag==1)
+                {
+                        ics = pow(sin(k*(x + y + z) - omega*t) + c, 2.0);
+                        grad_ics(0) = 2*k*cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)));
+                        grad_ics(1) = 2*k*cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)));
+                        grad_ics(2) = 2*k*cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)));
+                }
+                if(field_flag==2)
+                {
+                        ics = pow(sin(k*(x + y + z) - omega*t) + c, 2.0);
+                        grad_ics(0) = 2*k*cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)));
+                        grad_ics(1) = 2*k*cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)));
+                        grad_ics(2) = 2*k*cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)));
+                }
+                if(field_flag==3)
+                {
+                        ics = pow(sin(k*(x + y + z) - omega*t) + c, 2.0);
+                        grad_ics(0) = 2*k*cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)));
+                        grad_ics(1) = 2*k*cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)));
+                        grad_ics(2) = 2*k*cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)));
+                }
+                if(field_flag==4)
+                {
+                        ics = pow(sin(k*(x + y + z) - omega*t) + c, 4.0);
+                        grad_ics(0) = 4*k*cos(omega*t - k*(x + y + z))*pow(c - sin(omega*t - k*(x + y + z)),3.0);
+                        grad_ics(1) = 4*k*cos(omega*t - k*(x + y + z))*pow(c - sin(omega*t - k*(x + y + z)),3.0);
+                        grad_ics(2) = 4*k*cos(omega*t - k*(x + y + z))*pow(c - sin(omega*t - k*(x + y + z)),3.0);
+                }
+        }
+        */
+}
+
 int factorial(int in_n)
 {
 

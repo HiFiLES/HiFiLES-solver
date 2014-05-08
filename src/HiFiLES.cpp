@@ -209,6 +209,11 @@ int main(int argc, char *argv[]) {
       /*! Output the history file. */
       
       HistoryOutput(FlowSol.ini_iter+i_steps, init_time, &write_hist, &FlowSol);
+
+      /*! Output error if run has exact solution */
+      if (run_input.test_case != 0){
+          compute_error(FlowSol.ini_iter + i_steps, &FlowSol);
+        }
       
     }
     

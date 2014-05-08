@@ -113,6 +113,8 @@ void eval_couette_flow(array<double>& pos, double in_gamma, double in_R_ref, dou
 
 void eval_poly_ic(array<double>& pos, double rho, array<double>& ics, int n_dims);
 
+void eval_source(array<double>& pos, double t, double k, double c, double omega, double& ics, array<double>& grad_ics, int n_dims, int field_flag);
+
 int factorial(int in_n);
 
 /*! Functions used in evaluation of shape functions and its 1st and 2nd derivatives

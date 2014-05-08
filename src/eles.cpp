@@ -318,7 +318,7 @@ array<int> eles::get_connectivity_plot()
 
 void eles::set_ics(double& time)
 {
-  int i,j,k;
+  int i,j,k,m;
 
   double rho,vx,vy,vz,p;
   double gamma=run_input.gamma;
@@ -442,6 +442,17 @@ void eles::set_ics(double& time)
                   ics(2) = -1.0*cos(pos(0))*sin(pos(1))*cos(pos(2));
                   ics(3) = 0.0;
                   ics(4)=p/(gamma-1.0)+0.5*rho*(ics(1)*ics(1)+ics(2)*ics(2)+ics(3)*ics(3));
+                }
+            }
+          else if (run_input.ic_form==8)
+            {
+              double ic;
+              array<double> grad_ic(n_dims);
+
+              for(m=0;m<n_fields;m++)
+                {
+                  eval_source(pos,time,run_input.k_source,run_input.c_source,run_input.omega,ic,grad_ic,n_dims,m);
+                  ics(m) = ic;
                 }
             }
           else
@@ -4976,6 +4987,21 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
           error_grad_sol(ind,j) = grad_sol(ind,j) - grad_ene(j);
         }
     }
+  else if (run_input.test_case==8) //Source term
+    {
+      int ind;
+      double ene;
+      array<double> grad_ene(n_dims);
+
+      ind = n_fields-1;
+      eval_source(loc,time,run_input.k_source,run_input.c_source,run_input.omega,ene,grad_ene,n_dims,ind);
+
+      error_sol(ind) = sol(ind) - ene;
+
+      for (int j=0; j<n_dims; j++) {
+          error_grad_sol(ind,j) = grad_sol(ind,j) - grad_ene(j);
+        }
+    }
   else {
       FatalError("Test case not recognized in compute error, exiting");
     }
@@ -5139,6 +5165,20 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
 }
 
 void eles::evaluate_bodyForce(array <double>& body_force)
+{
+  if (n_eles!=0) {
+      int i,j,k,l,m;
+      // Add to viscous flux at solution points
+      for (i=0;i<n_eles;i++)
+        for (j=0;j<n_upts_per_ele;j++)
+          for(k=0;k<n_fields;k++)
+            for(l=0;l<n_dims;l++)
+              for(m=0;m<n_dims;m++)
+                tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*body_force(k);
+    }
+}
+
+void eles::evaluate_MMS_bodyForce(array <double>& body_force)
 {
   if (n_eles!=0) {
       int i,j,k,l,m;

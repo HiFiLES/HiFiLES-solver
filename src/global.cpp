@@ -19,7 +19,7 @@ using namespace std;
 input run_input;
 double pi=3.141592654;
 
-const char* HIFILES_DIR = getenv("HIFILES_HOME");
+const char* HIFILES_DIR = "/home/mlopez14/jcrabill-HiFiLES/HiFiLES/";//getenv("HIFILES_HOME");
 
 /*! Routine to multiply matrices similar to BLAS's dgemm */
 int dgemm(int Arows, int Bcols, int Acols, double alpha, double beta, double* a, double* b, double* c)

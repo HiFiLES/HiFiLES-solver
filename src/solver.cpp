@@ -91,6 +91,12 @@ void CalcResidual(struct solution* FlowSol) {
         FlowSol->mesh_eles(i)->evaluate_bodyForce(FlowSol->body_force);
     }
 
+  /*! Calculate body forcing if Method of Manufactured Solutions is running. */
+  if(run_input.test_case == 8) {
+      for(i=0; i<FlowSol->n_ele_types; i++)
+        FlowSol->mesh_eles(i)->evaluate_MMS_bodyForce(FlowSol->body_force);
+    }
+
   /*! Compute the inviscid numerical fluxes.
    Compute the common solution and solution corrections (viscous only). */
   for(i=0; i<FlowSol->n_int_inter_types; i++)
