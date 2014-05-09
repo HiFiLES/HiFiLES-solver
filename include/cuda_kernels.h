@@ -11,6 +11,9 @@
  * Copyright (C) 2013 Aerospace Computing Laboratory.
  */
 
+#ifndef INC_CUDA_KERNELS_H
+#define INC_CUDA_KERNELS_H
+
 #pragma once
 
 void RK45_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_disu1_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_rk4a, double in_rk4b, double in_dt, double in_const_src_term);
@@ -67,3 +70,5 @@ void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_p
 
 /*! wrapper for gpu kernel to calculate Leonard tensors for similarity model */
 void calc_similarity_model_kernel_wrapper(int flag, int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, double* in_disu_upts_ptr, double* in_disuf_upts_ptr, double* in_uu_ptr, double* in_ue_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr);
+
+#endif

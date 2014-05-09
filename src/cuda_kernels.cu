@@ -1941,6 +1941,423 @@ __global__ void RK45_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts,
     }
 }
 
+template< int n_fields >
+__global__ void RK11_MMS_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts,
+				   const int n_cells, const int n_qpts, const double dt, int n_dims, double *g_pos_qpts,
+				   double t, double k, double c, double omega, double gamma, double mu, double Pr)
+{
+  int n = blockIdx.x*blockDim.x + threadIdx.x;
+  const int m = n;
+  double jac;
+  double x, y, z;
+  double src_term;
+  double Beta, Aconst, Bconst, dconst;
+  int stride = n_cells*n_qpts;
+
+  if (n<n_cells*n_qpts)
+    {
+      jac = g_jac_det_qpts[m];
+
+      //cooridinates
+      x = g_pos_qpts[n];
+      y = g_pos_qpts[n+stride];
+      if(n_dims == 3)
+        z = g_pos_qpts[n+2*stride];
+
+      //printf(" %4.8f %4.8f %4.8f\n", x, y, z);
+
+      if(n_dims==2)
+        {
+          Beta = k*(x+y) - omega*t;
+          dconst = 2.0;
+        }
+      if(n_dims==3)
+        {
+          Beta = k*(x+y+z) - omega*t;
+          dconst = 3.0;
+        }
+
+      Aconst = -omega + (k/(dconst-1.0))*(pow(-1.0,dconst-1.0) + gamma*(2.0*dconst - 1.0));
+      Bconst = 0.5*(k*(dconst*dconst + gamma*(6.0 + 3.0*dconst)) - 8.0*omega);
+
+
+      // Update fields
+#pragma unroll
+      for (int i=0;i<n_fields;i++)
+        {
+          //source term
+          if(n_dims==2)
+            {
+              if(i==0)
+                {
+                  src_term = (2*k - omega)*cos(omega*t - k*(x + y));
+                }
+              if(i==1)
+                {
+                  src_term = cos(omega*t - k*(x + y))*((3 + 2*c*(-1 + gamma) - gamma)*k - omega - 2*(-1 + gamma)*k*sin(omega*t - k*(x + y)));
+                }
+              if(i==2)
+                {
+                  src_term = cos(omega*t - k*(x + y))*((3 + 2*c*(-1 + gamma) - gamma)*k - omega - 2*(-1 + gamma)*k*sin(omega*t - k*(x + y)));
+                }
+              if(i==3)
+                {
+                  src_term = (-2*gamma*pow(k,2.0)*mu*sin(omega*t - k*(x + y)) + 2*Pr*cos(omega*t - k*(x + y))*(k - gamma*k + 2*c*gamma*k - c*omega + (-2*gamma*k + omega)*sin(omega*t - k*(x + y))))/Pr;
+                }
+            }
+          if(n_dims==3)
+            {
+              if(i==0)
+                {
+                  src_term = (3*k - omega)*cos(omega*t - k*(x + y + z));
+                }
+              if(i==1)
+                {
+                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
+                }
+              if(i==2)
+                {
+                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
+                }
+              if(i==3)
+                {
+                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
+                }
+              if(i==4)
+                {
+                  src_term = (-6*gamma*pow(k,2.0)*mu*sin(omega*t - k*(x + y + z)) + Pr*cos(omega*t - k*(x + y + z))*
+                              (3*(3 - 3*gamma + 4*c*gamma)*k - 4*c*omega + 4*(-3*gamma*k + omega)*sin(omega*t - k*(x + y + z))))/(2.*Pr);
+                }
+            }
+
+          /*
+                        if(i==0)
+                        {
+                                        src_term = c*cos(Beta)*(dconst*k - omega);
+                        }
+                        if(i==1)
+                        {
+                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
+                        }
+                        if(i==2)
+                        {
+                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
+                        }
+
+                        if(n_dims==2)
+                        {
+                                if(i==3)
+                                {
+                                        src_term = c*(cos(Beta)*Bconst + sin(2*Beta)*c*(dconst*k*gamma - omega) + sin(Beta)*((dconst*k*k*mu*gamma)/Pr));
+                                }
+                        }
+                        if(n_dims==3)
+                        {
+                                if(i==3)
+                                {
+                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
+                                }
+                                if(i==4)
+                                {
+                                        src_term = c*(cos(Beta)*Bconst + sin(2*Beta)*c*(dconst*k*gamma - omega) + sin(Beta)*((dconst*k*k*mu*gamma)/Pr));
+                                }
+                        }
+                        */
+
+          /*
+                        //source term
+                        if(n_dims==2)
+                        {
+                                if(i==0)
+                                {
+                                        src_term = -(cos(omega*t - k*(x + y))*(-4*c*k + omega + 4*k*sin(omega*t - k*(x + y))));
+                                }
+                                if(i==1)
+                                {
+                                src_term = (-8*k*k*mu*sin(omega*t - k*(x + y)))/3. + cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)))*
+                                                                        (c*(9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega + k*sin(omega*t - k*(x + y))*(-9 + 8*c + 3*gamma - 8*c*gamma + 4*(-1 + gamma)*sin(omega*t - k*(x + y))));
+                                }
+                                if(i==2)
+                                {
+                                src_term = (-8*k*k*mu*sin(omega*t - k*(x + y)))/3. + cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)))*
+                                                                        (c*(9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega + k*sin(omega*t - k*(x + y))*(-9 + 8*c + 3*gamma - 8*c*gamma + 4*(-1 + gamma)*sin(omega*t - k*(x + y))));
+                                }
+                        if(i==3)
+                                {
+                                        src_term = (15*gamma*k*Pr*cos(5*omega*t - 5*k*(x + y)) + 3*Pr*cos(3*omega*t - 3*k*(x + y))*
+                                                        (-3*(5*gamma + 8*c*(2 + (-2 + 5*c)*gamma))*k + 24*c*omega + 8*(2*(1 - gamma + 5*c*gamma)*k - omega)*sin(omega*t - k*(x + y))) +
+                                                        2*(4*k*k*mu*(3*(3 + 4*c - 6*c*c)*gamma - 16*c*Pr)*sin(omega*t - k*(x + y)) +
+                                                        4*k*k*mu*cos(2*omega*t - 2*k*(x + y))*(-4*(-3*gamma + 9*c*gamma + 4*Pr) + 27*gamma*sin(omega*t - k*(x + y))) +
+                                                        3*Pr*cos(omega*t - k*(x + y))*((5*gamma + 4*c*(6 - 6*gamma + c*(8*c + (15 + 2*c*(-4 + 5*c))*gamma)))*k - 4*c*(3 + 4*c*c)*omega +
+                                        4*(-2*(1 - gamma + c*(5*gamma + 4*c*(3 - 3*gamma + 5*c*gamma)))*k + omega + 12*c*c*omega)*sin(omega*t - k*(x + y)))))/(24.*Pr);
+                                }
+                        }
+                        if(n_dims==3)
+                        {
+                                if(i==0)
+                                {
+                                        src_term = -(cos(omega*t - k*(x + y + z))*(-6*c*k + omega + 6*k*sin(omega*t - k*(x + y + z))));
+                                }
+                                if(i==1)
+                                {
+                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
+                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
+                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
+                                }
+                                if(i==2)
+                                {
+                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
+                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
+                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
+                                }
+                                if(i==3)
+                                {
+                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
+                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
+                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
+                                }
+                                if(i==4)
+                                {
+                                src_term = (15*gamma*k*Pr*cos(5*omega*t - 5*k*(x + y + z)) + Pr*cos(3*omega*t - 3*k*(x + y + z))*
+                                                        (-9*(5*gamma + 8*c*(3 + (-3 + 5*c)*gamma))*k + 48*c*omega + 8*((9 - 9*gamma + 30*c*gamma)*k - 2*omega)*sin(omega*t - k*(x + y + z))) +
+                                                        2*((3*(5*gamma + 4*c*(9 - 9*gamma + c*(15*gamma + 2*c*(6 + (-6 + 5*c)*gamma))))*k - 8*c*(3 + 4*c*c)*omega)*Pr*cos(omega*t - k*(x + y + z)) +
+                                                        2*(-3*(3 - 3*gamma + 2*c*(5*gamma + 2*c*(9 + (-9 + 10*c)*gamma)))*k + 2*omega + 24*c*c*omega)*Pr*sin(2*omega*t - 2*k*(x + y + z)) +
+                                                        12*k*k*mu*((3 - 6*(-1 + c)*c)*gamma - 8*c*Pr)*sin(omega*t - k*(x + y + z)) -
+                                                        12*k*k*mu*cos(2*omega*t - 2*k*(x + y + z))*(-6*gamma + 12*c*gamma + 8*Pr - 9*gamma*sin(omega*t - k*(x + y + z)))))/(16.*Pr);
+                                }
+                        }
+                        */
+
+          //printf("Field %d %4.2f\n", i, g_div_tfg_con_qpts[n]);
+          g_q_qpts[n] -= dt*(g_div_tfg_con_qpts[n]/jac - src_term);
+          n += stride;
+        }
+    }
+}
+
+
+template< int n_fields >
+__global__ void RK45_MMS_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_res_qpts, double *g_jac_det_qpts,
+				   const int n_cells, const int n_qpts, const double fa, const double fb, const double fc, const double dt, int n_dims, double *g_pos_qpts,
+				   double ttime, double k, double c, double omega, double gamma, double mu, double Pr)
+{
+  int n = blockIdx.x*blockDim.x + threadIdx.x;
+  const int m = n;
+  double rhs,res,jac;
+  double x, y, z, t;
+  double src_term;
+  double Beta, Aconst, Bconst, dconst;
+  int stride = n_cells*n_qpts;
+
+  t = ttime + fc*dt;
+
+  if (n<n_cells*n_qpts)
+    {
+      jac = g_jac_det_qpts[m];
+
+      //cooridinates
+      x = g_pos_qpts[m];
+      y = g_pos_qpts[m+stride];
+      if(n_dims == 3)
+        z = g_pos_qpts[m+2*stride];
+
+      //printf(" %4.8f %4.8f %4.8f\n", x, y, z);
+
+      if(n_dims==2)
+        {
+          Beta = k*(x+y) - omega*t;
+          dconst = 2.0;
+        }
+      if(n_dims==3)
+        {
+          Beta = k*(x+y+z) - omega*t;
+          dconst = 3.0;
+        }
+
+      Aconst = -omega + (k/(dconst-1.0))*(pow(-1.0,dconst-1.0) + gamma*(2.0*dconst - 1.0));
+      Bconst = 0.5*(k*(dconst*dconst + gamma*(6.0 + 3.0*dconst)) - 8.0*omega);
+
+
+      // Update fields
+#pragma unroll
+      for (int i=0;i<n_fields;i++)
+        {
+          //source term
+          if(n_dims==2)
+            {
+              if(i==0)
+                {
+                  src_term = (2*k - omega)*cos(omega*t - k*(x + y));
+                }
+              if(i==1)
+                {
+                  src_term = cos(omega*t - k*(x + y))*((3 + 2*c*(-1 + gamma) - gamma)*k - omega - 2*(-1 + gamma)*k*sin(omega*t - k*(x + y)));
+                }
+              if(i==2)
+                {
+                  src_term = cos(omega*t - k*(x + y))*((3 + 2*c*(-1 + gamma) - gamma)*k - omega - 2*(-1 + gamma)*k*sin(omega*t - k*(x + y)));
+                }
+              if(i==3)
+                {
+                  src_term = (-2*gamma*pow(k,2.0)*mu*sin(omega*t - k*(x + y)) + 2*Pr*cos(omega*t - k*(x + y))*(k - gamma*k + 2*c*gamma*k - c*omega + (-2*gamma*k + omega)*sin(omega*t - k*(x + y))))/Pr;
+                }
+            }
+          if(n_dims==3)
+            {
+              /*
+
+               **/
+
+
+              if(i==0)
+                {
+                  /*cos(omega*t - k*(x + y + z))*(3*k - omega)*/
+                  src_term = (3*k - omega)*cos(omega*t - k*(x + y + z));
+                }
+              if(i==1)
+                {
+                  /*-(cos(omega*t - k*(x + y + z))*(2*omega - 9*k + 4*c*k + 3*g*k - 4*k*sin(omega*t - k*(x + y + z)) - 4*c*g*k + 4*g*k*sin(omega*t - k*(x + y + z))))/2  */
+                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
+                }
+              if(i==2)
+                {
+                  /* -cos(omega*t - k*(x + y + z))*(omega - 6*k + 4*c*k + 3*g*k - 4*k*sin(omega*t - k*(x + y + z)) - 4*c*g*k + 4*g*k*sin(omega*t - k*(x + y + z))) */
+                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
+                  //src_term = -cos(omega*t - k*(x + y + z))*(omega - 6*k + 4*c*k + 3*gamma*k - 4*k*sin(omega*t - k*(x + y + z)) - 4*c*gamma*k + 4*gamma*k*sin(omega*t - k*(x + y + z)));
+                }
+              if(i==3)
+                {
+                  // cos(omega*t - k*(x + y + z))*(3*k - omega)
+                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
+                  //src_term = cos(omega*t - k*(x + y + z))*(3*k - omega);
+                }
+              if(i==4)
+                {
+
+                  src_term = (-6*gamma*pow(k,2.0)*mu*sin(omega*t - k*(x + y + z)) + Pr*cos(omega*t - k*(x + y + z))*
+                              (3*(3 - 3*gamma + 4*c*gamma)*k - 4*c*omega + 4*(-3*gamma*k + omega)*sin(omega*t - k*(x + y + z))))/(2.*Pr);
+                  //src_term =  -(9*Pr*gamma*k*cos(omega*t - k*(x + y + z)) - 9*Pr*k*cos(omega*t - k*(x + y + z)) + 4*Pr*c*omega*cos(omega*t - k*(x + y + z)) - 4*Pr*omega*cos(omega*t - k*(x + y + z))*sin(omega*t - k*(x + y + z)) + 6*gamma*pow(k,2.0)*mu*sin(omega*t - k*(x + y + z)) - 12*Pr*c*gamma*k*cos(omega*t - k*(x + y + z)) + 12*Pr*gamma*k*cos(omega*t - k*(x + y + z))*sin(omega*t - k*(x + y + z)))/(2*Pr);
+                }
+            }
+
+
+          /*
+                        if(i==0)
+                        {
+                                        src_term = c*cos(Beta)*(dconst*k - omega);
+                        }
+                        if(i==1)
+                        {
+                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
+                        }
+                        if(i==2)
+                        {
+                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
+                        }
+
+                        if(n_dims==2)
+                        {
+                                if(i==3)
+                                {
+                                        src_term = c*(cos(Beta)*Bconst + sin(2*Beta)*c*(dconst*k*gamma - omega) + sin(Beta)*((dconst*k*k*mu*gamma)/Pr));
+                                }
+                        }
+                        if(n_dims==3)
+                        {
+                                if(i==3)
+                                {
+                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
+                                }
+                                if(i==4)
+                                {
+                                        src_term = c*(cos(Beta)*Bconst + sin(2*Beta)*c*(dconst*k*gamma - omega) + sin(Beta)*((dconst*k*k*mu*gamma)/Pr));
+                                }
+                        }
+                        */
+
+          /*
+                        //source term
+                        if(n_dims==2)
+                        {
+                                if(i==0)
+                                {
+                                        src_term = -(cos(omega*t - k*(x + y))*(-4*c*k + omega + 4*k*sin(omega*t - k*(x + y))));
+                                }
+                                if(i==1)
+                                {
+                                src_term = (-8*k*k*mu*sin(omega*t - k*(x + y)))/3. + cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)))*
+                                                                        (c*(9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega + k*sin(omega*t - k*(x + y))*(-9 + 8*c + 3*gamma - 8*c*gamma + 4*(-1 + gamma)*sin(omega*t - k*(x + y))));
+                                }
+                                if(i==2)
+                                {
+                                src_term = (-8*k*k*mu*sin(omega*t - k*(x + y)))/3. + cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)))*
+                                                                        (c*(9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega + k*sin(omega*t - k*(x + y))*(-9 + 8*c + 3*gamma - 8*c*gamma + 4*(-1 + gamma)*sin(omega*t - k*(x + y))));
+                                }
+                        if(i==3)
+                                {
+                                        src_term = (15*gamma*k*Pr*cos(5*omega*t - 5*k*(x + y)) + 3*Pr*cos(3*omega*t - 3*k*(x + y))*
+                                                        (-3*(5*gamma + 8*c*(2 + (-2 + 5*c)*gamma))*k + 24*c*omega + 8*(2*(1 - gamma + 5*c*gamma)*k - omega)*sin(omega*t - k*(x + y))) +
+                                                        2*(4*k*k*mu*(3*(3 + 4*c - 6*c*c)*gamma - 16*c*Pr)*sin(omega*t - k*(x + y)) +
+                                                        4*k*k*mu*cos(2*omega*t - 2*k*(x + y))*(-4*(-3*gamma + 9*c*gamma + 4*Pr) + 27*gamma*sin(omega*t - k*(x + y))) +
+                                                        3*Pr*cos(omega*t - k*(x + y))*((5*gamma + 4*c*(6 - 6*gamma + c*(8*c + (15 + 2*c*(-4 + 5*c))*gamma)))*k - 4*c*(3 + 4*c*c)*omega +
+                                        4*(-2*(1 - gamma + c*(5*gamma + 4*c*(3 - 3*gamma + 5*c*gamma)))*k + omega + 12*c*c*omega)*sin(omega*t - k*(x + y)))))/(24.*Pr);
+                                }
+                        }
+                        if(n_dims==3)
+                        {
+                                if(i==0)
+                                {
+                                        src_term = -(cos(omega*t - k*(x + y + z))*(-6*c*k + omega + 6*k*sin(omega*t - k*(x + y + z))));
+                                }
+                                if(i==1)
+                                {
+                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
+                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
+                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
+                                }
+                                if(i==2)
+                                {
+                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
+                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
+                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
+                                }
+                                if(i==3)
+                                {
+                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
+                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
+                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
+                                }
+                                if(i==4)
+                                {
+                                src_term = (15*gamma*k*Pr*cos(5*omega*t - 5*k*(x + y + z)) + Pr*cos(3*omega*t - 3*k*(x + y + z))*
+                                                        (-9*(5*gamma + 8*c*(3 + (-3 + 5*c)*gamma))*k + 48*c*omega + 8*((9 - 9*gamma + 30*c*gamma)*k - 2*omega)*sin(omega*t - k*(x + y + z))) +
+                                                        2*((3*(5*gamma + 4*c*(9 - 9*gamma + c*(15*gamma + 2*c*(6 + (-6 + 5*c)*gamma))))*k - 8*c*(3 + 4*c*c)*omega)*Pr*cos(omega*t - k*(x + y + z)) +
+                                                        2*(-3*(3 - 3*gamma + 2*c*(5*gamma + 2*c*(9 + (-9 + 10*c)*gamma)))*k + 2*omega + 24*c*c*omega)*Pr*sin(2*omega*t - 2*k*(x + y + z)) +
+                                                        12*k*k*mu*((3 - 6*(-1 + c)*c)*gamma - 8*c*Pr)*sin(omega*t - k*(x + y + z)) -
+                                                        12*k*k*mu*cos(2*omega*t - 2*k*(x + y + z))*(-6*gamma + 12*c*gamma + 8*Pr - 9*gamma*sin(omega*t - k*(x + y + z)))))/(16.*Pr);
+                                }
+                        }
+
+                        */
+
+          /*
+                        if(i == 0)
+                        {
+                                printf("time %4.8f\n",t);
+                        }
+                        */
+
+          //residual
+          //printf("Field %d %4.2f\n", i, g_div_tfg_con_qpts[n]);
+          rhs = -(g_div_tfg_con_qpts[n]/jac - src_term);
+          res = g_res_qpts[n];
+          res = fa*res + dt*rhs;
+          g_res_qpts[n] = res;
+          g_q_qpts[n] += fb*res;
+          n += stride;
+        }
+    }
+}
 
 // gpu kernel to calculate transformed discontinuous inviscid flux at solution points for the wave equation
 // otherwise, switch to one thread per output?
@@ -3557,456 +3974,50 @@ void RK11_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fie
 
 }
 
-void RK45_MMS_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_disu1_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_rk4a, double in_rk4b, double in_dt, double in_const_src_term)
+void RK45_MMS_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_disu1_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_rk4a, double in_rk4b, double in_rk4c, double in_dt, double* in_pos_upts_ptr, double in_time, double in_k_source, double in_c_source, double in_omega, double in_gamma, double in_mu_inf, double in_prandtl)
 {
 
-  // HACK: fix 256 threads per block
-  int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
+	// HACK: fix 256 threads per block
+	int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
 
   if (in_n_fields==1)
-    {
-      RK45_MMS_update_kernel <1> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_dt, in_const_src_term);
-    }
+  {
+          RK45_MMS_update_kernel <1> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_rk4c, in_dt, in_n_dims, in_pos_upts_ptr, in_time, in_k_source, in_c_source, in_omega, in_gamma, in_mu_inf, in_prandtl);
+  }
   else if (in_n_fields==4)
-    {
-      RK45_MMS_update_kernel <4> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_dt, in_const_src_term);
-    }
+  {
+          RK45_MMS_update_kernel <4> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_rk4c, in_dt, in_n_dims, in_pos_upts_ptr, in_time, in_k_source, in_c_source, in_omega, in_gamma, in_mu_inf, in_prandtl);
+  }
   else if (in_n_fields==5)
-    {
-      RK45_MMS_update_kernel <5> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_dt, in_const_src_term);
-    }
+  {
+          RK45_MMS_update_kernel <5> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_disu1_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_rk4a, in_rk4b, in_rk4c, in_dt, in_n_dims, in_pos_upts_ptr, in_time, in_k_source, in_c_source, in_omega, in_gamma, in_mu_inf, in_prandtl);
+  }
   else
     FatalError("n_fields not supported");
 
 }
 
-void RK11_MMS_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_dt, double in_const_src_term)
+void RK11_MMS_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_dt, double* in_pos_upts_ptr, double in_time, double in_k_source, double in_c_source, double in_omega, double in_gamma, double in_mu_inf, double in_prandtl)
 {
 
-  // HACK: fix 256 threads per block
-  int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
+	// HACK: fix 256 threads per block
+	int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
 
   if (in_n_fields==1)
-    {
-      RK11_MMS_update_kernel <1> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_const_src_term);
-    }
+  {
+          RK11_MMS_update_kernel <1> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_n_dims, in_pos_upts_ptr, in_time, in_k_source, in_c_source, in_omega, in_gamma, in_mu_inf, in_prandtl);
+  }
   else if (in_n_fields==4)
-    {
-      RK11_MMS_update_kernel <4> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_const_src_term);
-    }
+  {
+          RK11_MMS_update_kernel <4> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_n_dims, in_pos_upts_ptr, in_time, in_k_source, in_c_source, in_omega, in_gamma, in_mu_inf, in_prandtl);
+  }
   else if (in_n_fields==5)
-    {
-      RK11_MMS_update_kernel <5> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_const_src_term);
-    }
+  {
+          RK11_MMS_update_kernel <5> <<< n_blocks,256>>> (in_disu0_upts_ptr, in_div_tconf_upts_ptr, in_detjac_upts_ptr, in_n_eles, in_n_upts_per_ele, in_dt, in_n_dims, in_pos_upts_ptr, in_time, in_k_source, in_c_source, in_omega, in_gamma, in_mu_inf, in_prandtl);
+  }
   else
     FatalError("n_fields not supported");
 
-}
-
-
-template< int n_fields >
-__global__ void RK11_MMS_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts,
-				   const int n_cells, const int n_qpts, const double dt, int n_dims, double *g_pos_qpts,
-				   double t, double k, double c, double omega, double gamma, double mu, double Pr)
-{
-  int n = blockIdx.x*blockDim.x + threadIdx.x;
-  const int m = n;
-  double jac;
-  double x, y, z;
-  double src_term;
-  double Beta, Aconst, Bconst, dconst;
-  int stride = n_cells*n_qpts;
-
-  if (n<n_cells*n_qpts)
-    {
-      jac = g_jac_det_qpts[m];
-
-      //cooridinates
-      x = g_pos_qpts[n];
-      y = g_pos_qpts[n+stride];
-      if(n_dims == 3)
-        z = g_pos_qpts[n+2*stride];
-
-      //printf(" %4.8f %4.8f %4.8f\n", x, y, z);
-
-      if(n_dims==2)
-        {
-          Beta = k*(x+y) - omega*t;
-          dconst = 2.0;
-        }
-      if(n_dims==3)
-        {
-          Beta = k*(x+y+z) - omega*t;
-          dconst = 3.0;
-        }
-
-      Aconst = -omega + (k/(dconst-1.0))*(pow(-1.0,dconst-1.0) + gamma*(2.0*dconst - 1.0));
-      Bconst = 0.5*(k*(dconst*dconst + gamma*(6.0 + 3.0*dconst)) - 8.0*omega);
-
-
-      // Update fields
-#pragma unroll
-      for (int i=0;i<n_fields;i++)
-        {
-          //source term
-          if(n_dims==2)
-            {
-              if(i==0)
-                {
-                  src_term = (2*k - omega)*cos(omega*t - k*(x + y));
-                }
-              if(i==1)
-                {
-                  src_term = cos(omega*t - k*(x + y))*((3 + 2*c*(-1 + gamma) - gamma)*k - omega - 2*(-1 + gamma)*k*sin(omega*t - k*(x + y)));
-                }
-              if(i==2)
-                {
-                  src_term = cos(omega*t - k*(x + y))*((3 + 2*c*(-1 + gamma) - gamma)*k - omega - 2*(-1 + gamma)*k*sin(omega*t - k*(x + y)));
-                }
-              if(i==3)
-                {
-                  src_term = (-2*gamma*pow(k,2.0)*mu*sin(omega*t - k*(x + y)) + 2*Pr*cos(omega*t - k*(x + y))*(k - gamma*k + 2*c*gamma*k - c*omega + (-2*gamma*k + omega)*sin(omega*t - k*(x + y))))/Pr;
-                }
-            }
-          if(n_dims==3)
-            {
-              if(i==0)
-                {
-                  src_term = (3*k - omega)*cos(omega*t - k*(x + y + z));
-                }
-              if(i==1)
-                {
-                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
-                }
-              if(i==2)
-                {
-                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
-                }
-              if(i==3)
-                {
-                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
-                }
-              if(i==4)
-                {
-                  src_term = (-6*gamma*pow(k,2.0)*mu*sin(omega*t - k*(x + y + z)) + Pr*cos(omega*t - k*(x + y + z))*
-                              (3*(3 - 3*gamma + 4*c*gamma)*k - 4*c*omega + 4*(-3*gamma*k + omega)*sin(omega*t - k*(x + y + z))))/(2.*Pr);
-                }
-            }
-
-          /*
-                        if(i==0)
-                        {
-                                        src_term = c*cos(Beta)*(dconst*k - omega);
-                        }
-                        if(i==1)
-                        {
-                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
-                        }
-                        if(i==2)
-                        {
-                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
-                        }
-
-                        if(n_dims==2)
-                        {
-                                if(i==3)
-                                {
-                                        src_term = c*(cos(Beta)*Bconst + sin(2*Beta)*c*(dconst*k*gamma - omega) + sin(Beta)*((dconst*k*k*mu*gamma)/Pr));
-                                }
-                        }
-                        if(n_dims==3)
-                        {
-                                if(i==3)
-                                {
-                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
-                                }
-                                if(i==4)
-                                {
-                                        src_term = c*(cos(Beta)*Bconst + sin(2*Beta)*c*(dconst*k*gamma - omega) + sin(Beta)*((dconst*k*k*mu*gamma)/Pr));
-                                }
-                        }
-                        */
-
-          /*
-                        //source term
-                        if(n_dims==2)
-                        {
-                                if(i==0)
-                                {
-                                        src_term = -(cos(omega*t - k*(x + y))*(-4*c*k + omega + 4*k*sin(omega*t - k*(x + y))));
-                                }
-                                if(i==1)
-                                {
-                                src_term = (-8*k*k*mu*sin(omega*t - k*(x + y)))/3. + cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)))*
-                                                                        (c*(9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega + k*sin(omega*t - k*(x + y))*(-9 + 8*c + 3*gamma - 8*c*gamma + 4*(-1 + gamma)*sin(omega*t - k*(x + y))));
-                                }
-                                if(i==2)
-                                {
-                                src_term = (-8*k*k*mu*sin(omega*t - k*(x + y)))/3. + cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)))*
-                                                                        (c*(9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega + k*sin(omega*t - k*(x + y))*(-9 + 8*c + 3*gamma - 8*c*gamma + 4*(-1 + gamma)*sin(omega*t - k*(x + y))));
-                                }
-                        if(i==3)
-                                {
-                                        src_term = (15*gamma*k*Pr*cos(5*omega*t - 5*k*(x + y)) + 3*Pr*cos(3*omega*t - 3*k*(x + y))*
-                                                        (-3*(5*gamma + 8*c*(2 + (-2 + 5*c)*gamma))*k + 24*c*omega + 8*(2*(1 - gamma + 5*c*gamma)*k - omega)*sin(omega*t - k*(x + y))) +
-                                                        2*(4*k*k*mu*(3*(3 + 4*c - 6*c*c)*gamma - 16*c*Pr)*sin(omega*t - k*(x + y)) +
-                                                        4*k*k*mu*cos(2*omega*t - 2*k*(x + y))*(-4*(-3*gamma + 9*c*gamma + 4*Pr) + 27*gamma*sin(omega*t - k*(x + y))) +
-                                                        3*Pr*cos(omega*t - k*(x + y))*((5*gamma + 4*c*(6 - 6*gamma + c*(8*c + (15 + 2*c*(-4 + 5*c))*gamma)))*k - 4*c*(3 + 4*c*c)*omega +
-                                        4*(-2*(1 - gamma + c*(5*gamma + 4*c*(3 - 3*gamma + 5*c*gamma)))*k + omega + 12*c*c*omega)*sin(omega*t - k*(x + y)))))/(24.*Pr);
-                                }
-                        }
-                        if(n_dims==3)
-                        {
-                                if(i==0)
-                                {
-                                        src_term = -(cos(omega*t - k*(x + y + z))*(-6*c*k + omega + 6*k*sin(omega*t - k*(x + y + z))));
-                                }
-                                if(i==1)
-                                {
-                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
-                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
-                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
-                                }
-                                if(i==2)
-                                {
-                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
-                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
-                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
-                                }
-                                if(i==3)
-                                {
-                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
-                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
-                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
-                                }
-                                if(i==4)
-                                {
-                                src_term = (15*gamma*k*Pr*cos(5*omega*t - 5*k*(x + y + z)) + Pr*cos(3*omega*t - 3*k*(x + y + z))*
-                                                        (-9*(5*gamma + 8*c*(3 + (-3 + 5*c)*gamma))*k + 48*c*omega + 8*((9 - 9*gamma + 30*c*gamma)*k - 2*omega)*sin(omega*t - k*(x + y + z))) +
-                                                        2*((3*(5*gamma + 4*c*(9 - 9*gamma + c*(15*gamma + 2*c*(6 + (-6 + 5*c)*gamma))))*k - 8*c*(3 + 4*c*c)*omega)*Pr*cos(omega*t - k*(x + y + z)) +
-                                                        2*(-3*(3 - 3*gamma + 2*c*(5*gamma + 2*c*(9 + (-9 + 10*c)*gamma)))*k + 2*omega + 24*c*c*omega)*Pr*sin(2*omega*t - 2*k*(x + y + z)) +
-                                                        12*k*k*mu*((3 - 6*(-1 + c)*c)*gamma - 8*c*Pr)*sin(omega*t - k*(x + y + z)) -
-                                                        12*k*k*mu*cos(2*omega*t - 2*k*(x + y + z))*(-6*gamma + 12*c*gamma + 8*Pr - 9*gamma*sin(omega*t - k*(x + y + z)))))/(16.*Pr);
-                                }
-                        }
-                        */
-
-          //printf("Field %d %4.2f\n", i, g_div_tfg_con_qpts[n]);
-          g_q_qpts[n] -= dt*(g_div_tfg_con_qpts[n]/jac - src_term);
-          n += stride;
-        }
-    }
-}
-
-
-template< int n_fields >
-__global__ void RK45_MMS_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_res_qpts, double *g_jac_det_qpts,
-				   const int n_cells, const int n_qpts, const double fa, const double fb, const double fc, const double dt, int n_dims, double *g_pos_qpts,
-				   double ttime, double k, double c, double omega, double gamma, double mu, double Pr)
-{
-  int n = blockIdx.x*blockDim.x + threadIdx.x;
-  const int m = n;
-  double rhs,res,jac;
-  double x, y, z, t;
-  double src_term;
-  double Beta, Aconst, Bconst, dconst;
-  int stride = n_cells*n_qpts;
-
-  t = ttime + fc*dt;
-
-  if (n<n_cells*n_qpts)
-    {
-      jac = g_jac_det_qpts[m];
-
-      //cooridinates
-      x = g_pos_qpts[m];
-      y = g_pos_qpts[m+stride];
-      if(n_dims == 3)
-        z = g_pos_qpts[m+2*stride];
-
-      //printf(" %4.8f %4.8f %4.8f\n", x, y, z);
-
-      if(n_dims==2)
-        {
-          Beta = k*(x+y) - omega*t;
-          dconst = 2.0;
-        }
-      if(n_dims==3)
-        {
-          Beta = k*(x+y+z) - omega*t;
-          dconst = 3.0;
-        }
-
-      Aconst = -omega + (k/(dconst-1.0))*(pow(-1.0,dconst-1.0) + gamma*(2.0*dconst - 1.0));
-      Bconst = 0.5*(k*(dconst*dconst + gamma*(6.0 + 3.0*dconst)) - 8.0*omega);
-
-
-      // Update fields
-#pragma unroll
-      for (int i=0;i<n_fields;i++)
-        {
-          //source term
-          if(n_dims==2)
-            {
-              if(i==0)
-                {
-                  src_term = (2*k - omega)*cos(omega*t - k*(x + y));
-                }
-              if(i==1)
-                {
-                  src_term = cos(omega*t - k*(x + y))*((3 + 2*c*(-1 + gamma) - gamma)*k - omega - 2*(-1 + gamma)*k*sin(omega*t - k*(x + y)));
-                }
-              if(i==2)
-                {
-                  src_term = cos(omega*t - k*(x + y))*((3 + 2*c*(-1 + gamma) - gamma)*k - omega - 2*(-1 + gamma)*k*sin(omega*t - k*(x + y)));
-                }
-              if(i==3)
-                {
-                  src_term = (-2*gamma*pow(k,2.0)*mu*sin(omega*t - k*(x + y)) + 2*Pr*cos(omega*t - k*(x + y))*(k - gamma*k + 2*c*gamma*k - c*omega + (-2*gamma*k + omega)*sin(omega*t - k*(x + y))))/Pr;
-                }
-            }
-          if(n_dims==3)
-            {
-              if(i==0)
-                {
-                  src_term = (3*k - omega)*cos(omega*t - k*(x + y + z));
-                }
-              if(i==1)
-                {
-                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
-                }
-              if(i==2)
-                {
-                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
-                }
-              if(i==3)
-                {
-                  src_term = (cos(omega*t - k*(x + y + z))*((9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega - 4*(-1 + gamma)*k*sin(omega*t - k*(x + y + z))))/2.;
-                }
-              if(i==4)
-                {
-                  src_term = (-6*gamma*pow(k,2.0)*mu*sin(omega*t - k*(x + y + z)) + Pr*cos(omega*t - k*(x + y + z))*
-                              (3*(3 - 3*gamma + 4*c*gamma)*k - 4*c*omega + 4*(-3*gamma*k + omega)*sin(omega*t - k*(x + y + z))))/(2.*Pr);
-                }
-            }
-
-
-          /*
-                        if(i==0)
-                        {
-                                        src_term = c*cos(Beta)*(dconst*k - omega);
-                        }
-                        if(i==1)
-                        {
-                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
-                        }
-                        if(i==2)
-                        {
-                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
-                        }
-
-                        if(n_dims==2)
-                        {
-                                if(i==3)
-                                {
-                                        src_term = c*(cos(Beta)*Bconst + sin(2*Beta)*c*(dconst*k*gamma - omega) + sin(Beta)*((dconst*k*k*mu*gamma)/Pr));
-                                }
-                        }
-                        if(n_dims==3)
-                        {
-                                if(i==3)
-                                {
-                                        src_term = c*(cos(Beta)*Aconst + sin(2*Beta)*c*k*(gamma-1));
-                                }
-                                if(i==4)
-                                {
-                                        src_term = c*(cos(Beta)*Bconst + sin(2*Beta)*c*(dconst*k*gamma - omega) + sin(Beta)*((dconst*k*k*mu*gamma)/Pr));
-                                }
-                        }
-                        */
-
-          /*
-                        //source term
-                        if(n_dims==2)
-                        {
-                                if(i==0)
-                                {
-                                        src_term = -(cos(omega*t - k*(x + y))*(-4*c*k + omega + 4*k*sin(omega*t - k*(x + y))));
-                                }
-                                if(i==1)
-                                {
-                                src_term = (-8*k*k*mu*sin(omega*t - k*(x + y)))/3. + cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)))*
-                                                                        (c*(9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega + k*sin(omega*t - k*(x + y))*(-9 + 8*c + 3*gamma - 8*c*gamma + 4*(-1 + gamma)*sin(omega*t - k*(x + y))));
-                                }
-                                if(i==2)
-                                {
-                                src_term = (-8*k*k*mu*sin(omega*t - k*(x + y)))/3. + cos(omega*t - k*(x + y))*(c - sin(omega*t - k*(x + y)))*
-                                                                        (c*(9 + 4*c*(-1 + gamma) - 3*gamma)*k - 2*omega + k*sin(omega*t - k*(x + y))*(-9 + 8*c + 3*gamma - 8*c*gamma + 4*(-1 + gamma)*sin(omega*t - k*(x + y))));
-                                }
-                        if(i==3)
-                                {
-                                        src_term = (15*gamma*k*Pr*cos(5*omega*t - 5*k*(x + y)) + 3*Pr*cos(3*omega*t - 3*k*(x + y))*
-                                                        (-3*(5*gamma + 8*c*(2 + (-2 + 5*c)*gamma))*k + 24*c*omega + 8*(2*(1 - gamma + 5*c*gamma)*k - omega)*sin(omega*t - k*(x + y))) +
-                                                        2*(4*k*k*mu*(3*(3 + 4*c - 6*c*c)*gamma - 16*c*Pr)*sin(omega*t - k*(x + y)) +
-                                                        4*k*k*mu*cos(2*omega*t - 2*k*(x + y))*(-4*(-3*gamma + 9*c*gamma + 4*Pr) + 27*gamma*sin(omega*t - k*(x + y))) +
-                                                        3*Pr*cos(omega*t - k*(x + y))*((5*gamma + 4*c*(6 - 6*gamma + c*(8*c + (15 + 2*c*(-4 + 5*c))*gamma)))*k - 4*c*(3 + 4*c*c)*omega +
-                                        4*(-2*(1 - gamma + c*(5*gamma + 4*c*(3 - 3*gamma + 5*c*gamma)))*k + omega + 12*c*c*omega)*sin(omega*t - k*(x + y)))))/(24.*Pr);
-                                }
-                        }
-                        if(n_dims==3)
-                        {
-                                if(i==0)
-                                {
-                                        src_term = -(cos(omega*t - k*(x + y + z))*(-6*c*k + omega + 6*k*sin(omega*t - k*(x + y + z))));
-                                }
-                                if(i==1)
-                                {
-                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
-                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
-                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
-                                }
-                                if(i==2)
-                                {
-                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
-                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
-                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
-                                }
-                                if(i==3)
-                                {
-                                src_term = -4*k*k*mu*sin(omega*t - k*(x + y + z)) + (cos(omega*t - k*(x + y + z))*(c - sin(omega*t - k*(x + y + z)))*
-                                                        (c*(-9*(-3 + gamma) + 8*c*(-1 + gamma))*k - 4*omega + k*sin(omega*t - k*(x + y + z))*(9*(-3 + gamma) - 16*c*(-1 + gamma) +
-                                                                                8*(-1 + gamma)*sin(omega*t - k*(x + y + z)))))/2.;
-                                }
-                                if(i==4)
-                                {
-                                src_term = (15*gamma*k*Pr*cos(5*omega*t - 5*k*(x + y + z)) + Pr*cos(3*omega*t - 3*k*(x + y + z))*
-                                                        (-9*(5*gamma + 8*c*(3 + (-3 + 5*c)*gamma))*k + 48*c*omega + 8*((9 - 9*gamma + 30*c*gamma)*k - 2*omega)*sin(omega*t - k*(x + y + z))) +
-                                                        2*((3*(5*gamma + 4*c*(9 - 9*gamma + c*(15*gamma + 2*c*(6 + (-6 + 5*c)*gamma))))*k - 8*c*(3 + 4*c*c)*omega)*Pr*cos(omega*t - k*(x + y + z)) +
-                                                        2*(-3*(3 - 3*gamma + 2*c*(5*gamma + 2*c*(9 + (-9 + 10*c)*gamma)))*k + 2*omega + 24*c*c*omega)*Pr*sin(2*omega*t - 2*k*(x + y + z)) +
-                                                        12*k*k*mu*((3 - 6*(-1 + c)*c)*gamma - 8*c*Pr)*sin(omega*t - k*(x + y + z)) -
-                                                        12*k*k*mu*cos(2*omega*t - 2*k*(x + y + z))*(-6*gamma + 12*c*gamma + 8*Pr - 9*gamma*sin(omega*t - k*(x + y + z)))))/(16.*Pr);
-                                }
-                        }
-
-                        */
-
-          /*
-                        if(i == 0)
-                        {
-                                printf("time %4.8f\n",t);
-                        }
-                        */
-
-          //residual
-          //printf("Field %d %4.2f\n", i, g_div_tfg_con_qpts[n]);
-          rhs = -(g_div_tfg_con_qpts[n]/jac - src_term);
-          res = g_res_qpts[n];
-          res = fa*res + dt*rhs;
-          g_res_qpts[n] = res;
-          g_q_qpts[n] += fb*res;
-          n += stride;
-        }
-    }
 }
 
 

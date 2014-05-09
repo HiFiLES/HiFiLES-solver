@@ -305,7 +305,7 @@ void InitSolution(struct solution* FlowSol)
   for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
           FlowSol->mesh_eles(i)->cp_disu_upts_cpu_gpu();
-
+          FlowSol->mesh_eles(i)->cp_pos_upts_cpu_gpu();
         }
     }
 #endif

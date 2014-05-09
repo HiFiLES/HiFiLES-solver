@@ -166,8 +166,8 @@ int main(int argc, char *argv[]) {
       /*! Time integration usign a RK scheme */
       
       for(j=0; j<FlowSol.n_ele_types; j++) {
-        
-        FlowSol.mesh_eles(j)->AdvanceSolution(i, FlowSol.adv_type);
+          FlowSol.mesh_eles(j)->sim_time = FlowSol.time; //communicate time to each type of element
+          FlowSol.mesh_eles(j)->AdvanceSolution(i, FlowSol.adv_type);
         
       }
       

@@ -266,6 +266,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
       norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
       norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+      if(run_input.test_case == 8) // if MMS test case
+        pos_upts.setup(n_upts_per_ele,n_eles,n_dims);
 
       if(viscous)
         {
@@ -342,6 +344,14 @@ void eles::set_ics(double& time)
           // calculate position of solution point
 
           calc_pos(loc,i,pos);
+
+          // store location only if needed
+          if(run_input.test_case == 8) { // if running MMS case
+              for(k=0;k<n_dims;k++)
+              {
+                      pos_upts(j,i,k) = pos(k);
+              }
+            }
 
           // evaluate solution at solution point
           if(run_input.ic_form==0)
@@ -498,8 +508,7 @@ void eles::set_ics(double& time)
 }
 
 
-// set initial conditions
-
+// set initial conditions with restart data
 
 void eles::read_restart_data(ifstream& restart_file)
 {
@@ -671,6 +680,16 @@ void eles::cp_disu_upts_gpu_cpu(void)
 #endif
 }
 
+// copy the locations of solution points to gpu
+void eles::cp_pos_upts_cpu_gpu(void)
+{
+        #ifdef _GPU
+  if (n_eles!=0)
+  {
+          pos_upts.cp_cpu_gpu();
+  }
+        #endif
+}
 
 // copy discontinuous solution at solution points to gpu
 void eles::cp_disu_upts_cpu_gpu(void)
@@ -823,7 +842,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 
 #ifdef _GPU
         if(run_input.test_case == 8) {
-            RK11_MMS_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,pos_upts.get_ptr_gpu(), time, run_input.k_source, run_input.c_source, run_input.omega, run_input.gamma, run_input.mu_inf, run_input.prandtl);
+            RK11_MMS_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,pos_upts.get_ptr_gpu(), sim_time, run_input.k_source, run_input.c_source, run_input.omega, run_input.gamma, run_input.mu_inf, run_input.prandtl);
           }
         else {
             RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
@@ -836,26 +855,33 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 
     else if (adv_type == 3) {
 
-      double rk4a, rk4b;
+      //coefficients for RK45 scheme
+
+      double rk4a, rk4b,rk4c;
       if (in_step==0) {
         rk4a=    0.0;
-        rk4b=   0.149659021999229;
+        rk4b=    0.149659021999229;
+        rk4c=    0.0;
       }
       else if (in_step==1) {
         rk4a=   -0.417890474499852;
         rk4b=   0.379210312999627;
+        rk4c=   0.149659021999229;
       }
       else if (in_step==2) {
         rk4a=   -1.192151694642677;
         rk4b=   0.822955029386982;
+        rk4c=   0.370400957364205;
       }
       else if (in_step==3) {
         rk4a=   -1.697784692471528;
         rk4b=   0.699450455949122;
+        rk4c=   0.622255763134443;
       }
       else if (in_step==4) {
         rk4a=   -1.514183444257156;
         rk4b=   0.153057247968152;
+        rk4c=   0.958282130674690;
       }
 
 #ifdef _CPU
@@ -925,7 +951,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 
 #ifdef _GPU
       if(run_input.test_case == 8) {
-          RK45_MMS_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,rk4c, run_input.dt, pos_upts.get_ptr_gpu(), time, run_input.k_source, run_input.c_source, run_input.omega, run_input.gamma, run_input.mu_inf, run_input.prandtl);
+          RK45_MMS_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,rk4c, run_input.dt, pos_upts.get_ptr_gpu(), sim_time, run_input.k_source, run_input.c_source, run_input.omega, run_input.gamma, run_input.mu_inf, run_input.prandtl);
         }
       else {
           RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
@@ -4852,7 +4878,8 @@ array<double> eles::compute_error(int in_norm_type, double& time)
   array<double> grad_disu_cubpt(n_fields,n_dims);
   double detjac;
   array<double> pos(n_dims);
-
+  array<double> d_pos(n_dims,n_dims);
+  array<double> loc(n_dims);
   array<double> error(2,n_fields);  //storage
   array<double> error_sum(2,n_fields);  //output
 
@@ -4866,6 +4893,13 @@ array<double> eles::compute_error(int in_norm_type, double& time)
     {
       for (int j=0;j<n_cubpts_per_ele;j++)
         {
+          for (int m=0;m<n_dims;m++) {
+            loc(m) = loc_volume_cubpts(m,j);
+            }
+
+          calc_pos(loc,i,pos);
+          calc_d_pos(loc,i,d_pos);
+
           // Get jacobian determinant at cubpts
           detjac = vol_detjac_vol_cubpts(j)(i);
 

@@ -35,6 +35,10 @@ public:
 
   ~eles();
 
+  // #### public data members ####
+  /*! time in simulation */
+  double sim_time;
+
   // #### methods ####
 
   /*! setup */
@@ -49,16 +53,19 @@ public:
   /*! write data to restart file */
   void write_restart_data(ofstream& restart_file);
 
-	/*! move all to from cpu to gpu */
-	void mv_all_cpu_gpu(void);
+  /*! move all to from cpu to gpu */
+  void mv_all_cpu_gpu(void);
 
-	/*! move wall distance array to from cpu to gpu */
-	void mv_wall_distance_cpu_gpu(void);
+  /*! move wall distance array to from cpu to gpu */
+  void mv_wall_distance_cpu_gpu(void);
 
-	/*! copy transformed discontinuous solution at solution points to cpu */
-	void cp_disu_upts_gpu_cpu(void);
+  /*! copy the location of solution points to gpu (used in MMS test case only)*/
+  void cp_pos_upts_cpu_gpu(void);
 
-	/*! copy transformed discontinuous solution at solution points to gpu */
+  /*! copy transformed discontinuous solution at solution points to cpu */
+  void cp_disu_upts_gpu_cpu(void);
+
+  /*! copy transformed discontinuous solution at solution points to gpu */
   void cp_disu_upts_cpu_gpu(void);
 
   void cp_grad_disu_upts_gpu_cpu(void);
@@ -236,6 +243,9 @@ public:
 
   /*! set opp_r */
   void set_opp_r(void);
+
+  /*! position at the solution points */
+  array<double> pos_upts;
 
   /*! calculate position of the plot points */
   void calc_pos_ppts(int in_ele, array<double>& out_pos_ppts);

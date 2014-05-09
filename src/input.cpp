@@ -621,6 +621,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
               c_source = 3.0;
               gamma = 1.4;
               prandtl = 0.72;
+
+              if(rank ==0)
+                cout<<"Using Method of Manufactured Solutions"<<endl;
             }
         }
       else {
