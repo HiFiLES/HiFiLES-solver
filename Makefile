@@ -14,8 +14,8 @@
 # TODO: add config script to build parmetis and look for BLAS, parmetis, CUDA, MPI and TECIO libraries
 
 # Copy the appropriate file from makefiles/makefile.machine.in to HIFILES_HOME as makefile.in
-# Note that this is the cluster makefile by default.
-include makefiles/makefile.enrico_GPU.in
+#
+include makefile.in
 
 # Compiler
 
@@ -37,7 +37,7 @@ endif
 
 # Pre-processing macros
 
-OPTS    = -D_$(NODE)  -D_$(BLAS)
+OPTS    = -D_$(NODE) -D_$(MACHINE)
 
 ifeq ($(PARALLEL),MPI)
 	OPTS    += -D_$(PARALLEL) 
@@ -51,16 +51,16 @@ ifeq ($(NODE),GPU)
 	OPTS	+= -I $(CUDA_DIR)/include 
 endif
 
-ifeq ($(BLAS),STANDARD_BLAS)
-	OPTS	+= -I $(BLAS_DIR)/include
-endif
+#ifeq ($(BLAS),STANDARD_BLAS)
+#	OPTS	+= -I $(BLAS_DIR)/include
+#endif
 
 ifeq ($(TECIO),YES)
 	OPTS += -I $(TECIO_DIR)/tecsrc
 endif
 
 ifeq ($(PARALLEL),MPI)
-	OPTS	+= -I $(MPI_DIR)
+	OPTS	+= -I $(MPI_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/metis/include
 endif
@@ -94,11 +94,17 @@ endif
 
 ifeq ($(BLAS),ACCELERATE_BLAS)
 	LIBS	+= -framework Accelerate
-	OPTS	+= -flax-vector-conversions 
+	OPTS	+= -flax-vector-conversions -D_$(BLAS)
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
   LIBS    += -L $(BLAS_DIR)/lib -lcblas
+  OPTS    += -I $(BLAS_DIR)/include -D_$(BLAS)
+endif
+
+ifeq ($(BLAS),ATLAS_BLAS)
+  LIBS    += -L $(BLAS_DIR)/lib -lcblas -latlas
+  OPTS    += -I $(BLAS_DIR)/include -D_STANDARD_BLAS
 endif
 
 ifeq ($(NODE),GPU)

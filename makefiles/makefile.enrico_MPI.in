@@ -11,7 +11,7 @@
 
 NODE=     CPU
 CODE=     DEBUG
-BLAS=     STANDARD_BLAS
+BLAS=     ATLAS_BLAS
 COMP=     GCC
 PARALLEL= MPI
 TECIO=    NO
@@ -20,10 +20,10 @@ BLAS_DIR= /usr/local/atlas
 
 PARMETIS_DIR = /usr/local/parmetis-4.0.3
 
-PARMETIS_BUILD_DIR = /usr/local/parmetis-4.0.3/build/Linux-x86_64/libparmetis
+PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/lib
 
 TECIO_DIR = lib/tecio-2008
 
-CUDA_DIR = /usr/local/cuda
+CUDA_DIR = /usr/local/cuda-5.0
 
-MPI_DIR= /usr/include/openmpi-x86_64/
+MPI_DIR= /usr/local/mpich2-1.5

@@ -53,7 +53,7 @@ class testcase:
     # Run HiFiLES
     os.chdir(os.path.join('./',self.cfg_dir)) 
     start   = datetime.datetime.now()
-    print("Path at terminal when executing this file")
+    print("\nPath at terminal when executing this file")
     print(command)
     process = subprocess.Popen(command, shell=True)  # This line launches HiFiLES
 
