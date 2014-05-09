@@ -97,7 +97,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       // Read section name
       in_run_input_file.getline(buf,BUFSIZ);
-      sscanf(buf,"%s",&section_TXT);
+      sscanf(buf,"%s",section_TXT);
       param_name.assign(section_TXT,0,99);
 
       if (!param_name.compare(0,5,"-----"))

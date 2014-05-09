@@ -12,8 +12,8 @@
 # Copyright (C) 2013 Aerospace Computing Laboratory.
 #####################################################
 # Standard (Helpful) Settings [Should not need to change these]
-HIFILES_HOME=$PWD
-HIFILES_RUN=$PWD/bin
+HIFILES_HOME=$(pwd)
+HIFILES_RUN=$(pwd)/bin
 # ---------------------------------------------------------------
 # Basic User-Modifiable Build Settings [Change these as desired]
 NODE="CPU"              # CPU or GPU
@@ -28,8 +28,8 @@ NVCC="nvcc"             # NVidia CUDA compiler
 MPICC="mpicxx"          # MPI compiler
 # ---------------------------------------------------------------
 # Library Locations [Change filepaths as needed]
-BLAS_LIB="/usr/local/atlas/lib"
-BLAS_INCLUDE="/usr/local/atlas/include"
+BLAS_LIB="/usr/lib/atlas-base"
+BLAS_INCLUDE="/usr/include"
 
 PARMETIS_LIB="/usr/local/lib"
 PARMETIS_INCLUDE="/usr/local/include"
