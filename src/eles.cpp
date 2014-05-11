@@ -2730,8 +2730,8 @@ void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double 
           }
         }
         else {
-          yplusH = yplus;
-          ReyH = Rey-Rey0;
+          yplusL = yplus;
+          ReyL = Rey-Rey0;
 
           if(Rey > eps) yplusH = yplus*Rey0/Rey;
           else yplusH = 2.0*yplusL;
@@ -2795,6 +2795,8 @@ void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double 
       // approximate solution using tw at previous timestep
       // Wang, Moin (2002), Phys.Fluids 14(7)
       else {
+        Rey = wallfn_br(yplus,A,B,E,kappa);
+        
         if(Rey > eps) utau = u*yplus/Rey;
         else          utau = 0.0;
         yplus = utau*phi;

@@ -77,7 +77,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
   diff_coeff = 0.;
 
   char buf[BUFSIZ]={""};
-  char section_TXT[100], param_TXT[100];
+  char section_TXT[100];
   string dummy, param_name;
 
   // First loop over the input file and print content to output

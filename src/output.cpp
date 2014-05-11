@@ -508,7 +508,7 @@ output: Mesh_<in_file_num>.pvtu																(parallel) file stitching togethe
 
 void write_vtu(int in_file_num, struct solution* FlowSol)
 {
-  int i,j,k,l,m,count;
+  int i,j,k,l,m;
   /*! Current rank */
   int my_rank = 0;
   /*! No. of processes */
