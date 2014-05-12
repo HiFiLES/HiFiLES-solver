@@ -237,3 +237,20 @@ w_bound
 0.0
 p_bound                               // boundary pressure
 17.857142857142854098
+-----------
+Forcing
+-----------
+body_forcing // Used for the periodic channel test case. 0 = no forcing, 1 = forcing
+1
+-----------
+Initial Profile // If ic_form=6, use these parameters to describe polynomial initial condition. Useful for cyclic problems. Specify coeffs of poly of form a + bx + cx^2 + dx^3 + ex^4 + by + cy^2 + dy^3 + ey^4 + bz + cz^2 + dz^3 + ez^4
+-----------
+x_coeffs // Coeffs of x-momentum
+1.875 0 0 0 0 0 0 0 0 0 -3.75 0 1.875
+y_coeffs // Coeffs of y-momentum
+0 0 0 0 0 0 0 0 0 0 0 0 0
+z_coeffs // Coeffs of z-momentum
+0 0 0 0 0 0 0 0 0 0 0 0 0
+-----------
+perturb_ic // If 1, add velocity perturbation to kickstart turbulence in periodic channel. 0 otherwise.
+1

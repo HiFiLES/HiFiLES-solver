@@ -905,6 +905,7 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   ofstream coeff_file;
   array<double> temp_inv_force(FlowSol->n_dims);
   array<double> temp_vis_force(FlowSol->n_dims);
+  double temp_cl, temp_cd;
 
 #ifdef _MPI
     sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
@@ -926,17 +927,22 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
         {
           // compute surface forces and coefficients
-          FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force, temp_vis_force, coeff_file);
+          FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force, temp_vis_force, temp_cl, temp_cd, coeff_file);
 
           // set surface forces
           for (int m=0;m<FlowSol->n_dims;m++) {
               FlowSol->inv_force(m) += temp_inv_force(m);
               FlowSol->vis_force(m) += temp_vis_force(m);
             }
+
+          // set lift and drag coefficients
+          FlowSol->coeff_lift += temp_cl;
+          FlowSol->coeff_drag += temp_cd;
+
         }
     }
   
-  // Compute lift and drag coeffs? See SU2
+  // Compute lift and drag coeffs
 
 #ifdef _MPI
 

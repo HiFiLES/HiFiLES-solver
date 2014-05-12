@@ -5294,7 +5294,7 @@ void eles::CalcIntegralQuantities(int n_integral_quantities, array <double>& int
   }
 }
 
-void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force, ofstream& coeff_file)
+void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force,  double& temp_cl, double& temp_cd, ofstream& coeff_file)
 {
 
   array<double> u_l(n_fields),norm(n_dims);
