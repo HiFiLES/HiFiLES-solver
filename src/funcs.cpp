@@ -1438,7 +1438,7 @@ void eval_shock_vortex(array<double>& pos, double time, double& rho, double& vx,
   double M_up = 1.2;
   double M_dn = 0.8422;
   double rho_dn = 1.3416;
-  double T_dn = 1.128;
+  double T_dn = 336.144;
 
   // Get upstream background flow conditions to add pertubations to
   double a_up = sqrt(gamma*R_gas*T_up);

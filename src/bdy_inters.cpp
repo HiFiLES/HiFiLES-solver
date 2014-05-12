@@ -85,6 +85,9 @@ void bdy_inters::set_bdy_params()
   bdy_params(11) = run_input.nx_free_stream;
   bdy_params(12) = run_input.ny_free_stream;
   bdy_params(13) = run_input.nz_free_stream;
+  
+  // Boundary parameters if you want to set a separate outflow pressure
+  bdy_params(14) = run_input.p_bound_out;
 }
 
 void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int in_run_type, struct solution* FlowSol)
@@ -282,6 +285,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
   double p_bound = bdy_params[4];
   double* v_wall = &bdy_params[5];
   double T_wall = bdy_params[8];
+  double p_bound_out = bdy_params[14];
 
   // Navier-Stokes Boundary Conditions
   if(equation==0)
@@ -326,6 +330,9 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // fix pressure
           p_r = p_bound;
+		  
+		  if(abs(p_bound_out) > 0.0001)
+			p_r = p_bound_out;		  
 
           // compute energy
           v_sq = 0.;
@@ -446,6 +453,9 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // fix pressure on the right side
           p_r = p_bound;
+		  
+		  if(abs(p_bound_out) > 0.0001)
+			p_r = p_bound_out;
 
           // Compute density
           rho_r = pow(p_r/s, 1.0/gamma);

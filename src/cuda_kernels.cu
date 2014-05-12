@@ -128,6 +128,7 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
   double p_bound = bdy_params[4];
   double* v_wall = &bdy_params[5];
   double T_wall = bdy_params[8];
+  double p_bound_out = bdy_params[14];
 
   // Navier-Stokes Boundary Conditions
   if(equation==0)
@@ -172,6 +173,9 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
 
           // fix pressure
           p_r = p_bound;
+		  
+		  if(abs(p_bound_out) > 0.0001)
+			p_r = p_bound_out;		  
 
           // compute energy
           v_sq = 0.;
@@ -292,6 +296,9 @@ __device__ void set_inv_boundary_conditions_kernel(int bdy_type, double* u_l, do
 
           // fix pressure on the right side
           p_r = p_bound;
+		  
+		  if(abs(p_bound_out) > 0.0001)
+			p_r = p_bound_out;		  
 
           // Compute density
           rho_r = pow(p_r/s, 1.0/gamma);
@@ -2022,6 +2029,38 @@ __global__ void calc_artivisc_coeff_gpu_kernel(int in_n_eles, int in_n_upts_per_
                 }
             }
         }
+
+        if(sensor <= s0 && sensor > s0 - kappa){
+            double nodal_sol[36];
+            double modal_sol[36];
+            int n_trun_modes = 3;
+            //printf("Sensor value is %f in thread %d \n",sensor, thread_id);
+
+            for(int k=0; k<in_n_fields; k++) {
+
+                for(int i=0; i<in_n_upts_per_ele; i++){
+                    nodal_sol[i] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + k*stride + i];
+                }
+                // Nodal to modal only upto 1st order
+                for(int i=0; i<in_n_upts_per_ele; i++){
+                    modal_sol[i] = 0;
+                    if(i < n_trun_modes){
+                        for(int j=0; j<in_n_upts_per_ele; j++)
+                            modal_sol[i] += in_inv_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*nodal_sol[j];
+                    }
+                }
+
+                // Change back to nodal
+                for(int i=0; i<in_n_upts_per_ele; i++){
+                    nodal_sol[i] = 0;
+                    for(int j=0; j<in_n_upts_per_ele; j++)
+                        nodal_sol[i] += in_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*modal_sol[j];
+
+                    in_disu_upts_ptr[thread_id*in_n_upts_per_ele + k*stride + i] = nodal_sol[i];
+                }
+            }
+        }
+
 /* ------------------------------------------------------------------------------------------ */
 
     }

@@ -101,6 +101,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
   s0 = 0;
   kappa = 0;
   shock_vortex_restart = 0;
+  p_bound_out = 0;
 
   // Now read in parameters
   while(!in_run_input_file.eof() )
@@ -284,6 +285,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
       else if (!param_name.compare("p_bound"))
         {
           in_run_input_file >> p_bound;
+        }
+      else if (!param_name.compare("p_bound_out"))
+        {
+          in_run_input_file >> p_bound_out;
         }
       else if (!param_name.compare("wave_speed_x"))
         {
