@@ -350,7 +350,7 @@ public:
   /*! Compute volume integral of diagnostic quantities */
   void CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities);
 
-  void compute_wall_forces(array<double>& inv_force, array<double>& vis_force, ofstream& cp_file, bool output);
+  void compute_wall_forces(array<double>& inv_force, array<double>& vis_force, ofstream& coeff_file);
 
   array<double> compute_error(int in_norm_type, double& time);
   

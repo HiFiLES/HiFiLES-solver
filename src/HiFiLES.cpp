@@ -212,9 +212,6 @@ int main(int argc, char *argv[]) {
       
     }
     
-    if (i_steps%run_input.monitor_res_freq == 0 || i_steps%run_input.monitor_force_freq == 0)
-      if (FlowSol.rank == 0) cout << endl;
-    
     /*! Dump Paraview or Tecplot file. */
     
     if(i_steps%FlowSol.plot_freq == 0) {

@@ -2492,9 +2492,9 @@ array <double> add_arrays(array <double>& M1, array <double>& M2)
             }
         }
     }
-  else {
-      cout << "ERROR: array dimensions are not compatible in sum function" << endl;
-      exit(1);
+  else
+    {
+      FatalError("array dimensions are not compatible in sum function");
     }
 }
 
