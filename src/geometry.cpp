@@ -79,12 +79,14 @@ void SetInput(struct solution* FlowSol) {
 
   // Cluster:
 #ifdef _YOSEMITESAM
+  if (FlowSol->rank==0) { cout << "setting CUDA devices on yosemitesam ..." << endl; }
   if ((FlowSol->rank%2)==0) { cudaSetDevice(0); }
   if ((FlowSol->rank%2)==1) { cudaSetDevice(1); }
 #endif
 
   // Enrico:
 #ifdef _ENRICO
+  if (FlowSol->rank==0) { cout << "setting CUDA devices on yosemitesam ..." << endl; }
   if (FlowSol->rank==0) { cudaSetDevice(2); }
   else if (FlowSol->rank==1) { cudaSetDevice(0); }
   else if (FlowSol->rank==2) { cudaSetDevice(3); }
