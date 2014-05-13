@@ -5305,37 +5305,45 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
   array<double> drho(n_dims);
   array<double> taun(n_dims);
   array<double> tautan(n_dims);
+  array<double> Finv(n_dims);
   array<double> Fvis(n_dims);
-  array<double> inv_force_on_inter(n_dims);
-  array<double> vis_force_on_inter(n_dims);
+  array<double> force(n_dims);
   array<double> loc(n_dims);
   array<double> pos(n_dims);
   double inte, mu, rt_ratio, gamma=run_input.gamma;
   double diag, tauw, taundotn, wgt, detjac;
-  double cp, cf, cl, cd;
+  double factor, aoa, cp, cf, cl, cd;
 
   for (int m=0;m<n_dims;m++)
     {
+      Finv(m) = 0.;
+      Fvis(m) = 0.;
       inv_force(m) = 0.;
       vis_force(m) = 0.;
     }
+  
+  temp_cd = 0.0;
+  temp_cl = 0.0;
 
+  // angle of attack
+  aoa = atan2(run_input.v_c_ic, run_input.u_c_ic);
+
+  // factor 0.5*rho*u^2 for friction coeff, pressure coeff, forces
+  factor = 0.5*run_input.rho_c_ic*(run_input.u_c_ic*run_input.u_c_ic+run_input.v_c_ic*run_input.v_c_ic+run_input.w_c_ic*run_input.w_c_ic);
+  
+  // loop over the boundary elements
   for (int i=0;i<n_bdy_eles;i++) {
 
       int ele = bdy_ele2ele(i);
+    
+      // loop over the interfaces of the element
       for (int l=0;l<n_inters_per_ele;l++) {
 
           if (bctype(ele,l) == 7 || bctype(ele,l) == 11 || bctype(ele,l) == 12 || bctype(ele,l)==16) {
 
-              for (int m=0;m<n_dims;m++)
-                {
-                  inv_force_on_inter(m) = 0.;
-                  vis_force_on_inter(m) = 0.;
-                }
-
               // Compute force on this interface
-              for (int j=0;j<n_cubpts_per_inter(l);j++) {
-
+              for (int j=0;j<n_cubpts_per_inter(l);j++)
+                {
                   // Get determinant of Jacobian
                   detjac = inter_detjac_inters_cubpts(l)(j,i);
 
@@ -5402,9 +5410,15 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                         v_sq += (u_l(m+1)*u_l(m+1));
                       p_l   = (gamma-1.0)*( u_l(n_dims+1) - 0.5*v_sq/u_l(0));
                     }
-
+                  
+                  // Inviscid force
+                  for (int m=0;m<n_dims;m++)
+                    {
+                      Finv(m) = wgt*p_l*norm(m)*detjac*factor;
+                    }
+                  
                   // calculate pressure coefficient at current point on the surface
-                  cp = (p_l-run_input.p_c_ic)/(0.5*run_input.rho_c_ic*(run_input.u_c_ic*run_input.u_c_ic+run_input.v_c_ic*run_input.v_c_ic+run_input.w_c_ic*run_input.w_c_ic));
+                  cp = (p_l-run_input.p_c_ic)*factor;
                 
                   coeff_file << scientific << setw(18) << setprecision(12) << pos(0) << " " << setw(18) << setprecision(12) << cp;
 
@@ -5425,15 +5439,10 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                       // trace of stress tensor
                       diag = 0.;
                       for (int m=0;m<n_dims;m++)
-                        diag += dv(m,m);
-                      diag /= 3.0;
-
-                      /*if (rank == 0)
                         {
-                          cout<< setw(18) <<setprecision(12)<<"dv: "<<endl;
-                          dv.print();
-                          cout<< setw(18) <<setprecision(12)<<"diag: "<<diag<<endl;
-                        }*/
+                          diag += dv(m,m);
+                        }
+                      diag /= 3.0;
 
                       // internal energy
                       inte = u_l(n_dims+1)/u_l(0);
@@ -5451,14 +5460,8 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                       if (n_dims==2)
                         {
                           // stresses w.r.t. normal
-                          taun(0) = 2.0*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1);
-                          taun(1) = 2.0*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0);
-
-                          /*if (rank == 0)
-                            {
-                              cout<< setw(18) <<setprecision(12)<<"taun: "<<endl;
-                              taun.print();
-                            }*/
+                          taun(0) = 2.0*mu*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1);
+                          taun(1) = 2.0*mu*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0);
 
                           // take dot product with normal
                           taundotn = taun(0)*norm(0)+taun(1)*norm(1);
@@ -5471,21 +5474,31 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                           tauw = sqrt(pow(tautan(0),2)+pow(tautan(1),2));
 
                           // coefficient of friction
-                          cf = 2.*tauw/(run_input.rho_c_ic*(run_input.u_c_ic*run_input.u_c_ic+run_input.v_c_ic*run_input.v_c_ic));
+                          cf = tauw*factor;
                           
                           coeff_file << " " << setw(18) <<setprecision(12) << cf;
 
                           // viscous force
-                          Fvis(0) = taun(0);
-                          Fvis(1) = taun(1);
+                          for (int m=0;m<n_dims;m++)
+                          {
+                            Fvis(m) = -wgt*taun(m)*detjac*factor;
+                          }
+                          
+                          // total force
+                          force(0) =
+                          
+                          // coefficients of lift and drag
+                          cl = -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
+                          cd = Fvis(0)*cos(aoa) + Fvis(1)*sin(aoa);
+                          
                         }
 
                       if (n_dims==3)
                         {
                           // stresses w.r.t. normal
-                          taun(0) = 2.0*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1) + (dv(0,2)+dv(2,0))*norm(2);
-                          taun(1) = 2.0*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(2);
-                          taun(2) = 2.0*(dv(2,2)-diag)*norm(2) + (dv(0,2)+dv(2,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(1);
+                          taun(0) = 2.0*mu*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1) + (dv(0,2)+dv(2,0))*norm(2);
+                          taun(1) = 2.0*mu*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(2);
+                          taun(2) = 2.0*mu*(dv(2,2)-diag)*norm(2) + (dv(0,2)+dv(2,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(1);
                           
                           // take dot product with normal
                           taundotn = taun(0)*norm(0)+taun(1)*norm(1)+taun(2)*norm(2);
@@ -5499,43 +5512,33 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                           tauw = sqrt(pow(tautan(0),2)+pow(tautan(1),2)+pow(tautan(2),2));
                           
                           // coefficient of friction
-                          cf = 2.*tauw/(run_input.rho_c_ic*(run_input.u_c_ic*run_input.u_c_ic+run_input.v_c_ic*run_input.v_c_ic+run_input.w_c_ic*run_input.w_c_ic));
+                          cf = tauw*factor;
                           
                           coeff_file << " " << setw(18) <<setprecision(12) << cf;
                           
                           // viscous force
-                          Fvis(0) = taun(0);
-                          Fvis(1) = taun(1);
-                          Fvis(2) = taun(2);
+                          for (int m=0;m<n_dims;m++)
+                            {
+                              Fvis(m) = -wgt*taun(m)*detjac*factor;
+                            }
+                          
+                          // coefficients of lift and drag
+                          cl = -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
+                          cd = Fvis(0)*cos(aoa) + Fvis(1)*sin(aoa);
                         }
-                      
-                      /*if (rank == 0)
-                        {
-                          cout<< setw(18) <<setprecision(12)<<"tauw: "<<tauw<<endl;
-                          cout<< setw(18) <<setprecision(12)<<"cp: "<<cp<<endl;
-                          cout<< setw(18) <<setprecision(12)<<"cf: "<<cf<<endl;
-                          cout<< setw(18) <<setprecision(12)<<"Fvis: "<<endl;
-                          Fvis.print();
-                        }*/
                     } // End of if viscous
 
                   coeff_file << endl;
-
-                  for (int m=0;m<n_dims;m++)
-                    {
-                      inv_force_on_inter(m) += wgt*p_l*norm(m)*detjac;
-                      if (viscous==1)
-                        {
-                          vis_force_on_inter(m) -= wgt*mu*taun(m)*detjac;
-                        }
-                    }
                 }
             
-              // Add contribution from current face
-              for (int m=0;m<n_dims;m++) {
-                  inv_force(m) += inv_force_on_inter(m);
-                  vis_force(m) += vis_force_on_inter(m);
+              // Add force and coefficient contributions from current face
+              for (int m=0;m<n_dims;m++)
+                {
+                  inv_force(m) += Finv(m);
+                  vis_force(m) += Fvis(m);
                 }
+              temp_cl += cl;
+              temp_cd += cd;
             }
         }
     }

@@ -210,6 +210,7 @@ int main(int argc, char *argv[]) {
       
       HistoryOutput(FlowSol.ini_iter+i_steps, init_time, &write_hist, &FlowSol);
       
+      if (FlowSol.rank == 0) cout << endl;
     }
     
     /*! Dump Paraview or Tecplot file. */

@@ -18,7 +18,7 @@ order                             // Order of basis polynomials
 dt 
 0.0001
 n_steps
-100
+10000
 adv_type                          // 0: Forward Euler, 3: RK45
 0
 tau 
@@ -59,7 +59,7 @@ inters_cub_order                  // Order of cubature rule for integrating over
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
 12
 plot_freq
-10
+100
 restart_dump_freq
 1000
 monitor_integrals_freq

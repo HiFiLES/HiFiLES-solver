@@ -916,11 +916,15 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
     file_name = &file_name_s[0];
     coeff_file.open(file_name);
   
+  // zero the forces and coeffs
   for (int m=0;m<FlowSol->n_dims;m++)
     {
       FlowSol->inv_force(m) = 0.;
       FlowSol->vis_force(m) = 0.;
     }
+  
+  FlowSol->coeff_lift = 0.0;
+  FlowSol->coeff_drag = 0.0;
 
   for(int i=0;i<FlowSol->n_ele_types;i++)
     {
@@ -948,6 +952,8 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
 
   array<double> inv_force_global(FlowSol->n_dims);
   array<double> vis_force_global(FlowSol->n_dims);
+  double coeff_lift_global=0.0;
+  double coeff_drag_global=0.0;
 
   for (int m=0;m<FlowSol->n_dims;m++) {
       inv_force_global(m) = 0.;
@@ -956,11 +962,18 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
       MPI_Reduce(&FlowSol->vis_force(m),&vis_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
     }
 
+  MPI_Reduce(&FlowSol->coeff_lift,&coeff_lift_global,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&FlowSol->coeff_drag,&coeff_drag_global,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  
   for (int m=0;m<FlowSol->n_dims;m++)
     {
       FlowSol->inv_force(m) = inv_force_global(m);
       FlowSol->vis_force(m) = vis_force_global(m);
     }
+  
+  FlowSol->coeff_lift = coeff_lift_global;
+  FlowSol->coeff_drag = coeff_drag_global;
+
 #endif
 
   // Calculate body forcing, if running periodic channel, and add to viscous flux
@@ -971,7 +984,7 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
 
   coeff_file.close();
 
-  if (FlowSol->rank == 0) cout << endl;
+  //if (FlowSol->rank == 0) cout << endl;
 }
 
 // Calculate integral diagnostic quantities
@@ -1004,7 +1017,7 @@ void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol) {
     }
 #endif
   
-  if (FlowSol->rank == 0) cout << endl;
+  //if (FlowSol->rank == 0) cout << endl;
 }
 
 void compute_error(int in_file_num, struct solution* FlowSol)
@@ -1217,7 +1230,7 @@ void CalcNormResidual(struct solution* FlowSol) {
     }
   }
   
- if (FlowSol->rank == 0) cout << endl;
+ //if (FlowSol->rank == 0) cout << endl;
 }
 
 void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
@@ -1243,8 +1256,8 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
       write_hist[0] << "VARIABLES = \"Iteration\"";
       
       // Add residual and variables
-      if (FlowSol->n_dims==2) write_hist[0] << ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\"";
-      else write_hist[0] <<  ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"F<sub>z</sub>(Total)\"";
+      if (FlowSol->n_dims==2) write_hist[0] << ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"CL</sub>(Total)\",\"CD</sub>(Total)\"";
+      else write_hist[0] <<  ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"F<sub>z</sub>(Total)\",\"CL</sub>(Total)\",\"CD</sub>(Total)\"";
       
       // Add integral diagnostics
       for(i=0; i<n_diags; i++)
@@ -1258,8 +1271,8 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     
     // Write the header
     if (write_heads) {
-      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
-      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
+      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total    CL_Total    CD_Total" << endl;
+      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total    CL_Total    CD_Total" << endl;
     }
     
     // Output residuals
@@ -1269,18 +1282,22 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     write_hist[0] << in_file_num;
     for(i=0; i<n_fields; i++) {
       cout.width(15); cout << FlowSol->norm_residual(i);
-      write_hist[0] <<", " << log10(FlowSol->norm_residual(i));
+      write_hist[0] << ", " << log10(FlowSol->norm_residual(i));
     }
     
     // Output forces
     for(i=0; i< FlowSol->n_dims; i++) {
       cout.width(15); cout << FlowSol->inv_force(i) + FlowSol->vis_force(i);
-      write_hist[0] <<", " << FlowSol->inv_force(i) + FlowSol->vis_force(i);
+      write_hist[0] << ", " << FlowSol->inv_force(i) + FlowSol->vis_force(i);
     }
+    
+    // Output lift and drag coeffs
+    cout.width(15); cout << FlowSol->coeff_lift  << ", " << FlowSol->coeff_drag;
+    write_hist[0] << ", " << FlowSol->coeff_lift  << ", " << FlowSol->coeff_drag;
     
     // Output integral diagnostic quantities
     for(i=0; i<n_diags; i++)
-      write_hist[0] <<", " << FlowSol->integral_quantities(i);
+      write_hist[0] << ", " << FlowSol->integral_quantities(i);
 
     // Output physical time
     write_hist[0] << ", " << in_time;
@@ -1290,7 +1307,7 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     write_hist[0] << ", " << (double) final/(((double) CLOCKS_PER_SEC) * 60.0) << endl;
   }
   
-  if (FlowSol->rank == 0) cout << endl;
+  //if (FlowSol->rank == 0) cout << endl;
 }
 
 void check_stability(struct solution* FlowSol)
