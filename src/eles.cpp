@@ -5312,7 +5312,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
   array<double> pos(n_dims);
   double inte, mu, rt_ratio, gamma=run_input.gamma;
   double diag, tauw, taundotn, wgt, detjac;
-  double factor, aoa, cp, cf, cl, cd;
+  double factor, aoa, aos, cp, cf, cl, cd;
 
   for (int m=0;m<n_dims;m++)
     {
@@ -5327,6 +5327,12 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
 
   // angle of attack
   aoa = atan2(run_input.v_c_ic, run_input.u_c_ic);
+
+  // angle of side slip
+  if (n_dims == 3)
+    {
+      aos = atan2(run_input.w_c_ic, run_input.u_c_ic);
+    }
 
   // factor 0.5*rho*u^2 for friction coeff, pressure coeff, forces
   factor = 0.5*run_input.rho_c_ic*(run_input.u_c_ic*run_input.u_c_ic+run_input.v_c_ic*run_input.v_c_ic+run_input.w_c_ic*run_input.w_c_ic);
@@ -5521,10 +5527,10 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                             {
                               Fvis(m) = -wgt*taun(m)*detjac*factor;
                             }
-                          
+
                           // coefficients of lift and drag
                           cl = -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
-                          cd = Fvis(0)*cos(aoa) + Fvis(1)*sin(aoa);
+                          cd = Fvis(0)*cos(aoa)*cos(aos) + Fvis(1)*sin(aoa) + Fvis(2)*sin(aoa)*cos(aos);
                         }
                     } // End of if viscous
 

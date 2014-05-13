@@ -208,10 +208,6 @@ void input::setup(ifstream& in_run_input_file, int rank)
         {
           in_run_input_file >> monitor_res_freq;
         }
-      else if (!param_name.compare("monitor_force_freq"))
-        {
-          in_run_input_file >> monitor_force_freq;
-        }
       else if (!param_name.compare("monitor_integrals_freq"))
         {
           in_run_input_file >> monitor_integrals_freq;
@@ -576,7 +572,6 @@ void input::setup(ifstream& in_run_input_file, int rank)
   // --------------------
 
   if (monitor_res_freq == 0) monitor_res_freq = 1000;
-  if (monitor_force_freq == 0) monitor_force_freq = 1000;
   if (monitor_integrals_freq == 0) monitor_integrals_freq = 1000;
 
   if (!mesh_file.compare(mesh_file.size()-3,3,"neu"))
@@ -820,7 +815,6 @@ void input::reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, 
 
       plot_freq = 100000;
       monitor_res_freq = n_freq;
-      monitor_force_freq = n_freq;
     }
 
   cout << endl;

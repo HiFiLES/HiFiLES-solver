@@ -101,13 +101,9 @@ int main(int argc, char *argv[]) {
   FlowSol.ene_hist = 1000.;
   FlowSol.grad_ene_hist = 1000.;
   
-  /*! Warning about body forcing term for periodic channel. */
+  /*! Initialize body forcing term for periodic channel. */
 
   if (run_input.equation == 0 && run_input.forcing == 1) {
-    if(run_input.monitor_force_freq > 100)
-      cout<<"WARNING: when running the periodic channel, it is necessary to add a body forcing"<<endl;
-      cout<<"term to prevent the flow decaying to zero. Make sure monitor_force_freq is set to a"<<endl;
-      cout<<"relatively small number, e.g. 100"<<endl;
     FlowSol.body_force.setup(5);
     for (i=0; i<5; i++) FlowSol.body_force(i)=0.0;
   }
@@ -182,7 +178,7 @@ int main(int argc, char *argv[]) {
 #ifdef _GPU
 
     if(i_steps%FlowSol.plot_freq == 0 || i_steps%run_input.monitor_res_freq == 0 ||
-       i_steps%FlowSol.restart_dump_freq==0 || i_steps%run_input.monitor_force_freq==0) {
+       i_steps%FlowSol.restart_dump_freq==0) {
 
       CopyGPUCPU(&FlowSol);
 
@@ -192,7 +188,7 @@ int main(int argc, char *argv[]) {
 
     /*! Force, integral quantities, and residual computation and output. */
 
-    if(i_steps%run_input.monitor_res_freq == 0 ) {
+    if( i_steps == 1 || i_steps%run_input.monitor_res_freq == 0 ) {
 
       /*! Compute the value of the forces. */
       

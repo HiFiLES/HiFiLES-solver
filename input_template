@@ -83,8 +83,6 @@ restart_dump_freq                 // number of timesteps between restart file wr
 10000
 monitor_res_freq                  // number of timesteps between residual outputs
 1
-monitor_force_freq                // number of timesteps between force outputs
-100
 monitor_integrals_freq            // Compute global integral diagnostics
 0
 n_integral_quantities             // Choose integral diagnostics: kineticenergy, vorticity, pressuredilatation, straincolonproduct. Set to 0 for no diagnostics

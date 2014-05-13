@@ -902,19 +902,43 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 void CalcForces(int in_file_num, struct solution* FlowSol) {
   
   char file_name_s[50], *file_name;
+  char forcedir_s[50], *forcedir;
   ofstream coeff_file;
   array<double> temp_inv_force(FlowSol->n_dims);
   array<double> temp_vis_force(FlowSol->n_dims);
   double temp_cl, temp_cd;
+  int my_rank;
 
+  // set name of directory to store force output
+  sprintf(forcedir_s,"force_files");
+  forcedir = &forcedir_s[0];
+
+  // Create directory and set name of files
 #ifdef _MPI
-    sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
+
+  my_rank = FlowSol->rank;
+
+  /*! Master node creates a subdirectory to store cp_*.dat files */
+  if (my_rank == 0)
+    {
+      struct stat st = {0};
+      if (stat(forcedir, &st) == -1) mkdir(forcedir, 0755);
+    }
+
+  sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
+
 #else
-    sprintf(file_name_s,"cp_%.09d_p%.04d.dat",in_file_num,0);
+
+  struct stat st = {0};
+  if (stat(forcedir, &st) == -1) mkdir(forcedir, 0755);
+
+  sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,0);
+
 #endif
-    
-    file_name = &file_name_s[0];
-    coeff_file.open(file_name);
+
+  // open files for writing
+  file_name = &file_name_s[0];
+  coeff_file.open(file_name);
   
   // zero the forces and coeffs
   for (int m=0;m<FlowSol->n_dims;m++)
@@ -926,6 +950,7 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   FlowSol->coeff_lift = 0.0;
   FlowSol->coeff_drag = 0.0;
 
+  // loop over elements and compute forces on solid surfaces
   for(int i=0;i<FlowSol->n_ele_types;i++)
     {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
@@ -942,12 +967,9 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
           // set lift and drag coefficients
           FlowSol->coeff_lift += temp_cl;
           FlowSol->coeff_drag += temp_cd;
-
         }
     }
   
-  // Compute lift and drag coeffs
-
 #ifdef _MPI
 
   array<double> inv_force_global(FlowSol->n_dims);
@@ -983,8 +1005,6 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   }
 
   coeff_file.close();
-
-  //if (FlowSol->rank == 0) cout << endl;
 }
 
 // Calculate integral diagnostic quantities
@@ -1017,7 +1037,6 @@ void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol) {
     }
 #endif
   
-  //if (FlowSol->rank == 0) cout << endl;
 }
 
 void compute_error(int in_file_num, struct solution* FlowSol)
@@ -1229,8 +1248,6 @@ void CalcNormResidual(struct solution* FlowSol) {
       }
     }
   }
-  
- //if (FlowSol->rank == 0) cout << endl;
 }
 
 void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
@@ -1271,8 +1288,8 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     
     // Write the header
     if (write_heads) {
-      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total    CL_Total    CD_Total" << endl;
-      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total    CL_Total    CD_Total" << endl;
+      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
+      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
     }
     
     // Output residuals
@@ -1292,7 +1309,6 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     }
     
     // Output lift and drag coeffs
-    cout.width(15); cout << FlowSol->coeff_lift  << ", " << FlowSol->coeff_drag;
     write_hist[0] << ", " << FlowSol->coeff_lift  << ", " << FlowSol->coeff_drag;
     
     // Output integral diagnostic quantities
@@ -1306,8 +1322,6 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     final = clock()-init;
     write_hist[0] << ", " << (double) final/(((double) CLOCKS_PER_SEC) * 60.0) << endl;
   }
-  
-  //if (FlowSol->rank == 0) cout << endl;
 }
 
 void check_stability(struct solution* FlowSol)
