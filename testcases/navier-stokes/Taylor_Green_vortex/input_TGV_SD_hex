@@ -64,10 +64,8 @@ restart_dump_freq
 10000
 monitor_res_freq
 1
-monitor_force_freq
-100
 monitor_integrals_freq                  // Compute global integrals. 0=no diagnostics
-10
+100
 n_integral_quantities
 1 kineticenergy
 res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
