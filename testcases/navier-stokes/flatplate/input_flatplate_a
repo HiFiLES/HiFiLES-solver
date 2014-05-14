@@ -70,8 +70,8 @@ monitor_integrals_freq
 100000
 monitor_res_freq
 10
-monitor_force_freq
-1
+monitor_cp_freq
+1000
 res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
 2
 error_norm_type                   // 0:infinity norm, 1:L1 norm, 2:L2 norm

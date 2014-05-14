@@ -64,6 +64,8 @@ restart_dump_freq
 10000
 monitor_res_freq
 1
+monitor_cp_freq
+100
 monitor_integrals_freq                  // Compute global integrals. 0=no diagnostics
 100
 n_integral_quantities
