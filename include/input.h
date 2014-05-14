@@ -89,6 +89,7 @@ public:
 
   int monitor_res_freq;
   int monitor_integrals_freq;
+  int monitor_cp_freq;
   int res_norm_type; // 0:infinity norm, 1:L1 norm, 2:L2 norm
   int error_norm_type; // 0:infinity norm, 1:L1 norm, 2:L2 norm
   int res_norm_field;

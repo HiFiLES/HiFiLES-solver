@@ -904,12 +904,13 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   char file_name_s[50], *file_name;
   char forcedir_s[50], *forcedir;
   ofstream coeff_file;
+  bool write_forces = ((((in_file_num % (run_input.monitor_cp_freq)) == 0)) || (in_file_num == 1));
   array<double> temp_inv_force(FlowSol->n_dims);
   array<double> temp_vis_force(FlowSol->n_dims);
   double temp_cl, temp_cd;
   int my_rank;
 
-  // set name of directory to store force output
+  // set name of directory to store output files
   sprintf(forcedir_s,"force_files");
   forcedir = &forcedir_s[0];
 
@@ -918,27 +919,46 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
 
   my_rank = FlowSol->rank;
 
-  /*! Master node creates a subdirectory to store cp_*.dat files */
-  if (my_rank == 0)
+  // Master node creates a subdirectory to store cp_*.dat files
+  if (my_rank == 0 && in_file_num == 1)
     {
       struct stat st = {0};
-      if (stat(forcedir, &st) == -1) mkdir(forcedir, 0755);
+      if (stat(forcedir, &st) == -1)
+        {
+          mkdir(forcedir, 0755);
+        }
     }
 
-  sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
+  if (write_forces)
+    {
+      sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,my_rank);
+      file_name = &file_name_s[0];
+    
+      // open files for writing
+      coeff_file.open(file_name);
+    }
 
 #else
 
   struct stat st = {0};
-  if (stat(forcedir, &st) == -1) mkdir(forcedir, 0755);
+  if (in_file_num == 1)
+    {
+      if (stat(forcedir, &st) == -1)
+        {
+          mkdir(forcedir, 0755);
+        }
+    }
 
-  sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,0);
+  if (write_forces)
+    {
+      sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,0);
+      file_name = &file_name_s[0];
+    
+      // open file for writing
+      coeff_file.open(file_name);
+    }
 
 #endif
-
-  // open files for writing
-  file_name = &file_name_s[0];
-  coeff_file.open(file_name);
   
   // zero the forces and coeffs
   for (int m=0;m<FlowSol->n_dims;m++)
@@ -956,7 +976,7 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
         {
           // compute surface forces and coefficients
-          FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force, temp_vis_force, temp_cl, temp_cd, coeff_file);
+          FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force, temp_vis_force, temp_cl, temp_cd, coeff_file, write_forces);
 
           // set surface forces
           for (int m=0;m<FlowSol->n_dims;m++) {
@@ -1004,7 +1024,7 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
       FlowSol->mesh_eles(i)->calc_body_force_upts(FlowSol->vis_force, FlowSol->body_force);
   }
 
-  coeff_file.close();
+  if (write_forces) { coeff_file.close(); }
 }
 
 // Calculate integral diagnostic quantities

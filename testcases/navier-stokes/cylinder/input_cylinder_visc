@@ -15,6 +15,8 @@ test_case                         // 0: Normal (doesn't have an analytical solut
 0
 order                             // Order of basis polynomials
 3
+dt_type
+0
 dt 
 0.0001
 n_steps
@@ -66,6 +68,8 @@ monitor_integrals_freq
 0
 monitor_res_freq
 1
+monitor_cp_freq                   // specify output frequency of file containing cp point values on surface. 0: no output.
+10
 res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
 1
 error_norm_type                   // 0:infinity norm, 1:L1 norm, 2:L2 norm
@@ -91,7 +95,7 @@ upts_type_tri
 fpts_type_tri
 0
 vcjh_scheme_tri
-3
+1
 c_tri
 0.0
 sparse_tri
@@ -99,7 +103,7 @@ sparse_tri
 upts_type_quad
 0
 vcjh_scheme_quad
-3
+0
 eta_quad
 0.0
 sparse_quad
@@ -199,7 +203,7 @@ rho_c_ic
 u_c_ic
 1.0
 v_c_ic
-1.0
+0.0
 w_c_ic
 0.0
 p_c_ic
@@ -209,7 +213,7 @@ rho_bound
 u_bound  
 1.0
 v_bound 
-1.0
+0.0
 w_bound 
 0.0
 p_bound 

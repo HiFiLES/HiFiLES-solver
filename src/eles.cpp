@@ -5294,7 +5294,7 @@ void eles::CalcIntegralQuantities(int n_integral_quantities, array <double>& int
   }
 }
 
-void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force,  double& temp_cl, double& temp_cd, ofstream& coeff_file)
+void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force,  double& temp_cl, double& temp_cd, ofstream& coeff_file, bool write_forces)
 {
 
   array<double> u_l(n_fields),norm(n_dims);
@@ -5426,7 +5426,8 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                   // calculate pressure coefficient at current point on the surface
                   cp = (p_l-run_input.p_c_ic)*factor;
                 
-                  coeff_file << scientific << setw(18) << setprecision(12) << pos(0) << " " << setw(18) << setprecision(12) << cp;
+                  // write to file
+                  if (write_forces) { coeff_file << scientific << setw(18) << setprecision(12) << pos(0) << " " << setw(18) << setprecision(12) << cp;}
 
                   if (viscous==1)
                     {
@@ -5482,7 +5483,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                           // coefficient of friction
                           cf = tauw*factor;
                           
-                          coeff_file << " " << setw(18) <<setprecision(12) << cf;
+                          if (write_forces) { coeff_file << " " << setw(18) <<setprecision(12) << cf; }
 
                           // viscous force
                           for (int m=0;m<n_dims;m++)
@@ -5520,7 +5521,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                           // coefficient of friction
                           cf = tauw*factor;
                           
-                          coeff_file << " " << setw(18) <<setprecision(12) << cf;
+                          if (write_forces) { coeff_file << " " << setw(18) <<setprecision(12) << cf; }
                           
                           // viscous force
                           for (int m=0;m<n_dims;m++)
@@ -5534,7 +5535,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                         }
                     } // End of if viscous
 
-                  coeff_file << endl;
+                  if (write_forces) { coeff_file << endl; }
                 }
             
               // Add force and coefficient contributions from current face
@@ -5548,6 +5549,5 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
             }
         }
     }
-  //if (rank == 0) cout << endl;
 }
 
