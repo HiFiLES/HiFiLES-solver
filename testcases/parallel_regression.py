@@ -201,8 +201,8 @@ if __name__=="__main__":
   cylinder.cfg_dir      = "testcases/navier-stokes/cylinder/"
   cylinder.cfg_file     = "input_cylinder_visc"
   cylinder.test_iter    = 25
-  cylinder.test_vals    = [0.17038345,0.75864863,0.23040523,10.05233986,2.78714597,-0.158299946]
-  cylinder.mpi_cmd      = "mpirun -np 2"
+  cylinder.test_vals    = [0.19189595,0.85895687,0.26388937,11.25535392,2.78010012,-0.17038719]
+  cylinder.mpi_cmd      = "mpiexec -np 2"
   cylinder.HiFiLES_exec = "HiFiLES"
   cylinder.timeout      = 1600
   cylinder.tol          = 0.00001
@@ -213,8 +213,8 @@ if __name__=="__main__":
   sqcyl.cfg_dir      = "testcases/navier-stokes/square_cylinder/"
   sqcyl.cfg_file     = "input_sqcyl_wsm_tet"
   sqcyl.test_iter    = 10
-  sqcyl.test_vals    = [0.64471221,2.70391512,0.24385134,0.14111932,16.79818472,32.00635168,0.42418391,18.65151934]
-  sqcyl.mpi_cmd      = "mpirun -np 8"
+  sqcyl.test_vals    = [0.64471221,2.70391512,0.24385134,0.14111932,16.79818282,32.00635168,0.42418391,16.41899432]
+  sqcyl.mpi_cmd      = "mpiexec -np 4"
   sqcyl.HiFiLES_exec = "HiFiLES"
   sqcyl.timeout      = 1600
   sqcyl.tol          = 0.00001
