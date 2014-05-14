@@ -5314,6 +5314,11 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
   double diag, tauw, taundotn, wgt, detjac;
   double factor, aoa, aos, cp, cf, cl, cd;
 
+  // Need to add a reference area to the input file... Not needed for Cp/Cf,
+  // but will be needed for forces if not equal to 1.0 for different geometries
+  
+  double area_ref = 1.0;
+  
   for (int m=0;m<n_dims;m++)
     {
       Finv(m) = 0.;
@@ -5334,8 +5339,8 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
       aos = atan2(run_input.w_c_ic, run_input.u_c_ic);
     }
 
-  // factor 0.5*rho*u^2 for friction coeff, pressure coeff, forces
-  factor = 0.5*run_input.rho_c_ic*(run_input.u_c_ic*run_input.u_c_ic+run_input.v_c_ic*run_input.v_c_ic+run_input.w_c_ic*run_input.w_c_ic);
+  // one over the dynamic pressure - factor for computing friction coeff, pressure coeff, forces
+  factor = 1.0 / (0.5*run_input.rho_c_ic*(run_input.u_c_ic*run_input.u_c_ic+run_input.v_c_ic*run_input.v_c_ic+run_input.w_c_ic*run_input.w_c_ic));
   
   // loop over the boundary elements
   for (int i=0;i<n_bdy_eles;i++) {
