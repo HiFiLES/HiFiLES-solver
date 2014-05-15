@@ -5472,8 +5472,8 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                       if (n_dims==2)
                         {
                           // stresses w.r.t. normal
-                          taun(0) = 2.0*mu*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1);
-                          taun(1) = 2.0*mu*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0);
+                          taun(0) = mu*(2.*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1));
+                          taun(1) = mu*(2.*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0));
 
                           // take dot product with normal
                           taundotn = taun(0)*norm(0)+taun(1)*norm(1);
@@ -5508,9 +5508,9 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                       if (n_dims==3)
                         {
                           // stresses w.r.t. normal
-                          taun(0) = 2.0*mu*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1) + (dv(0,2)+dv(2,0))*norm(2);
-                          taun(1) = 2.0*mu*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(2);
-                          taun(2) = 2.0*mu*(dv(2,2)-diag)*norm(2) + (dv(0,2)+dv(2,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(1);
+                          taun(0) = mu*(2.*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1) + (dv(0,2)+dv(2,0))*norm(2));
+                          taun(1) = mu*(2.*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(2));
+                          taun(2) = mu*(2.*(dv(2,2)-diag)*norm(2) + (dv(0,2)+dv(2,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(1));
                           
                           // take dot product with normal
                           taundotn = taun(0)*norm(0)+taun(1)*norm(1)+taun(2)*norm(2);
