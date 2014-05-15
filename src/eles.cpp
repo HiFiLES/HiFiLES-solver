@@ -5425,7 +5425,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                   // Inviscid force
                   for (int m=0;m<n_dims;m++)
                     {
-                      Finv(m) = wgt*p_l*norm(m)*detjac*factor;
+                      Finv(m) = -wgt*p_l*norm(m)*detjac*factor;
                     }
                   
                   // calculate pressure coefficient at current point on the surface
@@ -5493,11 +5493,11 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                           // viscous force
                           for (int m=0;m<n_dims;m++)
                           {
-                            Fvis(m) = -wgt*taun(m)*detjac*factor;
+                            Fvis(m) = wgt*taun(m)*detjac*factor;
                           }
                           
                           // total force
-                          force(0) =
+                          //force(0) =
                           
                           // coefficients of lift and drag
                           cl = -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
@@ -5531,7 +5531,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                           // viscous force
                           for (int m=0;m<n_dims;m++)
                             {
-                              Fvis(m) = -wgt*taun(m)*detjac*factor;
+                              Fvis(m) = wgt*taun(m)*detjac*factor;
                             }
 
                           // coefficients of lift and drag
