@@ -1,0 +1,130 @@
+\section{Results: Model Problem}
+
+Queries about the viscous FR formulation (see section IV) are addressed by a series of numerical experiments. These experiments allowed analysis of the viscous FR formulation within the context of several model problems. The first of these chosen problems was that of unsteady diffusion from a fixed concentration in 1D.  The problem can be formulated and solved using the linear diffusion equation. This problem was chosen for several reasons. Firstly, the problem isolates the performance of the viscous terms. There are no advection terms to interfere or obfuscate the effects of the viscous terms. In addition, this problem has a time-dependent exact solution in terms of the error function. This allowed the author to evaluate the time-dependent performance of the FR viscous terms without a need to converge to a steady state (as would be necessary for solving a poisson equation). In addition, the presence of an exact solution allowed the application of exact boundary conditions. This allowed the author to more assuredly determine the scheme's order of accuracy, removing the possibility of contamination from the boundary terms. Finally, the problem is linear and has the potential to converge at a rate greater than k+1. FR schemes have been shown to demonstrate superconvergence in similar linear problems \cite{Huynh09}. For all these reasons, the problem served as an ideal 1D test case. The problem can be formally stated as follows,
+%
+\begin{align*}
+	- \frac {\partial}{\partial x} \left(\lambda \frac{\partial u}{\partial x} \right) &= f  \qquad x \in [0,5]. 	\tag{39}
+\end{align*}
+%
+With boundary conditions given as,
+%
+\begin{align*}
+	u(0,t) = U_{0},  \tag{40}  \\ 
+	u(\infty, t) = 0.
+\end{align*}
+%
+And with the initial condition given as,
+%
+\begin{displaymath}
+	u(x, t_{0}) = \left \{
+		\begin{array}{lr}
+			U_{0} & : x = 0  \tag{41} \\
+			U_{0} \left[1-erf(\frac{x}{\sqrt{4\lambda t_{0}}}) \right] & : x > 0
+		\end{array}
+		\right .
+\end{displaymath}
+%
+\vspace{0.1 in}
+The exact solution (for \emph{f} = 0) is due to a similarity transformation,
+%
+\begin{align*}
+	u(\eta) & = U_{0} \left[1-erf(\frac{\eta}{2}) \right],  \tag{42} \\
+	\eta & = \frac{x}{ \sqrt{ \lambda t }}.
+\end{align*}
+
+\vspace{0.1 in}
+\noindent The viscous FR schemes were tested on grids of 16, 32, 64, 128, 256, and 512 cells. The cells were uniform in size on the simulation domain [0,5]. The schemes were marched forward in time using an explicit RK4 scheme. The schemes were allowed to advance the solution by 1.0 second of simulation time. The time step was of order \begin{math} 10^{-4} \end{math} seconds. The small time step and the brief simulation time helped ensure that the temporal discretization errors were negligible relative to the the spatial discretization errors. To ensure further isolation of the spatial error, the author performed a series of test runs with diminishing time steps. These tests confirmed that a time step of order \begin{math} 10^{-4} \end{math} was in the asymptotic range, (the solution did not change when the time step was halved). 
+
+\vspace{0.1 in}
+
+\noindent Each scheme's order of accuracy was evaluated over a range of conditions. The underlying discontinuous solution was allowed to vary over four orders of accuracy, with k = 1, 2, 3, and 4. The value of $c=0$ corresponding to the most accurate FR scheme (nodal DG) was utilized for all ESFR corrections functions. The error between the approximate and exact solutions was evaluated using a discrete L2 norm. The L2 norm was evaluated at the same points in all 6 grids. The order of accuracy was determined based on the errors from 5 of the 6 grids. In some cases, the 1st grid (with 16 cells) was too coarse and was therefore not in the asymptotic range for the spatial discretization. Thus (particularly for the lower order cases), the five finer grids (with 32, 64, 128, 256, and 512 cells) were often chosen. 
+
+\vspace{0.1 in}
+\noindent One additional concern involved roundoff error. For these simulations, machine zero was identified, and care was taken to ensure all error results were above the machine zero threshold. The results for schemes A and C are as follows ...
+
+\begin{figure} \tt
+\centering
+\includegraphics[angle=0, scale = 0.6]{./figures/scheme_a.eps} \\
+\caption{Order of accuracy for k = 1, .., 4, scheme A}
+\label{fig:a_scheme}
+\end{figure}
+
+
+\renewcommand{\arraystretch}{1.2}
+
+\begin{table} 
+\begin{center}
+\begin{tabular}{ c | c  c  c  c  c  c | c }
+	\hline
+	$k$ & $n = 16$ & $n = 32$ & $n = 64$ & $n = 128$ & $n = 256$ & $n = 512$ & Rate \\
+	\hline
+	1 & -- & $4.28 \cdot 10^{-2}$ & $2.79 \cdot 10^{-3}$ & $1.79 \cdot 10^{-4} $ &  $1.16 \cdot 10^{-5}$  & $ 9.74 \cdot 10^{-7} $ & 3.9  \\
+	2 & -- & $3.15 \cdot 10^{-4}$ & $1.12 \cdot 10^{-5}$ & $4.94 \cdot 10^{-7} $ &  $2.86 \cdot 10^{-8}$  & $ 1.65 \cdot 10^{-9} $ & 4.1 \\
+	3 & $1.12 \cdot 10^{-3}$ & $3.70 \cdot 10^{-6}$ & $6.78 \cdot 10^{-9} $ &  $3.26 \cdot 10^{-11}$  & $ 1.36 \cdot 10^{-13} $ & -- & 7.9\\
+	4 & $8.15 \cdot 10^{-6}$ & $3.07 \cdot 10^{-8}$ & $1.10 \cdot 10^{-10} $ &  $3.63 \cdot 10^{-13}$  & $ 1.26 \cdot 10^{-15} $ & -- & 8.2\\
+	\hline
+\end{tabular}
+\caption{Scheme A, $L_{2}$ errors of the solution to the model diffusion problem for different polynomial degree k and mesh size n}
+\label{table:scheme_a}
+\end{center}
+\end{table}
+
+\begin{table} 
+\begin{center}
+\begin{tabular}{ c | c  c  c  c  c  c | c }
+	\hline
+	$k$ & $n = 16$ & $n = 32$ & $n = 64$ & $n = 128$ & $n = 256$ & $n = 512$ & Rate \\
+	\hline
+	1 & -- & $4.21 \cdot 10^{-2}$ & $2.62 \cdot 10^{-3}$ & $1.63 \cdot 10^{-4} $ &  $1.03 \cdot 10^{-5}$  & $ 8.57 \cdot 10^{-7} $ & 3.9  \\
+	2 & -- & $2.23 \cdot 10^{-4}$ & $5.69 \cdot 10^{-6}$ & $2.68 \cdot 10^{-7} $ &  $1.52 \cdot 10^{-8}$  & $ 9.61 \cdot 10^{-10} $ & 4.0 \\
+	3 & $7.27 \cdot 10^{-4}$ & $2.25 \cdot 10^{-6}$ & $8.82 \cdot 10^{-9} $ &  $3.59 \cdot 10^{-11}$  & $ 1.15 \cdot 10^{-13} $ & -- & 8.3\\
+	4 & $7.45 \cdot 10^{-6}$ & $1.51 \cdot 10^{-8}$ & $2.96 \cdot 10^{-11} $ &  $7.76 \cdot 10^{-14}$  & $ 2.96 \cdot 10^{-16} $ & -- & 8.0\\
+	\hline
+\end{tabular}
+\caption{Scheme C, $L_{2}$ errors of the solution to the model diffusion problem for different polynomial degree k and mesh size n}
+\label{table:scheme_c}
+\end{center}
+\end{table}
+
+\noindent The results for schemes A and C are very similar. Thus, only the convergence results for scheme A appear in the figure. The figure (and the corresponding tables) demonstrate that both schemes achieve super-convergent results. The order of accuracy takes on values of $2k$ for even k and $2(k+1)$ for odd k. These results are consistent with the Fourier analysis of other authors (principally \cite{Huynh09}), which estimate a convergence rate of at least $2k$ for similar linear problems. The results suggest that schemes A and C (both utilizing reconstruction of the viscous flux) are good candidates for extension into 2D and application to the Navier-Stokes equations. The results also suggest that solution reconstruction at the interior solution points may be unnecessary. Recall that schemes A and C are nearly identical. Scheme C contains an additional step involving the reconstruction of the solution at the solution points. This step does not appear to significantly contribute to the accuracy of the scheme. Nevertheless, both schemes will be tested on the Navier Stokes equations. Significant differences between the schemes may only be visible in their treatment of non-linear problems. 
+
+\vspace{0.1in}
+\noindent The results from schemes B and D are also very similar. For clarity purposes, only the convergence results for scheme B appear below.
+
+\begin{figure} \tt
+\centering
+\includegraphics[angle=0,scale= 0.6]{./figures/scheme_d.eps} \\
+\caption{Order of accuracy for k = 1, .., 4, scheme D}
+\label{fig:a_scheme}
+\end{figure}
+
+\begin{table} 
+\begin{center}
+\begin{tabular}{ c | c  c  c  c  c  c | c }
+	\hline
+	$k$ & $n = 16$ & $n = 32$ & $n = 64$ & $n = 128$ & $n = 256$ & $n = 512$ & Rate \\
+	\hline
+	2 & -- & $2.82 \cdot 10^{-7}$ & $6.67 \cdot 10^{-8}$ & $2.10 \cdot 10^{-8} $ &  $7.75 \cdot 10^{-9}$  & $ 4.20 \cdot 10^{-9} $ & 0.9 \\
+	3 & -- & $8.38 \cdot 10^{-9}$ & $1.58 \cdot 10^{-9}$ & $4.11 \cdot 10^{-10} $ &  $8.66 \cdot 10^{-10}$  & $ 3.16 \cdot 10^{-11} $ & 2.0\\
+	\hline
+\end{tabular}
+\caption{Scheme B, $L_{2}$ errors of the solution to the model diffusion problem for different polynomial degree k and mesh size n}
+\label{table:scheme_c}
+\end{center}
+\end{table}
+
+\noindent Schemes B and D produce sub-standard convergence results. Numerical tests indicate that, for values of $k \leq 1$, the schemes are zeroth order accurate. Thus, only results for $k \geq 1$ are shown. For k = 2, and k = 3, the schemes appear to produce an order of accuracy of $k-1$. For values of k greater than 3, the author was unable to confirm the order of accuracy. This may be due to a fundamental inconsistency in the schemes or a failure to identify the asymptotic range for these schemes. Nevertheless, the confirmed cases (k =2, 3) produce an unacceptably low order of accuracy. The minimum expected order of accuracy for non-linear problems is $k+1$. The expected order of accuracy for linear problems is often higher. Thus, schemes B and D are not acceptable candidates for extension into 2D and application to the Navier-Stokes equations. 
+
+\vspace{0.1in}
+
+\noindent The loss of accuracy for both schemes is not surprising. Scheme B did not implement flux reconstruction, relying exclusively on solution reconstruction. This approach had the potential to yield a lower accuracy flux (as discussed in the previous section). Scheme D did not reconstruct the gradient at the boundary, but rather attempted to maintain accuracy by averaging the gradient and then applying flux reconstruction. These results indicate that the loss of accuracy caused by averaging the gradient (and eschewing solution reconstruction) is unacceptable.
+
+\vspace{0.1in}
+\noindent The remainder of this paper will focus on extending schemes A and C to treat the Navier Stokes equations.
+
+ 
+
+\vspace{0.2 in}
+\section{Results: Navier Stokes Equations}
+\noindent Results for this section are pending. The results will appear in the final draft of this paper.
+\vspace{0.2 in}

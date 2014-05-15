@@ -1,0 +1,64 @@
+\documentclass[DIV=8, parskip=half, pagesize=auto]{scrartcl}
+
+\usepackage{fixltx2e}
+\usepackage{etex}
+\usepackage{xspace}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\newcommand*{\pkg}[1]{\textsf{#1}}
+\newcommand*{\cs}[1]{\texttt{\textbackslash#1}}
+\makeatletter
+\newcommand*{\cmd}[1]{\cs{\expandafter\@gobble\string#1}}
+\makeatother
+\newcommand*{\opt}[1]{\texttt{#1}}
+
+\addtokomafont{title}{\rmfamily}
+
+\title{The \pkg{hypernat} package\thanks{This manual corresponds to \pkg{hypernat}~v1.0b, dated~2001/07/09.}}
+\author{Jens Berger}
+\date{2001/07/09}
+
+
+\begin{document}
+
+\maketitle
+
+\noindent
+This packages makes the \pkg{hyperref} package and the \pkg{natbib} package
+with options `\opt{numbers}' and `\opt{sort\&compress}' work together. This
+means, that the citations (e.g \texttt{[3,2,1]}) will be compressed to
+\texttt{[1-3]}, where the `\texttt{1}' and the `\texttt{3}' are (color-)linked to the
+bibliography.
+
+The changes I made here are suggested (in August 2000) for the
+next \pkg{natbib} release.
+
+This package will disappear from CTAN, when \pkg{natbib} will do
+the job by himself.
+
+Load this package after \pkg{natbib} and \pkg{hyperref}!
+
+Please make sure that you are using at least \pkg{natbib}~v7.0!
+
+
+\minisec{Changes}
+
+\begin{labeling}[\hspace{\labelsep}\textendash]{v1.0b\enskip 2001/07/09}
+\item[v1.0b\enskip 2001/07/09] anchor for all citations in the list
+  added to make \opt{backref} options working (bug reported by Günter
+  Keusen)
+
+\item[v1.0a\enskip 2001/01/22] \cmd{\noexpand} for some
+  \cmd{\hyper@natlinkend} added (bug reported by Frank Meißen),
+  \pkg{hypernat.sty} is working now for `\texttt{dvips} $\to$
+  \texttt{ps2pdf}' or `\texttt{dvips} $\to$ Distiller'
+\end{labeling}
+  
+
+
+\end{document}

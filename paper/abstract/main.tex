@@ -1,0 +1,94 @@
+\title{Verification and Validation of HiFiLES: a High-Order Navier-Stokes unstructured solver on multi-GPU platforms}
+
+\documentclass{aiaa-tc}
+\usepackage{amsmath,epstopdf}
+\usepackage{subfigure,morefloats}
+\usepackage{caption}
+
+\newcommand{\psibold}{\mbox{\boldmath$\psi$}}
+\newcommand{\nablabold}{\mbox{\boldmath$\nabla$}}
+\newcommand{\sigmabold}{\mbox{\boldmath$\sigma$}}
+\newcommand{\Omegabold}{\mbox{\boldmath$\Omega$}}
+\newcommand{\Gammabold}{\mbox{\boldmath$\Gamma$}}
+\newcommand{\degr}{ ^{\circ}}
+\renewcommand{\l}{\left}
+\renewcommand{\r}{\right}
+
+%List of authors:
+%Manuel R. L\'opez-Morales
+%Abhishek Sheshadri
+%Kartikey Asthana
+%Jacob Crabill
+%Thomas Economon
+%David Manosalvas
+%Joshua Romero
+%Jerry Watkins
+%David Williams
+%Dr. Francisco Palacios
+%Prof. Antony Jameson
+
+
+
+
+ \author{Manuel R. L\'opez-Morales
+         \thanks{Ph.D. Candidate, Department of Aeronautics and Astronautics, Stanford University, AIAA Student Member; mlopez14@stanford.edu}, 
+            Abhishek Sheshadri,\thanks{Ph.D. Candidates (authors in alphabetical order), Department of Aeronautics and Astronautics, AIAA Student Members},\\
+            Kartikey Asthana\footnotemark[2],
+            Jonathan Bull\thanks{Postdoctoral Scholar, Department of Aeronautics and Astronautics, Stanford University, AIAA Member},
+            Jacob Crabill\thanks{M.S. Student, Department of Aeronautics and Astronautics, Stanford University, AIAA Student Member},
+            Thomas Economon\footnotemark[2],
+            David Manosalvas\footnotemark[2],\\
+            Joshua Romero\footnotemark[2],
+            Jerry Watkins\footnotemark[2],
+            David Williams\thanks{CFD Engineer, Flight Sciences Division, Boeing Commercial Airplanes, AIAA Member},\\
+            Francisco Palacios\thanks{Engineering Research Associate, Department of Aeronautics and Astronautics, AIAA Senior Member}, and
+            Antony Jameson\thanks{Thomas V. Jones Professor of Engineering, Department of Aeronautics and Astronautics, Stanford University, AIAA Fellow} \\
+           \normalsize\itshape
+         Department of Aeronautics and Astronautics, Stanford University, Stanford, CA, 94305 \vspace{0.1in}
+         }
+
+
+
+
+\begin{document}
+\vspace{2in}
+\maketitle
+
+\input{abstract}
+\vspace{.20in}
+
+% \input{nomenclature}
+% \vspace{.20in}
+
+\input{introduction-v2.0}
+\vspace{.20in}
+
+\input{govEqns}
+\vspace{.20in}
+
+\input{code_description}
+\vspace{.20in}
+
+\input{verification2}
+\vspace{.20in}
+
+\input{validation2}
+\vspace{.20in}
+
+%\input{conclusion}
+%\vspace{.20in}
+
+
+\section*{Acknowledgments}
+
+The authors would like to acknowledge the support for this work provided by the Stanford Graduate Fellowships, National Science Foundation Graduate Fellowships, and the Air Force Office of Scientific Research.
+
+\bibliographystyle{aiaa}
+\bibliography{references2}
+
+
+
+
+ \end{document}
+
+

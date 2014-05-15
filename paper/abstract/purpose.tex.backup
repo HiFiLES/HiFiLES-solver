@@ -1,0 +1,28 @@
+%Purpose and scope; methods; key results; contributions to the state of the art; references
+\section{Purpose}
+       Jet impingement is used in multiple industrial and engineering applications. It is most commonly used to entrain particles on a surface (as in the printing industry) and to extract heat from a surface. In the aerospace industry, jets impinging on concave surfaces can be used to cool down high-pressure turbine blades\cite{han2001}. In this application, jet arrays impinge on the inner edges of blades. Given the complexity of the applications, accurate numerical simulations are an essential tool in the design of efficient impinging jets.
+
+Jefferson et al. \cite{jefferson2010} compared the results of different numerical methods to experiments peformed by Lee et al. \cite{lee1997} of jets impinging on concave surfaces. Jefferson et al. acknowledges that the numerical results obtained with LES were very sensitive to the boundary conditions. Additionally, they found that the numerical scheme they used for LES was too dissipative and, in order to get more accuracy, needed to use a wall-resolved grid. Consequently
+
+ 
+The use of concave surfaces has also been investigated to increase heat transfer rates.
+Impinging ﬂows over curved surfaces experience centripetal acceleration and can
+form Taylor-Gortler vortices. When these vortices develop, there is an additional
+mixing mechanism which is capable of increasing heat transfer. Experiments have
+shown an increase in heat transfer for ﬂow over concave surfaces (see for example
+Mayle [5] and Thormann [6]). Lee et al. [7] performed heat transfer and pressure
+coefﬁcient measurements for a round turbulent jet impinging on a concave hemi-
+spherical surface. Generally, it was observed that the stagnation point Nusselt
+number and wall-jet region Nusselt number increased with increasing surface curva-
+ture. There have been investigations [8, 9] of heat transfer for jet arrays impinging
+onto hemispherically-dimpled surfaces. Yang et al. [10] investigated a concave
+impinging jet conﬁguration with application to piston cooling. The standard design
+parameters for investigating impinging jets on ﬂat plates include jet Reynolds num-
+ber (based on pipe diameter), and the ratio of the nozzle-to-plate distance (H) and
+the jet diameter (D). For jets impinging onto more complex geometries, additional
+parameters may be required. For the single impinging jet to be investigated here,
+the geometry is deﬁned solely by the surface curvature (deﬁned by 2R=D) and
+H=D. These are set to match the experiments of Lee et al. [7].
+
+
+

@@ -1,0 +1,119 @@
+\section{Numerics}
+\label{sec:numerics}
+\subsection{Flux Reconstruction Method}
+
+What follows is an overview of the flux reconstruction (FR) framework. We start the discussion with the solution of the advection equation in one dimension using the FR approach to illustrate the peculiarities of the method. Then we proceed to describe the solution of the advection in two and three dimensions to show how the scheme works in triangular and tetrahedral elements. 
+More details about FR and ESFR properties and derivations can be found in the articles and papers by Williams, Vincent, Castonguay, Jameson, and Huynh.
+
+\subsubsection{Solution of the Advection Equation in One Dimension using the FR Approach}
+
+Consider the one-dimensional conservation law
+\begin{equation}
+\label{eq:cons}
+\frac{\partial u}{\partial t} + \frac{\partial f}{\partial x} = 0
+\end{equation}
+
+in domain $\Omega$, where $x$ is the spatial coordinate, $t$ is time, $u$ is a scalar function of $x$ and $t$, and $f$ is a scalar function of $u$. Note that letting $f = f(u,\frac{\partial u}{\partial x})$, Equation\ref{eq:cons} becomes a model of the Navier-Stokes equations.
+
+Let us partition the domain $\Omega = [x_1,x_{N+1})$ into $N$ non-overlapping elements with 
+interfaces at $x_1<x_2<...<x_{N+1}$. Then,
+$$
+\Omega = \bigcup^N_{n=1} \Omega_n
+$$
+and $\Omega_n = [x_n,x_{n+1})$ for $n = 1,...,N$.
+
+To simplify the implementation, let us map each of the physical elements $\Omega_n$ to a standard 
+element $\Omega_s=[-1,1)$ with the function $\Theta_n(\xi)$, where
+$$
+x = \Theta_n(\xi) = \l( \frac{1-\xi}{2} \r) x_n + \l(\frac{1+\xi}{2}\r) x_{n+1} 
+$$
+
+With this mapping, the evolution of $u$ within each $\Omega_n$ can be determined with the following 
+transformed advection equation
+$$
+\frac{\partial \hat{u}}{\partial t} + \frac{\partial \hat{f}}{\partial \xi} = 0
+$$
+where
+$$
+\hat{u} = J_n u(\Theta_n(\xi),t) \text{ in } \Omega_n
+$$
+$$
+\hat{f} = f(\Theta_n(\xi),t) \text{ in } \Omega_n
+$$
+
+Now, introduce polynomial approximations $\hat{u}^\delta, \hat{f}^\delta$ to 
+the exact values $\hat{u},\hat{f}$, respectively. Using piecewise polynomials of degree $p$ as 
+approximations, we can write
+$$
+\hat{u}^\delta = \sum_{i=1}^{N_s} \hat{u}_i^\delta l_i(\xi)
+$$
+$$
+\hat{f}^\delta = \sum_{i=1}^{N_s} \hat{f}_i^\delta l_i(\xi)
+$$
+where $N_s$ is the number of solution points, $\hat{u}_i^\delta$ is the current value of the 
+solution approximation function at the $i^\text{th}$ solution point in the reference element, 
+$\hat{f}_i^\delta$ is the current value of the flux approximation function at the $i^\text{th}$ 
+solution point in the reference element, $l_i$ is the Lagrange polynomial equal to $1$ at the 
+$i^\text{th}$ solution point and $0$ in the others, and $\delta$ signals that the function is an 
+approximation.
+
+Note that the piecewise polynomials may not be continuous (or $c_0$) accross the interfaces. In the 
+Flux Reconstruction approach, the flux used in the time advancement of the solution is made $c_0$ 
+by introducing flux correction functions. To this end, in the general non-linear advection case, it 
+is necessary to first make the solution $c_0$.
+
+This can be done by finding interface values at each element and then correcting the 
+solution. Let $\hat{u}_L^{\delta I}$ and $\hat{u}_R^{\delta I}$ be the interface values at left and right 
+boundaries of each element, respectively. Then, select solution correction functions $g_L$ and 
+$g_R$ such 
+that
+$$
+g_L(-1) = 1 \; g_L(1) = 0
+$$
+$$
+g_R(-1) = 0 \; g_R(1) = 1
+$$
+and let
+$$
+\hat{u}^c = \hat{u}^\delta + (\hat{u}^{\delta I}_L - \hat{u}^\delta_L) g_L + (\hat{u}^{\delta I}_R 
+- \hat{u}^\delta_R) g_R
+$$
+where superscript $c$ denotes the function is corrected, and $\hat{u}^\delta_L$, $\hat{u}^\delta_R$ 
+represent the solution approximation evaluated at the left and right boundaries.
+
+We can proceed in a similar fashion to correct the flux to obtain
+$$
+\hat{f}^c = \hat{f}^\delta + (\hat{f}^{\delta I}_L - \hat{f}^\delta_L) h_L + (\hat{f}^{\delta I}_R 
+- \hat{f}^\delta_R) h_R
+$$
+where $h_R$ and $h_L$ are right and left flux correction functions satisfying the same boundary 
+conditions as $g_R$ and $g_L$, respectively.
+
+The solution can then be advanced at each solution point. In semi-discrete form, this is
+$$
+\frac{d \hat{u}_i^\delta}{d t} = - \frac{\partial \hat{f}^c}{\partial \xi}(\xi_i)
+$$
+
+The FR scheme can be made stable by selecting special types of correction functions.
+
+%The final paper, for completeness, will include a description of the Flux Reconstruction\cite{vincent2011new} approach and the reasoning behind using the Energy-Stable version. A thorough description of the steps taken in the calculation of the residual for the 3D NS Equations will be included.
+
+
+\subsection{Unstructured Mesh Treatment}
+Mention developments in squares (tensor products of linear scheme), triangles\cite{castonguay2012new,williams2013tri}, tetrahedra\cite{williams2013tet}, prisms (tensor product of linear with triangular schemes), and hexahedra (tensor products of linear scheme).
+
+\subsection{Time Stepping and p-multigrid}
+Explicit RK4 with ability to use multigrid\cite{fidkowski2005p} and dual time-stepping\cite{Jameson1991DualTime} for implicit time advancement.
+
+%\subsection{Stabilization Techniques}
+
+\subsection{Large Eddy Simulation Models}
+SGS Models: Smagorinsky\cite{smagorinsky1963}, WALE\cite{nicoud1999}, WALE-similarity\cite{lodato2009}, SVV\cite{karamanos2000}.
+Filters: Vasilyev\cite{vasilyev1998,vasilyev2001}, discrete Gaussian\cite{lodato2012b}, Modal Vandermonde\cite{blackburn2003}.
+
+\subsection{Computing Architecture and Scalability}
+%The final paper will include a description of how HiFiLES is designed for a multi-GPU environment. Studies performed without filtering or SGS modeling in \cite{castonguay2011}. 
+\input{gpu}
+
+\subsection{Shock capturing and Stabilization Models}
+\input{shock}

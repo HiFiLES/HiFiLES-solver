@@ -1,0 +1,88 @@
+% Preliminaries
+\subsection{Preliminaries}\label{fr_intro_pre}
+
+Consider solving the 1D scalar conservation law
+\begin{equation}
+\frac{\partial u}{\partial t}+\frac{\partial f}{\partial x}=0
+\label{governing}
+\end{equation}
+within an arbitrary domain $\Omegabold$, where $x$ is a spatial coordinate, $t$ is time, $u=u(x,t)$ is a conserved scalar and $f=f(u)$ is the flux of $u$ in the $x$ direction. Further, consider partitioning $\Omegabold$ into $N$ distinct elements each denoted $\Omegabold_n=\{x|x_n<x<x_{n+1}\}$ such that
+\begin{equation}
+\Omegabold=\bigcup_{n=0}^{N-1}\Omegabold_n,\hspace{1cm}\bigcap_{n=0}^{N-1}\Omegabold_n=\emptyset.
+\end{equation}
+Finally, having partitioned $\Omegabold$ into separate elements, consider representing the exact solution $u$ within each $\Omegabold_n$ by a polynomial of degree k denoted $u^{\delta}_n=u^{\delta}_n(x,t)$ (which is in general piecewise discontinuous between elements), and the exact flux $f$ within each $\Omegabold_n$ by a polynomial of degree k+1 denoted $f^{\delta}_n=f^{\delta}_n(x,t)$ (which is piecewise continuous between elements), such that a total approximate solution $u^{\delta}=u^{\delta}(x,t)$ and a total approximate flux $f^{\delta}=f^{\delta}(x,t)$ can be defined within $\Omegabold$ as
+\begin{equation}
+u^{\delta}=\bigoplus_{n=0}^{N-1}u_n^{\delta}\approx u,\hspace{1cm}f^{\delta}=\bigoplus_{n=0}^{N-1}f_n^{\delta}\approx f.
+\end{equation}
+
+% Implementation
+\subsection{Implementation}
+
+From an implementation perspective, it is advantageous to consider transforming each $\Omegabold_n$ to a standard element $\Omegabold_S=\{r|-1\leq r\leq 1\}$ via the mapping
+\begin{equation}
+r=2\left(\frac{x-x_n}{x_{n+1}-x_n}\right)-1,
+\end{equation}
+which has the inverse
+\begin{equation}
+x=\left(\frac{1-r}{2}\right)x_n+\left(\frac{1+r}{2}\right)x_{n+1}.
+\end{equation}
+Having performed such a transformation, the evolution of $u_n^{\delta}$ within any individual $\Omegabold_n$ (and thus the evolution of $u^{\delta}$ within $\Omegabold$) can be determined by solving the following transformed equation within the standard element $\Omegabold_S$
+\begin{equation}
+\frac{\partial\hat{u}^{\delta}}{\partial t}+\frac{\partial\hat{f}^{\delta}}{\partial r}=0,
+\label{stand_ele_govern}
+\end{equation}
+where
+\begin{equation}
+\hat{u}^{\delta}=u^{\delta}_n,\hspace{1cm}\hat{f}^{\delta}=\frac{f^{\delta}_n}{J_n},
+\end{equation}
+with $J_n=(x_{n+1}-x_{n})/2$.
+
+The FR approach to solving Eq. \eqref{stand_ele_govern} within the standard element $\Omegabold_S$ consists of five stages. The first stage is to define a specific form for $\hat{u}^{\delta}$. To this end, it is assumed that values of $\hat{u}^{\delta}$ are known at a set of $k+1$ solution points inside $\Omegabold_S$, with each point located at a distinct position $r_i$ ($i=0$ to $k$). Lagrange polynomials $l_j=l_j(r)$ defined as
+\begin{equation}
+l_j=\prod_{i=0, i\neq j}^{k}\left(\frac{r-r_i}{r_j-r_i}\right)
+\end{equation}
+can then be used to construct the following expression for $\hat{u}^{\delta}$
+\begin{equation}
+\hat{u}^{\delta}=\sum_{i=0}^{k}\hat{u}^{\delta}_{i}\;l_i,
+\label{trans_soln}
+\end{equation}
+where $\hat{u}^{\delta}_{i}=\hat{u}^{\delta}_{i}(t)$ are the known values of $\hat{u}^{\delta}$ at the solution points $r_i$.
+
+The second stage of the FR process involves constructing a degree $k$ polynomial $\hat{f}^{\delta D}=\hat{f}^{\delta D}(r,t)$, defined as an approximation to what is termed the transformed discontinuous flux within $\Omegabold_S$. An expression for $\hat{f}^{\delta D}$ can be written as
+\begin{equation}
+\hat{f}^{\delta D}=\sum_{i=0}^{k}\hat{f}^{\delta D}_{i}\;l_i
+\end{equation}
+where the coefficients $\hat{f}^{\delta D}_{i}=\hat{f}^{\delta D}_{i}(t)$ are simply the transformed flux at each solution point $r_i$ evaluated directly from the approximate solution. The flux $\hat{f}^{\delta D}$ is termed discontinuous since it is calculated directly from the approximate solution, which is in general piecewise discontinuous between elements.
+
+The third stage of the FR process involves calculating transformed numerical fluxes at either end of the standard element $\Omegabold_S$ (at $r=\pm 1$). In order to calculate such fluxes, one must first obtain values for the approximate solution at either end of the standard element via Eq. \eqref{trans_soln}. Once these values have been obtained they can be used in conjunction with analogous information from adjoining elements to calculate transformed numerical interface fluxes. The exact methodology for calculating such numerical fluxes will depend on the nature of the equations being solved. For example, when solving the Euler equations one may use a Roe type approximate Riemann solver \cite{roe81}, or any other two-point flux formula that provides for an upwind bias. In what follows the transformed numerical interface fluxes calculated at the left and right hand ends of $\Omegabold_S$ will be denoted $\hat{f}^{\delta I}_L$ and $\hat{f}^{\delta I}_R$ respectively.
+
+The penultimate stage of the FR process involves adding a degree $k+1$ transformed correction flux $\hat{f}^{\delta C}=\hat{f}^{\delta C}(r,t)$ to the approximate transformed discontinuous flux $\hat{f}^{\delta D}$, such that their sum equals the transformed numerical interface flux at $r=\pm 1$, yet follows (in some sense) the approximate discontinuous flux within the interior of $\Omegabold_S$. In order to define $\hat{f}^{\delta C}$ such that it satisfies the above requirements, consider first defining degree $k+1$ correction functions $g_L=g_L(r)$ and $g_R=g_R(r)$ that approximate zero (in some sense) within $\Omegabold_S$, as well as satisfying 
+\begin{equation}
+g_L(-1)=1,\hspace{0.5cm}g_L(1)=0,
+\label{gL_BCs}
+\end{equation}
+\begin{equation}
+g_R(-1)=0,\hspace{0.5cm}g_R(1)=1,
+\end{equation}
+and, based on symmetry considerations
+\begin{equation}
+g_L(r)=g_R(-r).
+\end{equation}
+A suitable expression for $\hat{f}^{\delta C}$ can now be written in terms of $g_L$ and $g_R$ as
+\begin{equation}
+\hat{f}^{\delta C}=(\hat{f}^{\delta I}_L-\hat{f}^{\delta D}_L)g_L+(\hat{f}^{\delta I}_R-\hat{f}^{\delta D}_R)g_R,
+\end{equation}
+where $\hat{f}^{\delta D}_L=\hat{f}^{\delta D}(-1,t)$ and $\hat{f}^{\delta D}_R=\hat{f}^{\delta D}(1,t)$. Using this expression, a degree $k+1$ approximate total transformed flux $\hat{f}^{\delta}=\hat{f}^{\delta}(r,t)$ within $\Omegabold_S$ can be constructed from the discontinuous and correction fluxes as follows
+\begin{equation}
+\hat{f}^{\delta}=\hat{f}^{\delta D}+\hat{f}^{\delta C}.
+\end{equation}
+
+The final stage of the FR process involves calculating the divergence of $\hat{f}^{\delta}$ at each solution point $r_i$ using the expression
+\begin{equation}
+\frac{\partial\hat{f}^{\delta}}{\partial r}(r_i)=\sum_{j=0}^{k}\hat{f}^{\delta D}_j\;\frac{\mathrm{d}l_j}{\mathrm{d}r}(r_i)+(\hat{f}^{\delta I}_L-\hat{f}^{\delta D}_L)\frac{\mathrm{d}g_{L}}{\mathrm{d}r}(r_i)+(\hat{f}^{\delta I}_R-\hat{f}^{\delta D}_R)\frac{\mathrm{d}g_{R}}{\mathrm{d}r}(r_i).
+\end{equation}
+These values can then be used to advance the approximate transformed solution $\hat{u}^{\delta}$ in time via a suitable temporal discretization of the following semi-discrete expression
+\begin{equation}
+\frac{\partial\hat{u}^{\delta}_i}{\partial t}=-\frac{\partial\hat{f}^{\delta}}{\partial r}(r_i).
+\label{semi_disc}
+\end{equation}

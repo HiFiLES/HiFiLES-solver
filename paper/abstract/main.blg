@@ -1,0 +1,18 @@
+This is BibTeX, Version 0.99dThe top-level auxiliary file: main.aux
+The style file: aiaa.bst
+Database file #1: references2.bib
+I was expecting a `,' or a `}'---line 61 of file references2.bib
+ :   
+ :   journal={7th International Conference on Computational Fluid Dynamics Proceedings},
+(Error may have been on previous line)
+I'm skipping whatever remains of this entry
+Warning--string name "ftc" is undefined
+--line 192 of file references2.bib
+Warning--string name "pof" is undefined
+--line 205 of file references2.bib
+Warning--empty pages in castonguay2011
+Warning--empty pages in Jameson1991DualTime
+Warning--empty journal in nicoud1999
+Warning--empty journal in lodato2009
+Warning--empty institution in Persson06
+(There was 1 error message)
