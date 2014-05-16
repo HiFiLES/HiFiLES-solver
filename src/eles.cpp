@@ -5301,7 +5301,6 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
   array<double> tautan(n_dims);
   array<double> Finv(n_dims);
   array<double> Fvis(n_dims);
-  array<double> force(n_dims);
   array<double> loc(n_dims);
   array<double> pos(n_dims);
   double inte, mu, rt_ratio, gamma=run_input.gamma;
@@ -5503,9 +5502,6 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                             Fvis(m) = -wgt*taun(m)*detjac*factor;
                           }
                           
-                          // total force
-                          //force(0) =
-
                           // viscous component of the lift and drag coefficients
                           
                           cl += -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
