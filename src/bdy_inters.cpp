@@ -640,7 +640,6 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           double c_star;
           double vn_star;
           double vn_bound;
-          double vt_star;
           double r_plus,r_minus;
 
           double one_over_s;
@@ -661,13 +660,9 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           c_star = 0.25*(gamma-1.)*(r_plus-r_minus);
           vn_star = 0.5*(r_plus+r_minus);
 
-          // Works only for 2D and quasi-2D
           // Inflow
           if (vn_l<0)
             {
-              // assumes quasi-2D boundary i.e. norm[2] == 0;
-              vt_star = (v_bound[0]*norm[1] - v_bound[1]*norm[0]);
-
               // HACK
               one_over_s = pow(rho_bound,gamma)/p_bound;
 
@@ -678,14 +673,10 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
               h_free_stream = gamma/(gamma-1.)*p_bound/rho_bound + 0.5*v_sq;
 
               rho_r = pow(1./gamma*(one_over_s*c_star*c_star),1./(gamma-1.));
-              v_r[0] = (norm[0]*vn_star + norm[1]*vt_star);
-              v_r[1] = (norm[1]*vn_star - norm[0]*vt_star);
 
-              // no cross-flow
-              if(n_dims==3)
-                {
-                  v_r[2] = 0.0;
-                }
+              // Compute velocity on the right side
+              for (int i=0; i<n_dims; i++)
+                v_r[i] = vn_star*norm[i] + (v_bound[i] - vn_bound*norm[i]);
 
               p_r = rho_r/gamma*c_star*c_star;
               e_r = rho_r*h_free_stream - p_r;
@@ -694,20 +685,14 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           // Outflow
           else
             {
-              vt_star = (v_l[0]*norm[1] - v_l[1]*norm[0]);
-
               one_over_s = pow(rho_l,gamma)/p_l;
 
               // freestream total enthalpy
               rho_r = pow(1./gamma*(one_over_s*c_star*c_star), 1./(gamma-1.));
-              v_r[0] = (norm[0]*vn_star + norm[1]*vt_star);
-              v_r[1] = (norm[1]*vn_star - norm[0]*vt_star);
 
-              // no cross-flow
-              if(n_dims==3)
-                {
-                  v_r[2] = 0.0;
-                }
+              // Compute velocity on the right side
+              for (int i=0; i<n_dims; i++)
+                v_r[i] = vn_star*norm[i] + (v_l[i] - vn_l*norm[i]);
 
               p_r = rho_r/gamma*c_star*c_star;
               v_sq = 0.;
