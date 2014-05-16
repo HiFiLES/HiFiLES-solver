@@ -46,7 +46,7 @@ cubature_1d::cubature_1d(int in_order) // set by number of points
   int n_pts_file;
 
   order=in_order;
-  n_pts = (order+1)/2;
+  n_pts = order+1;
   locs.setup(n_pts);
   weights.setup(n_pts);
   
@@ -109,6 +109,7 @@ cubature_1d::cubature_1d(int in_order) // set by number of points
       }
     }
   }
+  else { FatalError("cubature rule not implemented."); }
 }
 
 // copy constructor

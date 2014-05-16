@@ -20,7 +20,7 @@ dt_type
 dt 
 0.0001
 n_steps
-25
+100000
 adv_type                          // 0: Forward Euler, 3: RK45
 0
 tau 
@@ -51,25 +51,25 @@ dz_cyclic
 Monitoring, plotting parameters
 -----------------------------------
 p_res                             // Plotting resolution, number of nodes per direction
-6
+4
 write_type                        // 0: Paraview, 1: Tecplot
 0
 n_diagnostic_fields
-5 u v pressure mach vorticity
+0
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
-12
+6
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
-12
+6
 plot_freq
-100
-restart_dump_freq
 1000
+restart_dump_freq
+10000
 monitor_integrals_freq
 0
 monitor_res_freq
 1
 monitor_cp_freq                   // specify output frequency of file containing cp point values on surface. 0: no output.
-10
+100
 res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
 1
 error_norm_type                   // 0:infinity norm, 1:L1 norm, 2:L2 norm
@@ -168,7 +168,7 @@ ny_free_stream
 nz_free_stream
 0.
 Re_free_stream 
-100.
+20.
 L_free_stream 
 1.
 T_free_stream 
@@ -188,11 +188,11 @@ Mach_c_ic
 nx_c_ic
 1.
 ny_c_ic 
-0.
+1.
 nz_c_ic
 0.
 Re_c_ic
-100
+20
 T_c_ic
 300
 -----------

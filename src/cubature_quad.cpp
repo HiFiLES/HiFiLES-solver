@@ -115,6 +115,7 @@ cubature_quad::cubature_quad(int in_rule) // set by rule
       }
     }
   }
+  else { FatalError("cubature rule not implemented."); }
 }
 
 // copy constructor
