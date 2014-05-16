@@ -903,12 +903,23 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   
   char file_name_s[50], *file_name;
   char forcedir_s[50], *forcedir;
+  struct stat st = {0};
   ofstream coeff_file;
-  bool write_forces = ((((in_file_num % (run_input.monitor_cp_freq)) == 0)) || (in_file_num == 1));
+  bool write_dir, write_forces;
   array<double> temp_inv_force(FlowSol->n_dims);
   array<double> temp_vis_force(FlowSol->n_dims);
   double temp_cl, temp_cd;
   int my_rank;
+
+  // set write flags
+  if (run_input.restart_flag==0) {
+    write_dir = (in_file_num == 1);
+    write_forces = ((in_file_num % (run_input.monitor_cp_freq)) == 0) || (in_file_num == 1);
+  }
+  else {
+    write_dir = (in_file_num == run_input.restart_iter+1);
+    write_forces = ((in_file_num % (run_input.monitor_cp_freq)) == 0) || (in_file_num == run_input.restart_iter+1);
+  }
 
   // set name of directory to store output files
   sprintf(forcedir_s,"force_files");
@@ -920,9 +931,8 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   my_rank = FlowSol->rank;
 
   // Master node creates a subdirectory to store cp_*.dat files
-  if (my_rank == 0 && in_file_num == 1)
+  if ((my_rank == 0) && (write_dir))
     {
-      struct stat st = {0};
       if (stat(forcedir, &st) == -1)
         {
           mkdir(forcedir, 0755);
@@ -940,8 +950,7 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
 
 #else
 
-  struct stat st = {0};
-  if (in_file_num == 1)
+  if (write_dir)
     {
       if (stat(forcedir, &st) == -1)
         {
@@ -1274,18 +1283,29 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
   
   int i, n_fields;
   clock_t final;
-
-  bool write_heads = ((((in_file_num % (run_input.monitor_res_freq*20)) == 0)) || (in_file_num == 1));
+  // TODO: write heads when starting from a restart file
+  bool open_hist, write_heads;
   int n_diags = run_input.n_integral_quantities;
   double in_time = FlowSol->time;
   
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
   
+  // set write flag
+  if (run_input.restart_flag==0) {
+    open_hist = (in_file_num == 1);
+    write_heads = (((in_file_num % (run_input.monitor_res_freq*20)) == 0) || (in_file_num == 1));
+  }
+  else {
+    open_hist = (in_file_num == run_input.restart_iter+1);
+    write_heads = (((in_file_num % (run_input.monitor_res_freq*20)) == 0) || (in_file_num == run_input.restart_iter+1));
+  }
+
   if (FlowSol->rank == 0) {
     
     // Open history file
-    if (in_file_num == 1) {
+    if (open_hist) {
+
       write_hist->open("history.plt", ios::out);
       write_hist->precision(15);
       write_hist[0] << "TITLE = \"HiFiLES simulation\"" << endl;

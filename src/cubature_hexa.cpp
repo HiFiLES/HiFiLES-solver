@@ -125,6 +125,7 @@ cubature_hexa::cubature_hexa(int in_rule) // set by rule
       }
     }
   }
+  else { FatalError("cubature rule not implemented."); }
 }
 
 // copy constructor
