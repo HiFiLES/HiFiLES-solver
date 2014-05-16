@@ -87,6 +87,10 @@ void eles_hexas::setup_ele_type_specific()
   set_loc_ppts();
   set_opp_p();
 
+  n_ftpts_per_ele = n_ppts_per_ele;
+  set_loc_ftpts();
+  set_opp_ft();
+
   n_fpts_per_inter.setup(6);
 
   n_fpts_per_inter(0)=(order+1)*(order+1);
@@ -550,6 +554,34 @@ void eles_hexas::set_loc_ppts(void)
         }
     }
 
+}
+
+// set location of FT points in standard element
+
+void eles_hexas::set_loc_ftpts(void)
+{
+  int i,j,k;
+  
+  int ftpt;
+  
+  loc_ftpts.setup(n_dims,n_ftpts_per_ele);
+  
+  for(k=0;k<p_res;++k)
+  {
+    for(j=0;j<p_res;++j)
+    {
+      for(i=0;i<p_res;++i)
+      {
+        ftpt=i+(p_res*j)+(p_res*p_res*k);
+        
+        loc_ftpts(0,ftpt)=-1.0+(2.0*i+1.0)/p_res;
+        loc_ftpts(1,ftpt)=-1.0+(2.0*j+1.0)/p_res;
+        loc_ftpts(2,ftpt)=-1.0+(2.0*k+1.0)/p_res;
+      }
+    }
+  }
+  cout << "FT points: " << n_ftpts_per_ele << endl;
+  loc_ftpts.print();
 }
 
 // set transformed normal at flux points

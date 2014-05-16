@@ -523,6 +523,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   int n_eles;
   /*! Number of plot points in element */
   int n_points;
+  // No. of FT points per element
+  int n_ftpoints;
   /*! Number of plot sub-elements in element */
   int n_cells;
   /*! No. of vertices per element */
@@ -539,6 +541,11 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! Diagnostic field data at plot points */
   array<double> diag_ppts_temp;
 
+  /*! FT point coordinates */
+  array<double> pos_ftpts_temp;
+  /*! Solution data at FT points */
+  array<double> disu_ftpts_temp;
+
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
 
@@ -551,16 +558,20 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   char vtu_s[50];
   char dumpnum_s[50];
   char pvtu_s[50];
+  char ftfile_s[50];
   /*! File name pointers needed for opening files */
   char *vtu;
   char *pvtu;
   char *dumpnum;
-
+  char *ftfile;
+  
   /*! Output files */
   ofstream write_vtu;
   write_vtu.precision(15);
   ofstream write_pvtu;
   write_pvtu.precision(15);
+  ofstream write_ftfile;
+  write_ftfile.precision(15);
 
   /*! no. of optional diagnostic fields */
   n_diag_fields = run_input.n_diagnostic_fields;
@@ -577,11 +588,14 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! On rank 0, write a .pvtu file to gather data from all .vtu files */
   sprintf(pvtu_s,"Mesh_%.09d.pvtu",in_file_num,0);
 
+  sprintf(ftfile_s,"ft_%.09d_%d.dat",in_file_num,my_rank,my_rank);
 #else
 
   /*! Only write a vtu file in serial */
   sprintf(dumpnum_s,"Mesh_%.09d",in_file_num,0);
   sprintf(vtu_s,"Mesh_%.09d.vtu",in_file_num,0);
+
+  sprintf(ftfile_s,"ft_%.09d.dat",in_file_num,0);
 
 #endif
 
@@ -589,6 +603,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   vtu = &vtu_s[0];
   pvtu = &pvtu_s[0];
   dumpnum = &dumpnum_s[0];
+  ftfile = &ftfile_s[0];
 
 #ifdef _MPI
 
@@ -603,7 +618,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
     }
 
   /*! Master node writes the .pvtu file */
-  if (my_rank == 0) {
+  if (my_rank == 0)
+    {
       cout << "Writing Paraview dump number " << dumpnum << " ...." << endl;
 
       write_pvtu.open(pvtu);
@@ -655,6 +671,13 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
 #endif
 
+  
+  // Open a file to write FT point data to
+  write_ftfile.open(ftfile);
+  write_ftfile << "---GRID VELOCITY AT SAMPLE POINTS---" << endl;
+  write_ftfile << "X  Y  Z  U  V  W" << endl;
+
+  
   /*! Each process writes its own .vtu file */
   write_vtu.open(vtu);
   /*! File header */
@@ -668,7 +691,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
       /*! no. of elements of type i */
       n_eles = FlowSol->mesh_eles(i)->get_n_eles();
       /*! Only proceed if there any elements of type i */
-      if (n_eles!=0) {
+      if (n_eles!=0)
+        {
           /*! element type */
           ele_type = FlowSol->mesh_eles(i)->get_ele_type();
 
@@ -686,6 +710,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
           /*! no. of dimensions */
           n_dims = FlowSol->mesh_eles(i)->get_n_dims();
+          
+          // Get alternative plot points for FT output
+          n_ftpoints = FlowSol->mesh_eles(i)->get_n_ftpts_per_ele();
 
           /*! Temporary array of plot point coordinates */
           pos_ppts_temp.setup(n_points,n_dims);
@@ -693,6 +720,15 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           /*! Temporary solution array at plot points */
           disu_ppts_temp.setup(n_points,n_fields);
 
+          /*! Temporary array of plot point coordinates */
+          pos_ftpts_temp.setup(n_ftpoints,n_dims);
+          
+          /*! Temporary array of FT point coordinates */
+          pos_ftpts_temp.setup(n_ftpoints,n_dims);
+
+          /*! Temporary solution array at plot points */
+          disu_ftpts_temp.setup(n_ftpoints,n_fields);
+          
           if(n_diag_fields > 0) {
             /*! Temporary solution array at plot points */
             grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
@@ -719,6 +755,20 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 /*! Calculate the diagnostic fields at the plot points */
                 FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
               }
+
+              /*! Calculate the prognostic (solution) fields at the FT points */
+              FlowSol->mesh_eles(i)->calc_disu_ftpts(j,disu_ftpts_temp);
+
+              /*! Calculate the FT point coordinates */
+              FlowSol->mesh_eles(i)->calc_pos_ftpts(j,pos_ftpts_temp);
+
+              // Write FT data to file
+              for(k=0;k<n_ftpoints;k++)
+                {
+                  write_ftfile << pos_ftpts_temp(k,0) << "," << pos_ftpts_temp(k,1) << "," << pos_ftpts_temp(k,2) << ",";
+                  write_ftfile << disu_ftpts_temp(k,1) << "," << disu_ftpts_temp(k,2) << "," << disu_ftpts_temp(k,3) << endl;
+                }
+              write_ftfile << endl;
 
               /*! write out solution to file */
               write_vtu << "			<PointData>" << endl;
@@ -861,6 +911,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
   /*! Close the .vtu file */
   write_vtu.close();
+
+  write_ftfile.close();
 }
 
 void write_restart(int in_file_num, struct solution* FlowSol)

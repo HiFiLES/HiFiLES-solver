@@ -54,6 +54,9 @@ public:
   /*! set location of plot points */
   void set_loc_ppts(void);
 
+  /*! set location of FT points */
+  void set_loc_ftpts(void);
+
   /*! set transformed normals at flux points */
   void set_tnorm_fpts(void);
 

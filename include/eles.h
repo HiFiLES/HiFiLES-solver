@@ -132,6 +132,9 @@ public:
   // get number of ppts_per_ele
   int get_n_ppts_per_ele(void);
 
+  // get number of ftpts_per_ele
+  int get_n_ftpts_per_ele(void);
+
   // get number of peles_per_ele
   int get_n_peles_per_ele(void);
 
@@ -228,6 +231,9 @@ public:
   /*! set opp_p */
   void set_opp_p(void);
 
+  /*! set opp_ft */
+  void set_opp_ft(void);
+
   /*! set opp_p */
   void set_opp_inters_cubpts(void);
 
@@ -240,6 +246,9 @@ public:
   /*! calculate position of the plot points */
   void calc_pos_ppts(int in_ele, array<double>& out_pos_ppts);
 
+  /*! calculate position of the FT points */
+  void calc_pos_ftpts(int in_ele, array<double>& out_pos_ftpts);
+
   void set_rank(int in_rank);
 
   virtual void set_connectivity_plot()=0;
@@ -250,6 +259,9 @@ public:
 
   /*! calculate solution at the plot points */
   void calc_disu_ppts(int in_ele, array<double>& out_disu_ppts);
+
+  /*! calculate solution at the FT points */
+  void calc_disu_ftpts(int in_ele, array<double>& out_disu_ftpts);
 
   /*! calculate gradient of solution at the plot points */
   void calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts);
@@ -429,6 +441,9 @@ protected:
   /*! number of plot points per element */
   int n_ppts_per_ele;
 
+  /*! number of FT points per element */
+  int n_ftpts_per_ele;
+
   /*! number of plot elements per element */
   int n_peles_per_ele;
 
@@ -476,7 +491,10 @@ protected:
 
 	/*! location of plot points in standard element */
 	array<double> loc_ppts;
-	
+
+  /*! location of FT points in standard element */
+	array<double> loc_ftpts;
+
 	/*! location of shape points in standard element (simplex elements only)*/
 	array<double> loc_spts;
 	
@@ -756,6 +774,9 @@ protected:
 
   /*! operator to go from discontinuous solution at the solution points to discontinuous solution at the plot points */
   array<double> opp_p;
+
+  /*! operator to go from discontinuous solution at the solution points to discontinuous solution at the FT points */
+  array<double> opp_ft;
 
   array< array<double> > opp_inters_cubpts;
   array<double> opp_volume_cubpts;
