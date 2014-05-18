@@ -686,7 +686,7 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   array<double> coeff_gdotn((in_order+1),1);
   array<double> coeff_divg(n_upts_tri,1);
 
-  cubature_1d cub1d(20);  // TODO: CHECK STRENGTH
+  cubature_1d cub1d(10);  // TODO: CHECK STRENGTH
 
   if (in_edge==0)
     edge_length=2.;

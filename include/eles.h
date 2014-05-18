@@ -533,16 +533,16 @@ protected:
 	/*! determinant of jacobian at flux points */
 	array<double> detjac_fpts;
 
-	/*! determinant of volume jacobian at flux points */
+	/*! determinant of volume jacobian at flux points. TODO: what is this really? */
 	array< array<double> > vol_detjac_inters_cubpts;
 
-	/*! determinant of volume jacobian at cubature points */
+	/*! determinant of volume jacobian at cubature points. TODO: what is this really? */
 	array< array<double> > vol_detjac_vol_cubpts;
 
 	/*! inverse of (determinant of jacobian multiplied by jacobian) at solution points */
-	array<double> inv_detjac_mul_jac_upts;
+	array<double> inv_detjac_mul_jac_upts; // TODO: change to detjac_mul_inv_jac_upts
 	
-	array<double> inv_detjac_mul_jac_fpts;
+	array<double> inv_detjac_mul_jac_fpts; // TODO: same as above
 	
 	/*! magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points */
 	array<double> mag_tnorm_dot_inv_detjac_mul_jac_fpts;

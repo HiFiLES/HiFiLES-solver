@@ -109,6 +109,7 @@ cubature_1d::cubature_1d(int in_order) // set by number of points
       }
     }
   }
+  else { FatalError("cubature rule not implemented."); }
 }
 
 // copy constructor
