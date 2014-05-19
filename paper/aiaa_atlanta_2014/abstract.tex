@@ -1,3 +1,5 @@
+% !TEX root = ./main.tex
+
 \begin{abstract}
 The goal of this paper is to show a detailed Verification and Validation of HiFiLES: a high-order Navier-Stokes solver developed at the Aerospace Computing Laboratory (ACL) at Stanford University. HiFiLES has been built on top of SD++ (Castonguay et al.) and achieves high-order spatial discretization with the Energy-Stable Flux Reconstruction (ESFR) scheme in unstructured grids (two and three dimensions). The high parallelizability of this scheme motivates the optimization of the solver’s ability to run in a multi-GPU (Graphical Processing Unit) environment.
 We intend this paper to be the main reference for HiFiLES and serve as a sort of manual for researchers and engineers that would like to develop or implement high-order numerical schemes based on an Energy-Stable Flux Reconstruction (ESFR) scheme.
