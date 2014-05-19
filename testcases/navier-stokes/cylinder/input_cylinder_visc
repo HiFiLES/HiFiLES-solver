@@ -20,7 +20,7 @@ dt_type
 dt 
 0.0001
 n_steps
-100000
+100
 adv_type                          // 0: Forward Euler, 3: RK45
 0
 tau 

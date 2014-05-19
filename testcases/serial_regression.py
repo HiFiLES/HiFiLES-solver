@@ -197,7 +197,7 @@ if __name__=="__main__":
   cylinder.cfg_dir      = "testcases/navier-stokes/cylinder"
   cylinder.cfg_file     = "input_cylinder_visc"
   cylinder.test_iter    = 25
-  cylinder.test_vals    = [0.19189595,0.85895687,0.26388937,11.25535392,2.78010012,-0.17038719]
+  cylinder.test_vals    = [0.273009,1.178080,1.268071,15.483935,8.855743,9.092093]
   cylinder.HiFiLES_exec = "HiFiLES"
   cylinder.timeout      = 1600
   cylinder.tol          = 0.00001
