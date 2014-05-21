@@ -26,7 +26,7 @@ U = \left \{ \begin{array}{c} \rho \\ \rho \vec{v} \\ \rho E \end{array} \right 
 %$\rho$ is the fluid density, $\vec{v} = \{v_1, v_2, v_3\}^\mathsf{T} \in \mathbb{R}^{3}$ is the flow speed in a Cartesian system of reference, $\vec{u}_\Omega$ is the velocity of a moving domain (mesh velocity after discretization), $E$ is the total energy per unit mass, $p$ is the static pressure, $c_p$ is the specific heat at constant pressure, $T$ is the temperature, and the viscous stress tensor can be written in vector notation as
 \begin{align} 
 \label{tau}
-\bar{\bar{\tau}} = \nabla \vec{v} + {\nabla \vec{v}}^\mathsf{T}  - \frac{2}{3} \bar{\bar{I}} (\nabla \cdot \vec{v} ).
+\bar{\bar{\tau}} = \nabla \vec{v} + {\nabla \vec{v}}^\mathsf{T}  - \frac{2}{3} \bar{\bar{I}} (\nabla \cdot \vec{v} ),
 \end{align}
 
 %The second line of Eqn.~\ref{rans} represents the no-slip condition at a solid wall, the third line represents an adiabatic condition at the wall, and the final line represents a characteristic-based boundary condition at the far-field where the fluid state at the boundary is updated using the state at infinity depending on the sign of the eigenvalues~\cite{Hirsch:Numerical}. Note that the boundary conditions take into account any domain motion. The temporal conditions will be problem dependent, and for this article, we will be interested in time-periodic flows where the initial and terminal conditions do not affect the time-averaged behavior over the time interval of interest, $\mathbb{T} = t_f - t_o$. Assuming a perfect gas with a ratio of specific heats, $\gamma$, and gas constant, $R$, the pressure is determined from

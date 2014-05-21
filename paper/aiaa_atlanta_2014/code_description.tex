@@ -109,14 +109,48 @@ Explicit RK4 with ability to use multigrid\cite{fidkowski2005p} and dual time-st
 
 %\subsection{Stabilization Techniques}
 
-\subsection{Large Eddy Simulation Models}
+\subsection{Large Eddy Simulation Models}\label{lesmodels}
 SGS Models: Smagorinsky\cite{smagorinsky1963}, WALE\cite{nicoud1999}, WALE-similarity\cite{lodato2009}, SVV\cite{karamanos2000}.
 Filters: Vasilyev\cite{vasilyev1998,vasilyev2001}, discrete Gaussian\cite{lodato2012b}, Modal Vandermonde\cite{blackburn2003}.
+
+In order to resolve all the scales of motion in a high Reynolds number turbulent flow, the computational mesh would have to be impractically fine.
+A practical solution is to employ the Large Eddy Simulation (LES) formulation, which only resolves the larger scales of motion and thus allows for the use of coarser meshes.
+The effect of the unresolved or subgrid-scale (SGS) dynamics on the solution is accounted for by an SGS model for the \emph{subgrid-scale stress} $\bar{\bar{\tau}}_{sgs}$, which is added to the viscous stress tensor $\bar{\bar{\tau}}$ given by (\ref{tau}):
+%
+\begin{equation}\label{tausgs}
+\bar{\bar{\tau}} = \mu \left ( \nabla \vec{v} + {\nabla \vec{v}}^\mathsf{T}  - \frac{2}{3} \bar{\bar{I}} (\nabla \cdot \vec{v} ) \right ) + \bar{\bar{\tau}}_{sgs}.
+\end{equation}
+%
+The standard Smagorinsky model is available in HiFiLES and is given by:
+%
+\begin{eqnarray}\label{smag}
+\bar{\bar{\tau}}_{sgs} &&= 2 \rho \nu_t \bar{\bar{S^d}}, \\
+\nu_t &&= C_S^2 \bigtriangleup^2 | \bar{\bar{S^d}} |,\\
+\bar{\bar{S^d}} &&= \frac 1 2 \left (\nabla \vec v + (\nabla \vec v)^T - \frac 2 3 \bar{\bar{I}} (\nabla \cdot \vec{v} ) \right )\ ,
+\end{eqnarray}
+%
+where the Smagorinsky coefficient $C_S = 0.1$ and the filter width $\bigtriangleup$ is a measure of the size of an element.
+The quantity $\nu_t$ is the eddy viscosity.
+In HiFiLES the filter width is given by (in 3D):
+%
+\begin{equation}
+\bigtriangleup = \alpha (\text{vol})^{1/3},
+\end{equation}
+%
+where $\alpha \geq 1$ is a user-defined scaling factor and vol is the element volume.
+HiFiLES also includes the Wall-Adapting Local Eddy-Viscosity (WALE) model~\cite{nicoud1999} and the Similarity model~\cite{bardina1980}.
+The Similarity model incorporates a filtering operator that locally smoothes the solution in order to extract small-scale information.
+Several filters are available in HiFiLES: a discrete Gaussian filter, a high-order commuting Vasilyev-type filter and a modal Vandermonde-type filter.
+For details of these operators, see Lodato, Castonguay and Jameson~\cite{lodato2012b} and Bull and Jameson~\cite{bull2013a}.
+Also available is the option to combine the similarity model and either the Smagorinsky or WALE model into a mixed model.
+The mixed WALE-similarity model, developed by Lodato et al.~\cite{lodato2009}, was used in simulations of the flow over a square cylinder (see Section \ref{sqcyl}).
+Finally, a Spectral Vanishing Viscosity (SVV) model is available.
+Instead of adding a model term, the SVV method applies a filter directly to the solution in order to damp high-order modes~\cite{karamanos2000}.
 
 \subsection{Computing Architecture and Scalability}
 %The final paper will include a description of how HiFiLES is designed for a multi-GPU environment. Studies performed without filtering or SGS modeling in \cite{castonguay2011}. 
 
-The Hi-FiLES code has been designed to work on multi-CPU as well as multi-CPU-GPU platforms. The Flux Reconstruction method in its current form with explicit time-stepping has a great potential for parallelization. Since the solution points are not explicitly shared between elements, most of the computations are element-local enabling an efficient use of shared memory on GPUs. Also, several computations are independent for each solution point and the highly parallelizable nature of GPUs becomes very useful. A detailed description of the paralleization of the FR method, along with scalability and performance analysis has been performed in \cite{castonguay2011}.
+The HiFiLES code has been designed to work on multi-CPU as well as multi-CPU-GPU platforms. The Flux Reconstruction method in its current form with explicit time-stepping has a great potential for parallelization. Since the solution points are not explicitly shared between elements, most of the computations are element-local enabling an efficient use of shared memory on GPUs. Also, several computations are independent for each solution point and the highly parallelizable nature of GPUs becomes very useful. A detailed description of the paralleization of the FR method, along with scalability and performance analysis has been performed in \cite{castonguay2011}.
 
 \subsection{Shock capturing and Stabilization Models}
 
