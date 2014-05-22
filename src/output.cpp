@@ -523,8 +523,6 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   int n_eles;
   /*! Number of plot points in element */
   int n_points;
-  // No. of FT points per element
-  int n_ftpoints;
   /*! Number of plot sub-elements in element */
   int n_cells;
   /*! No. of vertices per element */
@@ -541,11 +539,6 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! Diagnostic field data at plot points */
   array<double> diag_ppts_temp;
 
-  /*! FT point coordinates */
-  array<double> pos_ftpts_temp;
-  /*! Solution data at FT points */
-  array<double> disu_ftpts_temp;
-
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
 
@@ -558,20 +551,17 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   char vtu_s[50];
   char dumpnum_s[50];
   char pvtu_s[50];
-  char ftfile_s[50];
+
   /*! File name pointers needed for opening files */
   char *vtu;
   char *pvtu;
   char *dumpnum;
-  char *ftfile;
   
   /*! Output files */
   ofstream write_vtu;
   write_vtu.precision(15);
   ofstream write_pvtu;
   write_pvtu.precision(15);
-  ofstream write_ftfile;
-  write_ftfile.precision(15);
 
   /*! no. of optional diagnostic fields */
   n_diag_fields = run_input.n_diagnostic_fields;
@@ -588,14 +578,11 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! On rank 0, write a .pvtu file to gather data from all .vtu files */
   sprintf(pvtu_s,"Mesh_%.09d.pvtu",in_file_num,0);
 
-  sprintf(ftfile_s,"ft_%.09d_%d.dat",in_file_num,my_rank,my_rank);
 #else
 
   /*! Only write a vtu file in serial */
   sprintf(dumpnum_s,"Mesh_%.09d",in_file_num,0);
   sprintf(vtu_s,"Mesh_%.09d.vtu",in_file_num,0);
-
-  sprintf(ftfile_s,"ft_%.09d.dat",in_file_num,0);
 
 #endif
 
@@ -603,7 +590,6 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   vtu = &vtu_s[0];
   pvtu = &pvtu_s[0];
   dumpnum = &dumpnum_s[0];
-  ftfile = &ftfile_s[0];
 
 #ifdef _MPI
 
@@ -670,13 +656,6 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   MPI_Barrier(MPI_COMM_WORLD);
 
 #endif
-
-  
-  // Open a file to write FT point data to
-  write_ftfile.open(ftfile);
-  write_ftfile << "---GRID VELOCITY AT SAMPLE POINTS---" << endl;
-  write_ftfile << "X  Y  Z  U  V  W" << endl;
-
   
   /*! Each process writes its own .vtu file */
   write_vtu.open(vtu);
@@ -711,24 +690,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           /*! no. of dimensions */
           n_dims = FlowSol->mesh_eles(i)->get_n_dims();
           
-          // Get alternative plot points for FT output
-          n_ftpoints = FlowSol->mesh_eles(i)->get_n_ftpts_per_ele();
-
           /*! Temporary array of plot point coordinates */
           pos_ppts_temp.setup(n_points,n_dims);
 
           /*! Temporary solution array at plot points */
           disu_ppts_temp.setup(n_points,n_fields);
 
-          /*! Temporary array of plot point coordinates */
-          pos_ftpts_temp.setup(n_ftpoints,n_dims);
-          
-          /*! Temporary array of FT point coordinates */
-          pos_ftpts_temp.setup(n_ftpoints,n_dims);
-
-          /*! Temporary solution array at plot points */
-          disu_ftpts_temp.setup(n_ftpoints,n_fields);
-          
           if(n_diag_fields > 0) {
             /*! Temporary solution array at plot points */
             grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
@@ -755,20 +722,6 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 /*! Calculate the diagnostic fields at the plot points */
                 FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
               }
-
-              /*! Calculate the prognostic (solution) fields at the FT points */
-              FlowSol->mesh_eles(i)->calc_disu_ftpts(j,disu_ftpts_temp);
-
-              /*! Calculate the FT point coordinates */
-              FlowSol->mesh_eles(i)->calc_pos_ftpts(j,pos_ftpts_temp);
-
-              // Write FT data to file
-              for(k=0;k<n_ftpoints;k++)
-                {
-                  write_ftfile << pos_ftpts_temp(k,0) << "," << pos_ftpts_temp(k,1) << "," << pos_ftpts_temp(k,2) << ",";
-                  write_ftfile << disu_ftpts_temp(k,1) << "," << disu_ftpts_temp(k,2) << "," << disu_ftpts_temp(k,3) << endl;
-                }
-              write_ftfile << endl;
 
               /*! write out solution to file */
               write_vtu << "			<PointData>" << endl;
@@ -911,8 +864,240 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
   /*! Close the .vtu file */
   write_vtu.close();
+}
+
+// write out evenly spaced point data for TGV (2pi*2pi*2pi hex mesh)
+void write_ftpoints(int in_file_num, struct solution* FlowSol)
+{
+  int i,j,k,l,m,x,y,z;
+  // No. of elements
+  int n_eles;
+  // No. of FT points per element
+  int n_ftpts;
+  // no. of points per direction
+  int p_res = run_input.p_res;
+  // Element type
+  int xeles,ele,ftpt;
+
+  char ftfile_s[50];
+  char *ftfile;
+  ofstream write_ftfile;
+  write_ftfile.precision(15);
+
+  array<double> pos_ftpts_temp;
+  array<double> disu_ftpts_temp;
+
+  write_ftfile.precision(15);
+  sprintf(ftfile_s,"ft_%.09d.dat",in_file_num);
+  ftfile = &ftfile_s[0];
+  cout << "writing ft points to file: " << ftfile << endl;
+  // Open a file to write FT point data to
+  write_ftfile.open(ftfile);
+  write_ftfile << "---GRID VELOCITY AT SAMPLE POINTS---" << endl;
+  write_ftfile << "X  Y  Z  U  V  W" << endl;
+
+  // Loop over element types
+  for(i=0;i<FlowSol->n_ele_types;i++)
+    {
+      // no. of elements of type i
+      n_eles = FlowSol->mesh_eles(i)->get_n_eles();
+
+      // Only proceed if there any elements of type i
+      if (n_eles!=0)
+        {
+          // Get alternative plot points for FT output
+          n_ftpts = FlowSol->mesh_eles(i)->get_n_ftpts_per_ele();
+
+          xeles = round(pow(n_eles,1./3.));
+
+          // Temporary array of FT point coordinates
+          pos_ftpts_temp.setup(n_ftpts,n_dims);
+
+          // Temporary solution array at plot points
+          disu_ftpts_temp.setup(n_ftpts,n_fields);
+          
+
+          /*
+start at ele 1
+write the 1st and 3rd ft point
+go to next ele in x dir
+write the 5th and 7th
+repeat until max x
+move to the next row of eles
+write the 1st and 3rd ft point
+go to next ele in x dir
+write the 5th and 7th
+repeat until max z
+return to ele 1
+write the 2nd and 4th ft point
+go to next ele in x dir
+write the 6th and 8th
+repeat until max x
+move to the next row of eles
+...
+repeat until max z
+return to ele 1
+go to next ele in y dir
+repeat above
+
+          */
+
+          // loop over planes of eles in y axis
+          for(y=0;y<xeles;y++) { // y axis
+
+            // for each plane of eles in y axis, loop over p times
+            // to get all p layers of ftpoints within element
+            for(j=0;j<p_res;j++) {
+
+              // loop over rows of eles in z axis
+              for(z=0;z<xeles;z++) { // z axis
+
+                // for each row of eles in z axis, loop over p times
+                // to get all p layers of ftpoints within element
+                for(k=0;k<p_res;k++) {
+
+                  // loop over eles in x axis
+                  for(x=0;x<xeles;x++) { // x axis
+
+                    // for each ele in x axis, loop over p times
+                    // to get all p layers of ftpoints within element
+                    for(l=0;l<p_res;l++) {
+
+                      // ele number
+                      ele = y*xeles*xeles + z*xeles + x;
+                      // ft point number
+                      ftpt = k*p_res*p_res + l*p_res + j;
+                      //cout << "y,z,x,ele,ftpt: " << y << ", " << z << ", " << x << ", " << ele << ", " << ftpt << endl;
+
+                      // get coords and solution at ft points
+                      FlowSol->mesh_eles(i)->calc_pos_ftpts(ele,pos_ftpts_temp);
+                      FlowSol->mesh_eles(i)->calc_disu_ftpts(ele,disu_ftpts_temp);
+
+                      // Write 
+                      write_ftfile << pos_ftpts_temp(ftpt,0) << ", " << pos_ftpts_temp(ftpt,1) << ", " << pos_ftpts_temp(ftpt,2) << ", ";
+                      write_ftfile << disu_ftpts_temp(ftpt,1) << ", " << disu_ftpts_temp(ftpt,2) << ", " << disu_ftpts_temp(ftpt,3) << endl;
+                    }
+                  }
+                  write_ftfile << endl;
+                }
+              }
+            }
+          }
+        } // end of if n_eles!=0
+    } // end of ele_type loop
 
   write_ftfile.close();
+
+/*#ifdef _MPI
+  int n_global_eles;
+  double xmin_global,ymin_global,zmin_global;
+
+  array< array<double> > pos_ftpts_global;
+  array< array<double> > disu_ftpts_global;
+
+  int my_rank = FlowSol->rank;
+  int n_proc   = FlowSol->nproc;
+  array<int> n_eles_array(n_proc);
+
+          // Master node creates a master array
+          if (my_rank == 0)
+            {
+              int buf;
+              pos_ftpts_global.setup(n_proc);
+              disu_ftpts_global.setup(n_proc);
+
+              // get no. of eles on each proc
+
+              for(j=0;j<n_proc;j++)
+                {
+                  pos_ftpts_global(j).setup(n_ftpts,max_eles,n_dims);
+                  disu_ftpts_global(j).setup(n_ftpts,max_eles,n_fields);
+                }
+
+              // get total no. of eles, n_eles_array and min coords
+              MPI_Allreduce(&n_eles, &n_global_eles, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+              MPI_Allgather(&n_eles, 1, MPI_INT, n_eles_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
+
+              MPI_Allreduce(&xmin, &xmin_global, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+              MPI_Allreduce(&ymin, &ymin_global, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+              MPI_Allreduce(&zmin, &zmin_global, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+
+              xeles = round(pow(n_global_eles,1/3));
+
+              cout << "min coords: " << xmin_global << ", " << ymin_global << ", " << zmin_global << endl;
+              cout << "global eles, xeles: " << n_global_eles << ", " << xeles << endl;
+
+              // Gather coordinates of interface points to master partition
+              buf = max_eles*n_ftpts*n_dims;
+              MPI_Allgather(pos_ftpts.get_ptr_cpu(), buf, MPI_DOUBLE, pos_ftpts_global.get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+              buf = max_eles*n_ftpts*n_fields;
+              MPI_Allgather(disu_ftpts.get_ptr_cpu(), buf, MPI_DOUBLE, disu_ftpts_global.get_ptr_cpu(), buf, MPI_DOUBLE, MPI_COMM_WORLD);
+
+              write_ftfile.precision(15);
+              sprintf(ftfile_s,"ft_%.09d.dat",in_file_num);
+              ftfile = &ftfile_s[0];
+  
+              // Open a file to write FT point data to
+              write_ftfile.open(ftfile);
+              write_ftfile << "---GRID VELOCITY AT SAMPLE POINTS---" << endl;
+              write_ftfile << "X  Y  Z  U  V  W" << endl;
+
+              // Now loop over all processes and eles and write planes of points to file
+              for(j=0;j<n_proc;j++)
+                {
+                  // get no. of eles on each process
+                  n_eles = n_eles_array(j);
+
+                  for(k=0;k<n_eles;k++)
+                    {
+                      for(l=0;l<n_ftpts;l++)
+                        {
+                          // Write FT data to file
+                          write_ftfile << pos_ftpts_global(j)(l,k,0) << "," << pos_ftpts_global(j)(l,k,1) << "," << pos_ftpts_global(j)(l,k,2) << ",";
+                          write_ftfile << disu_ftpts_global(j)(l,k,1) << "," << disu_ftpts_global(j)(l,k,2) << "," << disu_ftpts_global(j)(l,k,3) << endl;
+                        }
+                      write_ftfile << endl;
+                    }
+                }
+            }
+
+#else*/
+
+          /*for(k=0;k<n_eles;k++)
+            {
+              for(l=0;l<l_ftpts;l++)
+                {
+                  // find array indices of min. coords
+                  if ((abs(pos_ftpts(k,j,0)-xmin)<eps) && (abs(pos_ftpts(k,j,1)-ymin)<eps) && (abs(pos_ftpts(k,j,2)-zmin)<eps)) {ele_min = j; ftpt_min = k;}
+                }
+            }
+
+          // Write solution at min coords to file
+          write_ftfile << xmin << "," << ymin << "," << zmin << ",";
+          write_ftfile << disu_ftpts(ftpt_min,ele_min,1) << "," << disu_ftpts(ftpt_min,ele_min,2) << "," << disu_ftpts(ftpt_min,ele_min,3) << endl;
+
+          // Now loop over dimensions of cube
+          
+
+          for(k=0;k<n_eles;k++)
+            {
+              for(l=0;l<n_ftpts;l++)
+                {
+                  // Write FT data to file
+                  write_ftfile << pos_ftpts(l,k,0) << "," << pos_ftpts(l,k,1) << "," << pos_ftpts(l,k,2) << ",";
+                  write_ftfile << disu_ftpts(l,k,1) << "," << disu_ftpts(l,k,2) << "," << disu_ftpts(l,k,3) << endl;
+                }
+              write_ftfile << endl;
+            }
+
+//#endif
+
+        } // end of if n_eles!=0
+    } // end of ele_type loop
+
+  write_ftfile.close();*/
+
 }
 
 void write_restart(int in_file_num, struct solution* FlowSol)

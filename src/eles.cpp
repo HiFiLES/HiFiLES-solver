@@ -3503,8 +3503,8 @@ void eles::set_opp_ft(void)
       opp_ft(j,i)=eval_nodal_basis(i,loc);
     }
   }
-  cout << "opp_ft:" << endl;
-  opp_ft.print();
+  //cout << "opp_ft:" << endl;
+  //opp_ft.print();
 }
 
 void eles::set_opp_inters_cubpts(void)

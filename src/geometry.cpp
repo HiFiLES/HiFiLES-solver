@@ -777,7 +777,7 @@ void GeoPreprocess(struct solution* FlowSol) {
     MPI_Allgather(&n_tri_noslip_inters, 1, MPI_INT, n_tri_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
     MPI_Allgather(&n_quad_noslip_inters, 1, MPI_INT, n_quad_inters_array.get_ptr_cpu(), 1, MPI_INT, MPI_COMM_WORLD);
 
-    // Set loop counters to max. inters on any partition
+    // Set array size to max. inters on any partition
     n_seg_noslip_inters = max_seg_noslip_inters;
     n_tri_noslip_inters = max_tri_noslip_inters;
     n_quad_noslip_inters = max_quad_noslip_inters;
