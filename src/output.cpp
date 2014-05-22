@@ -870,6 +870,10 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 void write_ftpoints(int in_file_num, struct solution* FlowSol)
 {
   int i,j,k,l,m,x,y,z;
+  // No. of solution fields
+  int n_fields;
+  // No. of dimensions
+  int n_dims;
   // No. of elements
   int n_eles;
   // No. of FT points per element
@@ -905,6 +909,12 @@ void write_ftpoints(int in_file_num, struct solution* FlowSol)
       // Only proceed if there any elements of type i
       if (n_eles!=0)
         {
+          // no. of solution fields
+          n_fields = FlowSol->mesh_eles(i)->get_n_fields();
+
+          // no. of dimensions
+          n_dims = FlowSol->mesh_eles(i)->get_n_dims();
+          
           // Get alternative plot points for FT output
           n_ftpts = FlowSol->mesh_eles(i)->get_n_ftpts_per_ele();
 
