@@ -41,6 +41,9 @@ void write_tec(int in_file_num, struct solution* FlowSol);
 /*! write an output file in VTK ASCII format */
 void write_vtu(int in_file_num, struct solution* FlowSol);
 
+/*! write an output file containing evenly spaced points for calculating spectra */
+void write_ftpoints(int in_file_num, struct solution* FlowSol);
+
 /*! writing a restart file */
 void write_restart(int in_file_num, struct solution* FlowSol);
 
