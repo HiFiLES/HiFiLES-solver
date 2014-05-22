@@ -145,10 +145,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     
     // Initialize to zero
     for (int m=0;m<n_adv_levels;m++)
-      for (int i=0;i<n_upts_per_ele;i++)
-        for (int j=0;j<n_eles;j++)
-          for (int k=0;k<n_fields;k++)
-            disu_upts(m)(i,j,k) = 0.;
+      disu_upts(m).initialize_to_zero();
     
     // Allocate storage for time-averaged diagnostic fields
     n_diagnostic_fields = run_input.n_diagnostic_fields;
@@ -257,10 +254,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     
     // Initialize to zero
     for (int m=0;m<n_adv_levels;m++)
-      for (int i=0;i<n_upts_per_ele;i++)
-        for (int j=0;j<n_eles;j++)
-          for (int k=0;k<n_fields;k++)
-            div_tconf_upts(m)(i,j,k) = 0.;
+      div_tconf_upts(m).initialize_to_zero();
     
     disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
     tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
@@ -293,11 +287,7 @@ void eles::set_disu_upts_to_zero_other_levels(void)
     // Initialize to zero
     for (int m=1;m<n_adv_levels;m++)
     {
-      for (int i=0;i<n_upts_per_ele;i++)
-        for (int j=0;j<n_eles;j++)
-          for (int k=0;k<n_fields;k++)
-            disu_upts(m)(i,j,k) = 0.;
-      
+      disu_upts(m).initialize_to_zero();
       
 #ifdef _GPU
       if (n_eles!=0)

@@ -166,7 +166,11 @@ void GeoPreprocess(struct solution* FlowSol) {
   array<int> icvsta, icvert;
 
   // Compute connectivity
+  if (FlowSol->rank==0) cout << "Setting up mesh connectivity" << endl;
+
   CompConnectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, rot_tag, unmatched_inters, n_unmatched_inters, icvsta, icvert, FlowSol->num_inters, FlowSol->num_edges, FlowSol);
+
+  if (FlowSol->rank==0) cout << "Done setting up mesh connectivity" << endl;
 
   // Reading boundaries
   ReadBound(run_input.mesh_file,c2v,c2n_v,ctype,bctype_c,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts, FlowSol);
@@ -1170,20 +1174,22 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   // Move cursor to $PhysicalNames
   while(1) {
       getline(mesh_file,str);
-      if (str=="$PhysicalNames") break;
+      if (str.find("$PhysicalNames")!=string::npos) break;
+      if(mesh_file.eof()) FatalError("$PhysicalNames tag not found!");
     }
 
   // Read number of boundaries and fields defined
-  int dummy,dummy2;
+  int dummy;
+  int n_bcs;;
   int id,elmtype,ntags,bcid,bcdim,bcflag;
 
   char buf[BUFSIZ]={""};
   char bcTXT[100][100];// can read up to 100 different boundary conditions
   char bc_txt_temp[100];
 
-  mesh_file >> dummy;
+  mesh_file >> n_bcs;
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
-  for(int i=0;i<dummy;i++)
+  for(int i=0;i<n_bcs;i++)
     {
       mesh_file.getline(buf,BUFSIZ);
       sscanf(buf,"%d %d \"%s", &bcdim, &bcid, bc_txt_temp);
@@ -1192,9 +1198,10 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
 
   // Move cursor to $Elements
   while(1) {
-      getline(mesh_file,str);
-      if (str=="$Elements") break;
-    }
+    getline(mesh_file,str);
+    if (str.find("$Elements")!=string::npos) break;
+    if(mesh_file.eof()) FatalError("$Elements tag not found!");
+  }
 
   // Each processor reads number of entities
   int n_entities;
@@ -1202,7 +1209,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   mesh_file   >> n_entities;   // num cells in mesh
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
-  array<int> vlist_boun(4), vlist_cell(4);
+  array<int> vlist_bound(4), vlist_cell(4);
   array<int> vlist_local(4);
 
   int found, num_v_per_f;
@@ -1236,40 +1243,47 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
       bdy_count++;
 
       if (elmtype==1 || elmtype==8) // Edge
-        {
-          num_face_vert = 2;
-          // Read the two vertices
-          mesh_file >> vlist_boun(0) >> vlist_boun(1);
-        }
+      {
+        num_face_vert = 2;
+        // Read the two vertices
+        mesh_file >> vlist_bound(0) >> vlist_bound(1);
+      }
       else if (elmtype==3) // Quad face
-        {
-          num_face_vert = 4;
-          mesh_file >> vlist_boun(0) >> vlist_boun(1) >> vlist_boun(3) >> vlist_boun(2);
-        }
-      else
+      {
+        num_face_vert = 4;
+        mesh_file >> vlist_bound(0) >> vlist_bound(1) >> vlist_bound(3) >> vlist_bound(2);
+      }
+      else if (elmtype==2) // Linear tri face
+      {
+        num_face_vert = 3;
+        mesh_file >> vlist_bound(0) >> vlist_bound(1) >> vlist_bound(2);
+      }
+      else 
+      {
+        cout << "Gmsh boundary element type: " << elmtype << endl;
         FatalError("Boundary elmtype not recognized");
+      }
 
-      // Shift by -1
-
+      // Shift by -1 (1-indexed -> 0-indexed)
       for (int j=0;j<num_face_vert;j++)
-        {
-          vlist_boun(j)--;
-        }
+      {
+        vlist_bound(j)--;
+      }
 
       mesh_file.getline(buf,BUFSIZ);  // Get rest of line
 
-      // Check if two vertices belong to processor
-      bool belong_to_proc = 1;
+      // Check if all vertices belong to processor
+      bool belong_to_proc = true;
       for (int j=0;j<num_face_vert;j++)
         {
-          vlist_local(j) = index_locate_int(vlist_boun(j),in_iv2ivg.get_ptr_cpu(),in_n_verts);
+          vlist_local(j) = index_locate_int(vlist_bound(j),in_iv2ivg.get_ptr_cpu(),in_n_verts);
           if (vlist_local(j) == -1)
-            belong_to_proc = 0;
+            belong_to_proc = false;
         }
 
       if (belong_to_proc)
         {
-          // Both vertices belong to processor
+          // All vertices on face belong to processor
           // Try to find the cell that they belong to
           found=0;
 
@@ -1277,37 +1291,29 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
           sta_ind = in_icvsta(vlist_local(0));
           end_ind = in_icvsta(vlist_local(0)+1)-1;
 
-          //for (int ic=0;ic<in_n_cells;ic++)
           for (int ind=sta_ind;ind<=end_ind;ind++)
             {
               int ic=in_icvert(ind);
               for (int k=0;k<FlowSol->num_f_per_c(in_ctype(ic));k++)
                 {
                   // Get local vertices of local face k of cell ic
-                  //cout << "ctype(ic)=" << in_ctype(ic) << "n_v=" << in_c2n_v(ic) << endl;
                   get_vlist_loc_face(in_ctype(ic),in_c2n_v(ic),k,vlist_cell,num_v_per_f);
-
-                  //cout << "Before, vlist_cell(0)=" << vlist_cell(0) << endl;
-                  //cout << "Before, vlist_cell(1)=" << vlist_cell(1) << endl;
 
                   if (num_v_per_f!= num_face_vert)
                     continue;
 
                   for (int j=0;j<num_v_per_f;j++)
-                    {
-                      //cout << "ic=" << ic << endl;
-                      vlist_cell(j) = in_c2v(ic,vlist_cell(j));
-                    }
+                  {
+                    vlist_cell(j) = in_c2v(ic,vlist_cell(j));
+                  }
 
-                  //cout << "vlist_cell(0)=" << vlist_cell(0) << endl;
-                  //cout << "vlist_cell(1)=" << vlist_cell(1) << endl;
                   compare_faces_boundary(vlist_local,vlist_cell,num_v_per_f,found);
 
                   if (found==1)
-                    {
-                      out_bctype(ic,k)=bcflag;
-                      break;
-                    }
+                  {
+                    out_bctype(ic,k)=bcflag;
+                    break;
+                  }
                 }
               if (found==1)
                 break;
@@ -1315,8 +1321,8 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
           if (found==0)
             {
               cout << "num_v_per_face=" << num_v_per_f << endl;
-              cout << "vlist_boun(0)=" << vlist_boun(0) << " vlist_boun(1)=" << vlist_boun(1) << endl;
-              cout << "vlist_boun(2)=" << vlist_boun(2) << " vlist_boun(3)=" << vlist_boun(3) << endl;
+              cout << "vlist_bound(0)=" << vlist_bound(0) << " vlist_bound(1)=" << vlist_bound(1) << endl;
+              cout << "vlist_bound(2)=" << vlist_bound(2) << " vlist_bound(3)=" << vlist_bound(3) << endl;
               FatalError("All nodes of boundary face belong to processor but could not find the coresponding faces");
             }
 
@@ -1404,7 +1410,8 @@ void read_vertices_gmsh(string& in_file_name, int in_n_verts, array<int> &in_iv2
   // Move cursor to $Nodes
   while(1) {
       getline(mesh_file,str);
-      if (str=="$Nodes") break;
+      if (str.find("$Nodes")!=string::npos) break;
+      if(mesh_file.eof()) FatalError("$Nodes tag not found!");
     }
 
   int n_verts_global;
@@ -1682,7 +1689,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   ifstream mesh_file;
 
   string str;
-
+  
   mesh_file.open(&in_file_name[0]);
   if (!mesh_file)
     FatalError("Unable to open mesh file");
@@ -1690,34 +1697,37 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   int id,elmtype,ntags,bcid,bcdim;
 
   // Move cursor to $PhysicalNames
+  int argh = 0;
   while(1) {
-      getline(mesh_file,str);
-      if (str=="$PhysicalNames") break;
-    }
+    getline(mesh_file,str);
+    if (str.find("$PhysicalNames")!=string::npos) break;
+    if(mesh_file.eof()) FatalError("$PhysicalNames tag not found!");
+  }
 
   // Read number of boundaries and fields defined
   mesh_file >> n_bnds;
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   for(int i=0;i<n_bnds;i++)
-    {
-      cout << "i "<<i << endl;
-      mesh_file.getline(buf,BUFSIZ);
-      sscanf(buf,"%d %d %s", &bcdim, &bcid, bc_txt_temp);
-      strcpy(bcTXT[bcid],bc_txt_temp);
-      cout << "bc_txt_temp " <<bc_txt_temp<< endl;
-      if (strcmp(bc_txt_temp,"FLUID")) {
-          FlowSol->n_dims=bcdim;
-        }
+  {
+    cout << "i "<<i << endl;
+    mesh_file.getline(buf,BUFSIZ);
+    sscanf(buf,"%d %d %s", &bcdim, &bcid, bc_txt_temp);
+    strcpy(bcTXT[bcid],bc_txt_temp);
+    cout << "bc_txt_temp " <<bc_txt_temp<< endl;
+    if (strstr(bc_txt_temp,"FLUID")) {
+      FlowSol->n_dims=bcdim;
     }
+  }
   if (FlowSol->n_dims != 2 && FlowSol->n_dims != 3) {
-      FatalError("Invalid mesh dimensionality. Expected 2D or 3D.");
-    }
+    FatalError("Invalid mesh dimensionality. Expected 2D or 3D.");
+  }
 
   // Move cursor to $Elements
   while(1) {
-      getline(mesh_file,str);
-      if (str=="$Elements") break;
-    }
+    getline(mesh_file,str);
+    if (str.find("$Elements")!=string::npos) break;
+    if(mesh_file.eof()) FatalError("$Elements tag not found!");
+  }
 
   // -------------------------------
   //  Read element connectivity
@@ -1732,18 +1742,18 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   int icount=0;
 
   for (int i=0;i<n_entities;i++)
-    {
-      mesh_file >> id >> elmtype >> ntags;
-      mesh_file >> bcid;
-      for (int tag=0; tag<ntags-1; tag++)
-        mesh_file >> dummy;
+  {
+    mesh_file >> id >> elmtype >> ntags;
+    mesh_file >> bcid;
+    for (int tag=0; tag<ntags-1; tag++)
+      mesh_file >> dummy;
 
-      if (strstr(bcTXT[bcid],"FLUID"))
-        icount++;
+    if (strstr(bcTXT[bcid],"FLUID"))
+      icount++;
 
-      mesh_file.getline(buf,BUFSIZ);  // clear rest of line
+    mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
-    }
+  }
   n_cells_global=icount;
 
   cout << "n_cell_global=" << n_cells_global << endl;
@@ -1783,7 +1793,8 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   mesh_file.seekg(0, ios::beg);
   while(1) {
       getline(mesh_file,str);
-      if (str=="$Elements") break;
+      if (str.find("$Elements")!=string::npos) break;
+      if(mesh_file.eof()) FatalError("$Elements tag not found!");
     }
 
   mesh_file >> n_entities;   // num cells in mesh
@@ -1792,6 +1803,9 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   // Skip elements being read by other processors
   icount=0;
   int i=0;
+
+  // ctype is the element type:  for HiFiLES: 0=tri, 1=quad, 2=tet, 3=prism, 4=hex
+  // For Gmsh node ordering, see: http://geuz.org/gmsh/doc/texinfo/gmsh.html#Node-ordering
 
   for (int k=0;k<n_entities;k++)
     {
@@ -1842,7 +1856,22 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
                       mesh_file >> out_c2v(i,0) >> out_c2v(i,2) >> out_c2v(i,8) >> out_c2v(i,6) >> out_c2v(i,1) >> out_c2v(i,5) >> out_c2v(i,7) >> out_c2v(i,3) >> out_c2v(i,4);
                     }
                 }
-              else if (elmtype==5) // Hexahedral
+              else if (elmtype==4 || elmtype==11) // Tetrahedron
+              {
+                out_ctype(i) = 2;
+                if (elmtype==4) // Linear tet
+                {
+                  out_c2n_v(i) = 4;
+                  mesh_file >> out_c2v(i,0) >> out_c2v(i,1) >> out_c2v(i,2) >> out_c2v(i,3);
+                }
+                else if (elmtype==11) // Quadratic tet
+                {
+                  out_c2n_v(i) = 10;                  
+                  mesh_file >> out_c2v(i,0) >> out_c2v(i,8) >> out_c2v(i,5) >> out_c2v(i,2) >> out_c2v(i,3);
+                  mesh_file >> out_c2v(i,6) >> out_c2v(i,7) >> out_c2v(i,4) >> out_c2v(i,9) >> out_c2v(i,1); 
+                }
+              }
+              else if (elmtype==5) // Hexahedron
                 {
                   out_ctype(i) = 4;
                   if (elmtype==5) // linear quadrangle
@@ -2179,7 +2208,6 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
   int num_v_per_f,num_v_per_f2;
   int iface, iface_old;
   int found,rtag;
-  int pause;
 
   n_cells = in_c2v.get_dim(0);
   n_verts = in_c2v.get_max()+1;
@@ -2189,7 +2217,13 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
   //array<int> num_v_per_c(5); // for 5 element types
   array<int> vlist_loc(MAX_V_PER_F),vlist_loc2(MAX_V_PER_F),vlist_glob(MAX_V_PER_F),vlist_glob2(MAX_V_PER_F); // faces cannot have more than 4 vertices
 
-  array<int> ifill,idummy;
+  array<int> v2n_c;
+
+  /**
+   * "Moving pointer" that points to next unassigned entry in icvert (for each vertex)
+   * (see descriptions of icvsta & icvert)
+   */
+  array<int> icvsta2;
 
   // Number of vertices for different type of cells
   //num_v_per_c(0) = 3; // tri
@@ -2198,71 +2232,77 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
   //num_v_per_c(3) = 6; // pris
   //num_v_per_c(4) = 8; // hexas
 
-  ifill.setup(n_verts);
-  idummy.setup(n_verts);
+  v2n_c.setup(n_verts);
+  icvsta2.setup(n_verts);
   // Assumes there won't be more than X cells around 1 vertex
-  int max_cells_per_vert = 50;
+  int max_cells_per_vert = 100; //50
+
+  /**
+   * List of cells around each vertex
+   * First v2n_c(0) entries are all cells around node 0,
+   * next v2n_c(1) etries are all cells around node 1, etc.
+   */
   out_icvert.setup(max_cells_per_vert*n_verts+1);
+
+  /**
+   * Index of icvert corresponding to start of each vertices' entries
+   * (see description of icvert)
+   * Similar in function to the "row_ptr" of a compressed-sparse-row matrix
+   */
   out_icvsta.setup(n_verts+1);
 
   // Initialize arrays to zero
-  for (int i=0;i<n_verts;i++) {
-      ifill(i) = 0;
-      idummy(i) = 0;
-      out_icvsta(i) = 0;
+  v2n_c.initialize_to_zero();
+  icvsta2.initialize_to_zero();
+  out_icvsta.initialize_to_zero();
+  out_icvert.initialize_to_zero();
+  vlist_loc.initialize_to_zero();
+  vlist_loc2.initialize_to_zero();
+  vlist_glob.initialize_to_zero();
+  vlist_glob2.initialize_to_zero();
+
+  // Determine how many cells share each node
+  for (int ic=0;ic<n_cells;ic++) {
+    for(int k=0;k<in_c2n_v(ic);k++) {
+      v2n_c(in_c2v(ic,k))++;
     }
-
-  out_icvsta(n_verts) = 0;
-  for (int i=0;i<max_cells_per_vert*n_verts+1;i++)
-    out_icvert(i) = 0;
-
-  for(int i=0;i<MAX_V_PER_F;i++)
-    vlist_loc(i) = vlist_loc2(i) = vlist_glob(i) = vlist_glob2(i) = 0;
-
-  // Compute how many cells share one node
-  for (int ic=0;ic<n_cells;ic++)
-    //for(int k=0;k<num_v_per_c(in_ctype(ic));k++)
-    for(int k=0;k<in_c2n_v(ic);k++)
-      ifill(in_c2v(ic,k))++;
+  }
 
   int k=0;
-  int max = 0;
+  int max_nc = 0;
   for(int iv=0;iv<n_verts;iv++)
-    {
-      if (ifill(iv)>max)
-        max = ifill(iv);
+  {
+    if (v2n_c(iv)>max_nc)
+      max_nc = v2n_c(iv);
 
-      out_icvsta(iv) = k;
-      idummy(iv) = out_icvsta(iv);
-      k = k+ifill(iv);
-    }
+    out_icvsta(iv) = k;
+    icvsta2(iv) = k;
+    k = k+v2n_c(iv);
+  }
 
   //cout << "Maximum number of cells who share same vertex = " << max << endl;
-  if (max>max_cells_per_vert)
+  if (max_nc>max_cells_per_vert)
     FatalError("ERROR: some vertices are shared by more than max_cells_per_vert");
 
-  out_icvsta(n_verts) = out_icvsta(n_verts-1)+ifill(n_verts-1);
+  out_icvsta(n_verts) = out_icvsta(n_verts-1)+v2n_c(n_verts-1);
 
   int iv,ic2,k2;
   for(int ic=0;ic<n_cells;ic++)
+  {
+    for(int k=0;k<in_c2n_v(ic);k++)
     {
-      //for(int k=0;k<num_v_per_c(in_ctype(ic));k++)
-      for(int k=0;k<in_c2n_v(ic);k++)
-        {
-          iv = in_c2v(ic,k);
-          out_icvert(idummy(iv)) = ic;
-          idummy(iv)++;
-        }
+      iv = in_c2v(ic,k);
+      out_icvert(icvsta2(iv)) = ic;
+      icvsta2(iv)++;
     }
+  }
 
   out_n_edges=-1;
   if (FlowSol->n_dims==3)
-    {
+  {
       // Create array ic2e
       array<int> num_e_per_c(5);
-      for (int i=0;i<n_cells;i++)
-        for (int j=0;j<MAX_E_PER_C;j++)
-          out_c2e(i,j) = -1;
+      out_c2e.initialize_to_value(-1);
 
       num_e_per_c(0) = 3;
       num_e_per_c(1) = 4;
@@ -2271,9 +2311,9 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
       num_e_per_c(4) = 12;
 
       for (int ic=0;ic<n_cells;ic++)
-        {
+      {
           for(int k=0;k<num_e_per_c(in_ctype(ic));k++)
-            {
+          {
               found = 0;
               if(out_c2e(ic,k) != -1) continue; // we have counted that face already
 
@@ -2281,24 +2321,23 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
               out_c2e(ic,k) = out_n_edges;
 
               get_vlist_loc_edge(in_ctype(ic),in_c2n_v(ic),k,vlist_loc);
-              for (int i=0;i<2;i++)
-                {
-                  vlist_glob(i) = in_c2v(ic,vlist_loc(i));
-                }
+              for (int i=0;i<2;i++) {
+                vlist_glob(i) = in_c2v(ic,vlist_loc(i));
+              }
 
               // loop over the cells touching vertex vlist_glob(0)
               sta_ind = out_icvsta(vlist_glob(0));
               end_ind = out_icvsta(vlist_glob(0)+1)-1;
 
               for(int ind=sta_ind;ind<=end_ind;ind++)
-                {
+              {
                   int ic2 = out_icvert(ind);
                   if(ic2==ic) continue; // ic2 is the same as ic1 so skip it
 
                   // Loop over edges of cell ic2 touching vertex vlist_glob(0)
                   for(int k2=0;k2<num_e_per_c(in_ctype(ic2));k2++)
-                    {
-                      // Get local vertices of local face k2 of cell ic2
+                  {
+                      // Get local vertices of local edge k2 of cell ic2
                       get_vlist_loc_edge(in_ctype(ic2),in_c2n_v(ic),k2,vlist_loc2);
 
                       // get global vertices corresponding to local vertices
@@ -2307,15 +2346,15 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
 
                       if ( (vlist_glob(0)==vlist_glob2(0) && vlist_glob(1)==vlist_glob2(1)) ||
                            (vlist_glob(0)==vlist_glob2(1) && vlist_glob(1)==vlist_glob2(0)) )
-                        {
-                          out_c2e(ic2,k2) = out_n_edges;
-                        }
-                    }
-                }
-            } // Loop over edges
-        } // Loop over cells
-      out_n_edges++;
-    } // if n_dims=3
+                      {
+                        out_c2e(ic2,k2) = out_n_edges;
+                      }
+                  }
+              }
+          } // Loop over edges
+      } // Loop over cells
+      out_n_edges++; // 0-index -> actual value
+  } // if n_dims=3
 
   iface = 0;
   out_n_unmatched_faces= 0;
@@ -2330,78 +2369,74 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
           iface_old = iface;
           if(out_c2f(ic,k) != -1) continue; // we have counted that face already
 
-          //cout << "ctype=" << in_ctype(ic) << "n_v=" << in_c2n_v(ic) << endl;
           // Get local vertices of local face k of cell ic
-          //cout << "ic=" << ic << endl;
           get_vlist_loc_face(in_ctype(ic),in_c2n_v(ic),k,vlist_loc,num_v_per_f);
 
           // get global vertices corresponding to local vertices
           for(int i=0;i<num_v_per_f;i++)
-            {
-              vlist_glob(i) = in_c2v(ic,vlist_loc(i));
-            }
+          {
+            vlist_glob(i) = in_c2v(ic,vlist_loc(i));
+          }
 
           // loop over the cells touching vertex vlist_glob(0)
           sta_ind = out_icvsta(vlist_glob(0));
           end_ind = out_icvsta(vlist_glob(0)+1)-1;
 
           for(int ind=sta_ind;ind<=end_ind;ind++)
-            {
+          {
               ic2 = out_icvert(ind);
 
               if(ic2==ic) continue; // ic2 is the same as ic1 so skip it
 
-              //cout << "ic2=" << ic2 << endl;
-              //cout << "ctype=" << in_ctype(ic2) << endl;
-              // Loop over faces of cell ic2 touching vertex vlist_glob(0)
+              // Loop over faces of cell ic2 (which touches vertex vlist_glob(0))
               for(k2=0;k2<FlowSol->num_f_per_c(in_ctype(ic2));k2++)
-                {
+              {
                   // Get local vertices of local face k2 of cell ic2
                   get_vlist_loc_face(in_ctype(ic2),in_c2n_v(ic2),k2,vlist_loc2,num_v_per_f2);
 
                   if (num_v_per_f2==num_v_per_f)
-                    {
+                  {
                       // get global vertices corresponding to local vertices
                       for (int i2=0;i2<num_v_per_f2;i2++)
                         vlist_glob2(i2) = in_c2v(ic2,vlist_loc2(i2));
 
                       // Compare the list of vertices
                       // If faces match returns 1
-                      // For 3D SHOULD RETURN THE ORIENTATION OF FACE2 WRT FACE
+                      // For 3D returns the orientation of face2 wrt face1 (rtag)
+                      // (see compare_faces for explanation of rtag)
                       compare_faces(vlist_glob,vlist_glob2,num_v_per_f,found,rtag);
 
                       if (found==1) break;
-                    }
-                }
+                  }
+              }
 
               if (found==1) break;
-            }
+          }
 
           if(found==1)
-            {
-              out_c2f(ic2,k2) = iface;
+          {
+            out_c2f(ic,k) = iface;
+            out_c2f(ic2,k2) = iface;
 
-              out_f2c(iface,0) = ic;
-              out_f2c(iface,1) = ic2;
+            out_f2c(iface,0) = ic;
+            out_f2c(iface,1) = ic2;
 
-              out_f2loc_f(iface,0) = k;
-              out_f2loc_f(iface,1) = k2;
+            out_f2loc_f(iface,0) = k;
+            out_f2loc_f(iface,1) = k2;
 
-              out_c2f(ic,k) = iface;
+            for(int i=0;i<num_v_per_f;i++)
+              out_f2v(iface,i) = vlist_glob(i);
 
-              for(int i=0;i<num_v_per_f;i++)
-                out_f2v(iface,i) = vlist_glob(i);
-
-              out_f2nv(iface) = num_v_per_f;
-              out_rot_tag(iface) = rtag;
-              iface++;
-            }
+            out_f2nv(iface) = num_v_per_f;
+            out_rot_tag(iface) = rtag;
+            iface++;
+          }
           else
-            {
+          {
               // If loops over ic2 and k2 were unsuccesful, it means that face is not shared by two cells
               // Then continue here and set f2c( ,1) = -1
               if (out_f2c(iface_old+1,0)==-1)
-                {
+              {
                   out_f2c(iface,0) = ic;
                   out_f2c(iface,1) = -1;
 
@@ -2410,24 +2445,21 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
 
                   out_c2f(ic,k) = iface;
                   for(int i=0;i<num_v_per_f;i++)
-                    {
-                      out_f2v(iface,i) = vlist_glob(i);
-                    }
+                  {
+                    out_f2v(iface,i) = vlist_glob(i);
+                  }
 
                   out_f2nv(iface) = num_v_per_f;
-
-
-
 
                   out_n_unmatched_faces++;
                   out_unmatched_faces(out_n_unmatched_faces-1) = iface;
 
                   iface=iface_old+1;
-                }
-            }
+              }
+          }
 
-        }  // end of loop over k
-    } // end of loop over ic
+      }  // end of loop over k
+  } // end of loop over ic
 
   out_n_faces = iface;
   //cout << "n_faces = " << out_n_faces << endl;
@@ -2834,7 +2866,6 @@ void get_vlist_loc_face(int& in_ctype, int& in_n_spts, int& in_face, array<int>&
     }
   else if (in_ctype==2) // Tet
     {
-      //cout << "CHECK ORIENTATION FOR TETS" << endl;
       num_v_per_f = 3;
       if(in_face==0)
         {
@@ -2864,7 +2895,6 @@ void get_vlist_loc_face(int& in_ctype, int& in_n_spts, int& in_face, array<int>&
     }
   else if (in_ctype==3) // Prism
     {
-      //cout << "CHECK ORIENTATION FOR TETS" << endl;
       if(in_face==0)
         {
           num_v_per_f = 3;
@@ -3015,7 +3045,12 @@ void get_vlist_loc_face(int& in_ctype, int& in_n_spts, int& in_face, array<int>&
 
 void compare_faces(array<int>& vlist1, array<int>& vlist2, int& num_v_per_f, int& found, int& rtag)
 {
-
+  /* Looking at a face from *inside* the cell, the nodes *must* be numbered in *CW* order
+   * (this is in agreement with Gambit; Gmsh does not care about local face numberings)
+   *
+   * The variable 'rtag' matches up the local node numbers of two overlapping faces from
+   * different cells (specifically, it is which node from face 2 matches node 0 from face 1)
+   */
   if(num_v_per_f==2) // edge
     {
       if ( (vlist1(0)==vlist2(0) && vlist1(1)==vlist2(1)) ||
@@ -3109,20 +3144,17 @@ void compare_faces_boundary(array<int>& vlist1, array<int>& vlist2, int& num_v_p
 {
 
   if ( !(num_v_per_f==2 || num_v_per_f==3 || num_v_per_f==4))
-    FatalError("Face not recognized");
+    FatalError("Boundary face type not recognized (expecting a linear edge, tri, or quad)");
 
   int count = 0;
-  for (int j=0;j<num_v_per_f;j++)
-    {
-      for (int k=0;k<num_v_per_f;k++)
-        {
-          if (vlist1(j)==vlist2(k))
-            {
-              count ++;
-              break;
-            }
-        }
+  for (int j=0;j<num_v_per_f;j++) {
+    for (int k=0;k<num_v_per_f;k++) {
+      if (vlist1(j)==vlist2(k)) {
+        count ++;
+        break;
+      }
     }
+  }
 
   if (count==num_v_per_f)
     found=1;
