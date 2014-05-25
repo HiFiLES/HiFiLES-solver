@@ -115,8 +115,6 @@ Mention developments in squares (tensor products of linear scheme), triangles\ci
 %\subsection{Stabilization Techniques}
 
 \subsection{Large Eddy Simulation Models}\label{lesmodels}
-SGS Models: Smagorinsky\cite{smagorinsky1963}, WALE\cite{nicoud1999}, WALE-similarity\cite{lodato2009}, SVV\cite{karamanos2000}.
-Filters: Vasilyev\cite{vasilyev1998,vasilyev2001}, discrete Gaussian\cite{lodato2012b}, Modal Vandermonde\cite{blackburn2003}.
 
 In order to resolve all the scales of motion in a high Reynolds number turbulent flow, the computational mesh would have to be impractically fine.
 A practical solution is to employ the Large Eddy Simulation (LES) formulation, which only resolves the larger scales of motion and thus allows for the use of coarser meshes.
@@ -126,7 +124,7 @@ The effect of the unresolved or subgrid-scale (SGS) dynamics on the solution is 
 \bar{\bar{\tau}} = \mu \left ( \nabla \vec{v} + {\nabla \vec{v}}^\mathsf{T}  - \frac{2}{3} \bar{\bar{I}} (\nabla \cdot \vec{v} ) \right ) + \bar{\bar{\tau}}_{sgs}.
 \end{equation}
 %
-The standard Smagorinsky model is available in HiFiLES and is given by:
+The standard Smagorinsky model\cite{smagorinsky1963} is available in HiFiLES:
 %
 \begin{eqnarray}\label{smag}
 \bar{\bar{\tau}}_{sgs} &&= 2 \rho \nu_t \bar{\bar{S^d}}, \\
@@ -145,12 +143,13 @@ In HiFiLES the filter width is given by (in 3D):
 where $\alpha \geq 1$ is a user-defined scaling factor and vol is the element volume.
 HiFiLES also includes the Wall-Adapting Local Eddy-Viscosity (WALE) model~\cite{nicoud1999} and the Similarity model~\cite{bardina1980}.
 The Similarity model incorporates a filtering operator that locally smoothes the solution in order to extract small-scale information.
-Several filters are available in HiFiLES: a discrete Gaussian filter, a high-order commuting Vasilyev-type filter and a modal Vandermonde-type filter.
+Several filters are available in HiFiLES: a discrete Gaussian filter\cite{lodato2012b}, a high-order commuting Vasilyev-type filter\cite{vasilyev1998,vasilyev2001} and a modal Vandermonde-type filter\cite{blackburn2003}.
+The modal filter is designed to operate on unstructured tetrahedral meshes.
 For details of these operators, see Lodato, Castonguay and Jameson~\cite{lodato2012b} and Bull and Jameson~\cite{bull2013a}.
-Also available is the option to combine the similarity model and either the Smagorinsky or WALE model into a mixed model.
-The mixed WALE-similarity model, developed by Lodato et al.~\cite{lodato2009}, was used in simulations of the flow over a square cylinder (see Section \ref{sqcyl}).
+Also available is the option to combine the similarity model with the Smagorinsky or WALE model to form a mixed SGS model.
+The WALE-similarity mixed (WSM) model, first proposed by Lodato et al.~\cite{lodato2009}, was used in simulations of the flow over a square cylinder (see Section \ref{sqcyl}).
 Finally, a Spectral Vanishing Viscosity (SVV) model is available.
-Instead of adding a model term, the SVV method applies a filter directly to the solution in order to damp high-order modes~\cite{karamanos2000}.
+Instead of adding a model term, the SVV method applies one of the above mentioned filters directly to the solution in order to damp the small scales or high-order modes~\cite{karamanos2000}.
 
 \subsection{Computing Architecture and Scalability}
 %The final paper will include a description of how HiFiLES is designed for a multi-GPU environment. Studies performed without filtering or SGS modeling in \cite{castonguay2011}. 
