@@ -4,8 +4,8 @@
 \label{sec:numerics}
 \subsection{Flux Reconstruction Method}
 
-What follows is an overview of the flux reconstruction (FR) framework. We start the discussion with the solution of the advection equation in one dimension using the FR approach to illustrate the peculiarities of the method. Then we proceed to describe the solution of the advection in two and three dimensions to show how the scheme works in triangular and tetrahedral elements. 
-More details about FR and ESFR properties and derivations can be found in the articles and papers by Williams, Vincent, Castonguay, Jameson, and Huynh.
+What follows is an overview of the flux reconstruction (FR) framework. We start the discussion with the solution of the advection-diffusion equation in one dimension using the FR approach to illustrate the peculiarities of the method. We then proceed to describe the solution of the Navier-Stokes equations in  three dimensions to show how the scheme works in tetrahedral elements. The treatment presented here synthesizes the detailed description given by Williams\cite{williams2013thesis}.
+%More details about FR and ESFR properties and derivations can be found in the following articles and papers: on the non-linear stability, Vincent\cite{vincent2011new}, Castonguay, Jameson, and Huynh. [CITE PAPERS]
 
 \subsubsection{Solution of the Advection Equation in One Dimension using the FR Approach}
 
@@ -15,88 +15,93 @@ Consider the one-dimensional conservation law
 \frac{\partial u}{\partial t} + \frac{\partial f}{\partial x} = 0
 \end{equation}
 
-in domain $\Omega$, where $x$ is the spatial coordinate, $t$ is time, $u$ is a scalar function of $x$ and $t$, and $f$ is a scalar function of $u$. Note that letting $f = f(u,\frac{\partial u}{\partial x})$, Equation\ref{eq:cons} becomes a model of the Navier-Stokes equations.
+in domain $\Omega$, where $x$ is the spatial coordinate, $t$ is time, $u$ --the solution-- is a scalar function of $x$ and $t$, and $f$ --the flux-- is a scalar function of $u$. Note that by letting $f = f(u,\frac{\partial u}{\partial x})$, Equation~\ref{eq:cons} becomes a model of the Navier-Stokes equations.
 
 Let us partition the domain $\Omega = [x_1,x_{N+1})$ into $N$ non-overlapping elements with 
 interfaces at $x_1<x_2<...<x_{N+1}$. Then,
-$$
+\begin{equation}
 \Omega = \bigcup^N_{n=1} \Omega_n
-$$
+\end{equation}
 and $\Omega_n = [x_n,x_{n+1})$ for $n = 1,...,N$.
 
 To simplify the implementation, let us map each of the physical elements $\Omega_n$ to a standard 
 element $\Omega_s=[-1,1)$ with the function $\Theta_n(\xi)$, where
-$$
+\begin{equation}
 x = \Theta_n(\xi) = \l( \frac{1-\xi}{2} \r) x_n + \l(\frac{1+\xi}{2}\r) x_{n+1} 
-$$
+\end{equation}
 
 With this mapping, the evolution of $u$ within each $\Omega_n$ can be determined with the following 
 transformed advection equation
-$$
-\frac{\partial \hat{u}}{\partial t} + \frac{\partial \hat{f}}{\partial \xi} = 0
-$$
+\begin{equation}
+\frac{\partial \hat{u}}{\partial t} + \frac{1}{J_n}\frac{\partial \hat{f}}{\partial \xi} = 0
+\end{equation}
 where
-$$
-\hat{u} = J_n u(\Theta_n(\xi),t) \text{ in } \Omega_n
-$$
-$$
+\begin{equation}
+\hat{u} = u(\Theta_n(\xi),t) \text{ in } \Omega_n
+\end{equation}
+\begin{equation}
 \hat{f} = f(\Theta_n(\xi),t) \text{ in } \Omega_n
-$$
+\end{equation}
+\begin{equation}
+J_n = \frac{\partial x}{\partial \xi} \bigg|_{\Omega_n}
+\end{equation}
 
-Now, introduce polynomial approximations $\hat{u}^\delta, \hat{f}^\delta$ to 
-the exact values $\hat{u},\hat{f}$, respectively. Using piecewise polynomials of degree $p$ as 
-approximations, we can write
-$$
+Now, introduce polynomials of degree $p$, $\hat{u}^\delta$ and $\hat{f}^\delta$, to 
+approximate the exact values $\hat{u},\hat{f}$, respectively. We can write these polynomials as
+\begin{equation}
 \hat{u}^\delta = \sum_{i=1}^{N_s} \hat{u}_i^\delta l_i(\xi)
-$$
-$$
+\end{equation}
+\begin{equation}
 \hat{f}^\delta = \sum_{i=1}^{N_s} \hat{f}_i^\delta l_i(\xi)
-$$
+\end{equation}
 where $N_s$ is the number of solution points, $\hat{u}_i^\delta$ is the current value of the 
 solution approximation function at the $i^\text{th}$ solution point in the reference element, 
 $\hat{f}_i^\delta$ is the current value of the flux approximation function at the $i^\text{th}$ 
 solution point in the reference element, $l_i$ is the Lagrange polynomial equal to $1$ at the 
-$i^\text{th}$ solution point and $0$ in the others, and $\delta$ signals that the function is an 
+$i^\text{th}$ solution point and $0$ at the others, and $\delta$ signals that the function is an 
 approximation.
 
-Note that the piecewise polynomials may not be continuous (or $c_0$) accross the interfaces. In the 
-Flux Reconstruction approach, the flux used in the time advancement of the solution is made $c_0$ 
-by introducing flux correction functions. To this end, in the general non-linear advection case, it 
-is necessary to first make the solution $c_0$.
+Note that the piecewise polynomials might not be continuous (or $C^0$) accross the interfaces. In the 
+Flux Reconstruction approach, the flux used in the time advancement of the solution is made $C^0$ 
+by introducing flux correction functions.
 
-This can be done by finding interface values at each element and then correcting the 
+This can be achieved by finding interface values at each element boundary and then correcting the 
 solution. Let $\hat{u}_L^{\delta I}$ and $\hat{u}_R^{\delta I}$ be the interface values at left and right 
-boundaries of each element, respectively. Then, select solution correction functions $g_L$ and 
+boundaries of some element, respectively. $\hat{u}_L^{\delta I}$ and $\hat{u}_R^{\delta I}$ can be found with a Riemann solver for Discontinuous-Galerkin (DG) methods\cite{hesthaven2007}. Then, select solution correction functions $g_L$ and 
 $g_R$ such 
 that
-$$
-g_L(-1) = 1 \; g_L(1) = 0
-$$
-$$
-g_R(-1) = 0 \; g_R(1) = 1
-$$
+\begin{equation}
+g_L(-1) = 1 \;,\; g_L(1) = 0
+\end{equation}
+\begin{equation}
+g_R(-1) = 0 \;,\; g_R(1) = 1
+\end{equation}
 and let
-$$
+\begin{equation}
 \hat{u}^c = \hat{u}^\delta + (\hat{u}^{\delta I}_L - \hat{u}^\delta_L) g_L + (\hat{u}^{\delta I}_R 
 - \hat{u}^\delta_R) g_R
-$$
+\end{equation}
 where superscript $c$ denotes the function is corrected, and $\hat{u}^\delta_L$, $\hat{u}^\delta_R$ 
 represent the solution approximation evaluated at the left and right boundaries.
 
+Using the values of $\hat{u}^\delta_i$ and $\frac{\partial \hat{u}^c}{\partial \xi}|_{\xi_i}$ we then find 
+$$\hat{f}_i^\delta = \hat{f}\l(\hat{u}^\delta_i,\frac{1}{J_n}\frac{\partial \hat{u}^c}{\partial \xi}\bigg|_{\xi_i}\r) \;\; \text{in element } \Omega_n$$
 We can proceed in a similar fashion to correct the flux to obtain
-$$
+\begin{equation}
 \hat{f}^c = \hat{f}^\delta + (\hat{f}^{\delta I}_L - \hat{f}^\delta_L) h_L + (\hat{f}^{\delta I}_R 
 - \hat{f}^\delta_R) h_R
-$$
+\end{equation}
 where $h_R$ and $h_L$ are right and left flux correction functions satisfying the same boundary 
-conditions as $g_R$ and $g_L$, respectively.
+conditions as $g_R$ and $g_L$, respectively, and $\hat{f}_L^{\delta I}$ and $\hat{f}_R^{\delta I}$ are the interface fluxes found via a Riemann solver. Note that if the flux corresponds to linear advection, correcting the solution and correcting the flux are equivalent steps.
 
 The solution can then be advanced at each solution point. In semi-discrete form, this is
-$$
+\begin{equation}\label{eq:semidiscrete}
 \frac{d \hat{u}_i^\delta}{d t} = - \frac{\partial \hat{f}^c}{\partial \xi}(\xi_i)
-$$
+\end{equation}
 
-The FR scheme can be made stable by selecting special types of correction functions.
+The FR scheme can be made provably stable for the linear advection-diffusion equation by selecting special types of correction functions\cite{castonguay2013}. In general, these correction functions are polynomials of degree $p+1$ so both sides in Equation~\eqref{eq:semidiscrete} are quantities related to polynomials of order $p$.
+
+Vincent et al. \cite{vincent2011new} have shown that in the case of the 1-dimensional, linear advection equation, the Flux Reconstruction approach can be proven to be stable for a specific family of correction functions parameterized by a scalar called $c$. In addition, they showed that by selecting specific values of $c$ it is possible to recover a particular nodal DG and Spectral Difference (SD) methods plus a FR scheme that was previously found to be stable by Huynh\cite{huynh2007flux}.
 
 %The final paper, for completeness, will include a description of the Flux Reconstruction\cite{vincent2011new} approach and the reasoning behind using the Energy-Stable version. A thorough description of the steps taken in the calculation of the residual for the 3D NS Equations will be included.
 
@@ -104,8 +109,8 @@ The FR scheme can be made stable by selecting special types of correction functi
 \subsection{Unstructured Mesh Treatment}
 Mention developments in squares (tensor products of linear scheme), triangles\cite{castonguay2012new,williams2013tri}, tetrahedra\cite{williams2013tet}, prisms (tensor product of linear with triangular schemes), and hexahedra (tensor products of linear scheme).
 
-\subsection{Time Stepping and p-multigrid}
-Explicit RK4 with ability to use multigrid\cite{fidkowski2005p} and dual time-stepping\cite{Jameson1991DualTime} for implicit time advancement.
+%\subsection{Time Stepping and p-multigrid}
+%Explicit RK4 with ability to use multigrid\cite{fidkowski2005p} and dual time-stepping\cite{Jameson1991DualTime} for implicit time advancement.
 
 %\subsection{Stabilization Techniques}
 
@@ -150,12 +155,12 @@ Instead of adding a model term, the SVV method applies a filter directly to the 
 \subsection{Computing Architecture and Scalability}
 %The final paper will include a description of how HiFiLES is designed for a multi-GPU environment. Studies performed without filtering or SGS modeling in \cite{castonguay2011}. 
 
-The HiFiLES code has been designed to work on multi-CPU as well as multi-CPU-GPU platforms. The Flux Reconstruction method in its current form with explicit time-stepping has a great potential for parallelization. Since the solution points are not explicitly shared between elements, most of the computations are element-local enabling an efficient use of shared memory on GPUs. Also, several computations are independent for each solution point and the highly parallelizable nature of GPUs becomes very useful. A detailed description of the paralleization of the FR method, along with scalability and performance analysis has been performed in \cite{castonguay2011}.
+The HiFiLES code has been designed to work on multi-CPU as well as multi-CPU-GPU platforms. The Flux Reconstruction method in its current form with explicit time-stepping has a great potential for parallelization. Since the solution points are not explicitly shared between elements, most of the computations are element-local enabling an efficient use of shared memory on GPUs. Also, several computations are independent for each solution point and the highly parallelizable nature of GPUs becomes very useful. A detailed description of the parallelization of the FR method, along with scalability and performance analysis has been performed in \cite{castonguay2011}.
 
 \subsection{Shock capturing and Stabilization Models}
 
 
-Currently, we have adapted Persson and Peraire's method \cite{Persson06} for shock detection and capturing. The method works well for inviscid flow cases and compressible flows upto a Mach number of 2 have been tried and tested. However the method requires fine-tuning of parameters for each problem and we are currently working on a new method which is more robust. Persson and Peraire have used this shock capturing tool as a stabilization method as well in their turbulence calculations and we plan to test this and present results for inviscid and viscous cases in the final draft. Here we show a few inviscid results for the case of M = 1.6 where we illustrate the ability to detect shocks and add dissipation in a local manner in the form of artificial viscosity in order to capture the shock in a fine manner and avoid the loss of accuracy away from the shock.    
+Currently, we have adapted Persson and Peraire's method \cite{Persson06} for shock detection and capturing. The method works well for inviscid flow cases and compressible flows up to a Mach number of 2 have been tried and tested. However the method requires fine-tuning of parameters for each problem and we are currently working on a new method which is more robust. Persson and Peraire have used this shock capturing tool as a stabilization method as well in their turbulence calculations and we plan to test this and present results for inviscid and viscous cases in the final draft. Here we show a few inviscid results for the case of M = 1.6 where we illustrate the ability to detect shocks and add dissipation in a local manner in the form of artificial viscosity in order to capture the shock in a fine manner and avoid the loss of accuracy away from the shock.    
 
 \begin{figure}[h] \tt
 \centering
