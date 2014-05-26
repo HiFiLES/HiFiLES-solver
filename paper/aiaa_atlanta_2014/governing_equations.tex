@@ -3,7 +3,83 @@
 \section{Governing Equations}
 \label{sec:govEq}
 \subsection{Navier Stokes (NS) Equations}
-In this article, we are concerned with time-accurate, viscous flow around aerodynamic bodies in arbitrary motion which is governed by the compressible, unsteady NS equations. Consider the equations in a domain, $\Omega \subset \mathbf{R}^3$, with a disconnected boundary that is divided into a far-field component, $\Gamma_\infty$, and an adiabatic wall boundary. The surface $S$ represents the outer mold line of an aerodynamic body, and it is considered continuously differentiable ($C^1$). These conservation equations along with a generic source term, $\mathcal{Q} $, can be expressed in an arbitrary Lagrangian-Eulerian (ALE) differential form as
+The main purpose of HiFiLES is to perform High-Fidelity Large-Eddy Simulations --hence the name. The form of the NS Equations most useful for understanding how the FR methodology can be used to solve them is the following
+\begin{equation}
+\frac{\partial U}{\partial t} +  \nabla \cdot {\bf F} = 0
+\end{equation}
+
+where ${\bf F} = (F,G,H) = (F_I,G_I,H_I) - (F_V,G_V,H_V)$ and
+\begin{equation}
+U = \l(
+\begin{tabular}{c}
+$\rho$\\
+$\rho u$\\
+$\rho v$\\
+$\rho w$\\
+$\rho e$
+\end{tabular}
+\r) \;\; 
+F_I = \l(
+\begin{tabular}{c}
+$\rho u$\\
+$\rho u^2 + p$\\
+$\rho uv$\\
+$\rho uw$\\
+$\rho ue + p$
+\end{tabular}
+\r) \;\; 
+G_I = \l(
+\begin{tabular}{c}
+$\rho v$\\
+$\rho vu$\\
+$\rho v^2 + p$\\
+$\rho vw$\\
+$\rho ve+p$
+\end{tabular}
+\r) \;\; 
+H_I = \l(
+\begin{tabular}{c}
+$\rho w$\\
+$\rho wu$\\
+$\rho wv$\\
+$\rho w^2 + p$\\
+$\rho we + p$
+\end{tabular}
+\r) \;\; 
+\end{equation}
+\begin{equation}
+F_V = \l(
+\begin{tabular}{c}
+$0$\\
+$\sigma_{xx}$\\
+$\sigma_{xy}$\\
+$\sigma_{xz}$\\
+$u_i\sigma_{ix}-q_x$
+\end{tabular}
+\r) \;\; 
+G_V = \l(
+\begin{tabular}{c}
+$0$\\
+$\sigma_{yx}$\\
+$\sigma_{yy}$\\
+$\sigma_{yz}$\\
+$u_i\sigma_{iy}-q_y$
+\end{tabular}
+\r) \;\; 
+F_V = \l(
+\begin{tabular}{c}
+$0$\\
+$\sigma_{zx}$\\
+$\sigma_{zy}$\\
+$\sigma_{zz}$\\
+$u_i\sigma_{iz}-q_z$
+\end{tabular}
+\r) \;\; 
+\end{equation}
+In this article, we are concerned with time-accurate, viscous flow around aerodynamic bodies which is governed by the compressible, unsteady NS equations. In order 
+
+
+Consider the equations in a domain, $\Omega \subset \mathbf{R}^3$, with a disconnected boundary that is divided into a far-field component, $\Gamma_\infty$, and an adiabatic wall boundary. The surface $S$ represents the outer mold line of an aerodynamic body, and it is considered continuously differentiable ($C^1$). These conservation equations along with a generic source term, $\mathcal{Q} $, can be expressed in an arbitrary Lagrangian-Eulerian (ALE) differential form as
 
 \begin{equation} 
 \label{rans}
