@@ -76,45 +76,28 @@ $u_i\sigma_{iz}-q_z$
 \end{tabular}
 \r) \;\; 
 \end{equation}
-In this article, we are concerned with time-accurate, viscous flow around aerodynamic bodies which is governed by the compressible, unsteady NS equations. In order 
 
-
-Consider the equations in a domain, $\Omega \subset \mathbf{R}^3$, with a disconnected boundary that is divided into a far-field component, $\Gamma_\infty$, and an adiabatic wall boundary. The surface $S$ represents the outer mold line of an aerodynamic body, and it is considered continuously differentiable ($C^1$). These conservation equations along with a generic source term, $\mathcal{Q} $, can be expressed in an arbitrary Lagrangian-Eulerian (ALE) differential form as
-
-\begin{equation} 
-\label{rans}
-\left\{\begin{array} {lll}
-\mathcal{R}(U) = \frac{\partial U}{\partial t} + \nabla \cdot \vec{F}^{c}_{ale} -  \nabla \cdot ( \mu_{tot}^{1}\vec{F}^{v1} + \mu_{tot}^{2}\vec{F}^{v2}) - \mathcal{Q} = 0, & \mbox{  in } \Omega, & t > 0  \\
-\vec{v} = \vec{u}_\Omega, &  \mbox{ on }  S,  \\
-\partial_n T = 0, &  \mbox{ on }  S,   \\
-(W)_+ = W_\infty,  & \mbox{ on }  \Gamma_\infty, \\
-\end{array}\right.
+As usual, $\rho$ is density, $u$, $v$, $w$ are the velocity components in the $x, y, z$ directions, respectively, and $e$ is total energy per unit mass. In HiFiLES, the pressure is determined from the ideal gas equation of state
+\begin{equation}
+p = (\gamma - 1)\rho\l(e - \frac{1}{2}\l(u^2 + v^2 + w^2\r)\r)
+\end{equation}
+the viscous stresses are those of a Newtonian fluid
+\begin{equation}
+\sigma_{ij} = \mu\l( \frac{\partial u_i}{\partial x_j}
++ \frac{\partial u_j}{\partial x_i} \r)
+- \frac{2}{3}\mu \delta_{ij}\frac{\partial u_k}{\partial x_k}
+\end{equation}
+and the heat fluxes are defined as
+\begin{equation}
+q_i = -k \frac{\partial T}{\partial x_i}
 \end{equation}
 where
-\begin{align} 
-\label{euler_f}
-U = \left \{ \begin{array}{c} \rho \\ \rho \vec{v} \\ \rho E \end{array} \right \},
-\vec{F}^{c}_{ale} = \left \{ \begin{array}{c} \rho (\vec{v} - \vec{u}_\Omega)  \\ \rho \vec{v} \otimes  (\vec{v} - \vec{u}_\Omega) + \bar{\bar{I}} p \\ \rho E (\vec{v} - \vec{u}_\Omega) + p \vec{v}   \end{array} \right \},
-\vec{F}^{v1} = \left \{ \begin{array}{c} \cdot \\ \bar{\bar{\tau}} \\ \bar{\bar{\tau}} \cdot \vec{v}  \end{array} \right  \},
-\vec{F}^{v2} = \left \{ \begin{array}{c} \cdot \\ \cdot \\ \ c_p \nabla T   \end{array} \right \}, 
-\mathcal{Q} = \left \{ \begin{array}{c} q_{\rho} \\ \vec{q}_{\rho \vec{v}} \\ \ q_{\rho E}   \end{array} \right \},
-\end{align}
-%$\rho$ is the fluid density, $\vec{v} = \{v_1, v_2, v_3\}^\mathsf{T} \in \mathbb{R}^{3}$ is the flow speed in a Cartesian system of reference, $\vec{u}_\Omega$ is the velocity of a moving domain (mesh velocity after discretization), $E$ is the total energy per unit mass, $p$ is the static pressure, $c_p$ is the specific heat at constant pressure, $T$ is the temperature, and the viscous stress tensor can be written in vector notation as
-\begin{align} 
-\label{tau}
-\bar{\bar{\tau}} = \nabla \vec{v} + {\nabla \vec{v}}^\mathsf{T}  - \frac{2}{3} \bar{\bar{I}} (\nabla \cdot \vec{v} ),
-\end{align}
+\begin{equation}
+k = \frac{C_p \mu}{\text{Pr}} , \;\; T = \frac{p}{R \rho}
+\end{equation}
 
-%The second line of Eqn.~\ref{rans} represents the no-slip condition at a solid wall, the third line represents an adiabatic condition at the wall, and the final line represents a characteristic-based boundary condition at the far-field where the fluid state at the boundary is updated using the state at infinity depending on the sign of the eigenvalues~\cite{Hirsch:Numerical}. Note that the boundary conditions take into account any domain motion. The temporal conditions will be problem dependent, and for this article, we will be interested in time-periodic flows where the initial and terminal conditions do not affect the time-averaged behavior over the time interval of interest, $\mathbb{T} = t_f - t_o$. Assuming a perfect gas with a ratio of specific heats, $\gamma$, and gas constant, $R$, the pressure is determined from
-\begin{align} 
-\label{constitutive}
-p = (\gamma-1) \rho \left [ E - \frac{1}{2} (\vec{v} \cdot \vec{v} ) \right ],
-\end{align}
- and the temperature is given by
-\begin{align} 
-\label{enthalpy}
-T = \frac{p}{\rho R}.
-\end{align}
+Pr is the Prandtl number, $C_p$ is the specific heat at constant pressure and $R$ is the gas constant. In the case of air, $\gamma = 1.4$ and Pr $= 0.72$. The dynamic viscosity $\mu$ in HiFiLES can be a constant or a function of temperature using Sutherland's law.
+
 
 \subsection{Reynolds Averaged Navier-Stokes (RANS) equations}
 The compressible NS equations can be used to solve a variety of different flow physics problems but for turbulent flows, direct numerical simulation using these equations can become excessively expensive. For engineering applications, it is customary to perform a Favre averaging procedure to the NS equations to solve a turbulent mean quantity. This leads to a variety of terms which must be modeled in order to provide closure to the resulting RANS equations \cite{wilcox1998turbulence,oliver2008high}. The conservative form of the equations is very similar to the NS equations with an added source term:
