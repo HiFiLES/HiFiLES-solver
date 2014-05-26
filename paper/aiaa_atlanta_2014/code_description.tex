@@ -58,7 +58,7 @@ where $N_s$ is the number of solution points, $\hat{u}_i^\delta$ is the current 
 solution approximation function at the $i^\text{th}$ solution point in the reference element, 
 $\hat{f}_i^\delta$ is the current value of the flux approximation function at the $i^\text{th}$ 
 solution point in the reference element, $l_i$ is the Lagrange polynomial equal to $1$ at the 
-$i^\text{th}$ solution point and $0$ at the others, and $\delta$ signals that the function is an 
+$i^\text{th}$ solution point and $0$ at the others, and $\delta$ denotes that the function is an 
 approximation.
 
 Note that the piecewise polynomials might not be continuous (or $C^0$) accross the interfaces. In the 
@@ -70,7 +70,7 @@ solution. Let $\hat{u}_L^{\delta I}$ and $\hat{u}_R^{\delta I}$ be the interface
 boundaries of some element, respectively. $\hat{u}_L^{\delta I}$ and $\hat{u}_R^{\delta I}$ can be found with a Riemann solver for Discontinuous-Galerkin (DG) methods\cite{hesthaven2007}. Then, select solution correction functions $g_L$ and 
 $g_R$ such 
 that
-\begin{equation}
+\begin{equation}\label{eq:condition}
 g_L(-1) = 1 \;,\; g_L(1) = 0
 \end{equation}
 \begin{equation}
@@ -107,7 +107,27 @@ Vincent et al. \cite{vincent2011new} have shown that in the case of the 1-dimens
 
 
 \subsection{Unstructured Mesh Treatment}
-Mention developments in squares (tensor products of linear scheme), triangles\cite{castonguay2012new,williams2013tri}, tetrahedra\cite{williams2013tet}, prisms (tensor product of linear with triangular schemes), and hexahedra (tensor products of linear scheme).
+Extension to multiple dimensions requires formulating multi-dimensional interpolation functions for individual elements and correction functions that satisfy boundary conditions equivalent to those in Equation~\eqref{eq:condition}.
+
+Interpolation bases for quadrilaterals and hexahedra can be obtained via tensor products of the 1-dimensional interpolation basis. More concretely, in HiFiLES, we discretize the solution in 3-dimensions in the following way
+\begin{equation}
+{\bf \hat{u}}^\delta(\xi,\eta,\zeta) = \sum_{i=1}^{p+1} \sum_{j=1}^{p+1} \sum_{k=1}^{p+1}
+{\bf \hat{u}}^\delta_{i,j,k} l_i(\xi) l_j(\eta) l_k(\zeta)
+\end{equation}
+where $i$, $j$, $k$ index the solution points along the $\xi, \eta, \zeta$ directions, respectively.
+
+The interpolation basis for triangles are described in detail by Castonguay et al. \cite{castonguay2012new} and Williams et al. \cite{williams2013tri}. The formulation for tetrahedra is detailed by Williams et al. \cite{williams2013tet}.
+
+The extension of interpolation polynomials to prisms is obtained via tensor products of the 1-dimensional basis with the triangular basis. 
+
+In general, the boundary conditions for the correction functions in multiple dimensions can be formulated as
+\begin{equation}\label{eq:genConstraint}
+{\bf h}_i( \vec{\xi}_j)\cdot {\bf n}_j = \delta_{ij}
+\end{equation}
+where ${\bf h}_i$ is the vector of correction functions associated with flux point $i$, $\vec{\xi}_j$ is the location vector of the $j^\text{th}$ flux point, and ${\bf n}_j$ is the outward unit normal at flux point $j$.
+
+One of the challenges in the Flux Reconstruction approach is finding correction functions that not only satisfy Equation~\eqref{eq:genConstraint} but also guarantee stability in the linear advection-diffusion case. Correction functions that guarantee such stability exist for 1-dimensional segments\cite{vincent2011new}, triangles\cite{castonguay2012new,williams2013tri}, and tetrahedra\cite{williams2013tet}. Although formal proofs of stability for the linear advection equation do not exist yet for quadrilaterals, hexahedra, and prisms, it has been observed that the tensor products of provably stable correction functions used in these elements maintain stability. In addition, as of now HiFiLES does not have an implementation for pyramidal elements, mostly because of the challenges involved in finding the respective correction functions that guarantee stability.
+
 
 %\subsection{Time Stepping and p-multigrid}
 %Explicit RK4 with ability to use multigrid\cite{fidkowski2005p} and dual time-stepping\cite{Jameson1991DualTime} for implicit time advancement.
