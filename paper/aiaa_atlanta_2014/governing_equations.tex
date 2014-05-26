@@ -2,8 +2,8 @@
 
 \section{Governing Equations}
 \label{sec:govEq}
-
-In this article, we are concerned with time-accurate, viscous flow around aerodynamic bodies in arbitrary motion which is governed by the compressible, unsteady Navier-Stokes (NS) equations. Consider the equations in a domain, $\Omega \subset \mathbf{R}^3$, with a disconnected boundary that is divided into a far-field component, $\Gamma_\infty$, and an adiabatic wall boundary. The surface $S$ represents the outer mold line of an aerodynamic body, and it is considered continuously differentiable ($C^1$). These conservation equations along with a generic source term, $\mathcal{Q} $, can be expressed in an arbitrary Lagrangian-Eulerian (ALE) differential form as
+\subsection{Navier Stokes (NS) Equations}
+In this article, we are concerned with time-accurate, viscous flow around aerodynamic bodies in arbitrary motion which is governed by the compressible, unsteady NS equations. Consider the equations in a domain, $\Omega \subset \mathbf{R}^3$, with a disconnected boundary that is divided into a far-field component, $\Gamma_\infty$, and an adiabatic wall boundary. The surface $S$ represents the outer mold line of an aerodynamic body, and it is considered continuously differentiable ($C^1$). These conservation equations along with a generic source term, $\mathcal{Q} $, can be expressed in an arbitrary Lagrangian-Eulerian (ALE) differential form as
 
 \begin{equation} 
 \label{rans}
@@ -39,3 +39,10 @@ p = (\gamma-1) \rho \left [ E - \frac{1}{2} (\vec{v} \cdot \vec{v} ) \right ],
 \label{enthalpy}
 T = \frac{p}{\rho R}.
 \end{align}
+
+\subsection{Reynolds Averaged Navier-Stokes (RANS) equations}
+The compressible NS equations can be used to solve a variety of different flow physics problems but for turbulent flows, direct numerical simulation using these equations can become excessively expensive. For engineering applications, it is customary to perform a Favre averaging procedure to the NS equations to solve a turbulent mean quantity. This leads to a variety of terms which must be modeled in order to provide closure to the resulting RANS equations \cite{wilcox1998turbulence,oliver2008high}. The conservative form of the equations is very similar to the NS equations with an added source term:
+\begin{align}
+	\frac{\partial \boldsymbol{U}}{\partial t} + \nabla \cdot \boldsymbol{F} = \boldsymbol{Q}
+\end{align}
+The conservative variables are now averaged quantities and the RANS equations must now be solved with an appropriate turbulence model.

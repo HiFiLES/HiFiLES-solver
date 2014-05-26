@@ -184,3 +184,47 @@ Currently, we have adapted Persson and Peraire's method \cite{Persson06} for sho
 \end{minipage}
 \end{figure} 
 
+
+\subsection{Spalart-Allmaras (SA) Turbulence Model and Negative $\tilde\nu$ Modification}
+The one equation SA turbulence model is one of the more commonly used turbulence models used to solve attached and moderately separated aerodynamic flows \cite{spalart1992one}. The added equation directly solves for turbulent eddy viscosity via advection, diffusion, production and dissipation. A modified form of the equation can be written as \cite{burgess2012robust,oliver2008high,moro2011navier}:
+\begin{align}
+	\frac{\partial}{\partial t}(\rho\tilde\nu) + \nabla\cdot(\rho\tilde\nu\boldsymbol{u}) = c_{b_1}\tilde S \rho\nu\psi + \frac{1}{\sigma}\left[\nabla\cdot((\mu + \mu\psi)\nabla\tilde\nu) + c_{b_2}\rho\nabla\tilde\nu\cdot\nabla\tilde\nu\right] - c_{w_1}\rho f_w \left(\frac{\nu\psi}{d}\right)^2
+\end{align}
+
+\begin{align}
+	 \mu_t =
+	  \begin{cases}
+	   \rho\tilde\nu f_{v_1} & \text{if } \tilde\nu \ge 0 \\
+	   0       & \text{if } \tilde\nu < 0
+	  \end{cases}
+	  \quad \mbox{where} \quad f_{v_1} = \frac{\left(\frac{\rho\tilde\nu}{\mu}\right)^3}{\left(\frac{\rho\tilde\nu}{\mu}\right)^3 + c_{v_1}^3}
+\end{align}
+
+\begin{align}
+	\tilde S &=
+	\begin{cases}
+	   S + \bar S & \text{if } \bar S \ge -c_{v_2}S \\
+	   S + \frac{S(c_{v_2}^2 S + c_{v_3}\bar S)}{(c_{v_3} - 2c_{v_2})S - \bar S} & \text{if } \bar S \le -c_{v_2}S
+	\end{cases}
+\end{align}
+\begin{align}
+	S &= \sqrt{\boldsymbol{\omega}\cdot\boldsymbol{\omega}}
+	\qquad \bar S = \frac{(\nu\psi)^2 f_{v_2}}{\kappa^2 d^2} \\
+	f_{v_2} &= 1 - \frac{\psi}{1 + \psi f_{v_1}}
+\end{align}
+
+\begin{align}
+	f_w &= g\left[\frac{1 + c_{w_3}^6}{g^6 + c_{w_3}^6}\right]^{1/6} 
+	\qquad g = r + c_{w_2}(r^6 - r) 
+	\qquad r = \frac{\nu\psi}{\tilde S \kappa^2 d^2}
+\end{align}
+
+The diffusion term, $\nabla\cdot(\rho\tilde\nu\boldsymbol{u})$, may become discontinuous in the first derivative leading to oscillations in high-order polynomials. This can lead to large negative values of the modified eddy viscosity term, $\tilde\nu$, significant enough to cause an unbounded solution. To prevent this, the following modification is introduced \cite{moro2011navier}.
+\begin{align}
+	\psi &=
+	\begin{cases}
+	   0.05log(1.0 + e^{(20.0\chi)}) & \text{if } \chi \le 10.0 \\
+	   \chi & \text{if } \chi > 10.0
+	\end{cases} \\
+	\chi &= \frac{\tilde\nu}{\nu}
+\end{align}
