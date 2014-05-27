@@ -43,6 +43,12 @@ inters::inters()
   viscous=run_input.viscous;
   LES = run_input.LES;
   motion  = run_input.motion;
+
+  if (motion!=0) {
+    n_gcl_fields = 1;
+  }else{
+    n_gcl_fields = 0;
+  }
 }
 
 inters::~inters() { }
@@ -97,63 +103,65 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
       FatalError("ERROR: Invalid interface type ... ");
     }
 
-      disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
-      norm_tconf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
-      detjac_fpts_l.setup(n_fpts_per_inter,n_inters);
-      mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.setup(n_fpts_per_inter,n_inters);
-      norm_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
-      loc_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
-      vel_fpts.setup(n_dims,n_fpts_per_inter,n_inters);
+  i_gcl_field=n_fields;
 
-      delta_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
+  disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields+n_gcl_fields);
+  norm_tconf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields+n_gcl_fields);
+  detjac_fpts_l.setup(n_fpts_per_inter,n_inters);
+  mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.setup(n_fpts_per_inter,n_inters);
+  norm_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
+  loc_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
+  vel_fpts.setup(n_dims,n_fpts_per_inter,n_inters);
 
-      if(viscous)
-        {
-          grad_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
-          normal_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
-          pos_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_dims);
-        }
+  delta_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields+n_gcl_fields);
 
-      if(LES) {
-        sgsf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
-        sgsf_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
-        temp_sgsf_l.setup(n_fields,n_dims);
-        temp_sgsf_r.setup(n_fields,n_dims);
-      }
-      else {
-        sgsf_fpts_l.setup(1);
-        sgsf_fpts_r.setup(1);
-      }
+  if(viscous)
+  {
+    grad_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+    normal_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
+    pos_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_dims);
+  }
 
-      temp_u_l.setup(n_fields);
-      temp_u_r.setup(n_fields);
+  if(LES) {
+    sgsf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+    sgsf_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+    temp_sgsf_l.setup(n_fields,n_dims);
+    temp_sgsf_r.setup(n_fields,n_dims);
+  }
+  else {
+    sgsf_fpts_l.setup(1);
+    sgsf_fpts_r.setup(1);
+  }
 
-      temp_v.setup(n_dims);
+  temp_u_l.setup(n_fields+n_gcl_fields);
+  temp_u_r.setup(n_fields+n_gcl_fields);
 
-      temp_grad_u_l.setup(n_fields,n_dims);
-      temp_grad_u_r.setup(n_fields,n_dims);
+  temp_v.setup(n_dims);
 
-      temp_normal_u_l.setup(n_fields);
+  temp_grad_u_l.setup(n_fields,n_dims);
+  temp_grad_u_r.setup(n_fields,n_dims);
 
-      temp_pos_u_l.setup(n_dims);
+  temp_normal_u_l.setup(n_fields);
 
-      temp_f_l.setup(n_fields,n_dims);
-      temp_f_r.setup(n_fields,n_dims);
+  temp_pos_u_l.setup(n_dims);
 
-      temp_f.setup(n_fields,n_dims);
+  temp_f_l.setup(n_fields+n_gcl_fields,n_dims);
+  temp_f_r.setup(n_fields+n_gcl_fields,n_dims);
 
-      temp_fn_l.setup(n_fields);
-      temp_fn_r.setup(n_fields);
+  temp_f.setup(n_fields+n_gcl_fields,n_dims);
 
-      temp_loc.setup(n_dims);
+  temp_fn_l.setup(n_fields+n_gcl_fields);
+  temp_fn_r.setup(n_fields+n_gcl_fields);
 
-      lut.setup(n_fpts_per_inter);
+  temp_loc.setup(n_dims);
 
-      // For Roe flux computation
-      v_l.setup(n_dims);
-      v_r.setup(n_dims);
-      um.setup(n_dims);
-      du.setup(n_fields);
+  lut.setup(n_fpts_per_inter);
+
+  // For Roe flux computation
+  v_l.setup(n_dims);
+  v_r.setup(n_dims);
+  um.setup(n_dims);
+  du.setup(n_fields);
 }
 
 // get look up table for flux point connectivity based on rotation tag
@@ -289,14 +297,14 @@ void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> 
   // calculate normal flux from discontinuous solution at flux points
   for(int k=0;k<n_fields;k++) {
 
-      fn_l(k)=0.;
-      fn_r(k)=0.;
+    fn_l(k)=0.;
+    fn_r(k)=0.;
 
-      for(int l=0;l<n_dims;l++) {
-          fn_l(k)+=f_l(k,l)*norm(l);
-          fn_r(k)+=f_r(k,l)*norm(l);
-        }
+    for(int l=0;l<n_dims;l++) {
+      fn_l(k)+=f_l(k,l)*norm(l);
+      fn_r(k)+=f_r(k,l)*norm(l);
     }
+  }
 
   // calculate wave speeds
   vx_l=u_l(1)/u_l(0);

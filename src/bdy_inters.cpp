@@ -95,39 +95,42 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
   boundary_type(in_inter) = bdy_type;
 
       for(int i=0;i<n_fields;i++)
+      {
+        for(int j=0;j<n_fpts_per_inter;j++)
         {
-          for(int j=0;j<n_fpts_per_inter;j++)
+          disu_fpts_l(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+
+          norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+
+          if(viscous)
+          {
+            delta_disu_fpts_l(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+          }
+
+          for(int k=0; k<n_dims; k++)
+          {
+            if(viscous)
             {
-              disu_fpts_l(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-
-              norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-
-              if(viscous)
-                {
-                  delta_disu_fpts_l(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-                }
+              grad_disu_fpts_l(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
             }
-        }
 
-      for(int i=0;i<n_fields;i++)
+            // Subgrid-scale flux
+            if(LES)
+            {
+              sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+            }
+          }
+        }
+      }
+
+      if (n_gcl_fields>0)
+      {
+        for(int j=0;j<n_fpts_per_inter;j++)
         {
-          for(int j=0;j<n_fpts_per_inter;j++)
-            {
-              for(int k=0; k<n_dims; k++)
-                {
-                  if(viscous)
-                    {
-                      grad_disu_fpts_l(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
-                    }
-
-                  // Subgrid-scale flux
-                  if(LES)
-                    {
-                      sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
-                    }
-                }
-            }
+          disu_fpts_l(j,in_inter,i_gcl_field)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i_gcl_field,in_local_inter_l,j,FlowSol);
+          norm_tconf_fpts_l(j,in_inter,i_gcl_field)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i_gcl_field,in_local_inter_l,j,FlowSol);
         }
+      }
 
       for(int j=0;j<n_fpts_per_inter;j++)
         {
@@ -207,7 +210,8 @@ void bdy_inters::mv_all_cpu_gpu(void)
 void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 
 #ifdef _CPU
-  array<double> norm(n_dims), fn(n_fields);
+  array<double> norm(n_dims), fn(n_fields+n_gcl_fields);
+  fn.initialize_to_zero();
 
   //viscous
   int bdy_spec, flux_spec;
@@ -282,8 +286,15 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
                 FatalError("Riemann solver not implemented");
             }
 
+          // Geometric Conservation Law "flux"
+          if(motion) {
+            for (int m=0; m<n_dims; m++) {
+              fn(i_gcl_field) -= temp_v(m)*norm(m);
+            }
+          }
+
           /*! Transform back to reference space */
-          for(int k=0;k<n_fields;k++)
+          for(int k=0;k<n_fields+n_gcl_fields;k++)
             (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
 
           if(viscous)
@@ -787,7 +798,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
 void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
 
-#ifdef _CPU
+//#ifdef _CPU
   int bdy_spec, flux_spec;
   array<double> norm(n_dims), fn(n_fields);
 
@@ -823,8 +834,6 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
             temp_u_l(k)=(*disu_fpts_l(j,i,k));
 
           for (int m=0;m<n_dims;m++)
-
-
             set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),temp_v.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 
           /*! obtain gradient of discontinuous solution at flux points */

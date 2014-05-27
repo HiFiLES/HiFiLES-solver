@@ -63,9 +63,15 @@ void eles_tris::setup_ele_type_specific()
 
 
   if (run_input.equation==0)
+  {
     n_fields=4;
+    i_gcl_field=4;
+  }
   else if (run_input.equation==1)
+  {
     n_fields=1;
+    i_gcl_field=1;
+  }
   else
     FatalError("Equation not supported");
 
@@ -118,8 +124,8 @@ void eles_tris::setup_ele_type_specific()
       if(filter) compute_filter_upts();
     }
 
-  temp_u.setup(n_fields);
-  temp_f.setup(n_fields,n_dims);
+  temp_u.setup(n_fields+n_gcl_fields);
+  temp_f.setup(n_fields+n_gcl_fields,n_dims);
 }
 
 void eles_tris::set_connectivity_plot()

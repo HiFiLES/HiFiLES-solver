@@ -63,9 +63,15 @@ void eles_tets::setup_ele_type_specific()
   n_dims=3;
 
   if (run_input.equation==0)
+  {
     n_fields=5;
+    i_gcl_field=5;
+  }
   else if (run_input.equation==1)
+  {
     n_fields=1;
+    i_gcl_field=1;
+  }
   else
     FatalError("Equation not supported");
 
@@ -121,8 +127,8 @@ void eles_tets::setup_ele_type_specific()
       if(filter) compute_filter_upts();
     }
 
-  temp_u.setup(n_fields);
-  temp_f.setup(n_fields,n_dims);
+  temp_u.setup(n_fields+n_gcl_fields);
+  temp_f.setup(n_fields+n_gcl_fields,n_dims);
 }
 
 void eles_tets::set_connectivity_plot()

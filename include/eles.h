@@ -522,6 +522,12 @@ protected:
   /*!  number of prognostic fields */
   int n_fields;
 
+  /*! number of additional fields needed for Geometric Conservation Law */
+  int n_gcl_fields;
+
+  /*! index of GCL equation in solution/flux vector */
+  int i_gcl_field;
+
   /*!  number of diagnostic fields */
   int n_diagnostic_fields;
 

@@ -176,9 +176,9 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
               disu_fpts_l(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
 
 #ifdef _GPU
-              disu_fpts_r(j,in_inter,i)=in_buffer_disu.get_ptr_gpu(in_inter*n_fpts_per_inter*n_fields+i*n_fpts_per_inter+j_rhs);
+              disu_fpts_r(j,in_inter,i)=in_buffer_disu.get_ptr_gpu(in_inter*n_fpts_per_inter*(n_fields+n_gcl_fields)+i*n_fpts_per_inter+j_rhs);
 #else
-              disu_fpts_r(j,in_inter,i)=in_buffer_disu.get_ptr_cpu(in_inter*n_fpts_per_inter*n_fields+i*n_fpts_per_inter+j_rhs);
+              disu_fpts_r(j,in_inter,i)=in_buffer_disu.get_ptr_cpu(in_inter*n_fpts_per_inter*(n_fields+n_gcl_fields)+i*n_fpts_per_inter+j_rhs);
 #endif
 
               norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
@@ -210,6 +210,22 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
                 }
             }
         }
+
+      if (n_gcl_fields>0)
+      {
+        for(j=0;j<n_fpts_per_inter;j++)
+        {
+          j_rhs=lut(j);
+
+          disu_fpts_l(j,in_inter,i_gcl_field)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i_gcl_field,in_local_inter_l,j,FlowSol);
+#ifdef _GPU
+          disu_fpts_r(j,in_inter,i_gcl_field)=in_buffer_disu.get_ptr_gpu(in_inter*n_fpts_per_inter*(n_fields+n_gcl_fields)+i_gcl_field*n_fpts_per_inter+j_rhs);
+#else
+          disu_fpts_r(j,in_inter,i_gcl_field)=in_buffer_disu.get_ptr_cpu(in_inter*n_fpts_per_inter*(n_fields+n_gcl_fields)+i_gcl_field*n_fpts_per_inter+j_rhs);
+#endif
+          norm_tconf_fpts_l(j,in_inter,i_gcl_field)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i_gcl_field,in_local_inter_l,j,FlowSol);
+        }
+      }
 
       for(i=0;i<n_fpts_per_inter;i++)
         {
@@ -412,8 +428,10 @@ void mpi_inters::calculate_common_invFlux(void)
 {
 
 #ifdef _CPU
-  array<double> norm(n_dims), fn(n_fields);
+  array<double> norm(n_dims), fn(n_fields+n_gcl_fields);
   array<double> u_c(n_fields);
+
+  fn.initialize_to_zero();
 
   for(int i=0;i<n_inters;i++)
     {
@@ -478,8 +496,15 @@ void mpi_inters::calculate_common_invFlux(void)
           else
             FatalError("Riemann solver not implemented");
 
+          // Geometric Conservation Law "flux"
+          if(motion) {
+            for (int m=0; m<n_dims; m++) {
+              fn(i_gcl_field,m) -= temp_v(m)*norm(m);
+            }
+          }
+
           // Transform back to reference space
-          for(int k=0;k<n_fields;k++) {
+          for(int k=0;k<n_fields+n_gcl_fields;k++) {
               (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
             }
 

@@ -78,7 +78,9 @@ protected:
   int n_fpts_per_inter;
   int n_fields;
   int n_dims;
-  int motion;
+  int motion;       //!< Mesh motion flag
+  int n_gcl_fields; //!< Add field for Geometric Conservation Law equation
+  int i_gcl_field;  //!< Index of GCL equation in solution, flux vectors
 
   array<double*> disu_fpts_l;
   array<double*> delta_disu_fpts_l;

@@ -57,17 +57,17 @@ void int_inters::setup(int in_n_inters,int in_inter_type)
 
   (*this).setup_inters(in_n_inters,in_inter_type);
 
-      disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
-      norm_tconf_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
-      detjac_fpts_r.setup(n_fpts_per_inter,n_inters);
-      mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.setup(n_fpts_per_inter,n_inters);
+  disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields+n_gcl_fields);
+  norm_tconf_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields+n_gcl_fields);
+  detjac_fpts_r.setup(n_fpts_per_inter,n_inters);
+  mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.setup(n_fpts_per_inter,n_inters);
 
-      delta_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
+  delta_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
 
-      if(viscous)
-        {
-          grad_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
-        }
+  if(viscous)
+  {
+    grad_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+  }
 }
 
 // set interior interface
@@ -111,6 +111,20 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
                 }
             }
         }
+
+      if (n_gcl_fields>0)
+      {
+        for(j=0;j<n_fpts_per_inter;j++)
+        {
+          j_rhs=lut(j);
+
+          disu_fpts_l(j,in_inter,i_gcl_field)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i_gcl_field,in_local_inter_l,j,FlowSol);
+          disu_fpts_r(j,in_inter,i_gcl_field)=get_disu_fpts_ptr(in_ele_type_r,in_ele_r,i_gcl_field,in_local_inter_r,j_rhs,FlowSol);
+
+          norm_tconf_fpts_l(j,in_inter,i_gcl_field)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i_gcl_field,in_local_inter_l,j,FlowSol);
+          norm_tconf_fpts_r(j,in_inter,i_gcl_field)=get_norm_tconf_fpts_ptr(in_ele_type_r,in_ele_r,i_gcl_field,in_local_inter_r,j_rhs,FlowSol);
+        }
+      }
 
       for(i=0;i<n_fpts_per_inter;i++)
         {
@@ -169,7 +183,8 @@ void int_inters::calculate_common_invFlux(void)
 {
 
 #ifdef _CPU
-  array<double> norm(n_dims), fn(n_fields);
+  array<double> norm(n_dims), fn(n_fields+n_gcl_fields);
+  fn.initialize_to_zero();
 
   //viscous
   array<double> u_c(n_fields);
@@ -203,21 +218,21 @@ void int_inters::calculate_common_invFlux(void)
             {
               // calculate flux from discontinuous solution at flux points
               if(n_dims==2) {
-                  calc_invf_2d(temp_u_l,temp_f_l);
-                  calc_invf_2d(temp_u_r,temp_f_r);
-                  if (motion) {
-                    calc_alef_2d(temp_u_l,temp_v,temp_f_l);
-                    calc_alef_2d(temp_u_r,temp_v,temp_f_r);
-                  }
+                calc_invf_2d(temp_u_l,temp_f_l);
+                calc_invf_2d(temp_u_r,temp_f_r);
+                if (motion) {
+                  calc_alef_2d(temp_u_l,temp_v,temp_f_l);
+                  calc_alef_2d(temp_u_r,temp_v,temp_f_r);
                 }
+              }
               else if(n_dims==3) {
-                  calc_invf_3d(temp_u_l,temp_f_l);
-                  calc_invf_3d(temp_u_r,temp_f_r);
-                  if (motion) {
-                    calc_alef_3d(temp_u_l,temp_v,temp_f_l);
-                    calc_alef_3d(temp_u_r,temp_v,temp_f_r);
-                  }
+                calc_invf_3d(temp_u_l,temp_f_l);
+                calc_invf_3d(temp_u_r,temp_f_r);
+                if (motion) {
+                  calc_alef_3d(temp_u_l,temp_v,temp_f_l);
+                  calc_alef_3d(temp_u_r,temp_v,temp_f_r);
                 }
+              }
               else
                 FatalError("ERROR: Invalid number of dimensions ... ");
 
@@ -232,11 +247,18 @@ void int_inters::calculate_common_invFlux(void)
           else
             FatalError("Riemann solver not implemented");
 
-          // Transform back to reference space
-          for(int k=0;k<n_fields;k++) {
-              (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
-              (*norm_tconf_fpts_r(j,i,k))=-fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(j,i));
+          // Geometric Conservation Law "flux"
+          if(motion) {
+            for (int m=0; m<n_dims; m++) {
+              fn(i_gcl_field) -= temp_v(m)*norm(m);
             }
+          }
+
+          // Transform back to reference space
+          for(int k=0;k<n_fields+n_gcl_fields;k++) {
+            (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+            (*norm_tconf_fpts_r(j,i,k))=-fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(j,i));
+          }
 
           if(viscous)
             {

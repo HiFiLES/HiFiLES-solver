@@ -84,6 +84,12 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       sgs_model = run_input.SGS_model;
       wall_model = run_input.wall_model;
 
+      if (motion != 0) {
+        n_gcl_fields = 1;
+      }else{
+        n_gcl_fields = 0;
+      }
+
       // Set filter flag before calling setup_ele_type_specific
       filter = 0;
       if(LES)
@@ -120,10 +126,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 
       // Allocate storage for solution
       disu_upts.setup(n_adv_levels);
-      for(int i=0;i<n_adv_levels;i++)
-        {
-          disu_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
-        }
+      for(int i=0;i<n_adv_levels;i++) {
+        disu_upts(i).setup(n_upts_per_ele,n_eles,n_fields+n_gcl_fields);
+        disu_upts(i).initialize_to_zero();
+      }
 
       // Allocate storage for timestep
       // If using global minimum, only one timestep
@@ -143,13 +149,6 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
           dt_local_mpi.initialize_to_zero();
         }
 #endif
-
-      // Initialize to zero
-      for (int m=0;m<n_adv_levels;m++)
-        for (int i=0;i<n_upts_per_ele;i++)
-          for (int j=0;j<n_eles;j++)
-            for (int k=0;k<n_fields;k++)
-              disu_upts(m)(i,j,k) = 0.;
 
       // Allocate storage for diagnostic fields
       n_diagnostic_fields = run_input.n_diagnostic_fields;
@@ -265,33 +264,37 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       one=1.0;
       zero=0.0;
 
-      n_fields_mul_n_eles=n_fields*n_eles;
+      n_fields_mul_n_eles=(n_fields+n_gcl_fields)*n_eles;
       n_dims_mul_n_upts_per_ele=n_dims*n_upts_per_ele;
 
       div_tconf_upts.setup(n_adv_levels);
       for(int i=0;i<n_adv_levels;i++)
-        {
-          div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
-        }
+      {
+        div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_fields+n_gcl_fields);
+      }
 
       // Initialize to zero
       for (int m=0;m<n_adv_levels;m++)
-        for (int i=0;i<n_upts_per_ele;i++)
-          for (int j=0;j<n_eles;j++)
-            for (int k=0;k<n_fields;k++)
-              div_tconf_upts(m)(i,j,k) = 0.;
+        div_tconf_upts(m).initialize_to_zero();
 
-      disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-      tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
-      norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-      norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+      disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields+n_gcl_fields);
+      tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields+n_gcl_fields,n_dims);
+      norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields+n_gcl_fields);
+      norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields+n_gcl_fields);
+
+      // not sure if needed, but adding for debugging purposes:
+      disu_fpts.initialize_to_zero();
+      tdisf_upts.initialize_to_zero();
+      norm_tdisf_fpts.initialize_to_zero();
+      norm_tconf_fpts.initialize_to_zero();
 
       if(viscous)
-        {
-          delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-          grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
-          grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
-        }
+      {
+        // The last entry (for GCL) will never be used, but is needed for BLAS matrix routines
+        delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields+n_gcl_fields);
+        grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields+n_gcl_fields,n_dims);
+        grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields+n_gcl_fields,n_dims);
+      }
 
       // Set connectivity array. Needed for Paraview output.
       if (ele_type==3) // prism
@@ -308,24 +311,20 @@ void eles::set_disu_upts_to_zero_other_levels(void)
 {
 
   if (n_eles!=0)
+  {
+    // Initialize to zero
+    for (int m=1;m<n_adv_levels;m++)
     {
-      // Initialize to zero
-      for (int m=1;m<n_adv_levels;m++)
-        {
-          for (int i=0;i<n_upts_per_ele;i++)
-            for (int j=0;j<n_eles;j++)
-              for (int k=0;k<n_fields;k++)
-                disu_upts(m)(i,j,k) = 0.;
-
+      disu_upts(m).initialize_to_zero();
 
 #ifdef _GPU
-          if (n_eles!=0)
-            {
-              disu_upts(m).cp_cpu_gpu();
-            }
+      if (n_eles!=0)
+      {
+        disu_upts(m).cp_cpu_gpu();
+      }
 #endif
-        }
     }
+  }
 }
 
 array<int> eles::get_connectivity_plot()
@@ -486,9 +485,14 @@ void eles::set_ics(double& time)
 
           // set solution at solution point
           for(k=0;k<n_fields;k++)
-            {
-              disu_upts(0)(j,i,k)=ics(k);
-            }
+          {
+            disu_upts(0)(j,i,k)=ics(k);
+          }
+
+          // setup GCL equation for element Jacobians
+          if (motion !=0) {
+            disu_upts(0)(j,i,i_gcl_field) = detjac_upts(j,i);
+          }
         }
     }
 
@@ -804,7 +808,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
           }
 
         // Integrate the GCL forward in time
-        for (int ic=0; ic<n_eles; ic++) {
+        /*for (int ic=0; ic<n_eles; ic++) {
           for (int upt=0; upt<n_upts_per_ele; upt++) {
             switch(run_input.dt_type) {
               case 0:
@@ -820,6 +824,32 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
                 break;
             }
           }
+        }*/
+
+        /** Integrate the GCL forward in time to get the updated
+            Jacobian (needed for remainder of time-advance) */
+        if (n_gcl_fields>0) {
+          for (int ic=0;ic<n_eles;ic++)
+          {
+            for (int inp=0;inp<n_upts_per_ele;inp++)
+            {
+              // User supplied timestep
+              if (run_input.dt_type == 0)
+                disu_upts(0)(inp,ic,i_gcl_field) += run_input.dt*div_tconf_upts(0)(inp,ic,i_gcl_field);
+
+              // Global minimum timestep
+              else if (run_input.dt_type == 1)
+                disu_upts(0)(inp,ic,i_gcl_field) -= dt_local(0)*div_tconf_upts(0)(inp,ic,i_gcl_field);
+
+              // Element local timestep
+              else if (run_input.dt_type == 2)
+                disu_upts(0)(inp,ic,i_gcl_field) -= dt_local(ic)*div_tconf_upts(0)(inp,ic,i_gcl_field);
+              else
+                FatalError("ERROR: dt_type not recognized!");
+
+              detjac_upts(inp,ic) = disu_upts(0)(inp,ic,i_gcl_field);
+            }
+          }
         }
 
         for (int i=0;i<n_fields;i++)
@@ -830,19 +860,19 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
                 {
                   // User supplied timestep
                   if (run_input.dt_type == 0) {
-                    disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic)/detjac_upts(inp,ic)*gbar_upts(inp,ic) - run_input.const_src_term);
-                    //disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+                    //disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/disu_upts(0)(inp,ic,i_gcl_field) - run_input.const_src_term);
+                    disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
                   }
 
                   // Global minimum timestep
                   else if (run_input.dt_type == 1)
-                    disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic)/detjac_upts(inp,ic)*gbar_upts(inp,ic) - run_input.const_src_term);
+                    disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
 
                   // Element local timestep
                   else if (run_input.dt_type == 2)
-                    disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic)/detjac_upts(inp,ic)*gbar_upts(inp,ic) - run_input.const_src_term);
+                    disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
                   else
-                    FatalError("ERROR: dt_type not recognized!")
+                    FatalError("ERROR: dt_type not recognized!");
 
                 }
             }
@@ -1032,7 +1062,7 @@ void eles::extrapolate_solution(int in_disu_upts_from)
       Acols = n_upts_per_ele;
 
       Brows = Acols;
-      Bcols = n_fields*n_eles;
+      Bcols = (n_fields+n_gcl_fields)*n_eles;
 
       Astride = Arows;
       Bstride = Brows;
@@ -1100,7 +1130,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
         }
 
-        if (motion) {
+        if (motion != 0) {
           for (k=0; k<n_dims; k++) {
             temp_v(k) = vel_upts(k,j,i);
           }
@@ -1111,19 +1141,29 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
         if(n_dims==2)
         {
           calc_invf_2d(temp_u,temp_f);
-          if (motion) calc_alef_2d(temp_u, temp_v, temp_f);
+          if (motion)
+          {
+            calc_alef_2d(temp_u, temp_v, temp_f);
+            for (k=0; k<n_dims; k++)
+              temp_f(i_gcl_field,k) = -temp_v(k);
+          }
         }
         else if(n_dims==3)
         {
           calc_invf_3d(temp_u,temp_f);
-          if (motion) calc_alef_3d(temp_u, temp_v, temp_f);
+          if (motion != 0)
+          {
+            calc_alef_3d(temp_u, temp_v, temp_f);
+            for (k=0; k<n_dims; k++)
+              temp_f(i_gcl_field,k) = -temp_v(k);
+          }
         }
         else
         {
           cout << "ERROR: Invalid number of dimensions ... " << endl;
         }
 
-        for(k=0;k<n_fields;k++)
+        for(k=0;k<n_fields+n_gcl_fields;k++)
         {
           for(l=0;l<n_dims;l++)
           {
@@ -1158,7 +1198,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 
 // calculate the normal transformed discontinuous flux at the flux points
 
-void eles::extrapolate_totalFlux()
+void eles::extrapolate_totalFlux(void)
 {
   if (n_eles!=0)
     {
@@ -1168,17 +1208,17 @@ void eles::extrapolate_totalFlux()
         {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-          cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+          cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
           for (int i=1;i<n_dims;i++)
             {
-              cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+              cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
             }
 
 #elif defined _NO_BLAS
-          dgemm(n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,0.0,opp_1(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),norm_tdisf_fpts.get_ptr_cpu());
+          dgemm(n_fpts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,0.0,opp_1(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),norm_tdisf_fpts.get_ptr_cpu());
           for (int i=1;i<n_dims;i++)
             {
-              dgemm(n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,1.0,opp_1(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),norm_tdisf_fpts.get_ptr_cpu());
+              dgemm(n_fpts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,1.0,opp_1(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),norm_tdisf_fpts.get_ptr_cpu());
             }
 #endif
         }
@@ -1205,18 +1245,18 @@ void eles::extrapolate_totalFlux()
 
       if (opp_1_sparse==0)
         {
-          cublasDgemm('N','N',n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
+          cublasDgemm('N','N',n_fpts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
           for (int i=1;i<n_dims;i++)
             {
-              cublasDgemm('N','N',n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
+              cublasDgemm('N','N',n_fpts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
             }
         }
       else if (opp_1_sparse==1)
         {
-          bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_1_ell_data(0).get_ptr_gpu(),opp_1_ell_indices(0).get_ptr_gpu(),opp_1_nnz_per_row(0),tdisf_upts.get_ptr_gpu(0,0,0,0),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,0);
+          bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,(n_fields+n_gcl_fields),n_eles,opp_1_ell_data(0).get_ptr_gpu(),opp_1_ell_indices(0).get_ptr_gpu(),opp_1_nnz_per_row(0),tdisf_upts.get_ptr_gpu(0,0,0,0),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,0);
           for (int i=1;i<n_dims;i++)
             {
-              bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_1_ell_data(i).get_ptr_gpu(),opp_1_ell_indices(i).get_ptr_gpu(),opp_1_nnz_per_row(i),tdisf_upts.get_ptr_gpu(0,0,0,i),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,1);
+              bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,(n_fields+n_gcl_fields),n_eles,opp_1_ell_data(i).get_ptr_gpu(),opp_1_ell_indices(i).get_ptr_gpu(),opp_1_nnz_per_row(i),tdisf_upts.get_ptr_gpu(0,0,0,i),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,1);
             }
         }
 #endif
@@ -1262,17 +1302,17 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
         {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-          cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+          cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
           for (int i=1;i<n_dims;i++)
             {
-              cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+              cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
             }
 
 #elif defined _NO_BLAS
-          dgemm(n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,0.0,opp_2(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+          dgemm(n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,0.0,opp_2(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
           for (int i=1;i<n_dims;i++)
             {
-              dgemm(n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,1.0,opp_2(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+              dgemm(n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,1.0,opp_2(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
             }
 
 #endif
@@ -1301,16 +1341,16 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
 
       if (opp_2_sparse==0)
         {
-          cublasDgemm('N','N',n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_gpu(),n_upts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
+          cublasDgemm('N','N',n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_gpu(),n_upts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
           for (int i=1;i<n_dims;i++) {
-              cublasDgemm('N','N',n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_gpu(),n_upts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
+              cublasDgemm('N','N',n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_gpu(),n_upts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
             }
         }
       else if (opp_2_sparse==1)
         {
-          bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_2_ell_data(0).get_ptr_gpu(),opp_2_ell_indices(0).get_ptr_gpu(),opp_2_nnz_per_row(0),tdisf_upts.get_ptr_gpu(0,0,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,0);
+          bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,(n_fields+n_gcl_fields),n_eles,opp_2_ell_data(0).get_ptr_gpu(),opp_2_ell_indices(0).get_ptr_gpu(),opp_2_nnz_per_row(0),tdisf_upts.get_ptr_gpu(0,0,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,0);
           for (int i=1;i<n_dims;i++) {
-              bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_2_ell_data(i).get_ptr_gpu(),opp_2_ell_indices(i).get_ptr_gpu(),opp_2_nnz_per_row(i),tdisf_upts.get_ptr_gpu(0,0,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
+              bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,(n_fields+n_gcl_fields),n_eles,opp_2_ell_data(i).get_ptr_gpu(),opp_2_ell_indices(i).get_ptr_gpu(),opp_2_nnz_per_row(i),tdisf_upts.get_ptr_gpu(0,0,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
             }
 
         }
@@ -1337,11 +1377,11 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
 
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-      cblas_daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
+      cblas_daxpy(n_eles*(n_fields)*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
 
 #elif defined _NO_BLAS
 
-      daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu());
+      daxpy(n_eles*(n_fields)*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu());
 
 #endif
 
@@ -1349,10 +1389,10 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
         {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-          cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_cpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_cpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+          cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_cpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_cpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
 
 #elif defined _NO_BLAS
-          dgemm(n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,1.0,opp_3.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+          dgemm(n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_fpts_per_ele,1.0,1.0,opp_3.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
 
 #endif
         }
@@ -1373,15 +1413,15 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
 
 #ifdef _GPU
 
-      cublasDaxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_gpu(),1,norm_tconf_fpts.get_ptr_gpu(),1);
+      cublasDaxpy(n_eles*(n_fields+n_gcl_fields)*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_gpu(),1,norm_tconf_fpts.get_ptr_gpu(),1);
 
       if (opp_3_sparse==0)
         {
-          cublasDgemm('N','N',n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_gpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_gpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
+          cublasDgemm('N','N',n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_gpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_gpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
         }
       else if (opp_3_sparse==1)
         {
-          bespoke_SPMV(n_upts_per_ele,n_fpts_per_ele,n_fields,n_eles,opp_3_ell_data.get_ptr_gpu(),opp_3_ell_indices.get_ptr_gpu(),opp_3_nnz_per_row,norm_tconf_fpts.get_ptr_gpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
+          bespoke_SPMV(n_upts_per_ele,n_fpts_per_ele,(n_fields+n_gcl_fields),n_eles,opp_3_ell_data.get_ptr_gpu(),opp_3_ell_indices.get_ptr_gpu(),opp_3_nnz_per_row,norm_tconf_fpts.get_ptr_gpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
         }
       else
         {
@@ -1424,7 +1464,7 @@ void eles::calculate_gradient(int in_disu_upts_from)
       Acols = n_upts_per_ele;
 
       Brows = Acols;
-      Bcols = n_fields*n_eles;
+      Bcols = (n_fields+n_gcl_fields)*n_eles;
 
       Astride = Arows;
       Bstride = Brows;
@@ -1474,7 +1514,7 @@ void eles::calculate_gradient(int in_disu_upts_from)
         {
           for (int i=0;i<n_dims;i++)
             {
-              bespoke_SPMV(Arows,Acols,n_fields,n_eles,opp_4_ell_data(i).get_ptr_gpu(),opp_4_ell_indices(i).get_ptr_gpu(),opp_4_nnz_per_row(i),disu_upts(in_disu_upts_from).get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(0,0,0,i),ele_type,order,0);
+              bespoke_SPMV(Arows,Acols,(n_fields+n_gcl_fields),n_eles,opp_4_ell_data(i).get_ptr_gpu(),opp_4_ell_indices(i).get_ptr_gpu(),opp_4_nnz_per_row(i),disu_upts(in_disu_upts_from).get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(0,0,0,i),ele_type,order,0);
             }
         }
 #endif
@@ -1507,7 +1547,7 @@ void eles::correct_gradient(void)
       Acols = n_fpts_per_ele;
 
       Brows = Acols;
-      Bcols = n_fields*n_eles;
+      Bcols = (n_fields+n_gcl_fields)*n_eles;
 
       Astride = Arows;
       Bstride = Brows;
@@ -1565,7 +1605,7 @@ void eles::correct_gradient(void)
               //physical gradient
               if(n_dims==2)
                 {
-                  for(int k=0;k<n_fields;k++)
+                  for(int k=0;k<(n_fields+n_gcl_fields);k++)
                     {
                       ur = grad_disu_upts(j,i,k,0);
                       us = grad_disu_upts(j,i,k,1);
@@ -1583,7 +1623,7 @@ void eles::correct_gradient(void)
                   ty = inv_detjac_mul_jac_upts(j,i,2,1);
                   tz = inv_detjac_mul_jac_upts(j,i,2,2);
 
-                  for (int k=0;k<n_fields;k++)
+                  for (int k=0;k<(n_fields+n_gcl_fields);k++)
                     {
                       ur = grad_disu_upts(j,i,k,0);
                       us = grad_disu_upts(j,i,k,1);
@@ -1612,11 +1652,11 @@ void eles::correct_gradient(void)
         {
           for (int i=0;i<n_dims;i++)
             {
-              bespoke_SPMV(Arows,Acols,n_fields,n_eles,opp_5_ell_data(i).get_ptr_gpu(),opp_5_ell_indices(i).get_ptr_gpu(),opp_5_nnz_per_row(i),delta_disu_fpts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(0,0,0,i),ele_type,order,1);
+              bespoke_SPMV(Arows,Acols,(n_fields+n_gcl_fields),n_eles,opp_5_ell_data(i).get_ptr_gpu(),opp_5_ell_indices(i).get_ptr_gpu(),opp_5_nnz_per_row(i),delta_disu_fpts.get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(0,0,0,i),ele_type,order,1);
             }
         }
 
-      transform_grad_disu_upts_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.equation);
+      transform_grad_disu_upts_kernel_wrapper(n_upts_per_ele,n_dims,(n_fields+n_gcl_fields),n_eles,grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.equation);
 
 #endif
 
@@ -1664,7 +1704,7 @@ void eles::extrapolate_corrected_gradient(void)
       Acols = n_upts_per_ele;
 
       Brows = Acols;
-      Bcols = n_fields*n_eles;
+      Bcols = (n_fields+n_gcl_fields)*n_eles;
 
       Astride = Arows;
       Bstride = Brows;
@@ -1715,7 +1755,7 @@ void eles::extrapolate_corrected_gradient(void)
         {
           for (int i=0;i<n_dims;i++)
             {
-              bespoke_SPMV(Arows,Acols,n_fields,n_eles,opp_6_ell_data.get_ptr_gpu(),opp_6_ell_indices.get_ptr_gpu(),opp_6_nnz_per_row,grad_disu_upts.get_ptr_gpu(0,0,0,i),grad_disu_fpts.get_ptr_gpu(0,0,0,i),ele_type,order,0);
+              bespoke_SPMV(Arows,Acols,(n_fields+n_gcl_fields),n_eles,opp_6_ell_data.get_ptr_gpu(),opp_6_ell_indices.get_ptr_gpu(),opp_6_nnz_per_row,grad_disu_upts.get_ptr_gpu(0,0,0,i),grad_disu_fpts.get_ptr_gpu(0,0,0,i),ele_type,order,0);
             }
         }
 
@@ -3899,7 +3939,7 @@ double eles::get_loc_upt(int in_upt, int in_dim)
 
 // set transforms
 
-void eles::set_transforms()
+void eles::set_transforms(void)
 {
   if (n_eles!=0)
     {
@@ -3991,7 +4031,7 @@ void eles::set_transforms()
                       FatalError("Negative Jacobian at solution points");
                     }
 
-                  // store inverse of determinant of jacobian multiplied by jacobian at the solution point
+                  // store determinant of jacobian multiplied by inverse of jacobian at the solution point
                   inv_detjac_mul_jac_upts(j,i,0,0)= ys;
                   inv_detjac_mul_jac_upts(j,i,0,1)= -xs;
                   inv_detjac_mul_jac_upts(j,i,1,0)= -yr;
@@ -4043,7 +4083,7 @@ void eles::set_transforms()
                   inv_detjac_mul_jac_upts(j,i,2,1) = xs*zr - xr*zs;
                   inv_detjac_mul_jac_upts(j,i,2,2) = xr*ys - xs*yr;
 
-                  // store inverse of determinant of jacobian multiplied by jacobian at the solution point
+                  // store determinant of jacobian multiplied by inverse of jacobian at the solution point
 
                   // gradient of detjac at solution point
 
@@ -6176,7 +6216,7 @@ void eles::initialize_grid_vel(void)
         vel_spts.setup(n_eles);
         for (int i=0;i<n_eles; i++) {
           vel_spts(i).setup(n_spts_per_ele(i),n_dims);
-        vel_spts(i).initialize_to_zero();
+          vel_spts(i).initialize_to_zero();
         }
 }
 
@@ -6258,7 +6298,7 @@ void eles::calc_div_vel_upt(int in_upt, int in_ele, array<double>& out_div_vel)
       for (k=0; k<n_dims; k++) {
         vel(i,j) += inv_detjac_mul_jac_upts(in_upt,in_ele,j,k)*vel_spts(in_ele)(i,k);
       }
-      vel(i,j) *= detjac_upts(in_upt,in_ele);
+      //vel(i,j) *= detjac_upts(in_upt,in_ele); //...wrong, right?
     }
   }
 
@@ -6311,6 +6351,9 @@ double eles::calc_div_vel_upt(int in_upt, int in_ele)
 
 void eles::calc_gcl_res(void)
 {
+  /** Residual for Geometric Conservation Law
+    * dg/dt = -d(xi_dot)/d_xi -d(eta_dot)/d_eta
+    */
   int i,j,k,upt,ic;
   array<double> vel;
 
@@ -6327,23 +6370,18 @@ void eles::calc_gcl_res(void)
       for(i=0;i<n_spts_per_ele(ic);i++) {
         for (j=0; j<n_dims; j++) {
           for (k=0; k<n_dims; k++) {
-
+            // [xi_dot,eta_dot] = -(g*G^{-1})*[x_dot,y_dot]
             vel(i,j) += inv_detjac_mul_jac_upts(upt,ic,j,k)*vel_spts(ic)(i,k);
-
           }
-          vel(i,j) *= detjac_upts(upt,ic);
         }
       }
 
       for(j=0;j<n_dims;j++) {
         for(i=0;i<n_spts_per_ele(ic);i++) {
-
-          gcl_res(upt,ic)+=d_nodal_s_basis_upts(j,i,upt,ic)*vel(i,j);
-
+          gcl_res(upt,ic) += d_nodal_s_basis_upts(j,i,upt,ic)*vel(i,j);
         }
       }
 
     }
   }
-
 }

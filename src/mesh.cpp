@@ -1596,8 +1596,8 @@ void mesh::perturb(solution* FlowSol) {
   time = iter*run_input.dt;
   for (int i=0; i<n_verts; i++) {
     /// Taken from Kui, AIAA-2010-5031-661
-    xv_new(i,0) = xv_0(i,0) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*time/10);
-    xv_new(i,1) = xv_0(i,1) + 1.5*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(4*pi*time/10);
+    xv_new(i,0) = xv_0(i,0) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*time/100);
+    xv_new(i,1) = xv_0(i,1) + 1.5*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(4*pi*time/100);
   }
 
   update(FlowSol);
