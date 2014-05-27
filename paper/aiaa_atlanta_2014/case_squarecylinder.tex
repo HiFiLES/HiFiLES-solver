@@ -3,7 +3,7 @@
 
 \subsection{LES of Flow Over a Square Cylinder at Re = 21,400}\label{sqcyl}
 
-Using the FR method to recover the fourth-order accurate SD scheme, the flow over a square cylinder of side $D$ in a domain of $21D \times 12D \times 3.2D$ at $Re = 21,400$ and Mach 0.3 was simulated, for which LDV experimental data is available~\cite{lyn1994,lyn1995}.
+Using the FR method to recover the fourth-order accurate SD scheme, the flow over a square cylinder of side $D$ in a domain of $21D \times 12D \times 3.2D$ (see Figure \ref{sqcylmesh}) at $Re = 21,400$ and Mach 0.3 was simulated, for which LDV experimental data is available~\cite{lyn1994,lyn1995}.
 A tetrahedral mesh of 87,178 elements was generated giving a total of 1.74M degrees of freedom (D0F) since there are 20 solution points per element at fourth order accuracy.
 Time discretization was by the fourth-order five-stage explicit RK scheme.
 A total time of 250 seconds was simulated and time-averaged quantities were calculated over the last 100 seconds (approx. 5 flow-through periods).
@@ -21,8 +21,11 @@ These results highlight the advantages of using HiFiLES for LES of turbulent flo
 
 \begin{figure}[h] \tt
 \centering
-\includegraphics[width=0.7\textwidth]{sqcyl-mesh-tet-plotnodes.pdf}
-\caption{Tetrahedral mesh used for LES of the square cylinder showing all degrees of freedom}
+\subfigure[geometry]{
+\includegraphics*[width=0.61\textwidth]{sqcyl-geom-small}}
+\subfigure[boundary layer mesh]{
+\includegraphics*[width=0.35\textwidth]{sqcyl-tet-coarse3-blmesh}}
+\caption{Square cylinder geometry and tetrahedral boundary layer mesh showing all degrees of freedom}
 \label{sqcylmesh}
 \end{figure}
 
