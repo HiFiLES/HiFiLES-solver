@@ -7,7 +7,7 @@ Computations of the flow over a subsonic flat-plate have been performed and vali
 
 \begin{center} 
     \begin{tabular}{l*{5}{c}r}
-    Height first cell \& \# of cells inside the boundary layer & Order 2 & Order 3 & Order 4 & Order 5 \\ \hline
+    Height first cell \& \# of cells inside the boundary layer & Poly order 3 & Poly order 4 & Poly order 5 & Poly order 6 \\ \hline
     Mesh a0 (140 = 14x10). 0.00075 / 2 cells & $\times$ & $\times$ & $\times$ & \Checkmark \\ \hline
     Mesh a1 (560 = 28x20). 0.000375 / 4 cells &  $\times$ & $\times$ & \Checkmark & \Checkmark \\ \hline
     Mesh a2 (2240 = 56x40). 0.0001875  / 8 cells & $\times$ & \Checkmark & \Checkmark & \Checkmark \\ \hline
@@ -17,7 +17,7 @@ Computations of the flow over a subsonic flat-plate have been performed and vali
       \captionof{table}{HiFiLES convergence using different grids and polynomial order} \label{tab:convergence} 
 \end{center}
 
-The objective of this study is to determine the minimum number of elements and the order of polynomial required to converge the flat-plate simulation using HiFILES. In particular, 4 different numerical grids have been used in this study (2, 4, 8, 16 elements inside the boundary layer). The results are summarized in Table \ref{table:convergence}, the simulations require a minimum number of elements in the boundary layer to obtain a satisfactory converge otherwise, there are important jumps across the elements.
+The objective of this study is to determine the minimum number of elements and the order of polynomial required to converge the flat-plate simulation using HiFILES. In particular, 4 different numerical grids have been used in this study (2, 4, 8, 16 elements inside the boundary layer). The results are summarized in Table \ref{table:convergence}, the simulations require a minimum number of elements in the boundary layer to obtain a satisfactory converge, otherwise, there will be noticeable jumps across the elements.
 
 \begin{figure}
 \begin{center}
@@ -53,4 +53,4 @@ The results has been compared with the Blasius' solution for laminar boundary la
 \end{center}
 \end{figure}
 
-To finalize, it is critical to note that the absence of a local time stepping technique in HiFiLES increases the required number of iterations to obtain a converged solution. However, we have noticed an improvement of the rate of converge as we refine the grid (see Fig. \ref{fig:ComparisonOrder}), and this convergence rate is comparable to a second order numerical code (e.g. SU$^2$) running using a similar numerical time integration (see Fig.\ref{fig:Comparison_SecondOrder}).
+To finalize, it is critical to note that the absence of a local time stepping technique in HiFiLES increases the required number of iterations to obtain a converged solution. However, we have noticed an improvement of the rate of converge as we refine the grid (see Fig. \ref{fig:ComparisonOrder}). Finally, the obtained convergence rate is comparable to a second order numerical code (e.g. SU$^2$\cite{palacios13,palacios14}) running using a similar numerical time integration (see Fig.\ref{fig:Comparison_SecondOrder}).
