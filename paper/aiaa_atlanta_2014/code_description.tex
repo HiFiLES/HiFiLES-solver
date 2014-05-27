@@ -3,11 +3,11 @@
 \section{Numerical Methods}
 \label{sec:numerics}
 
-In this section the main numerical techniques implemented in HiFiLES will be described. In particular, we will empathize the critical role of the selected numerical discretization (Flux Reconstruction Method), and it capability to solve CFD problems using unstructured meshes. 
+In this section the main numerical techniques implemented in HiFiLES will be described. We will empathize the critical role of the selected numerical discretization (Flux Reconstruction Method), and it capability to solve CFD problems using unstructured meshes. 
 
 \subsection{Flux Reconstruction Method}
 
-What follows is an overview of the flux reconstruction (FR) framework. We start the discussion with the solution of the advection-diffusion equation in one dimension using the FR approach to illustrate the peculiarities of the method. We then proceed to briefly explain how conservation equations can be solved in multiple dimensions. The Navier-Stokes equations are a set of coupled conservation equations in multiple dimensions, so the extension of the FR methodology to them is straightforward. The detailed description of the algorithm used in HiFiLES is given by Castonguay et al. \cite{castonguay2011}.
+What follows is an overview of the flux reconstruction (FR) framework. We start the discussion with the solution of the advection-diffusion equation in one dimension using the FR approach to illustrate the method. We then proceed to briefly explain how conservation equations can be solved in multiple dimensions. The Navier-Stokes equations are a set of coupled conservation equations in multiple dimensions, so the extension of the FR methodology to them is straightforward. The detailed description of the algorithm used in HiFiLES is given by Castonguay et al. \cite{castonguay2011}.
 
 \subsubsection{Solution of the Advection Equation in One Dimension using the FR Approach}
 
@@ -101,11 +101,11 @@ The FR scheme can be made provably stable for the linear advection-diffusion equ
 
 Vincent et al. \cite{vincent2011new} have shown that in the case of the 1-dimensional, linear advection equation, the Flux Reconstruction approach can be proven to be stable for a specific family of correction functions parameterized by a scalar called $c$. In addition, they showed that by selecting specific values of $c$ it is possible to recover a particular nodal Discontinuous Galerkin (DG) and Spectral Difference (SD) methods plus a FR scheme that was previously found to be stable by Huynh\cite{huynh2007flux}.
 
-\subsection{Unstructured Mesh Treatment}
+\subsection{Extension to Multiple Dimensions}
 
 Extension to multiple dimensions requires formulating multi-dimensional interpolation functions and correction functions that satisfy boundary conditions equivalent to those in Equation~\eqref{eq:condition} for each type of element.
 
-Interpolation bases for quadrilaterals and hexahedra can be obtained via tensor products of the 1-dimensional interpolation basis. More concretely, in HiFiLES, we discretize the solution in 3-dimensions in the following way
+Interpolation bases for quadrilaterals and hexahedra can be obtained via tensor products of the 1-dimensional interpolation basis. In HiFiLES, we discretize the solution in 3-dimensions in the following way
 \begin{equation}
 {\bf \hat{u}}^\delta(\xi,\eta,\zeta) = \sum_{i=1}^{p+1} \sum_{j=1}^{p+1} \sum_{k=1}^{p+1}
 {\bf \hat{u}}^\delta_{i,j,k} l_i(\xi) l_j(\eta) l_k(\zeta)
@@ -183,7 +183,7 @@ The one equation SA turbulence model is one of the more commonly used turbulence
 	\frac{\partial}{\partial t}(\rho\tilde\nu) + \nabla\cdot(\rho\tilde\nu\boldsymbol{u}) = c_{b_1}\tilde S \rho\nu\psi + \frac{1}{\sigma}\left[\nabla\cdot((\mu + \mu\psi)\nabla\tilde\nu) + c_{b_2}\rho\nabla\tilde\nu\cdot\nabla\tilde\nu\right] - c_{w_1}\rho f_w \left(\frac{\nu\psi}{d}\right)^2
 \end{align}
 
-where $\tilde\nu$ is a modified version of the kinematic eddy viscosity and $\nu$ is the kinematic viscosity. The other variables are defined as,
+where $\tilde\nu$ is a modified version of the kinematic eddy viscosity and $\nu$ is the kinematic viscosity. The other variables are defined as:
 
 \begin{align}
 	 \mu_t =
@@ -219,18 +219,18 @@ The diffusion term, $\nabla\cdot(\rho\tilde\nu\boldsymbol{u})$, may become disco
 \begin{align}
 	\psi &=
 	\begin{cases}
-	   0.05log(1.0 + e^{(20.0\chi)}) & \text{if } \chi \le 10.0 \\
-	   \chi & \text{if } \chi > 10.0
+	   0.05log(1.0 + e^{(20.0\chi)}) & \text{if } \chi \le 10.0, \\
+	   \chi & \text{if } \chi > 10.0,
 	\end{cases} \\
 	\chi &= \frac{\tilde\nu}{\nu}
 \end{align}
 
-\subsection{Large Eddy Simulation Models}\label{lesmodels}
+\subsection{Large Eddy Simulation}\label{lesmodels}
 
-In order to resolve all the scales of motion in a high Reynolds number turbulent flow, the computational mesh would have to be impractically fine.
+In order to resolve all the scales of motion in a high Reynolds number turbulent flow, the computational mesh would have to be exceedingly fine.
 A practical solution is to employ the Large Eddy Simulation (LES) formulation, which only resolves the larger scales of motion and thus allows for the use of coarser meshes.
 
-The effect of the unresolved or subgrid-scale (SGS) dynamics on the solution is accounted for by an SGS model for the \emph{subgrid-scale stress} $\tau_{ij}$, which is added to the viscous stress tensor $\sigma_{ij}$ given by (\ref{sigma}):
+The effect of the unresolved or subgrid-scale (SGS) dynamics on the solution is accounted for by an SGS model for the subgrid-scale stress $\tau_{ij}$, which is added to the viscous stress tensor $\sigma_{ij}$ given by (\ref{sigma}):
 
 \begin{eqnarray}\label{tausgs}
 \sigma_{ij} &&= 2 \mu S^d_{ij} + \tau_{ij},\\
@@ -239,11 +239,11 @@ S^d_{ij} &&= \frac 1 2 \l( \frac{\partial u_i}{\partial x_j} + \frac{\partial u_
 
 The standard Smagorinsky model\cite{smagorinsky1963} is available in HiFiLES:
 \begin{eqnarray}\label{smag}
-\tau_{ij} &&= 2 \rho \nu_t S^d_{ij}, \\
-\nu_t &&= C_S^2 \bigtriangleup^2 | S^d |,\\
+\tau_{ij} &&= 2 \mu_t S^d_{ij}, \\
+\mu_t &&= \rho C_S^2 \bigtriangleup^2 | S^d |,\\
 | S^d | &&= \sqrt{2 S^d_{ij} S^d_{ij}},
 \end{eqnarray}
-where $\nu_t$ is the eddy viscosity, $C_S = 0.1$ is the Smagorinsky coefficient and $\bigtriangleup$ is the filter width. In HiFiLES the filter width is given by (in 3D):
+where $\mu_t$ is the eddy viscosity, $C_S = 0.1$ is the Smagorinsky coefficient and $\bigtriangleup$ is the filter width. In HiFiLES the filter width is given by (in 3D):
 \begin{equation}
 \bigtriangleup = \alpha (\text{vol})^{1/3},
 \end{equation}
@@ -252,8 +252,9 @@ where $\alpha \geq 1$ is a user-defined scaling factor and vol is the element vo
 HiFiLES also includes the Wall-Adapting Local Eddy-Viscosity (WALE) model~\cite{nicoud1999} and the Similarity model~\cite{bardina1980}.
 The Similarity model incorporates a low-pass filtering operator, for which several choices are available in HiFiLES: a discrete Gaussian filter\cite{lodato2012b}, a high-order commuting Vasilyev-type filter\cite{vasilyev1998,vasilyev2001} and a modal Vandermonde-type filter\cite{blackburn2003}.
 
-The modal filter is able to be used on unstructured tetrahedral meshes. For details of these operators, see Lodato, Castonguay and Jameson~\cite{lodato2012b} and Bull and Jameson~\cite{bull2013a}. Also available is the option to combine the similarity model with the Smagorinsky or WALE model to form a mixed SGS model. The WALE-similarity mixed (WSM) model, first proposed by Lodato et al.~\cite{lodato2009}, was used in simulations of the flow over a square cylinder (see Section \ref{sqcyl}).
+The modal filter can be used on unstructured tetrahedral meshes. For details of these operators, see Lodato, Castonguay and Jameson~\cite{lodato2012b} and Bull and Jameson~\cite{bull2013a}. One can combine the similarity model with the Smagorinsky or WALE model to form a mixed SGS model. The WALE-similarity mixed (WSM) model, first proposed by Lodato et al.~\cite{lodato2009}, was used in simulations of the flow over a square cylinder (see Section \ref{sqcyl}).
 
 \subsection{Computing Architecture and Scalability}
 
 The HiFiLES code has been designed to work on multi-CPU as well as multi-CPU-GPU platforms. The Flux Reconstruction method in its current form with explicit time-stepping has a great potential for parallelization. Since the solution points are not explicitly shared between elements, most of the computations are element-local enabling an efficient use of shared memory on GPUs. Also, several computations are independent for each solution point and the highly parallelizable nature of GPUs becomes very useful. A detailed description of the parallelization of the FR method, along with scalability and performance analysis has been performed in \cite{castonguay2011}.
+%mention strong/weak scaling results if time
