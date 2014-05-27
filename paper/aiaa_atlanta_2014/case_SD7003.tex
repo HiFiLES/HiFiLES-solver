@@ -15,59 +15,44 @@ From Williams's thesis\cite{williams2013thesis}
 $c_{dg},\kappa_{dg}$ & 0.3719 & 0.04940 & 0.6722 & 0.04295 & 0.5831 & 0.01975 \\ 
 $c_{+},\kappa_{+}$ & 0.3713 & 0.04935 & 0.6655 & 0.04275 & 0.5774 & 0.02005  \\ 
  \end{tabular}
-\caption{Time-averaged values of the lift and drag coefficients for the SD7003 airfoil flows with $Re = 10000, 22000, 60000$}
+\caption{Time-averaged values of the lift and drag coefficients for the SD7003 airfoil flows with $Re = 10,000, 22,000, 60,000$}
 \label{table:sdAirfoilForce} 
  \end{table}
 
-
-%\begin{figure}
-%\centering
-%\includegraphics[height=30mm]{table_926} \\
-%\caption{Time-averaged values of the lift and drag coefficients for the SD7003 airfoil flows with $Re = 10000, 22000, 60000$}
-%\label{fig:table_926}
-%\end{figure}
-
-\begin{figure}
+\begin{figure}[htbp]
 \centering
-\includegraphics[height=60mm]{figure_935a} \\
-\caption{Density contour for the flow with $Re = 10000$ around the SD7003 airfoil.}
-\label{fig:figure_935a}
+\subfigure[Density contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_935a}}
+\subfigure[Vorticity contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_935b}}\\
+
+\caption{Density and vorticity contours for the flow with $Re = 10,000$ around the SD7003 airfoil. $p=2$ on unstructured triangular grid with $N = 25,810$ elements}
+\label{sdairfoilre10k}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[htbp]
 \centering
-\includegraphics[height=60mm]{figure_935b} \\
-\caption{Vorticity contour for the flow with $Re = 10000$ around the SD7003 airfoil.}
-\label{fig:figure_935b}
+\subfigure[Density contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_936a}}
+\subfigure[Vorticity contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_936b}}\\
+
+\caption{Density and vorticity contours for the flow with $Re = 22,000$ around the SD7003 airfoil. $p=2$ on unstructured triangular grid with $N = 25,810$ elements}
+\label{sdairfoilre22k}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[htbp]
 \centering
-\includegraphics[height=60mm]{figure_936a} \\
-\caption{Density contour for the flow with $Re = 22000$ around the SD7003 airfoil.}
-\label{fig:figure_936a}
+\subfigure[Density contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_937a}}
+\subfigure[Vorticity contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_937b}}\\
+
+\caption{Density and vorticity contours for the flow with $Re = 60,000$ around the SD7003 airfoil. $p=2$ on unstructured triangular grid with $N = 25,810$ elements}
+\label{sdairfoilre60k}
 \end{figure}
 
-\begin{figure}
-\centering
-\includegraphics[height=60mm]{figure_936b} \\
-\caption{Vorticity contour for the flow with $Re = 22000$ around the SD7003 airfoil.}
-\label{fig:figure_936b}
-\end{figure}
 
-\begin{figure}
-\centering
-\includegraphics[height=60mm]{figure_937a} \\
-\caption{Density contour for the flow with $Re = 60000$ around the SD7003 airfoil.}
-\label{fig:figure_937a}
-\end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[height=60mm]{figure_937b} \\
-\caption{Vorticity contour for the flow with $Re = 60000$ around the SD7003 airfoil.}
-\label{fig:figure_937b}
-\end{figure}
 
 
 \subsection{SD7003 wing section at 4$\degr$ angle of attack}
@@ -81,32 +66,23 @@ From David's thesis.
  &  \multicolumn{2}{|c|}{$Re = 10K$}  \\ 
  Source & $C_L$ & $C_D$    \\ 
 \hline
- Uranga et al.\cite{uranga2011implicit} & 0.3755 & 0.04978   \\ 
-$c_{dg},\kappa_{dg}$ & 0.3719 & 0.04940  \\ 
-$c_{+},\kappa_{+}$ & 0.3713 & 0.04935 \\ 
+ Uranga et al.\cite{uranga2011implicit} & 0.3743 & 0.04967   \\ 
+$c_{dg},\kappa_{dg}$ & 0.3466 & 0.04908  \\ 
+$c_{+},\kappa_{+}$ & 0.3454 & 0.04903 \\ 
  \end{tabular}
-\caption{Time-averaged values of the lift and drag coefficients for the SD7003 wing-section in a flow with $Re = 10000$}
+\caption{Time-averaged values of the lift and drag coefficients for the SD7003 wing-section in a flow with $Re = 10,000$}
 \label{table:sdWingForce} 
  \end{table}
 
-\begin{figure}
+
+\begin{figure}[htbp]
 \centering
-\includegraphics[height=20mm]{table_927} \\
-\caption{Time-averaged values of the lift and drag coefficients for the SD7003 wing-section in a flow with $Re = 10000$}
-\label{fig:table_927}
+\subfigure[Density contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_939a}}
+\subfigure[Vorticity contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_939b}}\\
+
+\caption{Density and vorticity isosurfaces colored by Mach number for the flow with $Re = 10,000$ around the SD7003 wing-section. $p=3$ on unstructured tetrahedral grid with $N = 711,332$ elements}
+\label{sdwingre10k}
 \end{figure}
 
-\begin{figure}
-\centering
-\includegraphics[height=60mm]{figure_939a} \\
-\caption{Density isosurfaces colored by Mach number for the flow with $Re = 10000$ around the SD7003 wing-section.}
-\label{fig:figure_939a}
-\end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[height=60mm]{figure_939b} \\
-\caption{Vorticity isosurfaces colored by Mach number for the flow with $Re = 10000$ around the SD7003 wing-section.}
-\label{fig:figure_939b}
-\end{figure}
-\newpage
