@@ -25,7 +25,7 @@ $\rho u$\\
 $\rho u^2 + p$\\
 $\rho uv$\\
 $\rho uw$\\
-$\rho ue + p$
+$\rho ue + pu$
 \end{tabular}
 \r) \;\; 
 G_I = \l(
@@ -34,7 +34,7 @@ $\rho v$\\
 $\rho vu$\\
 $\rho v^2 + p$\\
 $\rho vw$\\
-$\rho ve+p$
+$\rho ve+pv$
 \end{tabular}
 \r) \;\; 
 H_I = \l(
@@ -43,7 +43,7 @@ $\rho w$\\
 $\rho wu$\\
 $\rho wv$\\
 $\rho w^2 + p$\\
-$\rho we + p$
+$\rho we + pw$
 \end{tabular}
 \r) \;\; 
 \end{equation}
@@ -66,7 +66,7 @@ $\sigma_{yz}$\\
 $u_i\sigma_{iy}-q_y$
 \end{tabular}
 \r) \;\; 
-F_V = \l(
+H_V = \l(
 \begin{tabular}{c}
 $0$\\
 $\sigma_{zx}$\\
@@ -82,7 +82,7 @@ As usual, $\rho$ is density, $u$, $v$, $w$ are the velocity components in the $x
 p = (\gamma - 1)\rho\l(e - \frac{1}{2}\l(u^2 + v^2 + w^2\r)\r)
 \end{equation}
 the viscous stresses are those of a Newtonian fluid
-\begin{equation}
+\begin{equation}\label{sigma}
 \sigma_{ij} = \mu\l( \frac{\partial u_i}{\partial x_j}
 + \frac{\partial u_j}{\partial x_i} \r)
 - \frac{2}{3}\mu \delta_{ij}\frac{\partial u_k}{\partial x_k}
@@ -100,8 +100,107 @@ Pr is the Prandtl number, $C_p$ is the specific heat at constant pressure and $R
 
 
 \subsection{Reynolds Averaged Navier-Stokes (RANS) equations}
-The compressible NS equations can be used to solve a variety of different flow physics problems but for turbulent flows, direct numerical simulation using these equations can become excessively expensive. For engineering applications, it is customary to perform a Favre averaging procedure to the NS equations to solve a turbulent mean quantity. This leads to a variety of terms which must be modeled in order to provide closure to the resulting RANS equations \cite{wilcox1998turbulence,oliver2008high}. The conservative form of the equations is very similar to the NS equations with an added source term:
+The compressible NS equations can be used to solve a variety of different flow physics problems but for turbulent flows, direct numerical simulation using these equations can become excessively expensive. For engineering applications, it is customary to perform a Favre averaging procedure to the NS equations to solve a turbulent mean quantity. This leads to a variety of terms which must be modeled in order to provide closure to the resulting RANS equations \cite{wilcox1998turbulence,oliver2008high}. For example, using the one equation Spalart-Allmaras (SA) turbulence model, the conservative form of the RANS equations is very similar to the NS equations with an added equation and source term,
 \begin{align}
-	\frac{\partial \boldsymbol{U}}{\partial t} + \nabla \cdot \boldsymbol{F} = \boldsymbol{Q}
+	\frac{\partial U}{\partial t} +  \nabla \cdot {\bf F} = S
 \end{align}
-The conservative variables are now averaged quantities and the RANS equations must now be solved with an appropriate turbulence model.
+
+where, 
+\begin{equation}
+U = \l(
+\begin{tabular}{c}
+$\rho$\\
+$\rho u$\\
+$\rho v$\\
+$\rho w$\\
+$\rho e$ \\
+$\rho\tilde\nu$
+\end{tabular}
+\r) \;\; 
+F_I = \l(
+\begin{tabular}{c}
+$\rho u$\\
+$\rho u^2 + p$\\
+$\rho uv$\\
+$\rho uw$\\
+$\rho ue + pu$\\
+$\rho u\tilde\nu$
+\end{tabular}
+\r) \;\; 
+G_I = \l(
+\begin{tabular}{c}
+$\rho v$\\
+$\rho vu$\\
+$\rho v^2 + p$\\
+$\rho vw$\\
+$\rho ve+pv$\\
+$\rho v\tilde\nu$
+\end{tabular}
+\r) \;\; 
+H_I = \l(
+\begin{tabular}{c}
+$\rho w$\\
+$\rho wu$\\
+$\rho wv$\\
+$\rho w^2 + p$\\
+$\rho we + pw$\\
+$\rho w\tilde\nu$
+\end{tabular}
+\r) \;\; 
+\end{equation}
+\begin{equation}
+F_V = \l(
+\begin{tabular}{c}
+$0$\\
+$\sigma_{xx}$\\
+$\sigma_{xy}$\\
+$\sigma_{xz}$\\
+$u_i\sigma_{ix}-q_x$\\
+$\frac{1}{\sigma}(\mu + \mu \psi)\frac{\partial \tilde \nu}{\partial x}$
+\end{tabular}
+\r) \;\; 
+G_V = \l(
+\begin{tabular}{c}
+$0$\\
+$\sigma_{yx}$\\
+$\sigma_{yy}$\\
+$\sigma_{yz}$\\
+$u_i\sigma_{iy}-q_y$\\
+$\frac{1}{\sigma}(\mu + \mu \psi)\frac{\partial \tilde \nu}{\partial y}$
+\end{tabular}
+\r) \;\; 
+H_V = \l(
+\begin{tabular}{c}
+$0$\\
+$\sigma_{zx}$\\
+$\sigma_{zy}$\\
+$\sigma_{zz}$\\
+$u_i\sigma_{iz}-q_z$\\
+$\frac{1}{\sigma}(\mu + \mu \psi)\frac{\partial \tilde \nu}{\partial z}$
+\end{tabular}
+\r) \;\; 
+\end{equation}
+\begin{equation}
+S = \l(
+\begin{tabular}{c}
+$0$\\
+$0$\\
+$0$\\
+$0$\\
+$0$ \\
+$c_{b_1}\tilde S \rho\nu\psi + \frac{1}{\sigma}\left[c_{b_2}\rho\nabla\tilde\nu\cdot\nabla\tilde\nu\right] - c_{w_1}\rho f_w \left(\frac{\nu\psi}{d}\right)^2$
+\end{tabular}
+\r) \;\; 
+\end{equation}
+
+Note that the flow variables have been redefined as averaged quantities. Also, the viscous stresses now include the Boussinesq approximated Reynolds stress terms,
+\begin{equation}
+\sigma_{ij} = (\mu+\mu_t)\l( \frac{\partial u_i}{\partial x_j}
++ \frac{\partial u_j}{\partial x_i} \r)
+- \frac{2}{3}(\mu+\mu_t) \delta_{ij}\frac{\partial u_k}{\partial x_k}
+\end{equation}
+and the heat fluxes are redefined as
+\begin{equation}
+q_i = -C_p\l( \frac{\mu}{\text{Pr}} + \frac{\mu_t}{\text{Pr}_t}\r)\frac{\partial T}{\partial x_i}
+\end{equation}
+where $\mu_t$ is the dynamic eddy viscosity and $\text{Pr}_t$ is the turbulent Prandtl number. The various terms added by the one equation SA turbulence model are defined in a later section.

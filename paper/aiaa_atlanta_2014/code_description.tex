@@ -139,22 +139,22 @@ Although formal proofs of stability for the linear advection equation do not exi
 
 In order to resolve all the scales of motion in a high Reynolds number turbulent flow, the computational mesh would have to be impractically fine.
 A practical solution is to employ the Large Eddy Simulation (LES) formulation, which only resolves the larger scales of motion and thus allows for the use of coarser meshes.
-The effect of the unresolved or subgrid-scale (SGS) dynamics on the solution is accounted for by an SGS model for the \emph{subgrid-scale stress} $\bar{\bar{\tau}}_{sgs}$, which is added to the viscous stress tensor $\bar{\bar{\tau}}$ given by (\ref{tau}):
+The effect of the unresolved or subgrid-scale (SGS) dynamics on the solution is accounted for by an SGS model for the \emph{subgrid-scale stress} $\tau_{ij}$, which is added to the viscous stress tensor $\sigma_{ij}$ given by (\ref{sigma}):
 %
-\begin{equation}\label{tausgs}
-\bar{\bar{\tau}} = \mu \left ( \nabla \vec{v} + {\nabla \vec{v}}^\mathsf{T}  - \frac{2}{3} \bar{\bar{I}} (\nabla \cdot \vec{v} ) \right ) + \bar{\bar{\tau}}_{sgs}.
-\end{equation}
+\begin{eqnarray}\label{tausgs}
+\sigma_{ij} &&= 2 \mu S^d_{ij} + \tau_{ij},\\
+S^d_{ij} &&= \frac 1 2 \l( \frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i} - \frac{2}{3} \delta_{ij}\frac{\partial u_k}{\partial x_k} \r).
+\end{eqnarray}
 %
 The standard Smagorinsky model\cite{smagorinsky1963} is available in HiFiLES:
 %
 \begin{eqnarray}\label{smag}
-\bar{\bar{\tau}}_{sgs} &&= 2 \rho \nu_t \bar{\bar{S^d}}, \\
-\nu_t &&= C_S^2 \bigtriangleup^2 | \bar{\bar{S^d}} |,\\
-\bar{\bar{S^d}} &&= \frac 1 2 \left (\nabla \vec v + (\nabla \vec v)^T - \frac 2 3 \bar{\bar{I}} (\nabla \cdot \vec{v} ) \right )\ ,
+\tau_{ij} &&= 2 \rho \nu_t S^d_{ij}, \\
+\nu_t &&= C_S^2 \bigtriangleup^2 | S^d |,\\
+| S^d | &&= \sqrt{2 S^d_{ij} S^d_{ij}},
 \end{eqnarray}
 %
-where the Smagorinsky coefficient $C_S = 0.1$ and the filter width $\bigtriangleup$ is a measure of the size of an element.
-The quantity $\nu_t$ is the eddy viscosity.
+where $\nu_t$ is the eddy viscosity, $C_S = 0.1$ is the Smagorinsky coefficient and $\bigtriangleup$ is the filter width.
 In HiFiLES the filter width is given by (in 3D):
 %
 \begin{equation}
@@ -163,14 +163,13 @@ In HiFiLES the filter width is given by (in 3D):
 %
 where $\alpha \geq 1$ is a user-defined scaling factor and vol is the element volume.
 HiFiLES also includes the Wall-Adapting Local Eddy-Viscosity (WALE) model~\cite{nicoud1999} and the Similarity model~\cite{bardina1980}.
-The Similarity model incorporates a filtering operator that locally smoothes the solution in order to extract small-scale information.
-Several filters are available in HiFiLES: a discrete Gaussian filter\cite{lodato2012b}, a high-order commuting Vasilyev-type filter\cite{vasilyev1998,vasilyev2001} and a modal Vandermonde-type filter\cite{blackburn2003}.
-The modal filter is designed to operate on unstructured tetrahedral meshes.
+The Similarity model incorporates a low-pass filtering operator, for which several choices are available in HiFiLES: a discrete Gaussian filter\cite{lodato2012b}, a high-order commuting Vasilyev-type filter\cite{vasilyev1998,vasilyev2001} and a modal Vandermonde-type filter\cite{blackburn2003}.
+The modal filter is able to be used on unstructured tetrahedral meshes.
 For details of these operators, see Lodato, Castonguay and Jameson~\cite{lodato2012b} and Bull and Jameson~\cite{bull2013a}.
 Also available is the option to combine the similarity model with the Smagorinsky or WALE model to form a mixed SGS model.
 The WALE-similarity mixed (WSM) model, first proposed by Lodato et al.~\cite{lodato2009}, was used in simulations of the flow over a square cylinder (see Section \ref{sqcyl}).
-Finally, a Spectral Vanishing Viscosity (SVV) model is available.
-Instead of adding a model term, the SVV method applies one of the above mentioned filters directly to the solution in order to damp the small scales or high-order modes~\cite{karamanos2000}.
+%Finally, a Spectral Vanishing Viscosity (SVV) model is available.
+%Instead of adding a model term, the SVV method applies one of the above mentioned filters directly to the solution in order to damp the small scales or high-order modes~\cite{karamanos2000}.
 
 \subsection{Computing Architecture and Scalability}
 %The final paper will include a description of how HiFiLES is designed for a multi-GPU environment. Studies performed without filtering or SGS modeling in \cite{castonguay2011}. 
@@ -179,25 +178,47 @@ The HiFiLES code has been designed to work on multi-CPU as well as multi-CPU-GPU
 
 \subsection{Shock capturing and Stabilization Models}
 
-
-Currently, we have adapted Persson and Peraire's method \cite{Persson06} for shock detection and capturing. The method works well for inviscid flow cases and compressible flows up to a Mach number of 2 have been tried and tested. However the method requires fine-tuning of parameters for each problem and we are currently working on a new method which is more robust. Persson and Peraire have used this shock capturing tool as a stabilization method as well in their turbulence calculations and we plan to test this and present results for inviscid and viscous cases in the final draft. Here we show a few inviscid results for the case of M = 1.6 where we illustrate the ability to detect shocks and add dissipation in a local manner in the form of artificial viscosity in order to capture the shock in a fine manner and avoid the loss of accuracy away from the shock.    
-
-\begin{figure}[h] \tt
-\centering
-\includegraphics[angle=0, scale = 0.55]{./figures/M1pt6order3-inv-720ktime-mach.jpg} \\
-\caption{Mach contours for inviscid flow over Naca0012 at M = 1.6 and AoA = $0^{\circ} $}
-\label{fig:inv_mach}
-\end{figure}
+We use the method of concentration described in \cite{abhishekshockcapture} for detecting shocks on meshes with quadrilateral elements. We are still in the process of extending the method of concentration to triangles and are currently using Persson and Peraire's method \cite{Persson06} \cite{Persson13} for the same. We have explored both selective addition of artificial viscosity as well as modal order reduction for capturing the detected shocks effectively. Persson and Peraire have used this shock capturing tool as a stabilization method as well in their turbulence calculations. Here we show a viscous case on quads using concentration method (reproduction of the result in \cite{abhishekshockcapture}) and an inviscid case on triangles using Persson and Peraire's method.
 
 \begin{figure}
 \centering
 \begin{minipage}[t]{.5\textwidth}
   \centering
-  \includegraphics[width=.85\linewidth]{./figures/M1pt6-inv-av-ele-mesh}
-  \captionof{figure}{Element-wise AV co-efficients (case 1)}
-  \label{fig:AV-ele}
+  %\includegraphics[width=.85\linewidth]{./figures/density-t1050010-jet}
+  \captionof{figure}{density contours respectively for viscous flow at M = 1.2 over a NACA 0012 airfoil at 5$^{\circ}$ AoA with polynomial order 6 (49 points in each element)}
+  \label{fig:visM1pt2-density}
 \end{minipage}%
 \begin{minipage}[t]{.5\textwidth}
+  \centering
+  %\includegraphics[width=.85\linewidth]{./figures/energy-t1050010-jet}
+  \captionof{figure}{Energy contours}
+  \label{fig:visM1pt2-energy}
+\end{minipage}
+\end{figure} 
+
+\begin{figure}[h] \tt
+\centering
+%\includegraphics[angle=0, scale = 0.55]{./figures/sensor-t1050010-spectral} \\
+\caption{Figure shows the elemental shock "sensor" for the M = 1.2 viscous case shown in figure ~\ref{fig:visM1pt2-density}. The shock sensor is just the maximum value of the enhanced kernel in each element}
+\label{fig:sensor}
+\end{figure}
+
+\begin{figure}[h] \tt
+\centering
+\includegraphics[angle=0, scale = 0.68]{./figures/M1pt6order3-inv-720ktime-mach.jpg} \\
+\caption{Mach contours for inviscid flow over Naca0012 at M = 1.6 and AoA = $0^{\circ} $ on a triangle-mesh using Persson and Peraire's method and using artificial viscosity}
+\label{fig:inv_mach}
+\end{figure}
+
+\begin{figure}
+\centering
+\begin{minipage}[t]{.55\textwidth}
+  \centering
+  \includegraphics[width=.85\linewidth]{./figures/M1pt6-inv-av-ele-mesh}
+  \captionof{figure}{Element-wise AV co-efficients for the inviscid M 1.6 case}
+  \label{fig:AV-ele}
+\end{minipage}%
+\begin{minipage}[t]{.55\textwidth}
   \centering
   \includegraphics[width=.85\linewidth]{./figures/M1pt6-inv-av-mesh}
   \captionof{figure}{AV co-efficients with continuity enforcement}
@@ -211,6 +232,8 @@ The one equation SA turbulence model is one of the more commonly used turbulence
 \begin{align}
 	\frac{\partial}{\partial t}(\rho\tilde\nu) + \nabla\cdot(\rho\tilde\nu\boldsymbol{u}) = c_{b_1}\tilde S \rho\nu\psi + \frac{1}{\sigma}\left[\nabla\cdot((\mu + \mu\psi)\nabla\tilde\nu) + c_{b_2}\rho\nabla\tilde\nu\cdot\nabla\tilde\nu\right] - c_{w_1}\rho f_w \left(\frac{\nu\psi}{d}\right)^2
 \end{align}
+
+where $\tilde\nu$ is a modified version of the kinematic eddy viscosity and $\nu$ is the kinematic viscosity. The other variables are defined as,
 
 \begin{align}
 	 \mu_t =
@@ -239,6 +262,8 @@ The one equation SA turbulence model is one of the more commonly used turbulence
 	\qquad g = r + c_{w_2}(r^6 - r) 
 	\qquad r = \frac{\nu\psi}{\tilde S \kappa^2 d^2}
 \end{align}
+
+where S is the magnitude of vorticity, d is the closest distance to a wall, $c_{b1} = 0.1355$, $\sigma = \frac{2}{3}$, $c_{b2} = 0.622$, $K = 0.41$, $\text{Pr}_t = 0.9$, $c_{v1} = 7.1$, $c_{v2} = 0.7$, $c_{v3} = 0.9$, $c_{w1} = \frac{c_{b1}}{K^2} + \frac{(1+c_{b2})}{\sigma}$, $c_{w2} = 0.3$, $c_{w3} = 2$.\\
 
 The diffusion term, $\nabla\cdot(\rho\tilde\nu\boldsymbol{u})$, may become discontinuous in the first derivative leading to oscillations in high-order polynomials. This can lead to large negative values of the modified eddy viscosity term, $\tilde\nu$, significant enough to cause an unbounded solution. To prevent this, the following modification is introduced \cite{moro2011navier}.
 \begin{align}

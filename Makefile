@@ -15,7 +15,7 @@
 
 # Copy the appropriate file from makefiles/makefile.machine.in to HIFILES_HOME as makefile.in
 #
-include makefile.in
+include /Users/fpalacios/HiFiLES/Makefiles/makefile.fpalacios_OSX_MPI.in
 
 # Compiler
 
