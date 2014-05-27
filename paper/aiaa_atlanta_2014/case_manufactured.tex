@@ -3,6 +3,43 @@
 
 
 \subsection{Method of Manufactured Solutions}
+
+This section describes the test of HiFiLES's spatial order of accuracy using the Method of Manufactured Solutions (MMS) in 2D and 3D for viscous flows. As shown by Salari et. al\cite{salari2000code}, the MMS test rigorously assesses the correctness of implementation of a solver of Partial Differential Equations. Simplex elements are crucial for simulations in unstructured meshes and have a more complex implementation than squares and hexahedra. As a result, we perform the MMS test in grids using simplex elements.
+
+The MMS test for NS solvers requires checking the solver's solution against an exact solution. Such exact solution can be chosen arbitrarily. The NS equations can be satisfied with this arbitrary solution by including a time-dependent source term in the equations. Then, we solve
+
+\begin{equation}
+\frac{\partial U}{\partial t} +  \nabla \cdot {\bf F} = S
+\end{equation}
+
+For the following tests, we selected a smooth exact solution, so aliasing does not pollute the results. We picked
+
+\begin{equation}\label{eq:NSwithSource}
+U_{2D} = \l(
+\begin{tabular}{c}
+$\sin{(k(x+y) - \omega t)} + a$\\
+$\sin{(k(x+y) - \omega t)} + a$\\
+$\sin{(k(x+y) - \omega t)} + a$\\
+$(\sin{(k(x+y) - \omega t)} + a)^2$
+\end{tabular}
+\r) \;\; 
+U_{3D} = \l(
+\begin{tabular}{c}
+$\sin{(k(x+y+z) - \omega t)} + a$\\
+$\sin{(k(x+y+z) - \omega t)} + a$\\
+$\sin{(k(x+y+z) - \omega t)} + a$\\
+$\sin{(k(x+y+z) - \omega t)} + a$\\
+$(\sin{(k(x+y+z) - \omega t)} + a)^2$
+\end{tabular}
+\r)
+\end{equation}
+
+To find the value of $S$, we plug the values of our selected $U$ into the left-hand side of Equation~\eqref{eq:NSwithSource} and simplify. The resulting expression is $S$. 
+We let Pr$=0.72, \gamma = 1.4, k = \pi, \omega = \pi, a = 3.0$ and $\mu = 0.001$.
+
+The meshes used have dimensions $[-1,1] \times [-1,1]$ in 2D and $[-1,1] \times [-1,1] \times [-1,1]$ in 3D. Periodic boundary conditions were applied on the boundaries of the square and cube domains.
+
+
 \input{summaryTable_ele1_err1.tex}
 \input{summaryTable_ele2_err1.tex}
 
