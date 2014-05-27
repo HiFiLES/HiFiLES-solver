@@ -977,13 +977,16 @@ repeat above
                       ele = y*xeles*xeles + z*xeles + x;
                       // ft point number
                       ftpt = k*p_res*p_res + l*p_res + j;
-                      //cout << "y,z,x,ele,ftpt: " << y << ", " << z << ", " << x << ", " << ele << ", " << ftpt << endl;
 
                       // get coords and solution at ft points
                       FlowSol->mesh_eles(i)->calc_pos_ftpts(ele,pos_ftpts_temp);
                       FlowSol->mesh_eles(i)->calc_disu_ftpts(ele,disu_ftpts_temp);
+                      if(ele%1000==0) {
+                        cout << "y,z,x,ele,ftpt: " << y << ", " << z << ", " << x << ", " << ele << ", " << ftpt << endl;
+                        cout << "disu_ftpts: " << disu_ftpts_temp(ftpt,1) << ", " << disu_ftpts_temp(ftpt,2) << ", " << disu_ftpts_temp(ftpt,3) << endl;
+                      }
 
-                      // Write 
+                      // Write
                       write_ftfile << pos_ftpts_temp(ftpt,0) << ", " << pos_ftpts_temp(ftpt,1) << ", " << pos_ftpts_temp(ftpt,2) << ", ";
                       write_ftfile << disu_ftpts_temp(ftpt,1) << ", " << disu_ftpts_temp(ftpt,2) << ", " << disu_ftpts_temp(ftpt,3) << endl;
                     }
