@@ -3,7 +3,7 @@
 \section{Numerical Methods}
 \label{sec:numerics}
 
-In this section the main numerical techniques implemented in HiFiLES will be described. We will empathize the critical role of the selected numerical discretization (Flux Reconstruction Method), and it capability to solve CFD problems using unstructured meshes. 
+In this section the main numerical techniques implemented in HiFiLES will be described. We will emphasize the critical role of the selected numerical discretization (Flux Reconstruction Method), and it capability to solve CFD problems using unstructured meshes. 
 
 \subsection{Flux Reconstruction Method}
 
@@ -124,7 +124,7 @@ One of the challenges in the FR approach is finding correction functions that no
 
 Although formal proofs of stability for the linear advection equation do not exist yet for quadrilaterals, hexahedra, and prisms, it has been observed that the tensor products of provably stable correction functions used in these elements maintain stability. In addition, as of now HiFiLES does not have an implementation for pyramidal elements, mostly because of the challenges involved in finding the respective correction functions that guarantee stability. Nevertheless, a suggested approach to find such correction functions has been presented by Jameson\cite{jameson2011advances}.
 
-In terms of time integration, HiFiLES uses an explicit Adaptive Runge-Kutta 45 Method and local or global time stepping. Currently, a polynomial multigrid to improve the code convergence is being validated.
+In terms of time integration, HiFiLES uses an explicit Adaptive Runge-Kutta 45 (RK45) Method and local or global time stepping. Currently, a polynomial multigrid to improve the code convergence is being validated.
 
 \subsection{Shock Capturing and Stabilization Models}
 

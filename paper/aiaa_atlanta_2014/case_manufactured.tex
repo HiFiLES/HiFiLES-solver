@@ -40,7 +40,7 @@ We let Pr$=0.72, \gamma = 1.4, k = \pi, \omega = \pi, a = 3.0$ and $\mu = 0.001$
 The meshes used have dimensions $[-1,1] \times [-1,1]$ in 2D and $[-1,1] \times [-1,1] \times [-1,1]$ in 3D. Periodic boundary conditions were applied on the boundaries of the square and cube domains. Uniform square and cubic meshes were created and then each element was subdivided into triangles or tetrahedra. Two triangles were created from each square, and six tetrahedra were created from each cube. Consequently, in 2D a $N \times N$ mesh contains $2N^2$ triangles, and in 3D a $N \times N \times N$ mesh contains $6N^3$ tetrahedra. 
 
 
-In 3D, the time step was $1$e$-4$ seconds and 10 seconds of flow were simulated. In 2D, the time step was $1$e$-6$ seconds and 1 second of flow was simulated. The time-stepping scheme used was the low-storage, $4^\text{th}$ order accurate RK45 method.
+In 3D, the time step was $1$e$-4$ seconds and 10 seconds of flow were simulated. In 2D, the time step was $1$e$-6$ seconds and 1 second of flow was simulated. The time-stepping scheme used was the low-storage, $4^\text{th}$ order accurate RK45 method. 
 
 
 \input{summaryTable_ele1_err1.tex}
@@ -48,7 +48,9 @@ In 3D, the time step was $1$e$-4$ seconds and 10 seconds of flow were simulated.
 \input{summaryTable_ele2_err1.tex}
 \input{summaryTable_ele2_err2.tex}
 
-Tables \eqref{table:tetsError1} and \eqref{table:tetsError1} show the order of accuracy achieved when calculating\eqref{table:tetsError1}
+Tables \eqref{table:trisError1} and \eqref{table:tetsError1} show the spatial order of accuracy achieved when calculating the energy fields $\rho e$ in 2D and 3D, respectively. Tables \eqref{table:trisError2} and \eqref{table:tetsError2} show the order of accuracy for the gradient of the energy field $\frac{\partial }{\partial x_i}(\rho e)$ in 2D and 3D, respectively. Because of the exact solutions that were picked, the exact values of the gradients of $\rho e$ in the $x,y,z$ directions are equal.
+
+As expected\cite{hesthaven2007}, the order of accuracy of the solution is $p+1$ and the order of accuracy of the gradient of the solution is $p$, where $p$ is the order of the polynomial used to approximate the solution fields. In the fifth order simulations, the relatively large time step introduces errors larger than the spatial discretization errors. Hence we observe sub-optimal orders of convergence in the coarsest meshes.
 
 %\begin{figure}
 %\centering
