@@ -1,8 +1,8 @@
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \begin{tabular}{ c c c c c c c c} 
   
- Mesh: &   & 4x4 & 8x8 & 16x16 & 32x32 & 64x64 & Overall Order \\ 
+ Polynomial Order & Mesh: & 4x4 & 8x8 & 16x16 & 32x32 & 64x64 & Overall Order of Accuracy \\ 
  \hline 
  \multirow{2}{*}{$p = 1$} & $L_2$ error & 7.92e-01 & 1.84e-01 & 4.36e-02 & 1.07e-02 & 2.68e-03 &   \\ 
   
@@ -25,5 +25,6 @@
    & $\mathcal{O}(L_2)$ &   & 4.21 & 5.94 &   &   & 5.07 \\ 
  \hline 
  \end{tabular}
-\caption{Tris error1} 
+\caption{Accuracy of HiFiLES for NS equations with source term in triangular meshes at $t = 1$. $L_2$ error is the $L_2$-norm of the error in the energy field: $\rho e$}
+\label{table:trisError1} 
  \end{table}

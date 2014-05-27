@@ -1,8 +1,8 @@
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \begin{tabular}{ c c c c c c c} 
   
- Mesh: &   & 2x2x2 & 4x4x4 & 8x8x8 & 16x16x16 & Overall Order \\ 
+ Polynomial Order & Mesh: & 2x2x2 & 4x4x4 & 8x8x8 & 16x16x16 & Overall Order of Accuracy \\ 
  \hline 
  \multirow{2}{*}{$p = 1$} & $L_2$ error & 5.76e-01 & 1.35e-01 & 3.22e-02 & 7.90e-03 &   \\ 
   
@@ -25,5 +25,6 @@
    & $\mathcal{O}(L_2)$ &   & 4.91 & 6.20 &   & 5.55 \\ 
  \hline 
  \end{tabular}
-\caption{Tets error1} 
+\caption{Accuracy of HiFiLES for NS equations with source term in tetrahedral meshes at $t = 10$. $L_2$ error is the $L_2$-norm of the error in the energy field: $\rho e$}
+\label{table:tetsError1} 
  \end{table}
