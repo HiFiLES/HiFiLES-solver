@@ -139,10 +139,10 @@ Although formal proofs of stability for the linear advection equation do not exi
 
 In order to resolve all the scales of motion in a high Reynolds number turbulent flow, the computational mesh would have to be impractically fine.
 A practical solution is to employ the Large Eddy Simulation (LES) formulation, which only resolves the larger scales of motion and thus allows for the use of coarser meshes.
-The effect of the unresolved or subgrid-scale (SGS) dynamics on the solution is accounted for by an SGS model for the \emph{subgrid-scale stress} $\bar{\bar{\tau}}_{sgs}$, which is added to the viscous stress tensor $\bar{\bar{\tau}}$ given by (\ref{tau}):
+The effect of the unresolved or subgrid-scale (SGS) dynamics on the solution is accounted for by an SGS model for the \emph{subgrid-scale stress} $\bar{\bar{\tau}}_{sgs}$, which is added to the viscous stress tensor $\sigma_{ij}$ given by (\ref{sigma}):
 %
 \begin{equation}\label{tausgs}
-\bar{\bar{\tau}} = \mu \left ( \nabla \vec{v} + {\nabla \vec{v}}^\mathsf{T}  - \frac{2}{3} \bar{\bar{I}} (\nabla \cdot \vec{v} ) \right ) + \bar{\bar{\tau}}_{sgs}.
+\sigma_{ij} = \mu \left ( \nabla \vec{v} + {\nabla \vec{v}}^\mathsf{T}  - \frac{2}{3} \bar{\bar{I}} (\nabla \cdot \vec{v} ) \right ) + \sigma_{sgs}.
 \end{equation}
 %
 The standard Smagorinsky model\cite{smagorinsky1963} is available in HiFiLES:
