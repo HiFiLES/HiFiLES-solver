@@ -256,7 +256,7 @@ where $\alpha \geq 1$ is a user-defined scaling factor and vol is the element vo
 HiFiLES also includes the Wall-Adapting Local Eddy-Viscosity (WALE) model~\cite{nicoud1999} and the Similarity model~\cite{bardina1980}.
 The Similarity model incorporates a low-pass filtering operator, for which several choices are available in HiFiLES: a discrete Gaussian filter\cite{lodato2012b}, a high-order commuting Vasilyev-type filter\cite{vasilyev1998,vasilyev2001} and a modal Vandermonde-type filter\cite{blackburn2003}.
 
-The modal filter can be used on unstructured tetrahedral meshes. For details of these operators, see Lodato, Castonguay and Jameson~\cite{lodato2012b} and Bull and Jameson~\cite{bull2013a}. One can combine the similarity model with the Smagorinsky or WALE model to form a mixed SGS model. The WALE-similarity mixed (WSM) model, first proposed by Lodato et al.~\cite{lodato2009}, was used in simulations of the flow over a square cylinder (see Section \ref{sqcyl}).
+The modal filter can be used on unstructured tetrahedral meshes. For details of these operators, see Lodato, Castonguay and Jameson~\cite{lodato2012b} and Bull and Jameson~\cite{bull2014a}. One can combine the similarity model with the Smagorinsky or WALE model to form a mixed SGS model. The WALE-similarity mixed (WSM) model, first proposed by Lodato et al.~\cite{lodato2009}, was used in simulations of the flow over a square cylinder (see Section \ref{sqcyl}).
 
 \subsection{Computing Architecture and Scalability}
 

@@ -6,7 +6,7 @@
 The Taylor-Green Vortex (TGV) is a simple test of the resolution of the small scales of a turbulent flow by a numerical method.
 The compressible TGV at $Re=1600$ was one of the benchmark problems in the 1st and 2nd International Workshops on High-Order CFD Methods~\cite{wang2013}.
 A reference solution was computed by Debonis~\cite{debonis:13} using a high-order dispersion relation-preserving (DRP) scheme on a mesh of $512^3$ elements.
-The results presented here were obtained by Bull and Jameson using FR to recover the fourth-order-accurate DG and SD schemes in HiFiLES~\cite{bull2013a,bull2014a}.
+The results presented here were obtained by Bull and Jameson using FR to recover the fourth-order-accurate DG and SD schemes in HiFiLES~\cite{bull2014a,bull2014b}.
 We also compare our results to those of Beck and Gassner~\cite{beck:12}, who used a fourth-order filtered DG method on a mesh of $64^3$ elements.
 From a simple initial condition in a triply-periodic box of dimensions $[0:2\pi]^3$, interactions between vortices cause the flow to develop in a prescribed manner into a mass of elongated vortices across a range of scales.
 The initial condition is specified as
@@ -38,7 +38,7 @@ The evolution of complex small scale structures is evident.
 \includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{dissrate-SD-hex-mesh.pdf}}
 \subfigure[$-d \langle k \rangle/dt$, tetrahedral meshes]{
 \includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{dissrate-SD-tet-mesh.pdf}}\\
-\caption{\small Taylor-Green vortex results on hexahedral and tetrahedral meshes from Bull and Jameson~\cite{bull2013a}.
+\caption{\small Taylor-Green vortex results on hexahedral and tetrahedral meshes from Bull and Jameson~\cite{bull2014a}.
 (a, b) Evolution of average kinetic energy $\langle k \rangle$; (c, d) dissipation rate $-d \langle k \rangle/dt$.
 `SD-$M \times N$' refers to $M^3$ mesh, $N$th-order accurate SD scheme.
 (\textbf{- - -}) 4th-order DG on $64^3$ mesh~\cite{beck:12}; ($\circ$) DNS~\cite{debonis:13}.}

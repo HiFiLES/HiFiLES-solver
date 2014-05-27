@@ -7,7 +7,7 @@ Using the FR method to recover the fourth-order accurate SD scheme, the flow ove
 A tetrahedral mesh of 87,178 elements was generated giving a total of 1.74M degrees of freedom (D0F) since there are 20 solution points per element at fourth order accuracy.
 Time discretization was by the fourth-order five-stage explicit RK scheme.
 A total time of 250 seconds was simulated and time-averaged quantities were calculated over the last 100 seconds (approx. 5 flow-through periods).
-The WSM model (see Section \ref{lesmodels}) based on the modal Vandermonde filter~\cite{bull2013a} was used with the Breuer-Rodi three-layer wall model~\cite{breuer1994} within 0.2D of the wall.
+The WSM model (see Section \ref{lesmodels}) based on the modal Vandermonde filter~\cite{bull2014a} was used with the Breuer-Rodi three-layer wall model~\cite{breuer1994} within 0.2D of the wall.
 The computation took around 60 hours on 7 GPUs in the lab's own cluster.
 Figure \ref{sqcylmesh} shows the computational mesh including all the DoF.
 Figure \ref{sqcylqcrit} shows an isosurface of the $q$-criterion colored by velocity magnitude, illustrating the structures present in the turbulent boundary layer and wake.
