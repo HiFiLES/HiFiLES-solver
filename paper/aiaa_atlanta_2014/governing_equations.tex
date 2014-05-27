@@ -2,8 +2,10 @@
 
 \section{Governing Equations}
 \label{sec:govEq}
-\subsection{Navier Stokes (NS) Equations}
-The main purpose of HiFiLES is to perform High-Fidelity Large-Eddy Simulations --hence the name. The form of the NS Equations most useful for understanding how the FR methodology can be used to solve them is the following
+\subsection{Navier Stokes equations}
+
+The Navier-Stokes\cite{Landau1993} equations provide a complete (dynamical) description of a viscous fluid and expresses the conservation of mass, momentum and energy. The complete system of equations (without source terms and assuming adiabatic boundary conditions at the solid wall) can be written in the following conservative form:
+
 \begin{equation}
 \frac{\partial U}{\partial t} +  \nabla \cdot {\bf F} = 0
 \end{equation}
@@ -98,14 +100,11 @@ k = \frac{C_p \mu}{\text{Pr}} , \;\; T = \frac{p}{R \rho}
 
 Pr is the Prandtl number, $C_p$ is the specific heat at constant pressure and $R$ is the gas constant. In the case of air, $\gamma = 1.4$ and Pr $= 0.72$. The dynamic viscosity $\mu$ in HiFiLES can be a constant or a function of temperature using Sutherland's law.
 
-
 \subsection{Reynolds Averaged Navier-Stokes (RANS) equations}
-The compressible NS equations can be used to solve a variety of different flow physics problems but for turbulent flows, direct numerical simulation using these equations can become excessively expensive. For engineering applications, it is customary to perform a Favre averaging procedure to the NS equations to solve a turbulent mean quantity. This leads to a variety of terms which must be modeled in order to provide closure to the resulting RANS equations \cite{wilcox1998turbulence,oliver2008high}. For example, using the one equation Spalart-Allmaras (SA) turbulence model, the conservative form of the RANS equations is very similar to the NS equations with an added equation and source term,
-\begin{align}
-	\frac{\partial U}{\partial t} +  \nabla \cdot {\bf F} = S
-\end{align}
+The compressible Navier-Stokes equations can be used to solve a variety of different flow physics problems but for turbulent flows, direct numerical simulation using these equations can become excessively expensive. For engineering applications, it is customary to perform a Favre averaging procedure to the Navier-Stokes equations to solve a turbulent mean quantity. 
 
-where, 
+This leads to a variety of terms which must be modeled in order to provide closure to the resulting RANS equations \cite{wilcox1998turbulence,oliver2008high}. For example, using the one equation Spalart-Allmaras (SA) turbulence model, the conservative form of the RANS equations is very similar to the Navier-Stokes equations with an added equation and source term. In particular, the new variables and fluxes are:
+
 \begin{equation}
 U = \l(
 \begin{tabular}{c}
