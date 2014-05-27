@@ -18,7 +18,7 @@ order                             // Order of basis polynomials
 dt 
 0.001
 n_steps
-25
+
 adv_type                          // 0: Forward Euler, 3: RK45
 3
 tau 
@@ -38,7 +38,7 @@ n_restart_files
 Mesh options
 -----------------------
 mesh_file
-Taylor-Green-Vortex-hex.neu
+Taylor-Green-Vortex-hex-10.neu
 dx_cyclic
 6.2831853071795862
 dy_cyclic
@@ -49,7 +49,7 @@ dz_cyclic
 Monitoring, plotting parameters
 -----------------------------------
 p_res                             // Plotting resolution, number of nodes per direction
-3
+4
 write_type                        // 0: Paraview, 1: Tecplot
 0
 n_diagnostic_fields
@@ -59,7 +59,7 @@ inters_cub_order                  // Order of cubature rule for integrating over
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
 4
 plot_freq
-10
+1
 restart_dump_freq
 10000
 monitor_res_freq
