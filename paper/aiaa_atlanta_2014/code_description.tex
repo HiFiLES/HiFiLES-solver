@@ -128,14 +128,18 @@ In terms of time integration, HiFiLES uses an explicit Adaptive Runge-Kutta 45 M
 
 \subsection{Shock Capturing and Stabilization Models}
 
-We use the method of concentration described in \cite{abhishekshockcapture} for detecting shocks on meshes with quadrilateral elements. We are still in the process of extending the method of concentration to triangles and are currently using Persson and Peraire's method \cite{Persson06} \cite{Persson13} for the same. We have explored both selective addition of artificial viscosity as well as modal order reduction for capturing the detected shocks effectively. Persson and Peraire have used this shock capturing tool as a stabilization method as well in their turbulence calculations. Here we show a viscous case on quads using concentration method (reproduction of the result in \cite{abhishekshockcapture}) and an inviscid case on triangles using Persson and Peraire's method.
+We use the method of concentration described in \cite{abhishekshockcapture} for detecting shocks on meshes with quadrilateral elements. We are still in the process of extending the method of concentration to triangles and are currently using Persson and Peraire's method \cite{Persson06} \cite{Persson13} for the same. We have explored both selective addition of artificial viscosity as well as modal order reduction for capturing the detected shocks effectively. Persson and Peraire have used this shock capturing tool as a stabilization method as well in their turbulence calculations. Here we show a viscous case on quads using concentration method (reproduction of the result in \cite{abhishekshockcapture}) and an inviscid case on triangles using Persson and Peraire's method. \\
+
+ Figures \ref{fig:visM1pt2-density} and \ref{fig:visM1pt2-energy} show the density and energy plots for a Mach 1.2 flow over a NACA 0012 airfoil at a 5$^{\circ}$ angle of attack. The flow is at Reynolds number of 60000 and we have used 6th order polynomial interpolation in the elements for the computation. There is a bow shock in front of the airfoil and we see fish-tail shocks at the trailing edge. We can also see boundary layer formation and a $\Lambda$-shock structure on the upper side of the airfoil. Here we have used simple modal order reduction in elements with shock sensor value above a threshold. Figure \ref{fig:sensor} shows the elemental shock sensor values. We can see the shock sensor is able to distinguish between shocks and other smooth regions enabling the structure of the vortices and boundary layer to be preserved. \\
+ 
+ Figure \ref{fig:inv_mach} shows an inviscid flow of M = 1.6 over a Naca 0012 airfoil at $0^{\circ}$ angle of attack on a triangle mesh. Here we use Persson and Peraire's method  for shock detection and Here we can see that we the shock has been detected and captured well. A few oscillations still remain near the strong bow shock in front of the airfoil even after enforcement of continuity of the artificial viscosity co-efficients. Figures ~\ref{fig:AV-ele} and ~\ref{fig:AV-cont} show the artificial viscosity being added element-wise and after continuity enforcement respectively.
 
 \begin{figure}
 \centering
 \begin{minipage}[t]{.5\textwidth}
   \centering
   \includegraphics[width=.85\linewidth]{./figures/density-t1050010-jet}
-  \captionof{figure}{density contours respectively for viscous flow at M = 1.2 over a NACA 0012 airfoil at 5$^{\circ}$ AoA with polynomial order 6 (49 points in each element)}
+  \captionof{figure}{density contours for viscous flow at M = 1.2 over a NACA 0012 airfoil at 5$^{\circ}$ AoA with polynomial order 6}
   \label{fig:visM1pt2-density}
 \end{minipage}%
 \begin{minipage}[t]{.5\textwidth}
