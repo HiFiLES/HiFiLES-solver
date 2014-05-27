@@ -14,11 +14,11 @@ ic_form                           // 0: Isentropic Vortex, 1: Uniform flow, 2: S
 test_case                         // 0: Normal (doesn't have an analytical solution), 1:Isentropic Vortex, 2: Advection-Equation
 0
 order                             // Order of basis polynomials
-5
+3
 dt 
 0.001
 n_steps
-1
+
 adv_type                          // 0: Forward Euler, 3: RK45
 3
 tau 
@@ -49,7 +49,7 @@ dz_cyclic
 Monitoring, plotting parameters
 -----------------------------------
 p_res                             // Plotting resolution, number of nodes per direction
-6
+4
 write_type                        // 0: Paraview, 1: Tecplot
 0
 n_diagnostic_fields
