@@ -981,9 +981,9 @@ repeat above
                       // get coords and solution at ft points
                       FlowSol->mesh_eles(i)->calc_pos_ftpts(ele,pos_ftpts_temp);
                       FlowSol->mesh_eles(i)->calc_disu_ftpts(ele,disu_ftpts_temp);
-                      if(ele%1000==0) {
-                        cout << "y,z,x,ele,ftpt: " << y << ", " << z << ", " << x << ", " << ele << ", " << ftpt << endl;
-                        cout << "disu_ftpts: " << disu_ftpts_temp(ftpt,1) << ", " << disu_ftpts_temp(ftpt,2) << ", " << disu_ftpts_temp(ftpt,3) << endl;
+                      if(FlowSol->rank==0 && ftpt==0) {
+                        cout << "y,z,x,ele,ftpt,coords: " << y << ", " << z << ", " << x << ", " << ele << ", " << ftpt << ", " << pos_ftpts_temp(ftpt,0) << ", " << pos_ftpts_temp(ftpt,1) << ", " << pos_ftpts_temp(ftpt,2) << endl;
+                        //cout << "disu_ftpts: " << disu_ftpts_temp(ftpt,1) << ", " << disu_ftpts_temp(ftpt,2) << ", " << disu_ftpts_temp(ftpt,3) << endl;
                       }
 
                       // Write

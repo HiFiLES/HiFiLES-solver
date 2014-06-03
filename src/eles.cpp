@@ -75,7 +75,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 
   if (n_eles!=0)
     {
-
+      cout << "in_max_n_spts_per_ele: " << in_max_n_spts_per_ele << endl;
       order=run_input.order;
       p_res=run_input.p_res;
       viscous =run_input.viscous;
@@ -3478,8 +3478,6 @@ void eles::set_opp_p(void)
           opp_p(j,i)=eval_nodal_basis(i,loc);
         }
     }
-  cout << "opp_p:" << endl;
-  opp_p.print();
 }
 
 // set opp_ft (solution at solution points to solution at FT points)
@@ -3504,8 +3502,6 @@ void eles::set_opp_ft(void)
       opp_ft(j,i)=eval_nodal_basis(i,loc);
     }
   }
-  cout << "opp_ft:" << endl;
-  opp_ft.print();
 }
 
 void eles::set_opp_inters_cubpts(void)
