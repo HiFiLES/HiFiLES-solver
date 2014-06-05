@@ -415,12 +415,6 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
     //modal(ind,ind) = exp(-alpha*pow(eta,2*p));
     modal(ind,ind) = exp(-pow(2.0*eta,2)/48.0); // Gaussian filter
     ind++;
-  }*/
-
-  // Gaussian filter in modal space
-  for(i=0;i<N;i++) {
-    eta = i/double(N);
-    modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
   }
 
   // Sharp cutoff filter
@@ -467,12 +461,6 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
       modal(ind,ind) = exp(-pow(2.0*eta,2)/48.0); // Gaussian filter
       ind++;
     }
-  }*/
-
-  // Gaussian filter in modal space
-  for(i=0;i<N;i++) {
-    eta = i/double(N);
-    modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
   }
 
   // Sharp modal cutoff filter
@@ -521,12 +509,6 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
         ind++;
       }
     }
-  }*/
-
-  // Gaussian filter in modal space
-  for(i=0;i<N;i++) {
-    eta = i/double(N);
-    modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
   }
 
   // Sharp modal cutoff filter
