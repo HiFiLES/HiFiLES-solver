@@ -486,6 +486,7 @@ public:
   double calc_div_vel_upt(int in_upt, int in_ele);
   void calc_gcl_res(void);
 
+  void set_transforms_dynamic(void);
 protected:
 
   // #### members ####
@@ -718,6 +719,18 @@ protected:
   /*! number of storage levels for time-integration scheme */
   int n_adv_levels;
 
+  /*! Jacobian matrix at solution points */
+  array<double> jac_upts;
+
+  /*! Jacobian matrix at flux points */
+  array<double> jac_fpts;
+
+  /*! Jacobian matrix at volume cubature points */
+  array<double> jac_vol_cubpts;
+
+  /*! Jacobian matrix at interface cubature points */
+  array< array<double> > jac_inters_cubpts;
+
   /*! determinant of jacobian at solution points */
   array<double> detjac_upts;
 
@@ -749,6 +762,33 @@ protected:
 
   /*! normal at interface cubature points*/
   array< array<double> > norm_inters_cubpts;
+
+  /*! determinant of dynamic jacobian at solution points ( |G| ) */
+  array<double> J_dyn_upts;
+
+  /*! determinant of dynamic jacobian at flux points ( |G| ) */
+  array<double> J_dyn_fpts;
+
+  /*! Dynamic transformation matrix at solution points ( |G|*G^-1 )*/
+  array<double>  Ginv_dyn_upts;
+
+  /*! Dynamic transformation matrix at flux points ( |G|*G^-1 )*/
+  array<double>  Ginv_dyn_fpts;
+
+  /*! transformed gradient of determinant of dynamic jacobian at solution points */
+  array<double> tgrad_J_dyn_upts;
+
+  /*! transformed gradient of determinant of dynamic jacobian at flux points */
+  array<double> tgrad_J_dyn_fpts;
+
+  /*! normal at flux points in dynamic mesh */
+  array<double> norm_dyn_fpts;
+
+  /*! physical coordinates at flux points in dynamic mesh */
+  array<double> phys_pos_fpts;
+
+  /*! transformed n*dA at flux points in dynamic mesh (mag_tnorm_dot_...) (??) */
+  array<double> ndA_dyn_fpts;
 
   /*!
   description: transformed discontinuous solution at the solution points

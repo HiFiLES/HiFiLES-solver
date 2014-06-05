@@ -4220,401 +4220,416 @@ double eles::get_loc_upt(int in_upt, int in_dim)
 void eles::set_transforms(void)
 {
   if (n_eles!=0)
+  {
+
+    int i,j,k;
+
+    int n_comp;
+
+    if(n_dims == 2)
     {
+      n_comp = 3;
+    }
+    else if(n_dims == 3)
+    {
+      n_comp = 6;
+    }
 
-      int i,j,k;
+    array<double> loc(n_dims);
+    array<double> pos(n_dims);
+    array<double> d_pos(n_dims,n_dims);
+    array<double> dd_pos(n_dims,n_comp);
+    array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
 
-      int n_comp;
+    double xr, xs, xt;
+    double yr, ys, yt;
+    double zr, zs, zt;
 
-      if(n_dims == 2)
-        {
-          n_comp = 3;
+    double xrr, xss, xtt, xrs, xrt, xst;
+    double yrr, yss, ytt, yrs, yrt, yst;
+    double zrr, zss, ztt, zrs, zrt, zst;
+
+    if (first_time) {
+      detjac_upts.setup(n_upts_per_ele,n_eles);
+      inv_detjac_mul_jac_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
+      jac_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims); // Jacobian matrix (dX/dr, dX/ds; dY/dr, dY/ds, etc.)
+
+      if (viscous) {
+        tgrad_detjac_upts.setup(n_upts_per_ele,n_eles,n_dims);
+      }
+    }
+
+    if (rank==0 && first_time) {
+      cout << " at solution points" << endl;
+    }
+
+    for(i=0;i<n_eles;i++) {
+      if ((i%1000)==0 && rank==0 && first_time)
+        cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
+
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        // get coordinates of the solution point
+
+        for(k=0;k<n_dims;k++) {
+          loc(k)=loc_upts(k,j);
         }
-      else if(n_dims == 3)
-        {
-          n_comp = 6;
-        }
 
-      array<double> loc(n_dims);
-      array<double> pos(n_dims);
-      array<double> d_pos(n_dims,n_dims);
-      array<double> dd_pos(n_dims,n_comp);
-      array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
+        // calculate first derivatives of shape functions at the solution point
+        calc_d_pos(loc,i,d_pos);
 
-      double xr, xs, xt;
-      double yr, ys, yt;
-      double zr, zs, zt;
-
-      double xrr, xss, xtt, xrs, xrt, xst;
-      double yrr, yss, ytt, yrs, yrt, yst;
-      double zrr, zss, ztt, zrs, zrt, zst;
-
-      if (first_time) {
-        detjac_upts.setup(n_upts_per_ele,n_eles);
-        inv_detjac_mul_jac_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
-
+        // calculate second derivatives of shape functions at the solution point
         if (viscous) {
-          tgrad_detjac_upts.setup(n_upts_per_ele,n_eles,n_dims);
+          calc_dd_pos(loc,i,dd_pos);
+        }
+
+        // store quantities at the solution point
+
+        if(n_dims==2)
+        {
+          xr = d_pos(0,0);
+          xs = d_pos(0,1);
+
+          yr = d_pos(1,0);
+          ys = d_pos(1,1);
+
+          jac_upts(j,i,0,0) = xr;
+          jac_upts(j,i,0,1) = xs;
+          jac_upts(j,i,1,0) = yr;
+          jac_upts(j,i,1,1) = ys;
+
+          // store determinant of jacobian at solution point
+          detjac_upts(j,i)= xr*ys - xs*yr;
+
+          if (detjac_upts(j,i) <= 0)
+          {
+            FatalError("Negative Jacobian at solution points");
+          }
+
+          // store determinant of jacobian multiplied by inverse of jacobian at the solution point
+          inv_detjac_mul_jac_upts(j,i,0,0)= ys;
+          inv_detjac_mul_jac_upts(j,i,0,1)= -xs;
+          inv_detjac_mul_jac_upts(j,i,1,0)= -yr;
+          inv_detjac_mul_jac_upts(j,i,1,1)= xr;
+
+          // gradient of detjac at solution point
+          if(viscous)
+          {
+            xrr = dd_pos(0,0);
+            xss = dd_pos(0,1);
+            xrs = dd_pos(0,2);
+
+            yrr = dd_pos(1,0);
+            yss = dd_pos(1,1);
+            yrs = dd_pos(1,2);
+
+            tgrad_detjac_upts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
+            tgrad_detjac_upts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
+          }
+
+        }
+        else if(n_dims==3)
+        {
+          xr = d_pos(0,0);
+          xs = d_pos(0,1);
+          xt = d_pos(0,2);
+
+          yr = d_pos(1,0);
+          ys = d_pos(1,1);
+          yt = d_pos(1,2);
+
+          zr = d_pos(2,0);
+          zs = d_pos(2,1);
+          zt = d_pos(2,2);
+
+          jac_upts(j,i,0,0) = xr;
+          jac_upts(j,i,0,1) = xs;
+          jac_upts(j,i,0,2) = xt;
+          jac_upts(j,i,1,0) = yr;
+          jac_upts(j,i,1,1) = ys;
+          jac_upts(j,i,1,2) = yt;
+          jac_upts(j,i,2,0) = zr;
+          jac_upts(j,i,2,1) = zs;
+          jac_upts(j,i,2,2) = zt;
+
+          // store determinant of jacobian at solution point
+
+          detjac_upts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
+
+          //cout << "jac=" << detjac_upts(j,i) << endl;
+
+          inv_detjac_mul_jac_upts(j,i,0,0) = ys*zt - yt*zs;
+          inv_detjac_mul_jac_upts(j,i,0,1) = xt*zs - xs*zt;
+          inv_detjac_mul_jac_upts(j,i,0,2) = xs*yt - xt*ys;
+          inv_detjac_mul_jac_upts(j,i,1,0) = yt*zr - yr*zt;
+          inv_detjac_mul_jac_upts(j,i,1,1) = xr*zt - xt*zr;
+          inv_detjac_mul_jac_upts(j,i,1,2) = xt*yr - xr*yt;
+          inv_detjac_mul_jac_upts(j,i,2,0) = yr*zs - ys*zr;
+          inv_detjac_mul_jac_upts(j,i,2,1) = xs*zr - xr*zs;
+          inv_detjac_mul_jac_upts(j,i,2,2) = xr*ys - xs*yr;
+
+          // store determinant of jacobian multiplied by inverse of jacobian at the solution point
+
+          // gradient of detjac at solution point
+
+          if(viscous)
+          {
+            xrr = dd_pos(0,0);
+            xss = dd_pos(0,1);
+            xtt = dd_pos(0,2);
+            xrs = dd_pos(0,3);
+            xrt = dd_pos(0,4);
+            xst = dd_pos(0,5);
+
+            yrr = dd_pos(1,0);
+            yss = dd_pos(1,1);
+            ytt = dd_pos(1,2);
+            yrs = dd_pos(1,3);
+            yrt = dd_pos(1,4);
+            yst = dd_pos(1,5);
+
+            zrr = dd_pos(2,0);
+            zss = dd_pos(2,1);
+            ztt = dd_pos(2,2);
+            zrs = dd_pos(2,3);
+            zrt = dd_pos(2,4);
+            zst = dd_pos(2,5);
+
+            tgrad_detjac_upts(j,i,0) = xrt*(zs*yr - ys*zr) - xrs*(zt*yr - yt*zr) + xrr*(zt*ys - yt*zs) +
+                xr*(-zs*yrt + ys*zrt + zt*yrs - yt*zrs) - xs*(-zr*yrt + yr*zrt + zt*yrr - yt*zrr) + xt*(-zr*yrs + yr*zrs + zs*yrr - ys*zrr);
+            tgrad_detjac_upts(j,i,1) = -xss*(zt*yr - yt*zr) + xst*(zs*yr - ys*zr) + xrs*(zt*ys - yt*zs) +
+                xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
+            tgrad_detjac_upts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
+                xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
+          }
+        }
+        else
+        {
+          cout << "ERROR: Invalid number of dimensions ... " << endl;
         }
       }
-
-      if (rank==0 && first_time) {
-        cout << " at solution points" << endl;
-      }
-
-      for(i=0;i<n_eles;i++) {
-        if ((i%1000)==0 && rank==0 && first_time)
-          cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
-
-          for(j=0;j<n_upts_per_ele;j++)
-            {
-              // get coordinates of the solution point
-
-              for(k=0;k<n_dims;k++)
-                {
-                  loc(k)=loc_upts(k,j);
-                }
-
-              // calculate first derivatives of shape functions at the solution point
-              if (motion) {
-                  calc_d_pos_dyn_upt(j,i,d_pos);
-              }else{
-                  calc_d_pos(loc,i,d_pos);
-              }
-
-              // calculate second derivatives of shape functions at the solution point
-              if (viscous) {
-                  if (motion) {
-                      calc_dd_pos_dyn_upt(j,i,dd_pos);
-                  }else{
-                      calc_dd_pos(loc,i,dd_pos);
-                  }
-              }
-
-              // store quantities at the solution point
-
-              if(n_dims==2)
-                {
-                  xr = d_pos(0,0);
-                  xs = d_pos(0,1);
-
-                  yr = d_pos(1,0);
-                  ys = d_pos(1,1);
-
-                  // store determinant of jacobian at solution point
-                  detjac_upts(j,i)= xr*ys - xs*yr;
-
-                  if (detjac_upts(j,i) < 0)
-                    {
-                      FatalError("Negative Jacobian at solution points");
-                    }
-
-                  // store determinant of jacobian multiplied by inverse of jacobian at the solution point
-                  inv_detjac_mul_jac_upts(j,i,0,0)= ys;
-                  inv_detjac_mul_jac_upts(j,i,0,1)= -xs;
-                  inv_detjac_mul_jac_upts(j,i,1,0)= -yr;
-                  inv_detjac_mul_jac_upts(j,i,1,1)= xr;
-
-                  // gradient of detjac at solution point
-                  if(viscous)
-                    {
-                      xrr = dd_pos(0,0);
-                      xss = dd_pos(0,1);
-                      xrs = dd_pos(0,2);
-
-                      yrr = dd_pos(1,0);
-                      yss = dd_pos(1,1);
-                      yrs = dd_pos(1,2);
-
-                      tgrad_detjac_upts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
-                      tgrad_detjac_upts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
-                    }
-
-                }
-              else if(n_dims==3)
-                {
-                  xr = d_pos(0,0);
-                  xs = d_pos(0,1);
-                  xt = d_pos(0,2);
-
-                  yr = d_pos(1,0);
-                  ys = d_pos(1,1);
-                  yt = d_pos(1,2);
-
-                  zr = d_pos(2,0);
-                  zs = d_pos(2,1);
-                  zt = d_pos(2,2);
-
-                  // store determinant of jacobian at solution point
-
-                  detjac_upts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
-
-                  //cout << "jac=" << detjac_upts(j,i) << endl;
-
-                  inv_detjac_mul_jac_upts(j,i,0,0) = ys*zt - yt*zs;
-                  inv_detjac_mul_jac_upts(j,i,0,1) = xt*zs - xs*zt;
-                  inv_detjac_mul_jac_upts(j,i,0,2) = xs*yt - xt*ys;
-                  inv_detjac_mul_jac_upts(j,i,1,0) = yt*zr - yr*zt;
-                  inv_detjac_mul_jac_upts(j,i,1,1) = xr*zt - xt*zr;
-                  inv_detjac_mul_jac_upts(j,i,1,2) = xt*yr - xr*yt;
-                  inv_detjac_mul_jac_upts(j,i,2,0) = yr*zs - ys*zr;
-                  inv_detjac_mul_jac_upts(j,i,2,1) = xs*zr - xr*zs;
-                  inv_detjac_mul_jac_upts(j,i,2,2) = xr*ys - xs*yr;
-
-                  // store determinant of jacobian multiplied by inverse of jacobian at the solution point
-
-                  // gradient of detjac at solution point
-
-                  if(viscous)
-                    {
-                      xrr = dd_pos(0,0);
-                      xss = dd_pos(0,1);
-                      xtt = dd_pos(0,2);
-                      xrs = dd_pos(0,3);
-                      xrt = dd_pos(0,4);
-                      xst = dd_pos(0,5);
-
-                      yrr = dd_pos(1,0);
-                      yss = dd_pos(1,1);
-                      ytt = dd_pos(1,2);
-                      yrs = dd_pos(1,3);
-                      yrt = dd_pos(1,4);
-                      yst = dd_pos(1,5);
-
-                      zrr = dd_pos(2,0);
-                      zss = dd_pos(2,1);
-                      ztt = dd_pos(2,2);
-                      zrs = dd_pos(2,3);
-                      zrt = dd_pos(2,4);
-                      zst = dd_pos(2,5);
-
-                      tgrad_detjac_upts(j,i,0) = xrt*(zs*yr - ys*zr) - xrs*(zt*yr - yt*zr) + xrr*(zt*ys - yt*zs) +
-                          xr*(-zs*yrt + ys*zrt + zt*yrs - yt*zrs) - xs*(-zr*yrt + yr*zrt + zt*yrr - yt*zrr) + xt*(-zr*yrs + yr*zrs + zs*yrr - ys*zrr);
-                      tgrad_detjac_upts(j,i,1) = -xss*(zt*yr - yt*zr) + xst*(zs*yr - ys*zr) + xrs*(zt*ys - yt*zs) +
-                          xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
-                      tgrad_detjac_upts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
-                          xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
-                    }
-                }
-              else
-                {
-                  cout << "ERROR: Invalid number of dimensions ... " << endl;
-                }
-            }
-        }
+    }
 
 #ifdef _GPU
-          detjac_upts.cp_cpu_gpu(); // Copy since need in write_tec
-          inv_detjac_mul_jac_upts.mv_cpu_gpu();
-          /*
+    detjac_upts.cp_cpu_gpu(); // Copy since need in write_tec
+    inv_detjac_mul_jac_upts.mv_cpu_gpu();
+    /*
     if (viscous) {
         tgrad_detjac_upts.mv_cpu_gpu();
     }
     */
 #endif
 
-          // Compute metrics term at flux points
+    // Compute metrics term at flux points
 
-          if (first_time) {
-            detjac_fpts.setup(n_fpts_per_ele,n_eles);
-            inv_detjac_mul_jac_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
-            mag_tnorm_dot_inv_detjac_mul_jac_fpts.setup(n_fpts_per_ele,n_eles);
-            norm_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-            loc_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+    if (first_time) {
+      detjac_fpts.setup(n_fpts_per_ele,n_eles);
+      inv_detjac_mul_jac_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
+      mag_tnorm_dot_inv_detjac_mul_jac_fpts.setup(n_fpts_per_ele,n_eles);
+      norm_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+      loc_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+      jac_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
 
-            if (viscous) {
-              tgrad_detjac_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-            }
-          }
-
-          if (rank==0 && first_time)
-            cout << endl << " at flux points"  << endl;
-
-          for(i=0;i<n_eles;i++) {
-            if ((i%1000)==0 && rank==0 && first_time)
-              cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
-
-            for(j=0;j<n_fpts_per_ele;j++)
-            {
-              // get coordinates of the flux point
-
-              for(k=0;k<n_dims;k++)
-              {
-                loc(k)=tloc_fpts(k,j);
-              }
-
-              if (motion) {
-                calc_pos_dyn_fpt(j,i,pos);
-              }else{
-                calc_pos(loc,i,pos);
-              }
-
-              for(k=0;k<n_dims;k++)
-              {
-                loc_fpts(j,i,k)=pos(k);
-              }
-
-              // calculate first derivatives of shape functions at the flux points
-              if (motion) {
-                calc_d_pos_dyn_fpt(j,i,d_pos);
-              }else{
-                calc_d_pos(loc,i,d_pos);
-              }
-
-              // calculate second derivatives of shape functions at the flux point
-              if(viscous) {
-                if (motion) {
-                  calc_dd_pos_dyn_fpt(j,i,dd_pos);
-                }else{
-                  calc_dd_pos(loc,i,dd_pos);
-                }
-              }
-
-              // store quantities at the flux point
-
-              if(n_dims==2)
-              {
-                xr = d_pos(0,0);
-                xs = d_pos(0,1);
-
-                yr = d_pos(1,0);
-                ys = d_pos(1,1);
-
-                // store determinant of jacobian at flux point
-
-                detjac_fpts(j,i)= xr*ys - xs*yr;
-
-                if (detjac_fpts(j,i) < 0)
-                  {
-                    FatalError("Negative Jacobian at flux points");
-                  }
-
-                // store determinant of jacobian multiplied by inverse of jacobian at the flux point
-
-                inv_detjac_mul_jac_fpts(j,i,0,0)= ys;
-                inv_detjac_mul_jac_fpts(j,i,0,1)= -xs;
-                inv_detjac_mul_jac_fpts(j,i,1,0)= -yr;
-                inv_detjac_mul_jac_fpts(j,i,1,1)= xr;
-
-                // gradient of detjac at the flux point
-
-                if(viscous)
-                  {
-                    xrr = dd_pos(0,0);
-                    xss = dd_pos(0,1);
-                    xrs = dd_pos(0,2);
-
-                    yrr = dd_pos(1,0);
-                    yss = dd_pos(1,1);
-                    yrs = dd_pos(1,2);
-
-                    tgrad_detjac_fpts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
-                    tgrad_detjac_fpts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
-                  }
-
-                // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
-
-                tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_fpts(0,j)*d_pos(1,1))-(tnorm_fpts(1,j)*d_pos(1,0));
-                tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_fpts(0,j)*d_pos(0,1))+(tnorm_fpts(1,j)*d_pos(0,0));
-
-                // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
-
-                mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
-                                                                tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
-
-
-                // store normal at flux point
-
-                norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
-                norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
-              }
-            else if(n_dims==3)
-              {
-                xr = d_pos(0,0);
-                xs = d_pos(0,1);
-                xt = d_pos(0,2);
-
-                yr = d_pos(1,0);
-                ys = d_pos(1,1);
-                yt = d_pos(1,2);
-
-                zr = d_pos(2,0);
-                zs = d_pos(2,1);
-                zt = d_pos(2,2);
-
-                // store determinant of jacobian at flux point
-
-                detjac_fpts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
-
-                // store determinant of jacobian multiplied by inverse of jacobian at the flux point
-
-                inv_detjac_mul_jac_fpts(j,i,0,0) = ys*zt - yt*zs;
-                inv_detjac_mul_jac_fpts(j,i,0,1) = xt*zs - xs*zt;
-                inv_detjac_mul_jac_fpts(j,i,0,2) = xs*yt - xt*ys;
-                inv_detjac_mul_jac_fpts(j,i,1,0) = yt*zr - yr*zt;
-                inv_detjac_mul_jac_fpts(j,i,1,1) = xr*zt - xt*zr;
-                inv_detjac_mul_jac_fpts(j,i,1,2) = xt*yr - xr*yt;
-                inv_detjac_mul_jac_fpts(j,i,2,0) = yr*zs - ys*zr;
-                inv_detjac_mul_jac_fpts(j,i,2,1) = xs*zr - xr*zs;
-                inv_detjac_mul_jac_fpts(j,i,2,2) = xr*ys - xs*yr;
-
-                // gradient of detjac at the flux point
-
-                if(viscous)
-                  {
-                    xrr = dd_pos(0,0);
-                    xss = dd_pos(0,1);
-                    xtt = dd_pos(0,2);
-                    xrs = dd_pos(0,3);
-                    xrt = dd_pos(0,4);
-                    xst = dd_pos(0,5);
-
-                    yrr = dd_pos(1,0);
-                    yss = dd_pos(1,1);
-                    ytt = dd_pos(1,2);
-                    yrs = dd_pos(1,3);
-                    yrt = dd_pos(1,4);
-                    yst = dd_pos(1,5);
-
-                    zrr = dd_pos(2,0);
-                    zss = dd_pos(2,1);
-                    ztt = dd_pos(2,2);
-                    zrs = dd_pos(2,3);
-                    zrt = dd_pos(2,4);
-                    zst = dd_pos(2,5);
-
-                    tgrad_detjac_fpts(j,i,0) = xrt*(zs*yr - ys*zr) - xrs*(zt*yr - yt*zr) + xrr*(zt*ys - yt*zs) +
-                        xr*(-zs*yrt + ys*zrt + zt*yrs - yt*zrs) - xs*(-zr*yrt + yr*zrt + zt*yrr - yt*zrr) + xt*(-zr*yrs + yr*zrs + zs*yrr - ys*zrr);
-                    tgrad_detjac_fpts(j,i,1) = -xss*(zt*yr - yt*zr) + xst*(zs*yr - ys*zr) + xrs*(zt*ys - yt*zs) +
-                        xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
-                    tgrad_detjac_fpts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
-                        xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
-                  }
-
-                // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
-
-                tnorm_dot_inv_detjac_mul_jac(0)=((tnorm_fpts(0,j)*(d_pos(1,1)*d_pos(2,2)-d_pos(1,2)*d_pos(2,1)))+(tnorm_fpts(1,j)*(d_pos(1,2)*d_pos(2,0)-d_pos(1,0)*d_pos(2,2)))+(tnorm_fpts(2,j)*(d_pos(1,0)*d_pos(2,1)-d_pos(1,1)*d_pos(2,0))));
-                tnorm_dot_inv_detjac_mul_jac(1)=((tnorm_fpts(0,j)*(d_pos(0,2)*d_pos(2,1)-d_pos(0,1)*d_pos(2,2)))+(tnorm_fpts(1,j)*(d_pos(0,0)*d_pos(2,2)-d_pos(0,2)*d_pos(2,0)))+(tnorm_fpts(2,j)*(d_pos(0,1)*d_pos(2,0)-d_pos(0,0)*d_pos(2,1))));
-                tnorm_dot_inv_detjac_mul_jac(2)=((tnorm_fpts(0,j)*(d_pos(0,1)*d_pos(1,2)-d_pos(0,2)*d_pos(1,1)))+(tnorm_fpts(1,j)*(d_pos(0,2)*d_pos(1,0)-d_pos(0,0)*d_pos(1,2)))+(tnorm_fpts(2,j)*(d_pos(0,0)*d_pos(1,1)-d_pos(0,1)*d_pos(1,0))));
-
-                // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
-
-                mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
-                                                                tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
-                                                                tnorm_dot_inv_detjac_mul_jac(2)*tnorm_dot_inv_detjac_mul_jac(2));
-
-                // store normal at flux point
-
-                norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
-                norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
-                norm_fpts(j,i,2)=tnorm_dot_inv_detjac_mul_jac(2)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
-              }
-            else
-              {
-                cout << "ERROR: Invalid number of dimensions ... " << endl;
-              }
-          }
+      if (viscous) {
+        tgrad_detjac_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
       }
+    }
+
+    if (rank==0 && first_time)
+      cout << endl << " at flux points"  << endl;
+
+    for(i=0;i<n_eles;i++) {
+      if ((i%1000)==0 && rank==0 && first_time)
+        cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
+
+      for(j=0;j<n_fpts_per_ele;j++)
+      {
+        // get coordinates of the flux point
+
+        for(k=0;k<n_dims;k++)
+        {
+          loc(k)=tloc_fpts(k,j);
+        }
+
+        if (motion) {
+          calc_pos(loc,i,pos);
+        }
+
+        for(k=0;k<n_dims;k++)
+        {
+          loc_fpts(j,i,k)=pos(k);
+        }
+
+        // calculate first derivatives of shape functions at the flux points
+        calc_d_pos(loc,i,d_pos);
+
+        // calculate second derivatives of shape functions at the flux point
+        if(viscous) {
+          if (motion) {
+            calc_dd_pos_dyn_fpt(j,i,dd_pos);
+          }else{
+            calc_dd_pos(loc,i,dd_pos);
+          }
+        }
+
+        // store quantities at the flux point
+
+        if(n_dims==2)
+        {
+          xr = d_pos(0,0);
+          xs = d_pos(0,1);
+
+          yr = d_pos(1,0);
+          ys = d_pos(1,1);
+
+          jac_fpts(j,i,0,0) = xr;
+          jac_fpts(j,i,0,1) = xs;
+          jac_fpts(j,i,1,0) = yr;
+          jac_fpts(j,i,1,1) = ys;
+
+          // store determinant of jacobian at flux point
+          detjac_fpts(j,i)= xr*ys - xs*yr;
+
+          if (detjac_fpts(j,i) < 0)
+          {
+            FatalError("Negative Jacobian at flux points");
+          }
+
+          // store determinant of jacobian multiplied by inverse of jacobian at the flux point
+
+          inv_detjac_mul_jac_fpts(j,i,0,0)= ys;
+          inv_detjac_mul_jac_fpts(j,i,0,1)= -xs;
+          inv_detjac_mul_jac_fpts(j,i,1,0)= -yr;
+          inv_detjac_mul_jac_fpts(j,i,1,1)= xr;
+
+          // gradient of detjac at the flux point
+
+          if(viscous)
+          {
+            xrr = dd_pos(0,0);
+            xss = dd_pos(0,1);
+            xrs = dd_pos(0,2);
+
+            yrr = dd_pos(1,0);
+            yss = dd_pos(1,1);
+            yrs = dd_pos(1,2);
+
+            tgrad_detjac_fpts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
+            tgrad_detjac_fpts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
+          }
+
+          // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
+
+          tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_fpts(0,j)*d_pos(1,1))-(tnorm_fpts(1,j)*d_pos(1,0));
+          tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_fpts(0,j)*d_pos(0,1))+(tnorm_fpts(1,j)*d_pos(0,0));
+
+          // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
+
+          mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
+                                                          tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
+
+
+          // store normal at flux point
+
+          norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
+          norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
+        }
+        else if(n_dims==3)
+        {
+          xr = d_pos(0,0);
+          xs = d_pos(0,1);
+          xt = d_pos(0,2);
+
+          yr = d_pos(1,0);
+          ys = d_pos(1,1);
+          yt = d_pos(1,2);
+
+          zr = d_pos(2,0);
+          zs = d_pos(2,1);
+          zt = d_pos(2,2);
+
+          jac_fpts(j,i,0,0) = xr;
+          jac_fpts(j,i,0,1) = xs;
+          jac_fpts(j,i,0,2) = xt;
+          jac_fpts(j,i,1,0) = yr;
+          jac_fpts(j,i,1,1) = ys;
+          jac_fpts(j,i,1,2) = yt;
+          jac_fpts(j,i,2,0) = zr;
+          jac_fpts(j,i,2,1) = zs;
+          jac_fpts(j,i,2,2) = zt;
+
+          // store determinant of jacobian at flux point
+          detjac_fpts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
+
+          // store determinant of jacobian multiplied by inverse of jacobian at the flux point
+
+          inv_detjac_mul_jac_fpts(j,i,0,0) = ys*zt - yt*zs;
+          inv_detjac_mul_jac_fpts(j,i,0,1) = xt*zs - xs*zt;
+          inv_detjac_mul_jac_fpts(j,i,0,2) = xs*yt - xt*ys;
+          inv_detjac_mul_jac_fpts(j,i,1,0) = yt*zr - yr*zt;
+          inv_detjac_mul_jac_fpts(j,i,1,1) = xr*zt - xt*zr;
+          inv_detjac_mul_jac_fpts(j,i,1,2) = xt*yr - xr*yt;
+          inv_detjac_mul_jac_fpts(j,i,2,0) = yr*zs - ys*zr;
+          inv_detjac_mul_jac_fpts(j,i,2,1) = xs*zr - xr*zs;
+          inv_detjac_mul_jac_fpts(j,i,2,2) = xr*ys - xs*yr;
+
+          // gradient of detjac at the flux point
+
+          if(viscous)
+          {
+            xrr = dd_pos(0,0);
+            xss = dd_pos(0,1);
+            xtt = dd_pos(0,2);
+            xrs = dd_pos(0,3);
+            xrt = dd_pos(0,4);
+            xst = dd_pos(0,5);
+
+            yrr = dd_pos(1,0);
+            yss = dd_pos(1,1);
+            ytt = dd_pos(1,2);
+            yrs = dd_pos(1,3);
+            yrt = dd_pos(1,4);
+            yst = dd_pos(1,5);
+
+            zrr = dd_pos(2,0);
+            zss = dd_pos(2,1);
+            ztt = dd_pos(2,2);
+            zrs = dd_pos(2,3);
+            zrt = dd_pos(2,4);
+            zst = dd_pos(2,5);
+
+            tgrad_detjac_fpts(j,i,0) = xrt*(zs*yr - ys*zr) - xrs*(zt*yr - yt*zr) + xrr*(zt*ys - yt*zs) +
+                xr*(-zs*yrt + ys*zrt + zt*yrs - yt*zrs) - xs*(-zr*yrt + yr*zrt + zt*yrr - yt*zrr) + xt*(-zr*yrs + yr*zrs + zs*yrr - ys*zrr);
+            tgrad_detjac_fpts(j,i,1) = -xss*(zt*yr - yt*zr) + xst*(zs*yr - ys*zr) + xrs*(zt*ys - yt*zs) +
+                xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
+            tgrad_detjac_fpts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
+                xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
+          }
+
+          // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
+
+          tnorm_dot_inv_detjac_mul_jac(0)=((tnorm_fpts(0,j)*(d_pos(1,1)*d_pos(2,2)-d_pos(1,2)*d_pos(2,1)))+(tnorm_fpts(1,j)*(d_pos(1,2)*d_pos(2,0)-d_pos(1,0)*d_pos(2,2)))+(tnorm_fpts(2,j)*(d_pos(1,0)*d_pos(2,1)-d_pos(1,1)*d_pos(2,0))));
+          tnorm_dot_inv_detjac_mul_jac(1)=((tnorm_fpts(0,j)*(d_pos(0,2)*d_pos(2,1)-d_pos(0,1)*d_pos(2,2)))+(tnorm_fpts(1,j)*(d_pos(0,0)*d_pos(2,2)-d_pos(0,2)*d_pos(2,0)))+(tnorm_fpts(2,j)*(d_pos(0,1)*d_pos(2,0)-d_pos(0,0)*d_pos(2,1))));
+          tnorm_dot_inv_detjac_mul_jac(2)=((tnorm_fpts(0,j)*(d_pos(0,1)*d_pos(1,2)-d_pos(0,2)*d_pos(1,1)))+(tnorm_fpts(1,j)*(d_pos(0,2)*d_pos(1,0)-d_pos(0,0)*d_pos(1,2)))+(tnorm_fpts(2,j)*(d_pos(0,0)*d_pos(1,1)-d_pos(0,1)*d_pos(1,0))));
+
+          // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
+
+          mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
+                                                          tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
+                                                          tnorm_dot_inv_detjac_mul_jac(2)*tnorm_dot_inv_detjac_mul_jac(2));
+
+          // store normal at flux point
+
+          norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
+          norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
+          norm_fpts(j,i,2)=tnorm_dot_inv_detjac_mul_jac(2)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
+        }
+        else
+        {
+          cout << "ERROR: Invalid number of dimensions ... " << endl;
+        }
+      }
+    }
 
 #ifdef _GPU
     mag_tnorm_dot_inv_detjac_mul_jac_fpts.mv_cpu_gpu();
@@ -4631,17 +4646,403 @@ void eles::set_transforms(void)
     */
 #endif
 
-    if (first_time) {
-      gbar_upts = detjac_upts; // initialize GCL-corrected |G|
-    }
-
-      if (rank==0 && first_time) cout << endl;
-
-      // To avoid re-setting up ALL transform arrays in the future (for dynamic grids)
-      first_time = false;
-    } // if n_eles!=0
+    if (rank==0 && first_time) cout << endl;
+  } // if n_eles!=0
 }
 
+void eles::set_transforms_dynamic(void)
+{
+  if (n_eles!=0)
+  {
+
+    int i,j,k;
+
+    int n_comp;
+
+    if(n_dims == 2)
+    {
+      n_comp = 3;
+    }
+    else if(n_dims == 3)
+    {
+      n_comp = 6;
+    }
+
+    array<double> loc(n_dims);
+    array<double> pos(n_dims);
+    array<double> d_pos(n_dims,n_dims);
+    array<double> dd_pos(n_dims,n_comp);
+    array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);  // really need to figure out what this ACTUALLY is
+
+    double xr, xs, xt;
+    double yr, ys, yt;
+    double zr, zs, zt;
+
+    double xrr, xss, xtt, xrs, xrt, xst;
+    double yrr, yss, ytt, yrs, yrt, yst;
+    double zrr, zss, ztt, zrs, zrt, zst;
+
+    if (first_time) {
+      // Determinant of the dynamic -> static reference transformation matrix ( |G| )
+      J_dyn_upts.setup(n_upts_per_ele,n_eles);
+      // Total dynamic -> static reference transformation matrix ( |G|*G^{-1} )
+      Ginv_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
+
+      if (viscous) {
+        // Gradient of the determinant of the Jacobian as seen in the static frame ( del |G| )
+        tgrad_J_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims);
+      }
+    }
+
+    if (rank==0 && first_time) {
+      cout << " Setting up dynamic->static transforms at solution points" << endl;
+    }
+
+    for(i=0;i<n_eles;i++) {
+      if ((i%1000)==0 && rank==0 && first_time)
+        cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
+
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        // get coordinates of the solution point
+        for(k=0;k<n_dims;k++)
+        {
+          loc(k)=loc_upts(k,j);
+        }
+
+        // calculate first derivatives of shape functions at the solution point
+        calc_d_pos_dyn_upt(j,i,d_pos);
+
+        // calculate second derivatives of shape functions at the solution point
+        if (viscous) {
+          calc_dd_pos_dyn_upt(j,i,dd_pos);
+        }
+
+        // store quantities at the solution point
+
+        if(n_dims==2)
+        {
+          xr = d_pos(0,0);
+          xs = d_pos(0,1);
+
+          yr = d_pos(1,0);
+          ys = d_pos(1,1);
+
+          // store determinant of jacobian at solution point
+          J_dyn_upts(j,i)= xr*ys - xs*yr;
+
+          if (J_dyn_upts(j,i) < 0)
+          {
+            FatalError("Negative Jacobian at solution points");
+          }
+
+          // store determinant of jacobian multiplied by inverse of jacobian at the solution point
+          Ginv_dyn_upts(j,i,0,0)= ys;
+          Ginv_dyn_upts(j,i,0,1)= -xs;
+          Ginv_dyn_upts(j,i,1,0)= -yr;
+          Ginv_dyn_upts(j,i,1,1)= xr;
+
+          // gradient of detjac at solution point
+          if(viscous)
+          {
+            xrr = dd_pos(0,0);
+            xss = dd_pos(0,1);
+            xrs = dd_pos(0,2);
+
+            yrr = dd_pos(1,0);
+            yss = dd_pos(1,1);
+            yrs = dd_pos(1,2);
+
+            tgrad_J_dyn_upts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
+            tgrad_J_dyn_upts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
+          }
+
+        }
+        else if(n_dims==3)
+        {
+          xr = d_pos(0,0);
+          xs = d_pos(0,1);
+          xt = d_pos(0,2);
+
+          yr = d_pos(1,0);
+          ys = d_pos(1,1);
+          yt = d_pos(1,2);
+
+          zr = d_pos(2,0);
+          zs = d_pos(2,1);
+          zt = d_pos(2,2);
+
+          // store determinant of jacobian at solution point
+          J_dyn_upts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
+
+          // store determinant of jacobian multiplied by inverse of jacobian at the solution point
+          Ginv_dyn_upts(j,i,0,0) = ys*zt - yt*zs;
+          Ginv_dyn_upts(j,i,0,1) = xt*zs - xs*zt;
+          Ginv_dyn_upts(j,i,0,2) = xs*yt - xt*ys;
+          Ginv_dyn_upts(j,i,1,0) = yt*zr - yr*zt;
+          Ginv_dyn_upts(j,i,1,1) = xr*zt - xt*zr;
+          Ginv_dyn_upts(j,i,1,2) = xt*yr - xr*yt;
+          Ginv_dyn_upts(j,i,2,0) = yr*zs - ys*zr;
+          Ginv_dyn_upts(j,i,2,1) = xs*zr - xr*zs;
+          Ginv_dyn_upts(j,i,2,2) = xr*ys - xs*yr;
+
+          // gradient of detjac at solution point
+          if(viscous)
+          {
+            xrr = dd_pos(0,0);
+            xss = dd_pos(0,1);
+            xtt = dd_pos(0,2);
+            xrs = dd_pos(0,3);
+            xrt = dd_pos(0,4);
+            xst = dd_pos(0,5);
+
+            yrr = dd_pos(1,0);
+            yss = dd_pos(1,1);
+            ytt = dd_pos(1,2);
+            yrs = dd_pos(1,3);
+            yrt = dd_pos(1,4);
+            yst = dd_pos(1,5);
+
+            zrr = dd_pos(2,0);
+            zss = dd_pos(2,1);
+            ztt = dd_pos(2,2);
+            zrs = dd_pos(2,3);
+            zrt = dd_pos(2,4);
+            zst = dd_pos(2,5);
+
+            tgrad_J_dyn_upts(j,i,0) = xrt*(zs*yr - ys*zr) - xrs*(zt*yr - yt*zr) + xrr*(zt*ys - yt*zs) +
+                xr*(-zs*yrt + ys*zrt + zt*yrs - yt*zrs) - xs*(-zr*yrt + yr*zrt + zt*yrr - yt*zrr) + xt*(-zr*yrs + yr*zrs + zs*yrr - ys*zrr);
+            tgrad_J_dyn_upts(j,i,1) = -xss*(zt*yr - yt*zr) + xst*(zs*yr - ys*zr) + xrs*(zt*ys - yt*zs) +
+                xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
+            tgrad_J_dyn_upts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
+                xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
+          }
+        }
+        else
+        {
+          cout << "ERROR: Invalid number of dimensions ... " << endl;
+        }
+      }
+    }
+
+#ifdef _GPU
+    J_dyn_upts.cp_cpu_gpu(); // Copy since need in write_tec
+    Ginv_dyn_upts.mv_cpu_gpu();
+    /*
+    if (viscous) {
+        tgrad_J_dyn_upts.mv_cpu_gpu();
+    }
+    */
+#endif
+
+    // Compute metrics term at flux points
+
+    if (first_time) {
+      J_dyn_fpts.setup(n_fpts_per_ele,n_eles);
+      Ginv_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
+      norm_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+      phys_pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+
+      ndA_dyn_fpts.setup(n_fpts_per_ele,n_eles);
+
+      if (viscous) {
+        tgrad_J_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+      }
+    }
+
+    if (rank==0 && first_time)
+      cout << endl << " at flux points"  << endl;
+
+    for(i=0;i<n_eles;i++) {
+      if ((i%1000)==0 && rank==0 && first_time)
+        cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
+
+      for(j=0;j<n_fpts_per_ele;j++)
+      {
+        // get coordinates of the flux point
+
+        for(k=0;k<n_dims;k++)
+        {
+          loc(k)=tloc_fpts(k,j);
+        }
+
+        calc_pos_dyn_fpt(j,i,pos);
+
+        for(k=0;k<n_dims;k++)
+        {
+          phys_pos_fpts(j,i,k)=pos(k);
+        }
+
+        // calculate first derivatives of shape functions at the flux points
+        calc_d_pos_dyn_fpt(j,i,d_pos);
+
+        // calculate second derivatives of shape functions at the flux point
+        if(viscous) {
+          calc_dd_pos_dyn_fpt(j,i,dd_pos);
+        }
+
+        // store quantities at the flux point
+
+        if(n_dims==2)
+        {
+          xr = d_pos(0,0);
+          xs = d_pos(0,1);
+
+          yr = d_pos(1,0);
+          ys = d_pos(1,1);
+
+          // store determinant of jacobian at flux point
+
+          J_dyn_fpts(j,i)= xr*ys - xs*yr;
+
+          if (J_dyn_fpts(j,i) < 0)
+          {
+            FatalError("Negative Jacobian at flux points");
+          }
+
+          // store determinant of jacobian multiplied by inverse of jacobian at the flux point
+          Ginv_dyn_fpts(j,i,0,0)= ys;
+          Ginv_dyn_fpts(j,i,0,1)= -xs;
+          Ginv_dyn_fpts(j,i,1,0)= -yr;
+          Ginv_dyn_fpts(j,i,1,1)= xr;
+
+          // gradient of detjac at the flux point
+          if(viscous)
+          {
+            xrr = dd_pos(0,0);
+            xss = dd_pos(0,1);
+            xrs = dd_pos(0,2);
+
+            yrr = dd_pos(1,0);
+            yss = dd_pos(1,1);
+            yrs = dd_pos(1,2);
+
+            tgrad_J_dyn_fpts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
+            tgrad_J_dyn_fpts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
+          }
+
+          // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
+          tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_fpts(0,j)*d_pos(1,1))-(tnorm_fpts(1,j)*d_pos(1,0));
+          tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_fpts(0,j)*d_pos(0,1))+(tnorm_fpts(1,j)*d_pos(0,0));
+
+          // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
+          ndA_dyn_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
+                                                          tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
+
+
+          // store normal at flux point
+          norm_dyn_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/ndA_dyn_fpts(j,i);
+          norm_dyn_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/ndA_dyn_fpts(j,i);
+        }
+        else if(n_dims==3)
+        {
+          xr = d_pos(0,0);
+          xs = d_pos(0,1);
+          xt = d_pos(0,2);
+
+          yr = d_pos(1,0);
+          ys = d_pos(1,1);
+          yt = d_pos(1,2);
+
+          zr = d_pos(2,0);
+          zs = d_pos(2,1);
+          zt = d_pos(2,2);
+
+          // store determinant of jacobian at flux point
+
+          J_dyn_fpts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
+
+          // store determinant of jacobian multiplied by inverse of jacobian at the flux point
+
+          Ginv_dyn_fpts(j,i,0,0) = ys*zt - yt*zs;
+          Ginv_dyn_fpts(j,i,0,1) = xt*zs - xs*zt;
+          Ginv_dyn_fpts(j,i,0,2) = xs*yt - xt*ys;
+          Ginv_dyn_fpts(j,i,1,0) = yt*zr - yr*zt;
+          Ginv_dyn_fpts(j,i,1,1) = xr*zt - xt*zr;
+          Ginv_dyn_fpts(j,i,1,2) = xt*yr - xr*yt;
+          Ginv_dyn_fpts(j,i,2,0) = yr*zs - ys*zr;
+          Ginv_dyn_fpts(j,i,2,1) = xs*zr - xr*zs;
+          Ginv_dyn_fpts(j,i,2,2) = xr*ys - xs*yr;
+
+          // gradient of detjac at the flux point
+
+          if(viscous)
+          {
+            xrr = dd_pos(0,0);
+            xss = dd_pos(0,1);
+            xtt = dd_pos(0,2);
+            xrs = dd_pos(0,3);
+            xrt = dd_pos(0,4);
+            xst = dd_pos(0,5);
+
+            yrr = dd_pos(1,0);
+            yss = dd_pos(1,1);
+            ytt = dd_pos(1,2);
+            yrs = dd_pos(1,3);
+            yrt = dd_pos(1,4);
+            yst = dd_pos(1,5);
+
+            zrr = dd_pos(2,0);
+            zss = dd_pos(2,1);
+            ztt = dd_pos(2,2);
+            zrs = dd_pos(2,3);
+            zrt = dd_pos(2,4);
+            zst = dd_pos(2,5);
+
+            tgrad_J_dyn_fpts(j,i,0) = xrt*(zs*yr - ys*zr) - xrs*(zt*yr - yt*zr) + xrr*(zt*ys - yt*zs) +
+                xr*(-zs*yrt + ys*zrt + zt*yrs - yt*zrs) - xs*(-zr*yrt + yr*zrt + zt*yrr - yt*zrr) + xt*(-zr*yrs + yr*zrs + zs*yrr - ys*zrr);
+            tgrad_J_dyn_fpts(j,i,1) = -xss*(zt*yr - yt*zr) + xst*(zs*yr - ys*zr) + xrs*(zt*ys - yt*zs) +
+                xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
+            tgrad_J_dyn_fpts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
+                xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
+          }
+
+          // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
+
+          tnorm_dot_inv_detjac_mul_jac(0)=((tnorm_fpts(0,j)*(d_pos(1,1)*d_pos(2,2)-d_pos(1,2)*d_pos(2,1)))+(tnorm_fpts(1,j)*(d_pos(1,2)*d_pos(2,0)-d_pos(1,0)*d_pos(2,2)))+(tnorm_fpts(2,j)*(d_pos(1,0)*d_pos(2,1)-d_pos(1,1)*d_pos(2,0))));
+          tnorm_dot_inv_detjac_mul_jac(1)=((tnorm_fpts(0,j)*(d_pos(0,2)*d_pos(2,1)-d_pos(0,1)*d_pos(2,2)))+(tnorm_fpts(1,j)*(d_pos(0,0)*d_pos(2,2)-d_pos(0,2)*d_pos(2,0)))+(tnorm_fpts(2,j)*(d_pos(0,1)*d_pos(2,0)-d_pos(0,0)*d_pos(2,1))));
+          tnorm_dot_inv_detjac_mul_jac(2)=((tnorm_fpts(0,j)*(d_pos(0,1)*d_pos(1,2)-d_pos(0,2)*d_pos(1,1)))+(tnorm_fpts(1,j)*(d_pos(0,2)*d_pos(1,0)-d_pos(0,0)*d_pos(1,2)))+(tnorm_fpts(2,j)*(d_pos(0,0)*d_pos(1,1)-d_pos(0,1)*d_pos(1,0))));
+
+          // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
+
+          ndA_dyn_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
+                                                          tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
+                                                          tnorm_dot_inv_detjac_mul_jac(2)*tnorm_dot_inv_detjac_mul_jac(2));
+
+          // store normal at flux point
+
+          norm_dyn_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/ndA_dyn_fpts(j,i);
+          norm_dyn_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/ndA_dyn_fpts(j,i);
+          norm_dyn_fpts(j,i,2)=tnorm_dot_inv_detjac_mul_jac(2)/ndA_dyn_fpts(j,i);
+        }
+        else
+        {
+          cout << "ERROR: Invalid number of dimensions ... " << endl;
+        }
+      }
+    }
+
+#ifdef _GPU
+    mag_tnorm_dot_inv_detjac_mul_jac_fpts.mv_cpu_gpu();
+    norm_dyn_fpts.mv_cpu_gpu();
+    phys_pos_fpts.cp_cpu_gpu();
+
+    /*
+      inv_detjac_mul_jac_fpts.mv_cpu_gpu();
+      J_dyn_fpts.mv_cpu_gpu();
+    if (viscous)
+    {
+        tgrad_detjac_fpts.mv_cpu_gpu();
+    }
+    */
+#endif
+
+    if (rank==0 && first_time) cout << endl;
+
+    // To avoid re-setting up ALL transform arrays in the future (for dynamic grids)
+    first_time = false;
+  }
+}
 
 void eles::set_bdy_ele2ele(void)
 {
@@ -4714,12 +5115,14 @@ void eles::set_transforms_inters_cubpts(void)
       inter_detjac_inters_cubpts.setup(n_inters_per_ele);
       norm_inters_cubpts.setup(n_inters_per_ele);
       vol_detjac_inters_cubpts.setup(n_inters_per_ele);
+      jac_vol_cubpts.setup(n_inters_per_ele);
 
       for (int i=0;i<n_inters_per_ele;i++)
         {
           inter_detjac_inters_cubpts(i).setup(n_cubpts_per_inter(i),n_bdy_eles);
           norm_inters_cubpts(i).setup(n_cubpts_per_inter(i),n_bdy_eles,n_dims);
           vol_detjac_inters_cubpts(i).setup(n_cubpts_per_inter(i),n_bdy_eles);
+          jac_inters_cubpts(i).setup(n_cubpts_per_inter(i),n_bdy_eles,n_dims,n_dims);
         }
 
       for(i=0;i<n_bdy_eles;i++)
@@ -4755,6 +5158,11 @@ void eles::set_transforms_inters_cubpts(void)
                       yr = d_pos(1,0);
                       ys = d_pos(1,1);
 
+                      jac_inters_cubpts(l)(j,i,0,0) = xr;
+                      jac_inters_cubpts(l)(j,i,0,1) = xs;
+                      jac_inters_cubpts(l)(j,i,1,0) = yr;
+                      jac_inters_cubpts(l)(j,i,1,1) = ys;
+
                       // store determinant of jacobian at flux point
                       vol_detjac_inters_cubpts(l)(j,i)= xr*ys - xs*yr;
 
@@ -4788,6 +5196,16 @@ void eles::set_transforms_inters_cubpts(void)
                       zr = d_pos(2,0);
                       zs = d_pos(2,1);
                       zt = d_pos(2,2);
+
+                      jac_inters_cubpts(l)(j,i,0,0) = xr;
+                      jac_inters_cubpts(l)(j,i,0,1) = xs;
+                      jac_inters_cubpts(l)(j,i,0,2) = xt;
+                      jac_inters_cubpts(l)(j,i,1,0) = yr;
+                      jac_inters_cubpts(l)(j,i,1,1) = ys;
+                      jac_inters_cubpts(l)(j,i,1,2) = yt;
+                      jac_inters_cubpts(l)(j,i,2,0) = zr;
+                      jac_inters_cubpts(l)(j,i,2,1) = zs;
+                      jac_inters_cubpts(l)(j,i,2,2) = zt;
 
                       // store determinant of jacobian at flux point
                       vol_detjac_inters_cubpts(l)(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
@@ -4831,6 +5249,7 @@ void eles::set_transforms_vol_cubpts(void)
       array<double> pos(n_dims);
 
       vol_detjac_vol_cubpts.setup(n_cubpts_per_ele);
+//      jac_vol_cubpts.setup(n_cubpts_per_ele,n_eles,n_dims,n_dims);
 
       for (i=0;i<n_cubpts_per_ele;i++)
         vol_detjac_vol_cubpts(i).setup(n_eles);
@@ -4850,6 +5269,12 @@ void eles::set_transforms_vol_cubpts(void)
                 calc_pos(loc,i,pos);
                 calc_d_pos(loc,i,d_pos);
               }
+
+//              for (int k=0; k<n_dims; k++) {
+//                for (int n=0; n<n_dims; n++) {
+//                  jac_vol_cubpts.setup(j,i,k,n) = d_pos(k,n);
+//                }
+//              }
 
               if (n_dims==2)
                 {
@@ -5307,8 +5732,98 @@ void eles::calc_d_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_d
     }
 }
 
+///**
+// * Calculate derivative of dynamic position wrt reference (initial,static) position at fpt
+// * Uses pre-computed nodal shape basis derivatives for efficiency
+// * \param[in] in_fpt - ID of flux point within element to evaluate at
+// * \param[in] in_ele - local element ID
+// * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+// */
+//void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
+//{
+//    int i,j,k;
+//    //array<double> d_pos_ref(n_dims,n_dims); ///< derivative of ref. pos. wrt compuational space vars
+
+//    // Calculate dx/d<c>
+//    out_d_pos.initialize_to_zero();
+//    for(j=0;j<n_dims;j++) {
+//        for(k=0;k<n_dims;k++) {
+//            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+//                out_d_pos(j,k)+=d_nodal_s_basis_fpts(k,i,in_fpt,in_ele)*shape_dyn(j,i,in_ele);
+//            }
+//        }
+//    }
+//}
+
+///**
+// * Calculate derivative of dynamic position wrt reference (initial,static) position at upt
+// * Uses pre-computed nodal shape basis derivatives for efficiency
+// * \param[in] in_upt - ID of solution point within element to evaluate at
+// * \param[in] in_ele - local element ID
+// * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+// */
+//void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
+//{
+//    int i,j,k;
+
+//    // Calculate dx/d<c>
+//    out_d_pos.initialize_to_zero();
+//    for(j=0;j<n_dims;j++) {
+//        for(k=0;k<n_dims;k++) {
+//            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+//                out_d_pos(j,k)+=d_nodal_s_basis_upts(k,i,in_upt,in_ele)*shape_dyn(j,i,in_ele);
+//            }
+//        }
+//    }
+//}
+
+///**
+// * Calculate derivative of dynamic position wrt reference (initial,static) position at volume cubature point
+// * Uses pre-computed nodal shape basis derivatives for efficiency
+// * \param[in] in_cubpt - ID of solution point within element to evaluate at
+// * \param[in] in_ele - local element ID
+// * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+// */
+//void eles::calc_d_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, array<double>& out_d_pos)
+//{
+//    int i,j,k;
+
+//    // Calculate dx/d<c>
+//    out_d_pos.initialize_to_zero();
+//    for(j=0;j<n_dims;j++) {
+//        for(k=0;k<n_dims;k++) {
+//            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+//                out_d_pos(j,k)+=d_nodal_s_basis_vol_cubpts(k,i,in_cubpt,in_ele)*shape_dyn(j,i,in_ele);
+//            }
+//        }
+//    }
+//}
+
+///**
+// * Calculate derivative of dynamic position wrt reference (initial,static) position at interface cubature point
+// * Uses pre-computed nodal shape basis derivatives for efficiency
+// * \param[in] in_cubpt - ID of cubature point on selected face within element
+// * \param[in] in_face - ID of face within element
+// * \param[in] in_ele - local element ID
+// * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+// */
+//void eles::calc_d_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double>& out_d_pos)
+//{
+//    int i,j,k;
+
+//    // Calculate dx/d<c>
+//    out_d_pos.initialize_to_zero();
+//    for(j=0;j<n_dims;j++) {
+//        for(k=0;k<n_dims;k++) {
+//            for(i=0;i<n_spts_per_ele(in_ele);i++) {
+//                out_d_pos(j,k)+=d_nodal_s_basis_inters_cubpts(in_face)(k,i,in_cubpt,in_ele)*shape_dyn(j,i,in_ele);
+//            }
+//        }
+//    }
+//}
+
 /**
- * Calculate derivative of dynamic position wrt reference (initial,static) position at fpt
+ * Calculate derivative of dynamic physical position wrt static/reference physical position at fpt
  * Uses pre-computed nodal shape basis derivatives for efficiency
  * \param[in] in_fpt - ID of flux point within element to evaluate at
  * \param[in] in_ele - local element ID
@@ -5316,22 +5831,32 @@ void eles::calc_d_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_d
  */
 void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
 {
-    int i,j,k;
-    //array<double> d_pos_ref(n_dims,n_dims); ///< derivative of ref. pos. wrt compuational space vars
+  int i,j,k;
 
-    // Calculate dx/d<c>
-    out_d_pos.initialize_to_zero();
-    for(j=0;j<n_dims;j++) {
-        for(k=0;k<n_dims;k++) {
-            for(i=0;i<n_spts_per_ele(in_ele);i++) {
-                out_d_pos(j,k)+=d_nodal_s_basis_fpts(k,i,in_fpt,in_ele)*shape_dyn(j,i,in_ele);
-            }
-        }
+  // Calculate dx/dr
+  array<double> dxdr(n_dims,n_dims);
+  dxdr.initialize_to_zero();
+  for(i=0; i<n_dims; i++) {
+    for(j=0; j<n_dims; j++) {
+      for(k=0; k<n_spts_per_ele(in_ele); k++) {
+        dxdr(i,j) += d_nodal_s_basis_fpts(j,k,in_fpt,in_ele)*shape_dyn(i,k,in_ele);
+      }
     }
+  }
+
+  // Apply chain rule: dx/dX = (dx/dr) / (dX/dr)
+  out_d_pos.initialize_to_zero();
+  for (i=0; i<n_dims; i++) {
+    for (j=0; j<n_dims; j++) {
+      for (k=0; k<n_dims; k++) {
+        out_d_pos(i,j) += dxdr(i,k)/jac_fpts(in_fpt,in_ele,j,k);
+      }
+    }
+  }
 }
 
 /**
- * Calculate derivative of dynamic position wrt reference (initial,static) position at upt
+ * Calculate derivative of dynamic physical position wrt static/reference physical position at upt
  * Uses pre-computed nodal shape basis derivatives for efficiency
  * \param[in] in_upt - ID of solution point within element to evaluate at
  * \param[in] in_ele - local element ID
@@ -5339,62 +5864,96 @@ void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
  */
 void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
 {
-    int i,j,k;
+  int i,j,k;
 
-    // Calculate dx/d<c>
-    out_d_pos.initialize_to_zero();
-    for(j=0;j<n_dims;j++) {
-        for(k=0;k<n_dims;k++) {
-            for(i=0;i<n_spts_per_ele(in_ele);i++) {
-                out_d_pos(j,k)+=d_nodal_s_basis_upts(k,i,in_upt,in_ele)*shape_dyn(j,i,in_ele);
-            }
-        }
+  // Calculate dx/dr
+  array<double> dxdr(n_dims,n_dims);
+  dxdr.initialize_to_zero();
+  for(i=0; i<n_dims; i++) {
+    for(j=0; j<n_dims; j++) {
+      for(k=0; k<n_spts_per_ele(in_ele); k++) {
+        dxdr(i,j) += d_nodal_s_basis_upts(j,k,in_upt,in_ele)*shape_dyn(i,k,in_ele);
+      }
     }
+  }
+
+  // Apply chain rule: dx/dX = (dx/dr) / (dX/dr)
+  out_d_pos.initialize_to_zero();
+  for (i=0; i<n_dims; i++) {
+    for (j=0; j<n_dims; j++) {
+      for (k=0; k<n_dims; k++) {
+        out_d_pos(i,j) += dxdr(i,k)/jac_upts(in_upt,in_ele,j,k);
+      }
+    }
+  }
 }
 
+
 /**
- * Calculate derivative of dynamic position wrt reference (initial,static) position at volume cubature point
+ * Calculate derivative of dynamic physical position wrt static/reference physical position at volume cubature point
  * Uses pre-computed nodal shape basis derivatives for efficiency
- * \param[in] in_cubpt - ID of solution point within element to evaluate at
+ * \param[in] in_cubpt - ID of volume cubature point within element to evaluate at
  * \param[in] in_ele - local element ID
  * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
  */
 void eles::calc_d_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, array<double>& out_d_pos)
 {
-    int i,j,k;
+  int i,j,k;
 
-    // Calculate dx/d<c>
-    out_d_pos.initialize_to_zero();
-    for(j=0;j<n_dims;j++) {
-        for(k=0;k<n_dims;k++) {
-            for(i=0;i<n_spts_per_ele(in_ele);i++) {
-                out_d_pos(j,k)+=d_nodal_s_basis_vol_cubpts(k,i,in_cubpt,in_ele)*shape_dyn(j,i,in_ele);
-            }
-        }
+  // Calculate dx/dr
+  array<double> dxdr(n_dims,n_dims);
+  dxdr.initialize_to_zero();
+  for(i=0; i<n_dims; i++) {
+    for(j=0; j<n_dims; j++) {
+      for(k=0; k<n_spts_per_ele(in_ele); k++) {
+        dxdr(i,j) += d_nodal_s_basis_vol_cubpts(j,k,in_cubpt,in_ele)*shape_dyn(i,k,in_ele);
+      }
     }
+  }
+
+  // Apply chain rule: dx/dX = (dx/dr) / (dX/dr)
+  out_d_pos.initialize_to_zero();
+  for (i=0; i<n_dims; i++) {
+    for (j=0; j<n_dims; j++) {
+      for (k=0; k<n_dims; k++) {
+        out_d_pos(i,j) += dxdr(i,k)/jac_vol_cubpts(in_cubpt,in_ele,j,k);
+      }
+    }
+  }
 }
 
 /**
- * Calculate derivative of dynamic position wrt reference (initial,static) position at interface cubature point
+ * Calculate derivative of dynamic physical position wrt static/reference physical position at interface cubature point
  * Uses pre-computed nodal shape basis derivatives for efficiency
- * \param[in] in_cubpt - ID of cubature point on selected face within element
- * \param[in] in_face - ID of face within element
+ * \param[in] in_cubpt - ID of interface cubature point within element to evaluate at
+ * \param[in] in_face - Local ID of face within element
  * \param[in] in_ele - local element ID
  * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
  */
 void eles::calc_d_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double>& out_d_pos)
 {
-    int i,j,k;
+  int i,j,k;
 
-    // Calculate dx/d<c>
-    out_d_pos.initialize_to_zero();
-    for(j=0;j<n_dims;j++) {
-        for(k=0;k<n_dims;k++) {
-            for(i=0;i<n_spts_per_ele(in_ele);i++) {
-                out_d_pos(j,k)+=d_nodal_s_basis_inters_cubpts(in_face)(k,i,in_cubpt,in_ele)*shape_dyn(j,i,in_ele);
-            }
-        }
+  // Calculate dx/dr
+  array<double> dxdr(n_dims,n_dims);
+  dxdr.initialize_to_zero();
+  for(i=0; i<n_dims; i++) {
+    for(j=0; j<n_dims; j++) {
+      for(k=0; k<n_spts_per_ele(in_ele); k++) {
+        dxdr(i,j) += d_nodal_s_basis_inters_cubpts(j,k,in_cubpt,in_ele)*shape_dyn(i,k,in_ele);
+      }
     }
+  }
+
+  // Apply chain rule: dx/dX = (dx/dr) / (dX/dr)
+  out_d_pos.initialize_to_zero();
+  for (i=0; i<n_dims; i++) {
+    for (j=0; j<n_dims; j++) {
+      for (k=0; k<n_dims; k++) {
+        out_d_pos(i,j) += dxdr(i,k)/jac_inters_cubpts(in_face)(in_cubpt,in_ele,j,k);
+      }
+    }
+  }
 }
 
 
