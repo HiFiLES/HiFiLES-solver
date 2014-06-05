@@ -13,8 +13,9 @@
 
 # TODO: add config script to build parmetis and look for BLAS, parmetis, CUDA, MPI and TECIO libraries
 
-# TODO: include makefile.machine.in by looking for current machine name
-include makefiles/makefile.jbull_OSX_MPI.in
+# Copy the appropriate file from makefiles/makefile.machine.in to HIFILES_HOME as makefile.in
+#
+include /Users/fpalacios/HiFiLES/Makefiles/makefile.fpalacios_OSX_MPI.in
 
 # Compiler
 
@@ -129,7 +130,7 @@ endif
 
 ifeq ($(PARALLEL),MPI)
 	OBJS += $(OBJ)mpi_inters.o
-	OBJS += $(PARMETIS_BUILD_DIR)/libparmetis/libparmetis.a $(PARMETIS_BUILD_DIR)/libmetis/libmetis.a
+	OBJS += $(PARMETIS_BUILD_DIR)/libparmetis.a $(PARMETIS_BUILD_DIR)/libmetis.a
 endif
 	
 ifeq ($(TECIO),YES)

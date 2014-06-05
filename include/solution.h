@@ -85,6 +85,8 @@ struct solution {
   array<double> vis_force;
   array<double> norm_residual;
   array<double> integral_quantities;
+  double coeff_lift;
+  double coeff_drag;
 
   /*! Plotting resolution. */
   

@@ -361,7 +361,7 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
       restart_file.open(file_name);
 
       if (restart_file.fail())
-        FatalError(strcat("Could not open restart file ",file_name));
+        FatalError(strcat((char *)"Could not open restart file ",file_name));
 
       for (int i=0;i<FlowSol->n_ele_types;i++)  {
           if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {

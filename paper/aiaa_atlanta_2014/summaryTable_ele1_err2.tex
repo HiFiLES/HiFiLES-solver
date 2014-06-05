@@ -1,0 +1,30 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{ c c c c c c c} 
+  
+ Polynomial Order & Mesh: & 2x2x2 & 4x4x4 & 8x8x8 & 16x16x16 & Overall Order of Accuracy \\ 
+ \hline 
+ \multirow{2}{*}{$p = 1$} & $L_2$ error & 1.98e+01 & 9.57e+00 & 4.55e+00 & 2.19e+00 &   \\ 
+  
+   & $\mathcal{O}(L_2)$ &   & 1.05 & 1.07 & 1.06 & 1.06 \\ 
+ \hline 
+ \multirow{2}{*}{$p = 2$} & $L_2$ error & 1.17e+01 & 2.98e+00 & 7.10e-01 & 1.71e-01 &   \\ 
+  
+   & $\mathcal{O}(L_2)$ &   & 1.97 & 2.07 & 2.06 & 2.03 \\ 
+ \hline 
+ \multirow{2}{*}{$p = 3$} & $L_2$ error & 3.17e+00 & 3.81e-01 & 4.73e-02 &   &   \\ 
+  
+   & $\mathcal{O}(L_2)$ &   & 3.06 & 3.01 &   & 3.03 \\ 
+ \hline 
+ \multirow{2}{*}{$p = 4$} & $L_2$ error & 5.21e-01 & 4.27e-02 & 2.69e-03 &   &   \\ 
+  
+   & $\mathcal{O}(L_2)$ &   & 3.61 & 3.99 &   & 3.80 \\ 
+ \hline 
+ \multirow{2}{*}{$p = 5$} & $L_2$ error & 3.20e+00 & 1.88e-01 & 4.79e-03 &   &   \\ 
+  
+   & $\mathcal{O}(L_2)$ &   & 4.09 & 5.29 &   & 4.69 \\ 
+ \hline 
+ \end{tabular}
+\caption{Accuracy of HiFiLES for NS equations with source term in tetrahedral meshes at $t = 10$. $L_2$ error is the $L_2$-norm of the error in the gradient of the energy field:$\frac{\partial}{\partial x_i} (\rho e)$}
+\label{table:tetsError2} 
+ \end{table}

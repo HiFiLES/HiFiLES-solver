@@ -39,6 +39,12 @@ double eval_d_legendre(double in_r, int in_mode);
 /*! evaluate derivative of vcjh basis */
 double eval_d_vcjh_1d(double in_r, int in_mode, int in_order, double in_eta);
 
+/*! evaluate derivative of OESFR basis */
+double eval_d_oesfr_1d(double in_r, int in_mode, int in_order);
+
+/*! evaluate derivative of Optimized Flux Reconstruction (OFR) basis */
+double eval_d_ofr_1d(double in_r, int in_mode, int in_order);
+
 void get_opp_3_tri(array<double>& opp_3, array<double>& loc_upts_tri, array<double>& loc_fpts_tri, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_per_tri, int order, double c_tri, int vcjh_scheme_tri);
 
 void get_opp_3_dg(array<double>& opp_3_dg, array<double>& loc_upts_tri, array<double>& loc_fpts_tri, int n_upts_per_tri, int order);

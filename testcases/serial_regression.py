@@ -53,7 +53,7 @@ class testcase:
     # Run HiFiLES
     os.chdir(os.path.join('./',self.cfg_dir)) 
     start   = datetime.datetime.now()
-    print("Path at terminal when executing this file")
+    print("\nPath at terminal when executing this file")
     print(command)
     process = subprocess.Popen(command, shell=True)  # This line launches HiFiLES
 
@@ -197,7 +197,7 @@ if __name__=="__main__":
   cylinder.cfg_dir      = "testcases/navier-stokes/cylinder"
   cylinder.cfg_file     = "input_cylinder_visc"
   cylinder.test_iter    = 25
-  cylinder.test_vals    = [0.17038345,0.75864863,0.23040523,10.05233986,3.42539175,-0.04153506]
+  cylinder.test_vals    = [0.273009,1.178080,1.268071,15.483935,8.855743,9.092093]
   cylinder.HiFiLES_exec = "HiFiLES"
   cylinder.timeout      = 1600
   cylinder.tol          = 0.00001

@@ -53,6 +53,8 @@ class testcase:
     # Run HiFiLES
     os.chdir(os.path.join('./',self.cfg_dir)) 
     start   = datetime.datetime.now()
+    print("\nPath at terminal when executing this file")
+    print(command)
     process = subprocess.Popen(command, shell=True)  # This line launches HiFiLES
 
     while process.poll() is None:
@@ -199,8 +201,8 @@ if __name__=="__main__":
   cylinder.cfg_dir      = "testcases/navier-stokes/cylinder/"
   cylinder.cfg_file     = "input_cylinder_visc"
   cylinder.test_iter    = 25
-  cylinder.test_vals    = [0.17038345,0.75864863,0.23040523,10.05233986,3.42539175,-0.04153506]
-  cylinder.mpi_cmd      = "mpirun -np 2"
+  cylinder.test_vals    = [0.273009,1.178080,1.268071,15.483935,8.855743,9.092093]
+  cylinder.mpi_cmd      = "mpiexec -np 2"
   cylinder.HiFiLES_exec = "HiFiLES"
   cylinder.timeout      = 1600
   cylinder.tol          = 0.00001
@@ -211,8 +213,8 @@ if __name__=="__main__":
   sqcyl.cfg_dir      = "testcases/navier-stokes/square_cylinder/"
   sqcyl.cfg_file     = "input_sqcyl_wsm_tet"
   sqcyl.test_iter    = 10
-  sqcyl.test_vals    = [0.64471221,2.70391512,0.24385134,0.14111932,16.79818472,20.05215009,0.03604174,0.00009637]
-  sqcyl.mpi_cmd      = "mpirun -np 8"
+  sqcyl.test_vals    = [0.644712,2.703915,0.243851,0.141119,16.798187,40.230415,-0.002312,0.000193]
+  sqcyl.mpi_cmd      = "mpiexec -np 4"
   sqcyl.HiFiLES_exec = "HiFiLES"
   sqcyl.timeout      = 1600
   sqcyl.tol          = 0.00001

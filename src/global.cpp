@@ -43,7 +43,7 @@ int dgemm(int Arows, int Bcols, int Acols, double alpha, double beta, double* a,
   double temp;
 
   // Quick return if possible
-  if (Arows == 0 || Bcols == 0 || (alpha == 0. || Acols == 0) && beta == 1.)  {
+  if (Arows == 0 || Bcols == 0 || ((alpha == 0. || Acols == 0) && beta == 1.))  {
       return 0;
   }
 

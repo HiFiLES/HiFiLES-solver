@@ -972,33 +972,55 @@ double eles_quads::eval_div_vcjh_basis(int in_index, array<double>& loc)
 {
   int i,j;
   double eta;
-
-  if (run_input.vcjh_scheme_quad==0)
-    eta = run_input.eta_quad;
-  else
-    eta = compute_eta(run_input.vcjh_scheme_quad,order);
-
   double div_vcjh_basis;
+  int scheme = run_input.vcjh_scheme_quad;
 
+  if (scheme==0)
+    eta = run_input.eta_quad;    
+  else if (scheme < 5)
+    eta = compute_eta(run_input.vcjh_scheme_quad,order);
+  
   i=in_index/n_fpts_per_inter(0);
   j=in_index-(n_fpts_per_inter(0)*i);
 
-  if(i==0)
-    {
-      div_vcjh_basis=-eval_lagrange(loc(0),j,loc_1d_upts)*eval_d_vcjh_1d(loc(1),0,order,eta);
-    }
-  else if(i==1)
-    {
-      div_vcjh_basis=eval_d_vcjh_1d(loc(0),1,order,eta)*eval_lagrange(loc(1),j,loc_1d_upts);
-    }
-  else if(i==2)
-    {
-      div_vcjh_basis=eval_lagrange(loc(0),order-j,loc_1d_upts)*eval_d_vcjh_1d(loc(1),1,order,eta);
-    }
-  else if(i==3)
-    {
-      div_vcjh_basis=-eval_d_vcjh_1d(loc(0),0,order,eta)*eval_lagrange(loc(1),order-j,loc_1d_upts);
-    }
+  if (scheme < 5) {
+
+    if(i==0)
+      div_vcjh_basis = -eval_lagrange(loc(0),j,loc_1d_upts) * eval_d_vcjh_1d(loc(1),0,order,eta);
+    else if(i==1)
+      div_vcjh_basis = eval_lagrange(loc(1),j,loc_1d_upts) * eval_d_vcjh_1d(loc(0),1,order,eta);
+    else if(i==2)
+      div_vcjh_basis = eval_lagrange(loc(0),order-j,loc_1d_upts) * eval_d_vcjh_1d(loc(1),1,order,eta);
+    else if(i==3)
+      div_vcjh_basis = -eval_lagrange(loc(1),order-j,loc_1d_upts) * eval_d_vcjh_1d(loc(0),0,order,eta);
+
+  }
+  // OFR scheme
+  else if (scheme == 5) {
+
+    if(i==0)
+      div_vcjh_basis = -eval_lagrange(loc(0),j,loc_1d_upts) * eval_d_ofr_1d(loc(1),0,order);
+    else if(i==1)
+      div_vcjh_basis = eval_lagrange(loc(1),j,loc_1d_upts) * eval_d_ofr_1d(loc(0),1,order);
+    else if(i==2)
+      div_vcjh_basis = eval_lagrange(loc(0),order-j,loc_1d_upts) * eval_d_ofr_1d(loc(1),1,order);
+    else if(i==3)
+      div_vcjh_basis = -eval_lagrange(loc(1),order-j,loc_1d_upts) * eval_d_ofr_1d(loc(0),0,order);
+
+  }
+  // OESFR scheme
+  else if (scheme == 6) {
+
+    if(i==0)
+      div_vcjh_basis = -eval_lagrange(loc(0),j,loc_1d_upts) * eval_d_oesfr_1d(loc(1),0,order);
+    else if(i==1)
+      div_vcjh_basis = eval_lagrange(loc(1),j,loc_1d_upts) * eval_d_oesfr_1d(loc(0),1,order);
+    else if(i==2)
+      div_vcjh_basis = eval_lagrange(loc(0),order-j,loc_1d_upts) * eval_d_oesfr_1d(loc(1),1,order);
+    else if(i==3)
+      div_vcjh_basis = -eval_lagrange(loc(1),order-j,loc_1d_upts) * eval_d_oesfr_1d(loc(0),0,order);
+
+  }
 
   return div_vcjh_basis;
 }

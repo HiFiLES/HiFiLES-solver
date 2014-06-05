@@ -1,0 +1,79 @@
+\documentclass{aiaa-tc}
+\usepackage{amsmath,epstopdf}
+\usepackage{subfigure,morefloats}
+\usepackage{caption,multirow}
+\usepackage{subfigmat}
+\usepackage{caption}
+\usepackage{bbding}
+
+\newcommand{\psibold}{\mbox{\boldmath$\psi$}}
+\newcommand{\nablabold}{\mbox{\boldmath$\nabla$}}
+\newcommand{\sigmabold}{\mbox{\boldmath$\sigma$}}
+\newcommand{\Omegabold}{\mbox{\boldmath$\Omega$}}
+\newcommand{\Gammabold}{\mbox{\boldmath$\Gamma$}}
+\newcommand{\degr}{ ^{\circ}}
+\renewcommand{\l}{\left}
+\renewcommand{\r}{\right}
+
+%List of authors:
+%Manuel R. L\'opez-Morales
+%Abhishek Sheshadri
+%Kartikey Asthana
+%Jacob Crabill
+%Thomas Economon
+%David Manosalvas
+%Joshua Romero
+%Jerry Watkins
+%David Williams
+%Dr. Francisco Palacios
+%Prof. Antony Jameson
+
+\title{Verification and Validation of HiFiLES: a High-Order LES unstructured solver on multi-GPU platforms}
+
+ \author{Manuel R. L\'opez-Morales
+         \thanks{Ph.D. Candidate, Department of Aeronautics and Astronautics, Stanford University, AIAA Student Member; mlopez14@stanford.edu},
+            Jonathan Bull\thanks{Postdoctoral Scholar, Department of Aeronautics and Astronautics, Stanford University, AIAA Member},
+            Jacob Crabill,\thanks{Ph.D. Candidates (authors in alphabetical order), Department of Aeronautics and Astronautics, AIAA Student Members},\\
+            Thomas D. Economon\footnotemark[3],
+            David Manosalvas\footnotemark[3],\\
+            Joshua Romero\footnotemark[3],
+            Abhishek Sheshadri\footnotemark[3],
+            Jerry E. Watkins II\footnotemark[3],
+            David Williams\thanks{CFD Engineer, Flight Sciences Division, Boeing Commercial Airplanes, AIAA Member},\\
+            Francisco Palacios\thanks{Engineering Research Associate, Department of Aeronautics and Astronautics, AIAA Senior Member}, and
+            Antony Jameson\thanks{Thomas V. Jones Professor of Engineering, Department of Aeronautics and Astronautics, Stanford University, AIAA Fellow} \\
+           \normalsize\itshape
+         Department of Aeronautics and Astronautics, Stanford University, Stanford, CA, 94305
+         }
+
+
+\begin{document}
+
+\maketitle
+
+\input{abstract}
+
+%\input{nomenclature}
+
+\input{introduction}
+
+\input{governing_equations}
+
+\input{code_description}
+
+\input{verification}
+
+% Note that the verification section above now has both V & V
+%\input{validation}
+
+\input{conclusion}
+
+\input{acknowledgements}
+
+\bibliographystyle{aiaa}
+
+\bibliography{references}
+
+ \end{document}
+
+

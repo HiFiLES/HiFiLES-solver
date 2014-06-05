@@ -30,7 +30,7 @@
 		05CCBCBD1824729D0074A979 /* mpi_inters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05CCBCA51824729D0074A979 /* mpi_inters.cpp */; };
 		05E96FA318258403000BE589 /* output.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05E96FA118258403000BE589 /* output.cpp */; };
 		05E96FA418258403000BE589 /* solver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05E96FA218258403000BE589 /* solver.cpp */; };
-		819B392718EF4FF700078E06 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 819B392618EF4FF700078E06 /* Makefile */; };
+		81C26AD718F4760F001F5947 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 81C26AD518F4760F001F5947 /* Makefile */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -48,7 +48,7 @@
 /* Begin PBXFileReference section */
 		05CCBC7F1824724D0074A979 /* HiFiLES */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HiFiLES; sourceTree = BUILT_PRODUCTS_DIR; };
 		05CCBC8F1824729C0074A979 /* bdy_inters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = bdy_inters.cpp; path = src/bdy_inters.cpp; sourceTree = "<group>"; };
-		05CCBC901824729C0074A979 /* cubature_1d.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cubature_1d.cpp; path = src/cubature_1d.cpp; sourceTree = "<group>"; };
+		05CCBC901824729C0074A979 /* cubature_1d.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.cpp.cpp; name = cubature_1d.cpp; path = src/cubature_1d.cpp; sourceTree = "<group>"; tabWidth = 2; };
 		05CCBC911824729C0074A979 /* cubature_hexa.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cubature_hexa.cpp; path = src/cubature_hexa.cpp; sourceTree = "<group>"; };
 		05CCBC921824729C0074A979 /* cubature_quad.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cubature_quad.cpp; path = src/cubature_quad.cpp; sourceTree = "<group>"; };
 		05CCBC931824729C0074A979 /* cubature_tet.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cubature_tet.cpp; path = src/cubature_tet.cpp; sourceTree = "<group>"; };
@@ -112,42 +112,9 @@
 		05E96FA0182583E9000BE589 /* output.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = output.h; path = include/output.h; sourceTree = "<group>"; };
 		05E96FA118258403000BE589 /* output.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = output.cpp; path = src/output.cpp; sourceTree = "<group>"; };
 		05E96FA218258403000BE589 /* solver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = solver.cpp; path = src/solver.cpp; sourceTree = "<group>"; };
-		819B392518EF420400078E06 /* cuda_kernels.cu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = cuda_kernels.cu; path = src/cuda_kernels.cu; sourceTree = "<group>"; };
-		819B392618EF4FF700078E06 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
-		819B392918EF500B00078E06 /* makefile.aphrodite_CPU.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = makefile.aphrodite_CPU.in; sourceTree = "<group>"; };
-		819B392A18EF500B00078E06 /* makefile.cluster.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = makefile.cluster.in; sourceTree = "<group>"; };
-		819B392B18EF500B00078E06 /* makefile.enrico_GPU.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = makefile.enrico_GPU.in; sourceTree = "<group>"; };
-		819B392C18EF500B00078E06 /* makefile.enrico_MPI.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = makefile.enrico_MPI.in; sourceTree = "<group>"; };
-		819B392D18EF500B00078E06 /* makefile.fpalacios_OSX_MPI.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = makefile.fpalacios_OSX_MPI.in; sourceTree = "<group>"; };
-		819B392E18EF500B00078E06 /* makefile.nikola_MPI.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = makefile.nikola_MPI.in; sourceTree = "<group>"; };
-		819B392F18EF500B00078E06 /* makefile.OSX.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = makefile.OSX.in; sourceTree = "<group>"; };
-		819B393218EF502400078E06 /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
-		819B393418EF502400078E06 /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
-		819B393718EF502400078E06 /* cylinder_2ndorder_tri_vis.neu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cylinder_2ndorder_tri_vis.neu; sourceTree = "<group>"; };
-		819B393818EF502500078E06 /* input_cylinder_inv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = input_cylinder_inv; sourceTree = "<group>"; };
-		819B393918EF502500078E06 /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
-		819B393B18EF502500078E06 /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
-		819B393E18EF502500078E06 /* cylinder_2ndorder_tri_vis.neu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cylinder_2ndorder_tri_vis.neu; sourceTree = "<group>"; };
-		819B393F18EF502500078E06 /* input_cylinder_visc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = input_cylinder_visc; sourceTree = "<group>"; };
-		819B394118EF502500078E06 /* flatplate_a0-125-2s.neu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "flatplate_a0-125-2s.neu"; sourceTree = "<group>"; };
-		819B394218EF502500078E06 /* flatplate_a1-125-2s.neu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "flatplate_a1-125-2s.neu"; sourceTree = "<group>"; };
-		819B394318EF502500078E06 /* flatplate_a2-125-2s.neu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "flatplate_a2-125-2s.neu"; sourceTree = "<group>"; };
-		819B394418EF502500078E06 /* flatplate_a3-125-2s.neu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "flatplate_a3-125-2s.neu"; sourceTree = "<group>"; };
-		819B394518EF502500078E06 /* flatplate_a4-125-2s.neu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "flatplate_a4-125-2s.neu"; sourceTree = "<group>"; };
-		819B394618EF502500078E06 /* input_flatplate_a */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = input_flatplate_a; sourceTree = "<group>"; };
-		819B394718EF502500078E06 /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
-		819B394A18EF502500078E06 /* Beck-TGV-dissrate-DG-64x4-1600.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Beck-TGV-dissrate-DG-64x4-1600.dat"; sourceTree = "<group>"; };
-		819B394B18EF502500078E06 /* Beck-TGV-dissrate-DNS2-1600.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Beck-TGV-dissrate-DNS2-1600.dat"; sourceTree = "<group>"; };
-		819B394C18EF502500078E06 /* Debonis-TGV-tke-DNS-1600.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Debonis-TGV-tke-DNS-1600.dat"; sourceTree = "<group>"; };
-		819B394D18EF502500078E06 /* input_TGV_SD_hex */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = input_TGV_SD_hex; sourceTree = "<group>"; };
-		819B394E18EF502500078E06 /* plotstats.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = plotstats.py; sourceTree = "<group>"; };
-		819B394F18EF502500078E06 /* Taylor-Green-Vortex-hex-32.neu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Taylor-Green-Vortex-hex-32.neu"; sourceTree = "<group>"; };
-		819B395018EF502500078E06 /* Taylor-Green-Vortex-hex.neu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Taylor-Green-Vortex-hex.neu"; sourceTree = "<group>"; };
-		819B395118EF502500078E06 /* parallel_regression.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = parallel_regression.py; sourceTree = "<group>"; };
-		819B395318EF502500078E06 /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
-		819B395418EF502500078E06 /* serial_regression.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = serial_regression.py; sourceTree = "<group>"; };
-		819B395518EF506E00078E06 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
-		819B395618EF506E00078E06 /* makefile.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = makefile.in; sourceTree = "<group>"; };
+		81C26AD518F4760F001F5947 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		81C26AD618F4760F001F5947 /* Makefile.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.in; sourceTree = "<group>"; };
+		E994EDC5192416DE0058FE94 /* input_template */ = {isa = PBXFileReference; lastKnownFileType = text; path = input_template; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -245,6 +212,7 @@
 		05CCBC761824724D0074A979 = {
 			isa = PBXGroup;
 			children = (
+				E994EDC5192416DE0058FE94 /* input_template */,
 				81C26AD518F4760F001F5947 /* Makefile */,
 				81C26AD618F4760F001F5947 /* Makefile.in */,
 				05CCBC8E182472890074A979 /* src */,
@@ -252,9 +220,7 @@
 				05CCBC8C1824727E0074A979 /* data */,
 				05CCBC801824724D0074A979 /* Products */,
 			);
-			indentWidth = 2;
 			sourceTree = "<group>";
-			tabWidth = 2;
 		};
 		05CCBC801824724D0074A979 /* Products */ = {
 			isa = PBXGroup;
@@ -310,12 +276,6 @@
 			isa = PBXGroup;
 			children = (
 				05CCBC9E1824729C0074A979 /* HiFiLES.cpp */,
-				819B395518EF506E00078E06 /* Makefile.am */,
-				819B395618EF506E00078E06 /* makefile.in */,
-				819B393018EF502400078E06 /* testcases */,
-				819B392818EF500B00078E06 /* makefiles */,
-				819B392618EF4FF700078E06 /* Makefile */,
-				819B392518EF420400078E06 /* cuda_kernels.cu */,
 				05CCBCA41824729D0074A979 /* geometry.cpp */,
 				05E96FA218258403000BE589 /* solver.cpp */,
 				05E96FA118258403000BE589 /* output.cpp */,
@@ -329,140 +289,6 @@
 				051F2D5D182AD72F0029F49A /* cubature */,
 			);
 			name = src;
-			sourceTree = "<group>";
-		};
-		819B392818EF500B00078E06 /* makefiles */ = {
-			isa = PBXGroup;
-			children = (
-				819B392918EF500B00078E06 /* makefile.aphrodite_CPU.in */,
-				819B392A18EF500B00078E06 /* makefile.cluster.in */,
-				819B392B18EF500B00078E06 /* makefile.enrico_GPU.in */,
-				819B392C18EF500B00078E06 /* makefile.enrico_MPI.in */,
-				819B392D18EF500B00078E06 /* makefile.fpalacios_OSX_MPI.in */,
-				819B392E18EF500B00078E06 /* makefile.nikola_MPI.in */,
-				819B392F18EF500B00078E06 /* makefile.OSX.in */,
-			);
-			path = makefiles;
-			sourceTree = "<group>";
-		};
-		819B393018EF502400078E06 /* testcases */ = {
-			isa = PBXGroup;
-			children = (
-				819B393118EF502400078E06 /* adv-diffusion */,
-				819B393318EF502400078E06 /* advection */,
-				819B393518EF502400078E06 /* euler */,
-				819B393A18EF502500078E06 /* les */,
-				819B393C18EF502500078E06 /* navier-stokes */,
-				819B395118EF502500078E06 /* parallel_regression.py */,
-				819B395218EF502500078E06 /* rans */,
-				819B395418EF502500078E06 /* serial_regression.py */,
-			);
-			path = testcases;
-			sourceTree = "<group>";
-		};
-		819B393118EF502400078E06 /* adv-diffusion */ = {
-			isa = PBXGroup;
-			children = (
-				819B393218EF502400078E06 /* readme.txt */,
-			);
-			path = "adv-diffusion";
-			sourceTree = "<group>";
-		};
-		819B393318EF502400078E06 /* advection */ = {
-			isa = PBXGroup;
-			children = (
-				819B393418EF502400078E06 /* readme.txt */,
-			);
-			path = advection;
-			sourceTree = "<group>";
-		};
-		819B393518EF502400078E06 /* euler */ = {
-			isa = PBXGroup;
-			children = (
-				819B393618EF502400078E06 /* cylinder */,
-				819B393918EF502500078E06 /* readme.txt */,
-			);
-			path = euler;
-			sourceTree = "<group>";
-		};
-		819B393618EF502400078E06 /* cylinder */ = {
-			isa = PBXGroup;
-			children = (
-				819B393718EF502400078E06 /* cylinder_2ndorder_tri_vis.neu */,
-				819B393818EF502500078E06 /* input_cylinder_inv */,
-			);
-			path = cylinder;
-			sourceTree = "<group>";
-		};
-		819B393A18EF502500078E06 /* les */ = {
-			isa = PBXGroup;
-			children = (
-				819B393B18EF502500078E06 /* readme.txt */,
-			);
-			path = les;
-			sourceTree = "<group>";
-		};
-		819B393C18EF502500078E06 /* navier-stokes */ = {
-			isa = PBXGroup;
-			children = (
-				819B393D18EF502500078E06 /* cylinder */,
-				819B394018EF502500078E06 /* flatplate */,
-				819B394718EF502500078E06 /* readme.txt */,
-				819B394818EF502500078E06 /* Taylor_Green_vortex */,
-			);
-			path = "navier-stokes";
-			sourceTree = "<group>";
-		};
-		819B393D18EF502500078E06 /* cylinder */ = {
-			isa = PBXGroup;
-			children = (
-				819B393E18EF502500078E06 /* cylinder_2ndorder_tri_vis.neu */,
-				819B393F18EF502500078E06 /* input_cylinder_visc */,
-			);
-			path = cylinder;
-			sourceTree = "<group>";
-		};
-		819B394018EF502500078E06 /* flatplate */ = {
-			isa = PBXGroup;
-			children = (
-				819B394118EF502500078E06 /* flatplate_a0-125-2s.neu */,
-				819B394218EF502500078E06 /* flatplate_a1-125-2s.neu */,
-				819B394318EF502500078E06 /* flatplate_a2-125-2s.neu */,
-				819B394418EF502500078E06 /* flatplate_a3-125-2s.neu */,
-				819B394518EF502500078E06 /* flatplate_a4-125-2s.neu */,
-				819B394618EF502500078E06 /* input_flatplate_a */,
-			);
-			path = flatplate;
-			sourceTree = "<group>";
-		};
-		819B394818EF502500078E06 /* Taylor_Green_vortex */ = {
-			isa = PBXGroup;
-			children = (
-				819B394918EF502500078E06 /* data */,
-				819B394D18EF502500078E06 /* input_TGV_SD_hex */,
-				819B394E18EF502500078E06 /* plotstats.py */,
-				819B394F18EF502500078E06 /* Taylor-Green-Vortex-hex-32.neu */,
-				819B395018EF502500078E06 /* Taylor-Green-Vortex-hex.neu */,
-			);
-			path = Taylor_Green_vortex;
-			sourceTree = "<group>";
-		};
-		819B394918EF502500078E06 /* data */ = {
-			isa = PBXGroup;
-			children = (
-				819B394A18EF502500078E06 /* Beck-TGV-dissrate-DG-64x4-1600.dat */,
-				819B394B18EF502500078E06 /* Beck-TGV-dissrate-DNS2-1600.dat */,
-				819B394C18EF502500078E06 /* Debonis-TGV-tke-DNS-1600.dat */,
-			);
-			path = data;
-			sourceTree = "<group>";
-		};
-		819B395218EF502500078E06 /* rans */ = {
-			isa = PBXGroup;
-			children = (
-				819B395318EF502500078E06 /* readme.txt */,
-			);
-			path = rans;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -491,7 +317,7 @@
 		05CCBC771824724D0074A979 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0510;
+				LastUpgradeCheck = 0500;
 				ORGANIZATIONNAME = "Stanford University";
 			};
 			buildConfigurationList = 05CCBC7A1824724D0074A979 /* Build configuration list for PBXProject "HiFiLES" */;
@@ -522,7 +348,7 @@
 				05CCBCB71824729D0074A979 /* input.cpp in Sources */,
 				05CCBCA91824729D0074A979 /* cubature_hexa.cpp in Sources */,
 				05CCBCB51824729D0074A979 /* global.cpp in Sources */,
-				819B392718EF4FF700078E06 /* Makefile in Sources */,
+				81C26AD718F4760F001F5947 /* Makefile in Sources */,
 				05CCBCB21824729D0074A979 /* eles.cpp in Sources */,
 				05CCBCB11824729D0074A979 /* eles_tris.cpp in Sources */,
 				05CCBCA71824729D0074A979 /* bdy_inters.cpp in Sources */,
@@ -577,7 +403,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 			};
@@ -609,7 +435,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				SDKROOT = macosx;
 			};
 			name = Release;

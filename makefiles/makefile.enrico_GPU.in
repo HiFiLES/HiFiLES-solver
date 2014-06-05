@@ -15,13 +15,16 @@ BLAS=     NO
 COMP=     GCC
 PARALLEL= MPI
 TECIO=    NO
+MACHINE=  ENRICO
 
 BLAS_DIR= /usr/local/atlas
 
-PARMETIS_DIR = lib/parmetis-4.0.2-local
+PARMETIS_DIR = /usr/local/parmetis-4.0.3
 
-PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/build/Linux-x86_64
+PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/lib
 
 TECIO_DIR = lib/tecio-2008
 
 CUDA_DIR = /usr/local/cuda-5.0
+
+MPI_DIR= /usr/local/mpich2-1.5

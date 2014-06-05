@@ -59,7 +59,7 @@ p_res                             // Plotting resolution, number of nodes per di
 write_type                        // 0: Paraview, 1: Tecplot
 1
 n_plot_quantities
-8 rho u v w energy pressure mach vorticity
+7 u v w energy pressure mach vorticity
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 12
 volume_cub_order                  // Order of cubature rule for integrating over element volumes

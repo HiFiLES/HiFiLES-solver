@@ -112,7 +112,7 @@ cubature_tri::cubature_tri(int in_order) // set by order
     // read data from file to arrays
     while(datfile.getline(buf,BUFSIZ))
     {
-      sscanf(buf,"%s",&section_TXT);
+      sscanf(buf,"%s",section_TXT);
       param_name.assign(section_TXT,0,99);
       
       if(!param_name.compare(0,5,"order"))
@@ -130,7 +130,7 @@ cubature_tri::cubature_tri(int in_order) // set by order
           
           for(int i=0;i<n_pts;++i) {
             datfile.getline(buf,BUFSIZ);
-            sscanf(buf,"%s",&param_TXT);
+            sscanf(buf,"%s",param_TXT);
             param.assign(param_TXT,0,99);
             strbuf.str(param);
             locs(i,0) = atof(param.c_str());
@@ -141,7 +141,7 @@ cubature_tri::cubature_tri(int in_order) // set by order
           
           for(int i=0;i<n_pts;++i) {
             datfile.getline(buf,BUFSIZ);
-            sscanf(buf,"%s",&param_TXT);
+            sscanf(buf,"%s",param_TXT);
             param.assign(param_TXT,0,99);
             strbuf.str(param);
             locs(i,1) = atof(param.c_str());
@@ -152,7 +152,7 @@ cubature_tri::cubature_tri(int in_order) // set by order
           
           for(int i=0;i<n_pts;++i) {
             datfile.getline(buf,BUFSIZ);
-            sscanf(buf,"%s",&param_TXT);
+            sscanf(buf,"%s",param_TXT);
             param.assign(param_TXT,0,99);
             strbuf.str(param);
             weights(i) = atof(param.c_str());

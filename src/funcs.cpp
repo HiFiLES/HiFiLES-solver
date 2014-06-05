@@ -237,6 +237,124 @@ double eval_d_vcjh_1d(double in_r, int in_mode, int in_order, double in_eta)
   return dtemp_0;
 }
 
+double eval_d_ofr_1d(double in_r, int in_mode, int in_order)
+{
+	double dtemp_0;
+	double cVal, aP, eta;
+
+	array<double> loc_zeros_gL(in_order+2), loc_zeros_gR(in_order+2);
+
+	// Append end points
+	loc_zeros_gL(0) = -1.0;
+	loc_zeros_gL(in_order+1) = 1.0;
+	loc_zeros_gR(0) = -1.0;
+	loc_zeros_gR(in_order+1) = 1.0;
+
+	// zeros of correction function
+	if(in_order == 1) {
+		loc_zeros_gL(1) = -0.324936024976658;
+
+		loc_zeros_gR(1) = 0.324936024976658;
+	}
+	else if(in_order == 2) {
+		loc_zeros_gL(1) = -0.683006983995485;
+		loc_zeros_gL(2) = 0.302192635873585;
+
+		loc_zeros_gR(2) = 0.683006983995485;
+		loc_zeros_gR(1) = -0.302192635873585;
+	}
+	else if(in_order == 3) {
+                loc_zeros_gL(1) = -0.839877075575685;
+		loc_zeros_gL(2) = -0.202221671675099;
+		loc_zeros_gL(3) = 0.518569179742482;
+
+		loc_zeros_gR(3) = 0.839877075575685;
+		loc_zeros_gR(2) = 0.202221671675099;
+		loc_zeros_gR(1) = -0.518569179742482;
+	}
+	else if(in_order == 4) {
+		loc_zeros_gL(1) = -0.856985048185331;
+		loc_zeros_gL(2) = -0.447652424946130;
+		loc_zeros_gL(3) = 0.180019033571473;
+		loc_zeros_gL(4) = 0.638102911955799;
+
+		loc_zeros_gR(4) = 0.856985048185331;
+		loc_zeros_gR(3) = 0.447652424946130;
+		loc_zeros_gR(2) = -0.180019033571473;
+		loc_zeros_gR(1) = -0.638102911955799;
+	}
+	else if(in_order == 5) {
+		loc_zeros_gL(1) = -0.897887439354270;
+		loc_zeros_gL(2) = -0.577293821014237;
+		loc_zeros_gL(3) = -0.101190259640464;
+		loc_zeros_gL(4) = 0.354120543898467;
+		loc_zeros_gL(5) = 0.760380824360528;
+
+		loc_zeros_gR(5) = 0.897887439354270;
+		loc_zeros_gR(4) = 0.577293821014237;
+		loc_zeros_gR(3) = 0.101190259640464;
+		loc_zeros_gR(2) = -0.354120543898467;
+		loc_zeros_gR(1) = -0.760380824360528;
+	}
+	else if(in_order == 6) { // P=6 not verified
+		loc_zeros_gL(1) = -0.932638621602718;
+		loc_zeros_gL(2) = -0.627949285295015; 
+		loc_zeros_gL(3) = -0.196972255400472;
+		loc_zeros_gL(4) = 0.392803242695776;
+		loc_zeros_gL(5) = 0.481615260763104;
+		loc_zeros_gL(6) = 0.629467212278235;
+
+		loc_zeros_gR(6) = 0.932638621602718;
+		loc_zeros_gR(5) = 0.627949285295015; 
+		loc_zeros_gR(4) = 0.196972255400472;
+		loc_zeros_gR(3) = -0.392803242695776;
+		loc_zeros_gR(2) = -0.481615260763104;
+		loc_zeros_gR(1) = -0.629467212278235;
+	}
+	else
+		FatalError("OFR schemes have been obtained as yet for P = 1 to 6");
+
+	if(in_mode==0) // left correction function
+		dtemp_0 = eval_d_lagrange(in_r, 0, loc_zeros_gL);
+
+	else if(in_mode==1) // right correction function
+		dtemp_0 = eval_d_lagrange(in_r, in_order+1, loc_zeros_gR);
+
+	return dtemp_0;
+}
+
+double eval_d_oesfr_1d(double in_r, int in_mode, int in_order)
+{
+	double dtemp_0;
+	double cVal, aP, eta;
+
+	// optimal 'c' value
+	if (in_order == 1)
+		cVal = 8.40e-3;
+	else if (in_order == 2)
+		cVal = 5.83e-4;
+	else if (in_order == 3)
+		cVal = 3.17e-5;
+	else if (in_order == 4)
+		cVal = 9.68e-7;
+	else if (in_order == 5)
+		cVal = 1.02e-8;
+	else if (in_order == 6)
+		cVal = 9.76e-11;
+	else
+		FatalError("ESFR schemes have been obtained as yet for P = 1 to 6");
+
+	aP = (1.0/pow(2.0,in_order)) *factorial(2*in_order)/(factorial(in_order)*factorial(in_order));
+	eta = cVal * (0.5*(2*in_order+1)) * (aP*factorial(in_order))*(aP*factorial(in_order));
+        
+	if(in_mode==0) // left correction function
+		dtemp_0=0.5*pow(-1.0,in_order)*(eval_d_legendre(in_r,in_order)-(((eta*eval_d_legendre(in_r,in_order-1))+eval_d_legendre(in_r,in_order+1))/(1.0+eta)));
+
+	else if(in_mode==1) // right correction function
+		dtemp_0=0.5*(eval_d_legendre(in_r,in_order)+(((eta*eval_d_legendre(in_r,in_order-1))+eval_d_legendre(in_r,in_order+1))/(1.0+eta)));
+
+	return dtemp_0;
+}
 
 void get_opp_3_tri(array<double>& opp_3, array<double>& loc_upts_tri, array<double>& loc_1d_fpts, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_per_tri, int order, double c_tri, int vcjh_scheme_tri)
 {
@@ -689,7 +807,7 @@ double eval_div_dg_tri(array<double> &in_loc , int in_edge, int in_edge_fpt, int
   array<double> coeff_gdotn((in_order+1),1);
   array<double> coeff_divg(n_upts_tri,1);
 
-  cubature_1d cub1d(20);  // TODO: CHECK STRENGTH
+  cubature_1d cub1d(10);  // TODO: CHECK STRENGTH
 
   if (in_edge==0)
     edge_length=2.;
@@ -2495,9 +2613,9 @@ array <double> add_arrays(array <double>& M1, array <double>& M2)
             }
         }
     }
-  else {
-      cout << "ERROR: array dimensions are not compatible in sum function" << endl;
-      exit(1);
+  else
+    {
+      FatalError("array dimensions are not compatible in sum function");
     }
 }
 
