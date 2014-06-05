@@ -182,7 +182,7 @@ void int_inters::mv_all_cpu_gpu(void)
 void int_inters::calculate_common_invFlux(void)
 {
 
-//#ifdef _CPU
+#ifdef _CPU
   array<double> norm(n_dims), fn(n_fields+n_gcl_fields);
   fn.initialize_to_zero();
 

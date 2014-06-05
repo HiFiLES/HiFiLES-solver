@@ -798,7 +798,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
 void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
 
-//#ifdef _CPU
+#ifdef _CPU
   int bdy_spec, flux_spec;
   array<double> norm(n_dims), fn(n_fields);
 

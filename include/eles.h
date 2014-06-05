@@ -487,6 +487,11 @@ public:
   void calc_gcl_res(void);
 
   void set_transforms_dynamic(void);
+  void extrapolate_grid_vel(int in_disu_upts_from);
+  void extrapolate_GCL_flux();
+  void calculate_divergence_GCL(int in_div_tconf_upts_to);
+  void calculate_corrected_divergence_GCL(int in_div_tconf_upts_to);
+
 protected:
 
   // #### members ####
