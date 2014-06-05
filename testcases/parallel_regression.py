@@ -46,8 +46,8 @@ class testcase:
     self.do_adjust_iter()
 
     # Assemble the shell command to run HiFiLES
-    self.HiFiLES_exec = os.path.join("", self.HiFiLES_exec)
-    command_base = "%s %s > outputfile"%(self.HiFiLES_exec, self.cfg_file)
+    self.HiFiLES_exec = os.path.join("$HIFILES_RUN", self.HiFiLES_exec)
+    command_base = "%s %s %s > outputfile"%(self.mpi_cmd, self.HiFiLES_exec, self.cfg_file)
     command      = "%s"%(command_base)
 
     # Run HiFiLES
@@ -199,14 +199,27 @@ if __name__=="__main__":
   cylinder.cfg_dir      = "testcases/navier-stokes/cylinder/"
   cylinder.cfg_file     = "input_cylinder_visc"
   cylinder.test_iter    = 25
-  cylinder.test_vals    = [0.193583,1.353842,0.208335,10.488829]
-  cylinder.HiFiLES_exec = "mpirun -np 2 HiFiLES"
+  cylinder.test_vals    = [0.17038345,0.75864863,0.23040523,10.05233986,3.42539175,-0.04153506]
+  cylinder.mpi_cmd      = "mpirun -np 2"
+  cylinder.HiFiLES_exec = "HiFiLES"
   cylinder.timeout      = 1600
   cylinder.tol          = 0.00001
   passed1               = cylinder.run_test()
 
+  # 3D Square Cylinder
+  sqcyl              = testcase('sqcyl')
+  sqcyl.cfg_dir      = "testcases/navier-stokes/square_cylinder/"
+  sqcyl.cfg_file     = "input_sqcyl_wsm_tet"
+  sqcyl.test_iter    = 10
+  sqcyl.test_vals    = [0.64471221,2.70391512,0.24385134,0.14111932,16.79818472,20.05215009,0.03604174,0.00009637]
+  sqcyl.mpi_cmd      = "mpirun -np 8"
+  sqcyl.HiFiLES_exec = "HiFiLES"
+  sqcyl.timeout      = 1600
+  sqcyl.tol          = 0.00001
+  passed2            = sqcyl.run_test()
 
-  if (passed1):
+
+  if (passed1 and passed2):
     sys.exit(0)
   else:
     sys.exit(1)
