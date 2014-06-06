@@ -64,6 +64,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   array<double> disu_ppts_temp;
   array<double> grad_disu_ppts_temp;
   array<double> diag_ppts_temp;
+  array<double> dynamic_coeff_ppts_temp;
   int n_ppts_per_ele;
   int n_dims = FlowSol->n_dims;
   int n_fields;
@@ -200,7 +201,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
                 {
-                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
+                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,dynamic_coeff_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
                 }
 
               for(k=0;k<n_ppts_per_ele;k++)
@@ -538,7 +539,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   array<double> grad_disu_ppts_temp;
   /*! Diagnostic field data at plot points */
   array<double> diag_ppts_temp;
-
+  /*! dynamic LES coeff at plot points */
+  array<double> dynamic_coeff_ppts_temp;
+  
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
 
@@ -699,6 +702,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
             /*! Temporary diagnostic field array at plot points */
             diag_ppts_temp.setup(n_points,n_diag_fields);
+            
+            dynamic_coeff_ppts_temp.setup(n_points);
           }
 
           con.setup(n_verts,n_cells);
@@ -716,8 +721,14 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 /*! Calculate the gradient of the prognostic fields at the plot points */
                 FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
 
+                /*! Get dynamic LES coeff at plot points */
+                FlowSol->mesh_eles(i)->calc_dynamic_coeff_ppts(j,dynamic_coeff_ppts_temp);
+
+                //cout << "dynamic coeff: " << endl;
+                //dynamic_coeff_ppts_temp.print();
+                
                 /*! Calculate the diagnostic fields at the plot points */
-                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
+                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,dynamic_coeff_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
               }
 
               /*! write out solution to file */

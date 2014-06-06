@@ -38,7 +38,7 @@ filter_type                       // 0: Vasilyev high-order, 1: discrete Gaussia
 2
 filter_ratio                      // Filter width ratio. Try range 1:2. Not used for Modal Vandermonde filter.
 2
-SGS_model                         // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
+SGS_model                         // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity, 5: dynamic
 2
 wall_model                        // Select near-wall model for solid boundaries. 0: none, 1: Werner-Wengle, 2: Breuer & Rodi Three-layer
 0
@@ -71,7 +71,7 @@ p_res                             // Plotting resolution, number of nodes per di
 4
 write_type                        // 0: Paraview, 1: Tecplot
 0
-n_diagnostic_fields               // Choose extra fields to be written to file: u v w energy pressure mach vorticity q_criterion. Set to 0 for no diagnostic fields
+n_diagnostic_fields               // Choose extra fields to be written to file: u v w energy pressure mach vorticity q_criterion dynamic_coeff. Set to 0 for no diagnostic fields
 0
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 5

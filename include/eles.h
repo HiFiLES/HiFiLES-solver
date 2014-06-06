@@ -99,6 +99,9 @@ public:
   /*! calculate uncorrected transformed gradient of the discontinuous solution at the solution points */
   void calculate_gradient(int in_disu_upts_from);
 
+  /*! calculate gradient of the filtered solution at the solution points for dynamic LES model */
+  void calculate_filtered_gradient(void);
+
   /*! calculate corrected gradient of the discontinuous solution at solution points */
   void correct_gradient(void);
 
@@ -254,8 +257,11 @@ public:
   /*! calculate gradient of solution at the plot points */
   void calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts);
 
+  /*! calculate dynamic LES coeff at the plot points */
+  void calc_dynamic_coeff_ppts(int in_ele, array<double>& out_coeff_ppts);
+  
   /*! calculate diagnostic fields at the plot points */
-  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_coeff_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
 
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
@@ -513,6 +519,9 @@ protected:
 	/*! extra arrays for similarity model: Leonard tensors, velocity/energy products */
 	array<double> Lu, Le, uu, ue;
 
+  /*! array for writing dynamic LES coeff to output */
+  array<double> dynamic_coeff;
+  
 	/*! temporary flux storage */
 	array<double> temp_f;
 
@@ -635,7 +644,10 @@ protected:
 
 	/*! gradient of discontinuous solution at solution points */
 	array<double> grad_disu_upts;
-	
+
+  /*! gradient of discontinuous filtered solution at solution points */
+	array<double> grad_disuf_upts;
+
 	/*! gradient of discontinuous solution at flux points */
 	array<double> grad_disu_fpts;
 

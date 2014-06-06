@@ -39,7 +39,7 @@ filter_type                       // 0: Vasilyev high-order, 1: discrete Gaussia
 filter_ratio                      // Filter width = filter_ratio*local resolution. Default: 1.5; try range 1:2. Not used for Modal Vandermonde filter.
 2
 SGS_model                         // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
-2
+5
 wall_model                        // Select near-wall model for solid boundaries. 0: none, 1: Werner-Wengle, 2: Breuer & Rodi Three-layer
 0
 wall_layer_thickness              // Set thickness of layer within which wall model is applied
@@ -71,12 +71,14 @@ p_res                             // Plotting resolution, number of nodes per di
 4
 write_type                        // 0: Paraview, 1: Tecplot
 0
+n_diagnostic_fields
+1 dynamic_coeff
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 5
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
 5
 plot_freq
-10
+1
 restart_dump_freq
 10000
 monitor_res_freq

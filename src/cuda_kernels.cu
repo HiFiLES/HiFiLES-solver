@@ -2270,7 +2270,7 @@ __global__ void evaluate_boundaryConditions_invFlux_gpu_kernel(int in_n_fpts_per
 
 // gpu kernel to calculate transformed discontinuous viscous flux at solution points
 template<int in_n_dims, int in_n_fields, int in_n_comp>
-__global__ void evaluate_viscFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, int in_ele_type, int in_order, double in_filter_ratio, int in_LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* Leonard_mom, double* Leonard_ene, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
+__global__ void evaluate_viscFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_eles, int in_ele_type, int in_order, double in_filter_ratio, int in_LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* Leonard_mom, double* Leonard_ene, double* in_dynamic_coeff_ptr, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_grad_disuf_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
@@ -3682,7 +3682,7 @@ void evaluate_boundaryConditions_invFlux_gpu_kernel_wrapper(int in_n_fpts_per_in
 }
 
 // wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points
-void evaluate_viscFlux_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, int in_ele_type, int in_order, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* in_Lu_ptr, double* in_Le_ptr, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
+void evaluate_viscFlux_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, int in_n_fields, int in_n_eles, int in_ele_type, int in_order, double in_filter_ratio, int LES, int sgs_model, int wall_model, double in_wall_thickness, double* in_wall_dist_ptr, double* in_twall_ptr, double* in_Lu_ptr, double* in_Le_ptr, double* in_dynamic_coeff_ptr, double* in_disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* in_grad_disu_upts_ptr, double* in_grad_disuf_upts_ptr, double* in_detjac_upts_ptr, double* in_inv_detjac_mul_jac_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int equation, double in_diff_coeff)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/256)+1;
@@ -3692,9 +3692,9 @@ void evaluate_viscFlux_gpu_kernel_wrapper(int in_n_upts_per_ele, int in_n_dims, 
   if (equation==0)
   {
     if (in_n_dims==2)
-      evaluate_viscFlux_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_order, in_filter_ratio, LES, sgs_model, wall_model, in_wall_thickness, in_wall_dist_ptr, in_twall_ptr, in_Lu_ptr, in_Le_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, out_sgsf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
+      evaluate_viscFlux_NS_gpu_kernel<2,4,3> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_order, in_filter_ratio, LES, sgs_model, wall_model, in_wall_thickness, in_wall_dist_ptr, in_twall_ptr, in_Lu_ptr, in_Le_ptr, in_dynamic_coeff_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, out_sgsf_upts_ptr, in_grad_disu_upts_ptr, in_grad_disuf_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
     else if (in_n_dims==3)
-      evaluate_viscFlux_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_order, in_filter_ratio, LES, sgs_model, wall_model, in_wall_thickness, in_wall_dist_ptr, in_twall_ptr, in_Lu_ptr, in_Le_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, out_sgsf_upts_ptr, in_grad_disu_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
+      evaluate_viscFlux_NS_gpu_kernel<3,5,6> <<<n_blocks,256>>>(in_n_upts_per_ele, in_n_eles, in_ele_type, in_order, in_filter_ratio, LES, sgs_model, wall_model, in_wall_thickness, in_wall_dist_ptr, in_twall_ptr, in_Lu_ptr, in_Le_ptr, in_dynamic_coeff_ptr, in_disu_upts_ptr, out_tdisf_upts_ptr, out_sgsf_upts_ptr, in_grad_disu_upts_ptr, in_grad_disuf_upts_ptr, in_detjac_upts_ptr, in_inv_detjac_mul_jac_upts_ptr, in_gamma, in_prandtl, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis);
     else
       FatalError("ERROR: Invalid number of dimensions ... ");
   }

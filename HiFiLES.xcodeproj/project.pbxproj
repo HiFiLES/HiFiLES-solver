@@ -112,6 +112,7 @@
 		05E96FA0182583E9000BE589 /* output.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = output.h; path = include/output.h; sourceTree = "<group>"; };
 		05E96FA118258403000BE589 /* output.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = output.cpp; path = src/output.cpp; sourceTree = "<group>"; };
 		05E96FA218258403000BE589 /* solver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = solver.cpp; path = src/solver.cpp; sourceTree = "<group>"; };
+		81C07B491941630100C4D912 /* cuda_kernels.cu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = cuda_kernels.cu; path = src/cuda_kernels.cu; sourceTree = "<group>"; };
 		81C26AD518F4760F001F5947 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		81C26AD618F4760F001F5947 /* Makefile.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.in; sourceTree = "<group>"; };
 		E994EDC5192416DE0058FE94 /* input_template */ = {isa = PBXFileReference; lastKnownFileType = text; path = input_template; sourceTree = "<group>"; };
@@ -212,6 +213,7 @@
 		05CCBC761824724D0074A979 = {
 			isa = PBXGroup;
 			children = (
+				81C07B491941630100C4D912 /* cuda_kernels.cu */,
 				E994EDC5192416DE0058FE94 /* input_template */,
 				81C26AD518F4760F001F5947 /* Makefile */,
 				81C26AD618F4760F001F5947 /* Makefile.in */,

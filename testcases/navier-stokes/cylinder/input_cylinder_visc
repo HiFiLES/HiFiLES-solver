@@ -18,15 +18,30 @@ order                             // Order of basis polynomials
 dt_type
 0
 dt 
-0.0001
+0.0005
 n_steps
-100
+1000
 adv_type                          // 0: Forward Euler, 3: RK45
 0
 tau 
 1.0
 pen_fact 
 0.5
+-----------------------
+LES options
+-----------------------
+LES                               // 0: no LES, 1: LES
+1
+filter_type                       // 0: Vasilyev high-order, 1: discrete Gaussian, 2: Modal Vandermonde. Not all filters are available for each element type!
+2
+filter_ratio                      // Filter width = filter_ratio*local resolution. Default: 1.5; try range 1:2. Not used for Modal Vandermonde filter.
+2
+SGS_model                         // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity, 5: dynamic
+5
+wall_model                        // Select near-wall model for solid boundaries. 0: none, 1: Werner-Wengle, 2: Breuer & Rodi Three-layer
+0
+wall_layer_thickness              // Set thickness of layer within which wall model is applied
+0
 -----------------------
 Restart options
 -----------------------
@@ -55,13 +70,13 @@ p_res                             // Plotting resolution, number of nodes per di
 write_type                        // 0: Paraview, 1: Tecplot
 0
 n_diagnostic_fields
-0
+1 dynamic_coeff
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 6
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
 6
 plot_freq
-1000
+10
 restart_dump_freq
 10000
 monitor_integrals_freq
