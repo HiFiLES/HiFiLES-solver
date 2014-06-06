@@ -85,7 +85,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       wall_model = run_input.wall_model;
 
       if (motion != 0) {
-        n_gcl_fields = 1;
+        //n_gcl_fields = 1;
+        n_gcl_fields = 0;
       }else{
         n_gcl_fields = 0;
       }
@@ -490,9 +491,9 @@ void eles::set_ics(double& time)
           }
 
           // setup GCL equation for element Jacobians
-          if (motion !=0) {
-            disu_upts(0)(j,i,i_gcl_field) = detjac_upts(j,i);
-          }
+//          if (motion !=0) {
+//            disu_upts(0)(j,i,i_gcl_field) = detjac_upts(j,i);
+//          }
         }
     }
 
@@ -1131,9 +1132,16 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
         }
 
         if (motion != 0) {
+          // Transform solution from static frame to dynamic frame
+          for (k=0; k<n_fields; k++) {
+            temp_u(k) /= J_dyn_upts(j,i);
+          }
+          // Get mesh velocity (velocity in dynamic frame)
           for (k=0; k<n_dims; k++) {
             temp_v(k) = vel_upts(k,j,i);
           }
+          // Temporary flux vector for dynamic->static transformation
+          temp_f_ref.setup(n_fields,n_dims);
         }else{
           temp_v.initialize_to_zero();
         }
@@ -1144,8 +1152,8 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           if (motion)
           {
             calc_alef_2d(temp_u, temp_v, temp_f);
-            for (k=0; k<n_dims; k++)
-              temp_f(i_gcl_field,k) = -temp_v(k);
+//            for (k=0; k<n_dims; k++)
+//              temp_f(i_gcl_field,k) = -temp_v(k);
           }
         }
         else if(n_dims==3)
@@ -1154,8 +1162,8 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           if (motion != 0)
           {
             calc_alef_3d(temp_u, temp_v, temp_f);
-            for (k=0; k<n_dims; k++)
-              temp_f(i_gcl_field,k) = -temp_v(k);
+//            for (k=0; k<n_dims; k++)
+//              temp_f(i_gcl_field,k) = -temp_v(k);
           }
         }
         else
@@ -1163,7 +1171,25 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           cout << "ERROR: Invalid number of dimensions ... " << endl;
         }
 
-        for(k=0;k<n_fields+n_gcl_fields;k++)
+        // Transform from dynamic-physical space to static-physical space
+        if (motion != 0)
+        {
+          for(k=0; k<n_fields; k++)
+          {
+            for(l=0; l<n_dims; l++)
+            {
+              temp_f_ref(k,l)=0.;
+              for(m=0; m<n_dims; m++)
+              {
+                temp_f_ref(k,l) += Ginv_dyn_upts(j,i,l,m)*temp_f(k,m);
+              }
+            }
+          }
+          temp_f = temp_f_ref;
+        }
+
+        // Transform from static physical space to computational space
+        for(k=0;k<n_fields;k++)
         {
           for(l=0;l<n_dims;l++)
           {
@@ -1185,14 +1211,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 
       //tdisinvf_upts.cp_gpu_cpu();
 #endif
-      /*
-  for (int i=0;i<n_upts_per_ele;i++)
-    for (int j=0;j<n_eles;j++)
-      for (int k=0;k<n_fields;k++)
-        for (int m=0;m<n_dims;m++)
-          cout << "i=" << i << "j=" << j << "k=" << k << "m=" << m << " " << tdisinvf_upts(i,j,k,m) << endl;
-          */
-    }
+  }
 }
 
 
@@ -5115,7 +5134,7 @@ void eles::set_transforms_inters_cubpts(void)
       inter_detjac_inters_cubpts.setup(n_inters_per_ele);
       norm_inters_cubpts.setup(n_inters_per_ele);
       vol_detjac_inters_cubpts.setup(n_inters_per_ele);
-      jac_vol_cubpts.setup(n_inters_per_ele);
+      jac_inters_cubpts.setup(n_inters_per_ele);
 
       for (int i=0;i<n_inters_per_ele;i++)
         {
@@ -5141,11 +5160,11 @@ void eles::set_transforms_inters_cubpts(void)
                   // calculate first derivatives of shape functions at the flux points
 
                   // TODO: Need mapping between bdy_interfaces and ele
-                  if (motion) {
-                    calc_d_pos_dyn_inters_cubpt(j,l,i,d_pos);
-                  }else{
+                  //if (motion) {
+                  //  calc_d_pos_dyn_inters_cubpt(j,l,i,d_pos);
+                  //}else{
                     calc_d_pos(loc,bdy_ele2ele(i),d_pos);
-                  }
+                  //}
 
                   // store quantities at the flux point
 
@@ -5262,13 +5281,13 @@ void eles::set_transforms_vol_cubpts(void)
               for (m=0;m<n_dims;m++)
                 loc(m) = loc_volume_cubpts(m,j);
 
-              if (motion) {
-                calc_pos_dyn_vol_cubpt(j,i,pos);
-                calc_d_pos_dyn_vol_cubpt(j,i,d_pos);
-              }else{
+              //if (motion) {
+              //  calc_pos_dyn_vol_cubpt(j,i,pos);
+              //  calc_d_pos_dyn_vol_cubpt(j,i,d_pos);
+              //}else{
                 calc_pos(loc,i,pos);
                 calc_d_pos(loc,i,d_pos);
-              }
+              //}
 
 //              for (int k=0; k<n_dims; k++) {
 //                for (int n=0; n<n_dims; n++) {
@@ -5336,7 +5355,7 @@ double* eles::get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
 
 }
 
-// get a pointer to the determinant of the jacobian at a flux point
+// get a pointer to the determinant of the jacobian at a flux point (static->computational)
 
 double* eles::get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
 {
@@ -5358,7 +5377,29 @@ double* eles::get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter
 #endif
 }
 
-// get a pointer to the magnitude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points
+// get a pointer to the determinant of the jacobian at a flux point (dynamic->static)
+
+double* eles::get_detjac_dyn_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
+{
+  int i;
+
+  int fpt;
+
+  fpt=in_inter_local_fpt;
+
+  for(i=0;i<in_ele_local_inter;i++)
+    {
+      fpt+=n_fpts_per_inter(i);
+    }
+
+#ifdef _GPU
+  return J_dyn_fpts.get_ptr_gpu(fpt,in_ele);
+#else
+  return J_dyn_fpts.get_ptr_cpu(fpt,in_ele);
+#endif
+}
+
+//get pointer to the equivalent of 'dA' (face area) at a flux point in static physical space
 
 double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
 {
@@ -5377,6 +5418,28 @@ double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_f
   return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_gpu(fpt,in_ele);
 #else
   return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_cpu(fpt,in_ele);
+#endif
+}
+
+// get pointer to the equivalent of 'dA' (face area) at a flux point in dynamic physical space */
+
+double* eles::get_ndA_dyn_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
+{
+  int i;
+
+  int fpt;
+
+  fpt=in_inter_local_fpt;
+
+  for(i=0;i<in_ele_local_inter;i++)
+    {
+      fpt+=n_fpts_per_inter(i);
+    }
+
+#ifdef _GPU
+  return ndA_dyn_fpts.get_ptr_gpu(fpt,in_ele);
+#else
+  return ndA_dyn_fpts.get_ptr_cpu(fpt,in_ele);
 #endif
 }
 
@@ -5399,6 +5462,28 @@ double* eles::get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
   return norm_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 #else
   return norm_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
+#endif
+}
+
+// get a pointer to the normal at a flux point in dynamic space
+
+double* eles::get_norm_dyn_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele)
+{
+  int i;
+
+  int fpt;
+
+  fpt=in_inter_local_fpt;
+
+  for(i=0;i<in_ele_local_inter;i++)
+    {
+      fpt+=n_fpts_per_inter(i);
+    }
+
+#ifdef _GPU
+  return norm_dyn_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
+#else
+  return norm_dyn_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
 #endif
 }
 
@@ -5882,7 +5967,8 @@ void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
   for (i=0; i<n_dims; i++) {
     for (j=0; j<n_dims; j++) {
       for (k=0; k<n_dims; k++) {
-        out_d_pos(i,j) += dxdr(i,k)/jac_upts(in_upt,in_ele,j,k);
+        if (jac_upts(in_upt,in_ele,j,k)!=0)
+          out_d_pos(i,j) += dxdr(i,k)/jac_upts(in_upt,in_ele,j,k);
       }
     }
   }

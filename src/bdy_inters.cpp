@@ -135,10 +135,13 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
       for(int j=0;j<n_fpts_per_inter;j++)
         {
           mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+          ndA_dyn_fpts_l(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+          J_dyn_fpts_l(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
 
           for(int k=0;k<n_dims;k++)
             {
               norm_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+              norm_dyn_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
               vel_fpts(k,j,in_inter)=get_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 #ifdef _CPU
               loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
@@ -236,8 +239,14 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 
           // get grid velocity at flux point (or set to 0)
           if (motion) {
-              for(int k=0; k<n_dims; k++)
-                  temp_v(k)=(*vel_fpts(k,j,i));
+            // Transform solution to dynamic space
+            for (int k=0; k<n_fields; k++) {
+              temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
+            }
+            // Get dynamic grid velocity
+            for(int k=0; k<n_dims; k++) {
+              temp_v(k)=(*vel_fpts(k,j,i));
+            }
           }else{
               temp_v.initialize_to_zero();
           }
@@ -287,15 +296,24 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
             }
 
           // Geometric Conservation Law "flux"
-          if(motion) {
+          if(n_gcl_fields>0) {
             for (int m=0; m<n_dims; m++) {
               fn(i_gcl_field) -= temp_v(m)*norm(m);
             }
           }
 
           /*! Transform back to reference space */
-          for(int k=0;k<n_fields+n_gcl_fields;k++)
-            (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+          if (motion) {
+            for(int k=0;k<n_fields+n_gcl_fields;k++) {
+              (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*ndA_dyn_fpts_l(j,i))*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+            }
+          }
+          else
+          {
+            for(int k=0;k<n_fields+n_gcl_fields;k++) {
+              (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+            }
+          }
 
           if(viscous)
             {
@@ -313,9 +331,17 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
               else
                 FatalError("Viscous Riemann solver not implemented");
 
-              for(int k=0;k<n_fields;k++){
-                *delta_disu_fpts_l(j,i,k) = (u_c(k) - (*disu_fpts_l(j,i,k)));
+              if (motion) {
+                for(int k=0;k<n_fields;k++){
+                  *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k))*(*J_dyn_fpts_l(j,i));
                 }
+              }
+              else
+              {
+                for(int k=0;k<n_fields;k++){
+                  *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k));
+                }
+              }
             }
 
         }

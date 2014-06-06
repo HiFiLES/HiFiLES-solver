@@ -174,14 +174,23 @@ public:
   /*! get a pointer to the normal transformed continuous flux at a flux point */
   double* get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
 
-  /*! get a pointer to the determinant of the jacobian at a flux point */
+  /*! get a pointer to the determinant of the jacobian at a flux point (static->computational) */
   double* get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
 
-  /*! get a pointer to the magnitude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points */
+  /*! get a pointer to the determinant of the jacobian at a flux point (dynamic->static) */
+  double* get_detjac_dyn_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
+
+  /*! get pointer to the equivalent of 'dA' (face area) at a flux point in static physical space */
   double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
+
+  /*! get pointer to the equivalent of 'dA' (face area) at a flux point in dynamic physical space */
+  double* get_ndA_dyn_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
 
   /*! get a pointer to the normal at a flux point */
   double* get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
+
+  /*! get a pointer to the normal at a flux point in dynamic space */
+  double* get_norm_dyn_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
 
   /*! get a CPU pointer to the coordinates at a flux point */
   double* get_loc_fpts_ptr_cpu(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
@@ -712,6 +721,9 @@ protected:
 
   /*! temporary flux storage */
   array<double> temp_f;
+
+  /*! temporary flux storage */
+  array<double> temp_f_ref;
 
   /*! temporary subgrid-scale flux storage */
   array<double> temp_sgsf;

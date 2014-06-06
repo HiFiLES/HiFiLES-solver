@@ -91,6 +91,12 @@ protected:
   array<double*> norm_fpts;
   array<double*> loc_fpts;
 
+  // Dynamic grid variables:
+  array<double*> ndA_dyn_fpts_l;
+  array<double*> norm_dyn_fpts;
+  array<double*> J_dyn_fpts_l;
+  array<double*> vel_fpts;
+
   array<double> pos_disu_fpts_l;
   array<double*> grad_disu_fpts_l;
   array<double*> normal_disu_fpts_l;
@@ -98,9 +104,11 @@ protected:
   array<double> temp_u_l;
   array<double> temp_u_r;
 
+  // Ohter dynamic-grid variables
   // Note: grid velocity is continuous across interfaces
-  array<double*> vel_fpts;
   array<double> temp_v;
+  array<double> temp_fn_ref_l;
+  array<double> temp_fn_ref_r;
 
   array<double> temp_grad_u_l;
   array<double> temp_grad_u_r;

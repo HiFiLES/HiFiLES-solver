@@ -111,8 +111,14 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
   mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.setup(n_fpts_per_inter,n_inters);
   norm_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
   loc_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
-  vel_fpts.setup(n_dims,n_fpts_per_inter,n_inters);
 
+  if (motion)
+  {
+    vel_fpts.setup(n_dims,n_fpts_per_inter,n_inters);
+    ndA_dyn_fpts_l.setup(n_fpts_per_inter,n_inters);
+    norm_dyn_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
+    J_dyn_fpts_l.setup(n_fpts_per_inter,n_inters);
+  }
   delta_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields+n_gcl_fields);
 
   if(viscous)
@@ -152,6 +158,9 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
 
   temp_fn_l.setup(n_fields+n_gcl_fields);
   temp_fn_r.setup(n_fields+n_gcl_fields);
+
+  temp_fn_ref_l.setup(n_fields+n_gcl_fields);
+  temp_fn_ref_r.setup(n_fields+n_gcl_fields);
 
   temp_loc.setup(n_dims);
 

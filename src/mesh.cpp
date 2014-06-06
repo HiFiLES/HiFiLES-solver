@@ -260,17 +260,17 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
   for (int i=0; i<n_verts; i++) {
     for (int j=0; j<n_dims; j++) {
       /// --- IMPLEMENT RK45 TIMESTEPPING ---
-      if (run_input.adv_type == 0) {
-        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
-      }else if (run_input.adv_type == 3) {
-        /*cout << "Terribly sorry, but RK45 timestepping for mesh velocity has not been implemented yet! ";
-        cout << " Using Forward Euler instead." << endl;*/
-        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
-      }
+//      if (run_input.adv_type == 0) {
+//        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
+//      }else if (run_input.adv_type == 3) {
+//        /*cout << "Terribly sorry, but RK45 timestepping for mesh velocity has not been implemented yet! ";
+//        cout << " Using Forward Euler instead." << endl;*/
+//        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
+//      }
 
       /// Analytic solution for perturb test-case
-      //vel_new(i,0) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/8)*cos(2*pi*time/10); // from Kui
-      //vel_new(i,1) = 6*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/8)*cos(4*pi*time/10);
+      vel_new(i,0) = 4*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*time/100); // from Kui
+      vel_new(i,1) = 6*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(4*pi*time/100);
     }
   }
 
@@ -1222,26 +1222,26 @@ void mesh::update(solution* FlowSol)
   //if (FlowSol->rank==0) cout << "Deform: updating element transforms ... " << endl;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->set_transforms();
+      FlowSol->mesh_eles(i)->set_transforms_dynamic();
     }
   }
 
   /// if (iter%FlowSol->plot_freq == 0 || iter%FlowSol->restart_dump_freq == 0) {
-    // Set metrics at interface cubpts
-    //if (FlowSol->rank==0) cout << "Deform: setting element transforms at interface cubature points ... " << endl;
-    for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-        FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
-      }
-    }
+//    // Set metrics at interface cubpts
+//    //if (FlowSol->rank==0) cout << "Deform: setting element transforms at interface cubature points ... " << endl;
+//    for(int i=0;i<FlowSol->n_ele_types;i++) {
+//      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+//        FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
+//      }
+//    }
 
-    // Set metrics at volume cubpts
-    //if (FlowSol->rank==0) cout << "Deform: setting element transforms at volume cubature points ... " << endl;
-    for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-        FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
-      }
-    }
+//    // Set metrics at volume cubpts
+//    //if (FlowSol->rank==0) cout << "Deform: setting element transforms at volume cubature points ... " << endl;
+//    for(int i=0;i<FlowSol->n_ele_types;i++) {
+//      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+//        FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
+//      }
+//    }
   /// }
 }
 

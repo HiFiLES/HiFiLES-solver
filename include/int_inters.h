@@ -66,4 +66,8 @@ protected:
   array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_r;
   array<double*> grad_disu_fpts_r;
 
+  // Dynamic grid variables:
+  array<double*> ndA_dyn_fpts_r;
+  array<double*> J_dyn_fpts_r;
+
 };

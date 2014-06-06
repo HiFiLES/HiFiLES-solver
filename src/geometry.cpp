@@ -398,6 +398,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_upts();
           // Set physical -> reference transforms
           FlowSol->mesh_eles(i)->set_transforms();
+          FlowSol->mesh_eles(i)->set_transforms_dynamic();
         }
     }
 

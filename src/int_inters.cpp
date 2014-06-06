@@ -59,8 +59,11 @@ void int_inters::setup(int in_n_inters,int in_inter_type)
 
   disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields+n_gcl_fields);
   norm_tconf_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields+n_gcl_fields);
-  detjac_fpts_r.setup(n_fpts_per_inter,n_inters);
+  //detjac_fpts_r.setup(n_fpts_per_inter,n_inters); // unused
   mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.setup(n_fpts_per_inter,n_inters);
+
+  ndA_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
+  J_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
 
   delta_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
 
@@ -133,11 +136,25 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
           mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
           mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
 
+          if (motion)
+          {
+            ndA_dyn_fpts_l(i,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
+            ndA_dyn_fpts_r(i,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+
+            // pretty sure these should be the same due to the continuous nature of the dynamic->static mapping.
+            // But, leave it this way for now just in case.
+            J_dyn_fpts_l(i,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
+            J_dyn_fpts_r(i,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+          }
+
           for(j=0;j<n_dims;j++)
-            {
-              norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
+          {
+            norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
+            if (motion) {
+              norm_dyn_fpts(i,in_inter,j)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
               vel_fpts(j,i,in_inter)=get_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
             }
+          }
         }
 }
 
@@ -196,13 +213,20 @@ void int_inters::calculate_common_invFlux(void)
 
           // calculate discontinuous solution at flux points
           for(int k=0;k<n_fields;k++) {
-              temp_u_l(k)=(*disu_fpts_l(j,i,k));
-              temp_u_r(k)=(*disu_fpts_r(j,i,k));
-            }
+            temp_u_l(k)=(*disu_fpts_l(j,i,k));
+            temp_u_r(k)=(*disu_fpts_r(j,i,k));
+          }
 
           if (motion) {
-            for (int k=0; k<n_dims; k++)
+            // Transform solution to dynamic space
+            for (int k=0; k<n_fields; k++) {
+              temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
+              temp_u_r(k) /= (*J_dyn_fpts_r(j,i));
+            }
+            // Get mesh velocity
+            for (int k=0; k<n_dims; k++) {
               temp_v(k)=(*vel_fpts(k,j,i));
+            }
           }else{
             temp_v.initialize_to_zero();
           }
@@ -248,31 +272,52 @@ void int_inters::calculate_common_invFlux(void)
             FatalError("Riemann solver not implemented");
 
           // Geometric Conservation Law "common flux"
-          if(motion) {
+          if(n_gcl_fields>0) {
             for (int m=0; m<n_dims; m++) {
               fn(i_gcl_field) -= temp_v(m)*norm(m);
             }
           }
 
-          // Transform back to reference space
-          for(int k=0;k<n_fields+n_gcl_fields;k++) {
-            (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
-            (*norm_tconf_fpts_r(j,i,k))=-fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(j,i));
+          // Transform back to computational space from dynamic physical space
+          if (motion)
+          {
+            for(int k=0; k<n_fields; k++) {
+              temp_fn_ref_l(k) = fn(k)*(*ndA_dyn_fpts_l(j,i))*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+              temp_fn_ref_r(k) =-fn(k)*(*ndA_dyn_fpts_r(j,i))*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(j,i));
+            }
+          }
+          else
+          {
+            // Transform back to reference space from static physical space
+            for(int k=0;k<n_fields+n_gcl_fields;k++) {
+              (*norm_tconf_fpts_l(j,i,k))= fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+              (*norm_tconf_fpts_r(j,i,k))=-fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(j,i));
+            }
           }
 
           if(viscous)
-            {
-              // Calling viscous riemann solver
-              if (run_input.vis_riemann_solve_type==0)
-                ldg_solution(0,temp_u_l,temp_u_r,u_c,run_input.pen_fact,norm);
-              else
-                FatalError("Viscous Riemann solver not implemented");
+          {
+            // Calling viscous riemann solver
+            if (run_input.vis_riemann_solve_type==0)
+              ldg_solution(0,temp_u_l,temp_u_r,u_c,run_input.pen_fact,norm);
+            else
+              FatalError("Viscous Riemann solver not implemented");
 
+            if (motion) // include transformation back to static space
+            {
               for(int k=0;k<n_fields;k++) {
-                  *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k));
-                  *delta_disu_fpts_r(j,i,k) = (u_c(k) - temp_u_r(k));
-                }
+                *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k))*(*J_dyn_fpts_l(j,i));
+                *delta_disu_fpts_r(j,i,k) = (u_c(k) - temp_u_r(k))*(*J_dyn_fpts_r(j,i));
+              }
             }
+            else
+            {
+              for(int k=0;k<n_fields;k++) {
+                *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k));
+                *delta_disu_fpts_r(j,i,k) = (u_c(k) - temp_u_r(k));
+              }
+            }
+          }
 
         }
     }
