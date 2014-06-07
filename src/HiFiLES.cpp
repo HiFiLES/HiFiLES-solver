@@ -160,17 +160,17 @@ int main(int argc, char *argv[]) {
     
     for(i=0; i < RKSteps; i++) {
 
-      /*! If using moving mesh, need to advance the Geometric Conservation Law
-       *  (GCL) first to get updated Jacobians. Necessary to preserve freestream
-       *  on arbitrarily deforming mesh. */
+      /* If using moving mesh, need to advance the Geometric Conservation Law
+       * (GCL) first to get updated Jacobians. Necessary to preserve freestream
+       * on arbitrarily deforming mesh. See Kui Ou's Ph.D. thesis for details. */
       if (run_input.motion > 0) {
-        // Update the mesh
+        /* Update the mesh */
         Mesh.move(FlowSol.ini_iter+i_steps,i,&FlowSol);
 
-        // Update the Geometric Conservation Law (GCL)
+        /* Residual for Geometric Conservation Law (GCL) */
         CalcGCLResidual(&FlowSol);
 
-        // Advance the Geometric Conservation Law (GCL)
+        /* Time integration for Geometric Conservation Law (GCL) using a RK scheme */
         for(j=0; j<FlowSol.n_ele_types; j++) {
           FlowSol.mesh_eles(j)->AdvanceGCL(i, FlowSol.adv_type);
         }

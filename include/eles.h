@@ -330,6 +330,8 @@ public:
 
   virtual void fill_opp_3(array<double>& opp_3)=0;
 
+  virtual void fill_opp_3pt5(array<double>& opp_3p5)=0;
+
   /*! evaluate divergence of vcjh basis */
   //virtual double eval_div_vcjh_basis(int in_index, array<double>& loc)=0;
 
@@ -975,6 +977,19 @@ protected:
   array<double> opp_3_ell_data;
   array<int> opp_3_ell_indices;
   int opp_3_nnz_per_row;
+#endif
+
+  /*! operator to go from normal correction inviscid flux at the flux points to divergence of correction inviscid flux at the flux points*/
+  array<double> opp_3pt5;
+  array<double> opp_3pt5_data;
+  array<int> opp_3pt5_cols;
+  array<int> opp_3pt5_b;
+  array<int> opp_3pt5_e;
+  int opp_3pt5_sparse;
+#ifdef _GPU
+  array<double> opp_3pt5_ell_data;
+  array<int> opp_3pt5_ell_indices;
+  int opp_3pt5_nnz_per_row;
 #endif
 
   /*! operator to go from transformed solution at solution points to transformed gradient of transformed solution at solution points */

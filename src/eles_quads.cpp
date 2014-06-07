@@ -992,6 +992,26 @@ void eles_quads::fill_opp_3(array<double>& opp_3)
     }
 }
 
+void eles_quads::fill_opp_3pt5(array<double>& opp_3pt5)
+{
+
+  int i,j,k;
+  array<double> loc(n_dims);
+
+  for(i=0;i<n_fpts_per_ele;i++)
+  {
+    for(j=0;j<n_fpts_per_ele;j++)
+    {
+      for(k=0;k<n_dims;k++)
+      {
+        loc(k)=tloc_fpts(k,j);
+      }
+
+      opp_3pt5(j,i)=eval_div_vcjh_basis(i,loc);
+    }
+  }
+}
+
 // evaluate divergence of vcjh basis
 
 double eles_quads::eval_div_vcjh_basis(int in_index, array<double>& loc)

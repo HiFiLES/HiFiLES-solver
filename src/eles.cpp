@@ -3818,13 +3818,16 @@ void eles::set_opp_3(int in_sparse)
   opp_3.setup(n_upts_per_ele,n_fpts_per_ele);
   (*this).fill_opp_3(opp_3);
 
-  //cout << "OPP_3" << endl;
-  //cout << "ele_type=" << ele_type << endl;
-  //opp_3.print();
-  //cout << endl;
+  /* If moving mesh, also need divergence of GCL 'flux' at fpts */
+  if (motion) {
+    opp_3pt5.setup(n_upts_per_ele,n_fpts_per_ele);
+    (*this).fill_opp_3pt5(opp_3pt5);
+  }
 
 #ifdef _GPU
   opp_3.cp_cpu_gpu();
+  if (motion)
+    opp_3pt5.cp_cpu_gpu();
 #endif
 
   if(in_sparse==0)
@@ -3837,12 +3840,19 @@ void eles::set_opp_3(int in_sparse)
 
 #ifdef _CPU
       array_to_mklcsr(opp_3,opp_3_data,opp_3_cols,opp_3_b,opp_3_e);
+      if (motion)
+        array_to_mklcsr(opp_3pt5,opp_3pt5_data,opp_3pt5_cols,opp_3pt5_b,opp_3pt5_e);
 #endif
 
 #ifdef _GPU
       array_to_ellpack(opp_3, opp_3_ell_data, opp_3_ell_indices, opp_3_nnz_per_row);
       opp_3_ell_data.cp_cpu_gpu();
       opp_3_ell_indices.cp_cpu_gpu();
+      if (motion) {
+        array_to_ellpack(opp_3pt5, opp_3pt5_ell_data, opp_3pt5_ell_indices, opp_3pt5_nnz_per_row);
+        opp_3pt5_ell_data.cp_cpu_gpu();
+        opp_3pt5_ell_indices.cp_cpu_gpu();
+      }
 #endif
     }
   else

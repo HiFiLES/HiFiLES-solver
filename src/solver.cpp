@@ -197,7 +197,7 @@ void CalcGCLResidual(struct solution* FlowSol) {
       FlowSol->mesh_mpi_inters(i).send_solution_GCL();
 #endif
 
-  /*! Compute the inviscid flux at the solution points and store in total flux storage. */
+  /*! Compute the 'flux' at the solution points and store in total flux storage. */
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->evaluate_GCL_flux(in_disu_upts_from);
 
