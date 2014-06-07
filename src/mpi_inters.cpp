@@ -236,7 +236,7 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
           for(j=0;j<n_dims;j++)
             {
               norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-              vel_fpts(j,i,in_inter)=get_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
+              grid_vel_fpts(j,i,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
             }
         }
 }
@@ -452,7 +452,7 @@ void mpi_inters::calculate_common_invFlux(void)
 
           if (motion) {
             for (int k=0; k<n_dims; k++)
-              temp_v(k)=(*vel_fpts(k,j,i));
+              temp_v(k)=(*grid_vel_fpts(k,j,i));
           }else{
             temp_v.initialize_to_zero();
           }

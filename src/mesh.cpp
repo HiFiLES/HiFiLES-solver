@@ -81,8 +81,9 @@ mesh::~mesh(void)
   // not currently needed
 }
 
-void mesh::move(int _iter, solution *FlowSol) {
+void mesh::move(int _iter, int in_rk_step, solution *FlowSol) {
   iter = _iter;
+  rk_step = in_rk_step;
 
   if (run_input.motion == 1) {
     deform(FlowSol);
@@ -260,17 +261,17 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
   for (int i=0; i<n_verts; i++) {
     for (int j=0; j<n_dims; j++) {
       /// --- IMPLEMENT RK45 TIMESTEPPING ---
-//      if (run_input.adv_type == 0) {
-//        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
-//      }else if (run_input.adv_type == 3) {
-//        /*cout << "Terribly sorry, but RK45 timestepping for mesh velocity has not been implemented yet! ";
-//        cout << " Using Forward Euler instead." << endl;*/
-//        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
-//      }
+      if (run_input.adv_type == 0) {
+        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
+      }else if (run_input.adv_type == 3) {
+        /*cout << "Terribly sorry, but RK45 timestepping for mesh velocity has not been implemented yet! ";
+        cout << " Using Forward Euler instead." << endl;*/
+        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
+      }
 
       /// Analytic solution for perturb test-case
-      vel_new(i,0) = 4*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*time/100); // from Kui
-      vel_new(i,1) = 6*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(4*pi*time/100);
+//      vel_new(i,0) = 4*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*time/100); // from Kui
+//      vel_new(i,1) = 6*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(4*pi*time/100);
     }
   }
 
@@ -290,7 +291,7 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
   // Interpolate grid vel @ spts to fpts & upts
   for (int i=0; i<FlowSol->n_ele_types; i++) {
     FlowSol->mesh_eles(i)->set_grid_vel_fpts();
-    FlowSol->mesh_eles(i)->set_grid_vel_upts();
+    FlowSol->mesh_eles(i)->set_grid_vel_upts(rk_step);
   }
 }
 
@@ -1567,15 +1568,15 @@ void mesh::set_boundary_displacements(solution *FlowSol)
 void mesh::rigid_move(solution* FlowSol) {
   time = iter*run_input.dt;
 
-  if(start) {
-    for (int i=0; i<n_verts; i++) {
-      xv(i,0) = xv(i,0) + run_input.bound_vel_simple(0)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
-      xv(i,1) = xv(i,1) + run_input.bound_vel_simple(1)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
-      //xv_new(i,0) = xv(i,0);
-      //xv_new(i,1) = xv(i,1);
-    }
-    start = false;
-  }
+//  if(start) {
+//    for (int i=0; i<n_verts; i++) {
+//      xv(i,0) = xv(i,0) + run_input.bound_vel_simple(0)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
+//      xv(i,1) = xv(i,1) + run_input.bound_vel_simple(1)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
+//      //xv_new(i,0) = xv(i,0);
+//      //xv_new(i,1) = xv(i,1);
+//    }
+//    start = false;
+//  }
 
   for (int i=0; i<n_verts; i++) {
     // Useful for simple cases / debugging

@@ -123,6 +123,9 @@ public:
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolution(int in_step, int adv_type);
 
+  /*! advance GCL using a runge-kutta scheme */
+  void AdvanceGCL(int in_step, int adv_type);
+
   /*! Calculate element local timestep */
   double calc_dt_local(int in_ele);
 
@@ -292,6 +295,12 @@ public:
 
   /*! calculate derivative of position */
   void calc_d_pos(array<double> in_loc, int in_ele, array<double>& out_d_pos);
+
+  /*! calculate derivative of position at a solution point (using pre-computed gradients) */
+  void calc_d_pos_upt(int in_upt, int in_ele, array<double>& out_d_pos);
+
+  /*! calculate derivative of position at a flux point (using pre-computed gradients) */
+  void calc_d_pos_fpt(int in_fpt, int in_ele, array<double>& out_d_pos);
   
   /*! calculate second derivative of position */
   void calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_pos);
@@ -469,7 +478,7 @@ public:
   void set_grid_vel_fpts(void);
 
   /*! interpolate grid velocity from shape points to solution points */
-  void set_grid_vel_upts(void);
+  void set_grid_vel_upts(int in_rk_step);
 
   /*! interpolate grid velocity from shape points to plot points */
   void set_grid_vel_ppts(void);
@@ -478,7 +487,7 @@ public:
   array<double> get_grid_vel_ppts(void);
 
   /*! Get pointer to grid velocity at a flux point */
-  double *get_vel_fpts_ptr(int in_ele, int in_ele_local_inter, int in_inter_local_fpt, int in_dim);
+  double *get_grid_vel_fpts_ptr(int in_ele, int in_ele_local_inter, int in_inter_local_fpt, int in_dim);
 
   /*! Set new position of shape node */
   void set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos);
@@ -497,7 +506,7 @@ public:
 
   void set_transforms_dynamic(void);
   void extrapolate_grid_vel(int in_disu_upts_from);
-  void extrapolate_GCL_flux();
+  void extrapolate_GCL_flux(void);
   void calculate_divergence_GCL(int in_div_tconf_upts_to);
   void calculate_corrected_divergence_GCL(int in_div_tconf_upts_to);
 
@@ -669,7 +678,8 @@ protected:
   Description: Mesh velocity at flux points \n
   indexing: (in_ele, in_fpt, in_dim) \n
   */
-  array<double> vel_fpts, vel_upts, vel_ppts;
+  array<double> grid_vel_fpts, vel_ppts;
+  array< array<double> > grid_vel_upts, div_gcl_upts;
 
   /*! nodal shape basis contributions at flux points */
   array<double> nodal_s_basis_fpts;

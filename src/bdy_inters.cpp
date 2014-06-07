@@ -142,7 +142,7 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
             {
               norm_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
               norm_dyn_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
-              vel_fpts(k,j,in_inter)=get_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+              grid_vel_fpts(k,j,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 #ifdef _CPU
               loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 #endif
@@ -245,7 +245,7 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
             }
             // Get dynamic grid velocity
             for(int k=0; k<n_dims; k++) {
-              temp_v(k)=(*vel_fpts(k,j,i));
+              temp_v(k)=(*grid_vel_fpts(k,j,i));
             }
           }else{
               temp_v.initialize_to_zero();
@@ -850,7 +850,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
           // get grid velocity at flux point (or set to 0)
           if (motion) {
               for(int k=0; k<n_dims; k++)
-                  temp_v(k)=(*vel_fpts(k,j,i));
+                  temp_v(k)=(*grid_vel_fpts(k,j,i));
           }else{
               temp_v.initialize_to_zero();
           }

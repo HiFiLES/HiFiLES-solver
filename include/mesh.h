@@ -60,7 +60,7 @@ public:
   // #### methods ####
 
   /** Mesh motion wrapper */
-  void move(int _iter, solution *FlowSol);
+  void move(int _iter, int in_rk_step, solution *FlowSol);
 
   /** peform prescribed mesh motion using linear elasticity method */
   void deform(solution* FlowSol);
@@ -127,6 +127,7 @@ public:
   // nBndPts.setup(n_bnds); boundPts.setup(nBnds,nPtsPerBnd);
 
   array<double> vel_old, vel_new, xv_new;
+
 private:
   bool start;
   array<double> xv_nm1, xv_nm2, xv_nm3;//, xv_new, vel_old, vel_new;
@@ -143,6 +144,7 @@ private:
   int failedIts;
   double min_vol, min_length, solver_tolerance;
   double time;
+  int rk_step;
 
   /** create individual-element stiffness matrix - triangles */
   bool set_2D_StiffMat_ele_tri(array<double> &stiffMat_ele,int ele_id);

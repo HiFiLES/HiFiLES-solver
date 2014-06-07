@@ -152,7 +152,7 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
             norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
             if (motion) {
               norm_dyn_fpts(i,in_inter,j)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-              vel_fpts(j,i,in_inter)=get_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
+              grid_vel_fpts(j,i,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
             }
           }
         }
@@ -168,7 +168,7 @@ void int_inters::mv_all_cpu_gpu(void)
   norm_tconf_fpts_l.mv_cpu_gpu();
   mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.mv_cpu_gpu();
   norm_fpts.mv_cpu_gpu();
-  vel_fpts.mv_cpu_gpu();
+  grid_vel_fpts.mv_cpu_gpu();
 
   disu_fpts_r.mv_cpu_gpu();
   norm_tconf_fpts_r.mv_cpu_gpu();
@@ -225,16 +225,23 @@ void int_inters::calculate_common_invFlux(void)
             }
             // Get mesh velocity
             for (int k=0; k<n_dims; k++) {
-              temp_v(k)=(*vel_fpts(k,j,i));
+              temp_v(k)=(*grid_vel_fpts(k,j,i));
             }
           }else{
             temp_v.initialize_to_zero();
           }
 
           // storing normal components
-          for (int m=0;m<n_dims;m++)
+          if (motion) {
+            for (int m=0;m<n_dims;m++) {
+              norm(m) = *norm_dyn_fpts(j,i,m);
+            }
+          }
+          else
           {
-            norm(m) = *norm_fpts(j,i,m);
+            for (int m=0;m<n_dims;m++) {
+              norm(m) = *norm_fpts(j,i,m);
+            }
           }
 
           // Calling Riemann solver
@@ -282,8 +289,8 @@ void int_inters::calculate_common_invFlux(void)
           if (motion)
           {
             for(int k=0; k<n_fields; k++) {
-              temp_fn_ref_l(k) = fn(k)*(*ndA_dyn_fpts_l(j,i))*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
-              temp_fn_ref_r(k) =-fn(k)*(*ndA_dyn_fpts_r(j,i))*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(j,i));
+              (*norm_tconf_fpts_l(j,i,k)) = fn(k)*(*ndA_dyn_fpts_l(j,i))*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+              (*norm_tconf_fpts_r(j,i,k)) =-fn(k)*(*ndA_dyn_fpts_r(j,i))*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(j,i));
             }
           }
           else

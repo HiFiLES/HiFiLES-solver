@@ -114,7 +114,7 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
 
   if (motion)
   {
-    vel_fpts.setup(n_dims,n_fpts_per_inter,n_inters);
+    grid_vel_fpts.setup(n_dims,n_fpts_per_inter,n_inters);
     ndA_dyn_fpts_l.setup(n_fpts_per_inter,n_inters);
     norm_dyn_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
     J_dyn_fpts_l.setup(n_fpts_per_inter,n_inters);

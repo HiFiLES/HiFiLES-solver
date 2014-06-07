@@ -158,10 +158,23 @@ int main(int argc, char *argv[]) {
     if (FlowSol.adv_type == 0) RKSteps = 1;
     if (FlowSol.adv_type == 3) RKSteps = 5;
     
-    // Update the mesh
-    Mesh.move(FlowSol.ini_iter+i_steps,&FlowSol);
-
     for(i=0; i < RKSteps; i++) {
+
+      /*! If using moving mesh, need to advance the Geometric Conservation Law
+       *  (GCL) first to get updated Jacobians. Necessary to preserve freestream
+       *  on arbitrarily deforming mesh. */
+      if (run_input.motion > 0) {
+        // Update the mesh
+        Mesh.move(FlowSol.ini_iter+i_steps,i,&FlowSol);
+
+        // Update the Geometric Conservation Law (GCL)
+        CalcGCLResidual(&FlowSol);
+
+        // Advance the Geometric Conservation Law (GCL)
+        for(j=0; j<FlowSol.n_ele_types; j++) {
+          FlowSol.mesh_eles(j)->AdvanceGCL(i, FlowSol.adv_type);
+        }
+      }
 
       /*! Spatial integration. */
       CalcResidual(&FlowSol);

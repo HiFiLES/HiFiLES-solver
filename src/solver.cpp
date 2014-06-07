@@ -178,10 +178,60 @@ void CalcResidual(struct solution* FlowSol) {
   /*! Compute the divergence of the transformed continuous flux. */
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calculate_corrected_divergence(in_div_tconf_upts_to);
+}
 
-  /*! Compute the divergence of the transformed grid velocity (GCL residual). */
-  /*for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calc_gcl_res();*/
+void CalcGCLResidual(struct solution* FlowSol) {
+
+  int in_disu_upts_from = 0;        /*!< Define... */
+  int in_div_tconf_upts_to = 0;     /*!< Define... */
+  int i;                            /*!< Loop iterator */
+
+  /*! Compute the solution at the flux points. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->extrapolate_grid_vel(in_disu_upts_from);
+
+#ifdef _MPI
+  /*! Send the solution at the flux points across the MPI interfaces. */
+  if (FlowSol->nproc>1)
+    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+      FlowSol->mesh_mpi_inters(i).send_solution_GCL();
+#endif
+
+  /*! Compute the inviscid flux at the solution points and store in total flux storage. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->evaluate_GCL_flux(in_disu_upts_from);
+
+  /*! Compute the inviscid numerical fluxes.
+   Compute the common solution and solution corrections (viscous only). */
+  for(i=0; i<FlowSol->n_int_inter_types; i++)
+    FlowSol->mesh_int_inters(i).calculate_common_GCL_flux();
+
+  for(i=0; i<FlowSol->n_bdy_inter_types; i++)
+    FlowSol->mesh_bdy_inters(i).evaluate_boundaryConditions_GCL_flux(FlowSol->time);
+
+#ifdef _MPI
+  /*! Send the previously computed values across the MPI interfaces. */
+  if (FlowSol->nproc>1) {
+      for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+        FlowSol->mesh_mpi_inters(i).receive_GCL_solution();
+
+      for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+        FlowSol->mesh_mpi_inters(i).calculate_common_GCL_Flux();
+    }
+#endif
+
+  /*! For viscous or inviscid, compute the normal discontinuous flux at flux points. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->extrapolate_GCL_flux();
+
+  /*! For viscous or inviscid, compute the divergence of flux at solution points. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calculate_divergence_GCL(in_div_tconf_upts_to);
+
+  /*! Compute the divergence of the transformed continuous flux. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calculate_corrected_divergence_GCL(in_div_tconf_upts_to);
+
 }
 
 #ifdef _MPI
@@ -296,9 +346,9 @@ double* get_normal_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter
 }
 
 // get pointer to the grid velocity at a flux point
-double* get_vel_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
+double* get_grid_vel_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol)
 {
-  return FlowSol->mesh_eles(in_ele_type)->get_vel_fpts_ptr(in_ele,in_local_inter,in_fpt,in_dim);
+  return FlowSol->mesh_eles(in_ele_type)->get_grid_vel_fpts_ptr(in_ele,in_local_inter,in_fpt,in_dim);
 }
 
 void InitSolution(struct solution* FlowSol)

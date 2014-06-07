@@ -754,6 +754,189 @@ void eles::rm_detjac_upts_cpu(void)
 #endif
 }
 
+/// Advance the GCL forward to get updated Jacobians prior to residual calc
+void eles::AdvanceGCL(int in_step, int adv_type) {
+
+  if (n_eles!=0)
+  {
+    /*! Time integration using a forwards Euler integration. */
+    if (adv_type == 0) {
+
+      /*!
+       Performs B = B + (alpha*A) where: \n
+       alpha = -run_input.dt \n
+       A = div_tconf_upts(0)\n
+       B = disu_upts(0)
+       */
+
+#ifdef _CPU
+      // If using global minimum timestep based on CFL, determine
+      // global minimum
+      if (run_input.dt_type == 1)
+      {
+        // Find minimum timestep
+        dt_local(0) = 1e12; // Set to large value
+
+        for (int ic=0; ic<n_eles; ic++)
+        {
+          dt_local_new = calc_dt_local(ic);
+
+          if (dt_local_new < dt_local(0))
+            dt_local(0) = dt_local_new;
+        }
+
+        // If running in parallel, gather minimum timestep values from
+        // each partition and find global minumum across partitions
+#ifdef _MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
+                      1, MPI_DOUBLE, MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        dt_local(0) = dt_local_mpi.get_min();
+#endif
+      }
+
+      // If using local timestepping, just compute and store all local
+      // timesteps
+      if (run_input.dt_type == 2)
+      {
+        for (int ic=0; ic<n_eles; ic++)
+          dt_local(ic) = calc_dt_local(ic);
+      }
+
+      for (int i=0;i<n_fields;i++)
+      {
+        for (int ic=0;ic<n_eles;ic++)
+        {
+          for (int inp=0;inp<n_upts_per_ele;inp++)
+          {
+            // User supplied timestep
+            if (run_input.dt_type == 0) {
+              //disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/disu_upts(0)(inp,ic,i_gcl_field) - run_input.const_src_term);
+              disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+            }
+
+            // Global minimum timestep
+            else if (run_input.dt_type == 1)
+              disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+
+            // Element local timestep
+            else if (run_input.dt_type == 2)
+              disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+            else
+              FatalError("ERROR: dt_type not recognized!");
+          }
+        }
+      }
+#endif
+
+#ifdef _GPU
+      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
+#endif
+    }
+
+    /*! Time integration using a RK45 method. */
+    else if (adv_type == 3) {
+
+      double rk4a, rk4b;
+      if (in_step==0) {
+        rk4a=    0.0;
+        rk4b=   0.149659021999229;
+      }
+      else if (in_step==1) {
+        rk4a=   -0.417890474499852;
+        rk4b=   0.379210312999627;
+      }
+      else if (in_step==2) {
+        rk4a=   -1.192151694642677;
+        rk4b=   0.822955029386982;
+      }
+      else if (in_step==3) {
+        rk4a=   -1.697784692471528;
+        rk4b=   0.699450455949122;
+      }
+      else if (in_step==4) {
+        rk4a=   -1.514183444257156;
+        rk4b=   0.153057247968152;
+      }
+
+#ifdef _CPU
+      // for first stage only, compute timestep
+      if (in_step == 0)
+      {
+        // For global timestepping, find minimum timestep
+        if (run_input.dt_type == 1)
+        {
+          dt_local(0) = 1e12;
+
+          for (int ic=0; ic<n_eles; ic++)
+          {
+            dt_local_new = calc_dt_local(ic);
+
+            if (dt_local_new < dt_local(0))
+            {
+              dt_local(0) = dt_local_new;
+            }
+          }
+
+
+          // If using MPI, find minimum across partitions
+#ifdef _MPI
+          MPI_Barrier(MPI_COMM_WORLD);
+          MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),1,MPI_DOUBLE,MPI_COMM_WORLD);
+          MPI_Barrier(MPI_COMM_WORLD);
+
+          dt_local(0) = dt_local_mpi.get_min();
+#endif
+        }
+
+        // For local timestepping, find element local timesteps
+        if (run_input.dt_type == 2)
+        {
+          for (int ic=0; ic<n_eles; ic++)
+          {
+            dt_local(ic) = calc_dt_local(ic);
+          }
+        }
+      }
+
+      double res, rhs;
+      for (int ic=0;ic<n_eles;ic++)
+      {
+        for (int i=0;i<n_fields;i++)
+        {
+          for (int inp=0;inp<n_upts_per_ele;inp++)
+          {
+            rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
+            res = disu_upts(1)(inp,ic,i);
+
+            if (run_input.dt_type == 0)
+              res = rk4a*res + run_input.dt*rhs;
+            else if (run_input.dt_type == 1)
+              res = rk4a*res + dt_local(0)*rhs;
+            else if (run_input.dt_type == 2)
+              res = rk4a*res + dt_local(ic)*rhs;
+
+            disu_upts(1)(inp,ic,i) = res;
+            disu_upts(0)(inp,ic,i) += rk4b*res;
+          }
+        }
+      }
+#endif
+
+#ifdef _GPU
+      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
+#endif
+    }
+
+    /*! Time integration not implemented. */
+    else {
+      cout << "ERROR: Time integration type not recognised ... " << endl;
+    }
+  }
+}
+
 // advance solution
 
 void eles::AdvanceSolution(int in_step, int adv_type) {
@@ -775,25 +958,27 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 #ifdef _CPU
       // If using global minimum timestep based on CFL, determine
       // global minimum
-      if (run_input.dt_type == 1)
+      if (!motion) // if moving mesh, already calculated new dt during GCL advance, so don't repeat work
+      {
+        if (run_input.dt_type == 1)
         {
           // Find minimum timestep
           dt_local(0) = 1e12; // Set to large value
 
           for (int ic=0; ic<n_eles; ic++)
-            {
-              dt_local_new = calc_dt_local(ic);
+          {
+            dt_local_new = calc_dt_local(ic);
 
-              if (dt_local_new < dt_local(0))
-                  dt_local(0) = dt_local_new;
-            }
+            if (dt_local_new < dt_local(0))
+              dt_local(0) = dt_local_new;
+          }
 
           // If running in parallel, gather minimum timestep values from
           // each partition and find global minumum across partitions
 #ifdef _MPI
           MPI_Barrier(MPI_COMM_WORLD);
           MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
-              1, MPI_DOUBLE, MPI_COMM_WORLD);
+                        1, MPI_DOUBLE, MPI_COMM_WORLD);
           MPI_Barrier(MPI_COMM_WORLD);
 
           dt_local(0) = dt_local_mpi.get_min();
@@ -803,11 +988,11 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
         // If using local timestepping, just compute and store all local
         // timesteps
         if (run_input.dt_type == 2)
-          {
-            for (int ic=0; ic<n_eles; ic++)
-              dt_local(ic) = calc_dt_local(ic);
-          }
-
+        {
+          for (int ic=0; ic<n_eles; ic++)
+            dt_local(ic) = calc_dt_local(ic);
+        }
+      }
         // Integrate the GCL forward in time
         /*for (int ic=0; ic<n_eles; ic++) {
           for (int upt=0; upt<n_upts_per_ele; upt++) {
@@ -915,43 +1100,44 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 
 #ifdef _CPU
       // for first stage only, compute timestep
-      if (in_step == 0)
+      // if moving mesh, already calculated during GCL advance, so don't redo
+      if (in_step == 0 && !motion)
+      {
+        // For global timestepping, find minimum timestep
+        if (run_input.dt_type == 1)
         {
-          // For global timestepping, find minimum timestep
-          if (run_input.dt_type == 1)
+          dt_local(0) = 1e12;
+
+          for (int ic=0; ic<n_eles; ic++)
+          {
+            dt_local_new = calc_dt_local(ic);
+
+            if (dt_local_new < dt_local(0))
             {
-              dt_local(0) = 1e12;
-
-              for (int ic=0; ic<n_eles; ic++)
-                {
-                  dt_local_new = calc_dt_local(ic);
-
-                  if (dt_local_new < dt_local(0))
-                    {
-                      dt_local(0) = dt_local_new;
-                    }
-                }
+              dt_local(0) = dt_local_new;
+            }
+          }
 
 
           // If using MPI, find minimum across partitions
 #ifdef _MPI
-              MPI_Barrier(MPI_COMM_WORLD);
-              MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),1,MPI_DOUBLE,MPI_COMM_WORLD);
-              MPI_Barrier(MPI_COMM_WORLD);
+          MPI_Barrier(MPI_COMM_WORLD);
+          MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),1,MPI_DOUBLE,MPI_COMM_WORLD);
+          MPI_Barrier(MPI_COMM_WORLD);
 
-              dt_local(0) = dt_local_mpi.get_min();
+          dt_local(0) = dt_local_mpi.get_min();
 #endif
-            }
-
-          // For local timestepping, find element local timesteps
-          if (run_input.dt_type == 2)
-            {
-              for (int ic=0; ic<n_eles; ic++)
-                {
-                  dt_local(ic) = calc_dt_local(ic);
-                }
-            }
         }
+
+        // For local timestepping, find element local timesteps
+        if (run_input.dt_type == 2)
+        {
+          for (int ic=0; ic<n_eles; ic++)
+          {
+            dt_local(ic) = calc_dt_local(ic);
+          }
+        }
+      }
 
       double res, rhs;
       for (int ic=0;ic<n_eles;ic++)
@@ -1138,7 +1324,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           }
           // Get mesh velocity (velocity in dynamic frame)
           for (k=0; k<n_dims; k++) {
-            temp_v(k) = vel_upts(k,j,i);
+            temp_v(k) = grid_vel_upts(in_disu_upts_from)(k,j,i);
           }
           // Temporary flux vector for dynamic->static transformation
           temp_f_ref.setup(n_fields,n_dims);
@@ -1185,6 +1371,14 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
               }
             }
           }
+
+//          for (int f=0; f<n_fields;f++) {
+//            for(int n=0;n<n_dims;n++) {
+//              cout << "temp_f_phys/ref(" << f << "," << n << ") = " << temp_f(f,n) << ",  " << temp_f_ref(f,n) << endl;
+//            }
+//          }
+//          cout << endl;
+
           temp_f = temp_f_ref;
         }
 
@@ -3018,277 +3212,277 @@ void eles::evaluate_sgsFlux(void)
 /** aka opp_0 (extrapolate grid velocity from solution points to flux points)
  *  might not be needed, if only "normal flux" needed via FR extrapolation
  *  ("common flux" obtained from spts directly) */
-//void eles::extrapolate_grid_vel(int in_disu_upts_from)
-//{
-//  if (n_eles!=0) {
+void eles::extrapolate_grid_vel(int in_disu_upts_from)
+{
+  if (n_eles!=0) {
 
-//    /*!
-//      Performs C = (alpha*A*B) + (beta*C) where: \n
-//      alpha = 1.0 \n
-//      beta = 0.0 \n
-//      A = opp_0 \n
-//      B = disu_upts(in_disu_upts_from) \n
-//      C = disu_fpts
+    /*!
+      Performs C = (alpha*A*B) + (beta*C) where: \n
+      alpha = 1.0 \n
+      beta = 0.0 \n
+      A = opp_0 \n
+      B = disu_upts(in_disu_upts_from) \n
+      C = disu_fpts
 
-//      opp_0 is the polynomial extrapolation matrix;
-//          has dimensions n_f_pts_per_ele by n_upts_per_ele
+      opp_0 is the polynomial extrapolation matrix;
+          has dimensions n_f_pts_per_ele by n_upts_per_ele
 
-//      Recall: opp_0(j,i) = value of the ith nodal basis at the
-//          jth flux point location in the reference domain
+      Recall: opp_0(j,i) = value of the ith nodal basis at the
+          jth flux point location in the reference domain
 
-//      (vector of solution values at flux points) = opp_0 * (vector of solution values at nodes)
-//      */
+      (vector of solution values at flux points) = opp_0 * (vector of solution values at nodes)
+      */
 
-//    Arows =  n_fpts_per_ele;
-//    Acols = n_upts_per_ele;
+    Arows =  n_fpts_per_ele;
+    Acols = n_upts_per_ele;
 
-//    Brows = Acols;
-//    Bcols = n_eles;
+    Brows = Acols;
+    Bcols = n_eles;
 
-//    Astride = Arows;
-//    Bstride = Brows;
-//    Cstride = Arows;
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
 
-//#ifdef _CPU
+#ifdef _CPU
 
-//    if(opp_0_sparse==0) // dense
-//    {
-//#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-//      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,grid_vel_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,grid_vel_fpts.get_ptr_cpu(),Cstride);
+    if(opp_0_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,grid_vel_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,grid_vel_fpts.get_ptr_cpu(),Cstride);
 
-//#elif defined _NO_BLAS
-//      dgemm(Arows,Bcols,Acols,1.0,0.0,opp_0.get_ptr_cpu(),grid_vel_upts(in_disu_upts_from).get_ptr_cpu(),grid_vel_fpts.get_ptr_cpu());
+#elif defined _NO_BLAS
+      dgemm(Arows,Bcols,Acols,1.0,0.0,opp_0.get_ptr_cpu(),grid_vel_upts(in_disu_upts_from).get_ptr_cpu(),grid_vel_fpts.get_ptr_cpu());
 
-//#endif
-//    }
-//    else if(opp_0_sparse==1) // mkl blas four-array csr format
-//    {
-//#if defined _MKL_BLAS
-//      mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_eles,&n_upts_per_ele,&one,matdescra,opp_0_data.get_ptr_cpu(),opp_0_cols.get_ptr_cpu(),opp_0_b.get_ptr_cpu(),opp_0_e.get_ptr_cpu(),grid_vel_upts(in_disu_upts_from).get_ptr_cpu(),&n_upts_per_ele,&zero,grid_vel_fpts.get_ptr_cpu(),&n_fpts_per_ele);
+#endif
+    }
+    else if(opp_0_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+      mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_eles,&n_upts_per_ele,&one,matdescra,opp_0_data.get_ptr_cpu(),opp_0_cols.get_ptr_cpu(),opp_0_b.get_ptr_cpu(),opp_0_e.get_ptr_cpu(),grid_vel_upts(in_disu_upts_from).get_ptr_cpu(),&n_upts_per_ele,&zero,grid_vel_fpts.get_ptr_cpu(),&n_fpts_per_ele);
 
-//#endif
-//    }
-//    else { cout << "ERROR: Unknown storage for opp_0 ... " << endl; }
+#endif
+    }
+    else { cout << "ERROR: Unknown storage for opp_0 ... " << endl; }
 
-//#endif
+#endif
 
-//#ifdef _GPU
-//    if(opp_0_sparse==0)
-//    {
-//      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_0.get_ptr_gpu(),Astride,grid_vel_upts(in_disu_upts_from).get_ptr_gpu(),Bstride,0.0,grid_vel_fpts.get_ptr_gpu(),Cstride);
-//    }
-//    else if (opp_0_sparse==1)
-//    {
-//      bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,one,n_eles,opp_0_ell_data.get_ptr_gpu(),opp_0_ell_indices.get_ptr_gpu(),opp_0_nnz_per_row,grid_vel_upts(in_disu_upts_from).get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu(),ele_type,order,0);
-//    }
-//    else
-//    {
-//      cout << "ERROR: Unknown storage for opp_0 ... " << endl;
-//    }
-//#endif
+#ifdef _GPU
+    if(opp_0_sparse==0)
+    {
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_0.get_ptr_gpu(),Astride,grid_vel_upts(in_disu_upts_from).get_ptr_gpu(),Bstride,0.0,grid_vel_fpts.get_ptr_gpu(),Cstride);
+    }
+    else if (opp_0_sparse==1)
+    {
+      bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,one,n_eles,opp_0_ell_data.get_ptr_gpu(),opp_0_ell_indices.get_ptr_gpu(),opp_0_nnz_per_row,grid_vel_upts(in_disu_upts_from).get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu(),ele_type,order,0);
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_0 ... " << endl;
+    }
+#endif
 
-//  }
-//}
+  }
+}
 
-///** aka opp_1 (transformed discontinuous flux at solution points to normal transformed discontinuous flux at flux points) */
-//void eles::extrapolate_GCL_flux(void)
-//{
-//  if (n_eles!=0)
-//  {
-//#ifdef _CPU
+/** aka opp_1 (transformed discontinuous flux at solution points to normal transformed discontinuous flux at flux points) */
+void eles::extrapolate_GCL_flux(void)
+{
+  if (n_eles!=0)
+  {
+#ifdef _CPU
 
-//    if(opp_1_sparse==0) // dense
-//    {
-//#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+    if(opp_1_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-//      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,grid_vel_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
-//      for (int i=1;i<n_dims;i++)
-//      {
-//        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,grid_vel_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
-//      }
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,grid_vel_upts(0).get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+      for (int i=1;i<n_dims;i++)
+      {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,grid_vel_upts(0).get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+      }
 
-//#elif defined _NO_BLAS
-//      dgemm(n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,0.0,opp_1(0).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,0),norm_tdisf_fpts.get_ptr_cpu());
-//      for (int i=1;i<n_dims;i++)
-//      {
-//        dgemm(n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,1.0,opp_1(i).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,i),norm_tdisf_fpts.get_ptr_cpu());
-//      }
-//#endif
-//    }
-//    else if(opp_1_sparse==1) // mkl blas four-array csr format
-//    {
-//#if defined _MKL_BLAS
+#elif defined _NO_BLAS
+      dgemm(n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,0.0,opp_1(0).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,0),norm_tdisf_fpts.get_ptr_cpu());
+      for (int i=1;i<n_dims;i++)
+      {
+        dgemm(n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,1.0,opp_1(i).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,i),norm_tdisf_fpts.get_ptr_cpu());
+      }
+#endif
+    }
+    else if(opp_1_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
 
-//      mkl_dcsrmm(&transa,&n_fpts_per_ele,&one,&n_upts_per_ele,&one,matdescra,opp_1_data(0).get_ptr_cpu(),opp_1_cols(0).get_ptr_cpu(),opp_1_b(0).get_ptr_cpu(),opp_1_e(0).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,norm_tdisf_fpts.get_ptr_cpu,&n_fpts_per_ele);
+      mkl_dcsrmm(&transa,&n_fpts_per_ele,&one,&n_upts_per_ele,&one,matdescra,opp_1_data(0).get_ptr_cpu(),opp_1_cols(0).get_ptr_cpu(),opp_1_b(0).get_ptr_cpu(),opp_1_e(0).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,norm_tdisf_fpts.get_ptr_cpu,&n_fpts_per_ele);
 
-//      for (int i=1;i<n_dims;i++) {
-//        mkl_dcsrmm(&transa,&n_fpts_per_ele,&one,&n_upts_per_ele,&one,matdescra,opp_1_data(i).get_ptr_cpu(),opp_1_cols(i).get_ptr_cpu(),opp_1_b(i).get_ptr_cpu(),opp_1_e(i).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,i),&n_upts_per_ele,&one,norm_tdisf_fpts.get_ptr_cpu(),&n_fpts_per_ele);
-//      }
+      for (int i=1;i<n_dims;i++) {
+        mkl_dcsrmm(&transa,&n_fpts_per_ele,&one,&n_upts_per_ele,&one,matdescra,opp_1_data(i).get_ptr_cpu(),opp_1_cols(i).get_ptr_cpu(),opp_1_b(i).get_ptr_cpu(),opp_1_e(i).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,i),&n_upts_per_ele,&one,norm_tdisf_fpts.get_ptr_cpu(),&n_fpts_per_ele);
+      }
 
-//#endif
-//    }
-//    else
-//    {
-//      cout << "ERROR: Unknown storage for opp_1 ... " << endl;
-//    }
+#endif
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_1 ... " << endl;
+    }
 
-//#endif
+#endif
 
-//#ifdef _GPU
+#ifdef _GPU
 
-//    if (opp_1_sparse==0)
-//    {
-//      cublasDgemm('N','N',n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
-//      for (int i=1;i<n_dims;i++)
-//      {
-//        cublasDgemm('N','N',n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
-//      }
-//    }
-//    else if (opp_1_sparse==1)
-//    {
-//      bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,one,n_eles,opp_1_ell_data(0).get_ptr_gpu(),opp_1_ell_indices(0).get_ptr_gpu(),opp_1_nnz_per_row(0),grid_vel_upts.get_ptr_gpu(0,0,0,0),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,0);
-//      for (int i=1;i<n_dims;i++)
-//      {
-//        bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,one,n_eles,opp_1_ell_data(i).get_ptr_gpu(),opp_1_ell_indices(i).get_ptr_gpu(),opp_1_nnz_per_row(i),grid_vel_upts.get_ptr_gpu(0,0,0,i),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,1);
-//      }
-//    }
-//#endif
+    if (opp_1_sparse==0)
+    {
+      cublasDgemm('N','N',n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
+      for (int i=1;i<n_dims;i++)
+      {
+        cublasDgemm('N','N',n_fpts_per_ele,n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
+      }
+    }
+    else if (opp_1_sparse==1)
+    {
+      bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,one,n_eles,opp_1_ell_data(0).get_ptr_gpu(),opp_1_ell_indices(0).get_ptr_gpu(),opp_1_nnz_per_row(0),grid_vel_upts.get_ptr_gpu(0,0,0,0),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,0);
+      for (int i=1;i<n_dims;i++)
+      {
+        bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,one,n_eles,opp_1_ell_data(i).get_ptr_gpu(),opp_1_ell_indices(i).get_ptr_gpu(),opp_1_nnz_per_row(i),grid_vel_upts.get_ptr_gpu(0,0,0,i),norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,1);
+      }
+    }
+#endif
 
-//  }
-//}
-
-
-///** aka opp_2 (Calculate divergence of transformed discontinuous GCL flux at solution points) */
-//void eles::calculate_divergence_GCL(int in_div_tconf_upts_to)
-//{
-//  if (n_eles!=0)
-//  {
-//#ifdef _CPU
-
-//    if(opp_2_sparse==0) // dense
-//    {
-//#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
-//      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_cpu(),n_upts_per_ele,grid_vel_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
-//      for (int i=1;i<n_dims;i++)
-//      {
-//        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,grid_vel_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
-//      }
-
-//#elif defined _NO_BLAS
-//      dgemm(n_upts_per_ele,n_eles,n_upts_per_ele,1.0,0.0,opp_2(0).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,0),div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu());
-//      for (int i=1;i<n_dims;i++)
-//      {
-//        dgemm(n_upts_per_ele,n_eles,n_upts_per_ele,1.0,1.0,opp_2(i).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,i),div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu());
-//      }
-
-//#endif
-//    }
-//    else if(opp_2_sparse==1) // mkl blas four-array csr format
-//    {
-//#if defined _MKL_BLAS
-
-//      mkl_dcsrmm(&transa,&n_upts_per_ele,&eles,&n_upts_per_ele,&one,matdescra,opp_2_data(0).get_ptr_cpu(),opp_2_cols(0).get_ptr_cpu(),opp_2_b(0).get_ptr_cpu(),opp_2_e(0).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
-//      for (int i=1;i<n_dims;i++)
-//      {
-//        mkl_dcsrmm(&transa,&n_upts_per_ele,&n_eles,&n_upts_per_ele,&one,matdescra,opp_2_data(i).get_ptr_cpu(),opp_2_cols(i).get_ptr_cpu(),opp_2_b(i).get_ptr_cpu(),opp_2_e(i).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,i),&n_upts_per_ele,&one,div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
-//      }
-
-//#endif
-//    }
-//    else
-//    {
-//      cout << "ERROR: Unknown storage for opp_2 ... " << endl;
-//    }
-
-//#endif
+  }
+}
 
 
-//#ifdef _GPU
+/** aka opp_2 (Calculate divergence of transformed discontinuous GCL flux at solution points) */
+void eles::calculate_divergence_GCL(int in_div_tconf_upts_to)
+{
+  if (n_eles!=0)
+  {
+#ifdef _CPU
 
-//    if (opp_2_sparse==0)
-//    {
-//      cublasDgemm('N','N',n_upts_per_ele,n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_gpu(),n_upts_per_ele,grid_vel_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,div_gcl_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
-//      for (int i=1;i<n_dims;i++) {
-//        cublasDgemm('N','N',n_upts_per_ele,n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_gpu(),n_upts_per_ele,grid_vel_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,div_gcl_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
-//      }
-//    }
-//    else if (opp_2_sparse==1)
-//    {
-//      bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,one,n_eles,opp_2_ell_data(0).get_ptr_gpu(),opp_2_ell_indices(0).get_ptr_gpu(),opp_2_nnz_per_row(0),grid_vel_upts.get_ptr_gpu(0,0,0,0),div_gcl_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,0);
-//      for (int i=1;i<n_dims;i++) {
-//        bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,one,n_eles,opp_2_ell_data(i).get_ptr_gpu(),opp_2_ell_indices(i).get_ptr_gpu(),opp_2_nnz_per_row(i),grid_vel_upts.get_ptr_gpu(0,0,0,i),div_gcl_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
-//      }
+    if(opp_2_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-//    }
-//#endif
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_cpu(),n_upts_per_ele,grid_vel_upts(0).get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+      for (int i=1;i<n_dims;i++)
+      {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,grid_vel_upts(0).get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+      }
 
-//  }
-//}
+#elif defined _NO_BLAS
+      dgemm(n_upts_per_ele,n_eles,n_upts_per_ele,1.0,0.0,opp_2(0).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,0),div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu());
+      for (int i=1;i<n_dims;i++)
+      {
+        dgemm(n_upts_per_ele,n_eles,n_upts_per_ele,1.0,1.0,opp_2(i).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,i),div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu());
+      }
 
-///** Calculate divergence of transformed continuous GCL flux at solution points */
-//void eles::calculate_corrected_divergence_GCL(int in_div_tconf_upts_to)
-//{
-//  if (n_eles!=0)
-//  {
-//#ifdef _CPU
+#endif
+    }
+    else if(opp_2_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
 
-//#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+      mkl_dcsrmm(&transa,&n_upts_per_ele,&eles,&n_upts_per_ele,&one,matdescra,opp_2_data(0).get_ptr_cpu(),opp_2_cols(0).get_ptr_cpu(),opp_2_b(0).get_ptr_cpu(),opp_2_e(0).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
+      for (int i=1;i<n_dims;i++)
+      {
+        mkl_dcsrmm(&transa,&n_upts_per_ele,&n_eles,&n_upts_per_ele,&one,matdescra,opp_2_data(i).get_ptr_cpu(),opp_2_cols(i).get_ptr_cpu(),opp_2_b(i).get_ptr_cpu(),opp_2_e(i).get_ptr_cpu(),grid_vel_upts.get_ptr_cpu(0,0,0,i),&n_upts_per_ele,&one,div_gcl_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
+      }
 
-//    cblas_daxpy(n_eles*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
+#endif
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_2 ... " << endl;
+    }
 
-//#elif defined _NO_BLAS
+#endif
 
-//    daxpy(n_eles*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu());
 
-//#endif
+#ifdef _GPU
 
-//    if(opp_3_sparse==0) // dense
-//    {
-//#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+    if (opp_2_sparse==0)
+    {
+      cublasDgemm('N','N',n_upts_per_ele,n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_gpu(),n_upts_per_ele,grid_vel_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,div_gcl_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
+      for (int i=1;i<n_dims;i++) {
+        cublasDgemm('N','N',n_upts_per_ele,n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_gpu(),n_upts_per_ele,grid_vel_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,div_gcl_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
+      }
+    }
+    else if (opp_2_sparse==1)
+    {
+      bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,one,n_eles,opp_2_ell_data(0).get_ptr_gpu(),opp_2_ell_indices(0).get_ptr_gpu(),opp_2_nnz_per_row(0),grid_vel_upts.get_ptr_gpu(0,0,0,0),div_gcl_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,0);
+      for (int i=1;i<n_dims;i++) {
+        bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,one,n_eles,opp_2_ell_data(i).get_ptr_gpu(),opp_2_ell_indices(i).get_ptr_gpu(),opp_2_nnz_per_row(i),grid_vel_upts.get_ptr_gpu(0,0,0,i),div_gcl_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
+      }
 
-//      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_cpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_cpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+    }
+#endif
 
-//#elif defined _NO_BLAS
-//      dgemm(n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_fpts_per_ele,1.0,1.0,opp_3.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+  }
+}
 
-//#endif
-//    }
-//    else if(opp_3_sparse==1) // mkl blas four-array csr format
-//    {
-//#if defined _MKL_BLAS
+/** Calculate divergence of transformed continuous GCL flux at solution points */
+void eles::calculate_corrected_divergence_GCL(int in_div_tconf_upts_to)
+{
+  if (n_eles!=0)
+  {
+#ifdef _CPU
 
-//      mkl_dcsrmm(&transa,&n_upts_per_ele,&one,&n_fpts_per_ele,&one,matdescra,opp_3_data.get_ptr_cpu(),opp_3_cols.get_ptr_cpu(),opp_3_b.get_ptr_cpu(),opp_3_e.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),&n_fpts_per_ele,&one,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-//#endif
-//    }
-//    else
-//    {
-//      cout << "ERROR: Unknown storage for opp_3 ... " << endl;
-//    }
+    cblas_daxpy(n_eles*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
 
-//#endif
+#elif defined _NO_BLAS
 
-//#ifdef _GPU
+    daxpy(n_eles*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu());
 
-//    cublasDaxpy(n_eles*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_gpu(),1,norm_tconf_fpts.get_ptr_gpu(),1);
+#endif
 
-//    if (opp_3_sparse==0)
-//    {
-//      cublasDgemm('N','N',n_upts_per_ele,n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_gpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_gpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
-//    }
-//    else if (opp_3_sparse==1)
-//    {
-//      bespoke_SPMV(n_upts_per_ele,n_fpts_per_ele,(n_fields+n_gcl_fields),n_eles,opp_3_ell_data.get_ptr_gpu(),opp_3_ell_indices.get_ptr_gpu(),opp_3_nnz_per_row,norm_tconf_fpts.get_ptr_gpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
-//    }
-//    else
-//    {
-//      cout << "ERROR: Unknown storage for opp_3 ... " << endl;
-//    }
-//#endif
+    if(opp_3_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-//  }
-//}
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_cpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_cpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+
+#elif defined _NO_BLAS
+      dgemm(n_upts_per_ele,(n_fields+n_gcl_fields)*n_eles,n_fpts_per_ele,1.0,1.0,opp_3.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+
+#endif
+    }
+    else if(opp_3_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+
+      mkl_dcsrmm(&transa,&n_upts_per_ele,&one,&n_fpts_per_ele,&one,matdescra,opp_3_data.get_ptr_cpu(),opp_3_cols.get_ptr_cpu(),opp_3_b.get_ptr_cpu(),opp_3_e.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),&n_fpts_per_ele,&one,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
+
+#endif
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_3 ... " << endl;
+    }
+
+#endif
+
+#ifdef _GPU
+
+    cublasDaxpy(n_eles*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_gpu(),1,norm_tconf_fpts.get_ptr_gpu(),1);
+
+    if (opp_3_sparse==0)
+    {
+      cublasDgemm('N','N',n_upts_per_ele,n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_gpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_gpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
+    }
+    else if (opp_3_sparse==1)
+    {
+      bespoke_SPMV(n_upts_per_ele,n_fpts_per_ele,(n_fields+n_gcl_fields),n_eles,opp_3_ell_data.get_ptr_gpu(),opp_3_ell_indices.get_ptr_gpu(),opp_3_nnz_per_row,norm_tconf_fpts.get_ptr_gpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),ele_type,order,1);
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_3 ... " << endl;
+    }
+#endif
+
+  }
+}
 
 /* --------------------- End GCL Operations --------------------------------- */
 
@@ -4295,7 +4489,7 @@ void eles::set_transforms(void)
         }
 
         // calculate first derivatives of shape functions at the solution point
-        calc_d_pos(loc,i,d_pos);
+        calc_d_pos_upt(j,i,d_pos);
 
         // calculate second derivatives of shape functions at the solution point
         if (viscous) {
@@ -4470,9 +4664,7 @@ void eles::set_transforms(void)
           loc(k)=tloc_fpts(k,j);
         }
 
-        if (motion) {
-          calc_pos(loc,i,pos);
-        }
+        calc_pos(loc,i,pos);
 
         for(k=0;k<n_dims;k++)
         {
@@ -4480,15 +4672,11 @@ void eles::set_transforms(void)
         }
 
         // calculate first derivatives of shape functions at the flux points
-        calc_d_pos(loc,i,d_pos);
+        calc_d_pos_fpt(j,i,d_pos);
 
         // calculate second derivatives of shape functions at the flux point
         if(viscous) {
-          if (motion) {
-            calc_dd_pos_dyn_fpt(j,i,dd_pos);
-          }else{
-            calc_dd_pos(loc,i,dd_pos);
-          }
+          calc_dd_pos(loc,i,dd_pos);
         }
 
         // store quantities at the flux point
@@ -4747,9 +4935,13 @@ void eles::set_transforms_dynamic(void)
           yr = d_pos(1,0);
           ys = d_pos(1,1);
 
+//          cout << "i=" << i << ": xX=" << xr << ", xY=" << xs << ", yX=" << yr << ", yY=" << ys << endl;
+//          cout << "i=" << i << ": Xr=" << jac_upts(j,k,0,0) << ", Xs=" << jac_upts(j,k,0,1)  << ", Yr=" << jac_upts(j,k,1,0)  << ", Ys=" << jac_upts(j,k,1,1)  << endl;
+//          cout << endl;
+
           // store determinant of jacobian at solution point
           J_dyn_upts(j,i)= xr*ys - xs*yr;
-
+//          cout << "ele = " << i << ", upt = " << j << ", detjac_dyn = " << J_dyn_upts(j,i) << endl;
           if (J_dyn_upts(j,i) < 0)
           {
             FatalError("Negative Jacobian at solution points");
@@ -4941,13 +5133,12 @@ void eles::set_transforms_dynamic(void)
           }
 
           // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
-          tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_fpts(0,j)*d_pos(1,1))-(tnorm_fpts(1,j)*d_pos(1,0));
-          tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_fpts(0,j)*d_pos(0,1))+(tnorm_fpts(1,j)*d_pos(0,0));
+          tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_fpts(0,j)*ys)-(tnorm_fpts(1,j)*yr);
+          tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_fpts(0,j)*xs)+(tnorm_fpts(1,j)*xr);
 
           // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
           ndA_dyn_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
                                                           tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
-
 
           // store normal at flux point
           norm_dyn_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/ndA_dyn_fpts(j,i);
@@ -5654,7 +5845,7 @@ double* eles::get_sgsf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
 #endif
 }
 
-double* eles::get_vel_fpts_ptr(int in_ele, int in_ele_local_inter, int in_inter_local_fpt, int in_dim)
+double* eles::get_grid_vel_fpts_ptr(int in_ele, int in_ele_local_inter, int in_inter_local_fpt, int in_dim)
 {
     int i;
 
@@ -5668,9 +5859,9 @@ double* eles::get_vel_fpts_ptr(int in_ele, int in_ele_local_inter, int in_inter_
     }
 
 #ifdef _GPU
-    return vel_fpts.get_ptr_gpu(in_dim,fpt,in_ele);
+    return grid_vel_fpts.get_ptr_gpu(in_dim,fpt,in_ele);
 #else
-    return vel_fpts.get_ptr_cpu(in_dim,fpt,in_ele);
+    return grid_vel_fpts.get_ptr_cpu(in_dim,fpt,in_ele);
 #endif
 }
 
@@ -5792,6 +5983,50 @@ void eles::calc_d_pos(array<double> in_loc, int in_ele, array<double>& out_d_pos
             }
         }
     }
+}
+
+/**
+ * Calculate derivative of static position wrt computational-space position at upt
+ * Uses pre-computed nodal shape basis derivatives for efficiency
+ * \param[in] in_upt - ID of solution point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dxi_j
+ */
+void eles::calc_d_pos_upt(int in_upt, int in_ele, array<double>& out_d_pos)
+{
+  int i,j,k;
+
+  // Calculate dx/d<c>
+  out_d_pos.initialize_to_zero();
+  for(j=0;j<n_dims;j++) {
+    for(k=0;k<n_dims;k++) {
+      for(i=0;i<n_spts_per_ele(in_ele);i++) {
+        out_d_pos(j,k)+=d_nodal_s_basis_upts(k,i,in_upt,in_ele)*shape(j,i,in_ele);
+      }
+    }
+  }
+}
+
+/**
+ * Calculate derivative of static position wrt computational-space position at fpt
+ * Uses pre-computed nodal shape basis derivatives for efficiency
+ * \param[in] in_fpt - ID of flux point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dxi_j
+ */
+void eles::calc_d_pos_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
+{
+  int i,j,k;
+
+  // Calculate dx/d<c>
+  out_d_pos.initialize_to_zero();
+  for(j=0;j<n_dims;j++) {
+    for(k=0;k<n_dims;k++) {
+      for(i=0;i<n_spts_per_ele(in_ele);i++) {
+        out_d_pos(j,k)+=d_nodal_s_basis_fpts(k,i,in_fpt,in_ele)*shape(j,i,in_ele);
+      }
+    }
+  }
 }
 
 /**
@@ -5934,7 +6169,8 @@ void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
   for (i=0; i<n_dims; i++) {
     for (j=0; j<n_dims; j++) {
       for (k=0; k<n_dims; k++) {
-        out_d_pos(i,j) += dxdr(i,k)/jac_fpts(in_fpt,in_ele,j,k);
+        if (fabs(jac_fpts(in_fpt,in_ele,j,k))>=1e-14)
+          out_d_pos(i,j) += dxdr(i,k)/jac_fpts(in_fpt,in_ele,j,k);
       }
     }
   }
@@ -5962,16 +6198,23 @@ void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
     }
   }
 
-  // Apply chain rule: dx/dX = (dx/dr) / (dX/dr)
+//  cout << "ele " << in_ele << ", upt " << in_upt << endl;
+
+  // Apply chain rule: dx/dX = (dx/dr) / (dX/dr) + (dx/ds) / (dX/ds)
   out_d_pos.initialize_to_zero();
   for (i=0; i<n_dims; i++) {
     for (j=0; j<n_dims; j++) {
       for (k=0; k<n_dims; k++) {
-        if (jac_upts(in_upt,in_ele,j,k)!=0)
+        if (fabs(jac_upts(in_upt,in_ele,j,k))>=1e-14)
           out_d_pos(i,j) += dxdr(i,k)/jac_upts(in_upt,in_ele,j,k);
       }
     }
   }
+
+//  cout.precision(16);
+//  for (i=0;i<n_dims;i++)
+//    for (j=0;j<n_dims;j++)
+//      cout << "dx("<<i<<")dr("<<j<<")=" << dxdr(i,j) << ", dX("<<i<<")dr("<<j<<")="<<jac_upts(in_upt,in_ele,i,j)<<endl;
 }
 
 
@@ -7126,10 +7369,17 @@ void eles::initialize_grid_vel(void)
 {
     /* --- Setup arrays --- */
     // At solution & flux points
-    vel_fpts.setup(n_dims,n_fpts_per_ele,n_eles);
-    vel_fpts.initialize_to_zero();
-    vel_upts.setup(n_dims,n_upts_per_ele,n_eles);
-    vel_upts.initialize_to_zero();
+    grid_vel_fpts.setup(n_dims,n_fpts_per_ele,n_eles);
+    grid_vel_fpts.initialize_to_zero();
+
+    grid_vel_upts.setup(n_adv_levels);
+    div_gcl_upts.setup(n_adv_levels);
+    for (int i=0; i<n_adv_levels; i++) {
+      grid_vel_upts(i).setup(n_dims,n_upts_per_ele,n_eles);
+      div_gcl_upts(i).setup(n_dims,n_upts_per_ele,n_eles);
+      grid_vel_upts(i).initialize_to_zero();
+      div_gcl_upts(i).initialize_to_zero();
+    }
 
     // At output / plotting points
     vel_ppts.setup(n_dims,n_ppts_per_ele,n_eles);
@@ -7151,9 +7401,9 @@ void eles::set_grid_vel_fpts(void)
   for (ic=0; ic<n_eles; ic++) {
     for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
       for(k=0;k<n_dims;k++) {
-        vel_fpts(k,fpt,ic) = 0.0;
+        grid_vel_fpts(k,fpt,ic) = 0.0;
         for(j=0;j<n_spts_per_ele(ic);j++) {
-          vel_fpts(k,fpt,ic)+=nodal_s_basis_fpts(j,fpt,ic)*vel_spts(ic)(j,k);
+          grid_vel_fpts(k,fpt,ic)+=nodal_s_basis_fpts(j,fpt,ic)*vel_spts(ic)(j,k);
         }
       }
     }
@@ -7162,15 +7412,15 @@ void eles::set_grid_vel_fpts(void)
 
 /*! Interpolate the grid velocity from shape points to solution points
  *  TODO: Find a way to speed up with BLAS or something */
-void eles::set_grid_vel_upts(void)
+void eles::set_grid_vel_upts(int in_rk_step)
 {
   int ic,upt,j,k;
   for (ic=0; ic<n_eles; ic++) {
     for (upt=0; upt<n_upts_per_ele; upt++) {
       for(k=0;k<n_dims;k++) {
-        vel_upts(k,upt,ic) = 0.0;
+        grid_vel_upts(in_rk_step)(k,upt,ic) = 0.0;
         for(j=0;j<n_spts_per_ele(ic);j++) {
-          vel_upts(k,upt,ic)+=nodal_s_basis_upts(j,upt,ic)*vel_spts(ic)(j,k);
+          grid_vel_upts(in_rk_step)(k,upt,ic)+=nodal_s_basis_upts(j,upt,ic)*vel_spts(ic)(j,k);
         }
       }
     }
