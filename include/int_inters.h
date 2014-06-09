@@ -54,6 +54,9 @@ public:
   /*! calculate delta in transformed discontinuous solution at flux points */
   void calc_delta_disu_fpts(void);
 
+  /*! calculate normal transformed continuous GCL flux at the flux points */
+  void calculate_common_GCL_flux(void);
+
 protected:
 
   // #### members ####
@@ -69,5 +72,6 @@ protected:
   // Dynamic grid variables:
   array<double*> ndA_dyn_fpts_r;
   array<double*> J_dyn_fpts_r;
+  array<double*> norm_tconf_GCL_fpts_r;
 
 };

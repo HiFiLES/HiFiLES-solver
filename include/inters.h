@@ -96,6 +96,7 @@ protected:
   array<double*> norm_dyn_fpts;
   array<double*> J_dyn_fpts_l;
   array<double*> grid_vel_fpts;
+  array<double*> norm_tconf_GCL_fpts_l;
 
   array<double> pos_disu_fpts_l;
   array<double*> grad_disu_fpts_l;

@@ -63,6 +63,9 @@ public:
   /*! calculate normal transformed continuous viscous flux at the flux points on boundaries*/
   void evaluate_boundaryConditions_viscFlux(double time_bound);
 
+  /*! calculate normal transformed continuous GCL flux at the flux points on boundaries*/
+  void evaluate_boundaryConditions_GCL_flux(void);
+
 protected:
 
   // #### members ####

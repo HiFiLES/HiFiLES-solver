@@ -123,34 +123,30 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
         }
       }
 
-      if (n_gcl_fields>0)
-      {
-        for(int j=0;j<n_fpts_per_inter;j++)
-        {
-          disu_fpts_l(j,in_inter,i_gcl_field)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i_gcl_field,in_local_inter_l,j,FlowSol);
-          norm_tconf_fpts_l(j,in_inter,i_gcl_field)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i_gcl_field,in_local_inter_l,j,FlowSol);
-        }
-      }
-
       for(int j=0;j<n_fpts_per_inter;j++)
-        {
-          mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+      {
+        mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+
+        if (motion) {
           ndA_dyn_fpts_l(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
           J_dyn_fpts_l(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+        }
 
-          for(int k=0;k<n_dims;k++)
-            {
-              norm_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
-              norm_dyn_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
-              grid_vel_fpts(k,j,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+        for(int k=0;k<n_dims;k++)
+        {
+          norm_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+          if (motion) {
+            norm_dyn_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+            grid_vel_fpts(k,j,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+          }
 #ifdef _CPU
-              loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+          loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 #endif
 #ifdef _GPU
-              loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_gpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+          loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_gpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 #endif
-            }
         }
+      }
 
       // Get coordinates and solution at closest solution points to boundary
 
@@ -352,6 +348,38 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 #ifdef _GPU
   if (n_inters!=0)
     evaluate_boundaryConditions_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.R_ref,viscous,run_input.vis_riemann_solve_type, time_bound, run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda,run_input.equation);
+#endif
+}
+
+/*! Calculate normal transformed continuous inviscid flux at the flux points on the boundaries.*/
+
+void bdy_inters::evaluate_boundaryConditions_GCL_flux(void) {
+
+#ifdef _CPU
+  array<double> norm(n_dims);
+  double vn = 0;
+
+  for(int i=0;i<n_inters;i++)
+  {
+    for(int j=0;j<n_fpts_per_inter;j++)
+    {
+      /* Get grid velocity normal to the boundary */
+      for(int k=0; k<n_dims; k++) {
+        vn += (*grid_vel_fpts(k,j,i))*(*norm_dyn_fpts(j,i,k));
+      }
+
+      /* Transform back to reference space */
+      for(int k=0;k<n_fields+n_gcl_fields;k++) {
+        (*norm_tconf_fpts_l(j,i,k)) = fn(k)*(*ndA_dyn_fpts_l(j,i))*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+      }
+    }
+  }
+
+#endif
+
+#ifdef _GPU
+//  if (n_inters!=0)
+//    evaluate_boundaryConditions_GCL_flux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.R_ref,viscous,run_input.vis_riemann_solve_type, time_bound, run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda,run_input.equation);
 #endif
 }
 

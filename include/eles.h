@@ -507,11 +507,12 @@ public:
   void calc_gcl_res(void);
 
   void set_transforms_dynamic(void);
-  void extrapolate_grid_vel(int in_disu_upts_from);
+//  void extrapolate_grid_vel(int in_disu_upts_from);
   void extrapolate_GCL_flux(void);
   void calculate_divergence_GCL(int in_div_tconf_upts_to);
   void calculate_corrected_divergence_GCL(int in_div_tconf_upts_to);
 
+  void evaluate_GCL_flux(int in_disu_upts_from);
 protected:
 
   // #### members ####
@@ -681,7 +682,7 @@ protected:
   indexing: (in_ele, in_fpt, in_dim) \n
   */
   array<double> grid_vel_fpts, vel_ppts;
-  array< array<double> > grid_vel_upts, div_gcl_upts;
+  array< array<double> > grid_vel_upts, div_gcl_upts, div_gcl_upts;
 
   /*! nodal shape basis contributions at flux points */
   array<double> nodal_s_basis_fpts;
@@ -721,6 +722,9 @@ protected:
 
   /*! temporary grid velocity storage at a single solution point */
   array<double> temp_v;
+
+  /*! temporary grid velocity storage at a single solution point (transformed to static frame) */
+  array<double> temp_v_ref;
 
   /*! temporary solution gradient storage */
   array<double> temp_grad_u;
@@ -854,6 +858,18 @@ protected:
   array<double> tdisf_upts;
 
   /*!
+   * description: transformed discontinuous flux for GCL at the solution points \n
+   * indexing: (in_upt, in_dim, in_ele) \n
+   */
+  array<double> tdisf_GCL_upts;
+
+  /*!
+   * description: transformed discontinuous flux for GCL at the flux points \n
+   * indexing: (in_fpt, in_dim, in_ele) \n
+   */
+  array<double> tdisf_GCL_fpts;
+
+  /*!
         description: subgrid-scale flux at the solution points \n
         indexing: (in_upt, in_dim, in_field, in_ele) \n
         matrix mapping: (in_upt, in_dim || in_field, in_ele)
@@ -875,6 +891,13 @@ protected:
   array<double> norm_tdisf_fpts;
 
   /*!
+        normal transformed discontinuous GCL flux at the flux points
+        indexing: \n
+        matrix mapping:
+        */
+  array<double> norm_tdisf_GCL_fpts;
+
+  /*!
         normal transformed continuous flux at the flux points
         indexing: \n
         matrix mapping:
@@ -882,11 +905,24 @@ protected:
   array<double> norm_tconf_fpts;
 
   /*!
+        normal transformed continuous GCL flux at the flux points
+        indexing: \n
+        matrix mapping:
+        */
+  array<double> norm_tconf_GCL_fpts;
+
+  /*!
         divergence of transformed continuous flux at the solution points
         indexing: \n
         matrix mapping:
         */
   array< array<double> > div_tconf_upts;
+
+  /*!
+   *  divergence of transformed continuous GCL flux at the solution points
+   *  indexing: (in_upt, in_ele) \n
+   */
+  array< array<double> > div_GCL_upts;
 
   /*! delta of the transformed discontinuous solution at the flux points   */
   array<double> delta_disu_fpts;

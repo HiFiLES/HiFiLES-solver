@@ -539,6 +539,35 @@ void mpi_inters::calculate_common_invFlux(void)
 
 }
 
+// calculate normal transformed continuous inviscid flux at the flux points at mpi faces
+void mpi_inters::calculate_common_GCL_flux(void)
+{
+
+#ifdef _CPU
+  double vn = 0;
+
+  for(int i=0;i<n_inters;i++)
+  {
+    for(int j=0;j<n_fpts_per_inter;j++)
+    {
+      /* Get grid velocity normal to the boundary face */
+      for (int k=0; k<n_dims; k++)
+        vn -= (*norm_fpts(j,i,k))*(*grid_vel_fpts(k,j,i));
+
+      // Transform back to reference space
+      *norm_tconf_fpts_l(j,i,k) = vn*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i))*(*ndA_dyn_fpts_l(j,i));
+    }
+  }
+#endif
+
+#ifdef _GPU
+/*  if (n_inters!=0) {
+      calculate_common_GCL_flux_mpi_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type, delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.pen_fact, run_input.viscous, run_input.vis_riemann_solve_type, run_input.wave_speed(0), run_input.wave_speed(1), run_input.wave_speed(2), run_input.lambda);
+    }*/
+#endif
+
+}
+
 void mpi_inters::calculate_common_viscFlux(void)
 {
 

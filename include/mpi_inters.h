@@ -68,6 +68,8 @@ public:
   /*! move all from cpu to gpu */
   void mv_all_cpu_gpu(void);
 
+  void calculate_common_GCL_flux(void);
+
 protected:
 
   // #### members ####

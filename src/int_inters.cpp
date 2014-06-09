@@ -62,8 +62,11 @@ void int_inters::setup(int in_n_inters,int in_inter_type)
   //detjac_fpts_r.setup(n_fpts_per_inter,n_inters); // unused
   mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.setup(n_fpts_per_inter,n_inters);
 
-  ndA_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
-  J_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
+  if (motion) {
+    ndA_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
+    J_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
+    norm_tconf_GCL_fpts_r.setup(n_fpts_per_inter,n_inters);
+  }
 
   delta_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
 
@@ -79,83 +82,81 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
   int i,j,k;
   int i_rhs,j_rhs;
 
-      get_lut(rot_tag);
+  get_lut(rot_tag);
 
-      for(i=0;i<n_fields;i++)
+  for(i=0;i<n_fields;i++)
+  {
+    for(j=0;j<n_fpts_per_inter;j++)
+    {
+      j_rhs=lut(j);
+
+      disu_fpts_l(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+      disu_fpts_r(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
+
+      norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+      norm_tconf_fpts_r(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
+
+      for (int k=0;k<n_dims;k++)
+      {
+        if(viscous)
         {
-          for(j=0;j<n_fpts_per_inter;j++)
-            {
-              j_rhs=lut(j);
 
-              disu_fpts_l(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-              disu_fpts_r(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
+          delta_disu_fpts_l(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+          delta_disu_fpts_r(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
 
-              norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-              norm_tconf_fpts_r(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
-
-              for (int k=0;k<n_dims;k++)
-                {
-                  if(viscous)
-                    {
-
-                      delta_disu_fpts_l(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-                      delta_disu_fpts_r(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
-
-                      grad_disu_fpts_l(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
-                      grad_disu_fpts_r(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
-                    }
-
-                  // Subgrid-scale flux
-                  if(LES)
-                    {
-                      sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
-                      sgsf_fpts_r(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
-                    }
-                }
-            }
+          grad_disu_fpts_l(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+          grad_disu_fpts_r(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
         }
 
-      if (n_gcl_fields>0)
-      {
-        for(j=0;j<n_fpts_per_inter;j++)
+        // Subgrid-scale flux
+        if(LES)
         {
-          j_rhs=lut(j);
-
-          disu_fpts_l(j,in_inter,i_gcl_field)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i_gcl_field,in_local_inter_l,j,FlowSol);
-          disu_fpts_r(j,in_inter,i_gcl_field)=get_disu_fpts_ptr(in_ele_type_r,in_ele_r,i_gcl_field,in_local_inter_r,j_rhs,FlowSol);
-
-          norm_tconf_fpts_l(j,in_inter,i_gcl_field)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i_gcl_field,in_local_inter_l,j,FlowSol);
-          norm_tconf_fpts_r(j,in_inter,i_gcl_field)=get_norm_tconf_fpts_ptr(in_ele_type_r,in_ele_r,i_gcl_field,in_local_inter_r,j_rhs,FlowSol);
+          sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+          sgsf_fpts_r(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
         }
       }
+    }
+  }
 
-      for(i=0;i<n_fpts_per_inter;i++)
-        {
-          i_rhs=lut(i);
+  if (motion)
+  {
+    for(j=0;j<n_fpts_per_inter;j++)
+    {
+      j_rhs=lut(j);
 
-          mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
-          mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+      norm_tconf_GCL_fpts_l(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+      norm_tconf_GCL_fpts_r(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
 
-          if (motion)
-          {
-            ndA_dyn_fpts_l(i,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
-            ndA_dyn_fpts_r(i,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+      for (k=0; k<n_dims; k++) {
+        norm_dyn_fpts(i,in_inter,k)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,FlowSol);
+        grid_vel_fpts(k,i,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,FlowSol);
+      }
+    }
+  }
 
-            // pretty sure these should be the same due to the continuous nature of the dynamic->static mapping.
-            // But, leave it this way for now just in case.
-            J_dyn_fpts_l(i,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
-            J_dyn_fpts_r(i,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
-          }
+  for(i=0;i<n_fpts_per_inter;i++)
+  {
+    i_rhs=lut(i);
 
-          for(j=0;j<n_dims;j++)
-          {
-            norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-            if (motion) {
-              norm_dyn_fpts(i,in_inter,j)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-              grid_vel_fpts(j,i,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-            }
-          }
-        }
+    mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
+    mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+
+    if (motion)
+    {
+      ndA_dyn_fpts_l(i,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
+      ndA_dyn_fpts_r(i,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+
+      // pretty sure these should be the same due to the continuous nature of the dynamic->static mapping.
+      // But, leave it this way for now just in case.
+      J_dyn_fpts_l(i,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
+      J_dyn_fpts_r(i,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+    }
+
+    for(j=0;j<n_dims;j++)
+    {
+      norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
+    }
+  }
 }
 
 // move all from cpu to gpu
@@ -337,11 +338,37 @@ void int_inters::calculate_common_invFlux(void)
     }
 
 #endif
+}
 
+// calculate normal transformed continuous GCL flux at the flux points
+void int_inters::calculate_common_GCL_flux(void)
+{
+#ifdef _CPU
+  double vn = 0;
 
+  for(int i=0;i<n_inters;i++)
+  {
+    for(int j=0;j<n_fpts_per_inter;j++)
+    {
+      // storing normal components
+      for (int k=0; k<n_dims; k++) {
+        vn -= (*norm_dyn_fpts(j,i,k))*(*grid_vel_fpts(k,j,i));
+      }
 
+      // Transform back to computational space from dynamic physical space
+      *norm_tconf_GCL_fpts_l(j,i) = vn*(*ndA_dyn_fpts_l(j,i))*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+      *norm_tconf_GCL_fpts_r(j,i) =-vn*(*ndA_dyn_fpts_r(j,i))*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(j,i));
+    }
+  }
+#endif
 
+#ifdef _GPU
+  if (n_inters!=0)
+    {
+      calculate_common_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),delta_disu_fpts_r.get_ptr_gpu(),run_input.gamma,run_input.pen_fact,viscous,run_input.vis_riemann_solve_type,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda);
+    }
 
+#endif
 }
 
 
