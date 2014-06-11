@@ -151,6 +151,12 @@ void input::setup(ifstream& in_run_input_file, int rank)
     else if (!param_name.compare("dt_type"))
     {
       in_run_input_file >> dt_type;
+
+      if (dt_type == 2 && rank == 0)
+      {
+        cout << "Note: Local timestepping is still in an experimental phase," 
+          << " especially for viscous simulations." ;
+      }
     }
     else if (!param_name.compare("dt"))
     {

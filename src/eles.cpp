@@ -552,6 +552,18 @@ void eles::read_restart_data(ifstream& restart_file)
         getline(restart_file,str);
     }
   }
+  
+  // If required, calculate element reference lengths
+  if (run_input.dt_type != 0)
+  {
+    // Allocate array
+    h_ref.setup(n_eles);
+    h_ref.initialize_to_zero();
+    
+    // Call element specific function to obtain length
+    for (int i=0; i<n_eles; i++)
+      h_ref(i) = (*this).calc_h_ref_specific(i);
+  }
 }
 
 
@@ -917,15 +929,18 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 
 double eles::calc_dt_local(int in_ele)
 {
-  double lam, lam_new;
+  double lam_inv, lam_inv_new;
+  double lam_visc, lam_visc_new;
   double out_dt_local;
+  double dt_inv, dt_visc;
   
   // 2-D Elements
   if (n_dims == 2)
   {
     double u,v,p,c;
     
-    lam = 0;
+    lam_inv = 0;
+    lam_visc = 0;
     
     // Calculate maximum internal wavespeed per element
     for (int i=0; i<n_upts_per_ele; i++)
@@ -935,16 +950,27 @@ double eles::calc_dt_local(int in_ele)
       p = (run_input.gamma - 1.0) * (disu_upts(0)(i,in_ele,3) - 0.5*disu_upts(0)(i,in_ele,0)*(u*u+v*v));
       c = sqrt(run_input.gamma * p/disu_upts(0)(i,in_ele,0));
       
-      lam_new = sqrt(u*u + v*v) + c;
+      lam_inv_new = sqrt(u*u + v*v) + c;
+      lam_visc_new = 4.0/3.0*run_input.mu_inf/disu_upts(0)(i,in_ele,0);
       
-      if (lam < lam_new)
-        lam = lam_new;
+      if (lam_inv < lam_inv_new)
+        lam_inv = lam_inv_new;
+
+      if (lam_visc < lam_visc_new)
+        lam_visc = lam_visc_new;
     }
-    
+
     if (viscous)
-      out_dt_local = run_input.CFL*h_ref(in_ele)/(run_input.order*run_input.order*(lam + run_input.order*run_input.order*run_input.mu_inf/h_ref(in_ele)));
+    {
+      dt_visc = (run_input.CFL * 0.25 * h_ref(in_ele) * h_ref(in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
+      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
+    }
     else
-      out_dt_local = run_input.CFL*h_ref(in_ele)/lam*1.0/(2.0*run_input.order + 1.0);
+    {
+      dt_visc = 1e16;
+      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv * 1.0/(2.0*run_input.order + 1.0);
+    }
+      out_dt_local = min(dt_visc,dt_inv);
   }
   
   else if (n_dims == 3)
