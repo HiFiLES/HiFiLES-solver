@@ -1,14 +1,26 @@
 /*!
  * \file inters.cpp
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <iostream>
@@ -99,7 +111,7 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
       disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
       norm_tconf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
       detjac_fpts_l.setup(n_fpts_per_inter,n_inters);
-      mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.setup(n_fpts_per_inter,n_inters);
+      tdA_fpts_l.setup(n_fpts_per_inter,n_inters);
       norm_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
       loc_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
 

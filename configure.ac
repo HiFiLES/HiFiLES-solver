@@ -10,14 +10,13 @@
 #       Modified on 4/1/14
 #
 # HiFiLES (High Fidelity Large Eddy Simulation).
-# Copyright (C) 2013 Aerospace Computing Laboratory.
+# Copyright (C) 2014 Aerospace Computing Laboratory.
 #####################################################
 AC_INIT([HiFiLES], [1.0.0], [HiFiLES-dev@lists.stanford.edu],
         [HiFiLES], [http://hifiles.stanford.edu])
 AC_PREREQ([2.59])
-# AC_CONFIG_MACRO_DIR([m4])
-#AM_INIT_AUTOMAKE([subdir-objects foreign])
-AM_INIT_AUTOMAKE([foreign])
+AC_CONFIG_MACRO_DIR([m4])
+AM_INIT_AUTOMAKE([subdir-objects foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
 
 top_dir=`pwd`
@@ -41,19 +40,19 @@ hifiles_externals_LIBS=""
 # AC_CONFIG_FILES([externals/tecio/Makefile])
 
 # Metis
-# CONFIGURE_METIS
-# if (test $enablemetis = yes); then
-#   su2_externals_INCLUDES="$METIS_INCLUDE $su2_externals_INCLUDES"
-#   su2_externals_LIBS="$METIS_LIB $su2_externals_LIBS"
-# else
-#   su2_externals_INCLUDES="-DNO_METIS $su2_externals_INCLUDES"
-# fi
-# AM_CONDITIONAL(BUILD_METIS, test x$enablemetis = xyes)
-# AC_CONFIG_FILES([externals/metis/Makefile])
-# 
-# 
-# AC_SUBST([hifiles_externals_INCLUDES])
-# AC_SUBST([hifiles_externals_LIBS])
+CONFIGURE_METIS
+if (test $enablemetis = yes); then
+  hifiles_externals_INCLUDES="$METIS_INCLUDE $hifiles_externals_INCLUDES"
+  hifiles_externals_LIBS="$METIS_LIB $hifiles_externals_LIBS"
+else
+  hifiles_externals_INCLUDES="-DNO_METIS $hifiles_externals_INCLUDES"
+fi
+AM_CONDITIONAL(BUILD_METIS, test x$enablemetis = xyes)
+AC_CONFIG_FILES([lib/parmetis-4.0.2/Makefile])
+AC_CONFIG_FILES([lib/parmetis-4.0.2/metis/Makefile])
+
+AC_SUBST([hifiles_externals_INCLUDES])
+AC_SUBST([hifiles_externals_LIBS])
 
 # --------------------------------------------------------------
 # optional bindings
@@ -71,6 +70,9 @@ AC_ARG_WITH(CUDA-include,
 AC_ARG_WITH(MPI,
     AS_HELP_STRING([--with-MPI[=ARG]], [Build parallel version with MPI tools, ARG = MPI C++ compiler]), 
     [with_MPI=$withval], [with_MPI="no"])
+AC_ARG_WITH(MPI-include,
+    AS_HELP_STRING([--with-MPI-include[=ARG]], [MPI include directory, ARG = path to mpi.h, needed for METIS]),
+    [with_MPI_include=$withval], [with_MPI_include="no"])
 
 AC_ARG_WITH(Tecio-lib,
     AS_HELP_STRING([--with-Tecio-lib[=ARG]], [Tecio library directory, ARG = path to libtecio.a]), 
@@ -173,63 +175,72 @@ METISheader=metis.h
 ParMETISversion=
 have_ParMetis="no"
 
-if test "$with_ParMetis_lib" != "no" 
+# If not building from lib folder, link to given libraries
+if test $enablemetis != yes
 then
+  if test "$with_ParMetis_lib" != "no" 
+  then
+    
     # Optional value for separate Metis library file location
     if test "$with_Metis_lib" == "no"
     then
-        with_Metis_lib=$with_ParMetis_lib
+      with_Metis_lib=$with_ParMetis_lib
     fi    
-    
-  	AC_CHECK_FILE([$with_ParMetis_lib/$ParMETISlib],[have_ParMetis="yes"],[have_ParMetis="no"])   
-	if test "$have_ParMetis" == "no"
-	then
-		AC_MSG_ERROR([ParMETIS requested but library file not found.])
-	fi
-		
-	AC_CHECK_FILE([$with_Metis_lib/$METISlib],[have_ParMetis="yes"],[have_ParMetis="no"])   
-	if test "$have_ParMetis" == "no"
-	then
-		AC_MSG_ERROR([ParMETIS requested but METIS library file not found.])
-	fi
-fi
 
-# check for header
-if test "$have_ParMetis" != "no"
-then
-	if test "$with_ParMetis_include" != "no"
-	then
-	    # Optional value for separate Metis header file location
-	    if test "$with_Metis_include" == "no"
-        then
-            with_Metis_include=$with_ParMetis_include
-        fi  
-    
-		AC_CHECK_FILE([$with_ParMetis_include/$ParMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
-		if test "$have_ParMetis" == "no"
-		then
-			AC_MSG_ERROR([ParMETIS requested but header file not found.])
-		fi
-				
-		AC_CHECK_FILE([$with_Metis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
-		if test "$have_ParMetis" == "no"
-		then
-			AC_MSG_ERROR([ParMETIS requested but METIS header file not found.])
-		fi
-	else
-		have_ParMetis="no"
-	fi  
-fi
+    AC_CHECK_FILE([$with_ParMetis_lib/$ParMETISlib],[have_ParMetis="yes"],[have_ParMetis="no"])   
+    if test "$have_ParMetis" == "no"
+    then
+      AC_MSG_ERROR([ParMETIS requested but library file not found.])
+    fi
 
-if test "$have_ParMetis" != "no"
-then
-  	AM_CONDITIONAL(BUILD_PARMETIS,true)
-	PARMETIS_CXX="-I$with_Metis_include -I$with_ParMetis_include"
-	PARMETIS_LD="$with_ParMetis_lib/$ParMETISlib $with_Metis_lib/$METISlib"
+    AC_CHECK_FILE([$with_Metis_lib/$METISlib],[have_ParMetis="yes"],[have_ParMetis="no"])   
+    if test "$have_ParMetis" == "no"
+    then
+      AC_MSG_ERROR([ParMETIS requested but METIS library file not found.])
+    fi
+  fi
+
+  # check for header
+  if test "$have_ParMetis" != "no"
+  then
+    if test "$with_ParMetis_include" != "no"
+    then
+      # Optional value for separate Metis header file location
+      if test "$with_Metis_include" == "no"
+      then
+        with_Metis_include=$with_ParMetis_include
+      fi  
+
+      AC_CHECK_FILE([$with_ParMetis_include/$ParMETISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+      if test "$have_ParMetis" == "no"
+      then
+        AC_MSG_ERROR([ParMETIS requested but header file not found.])
+      fi
+
+      AC_CHECK_FILE([$with_Metis_include/$METISheader],[have_ParMetis="yes"],[have_ParMetis="no"]) 
+      if test "$have_ParMetis" == "no"
+      then
+        AC_MSG_ERROR([ParMETIS requested but METIS header file not found.])
+      fi
+    else
+      have_ParMetis="no"
+    fi  
+  fi
+
+  if test "$have_ParMetis" != "no"
+  then
+    AM_CONDITIONAL(BUILD_PARMETIS,true)
+    PARMETIS_CXX="-I$with_Metis_include -I$with_ParMetis_include"
+    PARMETIS_LD="$with_ParMetis_lib/$ParMETISlib $with_Metis_lib/$METISlib"
+  else
+    AM_CONDITIONAL(BUILD_PARMETIS,false)
+    PARMETIS_CXX=-DNO_PARMETIS
+    PARMETIS_LD=
+  fi
 else
-	AM_CONDITIONAL(BUILD_PARMETIS,false)
-	PARMETIS_CXX=-DNO_PARMETIS
-	PARMETIS_LD=
+  AM_CONDITIONAL(BUILD_PARMETIS,false)
+  PARMETIS_CXX=-DNO_PARMETIS
+  PARMETIS_LD=
 fi
 AC_SUBST([PARMETIS_CXX])
 AC_SUBST([PARMETIS_LD])
@@ -242,42 +253,42 @@ have_Tecio="no"
 # check for lib
 if test "$with_Tecio_lib" != "no" 
 then
-  	AC_CHECK_FILE([$with_Tecio_lib/$Teciolib],[have_Tecio="yes"],[have_Tecio="no"]) 
-	if test "$have_Tecio" == "no"
-	then
-		Teciolib=libtecio.a
-		AC_CHECK_FILE([$with_Tecio_lib/$Teciolib],[have_Tecio="yes"],[have_Tecio="no"])
-	fi
-	if test "$have_Tecio" == "no"
-	then
-		AC_MSG_ERROR([Tecplot linking requested but library file not found.])
-	fi
+  AC_CHECK_FILE([$with_Tecio_lib/$Teciolib],[have_Tecio="yes"],[have_Tecio="no"]) 
+  if test "$have_Tecio" == "no"
+  then
+    Teciolib=libtecio.a
+    AC_CHECK_FILE([$with_Tecio_lib/$Teciolib],[have_Tecio="yes"],[have_Tecio="no"])
+  fi
+  if test "$have_Tecio" == "no"
+  then
+    AC_MSG_ERROR([Tecplot linking requested but library file not found.])
+  fi
 fi
 
 # check for header
 if test "$have_Tecio" != "no"
 then
-	if test "$with_Tecio_include" != "no"
-	then
-		AC_CHECK_FILE([$with_Tecio_include/$Tecioheader],[have_Tecio="yes"],[have_Tecio="no"]) 
-		if test "$have_Tecio" == "no"
-		then
-			AC_MSG_ERROR([Tecplot linking requested but header file not found.])
-		fi
-	else
-		have_Tecio="no"
-	fi  
+  if test "$with_Tecio_include" != "no"
+  then
+    AC_CHECK_FILE([$with_Tecio_include/$Tecioheader],[have_Tecio="yes"],[have_Tecio="no"]) 
+    if test "$have_Tecio" == "no"
+    then
+      AC_MSG_ERROR([Tecplot linking requested but header file not found.])
+    fi
+  else
+    have_Tecio="no"
+  fi  
 fi
 
 if test "$have_Tecio" != "no"
 then
-  	AM_CONDITIONAL(BUILD_TECIO,true)
-	TECIO_CXX="-I"$with_Tecio_include
-	TECIO_LD=$with_Tecio_lib"/"$Teciolib
+  AM_CONDITIONAL(BUILD_TECIO,true)
+  TECIO_CXX="-I"$with_Tecio_include
+  TECIO_LD=$with_Tecio_lib"/"$Teciolib
 else
-	AM_CONDITIONAL(BUILD_TECIO,false)
-	TECIO_CXX=-DNO_TECIO
-	TECIO_LD=
+  AM_CONDITIONAL(BUILD_TECIO,false)
+  TECIO_CXX=-DNO_TECIO
+  TECIO_LD=
 fi
 AC_SUBST([TECIO_CXX])
 AC_SUBST([TECIO_LD])
@@ -288,18 +299,22 @@ AC_SUBST([TECIO_LD])
 have_MPI="no"
 if test "$with_MPI" != "no"
 then
-	CXX="$with_MPI"	
-	have_MPI="yes"
-	CXXFLAGS=$CXXFLAGS" -D_MPI"
+  CXX="$with_MPI"	
+  have_MPI="yes"
+  CXXFLAGS=$CXXFLAGS" -D_MPI"
+  MPI_INCLUDE="$with_MPI_include"
+else
+  MPI_INCLUDE="no"
 fi
+AC_SUBST([MPI_INCLUDE])
 
 ########################### BLAS
 # *** still need to implement library & header-file checks ***
 if test "$with_BLAS" == "ACCELERATE"
 then
-    BLAS_CXX=" -flax-vector-conversions -D_ACCELERATE_BLAS"
-    BLAS_LDFLAGS=" -framework Accelerate"
-    BLAS_LD=
+  BLAS_CXX=" -flax-vector-conversions -D_ACCELERATE_BLAS"
+  BLAS_LDFLAGS=" -framework Accelerate"
+  BLAS_LD=
 elif test "$with_BLAS" == "STANDARD"
 then
     AC_CHECK_FILE([$with_BLAS_lib/libcblas.a],[have_BLAS="yes"],[have_BLAS="no"]) 
@@ -357,6 +372,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AM_PROG_LIBTOOL
 AC_OUTPUT(Makefile \
+        lib/Makefile \
 	obj/Makefile)
 
 abs_srcdir=`(cd $srcdir && pwd)`

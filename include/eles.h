@@ -1,14 +1,26 @@
 /*!
  * \file eles.h
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -178,7 +190,7 @@ public:
   double* get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
 
   /*! get a pointer to the magnitude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points */
-  double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
+  double* get_tdA_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
 
   /*! get a pointer to the normal at a flux point */
   double* get_norm_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_ele);
@@ -527,25 +539,31 @@ protected:
 	/*! number of storage levels for time-integration scheme */
 	int n_adv_levels;
 	
-	/*! determinant of jacobian at solution points */
+  /*! determinant of Jacobian (transformation matrix) at solution points
+   *  (J = |G|) */
 	array<double> detjac_upts;
 	
-	/*! determinant of jacobian at flux points */
+  /*! determinant of Jacobian (transformation matrix) at flux points
+   *  (J = |G|) */
 	array<double> detjac_fpts;
 
-	/*! determinant of volume jacobian at flux points. TODO: what is this really? */
+  /*! determinant of jacobian at volume cubature points. TODO: what is this really? */
 	array< array<double> > vol_detjac_inters_cubpts;
 
 	/*! determinant of volume jacobian at cubature points. TODO: what is this really? */
 	array< array<double> > vol_detjac_vol_cubpts;
 
-	/*! inverse of (determinant of jacobian multiplied by jacobian) at solution points */
-	array<double> inv_detjac_mul_jac_upts; // TODO: change to detjac_mul_inv_jac_upts
+  /*! Full vector-transform matrix from physical->computational frame, at solution points
+   *  [Determinant of Jacobian times inverse of Jacobian] [J*G^-1] */
+  array<double> JGinv_upts;
 	
-	array<double> inv_detjac_mul_jac_fpts; // TODO: same as above
+  /*! Full vector-transform matrix from physical->computational frame, at flux points
+   *  [Determinant of Jacobian times inverse of Jacobian] [J*G^-1] */
+  array<double> JGinv_fpts;
 	
-	/*! magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points */
-	array<double> mag_tnorm_dot_inv_detjac_mul_jac_fpts;
+  /*! Magnitude of transformed face-area normal vector at flux points
+   *  [magntiude of (normal dot inverse transformation matrix)] [ |J*(G^-1)*(n*dA)| ] */
+  array<double> tdA_fpts;
 
 	/*! determinant of interface jacobian at flux points */
 	array< array<double> > inter_detjac_inters_cubpts;
