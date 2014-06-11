@@ -12,6 +12,8 @@
 # Copyright (C) 2013 Aerospace Computing Laboratory.
 #####################################################
 
-ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
+ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS} -I m4
 
-SUBDIRS = obj/
+SUBDIRS = lib
+
+SUBDIRS += obj

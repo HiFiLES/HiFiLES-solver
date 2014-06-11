@@ -21,6 +21,7 @@ AM_CPPFLAGS = -I../include/
 
 bin_PROGRAMS = ../bin/HiFiLES
 
+___bin_HiFiLES_CXXFLAGS=
 ___bin_HiFiLES_LDADD=
 ___bin_HiFiLES_LDFLAGS=
 
@@ -80,11 +81,13 @@ ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/solver.cpp \
                   ../src/HiFiLES.cpp
 
-___bin_HiFiLES_CXXFLAGS=@CXXFLAGS@
+___bin_HiFiLES_CXXFLAGS +=@CXXFLAGS@
+___bin_HiFiLES_CXXFLAGS +=@hifiles_externals_INCLUDES@
+___bin_HiFiLES_LDADD += @hifiles_externals_LIBS@
 
 # ParMETIS
-___bin_HiFiLES_CXXFLAGS += @PARMETIS_CXX@
-___bin_HiFiLES_LDADD += @PARMETIS_LD@
+#___bin_HiFiLES_CXXFLAGS += @PARMETIS_CXX@
+#___bin_HiFiLES_LDADD += @PARMETIS_LD@
 
 # TECIO
 ___bin_HiFiLES_CXXFLAGS += @TECIO_CXX@

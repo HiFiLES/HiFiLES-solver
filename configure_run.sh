@@ -42,6 +42,13 @@ TECIO_INCLUDE="lib/tecio-2008/include"
 
 CUDA_LIB="/usr/local/cuda/lib64"
 CUDA_INCLUDE="/usr/local/cuda/include"
+
+# Build ParMETIS from HiFiLES library folder?
+METIS="yes"
+
+# MPI header location (mpi.h needed for Metis)
+MPI_INCLUDE="/usr/include/mpich2"
+
 # ---------------------------------------------------------------
 # Run configure using the chosen options [Should not change this]
 if [[ "$NODE" == "GPU" ]]
@@ -69,6 +76,7 @@ fi
             --with-BLAS-lib=$BLAS_LIB \
             --with-BLAS-include=$BLAS_INCLUDE \
             --with-MPI=$_MPI \
+            --with-MPI-include=$MPI_INCLUDE \
             --with-CUDA=$_GPU \
             --with-CUDA-lib=$CUDA_LIB \
             --with-CUDA-include=$CUDA_INCLUDE \
@@ -78,3 +86,4 @@ fi
             --with-Metis-include=$METIS_INCLUDE \
             --with-Tecio-lib=$TECIO_LIB \
             --with-Tecio-include=$TECIO_INCLUDE
+            --enable-metis=$METIS
