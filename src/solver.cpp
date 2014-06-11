@@ -232,9 +232,9 @@ double* get_detjac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter,
 
 // get pointer to magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at a flux point
 
-double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol)
+double* get_tdA_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol)
 {
-  return FlowSol->mesh_eles(in_ele_type)->get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_inter_local_fpt,in_ele_local_inter,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_tdA_fpts_ptr(in_inter_local_fpt,in_ele_local_inter,in_ele);
 }
 
 // get pointer to the normal at a flux point

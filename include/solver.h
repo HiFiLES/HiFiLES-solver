@@ -64,7 +64,7 @@ double* get_sgsf_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int i
 double* get_detjac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol);
 
 /*! get pointer to magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at a solution point */
-double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol);
+double* get_tdA_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol);
 
 /*! get pointer to normal at a flux point */
 double* get_norm_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol);

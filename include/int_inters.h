@@ -75,7 +75,7 @@ protected:
   array<double*> norm_tconf_fpts_r;
   //array<double*> norm_tconvisf_fpts_r;
   array<double*> detjac_fpts_r;
-  array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_r;
+  array<double*> tdA_fpts_r;
   array<double*> grad_disu_fpts_r;
 
 };

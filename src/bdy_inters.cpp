@@ -142,7 +142,7 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
 
       for(int j=0;j<n_fpts_per_inter;j++)
         {
-          mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+          tdA_fpts_l(j,in_inter)=get_tdA_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
 
           for(int k=0;k<n_dims;k++)
             {
@@ -190,7 +190,7 @@ void bdy_inters::mv_all_cpu_gpu(void)
 
   disu_fpts_l.mv_cpu_gpu();
   norm_tconf_fpts_l.mv_cpu_gpu();
-  mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.mv_cpu_gpu();
+  tdA_fpts_l.mv_cpu_gpu();
   norm_fpts.mv_cpu_gpu();
   loc_fpts.mv_cpu_gpu();
 
@@ -279,7 +279,7 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 
           /*! Transform back to reference space */
           for(int k=0;k<n_fields;k++)
-            (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+            (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*tdA_fpts_l(j,i));
 
           if(viscous)
             {
@@ -309,7 +309,7 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 
 #ifdef _GPU
   if (n_inters!=0)
-    evaluate_boundaryConditions_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.R_ref,viscous,run_input.vis_riemann_solve_type, time_bound, run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda,run_input.equation);
+    evaluate_boundaryConditions_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.R_ref,viscous,run_input.vis_riemann_solve_type, time_bound, run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda,run_input.equation);
 #endif
 }
 
@@ -877,7 +877,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
 
           /*! Transform back to reference space. */
           for(int k=0;k<n_fields;k++)
-            (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
+            (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*tdA_fpts_l(j,i));
         }
     }
 
@@ -885,7 +885,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
 
 #ifdef _GPU
   if (n_inters!=0)
-    evaluate_boundaryConditions_viscFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff, LES);
+    evaluate_boundaryConditions_viscFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff, LES);
 #endif
 }
 

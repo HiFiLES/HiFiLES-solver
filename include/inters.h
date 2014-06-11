@@ -95,7 +95,7 @@ public:
 	array<double*> norm_tconf_fpts_l;
 	//array<double*> norm_tconvisf_fpts_l;
 	array<double*> detjac_fpts_l;
-	array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_l;
+	array<double*> tdA_fpts_l;
 	array<double*> norm_fpts;
 	array<double*> loc_fpts;
 
