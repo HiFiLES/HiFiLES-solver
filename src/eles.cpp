@@ -213,6 +213,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
         
         // dynamic coeff field
         dynamic_coeff.setup(n_upts_per_ele,n_eles);
+        zero_array(dynamic_coeff);
       }
       else {
         grad_disuf_upts.setup(1);
@@ -2054,7 +2055,8 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
       // the following routine handles CPU/GPU logic
       calculate_filtered_gradient();
       // everything else is done at the element level by calc_sgsf_upts
-      // TODO: calculate dtrain and strain modulus, then filter (strain*strain modulus) here
+      // TODO: calculate strain and strain modulus, then filter (strain*strain modulus) here
+
     }
   }
 }
@@ -2137,6 +2139,19 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           }
         }
       }
+
+      // Cell average dynamic coeff
+      double Csav=0.0;
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        Csav += dynamic_coeff(i,j)/n_upts_per_ele;
+      }
+      //cout << "Csav: " << Csav << endl;
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        dynamic_coeff(i,j) = Csav;
+      }
+      
     }
 #endif
     
@@ -2568,7 +2583,9 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         
         // limit value to prevent instability
         Cs=min(max(Cs,0.0),0.04);
-        
+
+        //cout << "Cs: " << setprecision(7) << Cs << endl;
+
         // set coeff field for output to Paraview
         dynamic_coeff(upt,ele) = Cs;
         
