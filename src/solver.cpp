@@ -333,19 +333,14 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
   restart_file.precision(15);
 
   // Open the restart files and read info
-  cout << "rank=" << FlowSol->rank << " reading restart info" << endl;
 
   for (int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          //cout << "Ele_type=" << i << "Reading restart file ";
-
           for (int j=0;j<in_n_files;j++)
             {
-              cout << j << " ";
               sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,j);
               file_name = &file_name_s[0];
-              cout<<"restart file name: "<<file_name_s<<endl;
               restart_file.open(file_name);
               if (!restart_file)
                 FatalError("Could not open restart file ");
@@ -358,10 +353,8 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
               if (info_found)
                 break;
             }
-          cout << endl;
         }
     }
-  cout << "Rank=" << FlowSol->rank << " Done reading restart info" << endl;
 
   // Now open all the restart files one by one and store data belonging to you
 
@@ -382,10 +375,8 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
 
             }
         }
-
       restart_file.close();
     }
-  cout << "Rank=" << FlowSol->rank << " Done reading restart data" << endl;
-
-
+  cout << "Rank=" << FlowSol->rank << " Done reading restart files" << endl;
 }
+
