@@ -34,38 +34,6 @@ top_dir=`pwd`
 AC_SUBST([top_dir])
 
 # --------------------------------------------------------------
-# Build up contributed packages that we will build from source
-# --------------------------------------------------------------
-hifiles_externals_INCLUDES=""
-hifiles_externals_LIBS=""
-
-# Tecplot
-# CONFIGURE_TECIO
-# if (test $enabletecio = yes); then
-#   hifiles_externals_INCLUDES="$TECIO_INCLUDE $hifiles_externals_INCLUDES"
-#   hifiles_externals_LIBS="$TECIO_LIB $hifiles_externals_LIBS"
-# else
-#   hifiles_externals_INCLUDES="-DNO_TECIO $hifiles_externals_INCLUDES"
-# fi
-# AM_CONDITIONAL(BUILD_TECIO, test x$enabletecio = xyes)
-# AC_CONFIG_FILES([externals/tecio/Makefile])
-
-# Metis
-CONFIGURE_METIS
-if (test $enablemetis = yes); then
-  hifiles_externals_INCLUDES="$METIS_INCLUDE $hifiles_externals_INCLUDES"
-  hifiles_externals_LIBS="$METIS_LIB $hifiles_externals_LIBS"
-else
-  hifiles_externals_INCLUDES="-DNO_METIS $hifiles_externals_INCLUDES"
-fi
-AM_CONDITIONAL(BUILD_METIS, test x$enablemetis = xyes)
-AC_CONFIG_FILES([lib/parmetis-4.0.2/Makefile])
-AC_CONFIG_FILES([lib/parmetis-4.0.2/metis/Makefile])
-
-AC_SUBST([hifiles_externals_INCLUDES])
-AC_SUBST([hifiles_externals_LIBS])
-
-# --------------------------------------------------------------
 # optional bindings
 # --------------------------------------------------------------
 AC_ARG_WITH(CUDA,
@@ -118,7 +86,46 @@ AC_ARG_WITH(BLAS-include,
 
 AC_ARG_WITH(CXX,
     AS_HELP_STRING([--with-CXX[=ARG]], [Optional: Specify C++ compiler, ARG = C++ compiler]), [with_CXX=$withval], [with_CXX="GCC"])
-    
+
+# --------------------------------------------------------------
+# Build up contributed packages that we will build from source
+# --------------------------------------------------------------
+hifiles_externals_INCLUDES=""
+hifiles_externals_LIBS=""
+
+# Tecplot
+# CONFIGURE_TECIO
+# if (test $enabletecio = yes); then
+#   hifiles_externals_INCLUDES="$TECIO_INCLUDE $hifiles_externals_INCLUDES"
+#   hifiles_externals_LIBS="$TECIO_LIB $hifiles_externals_LIBS"
+# else
+#   hifiles_externals_INCLUDES="-DNO_TECIO $hifiles_externals_INCLUDES"
+# fi
+# AM_CONDITIONAL(BUILD_TECIO, test x$enabletecio = xyes)
+# AC_CONFIG_FILES([externals/tecio/Makefile])
+
+# Metis
+CONFIGURE_METIS
+if (test $with_MPI != "no")
+then
+  if (test $enablemetis = yes)
+  then
+    hifiles_externals_INCLUDES="$METIS_INCLUDE $hifiles_externals_INCLUDES"
+    hifiles_externals_LIBS="$METIS_LIB $hifiles_externals_LIBS"
+    AC_CONFIG_FILES([lib/parmetis-4.0.2/Makefile])
+    AC_CONFIG_FILES([lib/parmetis-4.0.2/metis/Makefile])
+    AM_CONDITIONAL(BUILD_METIS, test x$enablemetis = xyes)
+  else
+    hifiles_externals_INCLUDES="-DNO_METIS $hifiles_externals_INCLUDES"
+    AM_CONDITIONAL(BUILD_METIS, test x$enablemetis = xyes)
+  fi
+else
+  AM_CONDITIONAL(BUILD_METIS, test $with_MPI != "no")
+fi
+
+AC_SUBST([hifiles_externals_INCLUDES])
+AC_SUBST([hifiles_externals_LIBS])
+
 ########################### CUDA (GPU-Enabled)
 # check if we're building GPU or CPU version
 # first, check for [a] CUDA library in the given directory

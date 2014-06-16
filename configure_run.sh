@@ -97,5 +97,5 @@ fi
             --with-Metis-lib=$METIS_LIB \
             --with-Metis-include=$METIS_INCLUDE \
             --with-Tecio-lib=$TECIO_LIB \
-            --with-Tecio-include=$TECIO_INCLUDE
+            --with-Tecio-include=$TECIO_INCLUDE \
             --enable-metis=$METIS
