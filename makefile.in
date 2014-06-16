@@ -23,19 +23,19 @@
 
 NODE=     CPU
 CODE=     DEBUG
-BLAS=     NO
+BLAS=     STANDARD_BLAS
 COMP=     GCC
-PARALLEL= NO
-TECIO=    YES
+PARALLEL= MPI
+TECIO=    NO
 ATLAS=    NO
 
-BLAS_DIR= /usr/local/atlas
+BLAS_DIR= /usr/local/cblas
 
-PARMETIS_DIR = /usr/local
+PARMETIS_DIR = /usr/local/parmetis-4.0.3
 
-PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/lib
+PARMETIS_BUILD_DIR = /usr/local/parmetis-4.0.3/build/Darwin-x86_64
 
-TECIO_DIR = lib/tecio-2008
+TECIO_DIR = /usr/local/tecio-2013
 
 CUDA_DIR = /usr/local/cuda-5.0
 
