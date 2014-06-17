@@ -2337,17 +2337,9 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
     if(eddy==1) {
       
       // Delta is the cutoff length-scale representing local grid resolution.
-      
-      // OPTION 1. Approx resolution in 1D element. Interval is [-1:1]
-      // Appropriate for quads, hexes and tris. Not sure about tets.
-      //dlt = 2.0/order;
-      
-      // OPTION 2. Deardorff definition (Deardorff, JFM 1970)
+      // Deardorff definition (Deardorff, JFM 1970)
       vol = (*this).calc_ele_vol(detjac);
       delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
-      
-      // OPTION 3. Suggested by Bardina, AIAA 1980:
-      // delta = sqrt((dx^2+dy^2+dz^2)/3)
       
       // Solution gradient
       for (i=0;i<n_dims;i++) {

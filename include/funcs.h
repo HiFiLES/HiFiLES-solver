@@ -49,7 +49,7 @@ void get_opp_3_tri(array<double>& opp_3, array<double>& loc_upts_tri, array<doub
 
 void get_opp_3_dg(array<double>& opp_3_dg, array<double>& loc_upts_tri, array<double>& loc_fpts_tri, int n_upts_per_tri, int order);
 
-void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order);
+void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order, int flt_kernel);
 
 void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order);
 

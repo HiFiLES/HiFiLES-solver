@@ -34,7 +34,7 @@ LES options
 -----------------------
 LES                               // 0: no LES, 1: LES
 1
-filter_type                       // 0: Vasilyev high-order, 1: discrete Gaussian, 2: Modal Vandermonde. Not all filters are available for each element type.
+filter_type                       // 0: Vasilyev high-order, 1: discrete Gaussian, 2: Modal (cutoff), 3: Modal (exp), 4: Modal (Gauss). Not all filters are available for each element type.
 2
 filter_ratio                      // Filter width ratio. Try range 1:2. Not used for Modal Vandermonde filter.
 2

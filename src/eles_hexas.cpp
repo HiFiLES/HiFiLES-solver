@@ -772,12 +772,12 @@ void eles_hexas::compute_filter_upts(void)
             }
         }
     }
-  else if(run_input.filter_type==2) // Modal coefficient filter
+  else if(run_input.filter_type==2 || run_input.filter_type==3 || run_input.filter_type==4) // Modal filter (3 choices of kernel)
     {
       if (rank==0) cout<<"Building modal filter"<<endl;
 
-      // Compute restriction-prolongation filter
-      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
+      // Compute cutoff filter
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_type);
 
       sum = 0;
       for(i=0;i<N;i++)

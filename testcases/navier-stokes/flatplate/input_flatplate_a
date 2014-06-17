@@ -14,7 +14,7 @@ ic_form                           // 0: Isentropic Vortex, 1: Uniform flow, 2: S
 test_case                         // 0: Normal (doesn't have an analytical solution), 1:Isentropic Vortex, 2: Advection-Equation
 0
 order                             // Order of basis polynomials
-3
+4
 dt_type                           // 0: User-supplied, 1: Global, 2: Local
 0
 dt 
@@ -22,13 +22,28 @@ dt
 CFL                               
 0.001
 n_steps
-500000000
+1
 adv_type                          // 0: Forward Euler, 3: RK45
 3
 tau 
 1.0
 pen_fact 
 0.5
+-----------------------
+LES options
+-----------------------
+LES                               // 0: no LES, 1: LES
+1
+filter_type                       // 0: Vasilyev high-order, 1: discrete Gaussian, 2: Modal (cutoff), 3: Modal (exp), 4: Modal (Gauss). Not all filters are available for each element type.
+4
+filter_ratio                      // Filter width ratio. Try range 1:2. Not used for Modal Vandermonde filter.
+1
+SGS_model                         // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity, 5: dynamic
+2
+wall_model                        // Select near-wall model for solid boundaries. 0: none, 1: Werner-Wengle, 2: Breuer & Rodi Three-layer
+0
+wall_layer_thickness              // Set thickness of layer within which wall model is applied
+0
 -----------------------
 Restart options
 -----------------------
@@ -63,7 +78,7 @@ inters_cub_order                  // Order of cubature rule for integrating over
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
 12
 plot_freq
-100
+1
 restart_dump_freq
 5000
 monitor_integrals_freq
