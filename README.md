@@ -1,4 +1,4 @@
-HiFiLES dev. v0.1: High Fidelity Large Eddy Simulation
+	HiFiLES dev. v0.1: High Fidelity Large Eddy Simulation
 =======
 
 At the Aerospace Computing Laboratory we believe that high-order numerical schemes have the potential to advance CFD beyond the current plateau of second-order methods and RANS turbulence modeling, ushering in new levels of accuracy and computational efficiency in turbulent flow simulations. HiFiLES (High Fidelity Large Eddy Simulation) is released as a freely available tool to unify the research community, promoting the advancement and wider adoption of high-order methods. The code is designed as an ideal base for further development on a variety of architectures.
@@ -47,10 +47,14 @@ following commands to install (assuming you are using a BASH-based Linux distro)
   1) bash configure_run.sh
   2) make
 
+If you encounter problems with the above procedure, you can copy the supplied handwritten file makefiles/Makefile to the master
+directory and edit as required for your system. You will also need a file makefile.in tailored to your system - see the supplied
+examples in the makefiles subdirectory for guidance.
+
 Unfortunately, the AutoTools build system supplied with HiFiLES does not currently support building with CUDA on GPUs.
-To build for GPUs, the supplied handwritten Makefile must be used, along with a Makefile.in similar to the input file 
-makefile.cluster.in found in the "makefiles" folder. If you figure out how to compile and link CUDA files to C++ code
-using AutoTools, please let us know!
+To build for GPUs, follow the manual procedure described above using the supplied handwritten file makefiles/Makefile
+and a makefile.in similar to the input file makefile.cluster.in found in the "makefiles" subdirectory.
+If you figure out how to compile and link CUDA files to C++ code using AutoTools, please let us know!
 
 Thanks for building, and happy running!
 - The HiFiLES Development Team
