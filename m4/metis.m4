@@ -7,15 +7,16 @@ AC_DEFUN([CONFIGURE_METIS],
                 AC_HELP_STRING([--enable-metis],
                                [build with Metis graph partitioning suppport]),
 		[case "${enableval}" in
-		  yes)  enablemetis=yes ;;
-		   no)  enablemetis=no ;;
+		  "YES")  enablemetis="YES" ;;
+		   "NO")  enablemetis="NO" ;;
  		    *)  AC_MSG_ERROR(bad value ${enableval} for --enable-metis) ;;
 		 esac],
-		 [enablemetis=yes])
+		 [enablemetis="YES"])
 
-  # The METIS API is distributed with SU2, so we don't have to guess
+  # Thanks, SU2, for providing this file
+  # The METIS API is distributed with HiFiLES, so we don't have to guess
   # where it might be installed...
-  if (test $enablemetis = yes); then
+  if (test $enablemetis = "YES"); then
 
     # look for METIS build cppflags by honoring the --with-metis-cppflags="..." flag,
     # defaulting to what we know works
@@ -36,8 +37,8 @@ AC_DEFUN([CONFIGURE_METIS],
  else
      METIS_INCLUDE=""
      METIS_LIB=""
-     SU2_METIS_CPPFLAGS=""
-     enablemetis=no
+     HIFILES_METIS_CPPFLAGS=""
+     enablemetis="NO"
   fi
 
   AC_SUBST(METIS_INCLUDE)

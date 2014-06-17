@@ -15,7 +15,7 @@
  /usr/lib/gcc/i686-linux-gnu/4.7/include/stdarg.h \
  /usr/include/i386-linux-gnu/bits/wchar.h \
  /usr/lib/gcc/i686-linux-gnu/4.7/include/stddef.h /usr/include/xlocale.h \
- /usr/include/c++/4.7/exception \
+ /usr/include/i386-linux-gnu/bits/wchar2.h /usr/include/c++/4.7/exception \
  /usr/include/c++/4.7/bits/atomic_lockfree_defines.h \
  /usr/include/c++/4.7/bits/char_traits.h \
  /usr/include/c++/4.7/bits/stl_algobase.h \
@@ -78,17 +78,15 @@
  /usr/include/i386-linux-gnu/bits/inf.h \
  /usr/include/i386-linux-gnu/bits/nan.h \
  /usr/include/i386-linux-gnu/bits/mathdef.h \
- /usr/include/i386-linux-gnu/bits/mathcalls.h /usr/include/cblas.h \
- /usr/include/mpich2/mpi.h /usr/include/mpich2/mpio.h \
- /usr/include/mpich2/mpi.h /usr/include/mpich2/mpicxx.h \
+ /usr/include/i386-linux-gnu/bits/mathcalls.h \
+ /usr/include/i386-linux-gnu/bits/mathinline.h ../src/../include/global.h \
+ ../src/../include/input.h /usr/include/c++/4.7/fstream \
+ /usr/include/c++/4.7/bits/codecvt.h /usr/include/c++/4.7/cstdio \
  /usr/include/libio.h /usr/include/_G_config.h \
  /usr/include/i386-linux-gnu/bits/stdio_lim.h \
  /usr/include/i386-linux-gnu/bits/sys_errlist.h \
- /usr/local/include/metis.h /usr/include/inttypes.h \
- /usr/lib/gcc/i686-linux-gnu/4.7/include/stdint.h /usr/include/stdint.h \
- /usr/local/include/parmetis.h ../src/../include/global.h \
- ../src/../include/input.h /usr/include/c++/4.7/fstream \
- /usr/include/c++/4.7/bits/codecvt.h /usr/include/c++/4.7/cstdio \
+ /usr/include/i386-linux-gnu/bits/stdio.h \
+ /usr/include/i386-linux-gnu/bits/stdio2.h \
  /usr/include/i386-linux-gnu/c++/4.7/./bits/basic_file.h \
  /usr/include/i386-linux-gnu/c++/4.7/./bits/c++io.h \
  /usr/include/c++/4.7/bits/fstream.tcc ../src/../include/array.h \
@@ -98,8 +96,10 @@
  /usr/include/i386-linux-gnu/sys/select.h \
  /usr/include/i386-linux-gnu/bits/select.h \
  /usr/include/i386-linux-gnu/bits/sigset.h \
+ /usr/include/i386-linux-gnu/bits/select2.h \
  /usr/include/i386-linux-gnu/sys/sysmacros.h /usr/include/alloca.h \
- /usr/include/string.h /usr/include/c++/4.7/typeinfo \
+ /usr/include/i386-linux-gnu/bits/stdlib.h /usr/include/string.h \
+ /usr/include/i386-linux-gnu/bits/string3.h /usr/include/c++/4.7/typeinfo \
  ../src/../include/error.h ../src/../include/flux.h \
  ../src/../include/eles.h ../src/../include/funcs.h
 
@@ -146,6 +146,8 @@
 /usr/lib/gcc/i686-linux-gnu/4.7/include/stddef.h:
 
 /usr/include/xlocale.h:
+
+/usr/include/i386-linux-gnu/bits/wchar2.h:
 
 /usr/include/c++/4.7/exception:
 
@@ -305,33 +307,7 @@
 
 /usr/include/i386-linux-gnu/bits/mathcalls.h:
 
-/usr/include/cblas.h:
-
-/usr/include/mpich2/mpi.h:
-
-/usr/include/mpich2/mpio.h:
-
-/usr/include/mpich2/mpi.h:
-
-/usr/include/mpich2/mpicxx.h:
-
-/usr/include/libio.h:
-
-/usr/include/_G_config.h:
-
-/usr/include/i386-linux-gnu/bits/stdio_lim.h:
-
-/usr/include/i386-linux-gnu/bits/sys_errlist.h:
-
-/usr/local/include/metis.h:
-
-/usr/include/inttypes.h:
-
-/usr/lib/gcc/i686-linux-gnu/4.7/include/stdint.h:
-
-/usr/include/stdint.h:
-
-/usr/local/include/parmetis.h:
+/usr/include/i386-linux-gnu/bits/mathinline.h:
 
 ../src/../include/global.h:
 
@@ -342,6 +318,18 @@
 /usr/include/c++/4.7/bits/codecvt.h:
 
 /usr/include/c++/4.7/cstdio:
+
+/usr/include/libio.h:
+
+/usr/include/_G_config.h:
+
+/usr/include/i386-linux-gnu/bits/stdio_lim.h:
+
+/usr/include/i386-linux-gnu/bits/sys_errlist.h:
+
+/usr/include/i386-linux-gnu/bits/stdio.h:
+
+/usr/include/i386-linux-gnu/bits/stdio2.h:
 
 /usr/include/i386-linux-gnu/c++/4.7/./bits/basic_file.h:
 
@@ -365,11 +353,17 @@
 
 /usr/include/i386-linux-gnu/bits/sigset.h:
 
+/usr/include/i386-linux-gnu/bits/select2.h:
+
 /usr/include/i386-linux-gnu/sys/sysmacros.h:
 
 /usr/include/alloca.h:
 
+/usr/include/i386-linux-gnu/bits/stdlib.h:
+
 /usr/include/string.h:
+
+/usr/include/i386-linux-gnu/bits/string3.h:
 
 /usr/include/c++/4.7/typeinfo:
 

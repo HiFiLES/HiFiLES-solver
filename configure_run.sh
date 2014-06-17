@@ -24,30 +24,24 @@
 # along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
 #####################################################
 # Standard (Helpful) Settings [Should not need to change these]
-HIFILES_HOME=$(pwd)
-HIFILES_RUN=$(pwd)/bin
+export HIFILES_HOME=$(pwd)
 # ---------------------------------------------------------------
 # Basic User-Modifiable Build Settings [Change these as desired]
 NODE="CPU"              # CPU or GPU
 CODE="DEBUG"            # DEBUG or RELEASE
-BLAS="ATLAS"            # ATLAS, STANDARD, ACCLERATE, MKL, or NO
-PARALLEL="no"           # MPI or NO
-TECIO="no"              # YES or NO
+BLAS="NO"               # ATLAS, STANDARD, ACCLERATE, or NO
+PARALLEL="YES"           # YES or NO
+TECIO="NO"              # YES or NO
+METIS="YES"              # Build & link to the HiFiLES-supplied ParMETIS libraries? YES or NO
 # ---------------------------------------------------------------
 # Compiler Selections [Change compilers or add full filepaths if needed]
-CXX="g++"               # Typically g++ (default) or icpc (Intel)
+CXX="g++"               # C++ compiler - Typically g++ (default, GNU) or icpc (Intel)
 NVCC="nvcc"             # NVidia CUDA compiler
-MPICC="mpicxx"          # MPI compiler
+MPICC="mpicxx"          # MPI C compiler
 # ---------------------------------------------------------------
-# Library Locations [Change filepaths as needed]
+# Library & Header File Locations [Change filepaths as needed]
 BLAS_LIB="/usr/lib/atlas-base"
 BLAS_INCLUDE="/usr/include"
-
-PARMETIS_LIB="/usr/local/lib"
-PARMETIS_INCLUDE="/usr/local/include"
-
-METIS_LIB="/usr/local/lib"
-METIS_INCLUDE="/usr/local/include"
 
 TECIO_LIB="lib/tecio-2008/lib"
 TECIO_INCLUDE="lib/tecio-2008/include"
@@ -55,11 +49,16 @@ TECIO_INCLUDE="lib/tecio-2008/include"
 CUDA_LIB="/usr/local/cuda/lib64"
 CUDA_INCLUDE="/usr/local/cuda/include"
 
-# Build ParMETIS from HiFiLES library folder?
-METIS="yes"
+# If building the supplied ParMETIS libraries, need the MPI header location
+MPI_INCLUDE="/usr/include/mpich2"       # location of mpi.h
 
-# MPI header location (mpi.h needed for Metis)
-MPI_INCLUDE="/usr/include/mpich2"
+# If NOT building the supplied ParMetis library, location of installed libraries
+PARMETIS_LIB="/usr/local/lib"           # location of libparmetis.a
+PARMETIS_INCLUDE="/usr/local/include"   # location of parmetis.h
+
+METIS_LIB="/usr/local/lib"              # location of libmetis.a
+METIS_INCLUDE="/usr/local/include"      # location of metis.h
+
 
 # ---------------------------------------------------------------
 # Run configure using the chosen options [Should not change this]
@@ -67,20 +66,20 @@ if [[ "$NODE" == "GPU" ]]
 then
     _GPU=$NVCC
 else
-    _GPU="no"
+    _GPU="NO"
 fi
-if [[ "$PARALLEL" == "MPI" ]]
+if [[ "$PARALLEL" == "YES" ]]
 then
     _MPI=$MPICC
 else
-    _MPI="no"
-    PARMETIS_LIB="no"
-    PARMETIS_INCLUDE="no"
+    _MPI="NO"
+    PARMETIS_LIB="NO"
+    PARMETIS_INCLUDE="NO"
 fi
-if [[ "$TECIO" == "no" ]]
+if [[ "$TECIO" == "NO" ]]
 then
-    TECIO_LIB="no"
-    TECIO_INCLUDE="no"
+    TECIO_LIB="NO"
+    TECIO_INCLUDE="NO"
 fi
 ./configure --prefix=$HIFILES_RUN/.. \
             --with-CXX=$CXX \
