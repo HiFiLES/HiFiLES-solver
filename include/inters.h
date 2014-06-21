@@ -87,16 +87,9 @@ protected:
   array<double*> norm_tconf_fpts_l;
   //array<double*> norm_tconvisf_fpts_l;
   array<double*> detjac_fpts_l;
-  array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_l;
+  array<double*> tdA_fpts_l;
   array<double*> norm_fpts;
   array<double*> loc_fpts;
-
-  // Dynamic grid variables:
-  array<double*> ndA_dyn_fpts_l;
-  array<double*> norm_dyn_fpts;
-  array<double*> J_dyn_fpts_l;
-  array<double*> grid_vel_fpts;
-  array<double*> norm_tconf_GCL_fpts_l;
 
   array<double> pos_disu_fpts_l;
   array<double*> grad_disu_fpts_l;
@@ -104,12 +97,6 @@ protected:
 
   array<double> temp_u_l;
   array<double> temp_u_r;
-
-  // Ohter dynamic-grid variables
-  // Note: grid velocity is continuous across interfaces
-  array<double> temp_v;
-  array<double> temp_fn_ref_l;
-  array<double> temp_fn_ref_r;
 
   array<double> temp_grad_u_l;
   array<double> temp_grad_u_r;
@@ -127,6 +114,22 @@ protected:
   array<double> temp_f;
 
   array<double> temp_loc;
+
+  // Dynamic grid variables:
+  // Note: grid velocity is continuous across interfaces
+  array<double*> disu_GCL_fpts_l;
+  array<double*> ndA_dyn_fpts_l;
+  array<double*> norm_dyn_fpts;
+  array<double*> J_dyn_fpts_l;
+  array<double*> grid_vel_fpts;
+  array<double*> norm_tconf_GCL_fpts_l;
+
+  double temp_u_GCL_l;
+  double temp_f_GCL_l;
+
+  array<double> temp_v;
+  array<double> temp_fn_ref_l;
+  array<double> temp_fn_ref_r;
 
 	// LES and wall model quantities
 	array<double*> sgsf_fpts_l;

@@ -82,8 +82,10 @@ public:
   /*! evaluate divergence of vcjh basis */
   double eval_div_vcjh_basis(int in_index, array<double>& loc);
 
+  /*! Fill the matrix used for "opp_3" */
   void fill_opp_3(array<double>& opp_3);
 
+  /*! Fill the matrix used for "opp_3pt5" */
   void fill_opp_3pt5(array<double>& opp_3pt5);
 
   /*! evaluate nodal shape basis */

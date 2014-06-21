@@ -1088,6 +1088,23 @@ void eles_tets::fill_opp_3(array<double>& opp_3)
   opp_3 = array<double>(m_temp);
 }
 
+// need to update to use fpts instead of upts
+void eles_tets::fill_opp_3pt5(array<double>& opp_3pt5)
+{
+
+  array <double> Filt(n_upts_per_ele,n_upts_per_ele);
+  array <double> opp_3_dg(n_upts_per_ele, n_fpts_per_ele);
+  array <double> m_temp(n_upts_per_ele, n_fpts_per_ele);
+
+  compute_filt_matrix_tet(Filt,run_input.vcjh_scheme_tet, run_input.c_tet);
+
+  get_opp_3_dg_tet(opp_3_dg);
+
+  m_temp = mult_arrays(Filt,opp_3_dg);
+
+  opp_3pt5 = array<double>(m_temp);
+}
+
 
 void eles_tets::get_opp_3_dg_tet(array<double>& opp_3_dg)
 {

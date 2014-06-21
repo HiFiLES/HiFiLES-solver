@@ -1226,6 +1226,11 @@ void eles_pris::fill_opp_3(array<double>& opp_3)
 
 }
 
+void eles_pris::fill_opp_3pt5(array<double>& opp_3)
+{
+  // need to create at some point
+}
+
 // evaluate divergence of vcjh basis
 
 double eles_pris::eval_div_vcjh_basis(int in_index, array<double>& loc)

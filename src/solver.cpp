@@ -187,6 +187,10 @@ void CalcGCLResidual(struct solution* FlowSol) {
   int in_div_tconf_upts_to = 0;     /*!< Define... */
   int i;                            /*!< Loop iterator */
 
+  /*! Compute the solution at the flux points. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->extrapolate_GCL_solution(in_disu_upts_from);
+
 #ifdef _MPI
   /*! Send the solution at the flux points across the MPI interfaces. */
 /*  if (FlowSol->nproc>1)
@@ -194,7 +198,7 @@ void CalcGCLResidual(struct solution* FlowSol) {
       FlowSol->mesh_mpi_inters(i).send_solution_GCL();*/
 #endif
 
-  /*! Compute the 'flux' at the solution points and store in total flux storage. */
+  /*! Compute the flux at the solution points and store in total flux storage. */
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->evaluate_GCL_flux(in_disu_upts_from);
 
@@ -220,7 +224,7 @@ void CalcGCLResidual(struct solution* FlowSol) {
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->extrapolate_GCL_flux();
 
-  /*! For viscous or inviscid, compute the divergence of flux at solution points. */
+  /*! Compute the divergence of the GCL flux at solution points. */
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calculate_divergence_GCL(in_div_tconf_upts_to);
 
@@ -245,6 +249,14 @@ double* get_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_loca
 {
   return FlowSol->mesh_eles(in_ele_type)->get_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
 }
+
+// get pointer to transformed discontinuous GCL solution at a flux point
+
+double* get_disu_GCL_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, struct solution* FlowSol)
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_disu_GCL_fpts_ptr(in_fpt,in_local_inter,in_ele);
+}
+
 
 // get pointer to normal continuous transformed inviscid flux at a flux point
 
@@ -282,9 +294,9 @@ double* get_detjac_dyn_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_in
 }
 
 // get pointer to the equivalent of 'dA' (face area) at a flux point in static physical space
-double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol)
+double* get_tdA_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol)
 {
-  return FlowSol->mesh_eles(in_ele_type)->get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_inter_local_fpt,in_ele_local_inter,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_tdA_fpts_ptr(in_inter_local_fpt,in_ele_local_inter,in_ele);
 }
 
 // get pointer to the equivalent of 'dA' (face area) at a flux point in dynamic physical space

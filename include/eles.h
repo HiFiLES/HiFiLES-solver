@@ -184,7 +184,7 @@ public:
   double* get_detjac_dyn_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
 
   /*! get pointer to the equivalent of 'dA' (face area) at a flux point in static physical space */
-  double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
+  double* get_tdA_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
 
   /*! get pointer to the equivalent of 'dA' (face area) at a flux point in dynamic physical space */
   double* get_ndA_dyn_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
@@ -216,6 +216,9 @@ public:
   /*! get a pointer to the subgrid-scale flux at a flux point */
   double* get_sgsf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_dim, int in_ele);
 
+  /*! get a pointer to the transformed normal GCL flux at a flux point */
+  double *get_norm_tconf_GCL_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
+
   /*! set opp_0 */
   void set_opp_0(int in_sparse);
   
@@ -225,8 +228,11 @@ public:
   /*! set opp_2 */
   void set_opp_2(int in_sparse);
 
-  /*! set opp_3 */
+  /*! set opp_3 (normal transformed correction flux at edge flux points to divergence of transformed correction flux at solution points) */
   void set_opp_3(int in_sparse);
+
+  /*! set opp_3pt5 (normal transformed correction flux at edge flux points to divergence of transformed correction flux at flux points) */
+  void set_opp_3pt5(int in_sparse);
 
   /*! set opp_4 */
   void set_opp_4(int in_sparse);
@@ -249,6 +255,12 @@ public:
   /*! set opp_r */
   void set_opp_r(void);
 
+  /*! set opp_vel_upts (grid velocity at spts -> grid velocity at upts) */
+  void set_opp_vel_upts(void);
+
+  /*! set opp_vel_ppts (grid velocity at spts -> grid velocity at ppts) */
+  void set_opp_vel_ppts(void);
+
   /*! calculate position of the plot points */
   void calc_pos_ppts(int in_ele, array<double>& out_pos_ppts);
 
@@ -269,8 +281,11 @@ public:
   /*! calculate diagnostic fields at the plot points */
   void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
 
-  /*! calculate position of a solution point */
+  /*! get physical position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
+
+  /*! get physical position of a flux point */
+  void calc_pos_fpt(int in_fpt, int in_ele, array<double>& out_pos);
 
   /*! returns position of a solution point */
   double get_loc_upt(int in_upt, int in_dim);
@@ -471,7 +486,7 @@ public:
   void store_dd_nodal_s_basis_upts(void);
 
   /*! initialize arrays for storing grid velocities */
-  void initialize_grid_vel(void);
+  void initialize_grid_vel(int in_max_n_spts_per_ele);
 
   /*! set grid velocity on element shape points */
   void set_grid_vel_spt(int in_ele, int in_spt, array<double> in_vel);
@@ -502,17 +517,25 @@ public:
   void calc_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double> &out_pos);
   void calc_d_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, array<double> &out_d_pos);
   void calc_d_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double> &out_d_pos);
-  void calc_div_vel_upt(int in_upt, int in_ele, array<double> &out_div_vel);
-  double calc_div_vel_upt(int in_upt, int in_ele);
-  void calc_gcl_res(void);
 
+//  void calc_div_vel_upt(int in_upt, int in_ele, array<double> &out_div_vel);
+//  double calc_div_vel_upt(int in_upt, int in_ele);
+//  void calc_gcl_res(void);
+
+  /*! Set the transformation variables for dynamic-physical -> static-physical frames */
   void set_transforms_dynamic(void);
-//  void extrapolate_grid_vel(int in_disu_upts_from);
+
+  /*! Update the dynamic transformation variables with the GCL-corrected Jacobian determinant */
+  void correct_dynamic_transforms(void);
+
+  /*! GCL Residual-Calculation Steps */
+  void evaluate_GCL_flux(int in_disu_upts_from);
+  void extrapolate_GCL_solution(int in_disu_upts_from);
   void extrapolate_GCL_flux(void);
   void calculate_divergence_GCL(int in_div_tconf_upts_to);
   void calculate_corrected_divergence_GCL(int in_div_tconf_upts_to);
 
-  void evaluate_GCL_flux(int in_disu_upts_from);
+  double *get_disu_GCL_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
 protected:
 
   // #### members ####
@@ -665,6 +688,9 @@ protected:
   /*! order of polynomials defining shapes */
   int s_order;
 
+  /*! maximum number of shape points used by any element */
+  int max_n_spts_per_ele;
+
   /*! shape */
   array<double> shape;
 
@@ -675,14 +701,15 @@ protected:
   Description: Mesh velocity at shape points \n
   indexing: (in_ele)(in_spt, in_dim) \n
   */
-  array< array<double> > vel_spts;
+  array<double> vel_spts;
 
   /*!
-  Description: Mesh velocity at flux points \n
+  Description: Mesh velocity at flux points (interpolated using shape basis funcs) \n
   indexing: (in_ele, in_fpt, in_dim) \n
   */
   array<double> grid_vel_fpts, vel_ppts;
-  array< array<double> > grid_vel_upts, div_gcl_upts, div_gcl_upts;
+  //array< array<double> > grid_vel_upts;
+  array<double> grid_vel_upts;
 
   /*! nodal shape basis contributions at flux points */
   array<double> nodal_s_basis_fpts;
@@ -725,6 +752,12 @@ protected:
 
   /*! temporary grid velocity storage at a single solution point (transformed to static frame) */
   array<double> temp_v_ref;
+
+  /*! temporary flux storage for GCL at a single solution point (transformed to static frame) */
+  array<double> temp_f_GCL;
+
+  /*! temporary flux storage for GCL at a single solution point (transformed to static frame) */
+  array<double> temp_f_ref_GCL;
 
   /*! temporary solution gradient storage */
   array<double> temp_grad_u;
@@ -776,13 +809,17 @@ protected:
   /*! determinant of volume jacobian at cubature points */
   array< array<double> > vol_detjac_vol_cubpts;
 
-  /*! inverse of (determinant of jacobian multiplied by jacobian) at solution points */
-  array<double> inv_detjac_mul_jac_upts;
+  /*! Full vector-transform matrix from physical->computational frame, at solution points
+   *  [Determinant of Jacobian times inverse of Jacobian] [J*G^-1] */
+  array<double> JGinv_upts;
 
-  array<double> inv_detjac_mul_jac_fpts;
+  /*! Full vector-transform matrix from physical->computational frame, at flux points
+   *  [Determinant of Jacobian times inverse of Jacobian] [J*G^-1] */
+  array<double> JGinv_fpts;
 
-  /*! magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points */
-  array<double> mag_tnorm_dot_inv_detjac_mul_jac_fpts;
+  /*! Magnitude of transformed face-area normal vector at flux points
+   *  [magntiude of (normal dot inverse transformation matrix)] [ |J*(G^-1)*(n*dA)| ] */
+  array<double> tdA_fpts;
 
   /*! determinant of interface jacobian at flux points */
   array< array<double> > inter_detjac_inters_cubpts;
@@ -803,10 +840,10 @@ protected:
   array<double> J_dyn_fpts;
 
   /*! Dynamic transformation matrix at solution points ( |G|*G^-1 )*/
-  array<double>  Ginv_dyn_upts;
+  array<double>  JGinv_dyn_upts;
 
   /*! Dynamic transformation matrix at flux points ( |G|*G^-1 )*/
-  array<double>  Ginv_dyn_fpts;
+  array<double>  JGinv_dyn_fpts;
 
   /*! transformed gradient of determinant of dynamic jacobian at solution points */
   array<double> tgrad_J_dyn_upts;
@@ -856,6 +893,18 @@ protected:
         matrix mapping: (in_upt, in_dim || in_field, in_ele)
         */
   array<double> tdisf_upts;
+
+  /*!
+   * description: discontinuous solution for GCL at the solution points \n
+   * indexing: (in_upt, in_ele) \n
+   */
+  array< array<double> > Jbar_upts;
+
+  /*!
+   * description: discontinuous solution for GCL at the flux points \n
+   * indexing: (in_fpt, in_ele) \n
+   */
+  array< array<double> > Jbar_fpts;
 
   /*!
    * description: transformed discontinuous flux for GCL at the solution points \n
@@ -922,7 +971,13 @@ protected:
    *  divergence of transformed continuous GCL flux at the solution points
    *  indexing: (in_upt, in_ele) \n
    */
-  array< array<double> > div_GCL_upts;
+  array< array<double> > div_tconf_GCL_upts;
+
+  /*!
+   *  divergence of transformed continuous GCL flux at the flux points
+   *  indexing: (in_fpt, in_ele) \n
+   */
+  array< array<double> > div_tconf_GCL_fpts;
 
   /*! delta of the transformed discontinuous solution at the flux points   */
   array<double> delta_disu_fpts;

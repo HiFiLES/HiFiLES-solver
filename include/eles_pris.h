@@ -78,6 +78,8 @@ public:
 
   void fill_opp_3(array<double>& opp_3);
 
+  void fill_opp_3pt5(array<double>& opp_3pt5);
+
   /*! evaluate nodal shape basis */
   double eval_nodal_s_basis(int in_index, array<double> in_loc, int in_n_spts);
 

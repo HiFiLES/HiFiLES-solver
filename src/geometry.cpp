@@ -253,6 +253,13 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   FlowSol->mesh_eles(3) = &FlowSol->mesh_eles_pris;
   FlowSol->mesh_eles(4) = &FlowSol->mesh_eles_hexas;
 
+  array<int> max_n_spts(FlowSol->n_ele_types);
+  max_n_spts(0) = max_n_spts_per_tri;
+  max_n_spts(1) = max_n_spts_per_quad;
+  max_n_spts(2) = max_n_spts_per_tet;
+  max_n_spts(3) = max_n_spts_per_pri;
+  max_n_spts(4) = max_n_spts_per_hexa;
+
   for (int i=0;i<FlowSol->n_ele_types;i++)
     {
       FlowSol->mesh_eles(i)->set_rank(FlowSol->rank);
@@ -387,25 +394,26 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   // set transforms
   if (FlowSol->rank==0) cout << "setting element transforms ... " << endl;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          // Pre-compute shape basis - CRITICAL for deforming mesh performance
-          FlowSol->mesh_eles(i)->store_nodal_s_basis_fpts();
-          FlowSol->mesh_eles(i)->store_nodal_s_basis_upts();
-          FlowSol->mesh_eles(i)->store_nodal_s_basis_ppts();          
-          FlowSol->mesh_eles(i)->store_d_nodal_s_basis_fpts();
-          FlowSol->mesh_eles(i)->store_d_nodal_s_basis_upts();
-          FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_fpts();
-          FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_upts();
-          // Set physical -> reference transforms
-          FlowSol->mesh_eles(i)->set_transforms();
-          FlowSol->mesh_eles(i)->set_transforms_dynamic();
-        }
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      // Pre-compute shape basis - CRITICAL for deforming mesh performance
+      FlowSol->mesh_eles(i)->store_nodal_s_basis_fpts();
+      FlowSol->mesh_eles(i)->store_nodal_s_basis_upts();
+      FlowSol->mesh_eles(i)->store_nodal_s_basis_ppts();
+      FlowSol->mesh_eles(i)->store_d_nodal_s_basis_fpts();
+      FlowSol->mesh_eles(i)->store_d_nodal_s_basis_upts();
+      FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_fpts();
+      FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_upts();
+      // Set physical -> reference transforms
+      FlowSol->mesh_eles(i)->set_transforms();
+      if (run_input.motion)
+        FlowSol->mesh_eles(i)->set_transforms_dynamic();
     }
+  }
 
   if (FlowSol->rank==0) cout << "setting mesh motion parameters ... " << endl;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->initialize_grid_vel();
+      FlowSol->mesh_eles(i)->initialize_grid_vel(max_n_spts(i));
     }
   }
 

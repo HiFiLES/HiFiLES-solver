@@ -108,12 +108,13 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
   disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields+n_gcl_fields);
   norm_tconf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields+n_gcl_fields);
   detjac_fpts_l.setup(n_fpts_per_inter,n_inters);
-  mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.setup(n_fpts_per_inter,n_inters);
+  tdA_fpts_l.setup(n_fpts_per_inter,n_inters);
   norm_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
   loc_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
 
   if (motion)
   {
+    disu_GCL_fpts_l.setup(n_fpts_per_inter,n_inters);
     grid_vel_fpts.setup(n_dims,n_fpts_per_inter,n_inters);
     ndA_dyn_fpts_l.setup(n_fpts_per_inter,n_inters);
     norm_dyn_fpts.setup(n_fpts_per_inter,n_inters,n_dims);

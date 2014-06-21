@@ -66,12 +66,15 @@ protected:
   array<double*> norm_tconf_fpts_r;
   //array<double*> norm_tconvisf_fpts_r;
   array<double*> detjac_fpts_r;
-  array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_r;
+  array<double*> tdA_fpts_r;
   array<double*> grad_disu_fpts_r;
 
   // Dynamic grid variables:
+  array<double*> disu_GCL_fpts_r;
   array<double*> ndA_dyn_fpts_r;
   array<double*> J_dyn_fpts_r;
   array<double*> norm_tconf_GCL_fpts_r;
 
+  double temp_u_GCL_r;
+  double temp_f_GCL_r;
 };

@@ -108,6 +108,8 @@ void eles_quads::setup_ele_type_specific()
   set_opp_1(run_input.sparse_quad);
   set_opp_2(run_input.sparse_quad);
   set_opp_3(run_input.sparse_quad);
+  if(motion)
+    set_opp_3pt5(run_input.sparse_quad);
 
   if(viscous)
     {
