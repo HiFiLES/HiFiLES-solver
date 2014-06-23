@@ -27,7 +27,7 @@ AC_DEFUN([CONFIGURE_METIS],
                  [HIFILES_METIS_CPPFLAGS="-D_FILE_OFFSET_BITS=64 -DNDEBUG -DNDEBUG2 -DHAVE_EXECINFO_H -DHAVE_GETLINE"])
 
 
-     METIS_INCLUDE="-DMETIS_5 -I\$(top_srcdir)/libs/parmetis-4.0.2/include -I\$(top_srcdir)/libs/parmetis-4.0.2/metis/include"
+     METIS_INCLUDE="-DMETIS_5 -I\$(top_srcdir)/lib/parmetis-4.0.2/include -I\$(top_srcdir)/lib/parmetis-4.0.2/metis/include"
      METIS_LIB="\$(top_builddir)/lib/parmetis-4.0.2/libparmetis.a \$(top_builddir)/lib/parmetis-4.0.2/metis/libmetis.a"
      AC_DEFINE(HAVE_METIS, 1, [Flag indicating whether the library will be compiled with Metis support])
      AC_MSG_RESULT(<<< Configuring library with Metis support >>>)

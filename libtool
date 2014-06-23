@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # libtool - Provide generalized library-building support services.
-# Generated automatically by config.status (HiFiLES) 1.0.0
+# Generated automatically by config.status (HiFiLES) 0.1
 # Libtool was configured on host acl-aphrodite:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 #
@@ -96,7 +96,7 @@ NM="/usr/bin/nm -B"
 LN_S="ln -s"
 
 # What is the maximum length of a command?
-max_cmd_len=805306365
+max_cmd_len=1572864
 
 # Object file suffix (normally "o").
 objext=o

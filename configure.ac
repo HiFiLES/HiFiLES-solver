@@ -23,7 +23,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
 #####################################################
-AC_INIT([HiFiLES], [1.0.0], [HiFiLES-dev@lists.stanford.edu],
+AC_INIT([HiFiLES], [0.1], [HiFiLES-dev@lists.stanford.edu],
         [HiFiLES], [http://hifiles.stanford.edu])
 AC_PREREQ([2.59])
 AC_CONFIG_MACRO_DIR([m4])
