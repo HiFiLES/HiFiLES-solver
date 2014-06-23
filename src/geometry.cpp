@@ -142,6 +142,11 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   Mesh.vel_new.setup(xv.get_dim(0),Mesh.n_dims);
   Mesh.vel_old.initialize_to_zero();
   Mesh.vel_new.initialize_to_zero();
+  Mesh.grid_vel.setup(2);
+  Mesh.grid_vel(0).setup(xv.get_dim(0),Mesh.n_dims);
+  Mesh.grid_vel(1).setup(xv.get_dim(0),Mesh.n_dims);
+  Mesh.grid_vel(0).initialize_to_zero();
+  Mesh.grid_vel(1).initialize_to_zero();
 
   /////////////////////////////////////////////////
   /// Set connectivity

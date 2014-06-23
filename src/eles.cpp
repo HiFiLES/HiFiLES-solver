@@ -782,6 +782,124 @@ void eles::rm_detjac_upts_cpu(void)
 #endif
 }
 
+void eles::set_dt(int in_step, int adv_type)
+{
+  if (n_eles!=0)
+  {
+    /*! Time integration using a forwards Euler integration. */
+    if (adv_type == 0) {
+#ifdef _CPU
+      // If using global minimum timestep based on CFL, determine
+      // global minimum
+      if (run_input.dt_type == 1)
+      {
+        // Find minimum timestep
+        dt_local(0) = 1e12; // Set to large value
+
+        for (int ic=0; ic<n_eles; ic++)
+        {
+          dt_local_new = calc_dt_local(ic);
+
+          if (dt_local_new < dt_local(0))
+            dt_local(0) = dt_local_new;
+        }
+
+        // If running in parallel, gather minimum timestep values from
+        // each partition and find global minumum across partitions
+#ifdef _MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
+                      1, MPI_DOUBLE, MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        dt_local(0) = dt_local_mpi.get_min();
+#endif
+      }
+
+      // If using local timestepping, just compute and store all local
+      // timesteps
+      if (run_input.dt_type == 2)
+      {
+        for (int ic=0; ic<n_eles; ic++)
+          dt_local(ic) = calc_dt_local(ic);
+      }
+#endif
+    }
+
+    /*! Time integration using a RK45 method. */
+    else if (adv_type == 3) {
+
+      double rk4a, rk4b;
+      if (in_step==0) {
+        rk4a=    0.0;
+        rk4b=   0.149659021999229;
+      }
+      else if (in_step==1) {
+        rk4a=   -0.417890474499852;
+        rk4b=   0.379210312999627;
+      }
+      else if (in_step==2) {
+        rk4a=   -1.192151694642677;
+        rk4b=   0.822955029386982;
+      }
+      else if (in_step==3) {
+        rk4a=   -1.697784692471528;
+        rk4b=   0.699450455949122;
+      }
+      else if (in_step==4) {
+        rk4a=   -1.514183444257156;
+        rk4b=   0.153057247968152;
+      }
+
+#ifdef _CPU
+      // for first stage only, compute timestep
+      if (in_step == 0)
+      {
+        // For global timestepping, find minimum timestep
+        if (run_input.dt_type == 1)
+        {
+          dt_local(0) = 1e12;
+
+          for (int ic=0; ic<n_eles; ic++)
+          {
+            dt_local_new = calc_dt_local(ic);
+
+            if (dt_local_new < dt_local(0))
+            {
+              dt_local(0) = dt_local_new;
+            }
+          }
+
+
+          // If using MPI, find minimum across partitions
+#ifdef _MPI
+          MPI_Barrier(MPI_COMM_WORLD);
+          MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),1,MPI_DOUBLE,MPI_COMM_WORLD);
+          MPI_Barrier(MPI_COMM_WORLD);
+
+          dt_local(0) = dt_local_mpi.get_min();
+#endif
+        }
+
+        // For local timestepping, find element local timesteps
+        if (run_input.dt_type == 2)
+        {
+          for (int ic=0; ic<n_eles; ic++)
+          {
+            dt_local(ic) = calc_dt_local(ic);
+          }
+        }
+      }
+#endif
+    }
+
+    /*! Time integration not implemented. */
+    else {
+      cout << "ERROR: Time integration type not recognised ... " << endl;
+    }
+  }
+}
+
 /// Advance the GCL forward to get updated Jacobians prior to residual calc
 void eles::AdvanceGCL(int in_step, int adv_type) {
 
@@ -4263,26 +4381,37 @@ void eles::calc_pos_ppts(int in_ele, array<double>& out_pos_ppts)
 void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 {
   if (n_eles!=0)
-    {
+  {
 
-      int i,j,k;
+    int i,j,k;
 
-      array<double> disu_upts_plot(n_upts_per_ele,n_fields);
+    array<double> disu_upts_plot(n_upts_per_ele,n_fields);
 
+    // If moving, need to transform back to moving frame for output
+    if (motion) {
       for(i=0;i<n_fields;i++)
+      {
+        for(j=0;j<n_upts_per_ele;j++)
         {
-          for(j=0;j<n_upts_per_ele;j++)
-            {
-              disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
-            }
+          disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i)/J_dyn_upts(j,in_ele);
         }
+      }
+    }else{
+      for(i=0;i<n_fields;i++)
+      {
+        for(j=0;j<n_upts_per_ele;j++)
+        {
+          disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
+        }
+      }
+    }
 
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,disu_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_ppts.get_ptr_cpu(),n_ppts_per_ele);
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,disu_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_ppts.get_ptr_cpu(),n_ppts_per_ele);
 
 #elif defined _NO_BLAS
-      dgemm(n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),disu_upts_plot.get_ptr_cpu(),out_disu_ppts.get_ptr_cpu());
+    dgemm(n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),disu_upts_plot.get_ptr_cpu(),out_disu_ppts.get_ptr_cpu());
 
 #else
 
@@ -5039,9 +5168,9 @@ void eles::set_transforms_dynamic(void)
           // store determinant of jacobian at solution point
           J_dyn_upts(j,i)= xr*ys - xs*yr;
 
-          if (first_time) {
+          //if (first_time) {
             Jbar_upts(0)(j,i) = J_dyn_upts(j,i);
-          }
+          //}
 
 //          cout << "ele = " << i << ", upt = " << j << ", J_dyn_upt = " << J_dyn_upts(j,i) << endl;
 //          cout << "ele = " << i << ", upt = " << j << ", Jbar_upt  = " << Jbar_upts(0)(j,i) << endl;
@@ -5208,9 +5337,9 @@ void eles::set_transforms_dynamic(void)
 
           J_dyn_fpts(j,i)= xr*ys - xs*yr;
 
-          if (first_time) {
+          //if (first_time) {
             Jbar_fpts(0)(j,i) = J_dyn_fpts(j,i);
-          }
+          //}
 
 //          if (i<5 && j<4) {
 //            cout << "ele = " << i << ", fpt = " << j << ", J_dyn_fpt = " << J_dyn_fpts(j,i) << endl;
@@ -6336,7 +6465,7 @@ void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
 {
   int i,j,k;
 
-  // Calculate dx/dr
+/*  // Calculate dx/dr
   array<double> dxdr(n_dims,n_dims);
   dxdr.initialize_to_zero();
   for(i=0; i<n_dims; i++) {
@@ -6357,6 +6486,15 @@ void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
       }
     }
   }
+*/
+  /// TESTING - Trying out explicit, analytical formula for perturbed motion
+  array<double> pos(2);
+  calc_pos_fpt(in_fpt,in_ele,pos);
+
+  out_d_pos(0,0) = 1 + 0.2*pi*cos(pi*pos(0)/10)*sin(pi*pos(1)/10)*sin(2*pi*run_input.time/100);
+  out_d_pos(0,1) = 0.2*pi*sin(pi*pos(0)/10)*cos(pi*pos(1)/10)*sin(2*pi*run_input.time/100);
+  out_d_pos(1,0) = 0.15*pi*cos(pi*pos(0)/10)*sin(pi*pos(1)/10)*sin(4*pi*run_input.time/100);
+  out_d_pos(1,1) = 1 + 0.15*pi*sin(pi*pos(0)/10)*cos(pi*pos(1)/10)*sin(4*pi*run_input.time/100);
 }
 
 /**
@@ -6371,7 +6509,7 @@ void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
   int i,j,k;
 
   // Calculate dx/dr
-  array<double> dxdr(n_dims,n_dims);
+/*  array<double> dxdr(n_dims,n_dims);
   dxdr.initialize_to_zero();
   for(i=0; i<n_dims; i++) {
     for(j=0; j<n_dims; j++) {
@@ -6393,6 +6531,15 @@ void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
       }
     }
   }
+*/
+  /// TESTING - Trying out explicit, analytical formula for perturbed motion
+  array<double> pos(2);
+  calc_pos_upt(in_upt,in_ele,pos);
+
+  out_d_pos(0,0) = 1 + 0.2*pi*cos(pi*pos(0)/10)*sin(pi*pos(1)/10)*sin(2*pi*run_input.time/100);
+  out_d_pos(0,1) = 0.2*pi*sin(pi*pos(0)/10)*cos(pi*pos(1)/10)*sin(2*pi*run_input.time/100);
+  out_d_pos(1,0) = 0.15*pi*cos(pi*pos(0)/10)*sin(pi*pos(1)/10)*sin(4*pi*run_input.time/100);
+  out_d_pos(1,1) = 1 + 0.15*pi*sin(pi*pos(0)/10)*cos(pi*pos(1)/10)*sin(4*pi*run_input.time/100);
 
 //  cout.precision(16);
 //  for (i=0;i<n_dims;i++)

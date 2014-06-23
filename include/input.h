@@ -225,4 +225,5 @@ public:
   array<double> z_coeffs;
   int perturb_ic;
 
+  double time;
 };

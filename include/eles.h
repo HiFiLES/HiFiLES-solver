@@ -536,6 +536,7 @@ public:
   void calculate_corrected_divergence_GCL(int in_div_tconf_upts_to);
 
   double *get_disu_GCL_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
+  void set_dt(int in_step, int adv_type);
 protected:
 
   // #### members ####

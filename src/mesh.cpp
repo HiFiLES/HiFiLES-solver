@@ -261,17 +261,17 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
   for (int i=0; i<n_verts; i++) {
     for (int j=0; j<n_dims; j++) {
       /// --- IMPLEMENT RK45 TIMESTEPPING ---
-      if (run_input.adv_type == 0) {
-        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
-      }else if (run_input.adv_type == 3) {
-        /*cout << "Terribly sorry, but RK45 timestepping for mesh velocity has not been implemented yet! ";
-        cout << " Using Forward Euler instead." << endl;*/
-        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
-      }
+//      if (run_input.adv_type == 0) {
+//        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
+//      }else if (run_input.adv_type == 3) {
+//        /*cout << "Terribly sorry, but RK45 timestepping for mesh velocity has not been implemented yet! ";
+//        cout << " Using Forward Euler instead." << endl;*/
+//        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
+//      }
 
       /// Analytic solution for perturb test-case
-//      vel_new(i,0) = 4*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*time/100); // from Kui
-//      vel_new(i,1) = 6*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(4*pi*time/100);
+      vel_new(i,0) = 4*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*time/100); // from Kui
+      vel_new(i,1) = 6*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(4*pi*time/100);
     }
   }
 

@@ -200,6 +200,8 @@ int main(int argc, char *argv[]) {
     
     FlowSol.time += run_input.dt;
     i_steps++;
+
+    run_input.time = FlowSol.time;
     
     /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
 #ifdef _GPU

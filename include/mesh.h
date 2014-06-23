@@ -126,7 +126,9 @@ public:
 
   // nBndPts.setup(n_bnds); boundPts.setup(nBnds,nPtsPerBnd);
 
-  array<double> vel_old, vel_new, xv_new;
+  array<double> vel_old,vel_new, xv_new;
+
+  array< array<double> > grid_vel;
 
 private:
   bool start;
