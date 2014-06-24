@@ -1,7 +1,7 @@
 SUBDIRS = metis/
 pkg_cppflags  = @HIFILES_METIS_CPPFLAGS@
 pkg_cppflags += -I$(srcdir)/include -I$(srcdir)/libparmetis 
-pkg_cppflags += -I$(srcdir)/metis/GKlib  -I$(srcdir)/metis/libmetis
+pkg_cppflags += -I$(srcdir)/metis/GKlib  -I$(srcdir)/metis/libmetis -I$(srcdir)/metis/include
 pkg_cppflags += -I@MPI_INCLUDE@ 
 pkg_sources = \
     libparmetis/akwayfm.c \
