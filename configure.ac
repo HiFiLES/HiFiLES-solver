@@ -15,9 +15,8 @@
 AC_INIT([HiFiLES], [1.0.0], [HiFiLES-dev@lists.stanford.edu],
         [HiFiLES], [http://hifiles.stanford.edu])
 AC_PREREQ([2.59])
-# AC_CONFIG_MACRO_DIR([m4])
-#AM_INIT_AUTOMAKE([subdir-objects foreign])
-AM_INIT_AUTOMAKE([foreign])
+AC_CONFIG_MACRO_DIR([m4])
+AM_INIT_AUTOMAKE([subdir-objects foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
 
 top_dir=`pwd`

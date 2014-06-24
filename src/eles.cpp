@@ -3364,7 +3364,7 @@ void eles::evaluate_GCL_flux(int in_disu_upts_from)
         // Transform from dynamic-physical space to static-physical space
         for(k=0; k<n_dims; k++)
         {
-          temp_f_ref(k)=0.;
+          temp_f_ref_GCL(k)=0.;
           for(m=0; m<n_dims; m++)
           {
             temp_f_ref_GCL(k) += JGinv_dyn_upts(j,i,k,m)*temp_f_GCL(m);

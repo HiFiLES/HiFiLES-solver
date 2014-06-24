@@ -127,26 +127,27 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   ReadMesh(run_input.mesh_file, xv, c2v, c2n_v, ctype, ic2icg, iv2ivg, FlowSol->num_eles, FlowSol->num_verts, Mesh.n_verts_global, FlowSol);
 
   // ** TODO: clean up duplicate/redundant data **
-  Mesh.n_dims = FlowSol->n_dims;
-  Mesh.c2v = c2v;
-  Mesh.c2n_v = c2n_v;
-  Mesh.xv = xv;
-  Mesh.xv_0 = xv; /// initial mesh, for ref.
-  Mesh.xv_new = xv;
-  Mesh.iv2ivg = iv2ivg;
-  Mesh.ctype = ctype;
-  Mesh.n_eles = FlowSol->num_eles;
-  Mesh.n_cells_global = FlowSol->num_cells_global;
-  Mesh.n_verts = FlowSol->num_verts;
-  Mesh.vel_old.setup(xv.get_dim(0),Mesh.n_dims);
-  Mesh.vel_new.setup(xv.get_dim(0),Mesh.n_dims);
-  Mesh.vel_old.initialize_to_zero();
-  Mesh.vel_new.initialize_to_zero();
-  Mesh.grid_vel.setup(2);
-  Mesh.grid_vel(0).setup(xv.get_dim(0),Mesh.n_dims);
-  Mesh.grid_vel(1).setup(xv.get_dim(0),Mesh.n_dims);
-  Mesh.grid_vel(0).initialize_to_zero();
-  Mesh.grid_vel(1).initialize_to_zero();
+  Mesh.setup(FlowSol->n_dims,FlowSol->num_eles,FlowSol->num_verts,FlowSol->num_cells_global,xv,c2v,c2n_v,iv2ivg,ctype);
+//  Mesh.n_dims = FlowSol->n_dims;
+//  Mesh.c2v = c2v;
+//  Mesh.c2n_v = c2n_v;
+//  Mesh.xv(0) = xv;
+//  Mesh.xv_0 = xv; /// initial mesh, for ref.
+//  Mesh.xv_new = xv;
+//  Mesh.iv2ivg = iv2ivg;
+//  Mesh.ctype = ctype;
+//  Mesh.n_eles = FlowSol->num_eles;
+//  Mesh.n_cells_global = FlowSol->num_cells_global;
+//  Mesh.n_verts = FlowSol->num_verts;
+//  Mesh.vel_old.setup(xv.get_dim(0),Mesh.n_dims);
+//  Mesh.vel_new.setup(xv.get_dim(0),Mesh.n_dims);
+//  Mesh.vel_old.initialize_to_zero();
+//  Mesh.vel_new.initialize_to_zero();
+//  Mesh.grid_vel.setup(2);
+//  Mesh.grid_vel(0).setup(xv.get_dim(0),Mesh.n_dims);
+//  Mesh.grid_vel(1).setup(xv.get_dim(0),Mesh.n_dims);
+//  Mesh.grid_vel(0).initialize_to_zero();
+//  Mesh.grid_vel(1).initialize_to_zero();
 
   /////////////////////////////////////////////////
   /// Set connectivity

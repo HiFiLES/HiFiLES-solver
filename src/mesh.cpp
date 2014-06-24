@@ -81,6 +81,39 @@ mesh::~mesh(void)
   // not currently needed
 }
 
+void mesh::setup(int &in_n_dims,int &in_n_eles,int &in_n_verts, int &in_n_cells_global,array<double> &in_xv,array<int> &in_c2v,array<int> &in_c2n_v,array<int> &in_iv2ivg,array<int> &in_ctype)
+{
+  n_dims = in_n_dims;
+  n_eles = in_n_eles;
+  n_verts = in_n_verts;
+  n_cells_global = in_n_cells_global;
+
+  // Setup for 4th-order backward difference
+  xv.setup(5);
+  xv(0) = in_xv;
+  xv(1) = in_xv;
+  xv(2) = in_xv;
+  xv(3) = in_xv;
+  xv(4) = in_xv;
+
+  xv_0 = in_xv;
+
+  c2v = in_c2v;
+  c2n_v = in_c2n_v;
+  iv2ivg = in_iv2ivg;
+  ctype = in_ctype;
+
+  vel_old.setup(in_xv.get_dim(0),n_dims);
+  vel_new.setup(in_xv.get_dim(0),n_dims);
+  vel_old.initialize_to_zero();
+  vel_new.initialize_to_zero();
+//  grid_vel.setup(2);
+//  grid_vel(0).setup(xv.get_dim(0),Mesh.n_dims);
+//  grid_vel(1).setup(xv.get_dim(0),Mesh.n_dims);
+//  grid_vel(0).initialize_to_zero();
+//  grid_vel(1).initialize_to_zero();
+}
+
 void mesh::move(int _iter, int in_rk_step, solution *FlowSol) {
   iter = _iter;
   rk_step = in_rk_step;
@@ -232,7 +265,7 @@ void mesh::deform(struct solution* FlowSol) {
 
   /*--- Now that deformation is complete & velocity is set, update the
       'official' vertex coordinates ---*/
-  xv = xv_new;
+  //xv = xv_new;
 
   /*--- Deallocate vectors for the linear system. ---*/
   LinSysSol.~CSysVector();
@@ -247,7 +280,7 @@ void mesh::set_min_length(void)
   double min_length2 = DBL_MAX;
 
   for (int i=0; i<n_edges; i++) {
-    length2 = pow((xv(e2v(i,0),0)-xv(e2v(i,1),0)),2) + pow((xv(e2v(i,0),1)-xv(e2v(i,1),1)),2);
+    length2 = pow((xv(0)(e2v(i,0),0)-xv(0)(e2v(i,1),0)),2) + pow((xv(0)(e2v(i,0),1)-xv(0)(e2v(i,1),1)),2);
     min_length2 = fmin(min_length2,length2);
   }
 
@@ -257,22 +290,16 @@ void mesh::set_min_length(void)
 void mesh::set_grid_velocity(solution* FlowSol, double dt)
 {
   time = iter*dt;
-  // calculate velocity using simple backward-Euler
+  // calculate velocity using backward difference formula
   for (int i=0; i<n_verts; i++) {
     for (int j=0; j<n_dims; j++) {
-      /// --- IMPLEMENT RK45 TIMESTEPPING ---
-//      if (run_input.adv_type == 0) {
-//        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
-//      }else if (run_input.adv_type == 3) {
-//        /*cout << "Terribly sorry, but RK45 timestepping for mesh velocity has not been implemented yet! ";
-//        cout << " Using Forward Euler instead." << endl;*/
-//        vel_new(i,j) = (xv_new(i,j) - xv(i,j))/dt;
-//      }
-
-      /// Analytic solution for perturb test-case
-      vel_new(i,0) = 4*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*time/100); // from Kui
-      vel_new(i,1) = 6*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(4*pi*time/100);
+      //vel_new(i,j) = (xv(0)(i,j) - xv(1)(i,j))/dt;  // using simple backward-Euler
+      vel_new(i,j) = 25/12*xv(0)(i,j) - 4*xv(1)(i,j) + 3*xv(2)(i,j) - 4/3*xv(3)(i,j) + 1/4*xv(4)(i,j); // 4th-order backward difference
+      vel_new(i,j) /= run_input.dt;
     }
+    /// Analytic solution for perturb test-case
+    //vel_new(i,0) = 4*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*time/100); // from Kui
+    //vel_new(i,1) = 6*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(4*pi*time/100);
   }
 
   // Apply velocity to the eles classes at the shape points
@@ -307,7 +334,7 @@ bool mesh::set_2D_StiffMat_ele_tri(array<double> &stiffMat_ele, int ele_id)
   for (int i=0; i<n_spts; i++) {
     iPoint = c2v(ele_id,i);
     for (int j=0; j<n_dims; j++) {
-      pos_spts(i,j) = xv(iPoint,j);
+      pos_spts(i,j) = xv(0)(iPoint,j);
     }
   }
 
@@ -418,8 +445,8 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale
   for (int i=0; i<nNodes; i++) {
     nodes(i) = iv2ivg(c2v(ic,i));
     for (int j=0; j<n_dims; j++) {
-      CoordCorners[i][j] = xv(nodes(i),j);
-      coords(i,j) = xv(nodes(i),j);
+      CoordCorners[i][j] = xv(0)(nodes(i),j);
+      coords(i,j) = xv(0)(nodes(i),j);
     }
   }
 
@@ -529,7 +556,7 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale
   for (int i=0; i<nNodes; i++) {
     nodes(i) = iv2ivg(c2v(ic,i));
     for (int j=0; j<n_dims; j++) {
-      CoordCorners[i][j] = xv(nodes(i),j);
+      CoordCorners[i][j] = xv(0)(nodes(i),j);
     }
   }
 
@@ -1213,7 +1240,7 @@ void mesh::update(solution* FlowSol)
     local_id = ic2loc_c(ic);
     for (int iv=0; iv<c2n_v(ic); iv++) {
       for (int k=0; k<n_dims; k++) {
-        pos(k) = xv_new(c2v(ic,iv),k);
+        pos(k) = xv(0)(c2v(ic,iv),k);
       }
       FlowSol->mesh_eles(ele_type)->set_dynamic_shape_node(iv,local_id,pos);
     }
@@ -1297,11 +1324,11 @@ void mesh::write_mesh_gmsh(double sim_time)
   // write nodes
   file << "$Nodes" << endl << n_verts_global << endl;
   for (int i=0; i<n_verts; i++) {
-    file << i+1 << " " << xv(i,0) << " " << xv(i,1) << " ";
+    file << i+1 << " " << xv(0)(i,0) << " " << xv(0)(i,1) << " ";
     if (n_dims==2) {
       file << 0;
     }else{
-      file << xv(i,2);
+      file << xv(0)(i,2);
     }
     file << endl;
   }
@@ -1402,12 +1429,16 @@ void mesh::update_grid_coords(void)
   /*--- Update the grid coordinates using the solution of the linear system
    after grid deformation (LinSysSol contains the x, y, z displacements). ---*/
 
+  for (int i=4; i>0; i--) {
+    xv(i) = xv(i-1);
+  }
+
   for (iPoint = 0; iPoint < n_verts; iPoint++) {
     for (iDim = 0; iDim < n_dims; iDim++) {
       total_index = iPoint*n_dims + iDim;
-      new_coord = xv(iPoint,iDim) + LinSysSol[total_index];
+      new_coord = xv(0)(iPoint,iDim) + LinSysSol[total_index];
       if (fabs(new_coord) < eps*eps) new_coord = 0.0;
-      xv_new(iPoint,iDim) = new_coord;
+      xv(0)(iPoint,iDim) = new_coord;
     }
   }
 }
@@ -1427,8 +1458,8 @@ double mesh::check_grid(solution* FlowSol) {
 
       double a[2], b[2];
       for (iDim = 0; iDim < n_dims; iDim++) {
-        a[iDim] = xv(c2v(iElem,0),iDim)-xv(c2v(iElem,1),iDim);
-        b[iDim] = xv(c2v(iElem,1),iDim)-xv(c2v(iElem,2),iDim);
+        a[iDim] = xv(0)(c2v(iElem,0),iDim)-xv(0)(c2v(iElem,1),iDim);
+        b[iDim] = xv(0)(c2v(iElem,1),iDim)-xv(0)(c2v(iElem,2),iDim);
       }
 
       Area = 0.5*fabs(a[0]*b[1]-a[1]*b[0]);
@@ -1444,9 +1475,9 @@ double mesh::check_grid(solution* FlowSol) {
       double r1[3], r2[3], r3[3], CrossProduct[3];
 
       for (iDim = 0; iDim < n_dims; iDim++) {
-        r1[iDim] = xv(c2v(iElem,1),iDim) - xv(c2v(iElem,0),iDim);
-        r2[iDim] = xv(c2v(iElem,2),iDim) - xv(c2v(iElem,0),iDim);
-        r3[iDim] = xv(c2v(iElem,3),iDim) - xv(c2v(iElem,0),iDim);
+        r1[iDim] = xv(0)(c2v(iElem,1),iDim) - xv(0)(c2v(iElem,0),iDim);
+        r2[iDim] = xv(0)(c2v(iElem,2),iDim) - xv(0)(c2v(iElem,0),iDim);
+        r3[iDim] = xv(0)(c2v(iElem,3),iDim) - xv(0)(c2v(iElem,0),iDim);
       }
 
       CrossProduct[0] = (r1[1]*r2[2] - r1[2]*r2[1])*r3[0];
@@ -1578,10 +1609,14 @@ void mesh::rigid_move(solution* FlowSol) {
 //    start = false;
 //  }
 
+  for (int i=4; i>0; i--) {
+    xv(i) = xv(i-1);
+  }
+
   for (int i=0; i<n_verts; i++) {
     // Useful for simple cases / debugging
-    xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)*cos(0.2*pi*time)*run_input.dt;
-    xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(1)*cos(0.2*pi*time)*run_input.dt;
+    xv(0)(i,0) = xv(0)(i,0) + run_input.bound_vel_simple(0)*cos(0.2*pi*time)*run_input.dt;
+    xv(0)(i,1) = xv(0)(i,1) + run_input.bound_vel_simple(1)*cos(0.2*pi*time)*run_input.dt;
 
     //xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)*run_input.dt;
     //xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(1)*run_input.dt;
@@ -1589,20 +1624,23 @@ void mesh::rigid_move(solution* FlowSol) {
 
   update(FlowSol);
 
-  xv = xv_new;
   //iter++; // does nothing - iter given in Mesh.move(iter,&FlowSol)
 }
 
 void mesh::perturb(solution* FlowSol) {
   time = iter*run_input.dt;
+
+  for (int i=4; i>0; i--) {
+    xv(i) = xv(i-1);
+  }
+
   for (int i=0; i<n_verts; i++) {
     /// Taken from Kui, AIAA-2010-5031-661
-    xv_new(i,0) = xv_0(i,0) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*time/100);
-    xv_new(i,1) = xv_0(i,1) + 1.5*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(4*pi*time/100);
+    xv(0)(i,0) = xv_0(i,0) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*time/100);
+    xv(0)(i,1) = xv_0(i,1) + 1.5*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(4*pi*time/100);
   }
 
   update(FlowSol);
 
-  xv = xv_new;
   iter++;
 }

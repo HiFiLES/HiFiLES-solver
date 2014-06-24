@@ -97,7 +97,8 @@ public:
   int iter;
 
   /** arrays which define the basic mesh geometry */
-  array<double> xv_0, xv,;
+  array<double> xv_0;//, xv;
+  array< array<double> > xv;
   array<int> c2v,c2n_v,ctype,bctype_c,ic2icg,iv2ivg,ic2loc_c,
   f2c,f2loc_f,c2f,c2e,f2v,f2n_v,e2v,v2n_e;
   array<array<int> > v2e;
@@ -130,6 +131,7 @@ public:
 
   array< array<double> > grid_vel;
 
+  void setup(int &in_n_dims, int &in_n_eles, int &in_n_verts, int &in_n_cells_global, array<double> &in_xv, array<int> &in_c2v, array<int> &in_c2n_v, array<int> &in_iv2ivg, array<int> &in_ctype);
 private:
   bool start;
   array<double> xv_nm1, xv_nm2, xv_nm3;//, xv_new, vel_old, vel_new;
