@@ -647,6 +647,10 @@ void eles_tris::compute_filter_upts(void)
   double dlt, k_c, sum, vol, norm;
   N = n_upts_per_ele;
 
+  array<double> X(n_dims,N);
+  array<double> B(N);
+  array<double> beta(N,N);
+
   filter_upts.setup(N,N);
 
   N2 = N/2;
@@ -658,6 +662,21 @@ void eles_tris::compute_filter_upts(void)
   // Approx resolution in element (assumes uniform point spacing)
   dlt = 2.0/order;
 
+  X = loc_upts;
+  X.print();
+  // Approx resolution in element (assumes uniform point spacing)
+  // Interval is [-1:1]
+  dlt = 2.0/order;
+  
+  // Normalised solution point separation: r = sqrt((x_a-x_b)^2 + (y_a-y_b)^2)
+  for (i=0;i<N;i++)
+    for (j=i;j<N;j++)
+      beta(i,j) = sqrt(pow(X(0,i)-X(0,j),2) + pow(X(1,i)-X(1,j),2));///dlt;
+  for (i=0;i<N;i++)
+    for (j=0;j<i;j++)
+      beta(i,j) = beta(j,i);
+
+  
   if(run_input.filter_type==0) // Vasilyev filter
     {
       FatalError("Vasilyev filters not implemented for tris. Exiting.");
@@ -672,24 +691,11 @@ void eles_tris::compute_filter_upts(void)
       double res_0, res_L, res_R;
       array<double> alpha(N);
       array<double> wf(N);
-      array<double> X(n_dims,N);
-      array<double> B(N);
-      array<double> beta(N,N);
 
       if(N != n_cubpts_per_ele)
         {
           FatalError("WARNING: Gaussian filter only currently possible for order 1, 2 or 4. If order 1, set vol_cub_order to 2. If order 2, set vol_cub_order to 3 or 4. If order 4, set vol_cub_order to 7. Exiting");
         }
-
-      X = loc_upts;
-
-      // Normalised solution point separation: r = sqrt((x_a-x_b)^2 + (y_a-y_b)^2)
-      for (i=0;i<N;i++)
-        for (j=i;j<N;j++)
-          beta(i,j) = sqrt(pow(X(0,i)-X(0,j),2) + pow(X(1,i)-X(1,j),2))/dlt;
-      for (i=0;i<N;i++)
-        for (j=0;j<i;j++)
-          beta(i,j) = beta(j,i);
 
       for (j=0;j<N;++j)
         wf(j) = weight_volume_cubpts(j);
@@ -755,12 +761,12 @@ void eles_tris::compute_filter_upts(void)
             }
         }
     }
-  else if(run_input.filter_type==2) // Modal coefficient filter
+  else if(run_input.filter_type==2 || run_input.filter_type==3 || run_input.filter_type==4) // Modal filter (3 choices of kernel)
     {
       if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute modal filter
-      compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order);
+      compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_type);
     }
   else // Simple average for low order
     {
@@ -794,6 +800,32 @@ void eles_tris::compute_filter_upts(void)
   for(i=0;i<N;i++)
     for(j=0;j<N;j++)
       sum+=filter_upts(i,j);
+  
+  cout<<"filter_upts:"<<endl;
+  filter_upts.print();
+  
+  // Output filter and beta to file
+  ofstream coeff_file;
+  coeff_file.open("filter_upts.dat");
+  for(i=0;i<N;++i) {
+    for(j=0;j<N;++j) {
+      coeff_file << setprecision(12) << filter_upts(i,j) << " ";
+    }
+    coeff_file << endl;
+  }
+  
+  coeff_file.close();
+  
+  coeff_file.open("beta_upts.dat");
+  for(i=0;i<N;++i) {
+    for(j=0;j<N;++j) {
+      coeff_file << setprecision(12) << abs(beta(j,i)) << " ";
+    }
+    coeff_file << endl;
+  }
+  
+  coeff_file.close();
+
 }
 
 

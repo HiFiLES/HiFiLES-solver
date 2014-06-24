@@ -259,9 +259,12 @@ public:
 
   /*! calculate dynamic LES coeff at the plot points */
   void calc_dynamic_coeff_ppts(int in_ele, array<double>& out_coeff_ppts);
-  
+
+  /*! calculate turbulent at the plot points */
+  void calc_turb_visc_ppts(int in_ele, array<double>& out_turb_visc_ppts);
+
   /*! calculate diagnostic fields at the plot points */
-  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_coeff_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_coeff_ppts, array<double>& in_turb_visc_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
 
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
@@ -521,7 +524,10 @@ protected:
 
   /*! array for writing dynamic LES coeff to output */
   array<double> dynamic_coeff;
-  
+
+  /*! array for writing turbulent viscosity to output */
+  array<double> turb_visc;
+
 	/*! temporary flux storage */
 	array<double> temp_f;
 

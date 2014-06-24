@@ -65,6 +65,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   array<double> grad_disu_ppts_temp;
   array<double> diag_ppts_temp;
   array<double> dynamic_coeff_ppts_temp;
+  array<double> turb_visc_ppts_temp;
   int n_ppts_per_ele;
   int n_dims = FlowSol->n_dims;
   int n_fields;
@@ -157,6 +158,8 @@ void write_tec(int in_file_num, struct solution* FlowSol)
           disu_ppts_temp.setup(n_ppts_per_ele,n_fields);
           grad_disu_ppts_temp.setup(n_ppts_per_ele,n_fields,n_dims);
           diag_ppts_temp.setup(n_ppts_per_ele,n_diag_fields);
+          dynamic_coeff_ppts_temp.setup(n_ppts_per_ele);
+          turb_visc_ppts_temp.setup(n_ppts_per_ele);
 
           // write element specific header
           if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
@@ -201,7 +204,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
                 {
-                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,dynamic_coeff_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
+                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,dynamic_coeff_ppts_temp,turb_visc_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
                 }
 
               for(k=0;k<n_ppts_per_ele;k++)
@@ -541,6 +544,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   array<double> diag_ppts_temp;
   /*! dynamic LES coeff at plot points */
   array<double> dynamic_coeff_ppts_temp;
+  /*! turbulent viscosity at plot points */
+  array<double> turb_visc_ppts_temp;
   
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
@@ -704,6 +709,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
             diag_ppts_temp.setup(n_points,n_diag_fields);
             
             dynamic_coeff_ppts_temp.setup(n_points);
+            turb_visc_ppts_temp.setup(n_points);
           }
 
           con.setup(n_verts,n_cells);
@@ -724,11 +730,11 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 /*! Get dynamic LES coeff at plot points */
                 FlowSol->mesh_eles(i)->calc_dynamic_coeff_ppts(j,dynamic_coeff_ppts_temp);
 
-                //cout << "dynamic coeff: " << endl;
-                //dynamic_coeff_ppts_temp.print();
+                /*! Get turbulent viscosity at plot points */
+                FlowSol->mesh_eles(i)->calc_turb_visc_ppts(j,turb_visc_ppts_temp);
                 
                 /*! Calculate the diagnostic fields at the plot points */
-                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,dynamic_coeff_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
+                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,dynamic_coeff_ppts_temp,turb_visc_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
               }
 
               /*! write out solution to file */
