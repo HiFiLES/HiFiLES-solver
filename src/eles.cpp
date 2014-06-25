@@ -653,9 +653,10 @@ void eles::mv_all_cpu_gpu(void)
     disuf_upts.mv_cpu_gpu();
     sgsf_upts.mv_cpu_gpu();
     sgsf_fpts.mv_cpu_gpu();
-    grad_disuf_upts.cp_cpu_gpu();
-    dynamic_coeff.cp_cpu_gpu();
-    turb_visc.cp_cpu_gpu();
+    grad_disuf_upts.mv_cpu_gpu();
+    strainproduct.mv_cpu_gpu();
+    dynamic_coeff.mv_cpu_gpu();
+    turb_visc.mv_cpu_gpu();
     uu.mv_cpu_gpu();
     ue.mv_cpu_gpu();
     Lu.mv_cpu_gpu();
