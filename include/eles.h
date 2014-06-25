@@ -102,6 +102,9 @@ public:
   /*! calculate gradient of the filtered solution at the solution points for dynamic LES model */
   void calculate_filtered_gradient(void);
 
+  /*! calculate filtered strain product for dynamic LES model */
+  void calculate_strainproduct(int in_disu_upts_from, int n_comp, array <double>& SSmod);
+
   /*! calculate corrected gradient of the discontinuous solution at solution points */
   void correct_gradient(void);
 
@@ -330,8 +333,11 @@ public:
   /*! evaluate second derivative of nodal shape basis */
   virtual void eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)=0;
 
+  /*! Calculate dynamic coefficient */
+  void calc_dynamic_coeff(int ele, int upt, double detjac);
+
   /*! Calculate SGS flux */
-  void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf);
+  void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double detjac, int ele, int upt, array<double>& temp_sgsf);
 
   /*! rotate velocity components to surface*/
   array<double> calc_rotation_matrix(array<double>& norm);
@@ -522,6 +528,9 @@ protected:
   /*! array for writing dynamic LES coeff to output */
   array<double> dynamic_coeff;
   
+  /*! filtered strain product array for dynamic LES */
+  array<double> strainproduct;
+
 	/*! temporary flux storage */
 	array<double> temp_f;
 
