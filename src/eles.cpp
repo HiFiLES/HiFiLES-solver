@@ -722,6 +722,24 @@ void eles::cp_div_tconf_upts_gpu_cpu(void)
   }
 }
 
+// copy LES diagnostic fields at solution points to cpu
+void eles::cp_LES_diagnostics_gpu_cpu(void)
+{
+#ifdef _GPU
+  if (n_eles!=0)
+  {
+    // eddy visc models: copy viscosity ratio
+    if(sgs_model==0 || sgs_model==1 || sgs_model==2 || sgs_model==5) {
+      turb_visc.cp_gpu_cpu();
+    }
+    // dynamic model: copy dynamic coeff
+    if(sgs_model==5) {
+      dynamic_coeff.cp_gpu_cpu();
+    }
+  }
+#endif
+}
+
 // remove transformed discontinuous solution at solution points from cpu
 
 void eles::rm_disu_upts_cpu(void)
@@ -2106,7 +2124,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
         
         // If LES or wall model, calculate SGS viscous flux
         if(LES != 0 || wall_model != 0) {
-          
+
           calc_sgsf_upts(temp_u,temp_grad_u,detjac,i,j,temp_sgsf);
           
           // Add SGS or wall flux to viscous flux
@@ -2146,7 +2164,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
     
 #ifdef _GPU
     
-    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), dynamic_coeff.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), grad_disuf_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), turb_visc.get_ptr_gpu(), dynamic_coeff.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), grad_disuf_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
     
 #endif
     
@@ -2415,29 +2433,34 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       else if(sgs_model==1 || sgs_model==2) {
         
         Cs=0.5;
-        array<double> Sq(n_dims,n_dims);
-        diag = 0.0;
+        array<double> gsq(n_dims,n_dims);
+        array<double> sd(n_dims,n_dims);
         
-        // Square of gradient tensor
-        // This needs optimising!
+        // squared gradient tensor - NOT symmetric!
+        diag = 0.0;
         for (i=0;i<n_dims;i++) {
           for (j=0;j<n_dims;j++) {
-            Sq(i,j) = 0.0;
+            gsq(i,j) = 0.0;
             for (k=0;k<n_dims;++k) {
-              Sq(i,j) += (du(i,k)*du(k,j)+du(j,k)*du(k,i))/2.0;
+              gsq(i,j) += du(i,k)*du(k,j);
             }
-            diag += du(i,j)*du(j,i)/3.0;
           }
+          diag += gsq(i,i)/3.0;
         }
-        
-        // Subtract diag
-        for (i=0;i<n_dims;i++) Sq(i,i) -= diag;
-        
+
+        // construct sd tensor - NOT symmetric!
+        for (i=0;i<n_dims;i++) {
+          for (j=0;j<n_dims;j++) {
+            sd(i,j) = 0.5*(gsq(i,j)+gsq(j,i));
+          }
+          sd(i,i) -= diag;
+        }
+
         // Numerator
         num = 0.0;
         for (i=0;i<n_dims;i++) {
           for (j=0;j<n_dims;j++) {
-            num += Sq(i,j)*Sq(i,j);
+            num += sd(i,j)*sd(i,j);
           }
         }
 
@@ -2452,9 +2475,6 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         denom = pow(denom,2.5) + pow(num,1.25);
         num = pow(num,1.5);
         mu_t = rho*Cs*Cs*delta*delta*num/(denom+eps);
-        //cout << rho << ", " << delta << ", " << num << ", " << denom << ", " << mu_t << endl;
-        if(isnan(mu_t)) cout << "WARNING: nan mu_t" << rho << ", " << delta << ", " << num << ", " << denom << ", " << mu_t << endl;
-        //if(abs(mu_t) > eps) cout << "mu_t: " << mu_t << endl;
       }
       
       // Dynamic LES model (Lilly, 1991):
@@ -2605,7 +2625,6 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 
       // set turbulent viscosity field for output to Paraview
       turb_visc(upt,ele) = mu_t;
-      //if(abs(turb_visc(upt,ele)) > eps) cout << "turb_visc(upt,ele) " << turb_visc(upt,ele) << endl;
     }
     
     // Add similarity term to SGS fluxes if WSM or Similarity model

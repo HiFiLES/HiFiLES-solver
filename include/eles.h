@@ -69,6 +69,9 @@ public:
   /*! copy divergence at solution points to cpu */
   void cp_div_tconf_upts_gpu_cpu(void);
 
+	/*! copy LES diagnostics at solution points to cpu */
+	void cp_LES_diagnostics_gpu_cpu(void);
+
   /*! remove transformed discontinuous solution at solution points from cpu */
   void rm_disu_upts_cpu(void);
 

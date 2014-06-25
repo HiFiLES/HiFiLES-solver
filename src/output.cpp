@@ -732,7 +732,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
                 /*! Get turbulent viscosity at plot points */
                 FlowSol->mesh_eles(i)->calc_turb_visc_ppts(j,turb_visc_ppts_temp);
-                
+
                 /*! Calculate the diagnostic fields at the plot points */
                 FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,dynamic_coeff_ppts_temp,turb_visc_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
               }
@@ -1508,16 +1508,21 @@ void check_stability(struct solution* FlowSol)
 #ifdef _GPU
 void CopyGPUCPU(struct solution* FlowSol)
 {
-  // copy solution to cpu
-
   for(int i=0;i<FlowSol->n_ele_types;i++)
     {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
         {
+          // copy solution and gradient to cpu
           FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+
           if (FlowSol->viscous==1)
             {
               FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
+            }
+
+          if (run_input.LES==1)
+            {
+              FlowSol->mesh_eles(i)->cp_LES_diagnostics_gpu_cpu();
             }
         }
     }
