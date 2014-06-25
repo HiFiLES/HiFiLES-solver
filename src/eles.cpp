@@ -170,6 +170,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       
       sgsf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
       sgsf_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
+      turb_visc.setup(n_upts_per_ele,n_eles);
+      zero_array(turb_visc);
       
       // Some models require filtered solution
       if(sgs_model==2 || sgs_model==3 || sgs_model==4 || sgs_model==5) {
@@ -240,6 +242,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       grad_disuf_upts.setup(1);
       dynamic_coeff.setup(1);
       strainproduct.setup(1);
+      turb_visc.setup(1);
       Lu.setup(1);
       uu.setup(1);
       Le.setup(1);
@@ -652,6 +655,7 @@ void eles::mv_all_cpu_gpu(void)
     sgsf_fpts.mv_cpu_gpu();
     grad_disuf_upts.cp_cpu_gpu();
     dynamic_coeff.cp_cpu_gpu();
+    turb_visc.cp_cpu_gpu();
     uu.mv_cpu_gpu();
     ue.mv_cpu_gpu();
     Lu.mv_cpu_gpu();
@@ -2620,17 +2624,9 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
     if(eddy==1) {
       
       // Delta is the cutoff length-scale representing local grid resolution.
-      
-      // OPTION 1. Approx resolution in 1D element. Interval is [-1:1]
-      // Appropriate for quads, hexes and tris. Not sure about tets.
-      //dlt = 2.0/order;
-      
-      // OPTION 2. Deardorff definition (Deardorff, JFM 1970)
+      // Deardorff definition (Deardorff, JFM 1970)
       vol = (*this).calc_ele_vol(detjac);
       delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
-      
-      // OPTION 3. Suggested by Bardina, AIAA 1980:
-      // delta = sqrt((dx^2+dy^2+dz^2)/3)
       
       // Solution gradient
       for (i=0;i<n_dims;i++) {
@@ -2684,7 +2680,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         
         Cs=0.1;
         mu_t = rho*Cs*Cs*delta*delta*Smod;
-        
+        //if(abs(mu_t) > eps) cout << "mu_t: " << mu_t << endl;
       }
       
       //  Wall-Adapting Local Eddy-viscosity (WALE) SGS Model
@@ -2722,6 +2718,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         for (i=0;i<n_dims;i++) Sq(i,i) -= diag;
         
         // Numerator
+        num = 0.0;
         for (i=0;i<n_dims;i++) {
           for (j=0;j<n_dims;j++) {
             num += Sq(i,j)*Sq(i,j);
@@ -2729,7 +2726,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         }
 
         // Denominator
-        num = 0.0; denom = 0.0;
+        denom = 0.0;
         for (i=0;i<n_dims;i++) {
           denom += S(i)*S(i);
         }
@@ -2739,6 +2736,9 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         denom = pow(denom,2.5) + pow(num,1.25);
         num = pow(num,1.5);
         mu_t = rho*Cs*Cs*delta*delta*num/(denom+eps);
+        //cout << rho << ", " << delta << ", " << num << ", " << denom << ", " << mu_t << endl;
+        if(isnan(mu_t)) cout << "WARNING: nan mu_t" << rho << ", " << delta << ", " << num << ", " << denom << ", " << mu_t << endl;
+        //if(abs(mu_t) > eps) cout << "mu_t: " << mu_t << endl;
       }
       
       // Dynamic LES model (Lilly, 1991):
@@ -2791,6 +2791,10 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         temp_sgsf(3,1) = -2.0*mu_t*S(5);
         temp_sgsf(3,2) = -2.0*mu_t*S(2);
       }
+
+      // set turbulent viscosity field for output to Paraview
+      turb_visc(upt,ele) = mu_t;
+      //if(abs(turb_visc(upt,ele)) > eps) cout << "turb_visc(upt,ele) " << turb_visc(upt,ele) << endl;
     }
     
     // Add similarity term to SGS fluxes if WSM or Similarity model
@@ -2818,6 +2822,8 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         temp_sgsf(3,1) += temp_sgsf(2,2);
         temp_sgsf(3,2) += rho*Lu(upt,ele,2);
       }
+      // set turbulent viscosity field for output to Paraview
+      turb_visc(upt,ele) = 0.0;
     }
   }
 }
@@ -4178,8 +4184,49 @@ void eles::calc_dynamic_coeff_ppts(int in_ele, array<double>& out_coeff_ppts)
   }
 }
 
+// calculate turbulent viscosity at the plot points
+void eles::calc_turb_visc_ppts(int in_ele, array<double>& out_turb_visc_ppts)
+{
+  if (n_eles!=0)
+  {
+    
+    int i,j,k;
+    
+    array<double> turb_visc_upts_plot(n_upts_per_ele);
+    
+    for(j=0;j<n_upts_per_ele;j++)
+    {
+      turb_visc_upts_plot(j)=turb_visc(j,in_ele);
+    }
+    
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+    
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,1,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,turb_visc_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_turb_visc_ppts.get_ptr_cpu(),n_ppts_per_ele);
+    
+#elif defined _NO_BLAS
+    dgemm(n_ppts_per_ele,1,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),turb_visc_upts_plot.get_ptr_cpu(),out_turb_visc_ppts.get_ptr_cpu());
+    
+#else
+    
+    //HACK (inefficient, but useful if cblas is unavailible)
+    
+    for(i=0;i<n_ppts_per_ele;i++)
+    {
+      out_turb_visc_ppts(i) = 0.;
+      
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        out_turb_visc_ppts(i) += opp_p(i,j)*turb_visc_upts_plot(j,k);
+      }
+    }
+    
+#endif
+    
+  }
+}
+
 // calculate diagnostic fields at the plot points
-void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_coeff_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts)
+void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_coeff_ppts, array<double>& in_turb_visc_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts)
 {
   int i,j,k,m;
   double diagfield_upt;
@@ -4189,6 +4236,7 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
   double dudx, dudy, dudz;
   double dvdx, dvdy, dvdz;
   double dwdx, dwdy, dwdz;
+  double eps=1.e-12;
   
   for(j=0;j<n_ppts_per_ele;j++)
   {
@@ -4306,11 +4354,31 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
       {
         diagfield_upt = in_coeff_ppts(j);
       }
+      else if(run_input.diagnostic_fields(k)=="viscosity_ratio")
+      {
+        double inte, rt_ratio, mu, mu_t;
+        
+        // internal energy
+        inte = in_disu_ppts(j,n_fields-1)*irho - 0.5*in_disu_ppts(j,0)*v_sq;
+        
+        // viscosity - really must write a function that does this, or else store mu as an extra field
+        rt_ratio = (run_input.gamma-1.0)*inte/(run_input.rt_inf);
+        mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
+        mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
+
+        // turbulent viscosity
+        mu_t = in_turb_visc_ppts(j);
+
+        diagfield_upt = mu_t/(mu+eps);
+      }
       else
         FatalError("plot_quantity not recognized");
       
       if (isnan(diagfield_upt))
         FatalError("NaN");
+      
+      // Paraview may have problems with very small numbers
+      if (abs(diagfield_upt) < eps) diagfield_upt = 0.0;
       
       // set array with solution point value
       out_diag_field_ppts(j,k) = diagfield_upt;

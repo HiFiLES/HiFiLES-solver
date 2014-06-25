@@ -619,12 +619,12 @@ void eles_quads::compute_filter_upts(void)
             }
         }
     }
-  else if(run_input.filter_type==2) // Modal coefficient filter
+  else if(run_input.filter_type==2 || run_input.filter_type==3 || run_input.filter_type==4) // Modal filter (3 choices of kernel)
     {
       if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute modal filter
-      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_type);
 
       sum = 0;
       for(i=0;i<N;i++)
@@ -644,6 +644,31 @@ void eles_quads::compute_filter_upts(void)
             }
         }
     }
+
+  cout<<"filter_upts:"<<endl;
+  filter_upts_1D.print();
+  
+  // Output filter and beta to file
+  ofstream coeff_file;
+  coeff_file.open("filter_upts.dat");
+  for(i=0;i<N;++i) {
+    for(j=0;j<N;++j) {
+      coeff_file << setprecision(12) << filter_upts_1D(i,j) << " ";
+    }
+    coeff_file << endl;
+  }
+  
+  coeff_file.close();
+
+  coeff_file.open("beta_upts.dat");
+  for(i=0;i<N;++i) {
+    for(j=0;j<N;++j) {
+      coeff_file << setprecision(12) << abs(beta(j,i)) << " ";
+    }
+    coeff_file << endl;
+  }
+  
+  coeff_file.close();
 
   // Build 2D filter on ideal (reference) element.
   int ii=0;
