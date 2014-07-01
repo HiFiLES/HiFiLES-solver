@@ -3,7 +3,7 @@
 \section{Numerical Methods}
 \label{sec:numerics}
 
-In this section the main numerical techniques implemented in HiFiLES will be described. We will emphasize the critical role of the selected numerical discretization (Flux Reconstruction Method), and it capability to solve CFD problems using unstructured meshes. 
+In this section the main numerical techniques implemented in HiFiLES will be described. We will emphasize the critical role of the selected numerical discretization (Flux Reconstruction Method), and its capability to solve CFD problems using unstructured meshes. 
 
 \subsection{Flux Reconstruction Method}
 
@@ -45,7 +45,7 @@ where
 J_n = \frac{\partial x}{\partial \xi} \bigg|_{\Omega_n}
 \end{equation}
 
-Now, we introduce polynomials of degree $p$, $\hat{u}^\delta$ and $\hat{f}^\delta$, to approximate the exact values $\hat{u},\hat{f}$, respectively. We can write these polynomials as
+Now, we introduce polynomials of degree $p$, $\hat{u}^\delta$ and $\hat{f}^\delta$, to approximate the exact values $\hat{u}$ and $\hat{f}$, respectively. We can write these polynomials as
 \begin{equation}
 \hat{u}^\delta = \sum_{i=1}^{N_s} \hat{u}_i^\delta l_i(\xi)
 \end{equation}
@@ -79,7 +79,7 @@ and let
 \hat{u}^C = \hat{u}^\delta + (\hat{u}^{\delta I}_L - \hat{u}^\delta_L) g_L + (\hat{u}^{\delta I}_R 
 - \hat{u}^\delta_R) g_R
 \end{equation}
-where superscript $C$ denotes the function is corrected, and $\hat{u}^\delta_L$, $\hat{u}^\delta_R$ 
+where superscript $C$ denotes the function has been made continuous (or has been corrected), and $\hat{u}^\delta_L$, $\hat{u}^\delta_R$ 
 represent the solution approximation evaluated at the left and right boundaries.
 
 Using the values of $\hat{u}^\delta_i$ and $\frac{\partial \hat{u}^C}{\partial \xi}|_{\xi_i}$ we then find 
@@ -94,12 +94,12 @@ conditions as $g_R$ and $g_L$, respectively, and $\hat{f}_L^{\delta I}$ and $\ha
 
 The solution can then be advanced at each solution point. In semi-discrete form, this is
 \begin{equation}\label{eq:semidiscrete}
-\frac{d \hat{u}_i^\delta}{d t} = - \frac{\partial \hat{f}^c}{\partial \xi}(\xi_i)
+\frac{d \hat{u}_i^\delta}{d t} = - \frac{\partial \hat{f}^C}{\partial \xi}(\xi_i)
 \end{equation}
 
 The FR scheme can be made provably stable for the linear advection-diffusion equation by selecting special types of correction functions\cite{castonguay2013}. In general, these correction functions are polynomials of degree $p+1$ so both sides in Equation~\eqref{eq:semidiscrete} are quantities related to polynomials of order $p$ --for consistency\cite{huynh2007}.
 
-Vincent et al. \cite{vincent2011new} have shown that in the case of the 1-dimensional, linear advection equation, the Flux Reconstruction approach can be proven to be stable for a specific family of correction functions parameterized by a scalar called $c$. In addition, they showed that by selecting specific values of $c$ it is possible to recover a particular nodal Discontinuous Galerkin (DG) and Spectral Difference (SD) methods plus a FR scheme that was previously found to be stable by Huynh\cite{huynh2007flux}.
+Vincent et al. \cite{vincent2011new} have shown that in the case of the 1-dimensional, linear advection equation, the Flux Reconstruction approach can be proven to be stable for a specific family of correction functions parameterized by a scalar called $c$. In addition, they showed that by selecting specific values of $c$ it is possible to recover a particular nodal Discontinuous Galerkin (DG) method and Spectral Difference (SD), plus a FR scheme that was previously found to be stable by Huynh\cite{huynh2007flux}.
 
 \subsection{Extension to Multiple Dimensions}
 
@@ -124,22 +124,22 @@ One of the challenges in the FR approach is finding correction functions that no
 
 Although formal proofs of stability for the linear advection equation do not exist yet for quadrilaterals, hexahedra, and prisms, it has been observed that the tensor products of provably stable correction functions used in these elements maintain stability. In addition, as of now HiFiLES does not have an implementation for pyramidal elements, mostly because of the challenges involved in finding the respective correction functions that guarantee stability. Nevertheless, a suggested approach to find such correction functions has been presented by Jameson\cite{jameson2011advances}.
 
-In terms of time integration, HiFiLES uses an explicit Adaptive Runge-Kutta 45 (RK45) Method and local or global time stepping. Currently, a polynomial multigrid to improve the code convergence is being validated.
+With regards to time integration, HiFiLES uses an explicit Adaptive Runge-Kutta 45 (RK45) Method and local or global time stepping. In addition, a polynomial multigrid to improve code convergence is currently being validated.
 
 \subsection{Shock Capturing and Stabilization Models}
 
 We use the method of concentration described in \cite{abhishekshockcapture} for detecting shocks on meshes with quadrilateral elements. We are still in the process of extending the method of concentration to triangles and are currently using Persson and Peraire's method \cite{Persson06} \cite{Persson13} for the same. We have explored both selective addition of artificial viscosity as well as modal order reduction for capturing the detected shocks effectively. Persson and Peraire have used this shock capturing tool as a stabilization method as well in their turbulence calculations. Here we show a viscous case on quads using concentration method (reproduction of the result in \cite{abhishekshockcapture}) and an inviscid case on triangles using Persson and Peraire's method. \\
 
- Figures \ref{fig:visM1pt2-density} and \ref{fig:visM1pt2-energy} show the density and energy plots for a Mach 1.2 flow over a NACA 0012 airfoil at a 5$^{\circ}$ angle of attack. The flow is at Reynolds number of 60000 and we have used 6th order polynomial interpolation in the elements for the computation. There is a bow shock in front of the airfoil and we see fish-tail shocks at the trailing edge. We can also see boundary layer formation and a $\Lambda$-shock structure on the upper side of the airfoil. Here we have used simple modal order reduction in elements with shock sensor value above a threshold. Figure \ref{fig:sensor} shows the elemental shock sensor values. We can see the shock sensor is able to distinguish between shocks and other smooth regions enabling the structure of the vortices and boundary layer to be preserved. \\
+ Figures \ref{fig:visM1pt2-density} and \ref{fig:visM1pt2-energy} show the density and energy plots for a Mach 1.2 flow over a NACA 0012 airfoil at a 5$^{\circ}$ angle of attack. The flow is at Reynolds number of 60000 and we have used 6th order polynomial interpolation in the elements for the computation. There is a bow shock in front of the airfoil and we see fish-tail shocks at the trailing edge. We can also see boundary layer formation and a $\Lambda$-shock structure on the upper side of the airfoil. Here we have used simple modal order reduction in elements with the shock sensor value above a certain threshold. Figure \ref{fig:sensor} shows the elemental shock sensor values. We can see the shock sensor is able to distinguish between shocks and other smooth regions enabling the structure of the vortices and boundary layer to be preserved. \\
  
- Figure \ref{fig:inv_mach} shows an inviscid flow of M = 1.6 over a Naca 0012 airfoil at $0^{\circ}$ angle of attack on a triangle mesh. Here we use Persson and Peraire's method  for shock detection and Here we can see that we the shock has been detected and captured well. A few oscillations still remain near the strong bow shock in front of the airfoil even after enforcement of continuity of the artificial viscosity co-efficients. Figures ~\ref{fig:AV-ele} and ~\ref{fig:AV-cont} show the artificial viscosity being added element-wise and after continuity enforcement respectively.
+ Figure \ref{fig:inv_mach} shows an inviscid flow of M = 1.6 over a Naca 0012 airfoil at $0^{\circ}$ angle of attack on a triangle mesh. Here we use Persson and Peraire's method  for shock detection, and we can see that the shock has been detected and captured well. A few oscillations still remain near the strong bow shock in front of the airfoil even after enforcement of continuity of the artificial viscosity coefficients. Figures ~\ref{fig:AV-ele} and ~\ref{fig:AV-cont} show the artificial viscosity being added element-wise and after continuity enforcement respectively.
 
 \begin{figure}
 \centering
 \begin{minipage}[t]{.5\textwidth}
   \centering
   \includegraphics[width=.85\linewidth]{./figures/density-t1050010-jet.eps}
-  \captionof{figure}{density contours for viscous flow at M = 1.2 over a NACA 0012 airfoil at 5$^{\circ}$ AoA with polynomial order 6}
+  \captionof{figure}{Density contours for viscous flow at M = 1.2 over a NACA 0012 airfoil at 5$^{\circ}$ AoA with polynomial order 6}
   \label{fig:visM1pt2-density}
 \end{minipage}%
 \begin{minipage}[t]{.5\textwidth}
@@ -153,14 +153,14 @@ We use the method of concentration described in \cite{abhishekshockcapture} for 
 \begin{figure}[h] \tt
 \centering
 \includegraphics[angle=0, scale = 0.55]{./figures/sensor-t1050010-spectral.eps}
-\caption{Figure shows the elemental shock "sensor" for the M = 1.2 viscous case shown in figure ~\ref{fig:visM1pt2-density}. The shock sensor is just the maximum value of the enhanced kernel in each element}
+\caption{This figure shows the elemental shock ``sensor" for the M = 1.2 viscous case shown in Figure ~\ref{fig:visM1pt2-density}}
 \label{fig:sensor}
 \end{figure}
 
 \begin{figure}[h] \tt
 \centering
 \includegraphics[angle=0, scale = 0.68]{./figures/M1pt6order3-inv-720ktime-mach.jpg} \\
-\caption{Mach contours for inviscid flow over Naca0012 at M = 1.6 and AoA = $0^{\circ} $ on a triangle-mesh using Persson and Peraire's method and using artificial viscosity}
+\caption{Mach contours for inviscid flow over NACA 0012 at M = 1.6 and AoA = $0^{\circ} $ on a triangle-mesh using Persson and Peraire's method}
 \label{fig:inv_mach}
 \end{figure}
 
@@ -169,20 +169,20 @@ We use the method of concentration described in \cite{abhishekshockcapture} for 
 \begin{minipage}[t]{.55\textwidth}
   \centering
   \includegraphics[width=.85\linewidth]{./figures/M1pt6-inv-av-ele-mesh}
-  \captionof{figure}{Element-wise AV co-efficients for the inviscid M 1.6 case}
+  \captionof{figure}{Element-wise AV coefficients for the inviscid M 1.6 case}
   \label{fig:AV-ele}
 \end{minipage}%
 \begin{minipage}[t]{.55\textwidth}
   \centering
   \includegraphics[width=.85\linewidth]{./figures/M1pt6-inv-av-mesh}
-  \captionof{figure}{AV co-efficients with continuity enforcement}
+  \captionof{figure}{AV coefficients with continuity enforcement}
   \label{fig:AV-cont}
 \end{minipage}
 \end{figure} 
 
-\subsection{Spalart-Allmaras (SA) Turbulence Model and Negative $\tilde\nu$ Modification}
+\subsection{Spalart-Allmaras (SA) Turbulence Model and Negative $\tilde\nu$ Modification}\label{sec:sa_model}
 
-The one equation SA turbulence model is one of the more commonly used turbulence models used to solve attached and moderately separated aerodynamic flows \cite{spalart1992one}. The added equation directly solves for turbulent eddy viscosity via advection, diffusion, production and dissipation. A modified form of the equation can be written as \cite{burgess2012robust,oliver2008high,moro2011navier}:
+The one equation SA turbulence model is one of the more commonly used turbulence models for solving attached and moderately separated aerodynamic flows \cite{spalart1992one}. The added equation directly solves for turbulent eddy viscosity via advection, diffusion, production and dissipation. A modified form of the equation can be written as \cite{burgess2012robust,oliver2008high,moro2011navier}:
 \begin{align}
 	\frac{\partial}{\partial t}(\rho\tilde\nu) + \nabla\cdot(\rho\tilde\nu\boldsymbol{u}) = c_{b_1}\tilde S \rho\nu\psi + \frac{1}{\sigma}\left[\nabla\cdot((\mu + \mu\psi)\nabla\tilde\nu) + c_{b_2}\rho\nabla\tilde\nu\cdot\nabla\tilde\nu\right] - c_{w_1}\rho f_w \left(\frac{\nu\psi}{d}\right)^2
 \end{align}
@@ -217,7 +217,7 @@ where $\tilde\nu$ is a modified version of the kinematic eddy viscosity and $\nu
 	\qquad r = \frac{\nu\psi}{\tilde S \kappa^2 d^2}
 \end{align}
 
-where S is the magnitude of vorticity, d is the closest distance to a wall, $c_{b1} = 0.1355$, $\sigma = \frac{2}{3}$, $c_{b2} = 0.622$, $K = 0.41$, $\text{Pr}_t = 0.9$, $c_{v1} = 7.1$, $c_{v2} = 0.7$, $c_{v3} = 0.9$, $c_{w1} = \frac{c_{b1}}{K^2} + \frac{(1+c_{b2})}{\sigma}$, $c_{w2} = 0.3$, $c_{w3} = 2$.\\
+where S is the magnitude of vorticity, d is the  distance to the closest wall, $c_{b1} = 0.1355$, $\sigma = \frac{2}{3}$, $c_{b2} = 0.622$, $K = 0.41$, $\text{Pr}_t = 0.9$, $c_{v1} = 7.1$, $c_{v2} = 0.7$, $c_{v3} = 0.9$, $c_{w1} = \frac{c_{b1}}{K^2} + \frac{(1+c_{b2})}{\sigma}$, $c_{w2} = 0.3$, and $c_{w3} = 2$.\\
 
 The diffusion term, $\nabla\cdot(\rho\tilde\nu\boldsymbol{u})$, may become discontinuous in the first derivative leading to oscillations in high-order polynomials. This can lead to large negative values of the modified eddy viscosity term, $\tilde\nu$, significant enough to cause an unbounded solution. To prevent this, the following modification is introduced \cite{moro2011navier}.
 \begin{align}
