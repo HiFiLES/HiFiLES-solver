@@ -1,14 +1,26 @@
 /*!
  * \file funcs.h
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -38,6 +50,12 @@ double eval_d_legendre(double in_r, int in_mode);
 
 /*! evaluate derivative of vcjh basis */
 double eval_d_vcjh_1d(double in_r, int in_mode, int in_order, double in_eta);
+
+/*! evaluate derivative of OESFR basis */
+double eval_d_oesfr_1d(double in_r, int in_mode, int in_order);
+
+/*! evaluate derivative of Optimized Flux Reconstruction (OFR) basis */
+double eval_d_ofr_1d(double in_r, int in_mode, int in_order);
 
 void get_opp_3_tri(array<double>& opp_3, array<double>& loc_upts_tri, array<double>& loc_fpts_tri, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_per_tri, int order, double c_tri, int vcjh_scheme_tri);
 

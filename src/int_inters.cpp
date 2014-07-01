@@ -1,14 +1,26 @@
 /*!
  * \file int_inters.cpp
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <iostream>
@@ -59,7 +71,7 @@ void int_inters::setup(int in_n_inters,int in_inter_type)
       disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
       norm_tconf_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
       detjac_fpts_r.setup(n_fpts_per_inter,n_inters);
-      mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.setup(n_fpts_per_inter,n_inters);
+      tdA_fpts_r.setup(n_fpts_per_inter,n_inters);
 
       delta_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
 
@@ -115,8 +127,8 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
         {
           i_rhs=lut(i);
 
-          mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
-          mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(i,in_inter)=get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+          tdA_fpts_l(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
+          tdA_fpts_r(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
 
           for(j=0;j<n_dims;j++)
             {
@@ -133,12 +145,12 @@ void int_inters::mv_all_cpu_gpu(void)
 
   disu_fpts_l.mv_cpu_gpu();
   norm_tconf_fpts_l.mv_cpu_gpu();
-  mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.mv_cpu_gpu();
+  tdA_fpts_l.mv_cpu_gpu();
   norm_fpts.mv_cpu_gpu();
 
   disu_fpts_r.mv_cpu_gpu();
   norm_tconf_fpts_r.mv_cpu_gpu();
-  mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.mv_cpu_gpu();
+  tdA_fpts_r.mv_cpu_gpu();
 
   //detjac_fpts_r.mv_cpu_gpu();
   //detjac_fpts_l.mv_cpu_gpu();
@@ -217,8 +229,8 @@ void int_inters::calculate_common_invFlux(void)
 
           // Transform back to reference space
           for(int k=0;k<n_fields;k++) {
-              (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
-              (*norm_tconf_fpts_r(j,i,k))=-fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(j,i));
+              (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*tdA_fpts_l(j,i));
+              (*norm_tconf_fpts_r(j,i,k))=-fn(k)*(*tdA_fpts_r(j,i));
             }
 
           if(viscous)
@@ -242,7 +254,7 @@ void int_inters::calculate_common_invFlux(void)
 #ifdef _GPU
   if (n_inters!=0)
     {
-      calculate_common_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),delta_disu_fpts_r.get_ptr_gpu(),run_input.gamma,run_input.pen_fact,viscous,run_input.vis_riemann_solve_type,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda);
+      calculate_common_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),tdA_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),delta_disu_fpts_r.get_ptr_gpu(),run_input.gamma,run_input.pen_fact,viscous,run_input.vis_riemann_solve_type,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda);
     }
 
 #endif
@@ -327,8 +339,8 @@ void int_inters::calculate_common_viscFlux(void)
 
           // Transform back to reference space
           for(int k=0;k<n_fields;k++) {
-              (*norm_tconf_fpts_l(j,i,k))+=  fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_l(j,i));
-              (*norm_tconf_fpts_r(j,i,k))+= -fn(k)*(*mag_tnorm_dot_inv_detjac_mul_jac_fpts_r(j,i));
+              (*norm_tconf_fpts_l(j,i,k))+=  fn(k)*(*tdA_fpts_l(j,i));
+              (*norm_tconf_fpts_r(j,i,k))+= -fn(k)*(*tdA_fpts_r(j,i));
             }
 
         }
@@ -338,7 +350,7 @@ void int_inters::calculate_common_viscFlux(void)
 
 #ifdef _GPU
   if (n_inters!=0)
-    calculate_common_viscFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_l.get_ptr_gpu(),mag_tnorm_dot_inv_detjac_mul_jac_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),sgsf_fpts_r.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff,LES);
+    calculate_common_viscFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),tdA_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),sgsf_fpts_r.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff,LES);
 #endif
 }
 

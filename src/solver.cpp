@@ -1,14 +1,26 @@
 /*!
  * \file solver.cpp
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <iostream>
@@ -220,9 +232,9 @@ double* get_detjac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter,
 
 // get pointer to magntiude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at a flux point
 
-double* get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol)
+double* get_tdA_fpts_ptr(int in_ele_type, int in_ele, int in_ele_local_inter, int in_inter_local_fpt, struct solution* FlowSol)
 {
-  return FlowSol->mesh_eles(in_ele_type)->get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(in_inter_local_fpt,in_ele_local_inter,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_tdA_fpts_ptr(in_inter_local_fpt,in_ele_local_inter,in_ele);
 }
 
 // get pointer to the normal at a flux point
@@ -321,19 +333,14 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
   restart_file.precision(15);
 
   // Open the restart files and read info
-  cout << "rank=" << FlowSol->rank << " reading restart info" << endl;
 
   for (int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          //cout << "Ele_type=" << i << "Reading restart file ";
-
           for (int j=0;j<in_n_files;j++)
             {
-              cout << j << " ";
               sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,j);
               file_name = &file_name_s[0];
-              cout<<"restart file name: "<<file_name_s<<endl;
               restart_file.open(file_name);
               if (!restart_file)
                 FatalError("Could not open restart file ");
@@ -346,10 +353,8 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
               if (info_found)
                 break;
             }
-          cout << endl;
         }
     }
-  cout << "Rank=" << FlowSol->rank << " Done reading restart info" << endl;
 
   // Now open all the restart files one by one and store data belonging to you
 
@@ -370,10 +375,8 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
 
             }
         }
-
       restart_file.close();
     }
-  cout << "Rank=" << FlowSol->rank << " Done reading restart data" << endl;
-
-
+  cout << "Rank=" << FlowSol->rank << " Done reading restart files" << endl;
 }
+

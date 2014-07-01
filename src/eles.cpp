@@ -1,14 +1,26 @@
 /*!
  * \file eles.cpp
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <iostream>
@@ -552,6 +564,18 @@ void eles::read_restart_data(ifstream& restart_file)
         getline(restart_file,str);
     }
   }
+  
+  // If required, calculate element reference lengths
+  if (run_input.dt_type != 0)
+  {
+    // Allocate array
+    h_ref.setup(n_eles);
+    h_ref.initialize_to_zero();
+    
+    // Call element specific function to obtain length
+    for (int i=0; i<n_eles; i++)
+      h_ref(i) = (*this).calc_h_ref_specific(i);
+  }
 }
 
 
@@ -917,15 +941,18 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 
 double eles::calc_dt_local(int in_ele)
 {
-  double lam, lam_new;
+  double lam_inv, lam_inv_new;
+  double lam_visc, lam_visc_new;
   double out_dt_local;
+  double dt_inv, dt_visc;
   
   // 2-D Elements
   if (n_dims == 2)
   {
     double u,v,p,c;
     
-    lam = 0;
+    lam_inv = 0;
+    lam_visc = 0;
     
     // Calculate maximum internal wavespeed per element
     for (int i=0; i<n_upts_per_ele; i++)
@@ -935,16 +962,27 @@ double eles::calc_dt_local(int in_ele)
       p = (run_input.gamma - 1.0) * (disu_upts(0)(i,in_ele,3) - 0.5*disu_upts(0)(i,in_ele,0)*(u*u+v*v));
       c = sqrt(run_input.gamma * p/disu_upts(0)(i,in_ele,0));
       
-      lam_new = sqrt(u*u + v*v) + c;
+      lam_inv_new = sqrt(u*u + v*v) + c;
+      lam_visc_new = 4.0/3.0*run_input.mu_inf/disu_upts(0)(i,in_ele,0);
       
-      if (lam < lam_new)
-        lam = lam_new;
+      if (lam_inv < lam_inv_new)
+        lam_inv = lam_inv_new;
+
+      if (lam_visc < lam_visc_new)
+        lam_visc = lam_visc_new;
     }
-    
+
     if (viscous)
-      out_dt_local = run_input.CFL*h_ref(in_ele)/(run_input.order*run_input.order*(lam + run_input.order*run_input.order*run_input.mu_inf/h_ref(in_ele)));
+    {
+      dt_visc = (run_input.CFL * 0.25 * h_ref(in_ele) * h_ref(in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
+      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
+    }
     else
-      out_dt_local = run_input.CFL*h_ref(in_ele)/lam*1.0/(2.0*run_input.order + 1.0);
+    {
+      dt_visc = 1e16;
+      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv * 1.0/(2.0*run_input.order + 1.0);
+    }
+      out_dt_local = min(dt_visc,dt_inv);
   }
   
   else if (n_dims == 3)
@@ -1070,7 +1108,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
             tdisf_upts(j,i,k,l)=0.;
             for(m=0;m<n_dims;m++)
             {
-              tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_f(k,m);
+              tdisf_upts(j,i,k,l)+=JGinv_upts(j,i,l,m)*temp_f(k,m);
             }
           }
         }
@@ -1080,7 +1118,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 #endif
     
 #ifdef _GPU
-    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
+    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
     
     
     //tdisinvf_upts.cp_gpu_cpu();
@@ -1497,10 +1535,10 @@ void eles::correct_gradient(void)
         detjac = detjac_upts(j,i);
         inv_detjac = 1.0/detjac;
         
-        rx = inv_detjac_mul_jac_upts(j,i,0,0);
-        ry = inv_detjac_mul_jac_upts(j,i,0,1);
-        sx = inv_detjac_mul_jac_upts(j,i,1,0);
-        sy = inv_detjac_mul_jac_upts(j,i,1,1);
+        rx = JGinv_upts(j,i,0,0);
+        ry = JGinv_upts(j,i,0,1);
+        sx = JGinv_upts(j,i,1,0);
+        sy = JGinv_upts(j,i,1,1);
         
         //physical gradient
         if(n_dims==2)
@@ -1516,12 +1554,12 @@ void eles::correct_gradient(void)
         }
         if (n_dims==3)
         {
-          rz = inv_detjac_mul_jac_upts(j,i,0,2);
-          sz = inv_detjac_mul_jac_upts(j,i,1,2);
+          rz = JGinv_upts(j,i,0,2);
+          sz = JGinv_upts(j,i,1,2);
           
-          tx = inv_detjac_mul_jac_upts(j,i,2,0);
-          ty = inv_detjac_mul_jac_upts(j,i,2,1);
-          tz = inv_detjac_mul_jac_upts(j,i,2,2);
+          tx = JGinv_upts(j,i,2,0);
+          ty = JGinv_upts(j,i,2,1);
+          tz = JGinv_upts(j,i,2,2);
           
           for (int k=0;k<n_fields;k++)
           {
@@ -1556,7 +1594,7 @@ void eles::correct_gradient(void)
       }
     }
     
-    transform_grad_disu_upts_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),inv_detjac_mul_jac_upts.get_ptr_gpu(),run_input.equation);
+    transform_grad_disu_upts_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),run_input.equation);
     
 #endif
     
@@ -2002,7 +2040,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
             for(l=0;l<n_dims;l++) {
               sgsf_upts(j,i,k,l) = 0.0;
               for(m=0;m<n_dims;m++) {
-                sgsf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_sgsf(k,m);
+                sgsf_upts(j,i,k,l)+=JGinv_upts(j,i,l,m)*temp_sgsf(k,m);
               }
             }
           }
@@ -2015,7 +2053,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           {
             for(m=0;m<n_dims;m++)
             {
-              tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*temp_f(k,m);
+              tdisf_upts(j,i,k,l)+=JGinv_upts(j,i,l,m)*temp_f(k,m);
             }
           }
         }
@@ -2025,7 +2063,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
     
 #ifdef _GPU
     
-    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), inv_detjac_mul_jac_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
     
 #endif
     
@@ -3863,8 +3901,10 @@ void eles::set_transforms()
     double yrr, yss, ytt, yrs, yrt, yst;
     double zrr, zss, ztt, zrs, zrt, zst;
     
+    // Determinant of Jacobian (transformation matrix) (J = |G|)
     detjac_upts.setup(n_upts_per_ele,n_eles);
-    inv_detjac_mul_jac_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
+    // Determinant of Jacobian times inverse of Jacobian (Full vector transform from physcial->reference frame)
+    JGinv_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
     
     if (viscous) {
       tgrad_detjac_upts.setup(n_upts_per_ele,n_eles,n_dims);
@@ -3914,10 +3954,10 @@ void eles::set_transforms()
           }
           
           // store inverse of determinant of jacobian multiplied by jacobian at the solution point
-          inv_detjac_mul_jac_upts(j,i,0,0)= ys;
-          inv_detjac_mul_jac_upts(j,i,0,1)= -xs;
-          inv_detjac_mul_jac_upts(j,i,1,0)= -yr;
-          inv_detjac_mul_jac_upts(j,i,1,1)= xr;
+          JGinv_upts(j,i,0,0)= ys;
+          JGinv_upts(j,i,0,1)= -xs;
+          JGinv_upts(j,i,1,0)= -yr;
+          JGinv_upts(j,i,1,1)= xr;
           
           // gradient of detjac at solution point
           if(viscous)
@@ -3955,15 +3995,15 @@ void eles::set_transforms()
           
           //cout << "jac=" << detjac_upts(j,i) << endl;
           
-          inv_detjac_mul_jac_upts(j,i,0,0) = ys*zt - yt*zs;
-          inv_detjac_mul_jac_upts(j,i,0,1) = xt*zs - xs*zt;
-          inv_detjac_mul_jac_upts(j,i,0,2) = xs*yt - xt*ys;
-          inv_detjac_mul_jac_upts(j,i,1,0) = yt*zr - yr*zt;
-          inv_detjac_mul_jac_upts(j,i,1,1) = xr*zt - xt*zr;
-          inv_detjac_mul_jac_upts(j,i,1,2) = xt*yr - xr*yt;
-          inv_detjac_mul_jac_upts(j,i,2,0) = yr*zs - ys*zr;
-          inv_detjac_mul_jac_upts(j,i,2,1) = xs*zr - xr*zs;
-          inv_detjac_mul_jac_upts(j,i,2,2) = xr*ys - xs*yr;
+          JGinv_upts(j,i,0,0) = ys*zt - yt*zs;
+          JGinv_upts(j,i,0,1) = xt*zs - xs*zt;
+          JGinv_upts(j,i,0,2) = xs*yt - xt*ys;
+          JGinv_upts(j,i,1,0) = yt*zr - yr*zt;
+          JGinv_upts(j,i,1,1) = xr*zt - xt*zr;
+          JGinv_upts(j,i,1,2) = xt*yr - xr*yt;
+          JGinv_upts(j,i,2,0) = yr*zs - ys*zr;
+          JGinv_upts(j,i,2,1) = xs*zr - xr*zs;
+          JGinv_upts(j,i,2,2) = xr*ys - xs*yr;
           
           // store inverse of determinant of jacobian multiplied by jacobian at the solution point
           
@@ -4009,7 +4049,7 @@ void eles::set_transforms()
     
 #ifdef _GPU
     detjac_upts.cp_cpu_gpu(); // Copy since need in write_tec
-    inv_detjac_mul_jac_upts.mv_cpu_gpu();
+    JGinv_upts.mv_cpu_gpu();
     /*
      if (viscous) {
      tgrad_detjac_upts.mv_cpu_gpu();
@@ -4018,9 +4058,11 @@ void eles::set_transforms()
 #endif
     
     // Compute metrics term at flux points
+    /// Determinant of Jacobian (transformation matrix)
     detjac_fpts.setup(n_fpts_per_ele,n_eles);
-    inv_detjac_mul_jac_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
-    mag_tnorm_dot_inv_detjac_mul_jac_fpts.setup(n_fpts_per_ele,n_eles);
+    /// Determinant of Jacobian times inverse of Jacobian (Full vector transform from physcial->reference frame)
+    JGinv_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
+    tdA_fpts.setup(n_fpts_per_ele,n_eles);
     norm_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
     loc_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
     
@@ -4083,10 +4125,10 @@ void eles::set_transforms()
           
           // store inverse of determinant of jacobian multiplied by jacobian at the flux point
           
-          inv_detjac_mul_jac_fpts(j,i,0,0)= ys;
-          inv_detjac_mul_jac_fpts(j,i,0,1)= -xs;
-          inv_detjac_mul_jac_fpts(j,i,1,0)= -yr;
-          inv_detjac_mul_jac_fpts(j,i,1,1)= xr;
+          JGinv_fpts(j,i,0,0)= ys;
+          JGinv_fpts(j,i,0,1)= -xs;
+          JGinv_fpts(j,i,1,0)= -yr;
+          JGinv_fpts(j,i,1,1)= xr;
           
           // gradient of detjac at the flux point
           
@@ -4111,14 +4153,14 @@ void eles::set_transforms()
           
           // store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
           
-          mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
+          tdA_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
                                                           tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
           
           
           // store normal at flux point
           
-          norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
-          norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
+          norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/tdA_fpts(j,i);
+          norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/tdA_fpts(j,i);
         }
         else if(n_dims==3)
         {
@@ -4140,15 +4182,15 @@ void eles::set_transforms()
           
           // store inverse of determinant of jacobian multiplied by jacobian at the flux point
           
-          inv_detjac_mul_jac_fpts(j,i,0,0) = ys*zt - yt*zs;
-          inv_detjac_mul_jac_fpts(j,i,0,1) = xt*zs - xs*zt;
-          inv_detjac_mul_jac_fpts(j,i,0,2) = xs*yt - xt*ys;
-          inv_detjac_mul_jac_fpts(j,i,1,0) = yt*zr - yr*zt;
-          inv_detjac_mul_jac_fpts(j,i,1,1) = xr*zt - xt*zr;
-          inv_detjac_mul_jac_fpts(j,i,1,2) = xt*yr - xr*yt;
-          inv_detjac_mul_jac_fpts(j,i,2,0) = yr*zs - ys*zr;
-          inv_detjac_mul_jac_fpts(j,i,2,1) = xs*zr - xr*zs;
-          inv_detjac_mul_jac_fpts(j,i,2,2) = xr*ys - xs*yr;
+          JGinv_fpts(j,i,0,0) = ys*zt - yt*zs;
+          JGinv_fpts(j,i,0,1) = xt*zs - xs*zt;
+          JGinv_fpts(j,i,0,2) = xs*yt - xt*ys;
+          JGinv_fpts(j,i,1,0) = yt*zr - yr*zt;
+          JGinv_fpts(j,i,1,1) = xr*zt - xt*zr;
+          JGinv_fpts(j,i,1,2) = xt*yr - xr*yt;
+          JGinv_fpts(j,i,2,0) = yr*zs - ys*zr;
+          JGinv_fpts(j,i,2,1) = xs*zr - xr*zs;
+          JGinv_fpts(j,i,2,2) = xr*ys - xs*yr;
           
           // gradient of detjac at the flux point
           
@@ -4191,15 +4233,15 @@ void eles::set_transforms()
           
           // store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
           
-          mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
+          tdA_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
                                                           tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
                                                           tnorm_dot_inv_detjac_mul_jac(2)*tnorm_dot_inv_detjac_mul_jac(2));
           
           // store normal at flux point
           
-          norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
-          norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
-          norm_fpts(j,i,2)=tnorm_dot_inv_detjac_mul_jac(2)/mag_tnorm_dot_inv_detjac_mul_jac_fpts(j,i);
+          norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/tdA_fpts(j,i);
+          norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/tdA_fpts(j,i);
+          norm_fpts(j,i,2)=tnorm_dot_inv_detjac_mul_jac(2)/tdA_fpts(j,i);
         }
         else
         {
@@ -4209,12 +4251,12 @@ void eles::set_transforms()
     }
     
 #ifdef _GPU
-    mag_tnorm_dot_inv_detjac_mul_jac_fpts.mv_cpu_gpu();
+    tdA_fpts.mv_cpu_gpu();
     norm_fpts.mv_cpu_gpu();
     loc_fpts.cp_cpu_gpu();
     
     /*
-     inv_detjac_mul_jac_fpts.mv_cpu_gpu();
+     JGinv_fpts.mv_cpu_gpu();
      detjac_fpts.mv_cpu_gpu();
      if (viscous)
      {
@@ -4504,7 +4546,7 @@ double* eles::get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter
 
 // get a pointer to the magnitude of normal dot inverse of (determinant of jacobian multiplied by jacobian) at flux points
 
-double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
+double* eles::get_tdA_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
 {
   int i;
   
@@ -4518,9 +4560,9 @@ double* eles::get_mag_tnorm_dot_inv_detjac_mul_jac_fpts_ptr(int in_inter_local_f
   }
   
 #ifdef _GPU
-  return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_gpu(fpt,in_ele);
+  return tdA_fpts.get_ptr_gpu(fpt,in_ele);
 #else
-  return mag_tnorm_dot_inv_detjac_mul_jac_fpts.get_ptr_cpu(fpt,in_ele);
+  return tdA_fpts.get_ptr_cpu(fpt,in_ele);
 #endif
 }
 
@@ -5132,7 +5174,7 @@ void eles::evaluate_bodyForce(array <double>& body_force)
         for(k=0;k<n_fields;k++)
           for(l=0;l<n_dims;l++)
             for(m=0;m<n_dims;m++)
-              tdisf_upts(j,i,k,l)+=inv_detjac_mul_jac_upts(j,i,l,m)*body_force(k);
+              tdisf_upts(j,i,k,l)+=JGinv_upts(j,i,l,m)*body_force(k);
   }
 }
 
