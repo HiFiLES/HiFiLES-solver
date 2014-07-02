@@ -117,6 +117,7 @@ void mesh::setup(int &in_n_dims,int &in_n_eles,int &in_n_verts, int &in_n_cells_
 void mesh::move(int _iter, int in_rk_step, solution *FlowSol) {
   iter = _iter;
   rk_step = in_rk_step;
+  time = FlowSol->time;
 
   if (run_input.motion == 1) {
     deform(FlowSol);
@@ -289,7 +290,6 @@ void mesh::set_min_length(void)
 
 void mesh::set_grid_velocity(solution* FlowSol, double dt)
 {
-  time = iter*dt;
   // calculate velocity using backward difference formula
   for (int i=0; i<n_verts; i++) {
     for (int j=0; j<n_dims; j++) {
@@ -298,8 +298,8 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
       vel_new(i,j) /= run_input.dt;
     }
     /// Analytic solution for perturb test-case
-    //vel_new(i,0) = 4*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*time/100); // from Kui
-    //vel_new(i,1) = 6*pi/100*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(4*pi*time/100);
+//    vel_new(i,0) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*time/10); // from Kui
+//    vel_new(i,1) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*time/10);
   }
 
   // Apply velocity to the eles classes at the shape points
@@ -1250,7 +1250,7 @@ void mesh::update(solution* FlowSol)
   //if (FlowSol->rank==0) cout << "Deform: updating element transforms ... " << endl;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->set_transforms_dynamic();
+      FlowSol->mesh_eles(i)->set_transforms_dynamic(rk_step);
     }
   }
 
@@ -1597,7 +1597,6 @@ void mesh::set_boundary_displacements(solution *FlowSol)
 }
 
 void mesh::rigid_move(solution* FlowSol) {
-  time = iter*run_input.dt;
 
 //  if(start) {
 //    for (int i=0; i<n_verts; i++) {
@@ -1609,8 +1608,14 @@ void mesh::rigid_move(solution* FlowSol) {
 //    start = false;
 //  }
 
-  for (int i=4; i>0; i--) {
-    xv(i) = xv(i-1);
+  if (rk_step==0) {
+    for (int i=4; i>0; i--) {
+      for (int j=0; j<xv(i).get_dim(0); j++) {
+        for (int k=0; k<n_dims; k++) {
+          xv(i)(j,k) = xv(i-1)(j,k);
+        }
+      }
+    }
   }
 
   for (int i=0; i<n_verts; i++) {
@@ -1628,16 +1633,21 @@ void mesh::rigid_move(solution* FlowSol) {
 }
 
 void mesh::perturb(solution* FlowSol) {
-  time = iter*run_input.dt;
 
-  for (int i=4; i>0; i--) {
-    xv(i) = xv(i-1);
+  if (rk_step==0) {
+    for (int i=4; i>0; i--) {
+      for (int j=0; j<xv(i).get_dim(0); j++) {
+        for (int k=0; k<n_dims; k++) {
+          xv(i)(j,k) = xv(i-1)(j,k);
+        }
+      }
+    }
   }
 
   for (int i=0; i<n_verts; i++) {
     /// Taken from Kui, AIAA-2010-5031-661
-    xv(0)(i,0) = xv_0(i,0) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*time/100);
-    xv(0)(i,1) = xv_0(i,1) + 1.5*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(4*pi*time/100);
+    xv(0)(i,0) = xv_0(i,0) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*time/10);
+    xv(0)(i,1) = xv_0(i,1) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*time/10);
   }
 
   update(FlowSol);

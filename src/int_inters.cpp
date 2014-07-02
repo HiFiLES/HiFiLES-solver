@@ -142,6 +142,7 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
       for (k=0; k<n_dims; k++) {
         norm_dyn_fpts(j,in_inter,k)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
         grid_vel_fpts(k,j,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+        loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
       }
     }
   }
@@ -207,6 +208,7 @@ void int_inters::calculate_common_invFlux(void)
 
   //viscous
   array<double> u_c(n_fields);
+  array<double> pos_fpt(n_dims);
 
   for(int i=0;i<n_inters;i++)
     {
@@ -228,12 +230,13 @@ void int_inters::calculate_common_invFlux(void)
             // Get mesh velocity
             for (int k=0; k<n_dims; k++) {
               temp_v(k)=(*grid_vel_fpts(k,j,i));
+              pos_fpt(k) = *loc_fpts(j,i,k);
             }
           }else{
             temp_v.initialize_to_zero();
           }
 
-          // storing normal components
+          // Interface unit normal vector
           if (motion) {
             for (int m=0;m<n_dims;m++)
               norm(m) = *norm_dyn_fpts(j,i,m);
@@ -317,6 +320,8 @@ void int_inters::calculate_common_invFlux(void)
             }
           }
 
+          /* debugging; comparing values to Kui's SD2D */
+          //cout << setprecision(2) << i << "," << j << ": " << pos_fpt(0) << ", " << pos_fpt(1) << ": " << fn(0) << ", " << setprecision(10) << (*ndA_dyn_fpts_l(j,i)) << endl;//(*norm_tconf_fpts_l(j,i,0)) << endl;
         }
     }
 #endif

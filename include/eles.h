@@ -523,7 +523,7 @@ public:
 //  void calc_gcl_res(void);
 
   /*! Set the transformation variables for dynamic-physical -> static-physical frames */
-  void set_transforms_dynamic(void);
+  void set_transforms_dynamic(int in_rkstep);
 
   /*! Update the dynamic transformation variables with the GCL-corrected Jacobian determinant */
   void correct_dynamic_transforms(void);

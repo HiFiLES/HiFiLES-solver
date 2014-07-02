@@ -375,6 +375,10 @@ void bdy_inters::evaluate_boundaryConditions_GCL_flux(void) {
         fn -= (*grid_vel_fpts(k,j,i))*(*norm_dyn_fpts(j,i,k))*temp_u_GCL_l;
       }
 
+      cout << *norm_tconf_fpts_l(j,i) << endl;
+      cout << *ndA_dyn_fpts_l(j,i) << endl;
+      cout << *tdA_fpts_l(j,i) << endl;
+
       /* Transform back to computational space */
       *norm_tconf_GCL_fpts_l(j,i) = fn*(*ndA_dyn_fpts_l(j,i))*(*tdA_fpts_l(j,i));
     }

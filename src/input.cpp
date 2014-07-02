@@ -33,6 +33,7 @@ input::input()
 {	
   // Set default values for non-mandatory options
   motion = 0;
+  GCL = 0;
   n_deform_iters = 1;
 }
 
@@ -317,6 +318,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
       else if (!param_name.compare("motion_flag"))
       {
         in_run_input_file >> motion;
+      }
+      else if (!param_name.compare("GCL_flag"))
+      {
+        in_run_input_file >> GCL;
       }
       else if (!param_name.compare("moving_boundaries"))
       {

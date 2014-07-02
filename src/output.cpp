@@ -607,7 +607,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
   /*! Master node writes the .pvtu file */
   if (my_rank == 0) {
-      cout << "Writing Paraview dump number " << dumpnum << " ...." << endl;
+      cout << "Writing Paraview dump number " << dumpnum << " ....";
 
       write_pvtu.open(pvtu);
       write_pvtu << "<?xml version=\"1.0\" ?>" << endl;
@@ -648,7 +648,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 #else
 
   /*! In serial, don't write a .pvtu file. */
-  cout << "Writing Paraview dump number " << dumpnum << " ...." << endl;
+  cout << "Writing Paraview dump number " << dumpnum << " ....";
 
 #endif
 
@@ -888,6 +888,14 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
   /*! Close the .vtu file */
   write_vtu.close();
+
+#ifdef _MPI
+  if (my_rank==0) {
+#endif
+    cout << "  Complete!" << endl;
+#ifdef _MPI
+  }
+#endif
 }
 
 void write_restart(int in_file_num, struct solution* FlowSol)

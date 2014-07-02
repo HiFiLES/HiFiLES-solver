@@ -412,7 +412,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
       // Set physical -> reference transforms
       FlowSol->mesh_eles(i)->set_transforms();
       if (run_input.motion)
-        FlowSol->mesh_eles(i)->set_transforms_dynamic();
+        FlowSol->mesh_eles(i)->set_transforms_dynamic(0);
     }
   }
 

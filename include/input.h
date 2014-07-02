@@ -102,6 +102,7 @@ public:
 
   // Mesh deformation options ----
   int n_moving_bnds, motion;
+  int GCL;
   int n_deform_iters;
   int mesh_output_freq;
   int mesh_output_format;
