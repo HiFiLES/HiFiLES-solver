@@ -43,6 +43,10 @@ using namespace std;
 
 input::input()
 {
+  // Set default values for optional parameters
+  motion = 0;
+  GCL = 0;
+  n_deform_iters = 1;
 }
 
 input::~input()
@@ -328,6 +332,39 @@ void input::setup(ifstream& in_run_input_file, int rank)
     else if (!param_name.compare("mesh_file"))
     {
       in_run_input_file >> mesh_file;
+    }
+    else if (!param_name.compare("motion_flag"))
+    {
+      in_run_input_file >> motion;
+    }
+    else if (!param_name.compare("GCL_flag"))
+    {
+      in_run_input_file >> GCL;
+    }
+    else if (!param_name.compare("moving_boundaries"))
+    {
+      in_run_input_file >> n_moving_bnds;
+      boundary_flags.setup(n_moving_bnds);
+      for (int i=0; i<n_moving_bnds; i++)
+        in_run_input_file >> boundary_flags(i);
+    }
+    else if (!param_name.compare("n_deform_iters"))
+    {
+      in_run_input_file >> n_deform_iters;
+    }
+    else if (!param_name.compare("simple_bound_velocity"))
+    {
+      bound_vel_simple.setup(3);
+      for (int i=0; i<3; i++)
+        in_run_input_file >> bound_vel_simple(i);
+    }
+    else if (!param_name.compare("mesh_output_freq"))
+    {
+      in_run_input_file >> mesh_output_freq;
+    }
+    else if (!param_name.compare("mesh_output_format"))
+    {
+      in_run_input_file >> mesh_output_format;
     }
     else if (!param_name.compare("upts_type_tri"))
     {

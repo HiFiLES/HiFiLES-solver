@@ -56,6 +56,7 @@ bdy_inters::bdy_inters()
   viscous=run_input.viscous;
   LES=run_input.LES;
   wall_model = run_input.wall_model;
+  motion=run_input.motion;
 }
 
 bdy_inters::~bdy_inters() { }
@@ -144,9 +145,21 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
         {
           tdA_fpts_l(j,in_inter)=get_tdA_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
 
+          if (motion) {
+            ndA_dyn_fpts_l(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+            J_dyn_fpts_l(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+            //if (run_input.GCL)
+              //disu_GCL_fpts_l(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+          }
+
           for(int k=0;k<n_dims;k++)
             {
               norm_fpts(j,in_inter,k)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+
+              if (motion) {
+                norm_dyn_fpts(j,in_inter,k)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+                grid_vel_fpts(k,j,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+              }
 
 #ifdef _CPU
               loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
@@ -226,34 +239,60 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 
 
   for(int i=0;i<n_inters;i++)
+  {
+    for(int j=0;j<n_fpts_per_inter;j++)
     {
-      for(int j=0;j<n_fpts_per_inter;j++)
-        {
 
-          /*! storing normal components and flux points location */
+      /*! storing normal components and flux points location */
+        if (motion) {
+          for (int m=0;m<n_dims;m++)
+            norm(m) = *norm_dyn_fpts(j,i,m);
+        }else{
           for (int m=0;m<n_dims;m++)
             norm(m) = *norm_fpts(j,i,m);
+        }
 
-          /*! calculate discontinuous solution at flux points */
-          for(int k=0;k<n_fields;k++)
-            temp_u_l(k)=(*disu_fpts_l(j,i,k));
+        /*! calculate discontinuous solution at flux points */
+        for(int k=0;k<n_fields;k++)
+          temp_u_l(k)=(*disu_fpts_l(j,i,k));
 
-          for (int m=0;m<n_dims;m++)
-            temp_loc(m) = *loc_fpts(j,i,m);
+        for (int m=0;m<n_dims;m++)
+          temp_loc(m) = *loc_fpts(j,i,m);
 
-          set_inv_boundary_conditions(boundary_type(i),temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
+        if (motion) {
+          // Transform solution to dynamic space
+          for (int k=0; k<n_fields; k++) {
+            temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
+          }
+          // Get dynamic grid velocity
+          for(int k=0; k<n_dims; k++) {
+            temp_v(k)=(*grid_vel_fpts(k,j,i));
+          }
+        }else{
+          temp_v.initialize_to_zero();
+        }
 
-          /*! calculate flux from discontinuous solution at flux points */
-          if(n_dims==2) {
-              calc_invf_2d(temp_u_l,temp_f_l);
-              calc_invf_2d(temp_u_r,temp_f_r);
-            }
-          else if(n_dims==3) {
-              calc_invf_3d(temp_u_l,temp_f_l);
-              calc_invf_3d(temp_u_r,temp_f_r);
-            }
-          else
-            FatalError("ERROR: Invalid number of dimensions ... ");
+        set_inv_boundary_conditions(boundary_type(i),temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),temp_v.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
+
+        /*! calculate flux from discontinuous solution at flux points */
+        if(n_dims==2) {
+          calc_invf_2d(temp_u_l,temp_f_l);
+          calc_invf_2d(temp_u_r,temp_f_r);
+          if(motion) {
+            calc_alef_2d(temp_u_l,temp_v,temp_f_l);
+            calc_alef_2d(temp_u_r,temp_v,temp_f_r);
+          }
+        }
+        else if(n_dims==3) {
+          calc_invf_3d(temp_u_l,temp_f_l);
+          calc_invf_3d(temp_u_r,temp_f_r);
+          if(motion) {
+            calc_alef_3d(temp_u_l,temp_v,temp_f_l);
+            calc_alef_3d(temp_u_r,temp_v,temp_f_r);
+          }
+        }
+        else
+          FatalError("ERROR: Invalid number of dimensions ... ");
 
 
           if (boundary_type(i)==16) // Dual consistent BC
@@ -271,15 +310,24 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
                   lax_friedrich(temp_u_l,temp_u_r,norm,fn,n_dims,n_fields,run_input.lambda,run_input.wave_speed);
                 }
               else if (run_input.riemann_solve_type==2) { // ROE
-                  roe_flux(temp_u_l,temp_u_r,norm,fn,n_dims,n_fields,run_input.gamma);
+                  roe_flux(temp_u_l,temp_u_r,temp_v,norm,fn,n_dims,n_fields,run_input.gamma);
                 }
               else
                 FatalError("Riemann solver not implemented");
             }
 
           /*! Transform back to reference space */
-          for(int k=0;k<n_fields;k++)
-            (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*tdA_fpts_l(j,i));
+          if (motion) {
+            for(int k=0;k<n_fields;k++) {
+              (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*ndA_dyn_fpts_l(j,i))*(*tdA_fpts_l(j,i));
+            }
+          }
+          else
+          {
+            for(int k=0;k<n_fields;k++) {
+              (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*tdA_fpts_l(j,i));
+            }
+          }
 
           if(viscous)
             {
@@ -297,9 +345,18 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
               else
                 FatalError("Viscous Riemann solver not implemented");
 
-              for(int k=0;k<n_fields;k++){
-                *delta_disu_fpts_l(j,i,k) = (u_c(k) - (*disu_fpts_l(j,i,k)));
+              if (motion) {
+                // Transform back to static-physical domain
+                for(int k=0;k<n_fields;k++){
+                  *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k))*(*J_dyn_fpts_l(j,i));
                 }
+              }
+              else
+              {
+                for(int k=0;k<n_fields;k++){
+                  *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k));
+                }
+              }
             }
 
         }
@@ -313,7 +370,7 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 #endif
 }
 
-void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* u_r, double *norm, double *loc, double *bdy_params, int n_dims, int n_fields, double gamma, double R_ref, double time_bound, int equation)
+void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* u_r, double* v_g, double *norm, double *loc, double *bdy_params, int n_dims, int n_fields, double gamma, double R_ref, double time_bound, int equation)
 {
   double rho_l, rho_r;
   double v_l[n_dims], v_r[n_dims];
@@ -549,7 +606,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           // Compute normal velocity on left side
           vn_l = 0.;
           for (int i=0; i<n_dims; i++)
-            vn_l += v_l[i]*norm[i];
+            vn_l += (v_l[i]-v_g[i])*norm[i];
 
           // reflect normal velocity
           for (int i=0; i<n_dims; i++)
@@ -574,12 +631,14 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // no-slip
           for (int i=0; i<n_dims; i++)
-            v_r[i] = 0.;
+            v_r[i] = v_g[i];
 
           // energy
           v_sq = 0.;
+          for (int i=0; i<n_dims; i++)
+            v_sq += (v_r[i]*v_r[i]);
 
-          e_r = (p_r/(gamma-1.0));// + 0.5*rho_r*v_sq;
+          e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
         }
 
       // Adiabatic, no-slip wall (fixed)
@@ -593,13 +652,14 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // no-slip
           for (int i=0; i<n_dims; i++)
-            v_r[i] = 0.;
+            v_r[i] = v_g[i];
 
           // energy
           v_sq = 0.;
+          for (int i=0; i<n_dims; i++)
+            v_sq += (v_r[i]*v_r[i]);
 
-          e_r = (p_r/(gamma-1.0));// + 0.5*rho_r*v_sq;
-
+          e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
         }
 
       // Isothermal, no-slip wall (moving)
@@ -616,7 +676,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // no-slip
           for (int i=0; i<n_dims; i++)
-            v_r[i] = v_wall[i];
+            v_r[i] = v_wall[i] + v_g[i];
 
           // energy
           v_sq = 0.;
@@ -637,7 +697,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // no-slip
           for (int i=0; i<n_dims; i++)
-            v_r[i] = v_wall[i];
+            v_r[i] = v_wall[i] + v_g[i];
 
           // energy
           v_sq = 0.;
@@ -770,32 +830,44 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
   array<double> norm(n_dims), fn(n_fields);
 
   for(int i=0;i<n_inters;i++)
+  {
+    /*! boundary specification */
+    bdy_spec = boundary_type(i);
+
+    if(bdy_spec == 12 || bdy_spec == 14)
+      flux_spec = 2;
+    else
+      flux_spec = 1;
+
+    for(int j=0;j<n_fpts_per_inter;j++)
     {
-      /*! boundary specification */
-      bdy_spec = boundary_type(i);
+      if (motion) {
+        /*! obtain discontinuous solution at flux points (transform to dynamic physical domain) */
+        for(int k=0;k<n_fields;k++)
+          temp_u_l(k)=(*disu_fpts_l(j,i,k))/(*J_dyn_fpts_l(j,i));
 
-      if(bdy_spec == 12 || bdy_spec == 14)
-        flux_spec = 2;
+        /*! Get grid velocity, normal components and flux points location */
+        for (int m=0;m<n_dims;m++) {
+          norm(m) = *norm_dyn_fpts(j,i,m);
+          temp_loc(m) = *pos_dyn_fpts(j,i,m);
+          temp_v(m)=(*grid_vel_fpts(m,j,i));
+        }
+      }
       else
-        flux_spec = 1;
+      {
+        /*! obtain discontinuous solution at flux points */
+        for(int k=0;k<n_fields;k++)
+          temp_u_l(k)=(*disu_fpts_l(j,i,k));
 
-      for(int j=0;j<n_fpts_per_inter;j++)
-        {
-          /*! storing normal components and flux points location */
-          for (int m=0;m<n_dims;m++)
-            {
-              norm(m) = *norm_fpts(j,i,m);
-              temp_loc(m) = *loc_fpts(j,i,m);
-            }
+        /*! Get normal components and flux points location */
+        for (int m=0;m<n_dims;m++) {
+          norm(m) = *norm_fpts(j,i,m);
+          temp_loc(m) = *loc_fpts(j,i,m);
+        }
+        temp_v.initialize_to_zero();
+      }
 
-          /*! obtain discontinuous solution at flux points */
-          for(int k=0;k<n_fields;k++)
-            temp_u_l(k)=(*disu_fpts_l(j,i,k));
-
-          for (int m=0;m<n_dims;m++)
-
-
-            set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
+      set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),temp_v.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 
           /*! obtain gradient of discontinuous solution at flux points */
           for(int k=0;k<n_dims;k++)
@@ -876,8 +948,15 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
             FatalError("Viscous Riemann solver not implemented");
 
           /*! Transform back to reference space. */
-          for(int k=0;k<n_fields;k++)
-            (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*tdA_fpts_l(j,i));
+          if (motion) {
+            for(int k=0;k<n_fields;k++)
+              (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*tdA_fpts_l(j,i))*(*ndA_dyn_fpts_l(j,i));
+          }
+          else
+          {
+            for(int k=0;k<n_fields;k++)
+              (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*tdA_fpts_l(j,i));
+          }
         }
     }
 

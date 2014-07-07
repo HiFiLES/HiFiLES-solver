@@ -394,11 +394,13 @@ Build Configuration Summary:
     Version:              ${VERSION}
     Compiler:             ${CXX}
     Preprocessor flags:   ${CPPFLAGS}
-    Compiler flags:       ${CXXFLAGS}
-    Linker flags:         ${LDFLAGS}
+    Compiler flags:       ${CXXFLAGS} ${BLAS_CXX} ${PARMETIS_CXX}
+    Linker flags:         ${LDFLAGS} ${BLAS_LD} ${PARMETIS_LD}
     BLAS support:         $have_BLAS
     MPI support:          $have_MPI
     CUDA support:         $have_CUDA
     TecIO support:        $have_Tecio
+
+    Additionally, don't forget to set the environment variable HIFILES_HOME
 
 ])

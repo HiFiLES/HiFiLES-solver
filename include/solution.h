@@ -62,6 +62,7 @@ struct solution {
   int num_verts;
   int num_edges;
   int num_inters;
+  int num_cells_global;
   
   int n_steps;
   int adv_type;

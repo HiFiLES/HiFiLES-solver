@@ -32,15 +32,16 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = i686-pc-linux-gnu
-host_triplet = i686-pc-linux-gnu
+build_triplet = x86_64-unknown-linux-gnu
+host_triplet = x86_64-unknown-linux-gnu
 subdir = lib/parmetis-4.0.2/metis
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/metis.m4 $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_tls.m4 \
+	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/metis.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -146,16 +147,16 @@ DIST_SOURCES = $(libmetis_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/jcrabill/new_hifiles/HiFiLES-solver/missing --run aclocal-1.11
+ACLOCAL = ${SHELL} /home/jcrabill/feature_Mesh/HiFiLES/missing --run aclocal-1.11
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 0
 AR = ar
-AUTOCONF = ${SHELL} /home/jcrabill/new_hifiles/HiFiLES-solver/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/jcrabill/new_hifiles/HiFiLES-solver/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/jcrabill/new_hifiles/HiFiLES-solver/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/jcrabill/feature_Mesh/HiFiLES/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/jcrabill/feature_Mesh/HiFiLES/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/jcrabill/feature_Mesh/HiFiLES/missing --run automake-1.11
 AWK = gawk
-BLAS_CXX = -D_NO_BLAS
-BLAS_LD = 
+BLAS_CXX = -I /usr/local/atlas/include -D_STANDARD_BLAS
+BLAS_LD = /usr/local/atlas/lib/libcblas.a /usr/local/atlas/lib/libatlas.a
 BLAS_LDFLAGS = 
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -170,7 +171,7 @@ CXXCPP = mpicxx -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS =  -D_MPI
 CYGPATH_W = echo
-DEFS = -DPACKAGE_NAME=\"HiFiLES\" -DPACKAGE_TARNAME=\"HiFiLES\" -DPACKAGE_VERSION=\"0.1\" -DPACKAGE_STRING=\"HiFiLES\ 0.1\" -DPACKAGE_BUGREPORT=\"HiFiLES-dev@lists.stanford.edu\" -DPACKAGE_URL=\"http://hifiles.stanford.edu\" -DPACKAGE=\"HiFiLES\" -DVERSION=\"0.1\" -DHAVE_METIS=1 -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\"
+DEFS = -DPACKAGE_NAME=\"HiFiLES\" -DPACKAGE_TARNAME=\"HiFiLES\" -DPACKAGE_VERSION=\"0.1\" -DPACKAGE_STRING=\"HiFiLES\ 0.1\" -DPACKAGE_BUGREPORT=\"HiFiLES-dev@lists.stanford.edu\" -DPACKAGE_URL=\"http://hifiles.stanford.edu\" -DPACKAGE=\"HiFiLES\" -DVERSION=\"0.1\" -DHAVE_METIS=1 -DTLS=__thread -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\"
 DEPDIR = .deps
 DLLTOOL = false
 DSYMUTIL = 
@@ -188,7 +189,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
-LD = /usr/bin/ld
+LD = /usr/bin/ld -m elf_x86_64
 LDFLAGS = 
 LIBOBJS = 
 LIBS = 
@@ -196,12 +197,12 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/jcrabill/new_hifiles/HiFiLES-solver/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/jcrabill/feature_Mesh/HiFiLES/missing --run makeinfo
 MANIFEST_TOOL = :
 METIS_INCLUDE = -DMETIS_5 -I$(top_srcdir)/lib/parmetis-4.0.2/include -I$(top_srcdir)/lib/parmetis-4.0.2/metis/include
 METIS_LIB = $(top_builddir)/lib/parmetis-4.0.2/libparmetis.a $(top_builddir)/lib/parmetis-4.0.2/metis/libmetis.a
 MKDIR_P = /bin/mkdir -p
-MPI_INCLUDE = /usr/include/mpich2
+MPI_INCLUDE = /opt/mpich2/gnu/include
 NM = /usr/bin/nm -B
 NMEDIT = 
 NVCC = 
@@ -223,15 +224,15 @@ PATH_SEPARATOR = :
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
-SHELL = /bin/bash
+SHELL = /bin/sh
 STRIP = strip
 TECIO_CXX = -DNO_TECIO
 TECIO_LD = 
 VERSION = 0.1
-abs_builddir = /home/jcrabill/new_hifiles/HiFiLES-solver/lib/parmetis-4.0.2/metis
-abs_srcdir = /home/jcrabill/new_hifiles/HiFiLES-solver/lib/parmetis-4.0.2/metis
-abs_top_builddir = /home/jcrabill/new_hifiles/HiFiLES-solver
-abs_top_srcdir = /home/jcrabill/new_hifiles/HiFiLES-solver
+abs_builddir = /home/jcrabill/feature_Mesh/HiFiLES/lib/parmetis-4.0.2/metis
+abs_srcdir = /home/jcrabill/feature_Mesh/HiFiLES/lib/parmetis-4.0.2/metis
+abs_top_builddir = /home/jcrabill/feature_Mesh/HiFiLES
+abs_top_srcdir = /home/jcrabill/feature_Mesh/HiFiLES
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = 
@@ -242,11 +243,11 @@ am__quote =
 am__tar = $${TAR-tar} chof - "$$tardir"
 am__untar = $${TAR-tar} xf -
 bindir = ${exec_prefix}/bin
-build = i686-pc-linux-gnu
+build = x86_64-unknown-linux-gnu
 build_alias = 
-build_cpu = i686
+build_cpu = x86_64
 build_os = linux-gnu
-build_vendor = pc
+build_vendor = unknown
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
@@ -255,15 +256,15 @@ dvidir = ${docdir}
 exec_prefix = ${prefix}
 hifiles_externals_INCLUDES = -DMETIS_5 -I$(top_srcdir)/lib/parmetis-4.0.2/include -I$(top_srcdir)/lib/parmetis-4.0.2/metis/include 
 hifiles_externals_LIBS = $(top_builddir)/lib/parmetis-4.0.2/libparmetis.a $(top_builddir)/lib/parmetis-4.0.2/metis/libmetis.a 
-host = i686-pc-linux-gnu
+host = x86_64-unknown-linux-gnu
 host_alias = 
-host_cpu = i686
+host_cpu = x86_64
 host_os = linux-gnu
-host_vendor = pc
+host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/jcrabill/new_hifiles/HiFiLES-solver/install-sh
+install_sh = ${SHELL} /home/jcrabill/feature_Mesh/HiFiLES/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -282,10 +283,10 @@ sysconfdir = ${prefix}/etc
 target_alias = 
 top_build_prefix = ../../../
 top_builddir = ../../..
-top_dir = /home/jcrabill/new_hifiles/HiFiLES-solver
+top_dir = /home/jcrabill/feature_Mesh/HiFiLES
 top_srcdir = ../../..
 pkg_cppflags = -D_FILE_OFFSET_BITS=64 -DNDEBUG -DNDEBUG2 -DHAVE_EXECINFO_H -DHAVE_GETLINE -I$(srcdir)/libmetis \
-	-I$(srcdir)/GKlib -I$(srcdir)/include -I/usr/include/mpich2 \
+	-I$(srcdir)/GKlib -I$(srcdir)/include -I/opt/mpich2/gnu/include \
 	-I$(srcdir)/GKlib -I$(srcdir)/libmetis
 pkg_sources = \
 	include/metis.h \

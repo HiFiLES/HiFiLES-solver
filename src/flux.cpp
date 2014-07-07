@@ -345,3 +345,48 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
     }
 }
 
+
+/*! Add additional ALE flux term due to mesh motion (2D) */
+void calc_alef_2d(array<double>& in_u, array<double>& in_v, array<double>& out_f)
+{
+  if (run_input.equation==0) // Euler / N-S
+  {
+    for (int i=0; i<4; i++) {
+      for (int j=0; j<2; j++) {
+        out_f(i,j) -= in_u(i)*in_v(j);
+      }
+    }
+  }
+  else if (run_input.equation==1) // Advection-diffusion
+  {
+    out_f(0,0) -= in_v(0)*in_u(0);
+    out_f(0,1) -= in_v(1)*in_u(0);
+  }
+  else
+  {
+    FatalError("equation not recognized");
+  }
+}
+
+/*! Add additional ALE flux term due to mesh motion (3D) */
+void calc_alef_3d(array<double>& in_u, array<double>& in_v, array<double>& out_f)
+{
+  if (run_input.equation==0) // Euler / N-S
+  {
+    for (int i=0; i<5; i++) {
+      for (int j=0; j<3; j++) {
+        out_f(i,j) -= in_u(i)*in_v(j);
+      }
+    }
+  }
+  else if (run_input.equation==1) // Advection-diffusion
+  {
+    out_f(0,0) -= in_v(0)*in_u(0);
+    out_f(0,1) -= in_v(1)*in_u(0);
+    out_f(0,2) -= in_v(2)*in_u(0);
+  }
+  else
+  {
+    FatalError("equation not recognized");
+  }
+}

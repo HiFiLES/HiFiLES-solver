@@ -84,6 +84,10 @@ am____bin_HiFiLES_OBJECTS = ../src/___bin_HiFiLES-global.$(OBJEXT) \
 	../src/___bin_HiFiLES-output.$(OBJEXT) \
 	../src/___bin_HiFiLES-geometry.$(OBJEXT) \
 	../src/___bin_HiFiLES-solver.$(OBJEXT) \
+	../src/___bin_HiFiLES-mesh.$(OBJEXT) \
+	../src/___bin_HiFiLES-matrix_structure.$(OBJEXT) \
+	../src/___bin_HiFiLES-vector_structure.$(OBJEXT) \
+	../src/___bin_HiFiLES-linear_solvers_structure.$(OBJEXT) \
 	../src/___bin_HiFiLES-HiFiLES.$(OBJEXT)
 ___bin_HiFiLES_OBJECTS = $(am____bin_HiFiLES_OBJECTS)
 ___bin_HiFiLES_DEPENDENCIES = $(am__append_1)
@@ -347,6 +351,10 @@ ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/output.cpp \
                   ../src/geometry.cpp \
                   ../src/solver.cpp \
+		  ../src/mesh.cpp \
+		  ../src/matrix_structure.cpp \
+		  ../src/vector_structure.cpp \
+		  ../src/linear_solvers_structure.cpp \
                   ../src/HiFiLES.cpp
 
 all: all-am
@@ -487,6 +495,14 @@ clean-binPROGRAMS:
 	../src/$(DEPDIR)/$(am__dirstamp)
 ../src/___bin_HiFiLES-solver.$(OBJEXT): ../src/$(am__dirstamp) \
 	../src/$(DEPDIR)/$(am__dirstamp)
+../src/___bin_HiFiLES-mesh.$(OBJEXT): ../src/$(am__dirstamp) \
+	../src/$(DEPDIR)/$(am__dirstamp)
+../src/___bin_HiFiLES-matrix_structure.$(OBJEXT):  \
+	../src/$(am__dirstamp) ../src/$(DEPDIR)/$(am__dirstamp)
+../src/___bin_HiFiLES-vector_structure.$(OBJEXT):  \
+	../src/$(am__dirstamp) ../src/$(DEPDIR)/$(am__dirstamp)
+../src/___bin_HiFiLES-linear_solvers_structure.$(OBJEXT):  \
+	../src/$(am__dirstamp) ../src/$(DEPDIR)/$(am__dirstamp)
 ../src/___bin_HiFiLES-HiFiLES.$(OBJEXT): ../src/$(am__dirstamp) \
 	../src/$(DEPDIR)/$(am__dirstamp)
 ../bin/$(am__dirstamp):
@@ -518,9 +534,13 @@ mostlyclean-compile:
 	-rm -f ../src/___bin_HiFiLES-input.$(OBJEXT)
 	-rm -f ../src/___bin_HiFiLES-int_inters.$(OBJEXT)
 	-rm -f ../src/___bin_HiFiLES-inters.$(OBJEXT)
+	-rm -f ../src/___bin_HiFiLES-linear_solvers_structure.$(OBJEXT)
+	-rm -f ../src/___bin_HiFiLES-matrix_structure.$(OBJEXT)
+	-rm -f ../src/___bin_HiFiLES-mesh.$(OBJEXT)
 	-rm -f ../src/___bin_HiFiLES-mpi_inters.$(OBJEXT)
 	-rm -f ../src/___bin_HiFiLES-output.$(OBJEXT)
 	-rm -f ../src/___bin_HiFiLES-solver.$(OBJEXT)
+	-rm -f ../src/___bin_HiFiLES-vector_structure.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -545,9 +565,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/___bin_HiFiLES-input.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/___bin_HiFiLES-int_inters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/___bin_HiFiLES-inters.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/___bin_HiFiLES-linear_solvers_structure.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/___bin_HiFiLES-matrix_structure.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/___bin_HiFiLES-mesh.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/___bin_HiFiLES-mpi_inters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/___bin_HiFiLES-output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/___bin_HiFiLES-solver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/___bin_HiFiLES-vector_structure.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -880,6 +904,62 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/solver.cpp' object='../src/___bin_HiFiLES-solver.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -c -o ../src/___bin_HiFiLES-solver.obj `if test -f '../src/solver.cpp'; then $(CYGPATH_W) '../src/solver.cpp'; else $(CYGPATH_W) '$(srcdir)/../src/solver.cpp'; fi`
+
+../src/___bin_HiFiLES-mesh.o: ../src/mesh.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -MT ../src/___bin_HiFiLES-mesh.o -MD -MP -MF ../src/$(DEPDIR)/___bin_HiFiLES-mesh.Tpo -c -o ../src/___bin_HiFiLES-mesh.o `test -f '../src/mesh.cpp' || echo '$(srcdir)/'`../src/mesh.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../src/$(DEPDIR)/___bin_HiFiLES-mesh.Tpo ../src/$(DEPDIR)/___bin_HiFiLES-mesh.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/mesh.cpp' object='../src/___bin_HiFiLES-mesh.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -c -o ../src/___bin_HiFiLES-mesh.o `test -f '../src/mesh.cpp' || echo '$(srcdir)/'`../src/mesh.cpp
+
+../src/___bin_HiFiLES-mesh.obj: ../src/mesh.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -MT ../src/___bin_HiFiLES-mesh.obj -MD -MP -MF ../src/$(DEPDIR)/___bin_HiFiLES-mesh.Tpo -c -o ../src/___bin_HiFiLES-mesh.obj `if test -f '../src/mesh.cpp'; then $(CYGPATH_W) '../src/mesh.cpp'; else $(CYGPATH_W) '$(srcdir)/../src/mesh.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../src/$(DEPDIR)/___bin_HiFiLES-mesh.Tpo ../src/$(DEPDIR)/___bin_HiFiLES-mesh.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/mesh.cpp' object='../src/___bin_HiFiLES-mesh.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -c -o ../src/___bin_HiFiLES-mesh.obj `if test -f '../src/mesh.cpp'; then $(CYGPATH_W) '../src/mesh.cpp'; else $(CYGPATH_W) '$(srcdir)/../src/mesh.cpp'; fi`
+
+../src/___bin_HiFiLES-matrix_structure.o: ../src/matrix_structure.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -MT ../src/___bin_HiFiLES-matrix_structure.o -MD -MP -MF ../src/$(DEPDIR)/___bin_HiFiLES-matrix_structure.Tpo -c -o ../src/___bin_HiFiLES-matrix_structure.o `test -f '../src/matrix_structure.cpp' || echo '$(srcdir)/'`../src/matrix_structure.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../src/$(DEPDIR)/___bin_HiFiLES-matrix_structure.Tpo ../src/$(DEPDIR)/___bin_HiFiLES-matrix_structure.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/matrix_structure.cpp' object='../src/___bin_HiFiLES-matrix_structure.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -c -o ../src/___bin_HiFiLES-matrix_structure.o `test -f '../src/matrix_structure.cpp' || echo '$(srcdir)/'`../src/matrix_structure.cpp
+
+../src/___bin_HiFiLES-matrix_structure.obj: ../src/matrix_structure.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -MT ../src/___bin_HiFiLES-matrix_structure.obj -MD -MP -MF ../src/$(DEPDIR)/___bin_HiFiLES-matrix_structure.Tpo -c -o ../src/___bin_HiFiLES-matrix_structure.obj `if test -f '../src/matrix_structure.cpp'; then $(CYGPATH_W) '../src/matrix_structure.cpp'; else $(CYGPATH_W) '$(srcdir)/../src/matrix_structure.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../src/$(DEPDIR)/___bin_HiFiLES-matrix_structure.Tpo ../src/$(DEPDIR)/___bin_HiFiLES-matrix_structure.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/matrix_structure.cpp' object='../src/___bin_HiFiLES-matrix_structure.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -c -o ../src/___bin_HiFiLES-matrix_structure.obj `if test -f '../src/matrix_structure.cpp'; then $(CYGPATH_W) '../src/matrix_structure.cpp'; else $(CYGPATH_W) '$(srcdir)/../src/matrix_structure.cpp'; fi`
+
+../src/___bin_HiFiLES-vector_structure.o: ../src/vector_structure.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -MT ../src/___bin_HiFiLES-vector_structure.o -MD -MP -MF ../src/$(DEPDIR)/___bin_HiFiLES-vector_structure.Tpo -c -o ../src/___bin_HiFiLES-vector_structure.o `test -f '../src/vector_structure.cpp' || echo '$(srcdir)/'`../src/vector_structure.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../src/$(DEPDIR)/___bin_HiFiLES-vector_structure.Tpo ../src/$(DEPDIR)/___bin_HiFiLES-vector_structure.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/vector_structure.cpp' object='../src/___bin_HiFiLES-vector_structure.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -c -o ../src/___bin_HiFiLES-vector_structure.o `test -f '../src/vector_structure.cpp' || echo '$(srcdir)/'`../src/vector_structure.cpp
+
+../src/___bin_HiFiLES-vector_structure.obj: ../src/vector_structure.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -MT ../src/___bin_HiFiLES-vector_structure.obj -MD -MP -MF ../src/$(DEPDIR)/___bin_HiFiLES-vector_structure.Tpo -c -o ../src/___bin_HiFiLES-vector_structure.obj `if test -f '../src/vector_structure.cpp'; then $(CYGPATH_W) '../src/vector_structure.cpp'; else $(CYGPATH_W) '$(srcdir)/../src/vector_structure.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../src/$(DEPDIR)/___bin_HiFiLES-vector_structure.Tpo ../src/$(DEPDIR)/___bin_HiFiLES-vector_structure.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/vector_structure.cpp' object='../src/___bin_HiFiLES-vector_structure.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -c -o ../src/___bin_HiFiLES-vector_structure.obj `if test -f '../src/vector_structure.cpp'; then $(CYGPATH_W) '../src/vector_structure.cpp'; else $(CYGPATH_W) '$(srcdir)/../src/vector_structure.cpp'; fi`
+
+../src/___bin_HiFiLES-linear_solvers_structure.o: ../src/linear_solvers_structure.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -MT ../src/___bin_HiFiLES-linear_solvers_structure.o -MD -MP -MF ../src/$(DEPDIR)/___bin_HiFiLES-linear_solvers_structure.Tpo -c -o ../src/___bin_HiFiLES-linear_solvers_structure.o `test -f '../src/linear_solvers_structure.cpp' || echo '$(srcdir)/'`../src/linear_solvers_structure.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../src/$(DEPDIR)/___bin_HiFiLES-linear_solvers_structure.Tpo ../src/$(DEPDIR)/___bin_HiFiLES-linear_solvers_structure.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/linear_solvers_structure.cpp' object='../src/___bin_HiFiLES-linear_solvers_structure.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -c -o ../src/___bin_HiFiLES-linear_solvers_structure.o `test -f '../src/linear_solvers_structure.cpp' || echo '$(srcdir)/'`../src/linear_solvers_structure.cpp
+
+../src/___bin_HiFiLES-linear_solvers_structure.obj: ../src/linear_solvers_structure.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -MT ../src/___bin_HiFiLES-linear_solvers_structure.obj -MD -MP -MF ../src/$(DEPDIR)/___bin_HiFiLES-linear_solvers_structure.Tpo -c -o ../src/___bin_HiFiLES-linear_solvers_structure.obj `if test -f '../src/linear_solvers_structure.cpp'; then $(CYGPATH_W) '../src/linear_solvers_structure.cpp'; else $(CYGPATH_W) '$(srcdir)/../src/linear_solvers_structure.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../src/$(DEPDIR)/___bin_HiFiLES-linear_solvers_structure.Tpo ../src/$(DEPDIR)/___bin_HiFiLES-linear_solvers_structure.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/linear_solvers_structure.cpp' object='../src/___bin_HiFiLES-linear_solvers_structure.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -c -o ../src/___bin_HiFiLES-linear_solvers_structure.obj `if test -f '../src/linear_solvers_structure.cpp'; then $(CYGPATH_W) '../src/linear_solvers_structure.cpp'; else $(CYGPATH_W) '$(srcdir)/../src/linear_solvers_structure.cpp'; fi`
 
 ../src/___bin_HiFiLES-HiFiLES.o: ../src/HiFiLES.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(___bin_HiFiLES_CXXFLAGS) $(CXXFLAGS) -MT ../src/___bin_HiFiLES-HiFiLES.o -MD -MP -MF ../src/$(DEPDIR)/___bin_HiFiLES-HiFiLES.Tpo -c -o ../src/___bin_HiFiLES-HiFiLES.o `test -f '../src/HiFiLES.cpp' || echo '$(srcdir)/'`../src/HiFiLES.cpp

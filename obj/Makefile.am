@@ -79,6 +79,10 @@ ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/output.cpp \
                   ../src/geometry.cpp \
                   ../src/solver.cpp \
+		  ../src/mesh.cpp \
+		  ../src/matrix_structure.cpp \
+		  ../src/vector_structure.cpp \
+		  ../src/linear_solvers_structure.cpp \
                   ../src/HiFiLES.cpp
 
 ___bin_HiFiLES_CXXFLAGS +=@CXXFLAGS@

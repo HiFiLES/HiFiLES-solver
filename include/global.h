@@ -33,6 +33,19 @@ extern input run_input;
 /*! double 'pi' has global scope */
 extern double pi;
 
+/** enumeration for cell type */
+enum CTYPE {
+    TRI     = 0,
+    QUAD    = 1,
+    TET     = 2,
+    PRISM   = 3,
+    HEX     = 4,
+    PYRAMID = 5
+};
+
+/** enumeration for mesh motion type */
+enum {MOTION_DISABLED, MOTION_ENABLED};
+
 /*! environment variable specifying location of HiFiLES repository */
 extern const char* HIFILES_DIR;
 
