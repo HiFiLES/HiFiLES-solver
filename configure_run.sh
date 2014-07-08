@@ -28,8 +28,8 @@ export HIFILES_HOME=$(pwd)
 # ---------------------------------------------------------------
 # Basic User-Modifiable Build Settings [Change these as desired]
 NODE="CPU"              # CPU or GPU
-CODE="DEBUG"            # DEBUG or RELEASE
-BLAS="NO"               # ATLAS, STANDARD, ACCLERATE, or NO
+CODE="RELEASE"            # DEBUG or RELEASE
+BLAS="ATLAS"               # ATLAS, STANDARD, ACCLERATE, or NO
 PARALLEL="YES"           # YES or NO
 TECIO="NO"              # YES or NO
 METIS="YES"              # Build & link to the HiFiLES-supplied ParMETIS libraries? YES or NO
@@ -97,4 +97,5 @@ fi
             --with-Metis-include=$METIS_INCLUDE \
             --with-Tecio-lib=$TECIO_LIB \
             --with-Tecio-include=$TECIO_INCLUDE \
-            --enable-metis=$METIS
+            --enable-metis=$METIS \
+            --enable-release=$CODE

@@ -780,6 +780,7 @@ with_BLAS
 with_BLAS_lib
 with_BLAS_include
 with_CXX
+enable_release
 enable_metis
 with_metis_cppflags
 enable_dependency_tracking
@@ -1426,6 +1427,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-silent-rules          less verbose build output (undo: `make V=1')
   --disable-silent-rules         verbose build output (undo: `make V=0')
+  --enable-release=ARG    Optional: Specify whether to compile for DEBUG
+                          (default) or RELEASE
   --enable-metis          build with Metis graph partitioning suppport
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
@@ -2977,6 +2980,23 @@ else
   with_CXX="GCC"
 fi
 
+
+@%:@ Check whether --enable-release was given.
+if test "${enable_release+set}" = set; then :
+  enableval=$enable_release; code_type=$enableval
+else
+  code_type="DEBUG"
+fi
+
+
+# -------------------------------------------------------------
+# Specify whether to build debug or release version of the code
+# -------------------------------------------------------------
+if test "$code_type" == "RELEASE" ; then
+  CXXFLAGS="-O3"
+else
+  CXXFLAGS="-g -O2"
+fi
 
 # --------------------------------------------------------------
 # Build up contributed packages that we will build from source
@@ -4549,10 +4569,38 @@ fi
 have_MPI="NO"
 if test "$with_MPI" != "NO"
 then
-  CXX="$with_MPI"	
+  as_ac_File=`$as_echo "ac_cv_file_$with_MPI_include/mpi.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_MPI_include/mpi.h" >&5
+$as_echo_n "checking for $with_MPI_include/mpi.h... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_MPI_include/mpi.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
   have_MPI="YES"
-  CXXFLAGS=$CXXFLAGS" -D_MPI"
-  MPI_INCLUDE="$with_MPI_include"
+else
+  have_MPI="NO"
+fi
+
+  if test "$have_MPI" == "YES"
+  then
+    CXX="$with_MPI"	
+    have_MPI="YES"
+    CXXFLAGS=$CXXFLAGS" -D_MPI"
+    MPI_INCLUDE="-I$with_MPI_include"
+  else
+    as_fn_error $? "MPI requested but header file not found." "$LINENO" 5
+  fi
 else
   MPI_INCLUDE="NO"
 fi
@@ -19221,16 +19269,17 @@ Build Configuration Summary:
     Source code location: ${abs_srcdir}
     Install location: 	  ${abs_prefix}
     Version:              ${VERSION}
+    Code Type:            ${code_type}
     Compiler:             ${CXX}
-    Preprocessor flags:   ${CPPFLAGS}
-    Compiler flags:       ${CXXFLAGS} ${BLAS_CXX} ${PARMETIS_CXX}
-    Linker flags:         ${LDFLAGS} ${BLAS_LD} ${PARMETIS_LD}
+    Preprocessor flags:   ${CPPFLAGS} ${BLAS_CXX} ${PARMETIS_CXX} ${CUDA_CXX} ${MPI_INCLUDE}
+    Compiler flags:       ${CXXFLAGS}
+    Linker flags:         ${LDFLAGS} ${BLAS_LD} ${BLAS_LDFLAGS} ${PARMETIS_LD} ${CUDA_LD}
     BLAS support:         $have_BLAS
     MPI support:          $have_MPI
     CUDA support:         $have_CUDA
     TecIO support:        $have_Tecio
 
-    Additionally, don't forget to set the environment variable HIFILES_HOME
+Additionally, don't forget to set the environment variable HIFILES_HOME
 
 " >&5
 $as_echo "
@@ -19240,15 +19289,16 @@ Build Configuration Summary:
     Source code location: ${abs_srcdir}
     Install location: 	  ${abs_prefix}
     Version:              ${VERSION}
+    Code Type:            ${code_type}
     Compiler:             ${CXX}
-    Preprocessor flags:   ${CPPFLAGS}
-    Compiler flags:       ${CXXFLAGS} ${BLAS_CXX} ${PARMETIS_CXX}
-    Linker flags:         ${LDFLAGS} ${BLAS_LD} ${PARMETIS_LD}
+    Preprocessor flags:   ${CPPFLAGS} ${BLAS_CXX} ${PARMETIS_CXX} ${CUDA_CXX} ${MPI_INCLUDE}
+    Compiler flags:       ${CXXFLAGS}
+    Linker flags:         ${LDFLAGS} ${BLAS_LD} ${BLAS_LDFLAGS} ${PARMETIS_LD} ${CUDA_LD}
     BLAS support:         $have_BLAS
     MPI support:          $have_MPI
     CUDA support:         $have_CUDA
     TecIO support:        $have_Tecio
 
-    Additionally, don't forget to set the environment variable HIFILES_HOME
+Additionally, don't forget to set the environment variable HIFILES_HOME
 
 " >&6; }

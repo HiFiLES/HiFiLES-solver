@@ -90,8 +90,8 @@ ___bin_HiFiLES_CXXFLAGS +=@hifiles_externals_INCLUDES@
 ___bin_HiFiLES_LDADD += @hifiles_externals_LIBS@
 
 # ParMETIS
-#___bin_HiFiLES_CXXFLAGS += @PARMETIS_CXX@
-#___bin_HiFiLES_LDADD += @PARMETIS_LD@
+___bin_HiFiLES_CXXFLAGS += @PARMETIS_CXX@
+___bin_HiFiLES_LDADD += @PARMETIS_LD@
 
 # TECIO
 ___bin_HiFiLES_CXXFLAGS += @TECIO_CXX@
@@ -106,3 +106,6 @@ ___bin_HiFiLES_CXXFLAGS += @CUDA_CXX@
 ___bin_HiFiLES_CXXFLAGS += @BLAS_CXX@
 ___bin_HiFiLES_LDFLAGS += @BLAS_LDFLAGS@
 ___bin_HiFiLES_LDADD += @BLAS_LD@
+
+# MPI
+___bin_HiFiLES_CXXFLAGS += @MPI_INCLUDE@

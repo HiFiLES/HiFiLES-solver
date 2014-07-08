@@ -637,7 +637,7 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
   else
     FatalError("VCJH triangular scheme not recognized");
 
-  cout << "c_tri " << c_tri << endl;
+  //cout << "c_tri " << c_tri << endl;
 
   run_input.c_tri = c_tri;
 

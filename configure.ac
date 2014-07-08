@@ -87,6 +87,19 @@ AC_ARG_WITH(BLAS-include,
 AC_ARG_WITH(CXX,
     AS_HELP_STRING([--with-CXX[=ARG]], [Optional: Specify C++ compiler, ARG = C++ compiler]), [with_CXX=$withval], [with_CXX="GCC"])
 
+AC_ARG_ENABLE(release, 
+    AS_HELP_STRING([--enable-release[=ARG]], [Optional: Specify whether to compile for DEBUG (default) or RELEASE]),
+    [code_type=$enableval], [code_type="DEBUG"])
+
+# -------------------------------------------------------------
+# Specify whether to build debug or release version of the code
+# -------------------------------------------------------------
+if test "$code_type" == "RELEASE" ; then
+  CXXFLAGS="-O3"
+else
+  CXXFLAGS="-g -O2"
+fi
+
 # --------------------------------------------------------------
 # Build up contributed packages that we will build from source
 # --------------------------------------------------------------
@@ -306,10 +319,16 @@ AC_SUBST([TECIO_LD])
 have_MPI="NO"
 if test "$with_MPI" != "NO"
 then
-  CXX="$with_MPI"	
-  have_MPI="YES"
-  CXXFLAGS=$CXXFLAGS" -D_MPI"
-  MPI_INCLUDE="$with_MPI_include"
+  AC_CHECK_FILE([$with_MPI_include/mpi.h],[have_MPI="YES"],[have_MPI="NO"])
+  if test "$have_MPI" == "YES"
+  then
+    CXX="$with_MPI"	
+    have_MPI="YES"
+    CXXFLAGS=$CXXFLAGS" -D_MPI"
+    MPI_INCLUDE="-I$with_MPI_include"
+  else
+    AC_MSG_ERROR([MPI requested but header file not found.])
+  fi
 else
   MPI_INCLUDE="NO"
 fi
@@ -392,15 +411,16 @@ Build Configuration Summary:
     Source code location: ${abs_srcdir}
     Install location: 	  ${abs_prefix}
     Version:              ${VERSION}
+    Code Type:            ${code_type}
     Compiler:             ${CXX}
-    Preprocessor flags:   ${CPPFLAGS}
-    Compiler flags:       ${CXXFLAGS} ${BLAS_CXX} ${PARMETIS_CXX}
-    Linker flags:         ${LDFLAGS} ${BLAS_LD} ${PARMETIS_LD}
+    Preprocessor flags:   ${CPPFLAGS} ${BLAS_CXX} ${PARMETIS_CXX} ${CUDA_CXX} ${MPI_INCLUDE}
+    Compiler flags:       ${CXXFLAGS}
+    Linker flags:         ${LDFLAGS} ${BLAS_LD} ${BLAS_LDFLAGS} ${PARMETIS_LD} ${CUDA_LD}
     BLAS support:         $have_BLAS
     MPI support:          $have_MPI
     CUDA support:         $have_CUDA
     TecIO support:        $have_Tecio
 
-    Additionally, don't forget to set the environment variable HIFILES_HOME
+Additionally, don't forget to set the environment variable HIFILES_HOME
 
 ])

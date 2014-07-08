@@ -1,5 +1,6 @@
 pkg_cppflags  = @HIFILES_METIS_CPPFLAGS@
-pkg_cppflags += -I$(srcdir)/libmetis -I$(srcdir)/GKlib -I$(srcdir)/include -I@MPI_INCLUDE@ -I$(srcdir)/GKlib -I$(srcdir)/libmetis
+pkg_cppflags += -I$(srcdir)/libmetis -I$(srcdir)/GKlib -I$(srcdir)/include 
+pkg_cppflags += @MPI_INCLUDE@ -I$(srcdir)/GKlib -I$(srcdir)/libmetis
 pkg_sources = \
 	include/metis.h \
 	GKlib/GKlib.h \

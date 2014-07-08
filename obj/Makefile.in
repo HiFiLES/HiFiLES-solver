@@ -306,8 +306,6 @@ ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 AM_CPPFLAGS = -I../include/
 
 # ParMETIS
-#___bin_HiFiLES_CXXFLAGS += @PARMETIS_CXX@
-#___bin_HiFiLES_LDADD += @PARMETIS_LD@
 
 # TECIO
 
@@ -316,10 +314,13 @@ AM_CPPFLAGS = -I../include/
 #___bin_HiFiLES_LDADD += @CUDA_LIBS@
 
 # BLAS
+
+# MPI
 ___bin_HiFiLES_CXXFLAGS = @CXXFLAGS@ @hifiles_externals_INCLUDES@ \
-	@TECIO_CXX@ @CUDA_CXX@ @BLAS_CXX@ $(am__empty)
+	@PARMETIS_CXX@ @TECIO_CXX@ @CUDA_CXX@ @BLAS_CXX@ @MPI_INCLUDE@ \
+	$(am__empty)
 ___bin_HiFiLES_LDADD = $(am__append_1) @hifiles_externals_LIBS@ \
-	@TECIO_LD@ @BLAS_LD@ $(am__empty)
+	@PARMETIS_LD@ @TECIO_LD@ @BLAS_LD@ $(am__empty)
 ___bin_HiFiLES_LDFLAGS = $(am__append_2) @BLAS_LDFLAGS@
 @BUILD_GPU_TRUE@libcudafiles_la_LINK = $(LIBTOOL) --mode=link $(CXX) -o $@ $(CUDA_LDFLAGS) $(CUDA_LIBS)
 @BUILD_GPU_TRUE@noinst_LTLIBRARIES = libcudafiles.la

@@ -286,7 +286,7 @@ top_builddir = @top_builddir@
 top_dir = @top_dir@
 top_srcdir = @top_srcdir@
 pkg_cppflags = @HIFILES_METIS_CPPFLAGS@ -I$(srcdir)/libmetis \
-	-I$(srcdir)/GKlib -I$(srcdir)/include -I@MPI_INCLUDE@ \
+	-I$(srcdir)/GKlib -I$(srcdir)/include @MPI_INCLUDE@ \
 	-I$(srcdir)/GKlib -I$(srcdir)/libmetis
 pkg_sources = \
 	include/metis.h \

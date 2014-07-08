@@ -54,6 +54,7 @@ inters::inters()
   order=run_input.order;
   viscous=run_input.viscous;
   LES = run_input.LES;
+  motion = run_input.motion;
 }
 
 inters::~inters() { }
@@ -117,12 +118,14 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
 
       if (motion)
       {
-        disu_GCL_fpts_l.setup(n_fpts_per_inter,n_inters);
+        if (run_input.GCL) {
+          disu_GCL_fpts_l.setup(n_fpts_per_inter,n_inters);
+          norm_tconf_GCL_fpts_l.setup(n_fpts_per_inter,n_inters);
+        }
         grid_vel_fpts.setup(n_dims,n_fpts_per_inter,n_inters);
         ndA_dyn_fpts_l.setup(n_fpts_per_inter,n_inters);
         norm_dyn_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
-        J_dyn_fpts_l.setup(n_fpts_per_inter,n_inters);
-        norm_tconf_GCL_fpts_l.setup(n_fpts_per_inter,n_inters);
+        J_dyn_fpts_l.setup(n_fpts_per_inter,n_inters);        
         pos_dyn_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
       }
 
@@ -356,6 +359,8 @@ void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> 
 
   for(int k=0;k<n_fields;k++)
     fn(k) = 0.5*( (fn_l(k)+fn_r(k)) - eig*(u_r(k)-u_l(k)) );
+
+  //cout << "fn(0) = " << fn(0) << endl;
 }
 
 // Rusanov inviscid numerical flux at the boundaries

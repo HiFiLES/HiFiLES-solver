@@ -1175,7 +1175,8 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
         }
 
-        if (motion != 0) {
+        if (motion) {
+          FatalError("testing - should not be here!");
           // Transform solution from static frame to dynamic frame
           for (k=0; k<n_fields; k++) {
             temp_u(k) /= J_dyn_upts(j,i);
@@ -1208,7 +1209,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
         }
 
         // Transform from dynamic-physical space to static-physical space
-        if (motion != 0) {
+        if (motion) {
           for(k=0; k<n_fields; k++) {
             for(l=0; l<n_dims; l++) {
               temp_f_ref(k,l)=0.;
@@ -4476,7 +4477,7 @@ void eles::set_transforms_dynamic(void)
           // store determinant of jacobian at solution point
           J_dyn_upts(j,i)= xr*ys - xs*yr;
 
-          if (first_time) {
+          if (first_time && run_input.GCL) {
           //if (in_rkstep==0) {
             Jbar_upts(0)(j,i) = J_dyn_upts(j,i);
           }
@@ -4641,7 +4642,7 @@ void eles::set_transforms_dynamic(void)
           // store determinant of dynamic transformation Jacobian at flux point
           J_dyn_fpts(j,i)= xr*ys - xs*yr;
 
-          if (first_time) {
+          if (first_time && run_input.GCL) {
           //if (in_rkstep==0) {
             Jbar_fpts(0)(j,i) = J_dyn_fpts(j,i);
           }

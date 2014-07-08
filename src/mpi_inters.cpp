@@ -463,15 +463,15 @@ void mpi_inters::calculate_common_invFlux(void)
 
           // calculate discontinuous solution at flux points
           for(int k=0;k<n_fields;k++) {
-              temp_u_l(k)=(*disu_fpts_l(j,i,k));
-              temp_u_r(k)=(*disu_fpts_r(j,i,k));
-            }
+            temp_u_l(k)=(*disu_fpts_l(j,i,k));
+            temp_u_r(k)=(*disu_fpts_r(j,i,k));
+          }
 
           if (motion) {
             // Transform solution to dynamic space
             for (int k=0; k<n_fields; k++) {
               temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
-              temp_u_r(k) /= (*J_dyn_fpts_r(j,i));
+              temp_u_r(k) /= (*J_dyn_fpts_l(j,i));
             }
             // Get mesh velocity
             for (int k=0; k<n_dims; k++) {
@@ -624,10 +624,6 @@ void mpi_inters::calculate_common_viscFlux(void)
                 {
                   temp_grad_u_l(l,k) = *grad_disu_fpts_l(j,i,l,k);
                   temp_grad_u_r(l,k) = *grad_disu_fpts_r(j,i,l,k);
-
-                  //if (rank==0) cout << "k=" << k << "l=" << l << "grad_l=" << temp_grad_u_l(l,k) << endl;
-                  //if (rank==0) cout << "k=" << k << "l=" << l << "grad_r=" << temp_grad_u_r(l,k) << endl;
-
                 }
             }
 
@@ -671,17 +667,16 @@ void mpi_inters::calculate_common_viscFlux(void)
           if (motion)
           {
             for(int k=0; k<n_fields; k++) {
-              (*norm_tconf_fpts_l(j,i,k)) = fn(k)*(*ndA_dyn_fpts_l(j,i))*(*tdA_fpts_l(j,i));
+              (*norm_tconf_fpts_l(j,i,k)) += fn(k)*(*ndA_dyn_fpts_l(j,i))*(*tdA_fpts_l(j,i));
             }
           }
           else
           {
             // Transform back to reference space from static physical space
             for(int k=0;k<n_fields;k++) {
-              (*norm_tconf_fpts_l(j,i,k))= fn(k)*(*tdA_fpts_l(j,i));
+              (*norm_tconf_fpts_l(j,i,k)) += fn(k)*(*tdA_fpts_l(j,i));
             }
           }
-
         }
     }
 

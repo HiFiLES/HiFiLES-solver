@@ -310,7 +310,7 @@ SUBDIRS = metis/
 pkg_cppflags = @HIFILES_METIS_CPPFLAGS@ -I$(srcdir)/include \
 	-I$(srcdir)/libparmetis -I$(srcdir)/metis/GKlib \
 	-I$(srcdir)/metis/libmetis -I$(srcdir)/metis/include \
-	-I@MPI_INCLUDE@
+	@MPI_INCLUDE@ $(am__empty)
 pkg_sources = \
     libparmetis/akwayfm.c \
     libparmetis/ametis.c \
