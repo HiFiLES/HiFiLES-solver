@@ -121,6 +121,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
       // Section header, ignore next two lines
       in_run_input_file.getline(buf,BUFSIZ);
     }
+    else if (!param_name.compare(0,2,"//"))
+    {
+      // Skip comment line
+    }
     else if (!param_name.compare("equation"))
     {
       in_run_input_file >> equation;
@@ -344,9 +348,18 @@ void input::setup(ifstream& in_run_input_file, int rank)
     else if (!param_name.compare("moving_boundaries"))
     {
       in_run_input_file >> n_moving_bnds;
+      motion_type.setup(n_moving_bnds);
+      bound_vel_simple.setup(n_moving_bnds);
       boundary_flags.setup(n_moving_bnds);
-      for (int i=0; i<n_moving_bnds; i++)
-        in_run_input_file >> boundary_flags(i);
+      for (int i=0; i<n_moving_bnds; i++) {
+        in_run_input_file.getline(buf,BUFSIZ);
+        in_run_input_file >> boundary_flags(i) >> motion_type(i);
+        bound_vel_simple(i).setup(3);
+        for (int j=0; j<3; j++) {
+          in_run_input_file >> bound_vel_simple(i)(j);
+          cout << bound_vel_simple(i)(j) << " ";
+        }
+      }
     }
     else if (!param_name.compare("n_deform_iters"))
     {
@@ -354,9 +367,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
     }
     else if (!param_name.compare("simple_bound_velocity"))
     {
-      bound_vel_simple.setup(3);
-      for (int i=0; i<3; i++)
-        in_run_input_file >> bound_vel_simple(i);
+//      bound_vel_simple.setup(3);
+//      for (int i=0; i<3; i++)
+//        in_run_input_file >> bound_vel_simple(i);
     }
     else if (!param_name.compare("mesh_output_freq"))
     {
@@ -622,8 +635,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
       FatalError("input parameter not recognized");
     }
     
-    // Read end of line
-    in_run_input_file.getline(buf,BUFSIZ);
+    // Read end of line, if not a comment line
+    if (param_name.compare(0,2,"//"))
+      in_run_input_file.getline(buf,BUFSIZ);
   }
   
   // --------------------

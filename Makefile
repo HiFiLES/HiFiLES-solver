@@ -60,7 +60,7 @@ ifeq ($(TECIO),YES)
 endif
 
 ifeq ($(PARALLEL),MPI)
-	OPTS	+= -I $(MPI_DIR)/include
+	OPTS += -I $(MPI_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/metis/include
 endif
@@ -98,13 +98,17 @@ ifeq ($(BLAS),ACCELERATE_BLAS)
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
-  LIBS    += -L $(BLAS_DIR)/lib -lcblas
-  OPTS    += -I $(BLAS_DIR)/include -D_$(BLAS)
+	LIBS    += -L $(BLAS_DIR)/lib -lcblas
+	OPTS    += -I $(BLAS_DIR)/include -D_$(BLAS)
 endif
 
 ifeq ($(BLAS),ATLAS_BLAS)
-  LIBS    += -L $(BLAS_DIR)/lib -lcblas -latlas
-  OPTS    += -I $(BLAS_DIR)/include -D_STANDARD_BLAS
+	LIBS    += -L $(BLAS_DIR)/lib -lcblas -latlas
+	OPTS    += -I $(BLAS_DIR)/include -D_STANDARD_BLAS
+endif
+
+ifeq ($(BLAS),NO_BLAS)
+	OPTS	+= -D_$(BLAS)
 endif
 
 ifeq ($(NODE),GPU)

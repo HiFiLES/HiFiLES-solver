@@ -43,6 +43,25 @@ enum CTYPE {
     PYRAMID = 5
 };
 
+/** enumeration for boundary conditions */
+enum BCFLAG {
+  SUB_IN_SIMP   = 1,
+  SUB_OUT_SIMP  = 2,
+  SUB_IN_CHAR   = 3,
+  SUB_OUT_CHAR  = 4,
+  SUP_IN        = 5,
+  SUP_OUT       = 6,
+  SLIP_WALL     = 7,
+  CYCLIC        = 9,
+  ISOTHERM_FIX  = 11,
+  ADIABAT_FIX   = 12,
+  ISOTHERM_MOVE = 13,
+  ADIABAT_MOVE  = 14,
+  CHAR          = 15,
+  SLIP_WALL_DUAL= 16,
+  AD_WALL       = 50
+};
+
 /** enumeration for mesh motion type */
 enum {MOTION_DISABLED, MOTION_ENABLED};
 

@@ -1626,10 +1626,10 @@ void mesh::set_boundary_displacements(solution *FlowSol)
     }*/
 
   array<double> VarCoord(n_dims);
-  /*VarCoord(0) = run_input.bound_vel_simple(0)*run_input.dt;
-  VarCoord(1) = run_input.bound_vel_simple(1)*run_input.dt;*/
+  /*VarCoord(0) = run_input.bound_vel_simple(0)(0)*run_input.dt;
+  VarCoord(1) = run_input.bound_vel_simple(0)(1)*run_input.dt;*/
   VarCoord(0) = 0;
-  VarCoord(1) = run_input.bound_vel_simple(0)*cos(2*run_input.bound_vel_simple(1)*pi*rk_time)*run_input.dt;
+  VarCoord(1) = run_input.bound_vel_simple(0)(0)*cos(2*run_input.bound_vel_simple(0)(1)*pi*rk_time)*run_input.dt;
   /// cout << "number of boundaries: " << n_bnds << endl;
   /*--- Set the known displacements, note that some points of the moving surfaces
     could be on on the symmetry plane, we should specify DeleteValsRowi again (just in case) ---*/
@@ -1655,8 +1655,8 @@ void mesh::rigid_move(solution* FlowSol) {
 
 //  if(start) {
 //    for (int i=0; i<n_verts; i++) {
-//      xv(i,0) = xv(i,0) + run_input.bound_vel_simple(0)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
-//      xv(i,1) = xv(i,1) + run_input.bound_vel_simple(1)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
+//      xv(i,0) = xv(i,0) + run_input.bound_vel_simple(0)(0)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
+//      xv(i,1) = xv(i,1) + run_input.bound_vel_simple(0)(1)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
 //      //xv_new(i,0) = xv(i,0);
 //      //xv_new(i,1) = xv(i,1);
 //    }
@@ -1675,11 +1675,11 @@ void mesh::rigid_move(solution* FlowSol) {
 
   for (int i=0; i<n_verts; i++) {
     // Useful for simple cases / debugging
-    xv(0)(i,0) = xv(0)(i,0) + run_input.bound_vel_simple(0)*cos(0.2*pi*time)*run_input.dt;
-    xv(0)(i,1) = xv(0)(i,1) + run_input.bound_vel_simple(1)*cos(0.2*pi*time)*run_input.dt;
+    xv(0)(i,0) = xv(0)(i,0) + run_input.bound_vel_simple(0)(0)*cos(0.2*pi*time)*run_input.dt;
+    xv(0)(i,1) = xv(0)(i,1) + run_input.bound_vel_simple(0)(1)*cos(0.2*pi*time)*run_input.dt;
 
-    //xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)*run_input.dt;
-    //xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(1)*run_input.dt;
+    //xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)(0)*run_input.dt;
+    //xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(0)(1)*run_input.dt;
   }
 
   update(FlowSol);

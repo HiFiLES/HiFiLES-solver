@@ -119,7 +119,8 @@ public:
   int mesh_output_freq;
   int mesh_output_format;
   array<string> boundary_flags;
-  array<double> bound_vel_simple;
+  array<array<double> > bound_vel_simple;
+  array<int> motion_type;
   /* -------------------------------- */
 
   // boundary_conditions
