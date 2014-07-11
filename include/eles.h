@@ -849,8 +849,11 @@ protected:
 	/*! normal at flux points*/
 	array<double> norm_fpts;
 	
-  /*! physical coordinates at flux points*/
-  array<double> loc_fpts;
+  /*! static-physical coordinates at flux points*/
+  array<double> pos_fpts;
+
+  /*! static-physical coordinates at solution points*/
+  array<double> pos_upts;
 
   /*! normal at interface cubature points*/
   array< array<double> > norm_inters_cubpts;
@@ -877,7 +880,7 @@ protected:
   array<double> norm_dyn_fpts;
 
   /*! physical coordinates at flux points in dynamic mesh */
-  array<double> phys_pos_fpts, phys_pos_upts, pos_upts, pos_fpts;
+  array<double> dyn_pos_fpts, dyn_pos_upts;
 
   /*! magnitude of transformed face-area normal vector from static-physical -> dynamic-physical frame
    *  [magntiude of (normal dot inverse dynamic transformation matrix)] [ |J*(G^-1)*(n*dA)| ] */

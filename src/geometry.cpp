@@ -796,6 +796,9 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
         }
     }
 
+  if (run_input.motion)
+    Mesh.ic2loc_c = local_c;
+
   // Flag interfaces for calculating LES wall model
   if(run_input.wall_model>0) {
 
@@ -1191,6 +1194,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
 
   out_bcfaces.setup(n_bcs);
   out_bccells.setup(n_bcs);
+  out_bclist.setup(n_bcs);
 
   for (int i=0;i<n_bcs;i++)
   {
@@ -1315,6 +1319,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
 
   mesh_file >> n_bcs;
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
+  out_bclist.setup(n_bcs);
   for(int i=0;i<n_bcs;i++)
   {
     mesh_file.getline(buf,BUFSIZ);

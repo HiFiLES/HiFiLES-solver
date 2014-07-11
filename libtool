@@ -10109,7 +10109,7 @@ reload_cmds="\$LD\$reload_flag -o \$output\$reload_objs"
 old_archive_cmds="\$AR \$AR_FLAGS \$oldlib\$oldobjs~\$RANLIB \$tool_oldlib"
 
 # A language specific compiler.
-CC="mpicxx"
+CC="g++"
 
 # Is the compiler the GNU compiler?
 with_gcc=yes
@@ -10124,7 +10124,7 @@ pic_flag=" -fPIC -DPIC"
 wl="-Wl,"
 
 # Compiler flag to prevent dynamic linking.
-link_static_flag=""
+link_static_flag="-static"
 
 # Does compiler simultaneously support -c and -o options?
 compiler_c_o="yes"
@@ -10230,17 +10230,17 @@ file_list_spec=""
 hardcode_action=immediate
 
 # The directories searched by this compiler when creating a shared library.
-compiler_lib_search_dirs="/usr/lib /usr/lib/gcc/i686-linux-gnu/4.7 /usr/lib/gcc/i686-linux-gnu/4.7/../../../i386-linux-gnu /usr/lib/gcc/i686-linux-gnu/4.7/../../../../lib /lib/i386-linux-gnu /lib/../lib /usr/lib/i386-linux-gnu /usr/lib/../lib /usr/lib/gcc/i686-linux-gnu/4.7/../../.."
+compiler_lib_search_dirs="/usr/lib/gcc/i686-linux-gnu/4.7 /usr/lib/gcc/i686-linux-gnu/4.7/../../../i386-linux-gnu /usr/lib/gcc/i686-linux-gnu/4.7/../../../../lib /lib/i386-linux-gnu /lib/../lib /usr/lib/i386-linux-gnu /usr/lib/../lib /usr/lib/gcc/i686-linux-gnu/4.7/../../.."
 
 # Dependencies to place before and after the objects being linked to
 # create a shared library.
 predep_objects="/usr/lib/gcc/i686-linux-gnu/4.7/../../../i386-linux-gnu/crti.o /usr/lib/gcc/i686-linux-gnu/4.7/crtbeginS.o"
 postdep_objects="/usr/lib/gcc/i686-linux-gnu/4.7/crtendS.o /usr/lib/gcc/i686-linux-gnu/4.7/../../../i386-linux-gnu/crtn.o"
 predeps=""
-postdeps="-lmpichcxx -lmpich -lopa -lmpl -lrt -lcr -lpthread -lstdc++ -lm -lgcc_s -lc -lgcc_s"
+postdeps="-lstdc++ -lm -lgcc_s -lc -lgcc_s"
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path="-L/usr/lib -L/usr/lib/gcc/i686-linux-gnu/4.7 -L/usr/lib/gcc/i686-linux-gnu/4.7/../../../i386-linux-gnu -L/usr/lib/gcc/i686-linux-gnu/4.7/../../../../lib -L/lib/i386-linux-gnu -L/lib/../lib -L/usr/lib/i386-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/i686-linux-gnu/4.7/../../.."
+compiler_lib_search_path="-L/usr/lib/gcc/i686-linux-gnu/4.7 -L/usr/lib/gcc/i686-linux-gnu/4.7/../../../i386-linux-gnu -L/usr/lib/gcc/i686-linux-gnu/4.7/../../../../lib -L/lib/i386-linux-gnu -L/lib/../lib -L/usr/lib/i386-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/i686-linux-gnu/4.7/../../.."
 
 # ### END LIBTOOL TAG CONFIG: CXX

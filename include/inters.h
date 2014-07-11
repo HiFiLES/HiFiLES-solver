@@ -98,7 +98,7 @@ public:
 	array<double*> detjac_fpts_l;
 	array<double*> tdA_fpts_l;
 	array<double*> norm_fpts;
-	array<double*> loc_fpts;
+	array<double*> pos_fpts;
   array<double*> pos_dyn_fpts;
 
   array<double> pos_disu_fpts_l;

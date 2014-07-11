@@ -1176,7 +1176,6 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
         }
 
         if (motion) {
-          FatalError("testing - should not be here!");
           // Transform solution from static frame to dynamic frame
           for (k=0; k<n_fields; k++) {
             temp_u(k) /= J_dyn_upts(j,i);
@@ -3116,6 +3115,7 @@ int eles::get_n_upts_per_ele(void)
 void eles::set_shape(int in_max_n_spts_per_ele)
 {
   shape.setup(n_dims,in_max_n_spts_per_ele,n_eles);
+  shape_dyn.setup(n_dims,in_max_n_spts_per_ele,n_eles);
   n_spts_per_ele.setup(n_eles);
 }
 
@@ -3126,6 +3126,7 @@ void eles::set_shape_node(int in_spt, int in_ele, array<double>& in_pos)
   for(int i=0;i<n_dims;i++)
   {
     shape(i,in_spt,in_ele)=in_pos(i);
+    shape_dyn(i,in_spt,in_ele)=in_pos(i);
   }
 }
 
@@ -3722,13 +3723,16 @@ void eles::calc_pos_ppts(int in_ele, array<double>& out_pos_ppts)
   array<double> pos(n_dims);
   
   for(i=0;i<n_ppts_per_ele;i++)
-  {
-    for(j=0;j<n_dims;j++)
-    {
-      loc(j)=loc_ppts(j,i);
+  {   
+    if (motion) {
+      calc_pos_dyn_ppt(i,in_ele,pos);
+    }else{
+      for(j=0;j<n_dims;j++)
+      {
+        loc(j)=loc_ppts(j,i);
+      }
+      calc_pos(loc,in_ele,pos);
     }
-    
-    calc_pos(loc,in_ele,pos);
     
     for(j=0;j<n_dims;j++)  // TODO: can this be made more efficient/simpler?
     {
@@ -3751,7 +3755,11 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
     {
       for(j=0;j<n_upts_per_ele;j++)
       {
-        disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
+        if (motion) {
+          disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i)/J_dyn_upts(j,i);
+        }else{
+          disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
+        }
       }
     }
     
@@ -4036,7 +4044,9 @@ void eles::set_transforms(void)
     detjac_upts.setup(n_upts_per_ele,n_eles);
     // Determinant of Jacobian times inverse of Jacobian (Full vector transform from physcial->reference frame)
     JGinv_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
-    
+    // Static-Physical position of solution points
+    pos_upts.setup(n_upts_per_ele,n_eles,n_dims);
+
     if (viscous) {
       tgrad_detjac_upts.setup(n_upts_per_ele,n_eles,n_dims);
     }
@@ -4059,6 +4069,13 @@ void eles::set_transforms(void)
           loc(k)=loc_upts(k,j);
         }
         
+        calc_pos(loc,i,pos);
+
+        for(k=0;k<n_dims;k++)
+        {
+          pos_upts(j,i,k)=pos(k);
+        }
+
         // calculate first derivatives of shape functions at the solution point
         calc_d_pos(loc,i,d_pos);
         
@@ -4195,8 +4212,9 @@ void eles::set_transforms(void)
     JGinv_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
     tdA_fpts.setup(n_fpts_per_ele,n_eles);
     norm_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-    loc_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-    
+    // Static-Physical position of solution points
+    pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+
     if (viscous)
     {
       tgrad_detjac_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
@@ -4223,7 +4241,7 @@ void eles::set_transforms(void)
         
         for(k=0;k<n_dims;k++)
         {
-          loc_fpts(j,i,k)=pos(k);
+          pos_fpts(j,i,k)=pos(k);
         }
         
         // calculate first derivatives of shape functions at the flux points
@@ -4384,7 +4402,7 @@ void eles::set_transforms(void)
 #ifdef _GPU
     tdA_fpts.mv_cpu_gpu();
     norm_fpts.mv_cpu_gpu();
-    loc_fpts.cp_cpu_gpu();
+    pos_fpts.cp_cpu_gpu();
     
     /*
      JGinv_fpts.mv_cpu_gpu();
@@ -4436,7 +4454,7 @@ void eles::set_transforms_dynamic(void)
       J_dyn_upts.setup(n_upts_per_ele,n_eles);
       // Total dynamic -> static reference transformation matrix ( |G|*G^{-1} )
       JGinv_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
-      phys_pos_upts.setup(n_upts_per_ele,n_eles,n_dims);
+      dyn_pos_upts.setup(n_upts_per_ele,n_eles,n_dims);
 
       if (viscous) {
         // Gradient of the determinant of the Jacobian as seen in the static frame ( del |G| )
@@ -4595,7 +4613,7 @@ void eles::set_transforms_dynamic(void)
       J_dyn_fpts.setup(n_fpts_per_ele,n_eles);
       JGinv_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
       norm_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-      phys_pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+      dyn_pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
 
       ndA_dyn_fpts.setup(n_fpts_per_ele,n_eles);
 
@@ -4618,7 +4636,7 @@ void eles::set_transforms_dynamic(void)
         calc_pos_dyn_fpt(j,i,pos);
 
         for(k=0;k<n_dims;k++) {
-          phys_pos_fpts(j,i,k)=pos(k);
+          dyn_pos_fpts(j,i,k)=pos(k);
         }
 
         // calculate first derivatives of shape functions at the flux points
@@ -4774,7 +4792,7 @@ void eles::set_transforms_dynamic(void)
 #ifdef _GPU
     tdA_fpts.mv_cpu_gpu();
     norm_dyn_fpts.mv_cpu_gpu();
-    phys_pos_fpts.cp_cpu_gpu();
+    dyn_pos_fpts.cp_cpu_gpu();
 
     /*
       JGinv_fpts.mv_cpu_gpu();
@@ -5192,7 +5210,7 @@ double* eles::get_loc_fpts_ptr_cpu(int in_inter_local_fpt, int in_ele_local_inte
     fpt+=n_fpts_per_inter(i);
   }
   
-  return loc_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
+  return pos_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
 }
 
 // get a GPU pointer to the coordinates at a flux point
@@ -5210,7 +5228,7 @@ double* eles::get_loc_fpts_ptr_gpu(int in_inter_local_fpt, int in_ele_local_inte
     fpt+=n_fpts_per_inter(i);
   }
   
-  return loc_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
+  return pos_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 }
 
 // get a CPU pointer to the coordinates at a flux point
@@ -5228,7 +5246,7 @@ double* eles::get_pos_dyn_fpts_ptr_cpu(int in_inter_local_fpt, int in_ele_local_
       fpt+=n_fpts_per_inter(i);
     }
 
-  return phys_pos_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
+  return dyn_pos_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
 }
 
 // get a pointer to delta of the transformed discontinuous solution at a flux point
@@ -5576,7 +5594,7 @@ void eles::calc_d_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_d
  */
 void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
 {
-  if (run_input.motion==3) {
+  if (run_input.motion==4) {
     // Analytical formula for perturbed motion
     out_d_pos(0,0) = 1 + 0.2*pi*cos(pi*pos_fpts(in_fpt,in_ele,0)/10)*sin(pi*pos_fpts(in_fpt,in_ele,1)/10)*sin(2*pi*run_input.rk_time/10);
     out_d_pos(0,1) = 0.2*pi*sin(pi*pos_fpts(in_fpt,in_ele,0)/10)*cos(pi*pos_fpts(in_fpt,in_ele,1)/10)*sin(2*pi*run_input.rk_time/10);
@@ -5620,7 +5638,7 @@ void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
  */
 void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
 {
-  if (run_input.motion==3) {
+  if (run_input.motion==4) {
     // Analytical formula for perturbed motion test case
     out_d_pos(0,0) = 1 + 0.2*pi*cos(pi*pos_upts(in_upt,in_ele,0)/10)*sin(pi*pos_upts(in_upt,in_ele,1)/10)*sin(2*pi*run_input.rk_time/10);
     out_d_pos(0,1) = 0.2*pi*sin(pi*pos_upts(in_upt,in_ele,0)/10)*cos(pi*pos_upts(in_upt,in_ele,1)/10)*sin(2*pi*run_input.rk_time/10);

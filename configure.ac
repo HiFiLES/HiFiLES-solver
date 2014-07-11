@@ -330,7 +330,7 @@ then
     AC_MSG_ERROR([MPI requested but header file not found.])
   fi
 else
-  MPI_INCLUDE="NO"
+  MPI_INCLUDE=
 fi
 AC_SUBST([MPI_INCLUDE])
 

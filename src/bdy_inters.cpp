@@ -159,13 +159,14 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
               if (motion) {
                 norm_dyn_fpts(j,in_inter,k)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
                 grid_vel_fpts(k,j,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+                pos_dyn_fpts(k,j,in_inter)=get_pos_dyn_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
               }
 
 #ifdef _CPU
-              loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+              pos_fpts(j,in_inter,k)=get_loc_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 #endif
 #ifdef _GPU
-              loc_fpts(j,in_inter,k)=get_loc_fpts_ptr_gpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+              pos_fpts(j,in_inter,k)=get_loc_fpts_ptr_gpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
 #endif
             }
         }
@@ -205,7 +206,7 @@ void bdy_inters::mv_all_cpu_gpu(void)
   norm_tconf_fpts_l.mv_cpu_gpu();
   tdA_fpts_l.mv_cpu_gpu();
   norm_fpts.mv_cpu_gpu();
-  loc_fpts.mv_cpu_gpu();
+  pos_fpts.mv_cpu_gpu();
 
   delta_disu_fpts_l.mv_cpu_gpu();
 
@@ -256,9 +257,6 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
         for(int k=0;k<n_fields;k++)
           temp_u_l(k)=(*disu_fpts_l(j,i,k));
 
-        for (int m=0;m<n_dims;m++)
-          temp_loc(m) = *loc_fpts(j,i,m);
-
         if (motion) {
           // Transform solution to dynamic space
           for (int k=0; k<n_fields; k++) {
@@ -268,7 +266,14 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
           for(int k=0; k<n_dims; k++) {
             temp_v(k)=(*grid_vel_fpts(k,j,i));
           }
+          // Get dynamic-physical flux point location
+          for (int m=0;m<n_dims;m++)
+            temp_loc(m) = *pos_dyn_fpts(j,i,m);
         }else{
+          // Get static-physical flux point location
+          for (int m=0;m<n_dims;m++)
+            temp_loc(m) = *pos_fpts(j,i,m);
+
           temp_v.initialize_to_zero();
         }
 
@@ -366,7 +371,7 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 
 #ifdef _GPU
   if (n_inters!=0)
-    evaluate_boundaryConditions_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.R_ref,viscous,run_input.vis_riemann_solve_type, time_bound, run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda,run_input.equation);
+    evaluate_boundaryConditions_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),pos_fpts.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.R_ref,viscous,run_input.vis_riemann_solve_type, time_bound, run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda,run_input.equation);
 #endif
 }
 
@@ -862,7 +867,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
         /*! Get normal components and flux points location */
         for (int m=0;m<n_dims;m++) {
           norm(m) = *norm_fpts(j,i,m);
-          temp_loc(m) = *loc_fpts(j,i,m);
+          temp_loc(m) = *pos_fpts(j,i,m);
         }
         temp_v.initialize_to_zero();
       }
@@ -964,7 +969,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
 
 #ifdef _GPU
   if (n_inters!=0)
-    evaluate_boundaryConditions_viscFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),loc_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff, LES);
+    evaluate_boundaryConditions_viscFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),pos_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff, LES);
 #endif
 }
 
