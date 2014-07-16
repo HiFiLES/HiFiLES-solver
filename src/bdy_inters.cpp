@@ -874,7 +874,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
 
       set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),temp_v.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 
-          /*! obtain gradient of discontinuous solution at flux points */
+          /*! obtain physical gradient of discontinuous solution at flux points */
           for(int k=0;k<n_dims;k++)
             {
               for(int l=0;l<n_fields;l++)

@@ -272,6 +272,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     // Allocate SGS flux array if using LES or wall model
     if(LES != 0 || wall_model != 0) {
       temp_sgsf.setup(n_fields,n_dims);
+      if(motion)
+        temp_sgsf_ref.setup(n_fields,n_dims);
     }
 
     // Allocate array for grid velocity
@@ -1649,19 +1651,21 @@ void eles::correct_gradient(void)
     double detjac;
     double inv_detjac;
     double rx,ry,rz,sx,sy,sz,tx,ty,tz;
-    double ur,us,ut;
+    double Xx,Xy,Xz,Yx,Yy,Yz,Zx,Zy,Zz;
+    double ur,us,ut,uX,uY,uZ;
     
     for (int i=0;i<n_eles;i++)
     {
       for (int j=0;j<n_upts_per_ele;j++)
       {
+        // Transform to static-physical domain
         detjac = detjac_upts(j,i);
         inv_detjac = 1.0/detjac;
         
-        rx = JGinv_upts(j,i,0,0);
-        ry = JGinv_upts(j,i,0,1);
-        sx = JGinv_upts(j,i,1,0);
-        sy = JGinv_upts(j,i,1,1);
+        rx = JGinv_upts(j,i,0,0)*inv_detjac;
+        ry = JGinv_upts(j,i,0,1)*inv_detjac;
+        sx = JGinv_upts(j,i,1,0)*inv_detjac;
+        sy = JGinv_upts(j,i,1,1)*inv_detjac;
         
         //physical gradient
         if(n_dims==2)
@@ -1671,18 +1675,18 @@ void eles::correct_gradient(void)
             ur = grad_disu_upts(j,i,k,0);
             us = grad_disu_upts(j,i,k,1);
             
-            grad_disu_upts(j,i,k,0) = (1.0/detjac)*(ur*rx + us*sx) ;
-            grad_disu_upts(j,i,k,1) = (1.0/detjac)*(ur*ry + us*sy) ;
+            grad_disu_upts(j,i,k,0) = ur*rx + us*sx;
+            grad_disu_upts(j,i,k,1) = ur*ry + us*sy;
           }
         }
         if (n_dims==3)
         {
-          rz = JGinv_upts(j,i,0,2);
-          sz = JGinv_upts(j,i,1,2);
+          rz = JGinv_upts(j,i,0,2)*inv_detjac;
+          sz = JGinv_upts(j,i,1,2)*inv_detjac;
           
-          tx = JGinv_upts(j,i,2,0);
-          ty = JGinv_upts(j,i,2,1);
-          tz = JGinv_upts(j,i,2,2);
+          tx = JGinv_upts(j,i,2,0)*inv_detjac;
+          ty = JGinv_upts(j,i,2,1)*inv_detjac;
+          tz = JGinv_upts(j,i,2,2)*inv_detjac;
           
           for (int k=0;k<n_fields;k++)
           {
@@ -1690,9 +1694,53 @@ void eles::correct_gradient(void)
             us = grad_disu_upts(j,i,k,1);
             ut = grad_disu_upts(j,i,k,2);
             
-            grad_disu_upts(j,i,k,0) = (1.0/detjac)*(ur*rx + us*sx + ut*tx);
-            grad_disu_upts(j,i,k,1) = (1.0/detjac)*(ur*ry + us*sy + ut*ty);
-            grad_disu_upts(j,i,k,2) = (1.0/detjac)*(ur*rz + us*sz + ut*tz);
+            grad_disu_upts(j,i,k,0) = ur*rx + us*sx + ut*tx;
+            grad_disu_upts(j,i,k,1) = ur*ry + us*sy + ut*ty;
+            grad_disu_upts(j,i,k,2) = ur*rz + us*sz + ut*tz;
+          }
+        }
+
+        if (motion) {
+          // Transform to dynamic-physical domain
+          detjac = J_dyn_upts(j,i);
+          inv_detjac = 1.0/detjac;
+
+          Xx = JGinv_dyn_upts(j,i,0,0)*inv_detjac;
+          Xy = JGinv_dyn_upts(j,i,0,1)*inv_detjac;
+          Yx = JGinv_dyn_upts(j,i,1,0)*inv_detjac;
+          Yy = JGinv_dyn_upts(j,i,1,1)*inv_detjac;
+
+          //physical gradient
+          if(n_dims==2)
+          {
+            for(int k=0;k<n_fields;k++)
+            {
+              uX = grad_disu_upts(j,i,k,0);
+              uY = grad_disu_upts(j,i,k,1);
+
+              grad_disu_upts(j,i,k,0) = uX*Xx + uY*Yx;
+              grad_disu_upts(j,i,k,1) = uX*Xy + uY*Yy;
+            }
+          }
+          if (n_dims==3)
+          {
+            Xz = JGinv_dyn_upts(j,i,0,2)*inv_detjac;
+            Yz = JGinv_dyn_upts(j,i,1,2)*inv_detjac;
+
+            Zx = JGinv_dyn_upts(j,i,2,0)*inv_detjac;
+            Zy = JGinv_dyn_upts(j,i,2,1)*inv_detjac;
+            Zz = JGinv_dyn_upts(j,i,2,2)*inv_detjac;
+
+            for (int k=0;k<n_fields;k++)
+            {
+              uX = grad_disu_upts(j,i,k,0);
+              uY = grad_disu_upts(j,i,k,1);
+              uZ = grad_disu_upts(j,i,k,2);
+
+              grad_disu_upts(j,i,k,0) = uX*Xx + uY*Yx + uZ*Zx;
+              grad_disu_upts(j,i,k,1) = uX*Xy + uY*Yy + uZ*Zy;
+              grad_disu_upts(j,i,k,2) = uX*Xz + uY*Yz + uZ*Zz;
+            }
           }
         }
       }
@@ -2113,6 +2161,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
     
     int i,j,k,l,m;
     double detjac;
+
     for(i=0;i<n_eles;i++) {
       
       // Calculate viscous flux
@@ -2120,17 +2169,25 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
       {
         detjac = detjac_upts(j,i);
         
-        //physical solution
+        // solution in static-physical domain
         for(k=0;k<n_fields;k++)
         {
           temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
           
-          //physical gradient
+          // gradient in dynamic-physical domain
           for (m=0;m<n_dims;m++)
           {
             temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
           }
         }
+
+        // Transform to dynamic-physical domain
+        if (motion) {
+          for (k=0; k<n_fields; k++) {
+            temp_u(k) /= J_dyn_upts(j,i);
+          }
+        }
+
         if(n_dims==2)
         {
           calc_visf_2d(temp_u,temp_grad_u,temp_f);
@@ -2158,13 +2215,50 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
         
         // If LES, add SGS flux to global array (needed for interface flux calc)
         if(LES > 0) {
-          
+
+          // Transfer back to static-phsycial domain
+          if (motion) {
+            temp_sgsf_ref.initialize_to_zero();
+            for(k=0;k<n_fields;k++) {
+              for(l=0;l<n_dims;l++) {
+                for(m=0;m<n_dims;m++) {
+                  temp_sgsf_ref(k,l)+=JGinv_dyn_upts(j,i,l,m)*temp_sgsf(k,m);
+                }
+              }
+            }
+            // Copy back to original flux array
+            for (k=0; k<n_fields; k++) {
+              for(l=0; l<n_dims; l++) {
+                temp_sgsf(k,l) = temp_sgsf_ref(k,l);
+              }
+            }
+          }
+
+          // Transfer back to computational domain
           for(k=0;k<n_fields;k++) {
             for(l=0;l<n_dims;l++) {
               sgsf_upts(j,i,k,l) = 0.0;
               for(m=0;m<n_dims;m++) {
                 sgsf_upts(j,i,k,l)+=JGinv_upts(j,i,l,m)*temp_sgsf(k,m);
               }
+            }
+          }
+        }
+
+        // Transfer back to static-phsycial domain
+        if (motion) {
+          temp_f_ref.initialize_to_zero();
+          for(k=0;k<n_fields;k++) {
+            for(l=0;l<n_dims;l++) {
+              for(m=0;m<n_dims;m++) {
+                temp_f_ref(k,l)+=JGinv_dyn_upts(j,i,l,m)*temp_f(k,m);
+              }
+            }
+          }
+          // Copy back to original flux array
+          for (k=0; k<n_fields; k++) {
+            for(l=0; l<n_dims; l++) {
+              temp_f(k,l) = temp_f_ref(k,l);
             }
           }
         }
@@ -3132,9 +3226,9 @@ void eles::set_shape_node(int in_spt, int in_ele, array<double>& in_pos)
 
 void eles::set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos)
 {
-    for(int i=0;i<n_dims;i++) {
-        shape_dyn(i,in_spt,in_ele)=in_pos(i);
-    }
+  for(int i=0;i<n_dims;i++) {
+    shape_dyn(i,in_spt,in_ele)=in_pos(i);
+  }
 }
 
 void eles::set_rank(int in_rank)
@@ -3756,7 +3850,7 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
       for(j=0;j<n_upts_per_ele;j++)
       {
         if (motion) {
-          disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i)/J_dyn_upts(j,i);
+          disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i)/J_dyn_upts(j,in_ele);
         }else{
           disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
         }
@@ -4047,9 +4141,10 @@ void eles::set_transforms(void)
     // Static-Physical position of solution points
     pos_upts.setup(n_upts_per_ele,n_eles,n_dims);
 
-    if (viscous) {
+    // NEVER USED??
+    /*if (viscous) {
       tgrad_detjac_upts.setup(n_upts_per_ele,n_eles,n_dims);
-    }
+    }*/
     
     if (rank==0) {
       cout << " at solution points" << endl;
@@ -4107,8 +4202,8 @@ void eles::set_transforms(void)
           JGinv_upts(j,i,1,0)= -yr;
           JGinv_upts(j,i,1,1)= xr;
           
-          // gradient of detjac at solution point
-          if(viscous)
+          // gradient of detjac at solution point -- NEVER USED??
+          /*if(viscous)
           {
             xrr = dd_pos(0,0);
             xss = dd_pos(0,1);
@@ -4120,7 +4215,7 @@ void eles::set_transforms(void)
             
             tgrad_detjac_upts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
             tgrad_detjac_upts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
-          }
+          }*/
           
         }
         else if(n_dims==3)
@@ -4155,9 +4250,9 @@ void eles::set_transforms(void)
           
           // store inverse of determinant of jacobian multiplied by jacobian at the solution point
           
-          // gradient of detjac at solution point
+          // gradient of detjac at solution point -- NEVER USED
           
-          if(viscous)
+          /*if(viscous)
           {
             xrr = dd_pos(0,0);
             xss = dd_pos(0,1);
@@ -4186,7 +4281,7 @@ void eles::set_transforms(void)
             xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
             tgrad_detjac_upts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
             xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
-          }
+          }*/
         }
         else
         {
@@ -4215,10 +4310,11 @@ void eles::set_transforms(void)
     // Static-Physical position of solution points
     pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
 
-    if (viscous)
+    // NEVER USED??
+    /*if (viscous)
     {
       tgrad_detjac_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-    }
+    }*/
     
     if (rank==0)
       cout << endl << " at flux points"  << endl;
@@ -4279,9 +4375,9 @@ void eles::set_transforms(void)
           JGinv_fpts(j,i,1,0)= -yr;
           JGinv_fpts(j,i,1,1)= xr;
           
-          // gradient of detjac at the flux point
+          // gradient of detjac at the flux point -- NEVER USED??
           
-          if(viscous)
+          /*if(viscous)
           {
             xrr = dd_pos(0,0);
             xss = dd_pos(0,1);
@@ -4293,7 +4389,7 @@ void eles::set_transforms(void)
             
             tgrad_detjac_fpts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
             tgrad_detjac_fpts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
-          }
+          }*/
           
           // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
           
@@ -4341,9 +4437,9 @@ void eles::set_transforms(void)
           JGinv_fpts(j,i,2,1) = xs*zr - xr*zs;
           JGinv_fpts(j,i,2,2) = xr*ys - xs*yr;
           
-          // gradient of detjac at the flux point
+          // gradient of detjac at the flux point -- NEVER USED
           
-          if(viscous)
+          /*if(viscous)
           {
             xrr = dd_pos(0,0);
             xss = dd_pos(0,1);
@@ -4372,7 +4468,7 @@ void eles::set_transforms(void)
             xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
             tgrad_detjac_fpts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
             xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
-          }
+          }*/
           
           // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
           
@@ -4458,7 +4554,7 @@ void eles::set_transforms_dynamic(void)
 
       if (viscous) {
         // Gradient of the determinant of the Jacobian as seen in the static frame ( del |G| )
-        tgrad_J_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims);
+        //tgrad_J_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims);
       }
     }
 
@@ -4512,7 +4608,7 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_upts(j,i,1,1)=  xr;
 
           // gradient of detjac at solution point
-          if(viscous)
+          /*if(viscous)
           {
             xrr = dd_pos(0,0);
             xss = dd_pos(0,1);
@@ -4524,7 +4620,7 @@ void eles::set_transforms_dynamic(void)
 
             tgrad_J_dyn_upts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
             tgrad_J_dyn_upts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
-          }
+          }*/
 
         }
         else if(n_dims==3)
@@ -4556,7 +4652,7 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_upts(j,i,2,2) = (xr*ys - xs*yr);
 
           // gradient of detjac at solution point
-          if(viscous)
+          /*if(viscous)
           {
             xrr = dd_pos(0,0);
             xss = dd_pos(0,1);
@@ -4585,7 +4681,7 @@ void eles::set_transforms_dynamic(void)
                 xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
             tgrad_J_dyn_upts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
                 xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
-          }
+          }*/
         }
         else
         {
@@ -4618,7 +4714,9 @@ void eles::set_transforms_dynamic(void)
       ndA_dyn_fpts.setup(n_fpts_per_ele,n_eles);
 
       if (viscous) {
-        tgrad_J_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+        //tgrad_J_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims); // NEVER USED
+        // Total static-physical -> dynamic-physical transformation matrix ( {G}/J )
+        JinvG_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
       }
     }
 
@@ -4671,13 +4769,23 @@ void eles::set_transforms_dynamic(void)
           }
 
           // store determinant of jacobian multiplied by inverse of jacobian at the flux point
+          // (dynamic -> static transformation matrix)
           JGinv_dyn_fpts(j,i,0,0)=  ys;
           JGinv_dyn_fpts(j,i,0,1)= -xs;
           JGinv_dyn_fpts(j,i,1,0)= -yr;
           JGinv_dyn_fpts(j,i,1,1)=  xr;
 
+          if (viscous)
+          {
+            // store static->dynamic transformation matrix
+            JinvG_dyn_fpts(j,i,0,0)= xr/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,0,1)= xs/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,1,0)= yr/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,1,1)= ys/J_dyn_fpts(j,i);
+          }
+
           // gradient of detjac at the flux point
-          if(viscous)
+          /*if(viscous)
           {
             xrr = dd_pos(0,0);
             xss = dd_pos(0,1);
@@ -4689,7 +4797,7 @@ void eles::set_transforms_dynamic(void)
 
             tgrad_J_dyn_fpts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
             tgrad_J_dyn_fpts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
-          }
+          }*/
 
           // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
           norm_dot_JGinv(0)= ( norm_fpts(j,i,0)*ys -norm_fpts(j,i,1)*yr);
@@ -4733,9 +4841,23 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_fpts(j,i,2,1) = (xs*zr - xr*zs);
           JGinv_dyn_fpts(j,i,2,2) = (xr*ys - xs*yr);
 
+          if (viscous)
+          {
+            // store static->dynamic transformation matrix
+            JinvG_dyn_fpts(j,i,0,0)= xr/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,0,1)= xs/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,0,2)= xt/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,1,0)= yr/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,1,1)= ys/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,1,2)= yt/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,2,0)= zr/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,2,1)= zs/J_dyn_fpts(j,i);
+            JinvG_dyn_fpts(j,i,2,2)= zt/J_dyn_fpts(j,i);
+          }
+
           // gradient of detjac at the flux point
 
-          if(viscous)
+          /*if(viscous)
           {
             xrr = dd_pos(0,0);
             xss = dd_pos(0,1);
@@ -4764,7 +4886,7 @@ void eles::set_transforms_dynamic(void)
                 xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
             tgrad_J_dyn_fpts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
                 xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
-          }
+          }*/
 
           // temporarily store moving-physical domain interface normal at the flux point
           // [transformed normal dot determinant of jacobian multiplied by inverse of jacobian]

@@ -616,7 +616,7 @@ void mpi_inters::calculate_common_viscFlux(void)
               norm(m) = *norm_fpts(j,i,m);
           }
 
-          // obtain gradient of discontinuous solution at flux points
+          // obtain physical gradient of discontinuous solution at flux points
 
           for(int k=0;k<n_dims;k++)
             {

@@ -401,7 +401,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (FlowSol->rank==0) cout << "done." << endl;
 
   // Pre-compute shape basis - CRITICAL for deforming-mesh performance
-  if (FlowSol->rank==0) cout << "pre-computing nodal shape-basis functions ... ";
+  if (FlowSol->rank==0) cout << "pre-computing nodal shape-basis functions ... " << flush;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       FlowSol->mesh_eles(i)->store_nodal_s_basis_fpts();
@@ -429,7 +429,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (FlowSol->rank==0) cout << "done." << endl;
 
   // Initialize grid velocity variables & set to 0
-  if (FlowSol->rank==0) cout << "initializing grid velocity to 0 ... " << endl;
+  if (FlowSol->rank==0) cout << "initializing grid velocity to 0 ... " << flush;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
       FlowSol->mesh_eles(i)->initialize_grid_vel(max_n_spts(i));

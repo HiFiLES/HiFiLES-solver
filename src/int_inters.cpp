@@ -361,6 +361,7 @@ void int_inters::calculate_common_viscFlux(void)
         // obtain discontinuous solution at flux points
 
         if (motion) {
+          // Transform to dynamic-physical domain
           for(int k=0;k<n_fields;k++)
           {
             temp_u_l(k)=(*disu_fpts_l(j,i,k))/(*J_dyn_fpts_l(j,i));
@@ -376,7 +377,7 @@ void int_inters::calculate_common_viscFlux(void)
           }
         }
 
-          // obtain gradient of discontinuous solution at flux points
+          // obtain physical gradient of discontinuous solution at flux points
 
           for(int k=0;k<n_dims;k++)
             {

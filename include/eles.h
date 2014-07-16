@@ -808,6 +808,9 @@ protected:
 
 	/*! temporary subgrid-scale flux storage */
 	array<double> temp_sgsf;
+
+  /*! temporary subgrid-scale flux storage for dynamic->static transformation */
+  array<double> temp_sgsf_ref;
 	
 	/*! storage for distance of solution points to nearest no-slip boundary */
 	array<double> wall_distance;
@@ -864,11 +867,14 @@ protected:
   /*! determinant of dynamic jacobian at flux points ( |G| ) */
   array<double> J_dyn_fpts;
 
-  /*! Dynamic transformation matrix at solution points ( |G|*G^-1 )*/
+  /*! Dynamic transformation matrix at solution points ( |G|*G^-1 ) */
   array<double>  JGinv_dyn_upts;
 
-  /*! Dynamic transformation matrix at flux points ( |G|*G^-1 )*/
+  /*! Dynamic->Static transformation matrix at flux points ( |G|*G^-1 ) */
   array<double>  JGinv_dyn_fpts;
+
+  /*! Static->Dynamic transformation matrix at flux points ( G/|G| ) */
+  array<double>  JinvG_dyn_fpts;
 
   /*! transformed gradient of determinant of dynamic jacobian at solution points */
   array<double> tgrad_J_dyn_upts;

@@ -359,16 +359,14 @@ void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> 
 
   for(int k=0;k<n_fields;k++)
     fn(k) = 0.5*( (fn_l(k)+fn_r(k)) - eig*(u_r(k)-u_l(k)) );
-
-  //cout << "fn(0) = " << fn(0) << endl;
 }
 
-// Rusanov inviscid numerical flux at the boundaries
+// Central-difference inviscid numerical flux at the boundaries
 void inters::convective_flux_boundary( array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields)
 {
   array<double> fn_l(n_fields),fn_r(n_fields);
 
-  // calculate normal flux from discontinuous solution at flux points
+  // calculate normal flux from total discontinuous flux at flux points
   for(int k=0;k<n_fields;k++) {
 
       fn_l(k)=0.;
@@ -381,7 +379,6 @@ void inters::convective_flux_boundary( array<double> &f_l, array<double> &f_r, a
     }
 
   // calculate the normal transformed continuous flux at the flux points
-
   for(int k=0;k<n_fields;k++)
     fn(k)=0.5*(fn_l(k)+fn_r(k));
 }
