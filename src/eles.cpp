@@ -1243,7 +1243,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 #endif
     
 #ifdef _GPU
-    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),run_input.gamma,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
+    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,run_input.motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
     
     
     //tdisinvf_upts.cp_gpu_cpu();
@@ -4557,6 +4557,14 @@ void eles::set_transforms_dynamic(void)
         //tgrad_J_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims);
       }
     }
+#ifdef _GPU
+    else
+    {
+      J_dyn_upts.mv_gpu_cpu();
+      JGinv_dyn_upts.mv_gpu_cpu();
+      dyn_pos_upts.mv_gpu_cpu();
+    }
+#endif
 
     if (rank==0 && first_time) {
       cout << " Setting up dynamic->static transforms at solution points" << endl;
@@ -4719,6 +4727,16 @@ void eles::set_transforms_dynamic(void)
         JinvG_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
       }
     }
+#ifdef _GPU
+    else
+    {
+      J_dyn_fpts.mv_gpu_cpu();
+      JGinv_dyn_fpts.mv_gpu_cpu();
+      dyn_pos_fpts.mv_gpu_cpu();
+      norm_dyn_fpts.mv_gpu_cpu();
+      ndA_dyn_fpts.mv_gpu_cpu();
+    }
+#endif
 
     if (rank==0 && first_time)
       cout << endl << " at flux points"  << endl;
@@ -4912,18 +4930,15 @@ void eles::set_transforms_dynamic(void)
     }
 
 #ifdef _GPU
-    tdA_fpts.mv_cpu_gpu();
+    ndA_dyn_fpts.mv_cpu_gpu();
     norm_dyn_fpts.mv_cpu_gpu();
-    dyn_pos_fpts.cp_cpu_gpu();
+    dyn_pos_fpts.cp_cpu_gpu();    
+    JGinv_dyn_fpts.mv_cpu_gpu();
+    J_dyn_fpts.mv_cpu_gpu();
 
-    /*
-      JGinv_fpts.mv_cpu_gpu();
-      J_dyn_fpts.mv_cpu_gpu();
-    if (viscous)
-    {
-        tgrad_detjac_fpts.mv_cpu_gpu();
-    }
-    */
+    /*if (viscous) {
+      JinvG_dyn_fpts.mv_cpu_gpu();
+    }*/
 #endif
 
     if (rank==0 && first_time) cout << endl;
@@ -6747,13 +6762,16 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
     }
 }
 
-/*! Set the grid velocity at one shape point */
+/*! Set the grid velocity at one shape point
+ *  TODO: CUDA */
 void eles::set_grid_vel_spt(int in_ele, int in_spt, array<double> in_vel)
 {
   for (int i=0; i<n_dims; i++)
     vel_spts(i,in_spt,in_ele) = in_vel(i);
 }
 
+/*! Store nodal basis at flux points to avoid re-calculating every time
+ *  TODO: CUDA (mv to GPU) */
 void eles::store_nodal_s_basis_fpts(void)
 {
   int ic,fpt,j,k;
@@ -7004,13 +7022,21 @@ void eles::initialize_grid_vel(int in_max_n_spts_per_ele)
     // at shape points
     vel_spts.setup(n_dims,in_max_n_spts_per_ele,n_eles);
     vel_spts.initialize_to_zero();
+
+    /// TODO: after other mesh stuff implemented in CUDA, *.mv_cpu_gpu()
+    /// ALSO: *_nodal_s_basis data is redundant: same for every element (of same type)
 }
 
 /*! Interpolate the grid velocity from shape points to flux points
  *  TODO: Find a way to speed up with BLAS or something
+ *  TODO: Implement these routines in CUDA (just 'for' loops - easy!)
  *  (would have to use sparse BLAS - think block-diag matrix) */
 void eles::set_grid_vel_fpts(int in_rk_step)
 {
+#ifdef _GPU
+  if (grid_vel_fpts.gpu_flag)
+    grid_vel_fpts.mv_gpu_cpu();
+#endif
   int ic,fpt,j,k;
 //  if (run_input.motion==3) {
 //    double rk_time;
@@ -7035,12 +7061,20 @@ void eles::set_grid_vel_fpts(int in_rk_step)
       }
     }
 //  }
+#ifdef _GPU
+  grid_vel_fpts.mv_cpu_gpu();
+#endif
 }
 
 /*! Interpolate the grid velocity from shape points to solution points
- *  TODO: Find a way to speed up with BLAS or something */
+ *  TODO: Find a way to speed up with BLAS or something
+ *  TODO: Implement these routines in CUDA (just 'for' loops - easy!) */
 void eles::set_grid_vel_upts(int in_rk_step)
 {
+#ifdef _GPU
+  if (grid_vel_upts.gpu_flag)
+    grid_vel_upts.mv_gpu_cpu();
+#endif
   int ic,upt,j,k;
 //  if (run_input.motion==3) {
 //    double rk_time;
@@ -7065,6 +7099,9 @@ void eles::set_grid_vel_upts(int in_rk_step)
       }
     }
 //  }
+#ifdef _GPU
+  grid_vel_upts.mv_cpu_gpu();
+#endif
 }
 
 
