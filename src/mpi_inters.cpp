@@ -247,7 +247,7 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
 
           for (k=0; k<n_dims; k++) {
             norm_dyn_fpts(j,in_inter,k)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
-            grid_vel_fpts(k,j,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+            grid_vel_fpts(j,in_inter,k)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
             pos_dyn_fpts(j,in_inter,k)=get_pos_dyn_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
           }
         }
@@ -475,7 +475,7 @@ void mpi_inters::calculate_common_invFlux(void)
             }
             // Get mesh velocity
             for (int k=0; k<n_dims; k++) {
-              temp_v(k)=(*grid_vel_fpts(k,j,i));
+              temp_v(k)=(*grid_vel_fpts(j,i,k));
             }
           }else{
             temp_v.initialize_to_zero();
@@ -601,7 +601,7 @@ void mpi_inters::calculate_common_viscFlux(void)
             }
             // Get mesh velocity
             for (int k=0; k<n_dims; k++) {
-              temp_v(k)=(*grid_vel_fpts(k,j,i));
+              temp_v(k)=(*grid_vel_fpts(j,i,k));
             }
           }else{
             temp_v.initialize_to_zero();

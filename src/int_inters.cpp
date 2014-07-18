@@ -157,7 +157,7 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
 
           for (k=0; k<n_dims; k++) {
             norm_dyn_fpts(j,in_inter,k)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
-            grid_vel_fpts(k,j,in_inter)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+            grid_vel_fpts(j,in_inter,k)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
             pos_dyn_fpts(j,in_inter,k)=get_pos_dyn_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
           }
         }
@@ -197,6 +197,14 @@ void int_inters::mv_all_cpu_gpu(void)
 
   delta_disu_fpts_l.mv_cpu_gpu();
   delta_disu_fpts_r.mv_cpu_gpu();
+
+  // Moving-mesh arrays
+  J_dyn_fpts_l.mv_cpu_gpu();
+  J_dyn_fpts_r.mv_cpu_gpu();
+  ndA_dyn_fpts_l.mv_cpu_gpu();
+  ndA_dyn_fpts_r.mv_cpu_gpu();
+  norm_dyn_fpts.mv_cpu_gpu();
+  grid_vel_fpts.mv_cpu_gpu();
 
   if(viscous)
     {
@@ -242,7 +250,7 @@ void int_inters::calculate_common_invFlux(void)
         }
         // Get mesh velocity
         for (int k=0; k<n_dims; k++) {
-          temp_v(k)=(*grid_vel_fpts(k,j,i));
+          temp_v(k)=(*grid_vel_fpts(j,i,k));
         }
       }else{
         temp_v.initialize_to_zero();
@@ -339,7 +347,7 @@ void int_inters::calculate_common_invFlux(void)
 #ifdef _GPU
   if (n_inters!=0)
     {
-      calculate_common_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),tdA_fpts_r.get_ptr_gpu(),ndA_dyn_fpts_l.get_ptr_gpu(),ndA_dyn_fpts_r.get_ptr_gpu(),J_dyn_fpts_l.get_ptr_gpu(),J_dyn_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),delta_disu_fpts_r.get_ptr_gpu(),run_input.gamma,run_input.pen_fact,viscous,motion,run_input.vis_riemann_solve_type,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda);
+      calculate_common_invFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),tdA_fpts_r.get_ptr_gpu(),ndA_dyn_fpts_l.get_ptr_gpu(),ndA_dyn_fpts_r.get_ptr_gpu(),J_dyn_fpts_l.get_ptr_gpu(),J_dyn_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),delta_disu_fpts_r.get_ptr_gpu(),run_input.gamma,run_input.pen_fact,viscous,motion,run_input.vis_riemann_solve_type,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda);
     }
 
 #endif

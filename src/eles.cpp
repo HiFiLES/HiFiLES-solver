@@ -737,6 +737,19 @@ void eles::mv_all_cpu_gpu(void)
     Lu.mv_cpu_gpu();
     Le.mv_cpu_gpu();
     twall.mv_cpu_gpu();
+
+    // Dynamic Transforms & other moving mesh arrays
+    J_dyn_upts.cp_cpu_gpu();
+    JGinv_dyn_upts.cp_cpu_gpu();
+
+    J_dyn_fpts.cp_cpu_gpu();
+    JGinv_dyn_fpts.cp_cpu_gpu();
+    ndA_dyn_fpts.cp_cpu_gpu();
+    norm_dyn_fpts.cp_cpu_gpu();
+    dyn_pos_fpts.cp_cpu_gpu(); 
+
+    grid_vel_upts.cp_cpu_gpu();
+    grid_vel_fpts.cp_cpu_gpu();
   }
 #endif
 }
@@ -1184,7 +1197,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           }
           // Get mesh velocity in dynamic frame
           for (k=0; k<n_dims; k++) {
-            temp_v(k) = grid_vel_upts(k,j,i);
+            temp_v(k) = grid_vel_upts(j,i,k);
           }
           // Temporary flux vector for dynamic->static transformation
           temp_f_ref.setup(n_fields,n_dims);
@@ -4292,7 +4305,7 @@ void eles::set_transforms(void)
     
 #ifdef _GPU
     detjac_upts.cp_cpu_gpu(); // Copy since need in write_tec
-    JGinv_upts.mv_cpu_gpu();
+    JGinv_upts.cp_cpu_gpu(); // Copy since needed for calc_d_pos_dyn
     /*
      if (viscous) {
      tgrad_detjac_upts.mv_cpu_gpu();
@@ -4497,7 +4510,11 @@ void eles::set_transforms(void)
     
 #ifdef _GPU
     tdA_fpts.mv_cpu_gpu();
-    norm_fpts.mv_cpu_gpu();
+    if (motion)
+      norm_fpts.cp_cpu_gpu(); // cp b/c needed for set_transforms_dynamic()
+    else
+      norm_fpts.mv_cpu_gpu(); 
+
     pos_fpts.cp_cpu_gpu();
     
     /*
@@ -4516,7 +4533,7 @@ void eles::set_transforms(void)
 
 void eles::set_transforms_dynamic(void)
 {
-  if (n_eles!=0)
+  if (n_eles!=0 && motion)
   {
 
     int i,j,k;
@@ -4557,14 +4574,6 @@ void eles::set_transforms_dynamic(void)
         //tgrad_J_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims);
       }
     }
-#ifdef _GPU
-    else
-    {
-      J_dyn_upts.mv_gpu_cpu();
-      JGinv_dyn_upts.mv_gpu_cpu();
-      dyn_pos_upts.mv_gpu_cpu();
-    }
-#endif
 
     if (rank==0 && first_time) {
       cout << " Setting up dynamic->static transforms at solution points" << endl;
@@ -4703,12 +4712,7 @@ void eles::set_transforms_dynamic(void)
 
 #ifdef _GPU
     J_dyn_upts.cp_cpu_gpu(); // Copy since need in write_tec
-    JGinv_dyn_upts.mv_cpu_gpu();
-    /*
-    if (viscous) {
-        tgrad_J_dyn_upts.mv_cpu_gpu();
-    }
-    */
+    JGinv_dyn_upts.cp_cpu_gpu();
 #endif
 
     // Compute metrics term at flux points
@@ -4727,16 +4731,6 @@ void eles::set_transforms_dynamic(void)
         JinvG_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
       }
     }
-#ifdef _GPU
-    else
-    {
-      J_dyn_fpts.mv_gpu_cpu();
-      JGinv_dyn_fpts.mv_gpu_cpu();
-      dyn_pos_fpts.mv_gpu_cpu();
-      norm_dyn_fpts.mv_gpu_cpu();
-      ndA_dyn_fpts.mv_gpu_cpu();
-    }
-#endif
 
     if (rank==0 && first_time)
       cout << endl << " at flux points"  << endl;
@@ -4930,11 +4924,11 @@ void eles::set_transforms_dynamic(void)
     }
 
 #ifdef _GPU
-    ndA_dyn_fpts.mv_cpu_gpu();
-    norm_dyn_fpts.mv_cpu_gpu();
+    ndA_dyn_fpts.cp_cpu_gpu();
+    norm_dyn_fpts.cp_cpu_gpu();
     dyn_pos_fpts.cp_cpu_gpu();    
-    JGinv_dyn_fpts.mv_cpu_gpu();
-    J_dyn_fpts.mv_cpu_gpu();
+    JGinv_dyn_fpts.cp_cpu_gpu();
+    J_dyn_fpts.cp_cpu_gpu();
 
     /*if (viscous) {
       JinvG_dyn_fpts.mv_cpu_gpu();
@@ -4946,6 +4940,20 @@ void eles::set_transforms_dynamic(void)
     // To avoid re-setting up ALL transform arrays in the future (for dynamic grids)
     first_time = false;
   }
+#ifdef _GPU
+  else if (n_eles!=0 && motion==0)
+  {
+    // No setup required; just get dummy ptrs on GPU
+    J_dyn_upts.cp_cpu_gpu();
+    JGinv_dyn_upts.cp_cpu_gpu();
+
+    J_dyn_fpts.cp_cpu_gpu();
+    JGinv_dyn_fpts.cp_cpu_gpu();
+    ndA_dyn_fpts.cp_cpu_gpu();
+    norm_dyn_fpts.cp_cpu_gpu();
+    dyn_pos_fpts.cp_cpu_gpu();    
+  }
+#endif
 }
 
 void eles::set_bdy_ele2ele(void)
@@ -5511,9 +5519,9 @@ double* eles::get_grid_vel_fpts_ptr(int in_ele, int in_ele_local_inter, int in_i
     }
 
 #ifdef _GPU
-    return grid_vel_fpts.get_ptr_gpu(in_dim,fpt,in_ele);
+    return grid_vel_fpts.get_ptr_gpu(fpt,in_ele,in_dim);
 #else
-    return grid_vel_fpts.get_ptr_cpu(in_dim,fpt,in_ele);
+    return grid_vel_fpts.get_ptr_cpu(fpt,in_ele,in_dim);
 #endif
 }
 
@@ -7008,11 +7016,13 @@ void eles::store_dd_nodal_s_basis_upts(void)
 /*! Setup arrays for storing grid velocity */
 void eles::initialize_grid_vel(int in_max_n_spts_per_ele)
 {
+  if (motion)
+  {
     // At solution & flux points
-    grid_vel_fpts.setup(n_dims,n_fpts_per_ele,n_eles);
+    grid_vel_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
     grid_vel_fpts.initialize_to_zero();
 
-    grid_vel_upts.setup(n_dims,n_upts_per_ele,n_eles);
+    grid_vel_upts.setup(n_upts_per_ele,n_eles,n_dims);
     grid_vel_upts.initialize_to_zero();
 
     // At output / plotting points
@@ -7025,6 +7035,13 @@ void eles::initialize_grid_vel(int in_max_n_spts_per_ele)
 
     /// TODO: after other mesh stuff implemented in CUDA, *.mv_cpu_gpu()
     /// ALSO: *_nodal_s_basis data is redundant: same for every element (of same type)
+  }
+  else
+  {
+    // Never going to be used, but still need dummy ptr on gpu regardless
+    grid_vel_fpts.cp_cpu_gpu();
+    grid_vel_upts.cp_cpu_gpu();
+  }
 }
 
 /*! Interpolate the grid velocity from shape points to flux points
@@ -7034,8 +7051,8 @@ void eles::initialize_grid_vel(int in_max_n_spts_per_ele)
 void eles::set_grid_vel_fpts(int in_rk_step)
 {
 #ifdef _GPU
-  if (grid_vel_fpts.gpu_flag)
-    grid_vel_fpts.mv_gpu_cpu();
+//  if (!grid_vel_fpts.cpu_flag)
+//    grid_vel_fpts.mv_gpu_cpu();
 #endif
   int ic,fpt,j,k;
 //  if (run_input.motion==3) {
@@ -7043,8 +7060,8 @@ void eles::set_grid_vel_fpts(int in_rk_step)
 //    rk_time = run_input.time+RK_c(in_rk_step)*run_input.dt;
 //    for (ic=0; ic<n_eles; ic++) {
 //      for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
-//        grid_vel_upts(0,fpt,ic) = 4*pi/10*sin(pi*pos_fpts(fpt,ic,0)/10)*sin(pi*pos_fpts(fpt,ic,1)/10)*cos(2*pi*rk_time/10);
-//        grid_vel_upts(1,fpt,ic) = 4*pi/10*sin(pi*pos_fpts(fpt,ic,0)/10)*sin(pi*pos_fpts(fpt,ic,1)/10)*cos(2*pi*rk_time/10);
+//        grid_vel_fpts(fpt,ic,0) = 4*pi/10*sin(pi*pos_fpts(fpt,ic,0)/10)*sin(pi*pos_fpts(fpt,ic,1)/10)*cos(2*pi*rk_time/10);
+//        grid_vel_fpts(fpt,ic,1) = 4*pi/10*sin(pi*pos_fpts(fpt,ic,0)/10)*sin(pi*pos_fpts(fpt,ic,1)/10)*cos(2*pi*rk_time/10);
 //      }
 //    }
 //  }
@@ -7053,16 +7070,16 @@ void eles::set_grid_vel_fpts(int in_rk_step)
     for (ic=0; ic<n_eles; ic++) {
       for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
         for(k=0;k<n_dims;k++) {
-          grid_vel_fpts(k,fpt,ic) = 0.0;
+          grid_vel_fpts(fpt,ic,k) = 0.0;
           for(j=0;j<n_spts_per_ele(ic);j++) {
-            grid_vel_fpts(k,fpt,ic)+=nodal_s_basis_fpts(j,fpt,ic)*vel_spts(k,j,ic);
+            grid_vel_fpts(fpt,ic,k)+=nodal_s_basis_fpts(j,fpt,ic)*vel_spts(k,j,ic);
           }
         }
       }
     }
 //  }
 #ifdef _GPU
-  grid_vel_fpts.mv_cpu_gpu();
+  grid_vel_fpts.cp_cpu_gpu();
 #endif
 }
 
@@ -7072,8 +7089,8 @@ void eles::set_grid_vel_fpts(int in_rk_step)
 void eles::set_grid_vel_upts(int in_rk_step)
 {
 #ifdef _GPU
-  if (grid_vel_upts.gpu_flag)
-    grid_vel_upts.mv_gpu_cpu();
+//  if (grid_vel_upts.gpu_flag)
+//    grid_vel_upts.mv_gpu_cpu();
 #endif
   int ic,upt,j,k;
 //  if (run_input.motion==3) {
@@ -7081,8 +7098,8 @@ void eles::set_grid_vel_upts(int in_rk_step)
 //    rk_time = run_input.time+RK_c(in_rk_step)*run_input.dt;
 //    for (ic=0; ic<n_eles; ic++) {
 //      for (upt=0; upt<n_upts_per_ele; upt++) {
-//        grid_vel_upts(0,upt,ic) = 4*pi/10*sin(pi*pos_upts(upt,ic,0)/10)*sin(pi*pos_upts(upt,ic,1)/10)*cos(2*pi*rk_time/10);
-//        grid_vel_upts(1,upt,ic) = 4*pi/10*sin(pi*pos_upts(upt,ic,0)/10)*sin(pi*pos_upts(upt,ic,1)/10)*cos(2*pi*rk_time/10);
+//        grid_vel_upts(upt,ic,0) = 4*pi/10*sin(pi*pos_upts(upt,ic,0)/10)*sin(pi*pos_upts(upt,ic,1)/10)*cos(2*pi*rk_time/10);
+//        grid_vel_upts(upt,ic,1) = 4*pi/10*sin(pi*pos_upts(upt,ic,0)/10)*sin(pi*pos_upts(upt,ic,1)/10)*cos(2*pi*rk_time/10);
 //      }
 //    }
 //  }
@@ -7091,16 +7108,16 @@ void eles::set_grid_vel_upts(int in_rk_step)
     for (ic=0; ic<n_eles; ic++) {
       for (upt=0; upt<n_upts_per_ele; upt++) {
         for(k=0;k<n_dims;k++) {
-          grid_vel_upts(k,upt,ic) = 0.0;
+          grid_vel_upts(upt,ic,k) = 0.0;
           for(j=0;j<n_spts_per_ele(ic);j++) {
-            grid_vel_upts(k,upt,ic)+=nodal_s_basis_upts(j,upt,ic)*vel_spts(k,j,ic);
+            grid_vel_upts(upt,ic,k)+=nodal_s_basis_upts(j,upt,ic)*vel_spts(k,j,ic);
           }
         }
       }
     }
 //  }
 #ifdef _GPU
-  grid_vel_upts.mv_cpu_gpu();
+  grid_vel_upts.cp_cpu_gpu();
 #endif
 }
 

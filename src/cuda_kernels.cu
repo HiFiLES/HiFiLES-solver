@@ -657,7 +657,7 @@ __device__ void inv_NS_flux(double* q, double* v_g, double *p, double* f, double
     }
     else if (in_field==0) {
       f[0] = q[1] - q[0]*v_g[0];
-      f[1] = q[2] - q[0]*v_g[2];
+      f[1] = q[2] - q[0]*v_g[1];
     }
     else if (in_field==1) {
       f[0]  = (*p) + (q[1]*q[1]/q[0]) - q[1]*v_g[0];
@@ -1491,7 +1491,7 @@ template<int in_n_fields, int in_n_dims>
 __device__ __host__ void rusanov_flux(double* q_l, double *q_r, double* v_g, double *norm, double *fn, double in_gamma)
 {
   double vn_l, vn_r;
-  double vn_av_mag, c_av;
+  double vn_av_mag, c_av, vn_g;
   double p_l, p_r,f_l,f_r;
 
   double f[in_n_dims];
@@ -1499,17 +1499,19 @@ __device__ __host__ void rusanov_flux(double* q_l, double *q_r, double* v_g, dou
   // Compute normal velocity
   vn_l = 0.;
   vn_r = 0.;
+  vn_g = 0.;
 #pragma unroll
   for (int i=0;i<in_n_dims;i++) {
       vn_l += q_l[i+1]/q_l[0]*norm[i];
       vn_r += q_r[i+1]/q_r[0]*norm[i];
+      vn_g += v_g[i]*norm[i];
     }
 
   // Flux prep
   inv_NS_flux<in_n_dims>(q_l,v_g,&p_l,f,in_gamma,-1);
   inv_NS_flux<in_n_dims>(q_r,v_g,&p_r,f,in_gamma,-1);
 
-  vn_av_mag=sqrt(0.25*(vn_l+vn_r)*(vn_l+vn_r));
+  vn_av_mag=0.5*fabs(vn_l+vn_r);
   c_av=sqrt((in_gamma*(p_l+p_r))/(q_l[0]+q_r[0]));
 
 #pragma unroll
@@ -1530,7 +1532,7 @@ __device__ __host__ void rusanov_flux(double* q_l, double *q_r, double* v_g, dou
         f_r += f[2]*norm[2];
 
       // Common normal flux
-      fn[i] = 0.5*(f_l+f_r) - 0.5*(vn_av_mag+c_av)*(q_r[i]-q_l[i]);
+      fn[i] = 0.5*(f_l+f_r) - 0.5*fabs(vn_av_mag-vn_g+c_av)*(q_r[i]-q_l[i]);
     }
 }
 
@@ -1589,6 +1591,12 @@ __device__ __host__ void right_flux(double *q_r, double *norm, double *fn, doubl
 
   double p_r,f_r;
   double f[in_n_dims];
+  double v_g[in_n_dims]; 
+
+  // WARNING: right_flux never used, so not going to bother finishing this
+#pragma unroll
+  for (int i=0; i<in_n_dims; i++)
+    v_g[i] = 0.;
 
   // Flux prep
   inv_NS_flux<in_n_dims>(q_r,v_g,&p_r,f,in_gamma,-1);
@@ -1990,6 +1998,7 @@ __global__ void evaluate_invFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_e
   double temp_f[in_n_dims];
   double met[in_n_dims][in_n_dims];
   double met_dyn[in_n_dims][in_n_dims];
+  double v_g[in_n_dims];
 
   double p;
   int stride = in_n_upts_per_ele*in_n_eles;
@@ -2023,8 +2032,10 @@ __global__ void evaluate_invFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_e
 
         // Get grid velocity
 #pragma unroll
-        for (int i=0;i<in_n_dims;i++)
+        for (int i=0;i<in_n_dims;i++) {
           v_g[i] = in_grid_vel_upts_ptr[thread_id + i*stride];
+          //v_g[i] = in_grid_vel_upts_ptr[i+];
+        }
       }
       else
       {
@@ -2068,7 +2079,8 @@ __global__ void evaluate_invFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_e
               f[2] = temp_f[2];
             }
           }
-
+          
+          // Transform back to computational domain
           if (in_n_dims==2) {
               out_tdisf_upts_ptr[index                    ] = met[0][0]*f[0] + met[0][1]*f[1];
               out_tdisf_upts_ptr[index+stride*in_n_fields ] = met[1][0]*f[0] + met[1][1]*f[1];
@@ -2153,18 +2165,20 @@ __global__ void calculate_common_invFlux_NS_gpu_kernel(int in_n_fpts_per_inter, 
         roe_flux<in_n_fields,in_n_dims> (q_l,q_r,v_g,norm,fn,in_gamma);
 
       // Store transformed flux (transform to computational domain)
-      if (in_motion)
+      if (in_motion) {
         jac = (*(in_tdA_fpts_l_ptr[thread_id]))*(*(in_tdA_dyn_fpts_l_ptr[thread_id]));
-      else
+      }else{
         jac = (*(in_tdA_fpts_l_ptr[thread_id]));
+      }
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         (*(in_norm_tconf_fpts_l_ptr[thread_id+i*stride]))=jac*fn[i];
 
-      if (in_motion)
+      if (in_motion) {
         jac = (*(in_tdA_fpts_r_ptr[thread_id]))*(*(in_tdA_dyn_fpts_r_ptr[thread_id]));
-      else
+      }else{
         jac = (*(in_tdA_fpts_r_ptr[thread_id]));
+      }
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         (*(in_norm_tconf_fpts_r_ptr[thread_id+i*stride]))=-jac*fn[i];
@@ -2316,33 +2330,23 @@ __global__ void evaluate_boundaryConditions_invFlux_gpu_kernel(int in_n_fpts_per
           q_l[i] /= *(in_detjac_dyn_fpts_l_ptr[thread_id]);
       }
 
-      // Compute normal
       if (in_motion>0) {
-        // Get normal in dynamic-physical domain
+        // Get normal & grid velocity in dynamic-physical domain
 #pragma unroll
-      for (int i=0;i<in_n_dims;i++)
-        norm[i]=*(in_norm_dyn_fpts_ptr[thread_id + i*stride]);
+        for (int i=0;i<in_n_dims;i++) {
+          norm[i]=*(in_norm_dyn_fpts_ptr[thread_id + i*stride]);
+          v_g[i]=*(in_grid_vel_fpts_ptr[thread_id+i*stride]);
+        }
       }
       else
       {
-        // Get normal in static-physical domain
+        // Get normal & grid velocity (0) in static-physical domain
 #pragma unroll
-      for (int i=0;i<in_n_dims;i++)
-        norm[i]=*(in_norm_fpts_ptr[thread_id + i*stride]);
+        for (int i=0;i<in_n_dims;i++) {
+          norm[i]=*(in_norm_fpts_ptr[thread_id + i*stride]);
+          v_g[i] = 0.;
+        }
       }
-
-      // Get grid velocity
-//      if (in_motion>0) {
-#pragma unroll
-      for (int i=0;i<in_n_dims;i++)
-        v_g[i]=*(in_grid_vel_fpts_ptr[thread_id+i*stride]);
-//      }
-//      else
-//      {
-//#pragma unroll
-//        for (int i=0;i<in_n_dims;i++)
-//          v_g[i] = 0.;
-//      }
 
       // Get physical position of flux points
       if (in_motion) {
@@ -3047,6 +3051,7 @@ __global__ void evaluate_boundaryConditions_viscFlux_gpu_kernel(int in_n_fpts_pe
   double fn[in_n_fields];
   double norm[in_n_dims];
   double loc[in_n_dims];
+  double v_g[in_n_dims];
 
   double grad_ene[in_n_dims];
   double grad_vel[in_n_dims*in_n_dims];
@@ -3276,6 +3281,7 @@ __global__ void calculate_common_viscFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_in
 
   double fn[in_n_fields];
   double norm[in_n_dims];
+  double v_g[in_n_dims];
 
   double grad_ene[in_n_dims];
   double grad_vel[in_n_dims*in_n_dims];
@@ -3738,7 +3744,7 @@ void calculate_common_invFlux_gpu_kernel_wrapper(int in_n_fpts_per_inter, int in
   int n_blocks=((in_n_inters*in_n_fpts_per_inter-1)/256)+1;
 
   check_cuda_error("Before", __FILE__, __LINE__);
-
+  
   if (in_riemann_solve_type==0) // Rusanov
     {
       if(in_vis_riemann_solve_type==0) //LDG
@@ -3818,9 +3824,9 @@ void evaluate_boundaryConditions_invFlux_gpu_kernel_wrapper(int in_n_fpts_per_in
       if (in_vis_riemann_solve_type==0) // LDG
         {
           if (in_n_dims==2)
-            evaluate_boundaryConditions_invFlux_gpu_kernel<2,4,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_tdA_fpts_l_ptr, in_tdA_dyn_fpts_l_ptr, in_norm_fpts_ptr, in_norm_dyn_fpts_ptr, in_loc_fpts_ptr, in_loc_dyn_fpts_ptr, in_grid_vel_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_motion, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation);
+            evaluate_boundaryConditions_invFlux_gpu_kernel<2,4,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_tdA_fpts_l_ptr, in_tdA_dyn_fpts_l_ptr, in_detjac_dyn_fpts_l_ptr, in_norm_fpts_ptr, in_norm_dyn_fpts_ptr, in_loc_fpts_ptr, in_loc_dyn_fpts_ptr, in_grid_vel_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_motion, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation);
           else if (in_n_dims==3)
-            evaluate_boundaryConditions_invFlux_gpu_kernel<3,5,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_tdA_fpts_l_ptr, in_tdA_dyn_fpts_l_ptr, in_norm_fpts_ptr, in_norm_dyn_fpts_ptr, in_loc_fpts_ptr, in_loc_dyn_fpts_ptr, in_grid_vel_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_motion, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation);
+            evaluate_boundaryConditions_invFlux_gpu_kernel<3,5,2,0> <<<n_blocks,256>>>(in_n_fpts_per_inter, in_n_inters, in_disu_fpts_l_ptr, in_norm_tconf_fpts_l_ptr, in_tdA_fpts_l_ptr, in_tdA_dyn_fpts_l_ptr, in_detjac_dyn_fpts_l_ptr, in_norm_fpts_ptr, in_norm_dyn_fpts_ptr, in_loc_fpts_ptr, in_loc_dyn_fpts_ptr, in_grid_vel_fpts_ptr, in_boundary_type, in_bdy_params, in_delta_disu_fpts_l_ptr, in_gamma, in_R_ref, in_viscous, in_motion, in_time_bound, in_wave_speed_x, in_wave_speed_y, in_wave_speed_z, in_lambda, in_equation);
         }
       else
         FatalError("ERROR: Viscous riemann solver type not recognized in bdy riemann solver");
