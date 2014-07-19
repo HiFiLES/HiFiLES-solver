@@ -427,8 +427,15 @@ void int_inters::calculate_common_viscFlux(void)
           }
 
           // storing normal components
-          for (int m=0;m<n_dims;m++)
-            norm(m) = *norm_fpts(j,i,m);
+          if (motion) {
+            for (int m=0;m<n_dims;m++)
+              norm(m) = *norm_dyn_fpts(j,i,m);
+          }
+          else
+          {
+            for (int m=0;m<n_dims;m++)
+              norm(m) = *norm_fpts(j,i,m);
+          }
 
           // Calling viscous riemann solver
           if (run_input.vis_riemann_solve_type==0)

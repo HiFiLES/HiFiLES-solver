@@ -1256,7 +1256,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 #endif
     
 #ifdef _GPU
-    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,run_input.motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
+    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
     
     
     //tdisinvf_upts.cp_gpu_cpu();
@@ -2269,8 +2269,8 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
             }
           }
           // Copy back to original flux array
-          for (k=0; k<n_fields; k++) {
-            for(l=0; l<n_dims; l++) {
+          for(l=0; l<n_dims; l++) {
+            for (k=0; k<n_fields; k++) {
               temp_f(k,l) = temp_f_ref(k,l);
             }
           }

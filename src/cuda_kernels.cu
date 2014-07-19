@@ -1617,7 +1617,7 @@ __device__ __host__ void roe_flux(double* u_l, double* v_g, double *u_r, double 
 {
   double p_l,p_r;
   double h_l, h_r;
-  double sq_rho,rrho,hm,usq,am,am_sq,unm;
+  double sq_rho,rrho,hm,usq,am,am_sq,unm,vgn;
   double lambda0,lambdaP,lambdaM;
   double rhoun_l, rhoun_r,eps;
   double a1,a2,a3,a4,a5,a6,aL1,bL1;
@@ -1663,9 +1663,12 @@ __device__ __host__ void roe_flux(double* u_l, double* v_g, double *u_r, double 
   am  = sqrt(am_sq);
 
   unm = 0.;
+  vgn = 0.;
 #pragma unroll
-  for (int i=0;i<n_dims;i++)
+  for (int i=0;i<n_dims;i++) {
     unm += um[i]*norm[i];
+    vgn += v_g[i]*norm[i];
+  }
 
   //if (flag)
   //  printf("unm=%16.12f, usq=%16.12f\n",unm,usq);
@@ -1702,9 +1705,9 @@ __device__ __host__ void roe_flux(double* u_l, double* v_g, double *u_r, double 
       //  printf("du=%16.12f\n",du[i]);
     }
 
-  lambda0 = abs(unm);
-  lambdaP = abs(unm+am);
-  lambdaM = abs(unm-am);
+  lambda0 = abs(unm-vgn);
+  lambdaP = abs(unm-vgn+am);
+  lambdaM = abs(unm-vgn-am);
 
   // Entropy fix
   eps = 0.5*(abs(rhoun_l/u_l[0]-rhoun_r/u_r[0])+ abs(sqrt(in_gamma*p_l/u_l[0])-sqrt(in_gamma*p_r/u_r[0])));
@@ -1773,7 +1776,7 @@ __device__ __host__ void roe_flux(double* u_l, double* v_g, double *u_r, double 
 
 #pragma unroll
   for (int i=0;i<n_fields;i++)
-    fn[i] =  0.5*fn[i];
+      fn[i] =  0.5*(fn[i] - vgn*(u_l[i]+u_r[i]));
 
 }
 
@@ -2028,10 +2031,8 @@ __global__ void evaluate_invFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_e
 
         // Get grid velocity
 #pragma unroll
-        for (int i=0;i<in_n_dims;i++) {
+        for (int i=0;i<in_n_dims;i++)
           v_g[i] = in_grid_vel_upts_ptr[thread_id + i*stride];
-          //v_g[i] = in_grid_vel_upts_ptr[i+];
-        }
       }
       else
       {
@@ -2120,7 +2121,7 @@ __global__ void calculate_common_invFlux_NS_gpu_kernel(int in_n_fpts_per_inter, 
       // Compute right state solution
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
-        q_r[i]=(*(in_disu_fpts_r_ptr[thread_id+i*stride]))/(*(in_detjac_dyn_fpts_l_ptr[thread_id]));
+        q_r[i]=(*(in_disu_fpts_r_ptr[thread_id+i*stride]))/(*(in_detjac_dyn_fpts_r_ptr[thread_id]));
 
       // Compute normal
 #pragma unroll
@@ -2161,20 +2162,16 @@ __global__ void calculate_common_invFlux_NS_gpu_kernel(int in_n_fpts_per_inter, 
         roe_flux<in_n_fields,in_n_dims> (q_l,q_r,v_g,norm,fn,in_gamma);
 
       // Store transformed flux (transform to computational domain)
-      if (in_motion) {
-        jac = (*(in_tdA_fpts_l_ptr[thread_id]))*(*(in_tdA_dyn_fpts_l_ptr[thread_id]));
-      }else{
-        jac = (*(in_tdA_fpts_l_ptr[thread_id]));
-      }
+      jac = (*(in_tdA_fpts_l_ptr[thread_id]));
+      if (in_motion)
+        jac *= (*(in_tdA_dyn_fpts_l_ptr[thread_id]));
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         (*(in_norm_tconf_fpts_l_ptr[thread_id+i*stride]))=jac*fn[i];
 
-      if (in_motion) {
-        jac = (*(in_tdA_fpts_r_ptr[thread_id]))*(*(in_tdA_dyn_fpts_r_ptr[thread_id]));
-      }else{
-        jac = (*(in_tdA_fpts_r_ptr[thread_id]));
-      }
+      jac = (*(in_tdA_fpts_r_ptr[thread_id]));
+      if (in_motion)
+        jac *= (*(in_tdA_dyn_fpts_r_ptr[thread_id]));
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
         (*(in_norm_tconf_fpts_r_ptr[thread_id+i*stride]))=-jac*fn[i];
@@ -2188,22 +2185,22 @@ __global__ void calculate_common_invFlux_NS_gpu_kernel(int in_n_fpts_per_inter, 
           if (in_motion) {
             // Transform from dynamic-physical to static-physical domain
 #pragma unroll
-          for (int i=0;i<in_n_fields;i++)
-            (*(in_delta_disu_fpts_l_ptr[thread_id+i*stride])) = (q_c[i]-q_l[i])*(*(in_detjac_dyn_fpts_l_ptr[thread_id]));
+            for (int i=0;i<in_n_fields;i++)
+              (*(in_delta_disu_fpts_l_ptr[thread_id+i*stride])) = (q_c[i]-q_l[i])*(*(in_detjac_dyn_fpts_l_ptr[thread_id]));
 
 #pragma unroll
-          for (int i=0;i<in_n_fields;i++)
-            (*(in_delta_disu_fpts_r_ptr[thread_id+i*stride])) = (q_c[i]-q_r[i])*(*(in_detjac_dyn_fpts_r_ptr[thread_id]));
+            for (int i=0;i<in_n_fields;i++)
+              (*(in_delta_disu_fpts_r_ptr[thread_id+i*stride])) = (q_c[i]-q_r[i])*(*(in_detjac_dyn_fpts_r_ptr[thread_id]));
           }
           else
           {
 #pragma unroll
-          for (int i=0;i<in_n_fields;i++)
-            (*(in_delta_disu_fpts_l_ptr[thread_id+i*stride])) = (q_c[i]-q_l[i]);
+            for (int i=0;i<in_n_fields;i++)
+              (*(in_delta_disu_fpts_l_ptr[thread_id+i*stride])) = (q_c[i]-q_l[i]);
 
 #pragma unroll
-          for (int i=0;i<in_n_fields;i++)
-            (*(in_delta_disu_fpts_r_ptr[thread_id+i*stride])) = (q_c[i]-q_r[i]);
+            for (int i=0;i<in_n_fields;i++)
+              (*(in_delta_disu_fpts_r_ptr[thread_id+i*stride])) = (q_c[i]-q_r[i]);
           }
         }
 
@@ -2516,7 +2513,14 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_
       vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, i);
 
       if (in_motion) {
-        // Transform from dynamic-physical to static-physical domain
+//#pragma unroll
+//        for(j=0;j<in_n_dims;j++) {
+//          temp_f[j] = 0.;
+//#pragma unroll
+//          for(k=0;k<in_n_dims;k++) {
+//            temp_f[j] += met_dyn[j][k]*f[k];
+//          }
+
         if(in_n_dims==2) {
           temp_f[0] = met_dyn[0][0]*f[0] + met_dyn[0][1]*f[1];
           temp_f[1] = met_dyn[1][0]*f[0] + met_dyn[1][1]*f[1];
@@ -2526,6 +2530,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_
           temp_f[1] = met_dyn[1][0]*f[0] + met_dyn[1][1]*f[1] + met_dyn[1][2]*f[2];
           temp_f[2] = met_dyn[2][0]*f[0] + met_dyn[2][1]*f[1] + met_dyn[2][2]*f[2];
         }
+
         // Copy back into f
 #pragma unroll
         for (j=0;j<in_n_dims;j++)
@@ -2533,6 +2538,13 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_
       }
 
       // Transform from static-physical to computational domain
+//#pragma unroll
+//      for(j=0;j<in_n_dims;j++) {
+//#pragma unroll
+//        for(k=0;k<in_n_dims;k++) {
+//          out_tdisf_upts_ptr[index+i*stride*in_n_fields] += met[j][k]*f[k];
+//        }
+//      }
       if(in_n_dims==2) {
         out_tdisf_upts_ptr[index                   ] += met[0][0]*f[0] + met[0][1]*f[1];
         out_tdisf_upts_ptr[index+stride*in_n_fields] += met[1][0]*f[0] + met[1][1]*f[1];
