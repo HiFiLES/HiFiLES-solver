@@ -14,13 +14,13 @@ ic_form                           // 0: Isentropic Vortex, 1: Uniform flow, 2: S
 test_case                         // 0: Normal (doesn't have an analytical solution), 1:Isentropic Vortex, 2: Advection-Equation
 0
 order                             // Order of basis polynomials
-5
+3
 dt_type
 0
 dt 
 0.0005
 n_steps
-1
+10000
 adv_type                          // 0: Forward Euler, 3: RK45
 0
 tau 
