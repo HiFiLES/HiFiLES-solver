@@ -651,13 +651,147 @@ void eles_tets::compute_filter_upts(void)
           FatalError("WARNING: Gaussian filter cannot be built for tets since n_upts_per_ele != n_cubpts_per_ele for any order. Exiting");
         }
     }
-  else if(run_input.filter_type==2) // Modal coefficient filter
+  else if(run_input.filter_type==2 || run_input.filter_type==3 || run_input.filter_type==4) // Modal filter (3 choices of kernel)
     {
       if (rank==0) cout<<"Building modal filter"<<endl;
 
-      // Compute modal filter
-      compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order);
-
+      // Output beta to file
+      ofstream coeff_file;
+      coeff_file.open("beta_upts_tet.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << beta(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+      
+      // Compute modal cutoff filter
+      compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 2);
+      
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      // Ensure symmetry and normalization
+      for(i=0;i<N2;i++)
+      {
+        for(j=0;j<N;j++)
+        {
+          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+        }
+      }
+      for(i=0;i<N2;i++)
+      {
+        norm = 0.0;
+        for(j=0;j<N;j++)
+          norm += filter_upts(i,j);
+        for(j=0;j<N;j++)
+          filter_upts(i,j) /= norm;
+        for(j=0;j<N;j++)
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+      }
+      sum = 0;
+      for(i=0;i<N;i++)
+        for(j=0;j<N;j++)
+          sum+=filter_upts(i,j);
+      
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      cout<<"filter sum: "<<sum<<endl;
+      
+      // Output filter to file
+      coeff_file.open("filter_upts_tet_cutoff.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+      
+      // Compute modal cutoff filter
+      compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 3);
+      
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      // Ensure symmetry and normalization
+      for(i=0;i<N2;i++)
+      {
+        for(j=0;j<N;j++)
+        {
+          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+        }
+      }
+      for(i=0;i<N2;i++)
+      {
+        norm = 0.0;
+        for(j=0;j<N;j++)
+          norm += filter_upts(i,j);
+        for(j=0;j<N;j++)
+          filter_upts(i,j) /= norm;
+        for(j=0;j<N;j++)
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+      }
+      sum = 0;
+      for(i=0;i<N;i++)
+        for(j=0;j<N;j++)
+          sum+=filter_upts(i,j);
+      
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      cout<<"filter sum: "<<sum<<endl;
+      
+      coeff_file.open("filter_upts_tet_exp.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+      
+      // Compute modal cutoff filter
+      compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 4);
+      
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      // Ensure symmetry and normalization
+      for(i=0;i<N2;i++)
+      {
+        for(j=0;j<N;j++)
+        {
+          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+        }
+      }
+      for(i=0;i<N2;i++)
+      {
+        norm = 0.0;
+        for(j=0;j<N;j++)
+          norm += filter_upts(i,j);
+        for(j=0;j<N;j++)
+          filter_upts(i,j) /= norm;
+        for(j=0;j<N;j++)
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+      }
+      sum = 0;
+      for(i=0;i<N;i++)
+        for(j=0;j<N;j++)
+          sum+=filter_upts(i,j);
+      
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      cout<<"filter sum: "<<sum<<endl;
+      
+      coeff_file.open("filter_upts_tet_gauss.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
     }
   else // Simple average for low order
     {
@@ -687,7 +821,7 @@ void eles_tets::compute_filter_upts(void)
     {
       norm = 0.0;
       for(j=0;j<N;j++)
-        norm += filter_upts(i,j); // or abs(filter_upts(i,j))?
+        norm += filter_upts(i,j);
       for(j=0;j<N;j++)
         filter_upts(i,j) /= norm;
       for(j=0;j<N;j++)

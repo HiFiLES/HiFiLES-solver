@@ -632,7 +632,7 @@ void eles_hexas::compute_filter_upts(void)
   k_c = 1.0/run_input.filter_ratio;
   // Approx resolution in element (assumes uniform point spacing)
   // Interval is [-1:1]
-  dlt = 2.0/order;
+  dlt = 2.0/(order+1.0);
 
   // Normalised solution point separation
   for (i=0;i<N;++i)
@@ -777,12 +777,8 @@ void eles_hexas::compute_filter_upts(void)
       if (rank==0) cout<<"Building modal filter"<<endl;
 
       // Compute cutoff filter
-      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_type);
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, run_input.filter_type);
 
-      sum = 0;
-      for(i=0;i<N;i++)
-        for(j=0;j<N;j++)
-          sum+=filter_upts_1D(i,j);
     }
   else // Simple average for low order
     {
