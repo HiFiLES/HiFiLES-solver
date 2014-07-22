@@ -243,8 +243,11 @@ $(OBJ)global.o: global.cpp global.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
 ifeq ($(NODE),GPU)	
+NVCC_FLAGS=
+# For very verbose compilation:
+#NVCC_FLAGS=--ptxas-options=-v
 $(OBJ)cuda_kernels.o: cuda_kernels.cu cuda_kernels.h error.h util.h
-	$(NVCC) -arch=sm_20 --ptxas-options=-v $(OPTS) -c -o $@ $<
+	$(NVCC) -arch=sm_20 $(NVCC_FLAGS) -Xcudafe "--diag_suppress=subscript_out_of_range" $(OPTS) -c -o $@ $<
 endif
 
 clean: 
