@@ -75,3 +75,9 @@ void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_p
 
 /*! wrapper for gpu kernel to calculate Leonard tensors for similarity model */
 void calc_similarity_model_kernel_wrapper(int flag, int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, double* in_disu_upts_ptr, double* in_disuf_upts_ptr, double* in_uu_ptr, double* in_ue_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr);
+
+/*! Wrapper for GPU kernel to update coordinate transformation at flux points for moving grids */
+void set_transforms_dynamic_fpts_kernel_wrapper(int in_n_fpts_per_ele, int in_n_eles, int in_n_dims, double* J_dyn_fpts_ptr, double* JGinv_dyn_fpts_ptr, double* tdA_dyn_fpts_ptr, double* norm_dyn_fpts_ptr, double *d_nodal_s_basis_fpts, double *shape_dyn);
+
+/*! Wrapper for GPU kernel to update coordinate transformation at solution points for moving grids */
+void set_transforms_dynamic_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_eles, int in_n_dims, int *n_spts_per_ele, double* J_upts_ptr, double *J_dyn_upts_ptr, double *JGinv_upts_ptr, double *JGinv_dyn_upts_ptr, double *d_nodal_s_basis_upts, double *shape_dyn);

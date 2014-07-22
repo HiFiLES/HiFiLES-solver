@@ -1487,6 +1487,184 @@ __device__ void SGS_flux_kernel(double* q, double* grad_q, double* grad_vel, dou
   }
 }
 
+//__global__ void set_transforms_dynamic_upts_kernel(int n_upts_per_ele, int n_eles, int* n_spts_per_ele, double* J_dyn_upts_ptr, double* JGinv_dyn_upts_ptr, double* tdA_dyn_fpts_ptr, double* norm_dyn_fpts_ptr)
+/*! gpu kernel to update coordiante transformation variables for moving grids */
+template<int in_n_dims>
+__global__ int set_transforms_dynamic_upts_kernel(int n_upts_per_ele, int n_eles, int* n_spts_per_ele, double* J_upts, double* J_dyn_upts, double* JGinv_upts, double* JGinv_dyn_upts, double* d_nodal_s_basis_upts, double* shape_dyn)
+{
+  const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
+
+  int stride = in_n_upts_per_ele*in_n_eles;
+  int i,j,k;
+  double d_pos[in_n_dims][in_n_dims];
+
+  double xr, xs, xt;
+  double yr, ys, yt;
+  double zr, zs, zt;
+
+  int err = 0;
+
+  if(thread_id<in_n_upts_per_ele*in_n_eles) {
+
+    /**
+    J_dyn_upts(n_upts_per_ele,n_eles): Determinant of the dynamic -> static reference transformation matrix ( |G| )
+    JGinv_dyn_upts(n_upts_per_ele,n_eles,n_dims,n_dims): Total dynamic -> static reference transformation matrix ( |G|*G^{-1} )
+    dyn_pos_upts(n_upts_per_ele,n_eles,n_dims): Physical position of solution points */
+
+    if(in_n_dims==2)
+    {
+      // calculate first derivatives of shape functions at the solution point
+      calc_d_pos_dyn_upt_kernel<2>(n_upts_per_ele, n_spts_per_ele, n_eles, JGinv_upts, J_upts, d_nodal_s_basis_upts, shape_dyn, d_pos);
+
+      xr = d_pos[0][0];
+      xs = d_pos[0][1];
+
+      yr = d_pos[1][0];
+      ys = d_pos[1][1];
+
+      // store determinant of jacobian at solution point
+      J_dyn_upts[thread_id]= xr*ys - xs*yr;
+
+      if (J_dyn_upts[thread_id] < 0) err = 1;
+
+      // store determinant of jacobian multiplied by inverse of jacobian at the solution point
+      JGinv_dyn_upts[thread_id + (0*in_n_dims+0)*stride] =  ys;
+      JGinv_dyn_upts[thread_id + (1*in_n_dims+0)*stride] = -xs;
+      JGinv_dyn_upts[thread_id + (0*in_n_dims+1)*stride] = -yr;
+      JGinv_dyn_upts[thread_id + (1*in_n_dims+1)*stride] = -xr;
+    }
+    else if(n_dims==3)
+    {
+      calc_d_pos_dyn_upt_kernel<3>(n_upts_per_ele, n_spts_per_ele, n_eles, JGinv_upts, J_upts, d_nodal_s_basis_upts, shape_dyn, d_pos);
+
+      xr = d_pos[0][0];
+      xs = d_pos[0][1];
+      xt = d_pos[0][2];
+
+      yr = d_pos[1][0];
+      ys = d_pos[1][1];
+      yt = d_pos[1][2];
+
+      zr = d_pos[2][0];
+      zs = d_pos[2][1];
+      zt = d_pos[2][2];
+
+      // store determinant of jacobian at solution point
+      J_dyn_upts[thread_id] = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
+
+      if (J_dyn_upts[thread_id] < 0) err = 1;
+
+      // store determinant of jacobian multiplied by inverse of jacobian at the solution point
+      JGinv_dyn_upts[thread_id + (0*in_n_dims+0)*stride] = (ys*zt - yt*zs);
+      JGinv_dyn_upts[thread_id + (1*in_n_dims+0)*stride] = (xt*zs - xs*zt);
+      JGinv_dyn_upts[thread_id + (2*in_n_dims+0)*stride] = (xs*yt - xt*ys);
+      JGinv_dyn_upts[thread_id + (0*in_n_dims+1)*stride] = (yt*zr - yr*zt);
+      JGinv_dyn_upts[thread_id + (1*in_n_dims+1)*stride] = (xr*zt - xt*zr);
+      JGinv_dyn_upts[thread_id + (2*in_n_dims+1)*stride] = (xt*yr - xr*yt);
+      JGinv_dyn_upts[thread_id + (0*in_n_dims+2)*stride] = (yr*zs - ys*zr);
+      JGinv_dyn_upts[thread_id + (1*in_n_dims+2)*stride] = (xs*zr - xr*zs);
+      JGinv_dyn_upts[thread_id + (2*in_n_dims+2)*stride] = (xr*ys - xs*yr);
+    }
+  }
+  return err;
+}
+
+/**
+ * GPU Kernel to calculate derivative of dynamic physical position wrt static/reference physical position at fpt
+ * Uses pre-computed nodal shape basis derivatives for efficiency
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ */
+template<int n_dims>
+__global__ void calc_d_pos_dyn_kernel(int n_pts_per_ele, int* n_spts_per_ele, int n_eles, double* JGinv_pts, double* detjac_pts, double* d_nodal_s_basis_pts, double* shape_dyn, double** out_d_pos)
+{
+  const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
+
+  int stride = n_pts_per_ele*n_eles;
+  int i,j,k;
+  double dxdr[n_dims][n_dims];
+
+  int ele = (int)thread_id/n_pts_per_ele;
+  int pt = thread_id%n_pts_per_ele;
+  int n_spts = n_spts_per_ele[ele];
+
+  if(thread_id<n_pts_per_ele*n_eles) {
+    // Calculate dx/dr
+    #pragma unroll
+    for(i=0; i<n_dims; i++) {
+      #pragma unroll
+      for(j=0; j<n_dims; j++) {
+        dxdr[i][j] = 0.;
+        #pragma unroll
+        for(k=0; k<n_spts; k++) {
+          dxdr[i][j] += shape_dyn[i+(n_dims*(k+n_spts*ele))]*d_nodal_s_basis_pts[j+(n_dims*(k+n_dims*(pt+n_pts_per_ele*ele)))];
+        }
+      }
+    }
+
+    // Calculate dx/dX using transformation matrix
+    #pragma unroll
+    for(i=0; i<n_dims; i++) {
+      #pragma unroll
+      for(j=0; j<n_dims; j++) {
+        out_d_pos[i][j] = 0.;
+        #pragma unroll
+        for(k=0; k<n_dims; k++) {
+          out_d_pos[i][j] += dxdr[i][k]*JGinv_pts[thread_id+(j*n_dims+k)*stride]/detjac_pts[thread_id];
+        }
+      }
+    }
+  }
+}
+
+/**
+ * GPU Kernel to calculate derivative of dynamic physical position wrt static/reference physical position at upt
+ * Uses pre-computed nodal shape basis derivatives for efficiency
+ * \param[in] in_upt - ID of solution point within element to evaluate at
+ * \param[in] in_ele - local element ID
+ * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ */
+template<int n_dims>
+__global__ void calc_d_pos_dyn_upt_kernel(int n_upts_per_ele, int* n_spts_per_ele, int n_eles, double* JGinv_upts, double* detjac_upts, double* d_nodal_s_basis_upts, double* shape_dyn, double** out_d_pos)
+{
+  const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
+
+  int stride = n_upts_per_ele*n_eles;
+  int i,j,k;
+  double dxdr[n_dims][n_dims];
+
+  int ele = (int)thread_id/n_upts_per_ele;
+  int upt = thread_id%n_upts_per_ele;
+  int n_spts = n_spts_per_ele[ele];
+
+  if(thread_id<n_upts_per_ele*n_eles) {
+    // Calculate dx/dr
+    #pragma unroll
+    for(i=0; i<n_dims; i++) {
+      #pragma unroll
+      for(j=0; j<n_dims; j++) {
+        dxdr[i][j] = 0.;
+        #pragma unroll
+        for(k=0; k<n_spts; k++) {
+          dxdr[i][j] += shape_dyn[i+(n_dims*(k+n_spts*ele))]*d_nodal_s_basis_upts[j+(n_dims*(k+n_dims*(upt+n_upts_per_ele*ele)))];
+        }
+      }
+    }
+
+    // Calculate dx/dX using transformation matrix
+    #pragma unroll
+    for(i=0; i<n_dims; i++) {
+      #pragma unroll
+      for(j=0; j<n_dims; j++) {
+        out_d_pos[i][j] = 0.;
+        #pragma unroll
+        for(k=0; k<n_dims; k++) {
+          out_d_pos[i][j] += dxdr[i][k]*JGinv_upts[thread_id+(j*n_dims+k)*stride]/detjac_upts[thread_id];
+        }
+      }
+    }
+  }
+}
+
 template<int in_n_fields, int in_n_dims>
 __device__ __host__ void rusanov_flux(double* q_l, double *q_r, double* v_g, double *norm, double *fn, double in_gamma)
 {
@@ -4195,6 +4373,50 @@ void calc_similarity_model_kernel_wrapper(int flag, int in_n_fields, int in_n_up
   check_cuda_error("After",__FILE__, __LINE__);
 }
 
+/*! wrapper for gpu kernel to update coordinate transformations for moving grids */
+void set_transforms_dynamic_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_eles, int in_n_dims, int* n_spts_per_ele, double* J_upts_ptr, double* J_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double* d_nodal_s_basis_upts, double* shape_dyn)
+{
+  // HACK: fix 256 threads per block
+  int block_size=256;
+  int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/block_size)+1;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+  if(in_n_dims==2) {
+    err = set_transforms_dynamic_upts_kernel<2> <<< n_blocks,block_size >>> (in_n_upts_per_ele, in_n_eles, n_spts_per_ele, J_upts_ptr, J_dyn_upts_ptr, JGinv_upts_ptr, JGinv_dyn_upts_ptr, d_nodal_s_basis_upts, shape_dyn);
+  }
+  else if(in_n_dims==3) {
+    err = set_transforms_dynamic_upts_kernel<3> <<< n_blocks,block_size >>> (in_n_upts_per_ele, in_n_eles, n_spts_per_ele, J_upts_ptr, J_dyn_upts_ptr, JGinv_upts_ptr, JGinv_dyn_upts_ptr, d_nodal_s_basis_upts, shape_dyn);
+  }
+
+  if (err)
+    cout << "ERROR: Negative Jacobian found at solution point!" << endl;
+
+  check_cuda_error("After",__FILE__, __LINE__);
+}
+
+/*! wrapper for gpu kernel to update coordinate transformations for moving grids */
+void set_transforms_dynamic_fpts_kernel_wrapper(int in_n_fpts_per_ele, int in_n_eles, int in_n_dims, int* n_spts_per_ele, double* J_fpts_ptr, double* J_dyn_fpts_ptr, double* JGinv_fpts_ptr, double* JGinv_dyn_fpts_ptr, double* tdA_dyn_fpts_ptr, double* norm_dyn_fpts_ptr, double* d_nodal_s_basis_fpts, double* shape_dyn)
+{
+  // HACK: fix 256 threads per block
+  int block_size=256;
+  int n_blocks=((in_n_eles*in_n_upts_per_ele-1)/block_size)+1;
+  int err = 0;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+  if(in_n_dims==2) {
+    err = set_transforms_dynamic_fpts_kernel<2> <<< n_blocks,block_size >>> (in_n_fpts_per_ele, in_n_eles, n_spts_per_ele, J_fpts_ptr, J_dyn_fpts_ptr, JGinv_fpts_ptr, JGinv_dyn_fpts_ptr, tdA_dyn_fpts_ptr, norm_dyn_fpts_ptr, d_nodal_s_basis_fpts, shape_dyn);
+  }
+  else if(in_n_dims==3) {
+    err = set_transforms_dynamic_fpts_kernel<3> <<< n_blocks,block_size >>> (in_n_fpts_per_ele, in_n_eles, n_spts_per_ele, J_fpts_ptr, J_dyn_fpts_ptr, JGinv_fpts_ptr, JGinv_dyn_fpts_ptr, tdA_dyn_fpts_ptr, norm_dyn_fpts_ptr, d_nodal_s_basis_fpts, shape_dyn);
+  }
+
+  if (err)
+    cout << "ERROR: Negative Jacobian found at flux point!" << endl;
+
+  check_cuda_error("After",__FILE__, __LINE__);
+}
 
 #ifdef _MPI
 
