@@ -1493,7 +1493,7 @@ __device__ void SGS_flux_kernel(double* q, double* grad_q, double* grad_vel, dou
  * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
  */
 template<int n_dims>
-__device__ void calc_d_pos_dyn_kernel(int n_pts_per_ele, int n_eles, int* n_spts_per_ele, double* detjac_pts, double* JGinv_pts, double* d_nodal_s_basis_pts, double* shape_dyn, double *&out_d_pos)
+__device__ void calc_d_pos_dyn_kernel(int n_pts_per_ele, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* detjac_pts, double* JGinv_pts, double* d_nodal_s_basis_pts, double* shape_dyn, double *&out_d_pos)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
@@ -1501,7 +1501,7 @@ __device__ void calc_d_pos_dyn_kernel(int n_pts_per_ele, int n_eles, int* n_spts
   int i,j,k;
   double dxdr[n_dims][n_dims];
 
-  int ele = (int)thread_id/n_pts_per_ele;
+  int ele = thread_id/n_pts_per_ele;
   int pt = thread_id%n_pts_per_ele;
   int n_spts = n_spts_per_ele[ele];
 
@@ -1514,7 +1514,7 @@ __device__ void calc_d_pos_dyn_kernel(int n_pts_per_ele, int n_eles, int* n_spts
         dxdr[i][j] = 0.;
         #pragma unroll
         for(k=0; k<n_spts; k++) {
-          dxdr[i][j] += shape_dyn[i+(n_dims*(k+n_spts*ele))]*d_nodal_s_basis_pts[j+(n_dims*(k+n_dims*(pt+n_pts_per_ele*ele)))];
+          dxdr[i][j] += shape_dyn[i+(n_dims*(k+max_n_spts_per_ele*ele))]*d_nodal_s_basis_pts[j+(n_dims*(k+max_n_spts_per_ele*(pt+n_pts_per_ele*ele)))];
         }
       }
     }
@@ -1536,7 +1536,7 @@ __device__ void calc_d_pos_dyn_kernel(int n_pts_per_ele, int n_eles, int* n_spts
 
 /*! gpu kernel to update coordiante transformation variables for moving grids */
 template<int n_dims>
-__global__ void set_transforms_dynamic_upts_kernel(int n_upts_per_ele, int n_eles, int* n_spts_per_ele, double* J_upts, double* J_dyn_upts, double* JGinv_upts, double* JGinv_dyn_upts, double* d_nodal_s_basis_upts, double* shape_dyn)
+__global__ void set_transforms_dynamic_upts_kernel(int n_upts_per_ele, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* J_upts, double* J_dyn_upts, double* JGinv_upts, double* JGinv_dyn_upts, double* d_nodal_s_basis_upts, double* shape_dyn)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
@@ -1557,7 +1557,7 @@ __global__ void set_transforms_dynamic_upts_kernel(int n_upts_per_ele, int n_ele
     if(n_dims==2)
     {
       // calculate first derivatives of shape functions at the solution point
-      calc_d_pos_dyn_kernel<2>(n_upts_per_ele, n_eles, n_spts_per_ele, J_upts, JGinv_upts, d_nodal_s_basis_upts, shape_dyn, d_pos);
+      calc_d_pos_dyn_kernel<2>(n_upts_per_ele, n_eles, max_n_spts_per_ele, n_spts_per_ele, J_upts, JGinv_upts, d_nodal_s_basis_upts, shape_dyn, d_pos);
 
       xr = d_pos[0+0*n_dims];
       xs = d_pos[0+1*n_dims];
@@ -1574,11 +1574,11 @@ __global__ void set_transforms_dynamic_upts_kernel(int n_upts_per_ele, int n_ele
       JGinv_dyn_upts[thread_id + (0*n_dims+0)*stride] =  ys;
       JGinv_dyn_upts[thread_id + (1*n_dims+0)*stride] = -xs;
       JGinv_dyn_upts[thread_id + (0*n_dims+1)*stride] = -yr;
-      JGinv_dyn_upts[thread_id + (1*n_dims+1)*stride] = -xr;
+      JGinv_dyn_upts[thread_id + (1*n_dims+1)*stride] =  xr;
     }
     else if(n_dims==3)
     {
-      calc_d_pos_dyn_kernel<3>(n_upts_per_ele, n_eles, n_spts_per_ele, J_upts, JGinv_upts, d_nodal_s_basis_upts, shape_dyn, d_pos);
+      calc_d_pos_dyn_kernel<3>(n_upts_per_ele, n_eles, max_n_spts_per_ele, n_spts_per_ele, J_upts, JGinv_upts, d_nodal_s_basis_upts, shape_dyn, d_pos);
 
       xr = d_pos[0+0*n_dims];
       xs = d_pos[0+1*n_dims];
@@ -1614,7 +1614,7 @@ __global__ void set_transforms_dynamic_upts_kernel(int n_upts_per_ele, int n_ele
 
 /*! gpu kernel to update coordiante transformation variables for moving grids */
 template<int n_dims>
-__global__ void set_transforms_dynamic_fpts_kernel(int n_fpts_per_ele, int n_eles, int* n_spts_per_ele, double* J_fpts, double* J_dyn_fpts, double* JGinv_fpts, double* JGinv_dyn_fpts, double* tdA_dyn_fpts, double* norm_fpts, double* norm_dyn_fpts, double* d_nodal_s_basis_fpts, double* shape_dyn)
+__global__ void set_transforms_dynamic_fpts_kernel(int n_fpts_per_ele, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* J_fpts, double* J_dyn_fpts, double* JGinv_fpts, double* JGinv_dyn_fpts, double* tdA_dyn_fpts, double* norm_fpts, double* norm_dyn_fpts, double* d_nodal_s_basis_fpts, double* shape_dyn)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
 
@@ -1631,7 +1631,7 @@ __global__ void set_transforms_dynamic_fpts_kernel(int n_fpts_per_ele, int n_ele
     if(n_dims==2)
     {
       // calculate first derivatives of shape functions at the solution point
-      calc_d_pos_dyn_kernel<2>(n_fpts_per_ele, n_eles, n_spts_per_ele, J_fpts, JGinv_fpts, d_nodal_s_basis_fpts, shape_dyn, d_pos);
+      calc_d_pos_dyn_kernel<2>(n_fpts_per_ele, n_eles, max_n_spts_per_ele, n_spts_per_ele, J_fpts, JGinv_fpts, d_nodal_s_basis_fpts, shape_dyn, d_pos);
 
       xr = d_pos[0+0*n_dims];
       xs = d_pos[0+1*n_dims];
@@ -1648,7 +1648,7 @@ __global__ void set_transforms_dynamic_fpts_kernel(int n_fpts_per_ele, int n_ele
       JGinv_dyn_fpts[thread_id + (0*n_dims+0)*stride] =  ys;
       JGinv_dyn_fpts[thread_id + (1*n_dims+0)*stride] = -xs;
       JGinv_dyn_fpts[thread_id + (0*n_dims+1)*stride] = -yr;
-      JGinv_dyn_fpts[thread_id + (1*n_dims+1)*stride] = -xr;
+      JGinv_dyn_fpts[thread_id + (1*n_dims+1)*stride] =  xr;
 
       // temporarily store unnormalized transformed normal
       norm[0]= ( norm_fpts[thread_id]*ys -norm_fpts[thread_id+stride]*yr);
@@ -1663,7 +1663,7 @@ __global__ void set_transforms_dynamic_fpts_kernel(int n_fpts_per_ele, int n_ele
     }
     else if(n_dims==3)
     {
-      calc_d_pos_dyn_kernel<3>(n_fpts_per_ele, n_eles, n_spts_per_ele, J_fpts, JGinv_fpts, d_nodal_s_basis_fpts, shape_dyn, d_pos);
+      calc_d_pos_dyn_kernel<3>(n_fpts_per_ele, n_eles, max_n_spts_per_ele, n_spts_per_ele, J_fpts, JGinv_fpts, d_nodal_s_basis_fpts, shape_dyn, d_pos);
 
       xr = d_pos[0+0*n_dims];
       xs = d_pos[0+1*n_dims];
@@ -3572,7 +3572,7 @@ __global__ void evaluate_boundaryConditions_viscFlux_gpu_kernel(int in_n_fpts_pe
 
 // gpu kernel to calculate normal transformed continuous inviscid flux at the flux points for mpi faces
 template <int in_n_dims, int in_n_fields, int in_riemann_solve_type, int in_vis_riemann_solve_type>
-__global__ void calculate_common_invFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_tdA_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_delta_disu_fpts_l_ptr, double in_gamma, double in_pen_fact, int in_viscous)
+__global__ void calculate_common_invFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_tdA_fpts_l_ptr, double** in_tdA_dyn_fpts_l_ptr, double** in_detjac_dyn_fpts_ptr, double** in_norm_fpts_ptr, double** in_norm_dyn_fpts_ptr, double** in_grid_vel_fpts_ptr, double** in_delta_disu_fpts_l_ptr, double in_gamma, double in_pen_fact, int in_viscous, int in_motion)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
@@ -3581,6 +3581,7 @@ __global__ void calculate_common_invFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_int
   double q_r[in_n_fields];
   double fn[in_n_fields];
   double norm[in_n_dims];
+  double v_g[in_n_dims];
 
   double q_c[in_n_fields];
 
@@ -3602,22 +3603,26 @@ __global__ void calculate_common_invFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_int
       if (in_motion) {
 #pragma unroll
         for (int i=0;i<in_n_fields;i++) {
-          q_l[i] /= (*(in_detjac_dyn_fpts_l_ptr[thread_id]));
-          q_r[i] /= *(in_detjac_dyn_fpts_r_ptr[thread_id]);
+          q_l[i] /= *(in_detjac_dyn_fpts_ptr[thread_id]);
+          q_r[i] /= *(in_detjac_dyn_fpts_ptr[thread_id]);
         }
       }
 
       // Compute normal
-      if (in_motion) {
+      if (in_motion>0) {
 #pragma unroll
-        for (int i=0;i<in_n_dims;i++)
+        for (int i=0;i<in_n_dims;i++) {
           norm[i]=*(in_norm_dyn_fpts_ptr[thread_id + i*stride]);
+          v_g[i] =*(in_grid_vel_fpts_ptr[thread_id + i*stride]);
+        }
       }
       else
       {
 #pragma unroll
-        for (int i=0;i<in_n_dims;i++)
+        for (int i=0;i<in_n_dims;i++) {
           norm[i]=*(in_norm_fpts_ptr[thread_id + i*stride]);
+          v_g[i] = 0.;
+        }
       }
 
       if (in_riemann_solve_type==0)
@@ -3627,7 +3632,7 @@ __global__ void calculate_common_invFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_int
 
       // Store transformed flux
       jac = (*(in_tdA_fpts_l_ptr[thread_id]));
-      if (in_motion)
+      if (in_motion>0)
         jac *= (*(in_tdA_dyn_fpts_l_ptr[thread_id]));
 #pragma unroll
       for (int i=0;i<in_n_fields;i++)
@@ -3644,10 +3649,10 @@ __global__ void calculate_common_invFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_int
             (*(in_delta_disu_fpts_l_ptr[thread_id+i*stride])) = (q_c[i]-q_l[i]);
 
           // Tranform back to static-reference domain
-          if (in_motion) {
+          if (in_motion>0) {
 #pragma unroll
             for (int i=0;i<in_n_fields;i++)
-              (*(in_delta_disu_fpts_l_ptr[thread_id+i*stride])) *= (*(in_detjac_dyn_fpts_l_ptr[thread_id]));
+              (*(in_delta_disu_fpts_l_ptr[thread_id+i*stride])) *= (*(in_detjac_dyn_fpts_ptr[thread_id]));
           }
         }
     }
@@ -3656,7 +3661,7 @@ __global__ void calculate_common_invFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_int
 
 // gpu kernel to calculate normal transformed continuous viscous flux at the flux points
 template <int in_n_dims, int in_n_fields, int in_n_comp, int in_vis_riemann_solve_type>
-__global__ void calculate_common_viscFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_tdA_fpts_l_ptr, double** in_norm_fpts_ptr, double** in_sgsf_fpts_l_ptr, double** in_sgsf_fpts_r_ptr, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int in_LES)
+__global__ void calculate_common_viscFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_inter, int in_n_inters, double** in_disu_fpts_l_ptr, double** in_disu_fpts_r_ptr, double** in_grad_disu_fpts_l_ptr, double** in_grad_disu_fpts_r_ptr, double** in_norm_tconf_fpts_l_ptr, double** in_tdA_fpts_l_ptr, double** in_tdA_dyn_fpts_l_ptr, double** in_detjac_dyn_fpts_ptr, double** in_norm_fpts_ptr, double** in_norm_dyn_fpts_ptr, double** in_sgsf_fpts_l_ptr, double** in_sgsf_fpts_r_ptr, double in_pen_fact, double in_tau, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, double in_fix_vis, int in_LES, int in_motion)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   const int stride = in_n_fpts_per_inter*in_n_inters;
@@ -3671,7 +3676,6 @@ __global__ void calculate_common_viscFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_in
 
   double fn[in_n_fields];
   double norm[in_n_dims];
-  double v_g[in_n_dims];
 
   double grad_ene[in_n_dims];
   double grad_vel[in_n_dims*in_n_dims];
@@ -3692,7 +3696,7 @@ __global__ void calculate_common_viscFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_in
       if (in_motion) {
 #pragma unroll
         for (int i=0;i<in_n_fields;i++)
-          q_l[i] *= (*(in_detjac_dyn_fpts_l_ptr[thread_id]));
+          q_l[i] /= (*(in_detjac_dyn_fpts_ptr[thread_id]));
       }
 
       // Left solution gradient and SGS flux
@@ -3749,7 +3753,7 @@ __global__ void calculate_common_viscFlux_NS_mpi_gpu_kernel(int in_n_fpts_per_in
       if (in_motion) {
 #pragma unroll
         for (int i=0;i<in_n_fields;i++)
-          q_r[i] /= (*(in_detjac_dyn_fpts_r_ptr[thread_id]));
+          q_r[i] /= (*(in_detjac_dyn_fpts_ptr[thread_id]));
       }
 
       // Right solution gradientand SGS flux
@@ -4419,7 +4423,7 @@ void calc_similarity_model_kernel_wrapper(int flag, int in_n_fields, int in_n_up
 }
 
 /*! wrapper for gpu kernel to update coordinate transformations for moving grids */
-void set_transforms_dynamic_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_eles, int in_n_dims, int* n_spts_per_ele, double* J_upts_ptr, double* J_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double* d_nodal_s_basis_upts, double* shape_dyn)
+void set_transforms_dynamic_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_eles, int in_n_dims, int max_n_spts_per_ele, int* n_spts_per_ele, double* J_upts_ptr, double* J_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double* d_nodal_s_basis_upts, double* shape_dyn)
 {
   // HACK: fix 256 threads per block
   int block_size=256;
@@ -4429,10 +4433,10 @@ void set_transforms_dynamic_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_
   check_cuda_error("Before", __FILE__, __LINE__);
 
   if(in_n_dims==2) {
-    set_transforms_dynamic_upts_kernel<2> <<< n_blocks,block_size >>> (in_n_upts_per_ele, in_n_eles, n_spts_per_ele, J_upts_ptr, J_dyn_upts_ptr, JGinv_upts_ptr, JGinv_dyn_upts_ptr, d_nodal_s_basis_upts, shape_dyn);
+    set_transforms_dynamic_upts_kernel<2> <<< n_blocks,block_size >>> (in_n_upts_per_ele, in_n_eles, max_n_spts_per_ele, n_spts_per_ele, J_upts_ptr, J_dyn_upts_ptr, JGinv_upts_ptr, JGinv_dyn_upts_ptr, d_nodal_s_basis_upts, shape_dyn);
   }
   else if(in_n_dims==3) {
-    set_transforms_dynamic_upts_kernel<3> <<< n_blocks,block_size >>> (in_n_upts_per_ele, in_n_eles, n_spts_per_ele, J_upts_ptr, J_dyn_upts_ptr, JGinv_upts_ptr, JGinv_dyn_upts_ptr, d_nodal_s_basis_upts, shape_dyn);
+    set_transforms_dynamic_upts_kernel<3> <<< n_blocks,block_size >>> (in_n_upts_per_ele, in_n_eles, max_n_spts_per_ele, n_spts_per_ele, J_upts_ptr, J_dyn_upts_ptr, JGinv_upts_ptr, JGinv_dyn_upts_ptr, d_nodal_s_basis_upts, shape_dyn);
   }
 
   if (err)
@@ -4442,7 +4446,7 @@ void set_transforms_dynamic_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_
 }
 
 /*! wrapper for gpu kernel to update coordinate transformations for moving grids */
-void set_transforms_dynamic_fpts_kernel_wrapper(int in_n_fpts_per_ele, int in_n_eles, int in_n_dims, int* n_spts_per_ele, double* J_fpts_ptr, double* J_dyn_fpts_ptr, double* JGinv_fpts_ptr, double* JGinv_dyn_fpts_ptr, double* tdA_dyn_fpts_ptr, double* norm_fpts_ptr, double* norm_dyn_fpts_ptr, double* d_nodal_s_basis_fpts, double* shape_dyn)
+void set_transforms_dynamic_fpts_kernel_wrapper(int in_n_fpts_per_ele, int in_n_eles, int in_n_dims, int max_n_spts_per_ele, int* n_spts_per_ele, double* J_fpts_ptr, double* J_dyn_fpts_ptr, double* JGinv_fpts_ptr, double* JGinv_dyn_fpts_ptr, double* tdA_dyn_fpts_ptr, double* norm_fpts_ptr, double* norm_dyn_fpts_ptr, double* d_nodal_s_basis_fpts, double* shape_dyn)
 {
   // HACK: fix 256 threads per block
   int block_size=256;
@@ -4452,10 +4456,10 @@ void set_transforms_dynamic_fpts_kernel_wrapper(int in_n_fpts_per_ele, int in_n_
   check_cuda_error("Before", __FILE__, __LINE__);
 
   if(in_n_dims==2) {
-    set_transforms_dynamic_fpts_kernel<2> <<< n_blocks,block_size >>> (in_n_fpts_per_ele, in_n_eles, n_spts_per_ele, J_fpts_ptr, J_dyn_fpts_ptr, JGinv_fpts_ptr, JGinv_dyn_fpts_ptr, tdA_dyn_fpts_ptr, norm_fpts_ptr, norm_dyn_fpts_ptr, d_nodal_s_basis_fpts, shape_dyn);
+    set_transforms_dynamic_fpts_kernel<2> <<< n_blocks,block_size >>> (in_n_fpts_per_ele, in_n_eles, max_n_spts_per_ele, n_spts_per_ele, J_fpts_ptr, J_dyn_fpts_ptr, JGinv_fpts_ptr, JGinv_dyn_fpts_ptr, tdA_dyn_fpts_ptr, norm_fpts_ptr, norm_dyn_fpts_ptr, d_nodal_s_basis_fpts, shape_dyn);
   }
   else if(in_n_dims==3) {
-    set_transforms_dynamic_fpts_kernel<3> <<< n_blocks,block_size >>> (in_n_fpts_per_ele, in_n_eles, n_spts_per_ele, J_fpts_ptr, J_dyn_fpts_ptr, JGinv_fpts_ptr, JGinv_dyn_fpts_ptr, tdA_dyn_fpts_ptr, norm_fpts_ptr, norm_dyn_fpts_ptr, d_nodal_s_basis_fpts, shape_dyn);
+    set_transforms_dynamic_fpts_kernel<3> <<< n_blocks,block_size >>> (in_n_fpts_per_ele, in_n_eles, max_n_spts_per_ele, n_spts_per_ele, J_fpts_ptr, J_dyn_fpts_ptr, JGinv_fpts_ptr, JGinv_dyn_fpts_ptr, tdA_dyn_fpts_ptr, norm_fpts_ptr, norm_dyn_fpts_ptr, d_nodal_s_basis_fpts, shape_dyn);
   }
 
   /*if (*err)

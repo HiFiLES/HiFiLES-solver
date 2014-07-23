@@ -4795,20 +4795,8 @@ void eles::set_transforms_dynamic(void)
 #ifdef _GPU
   if (n_eles!=0 && motion)
   {
-//    if (rank==0 && first_time) cout << endl << "Moving transforms to GPU ... " << flush;
-//    J_dyn_upts.cp_cpu_gpu(); // Copy since need in write_tec
-//    JGinv_dyn_upts.cp_cpu_gpu();
-
-//    ndA_dyn_fpts.cp_cpu_gpu();
-//    norm_dyn_fpts.cp_cpu_gpu();
-//    dyn_pos_fpts.cp_cpu_gpu();
-//    JGinv_dyn_fpts.cp_cpu_gpu();
-//    J_dyn_fpts.cp_cpu_gpu();
-
-//
-
     if (first_time) {
-      if (rank==0) cout << endl << "Moving transforms to GPU ... " << flush;
+      if (rank==0) cout << endl << "Moving dynamic transforms to GPU ... " << flush;
       J_dyn_upts.cp_cpu_gpu(); // Copy since need in write_tec
       JGinv_dyn_upts.cp_cpu_gpu();
 
@@ -4822,29 +4810,14 @@ void eles::set_transforms_dynamic(void)
       shape_dyn.cp_cpu_gpu();
 
       if (rank==0) cout << "done." << endl;
+    }else{
+      shape_dyn.cp_cpu_gpu();
     }
 
-    //double *dummy, *dummy1, *dummy2;
-    //dummy1 = detjac_upts.get_ptr_gpu();
-
     if (rank == 0 && first_time) cout << "Setting dynamic transformations ... " << flush;
-    set_transforms_dynamic_fpts_kernel_wrapper(n_fpts_per_ele,n_eles,n_dims,n_spts_per_ele.get_ptr_gpu(),detjac_fpts.get_ptr_gpu(),J_dyn_fpts.get_ptr_gpu(),JGinv_fpts.get_ptr_gpu(),JGinv_dyn_fpts.get_ptr_gpu(),ndA_dyn_fpts.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu(),d_nodal_s_basis_fpts.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
-    set_transforms_dynamic_upts_kernel_wrapper(n_upts_per_ele,n_eles,n_dims,n_spts_per_ele.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),d_nodal_s_basis_upts.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
+    set_transforms_dynamic_fpts_kernel_wrapper(n_fpts_per_ele,n_eles,n_dims,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),detjac_fpts.get_ptr_gpu(),J_dyn_fpts.get_ptr_gpu(),JGinv_fpts.get_ptr_gpu(),JGinv_dyn_fpts.get_ptr_gpu(),ndA_dyn_fpts.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu(),d_nodal_s_basis_fpts.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
+    set_transforms_dynamic_upts_kernel_wrapper(n_upts_per_ele,n_eles,n_dims,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),d_nodal_s_basis_upts.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
     if (rank == 0 && first_time) cout << "done." << endl;
-
-    // Copy back to CPU for misc. usage
-    J_dyn_upts.cp_gpu_cpu(); // Copy since need in write_tec
-    JGinv_dyn_upts.cp_gpu_cpu();
-
-    ndA_dyn_fpts.cp_gpu_cpu();
-    norm_dyn_fpts.cp_gpu_cpu();
-    dyn_pos_fpts.cp_gpu_cpu();
-    JGinv_dyn_fpts.cp_gpu_cpu();
-    J_dyn_fpts.cp_gpu_cpu();
-
-    // Start outputting stuff here to debug what's going wrong...
-
-    first_time = false;
   }
   else if (n_eles!=0 && motion==0 && first_time)
   {
@@ -4858,8 +4831,24 @@ void eles::set_transforms_dynamic(void)
     norm_dyn_fpts.cp_cpu_gpu();
     dyn_pos_fpts.cp_cpu_gpu();
   }
+
+  first_time = false;
 #endif
 }
+
+#ifdef _GPU
+void eles::cp_transforms_gpu_cpu(void)
+{
+  J_dyn_upts.cp_gpu_cpu();
+  JGinv_dyn_upts.cp_gpu_cpu();
+
+  J_dyn_fpts.cp_gpu_cpu();
+  JGinv_dyn_fpts.cp_gpu_cpu();
+  ndA_dyn_fpts.cp_gpu_cpu();
+  norm_dyn_fpts.cp_gpu_cpu();
+  dyn_pos_fpts.cp_gpu_cpu();
+}
+#endif
 
 void eles::set_bdy_ele2ele(void)
 {

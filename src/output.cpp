@@ -1506,16 +1506,17 @@ void CopyGPUCPU(struct solution* FlowSol)
   // copy solution to cpu
 
   for(int i=0;i<FlowSol->n_ele_types;i++)
+  {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
     {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
-        {
-          FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-          if (FlowSol->viscous==1)
-            {
-              FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
-            }
-        }
+      FlowSol->mesh_eles(i)->cp_transforms_gpu_cpu();
+      FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+      if (FlowSol->viscous==1)
+      {
+        FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
+      }
     }
+  }
 }
 #endif
 

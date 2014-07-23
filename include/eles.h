@@ -572,6 +572,9 @@ public:
   /*! Set the time step for the current iteration */
   void set_dt(int in_step, int adv_type);
 
+#ifdef _GPU
+  void cp_transforms_gpu_cpu();
+#endif
 protected:
 
   // #### members ####
