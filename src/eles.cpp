@@ -2760,6 +2760,9 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         denom = pow(denom,2.5) + pow(num,1.25);
         num = pow(num,1.5);
         mu_t = rho*Cs*Cs*delta*delta*num/(denom+eps);
+
+        // HACK: prevent negative values
+        mu_t = max(mu_t, 0.0);
       }
       
       // Dynamic LES model (Lilly, 1991):

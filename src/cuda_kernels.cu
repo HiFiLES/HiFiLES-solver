@@ -1365,6 +1365,9 @@ __device__ void SGS_flux_kernel(double* q, double* qf, double* grad_vel, double*
 
     // eddy viscosity
     *mu_t = q[0]*(*Cs)*(*Cs)*delta*delta*num/(denom+eps);
+
+    // HACK: prevent negative mu_t
+    *mu_t = max(*mu_t,0.0);
   }
   // Dynamic model
   else if(sgs_model==5) {
