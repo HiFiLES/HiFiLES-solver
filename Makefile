@@ -15,7 +15,7 @@
 
 # Copy the appropriate file from makefiles/makefile.machine.in to HIFILES_HOME as makefile.in
 #
-include /Users/fpalacios/HiFiLES/Makefiles/makefile.fpalacios_OSX_MPI.in
+include makefile.enrico.in
 
 # Compiler
 
@@ -60,7 +60,7 @@ ifeq ($(TECIO),YES)
 endif
 
 ifeq ($(PARALLEL),MPI)
-	OPTS	+= -I $(MPI_DIR)/include
+	OPTS += -I $(MPI_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/metis/include
 endif
@@ -98,13 +98,17 @@ ifeq ($(BLAS),ACCELERATE_BLAS)
 endif
 
 ifeq ($(BLAS),STANDARD_BLAS)
-  LIBS    += -L $(BLAS_DIR)/lib -lcblas
-  OPTS    += -I $(BLAS_DIR)/include -D_$(BLAS)
+	LIBS    += -L $(BLAS_DIR)/lib -lcblas
+	OPTS    += -I $(BLAS_DIR)/include -D_$(BLAS)
 endif
 
 ifeq ($(BLAS),ATLAS_BLAS)
-  LIBS    += -L $(BLAS_DIR)/lib -lcblas -latlas
-  OPTS    += -I $(BLAS_DIR)/include -D_STANDARD_BLAS
+	LIBS    += -L $(BLAS_DIR)/lib -lcblas -latlas
+	OPTS    += -I $(BLAS_DIR)/include -D_STANDARD_BLAS
+endif
+
+ifeq ($(BLAS),NO_BLAS)
+	OPTS	+= -D_$(BLAS)
 endif
 
 ifeq ($(NODE),GPU)
@@ -119,10 +123,11 @@ BIN	= bin/
 vpath %.cpp src
 vpath %.cu src
 vpath %.h include
+vpath %.hpp include
 
 # Objects
 
-OBJS    = $(OBJ)HiFiLES.o $(OBJ)geometry.o $(OBJ)solver.o $(OBJ)output.o $(OBJ)eles.o $(OBJ)eles_tris.o $(OBJ)eles_quads.o $(OBJ)eles_hexas.o $(OBJ)eles_tets.o $(OBJ)eles_pris.o $(OBJ)inters.o $(OBJ)int_inters.o $(OBJ)bdy_inters.o $(OBJ)funcs.o $(OBJ)flux.o $(OBJ)global.o $(OBJ)input.o $(OBJ)cubature_1d.o $(OBJ)cubature_tri.o $(OBJ)cubature_quad.o $(OBJ)cubature_hexa.o $(OBJ)cubature_tet.o
+OBJS    = $(OBJ)HiFiLES.o $(OBJ)geometry.o $(OBJ)mesh.o $(OBJ)matrix_structure.o $(OBJ)vector_structure.o $(OBJ)linear_solvers_structure.o $(OBJ)solver.o $(OBJ)output.o $(OBJ)eles.o $(OBJ)eles_tris.o $(OBJ)eles_quads.o $(OBJ)eles_hexas.o $(OBJ)eles_tets.o $(OBJ)eles_pris.o $(OBJ)inters.o $(OBJ)int_inters.o $(OBJ)bdy_inters.o $(OBJ)funcs.o $(OBJ)flux.o $(OBJ)global.o $(OBJ)input.o $(OBJ)cubature_1d.o $(OBJ)cubature_tri.o $(OBJ)cubature_quad.o $(OBJ)cubature_hexa.o $(OBJ)cubature_tet.o
 
 ifeq ($(NODE),GPU)
 	OBJS	+=  $(OBJ)cuda_kernels.o
@@ -158,6 +163,18 @@ $(OBJ)HiFiLES.o: HiFiLES.cpp geometry.h input.h flux.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
 $(OBJ)geometry.o: geometry.cpp geometry.h input.h  error.h
+	$(CC) $(OPTS)  -c -o $@ $<
+
+$(OBJ)mesh.o: mesh.cpp matrix_structure.hpp vector_structure.hpp linear_solvers_structure.hpp input.h  error.h
+	$(CC) $(OPTS)  -c -o $@ $<
+	
+$(OBJ)matrix_structure.o: matrix_structure.cpp matrix_structure.hpp vector_structure.hpp linear_solvers_structure.hpp input.h  error.h
+	$(CC) $(OPTS)  -c -o $@ $<
+
+$(OBJ)vector_structure.o: vector_structure.cpp matrix_structure.hpp vector_structure.hpp linear_solvers_structure.hpp input.h  error.h
+	$(CC) $(OPTS)  -c -o $@ $<
+
+$(OBJ)linear_solvers_structure.o: linear_solvers_structure.cpp matrix_structure.hpp vector_structure.hpp linear_solvers_structure.hpp input.h  error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
 $(OBJ)solver.o: solver.cpp solver.h input.h  error.h

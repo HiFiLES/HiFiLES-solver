@@ -1,14 +1,26 @@
 /*!
  * \file flux.cpp
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <cmath>
@@ -331,4 +343,50 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
     {
       FatalError("equation not recognized");
     }
+}
+
+
+/*! Add additional ALE flux term due to mesh motion (2D) */
+void calc_alef_2d(array<double>& in_u, array<double>& in_v, array<double>& out_f)
+{
+  if (run_input.equation==0) // Euler / N-S
+  {
+    for (int i=0; i<4; i++) {
+      for (int j=0; j<2; j++) {
+        out_f(i,j) -= in_u(i)*in_v(j);
+      }
+    }
+  }
+  else if (run_input.equation==1) // Advection-diffusion
+  {
+    out_f(0,0) -= in_v(0)*in_u(0);
+    out_f(0,1) -= in_v(1)*in_u(0);
+  }
+  else
+  {
+    FatalError("equation not recognized");
+  }
+}
+
+/*! Add additional ALE flux term due to mesh motion (3D) */
+void calc_alef_3d(array<double>& in_u, array<double>& in_v, array<double>& out_f)
+{
+  if (run_input.equation==0) // Euler / N-S
+  {
+    for (int i=0; i<5; i++) {
+      for (int j=0; j<3; j++) {
+        out_f(i,j) -= in_u(i)*in_v(j);
+      }
+    }
+  }
+  else if (run_input.equation==1) // Advection-diffusion
+  {
+    out_f(0,0) -= in_v(0)*in_u(0);
+    out_f(0,1) -= in_v(1)*in_u(0);
+    out_f(0,2) -= in_v(2)*in_u(0);
+  }
+  else
+  {
+    FatalError("equation not recognized");
+  }
 }

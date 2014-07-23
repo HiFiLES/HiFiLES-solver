@@ -1,0 +1,21 @@
+% !TEX root = ./main.tex
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this work, we have presented a comprehensive description, verification and validation of the HiFiLES solver. In its first version, HiFiLES offers to its users an implementation of the Flux Reconstruction methodology on unstructured 3D grids optimized for using GPUs or traditional MPI. The implementation has been verified via the method of manufactured solutions. The code has been tested in some difficult Navier-Stokes and Large Eddy Simulation problems with very satisfactory results.
+
+%pros:
+The power of the Flux Reconstruction method is in its flexibility, efficiency and accuracy.
+Different high-order schemes can be recovered by choosing a single parameter, allowing the numerical behavior to be fine-tuned.
+%cons:
+Despite its advantages, FR is not yet as popular as other high-order methods, but we hope that, thanks to this work, the benefits of the method will be communicated to a much wider audience.
+Though the use of explicit timestepping sets limits on the CFL condition, the fact that HiFiLES can be run on high performance multi-GPU platforms may compensate for this.
+
+
+Despite considerable advances in the accuracy and versatility of subgrid-scale models, current industrial CFD codes are restricted in their ability to perform LES of turbulent flows by the use of highly dissipative second-order numerical schemes.
+Therefore, in order to advance the state of the art in industrial CFD, it is necessary to move to high-order accurate numerical methods.
+The ESFR family of schemes are ideal for resolving turbulent flows due to low numerical dissipation and high-order accurate representation of solution gradients at the small scales.
+Advanced subgrid-scale models have been implemented in HiFiLES for all element types, enabling simulation of turbulent flows over complex geometry.
+The development of the first open-source, high-order accurate solver for unstructured meshes incorporating LES modeling capabilities represents a significant step towards tackling challenging compressible turbulent flow problems of practical interest.
+Future work will include stabilization techniques, optimization of the ESFR schemes for turbulence resolution, moving mesh capabilities, local time-stepping, multigrid convergence acceleration and advanced turbulence modeling.
