@@ -2440,10 +2440,6 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
     
     int i,j,k,l,m;
     double detjac;
-<<<<<<< HEAD
-    double eps=1.e-10;
-=======
->>>>>>> master
 
     for(i=0;i<n_eles;i++) {
       

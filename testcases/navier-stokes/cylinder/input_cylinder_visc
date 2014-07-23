@@ -55,7 +55,7 @@ n_restart_files
 Mesh options
 -----------------------
 mesh_file
-cylinder_2ndorder_quad.neu
+cylinder_2ndorder_tri_vis.neu
 dx_cyclic
 200000000.0
 dy_cyclic

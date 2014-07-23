@@ -1,10 +1,10 @@
-m4trace:aclocal.m4:1064: -1- m4_include([m4/ax_tls.m4])
-m4trace:aclocal.m4:1065: -1- m4_include([m4/libtool.m4])
-m4trace:aclocal.m4:1066: -1- m4_include([m4/ltoptions.m4])
-m4trace:aclocal.m4:1067: -1- m4_include([m4/ltsugar.m4])
-m4trace:aclocal.m4:1068: -1- m4_include([m4/ltversion.m4])
-m4trace:aclocal.m4:1069: -1- m4_include([m4/lt~obsolete.m4])
-m4trace:aclocal.m4:1070: -1- m4_include([m4/metis.m4])
+m4trace:aclocal.m4:1014: -1- m4_include([m4/ax_tls.m4])
+m4trace:aclocal.m4:1015: -1- m4_include([m4/libtool.m4])
+m4trace:aclocal.m4:1016: -1- m4_include([m4/ltoptions.m4])
+m4trace:aclocal.m4:1017: -1- m4_include([m4/ltsugar.m4])
+m4trace:aclocal.m4:1018: -1- m4_include([m4/ltversion.m4])
+m4trace:aclocal.m4:1019: -1- m4_include([m4/lt~obsolete.m4])
+m4trace:aclocal.m4:1020: -1- m4_include([m4/metis.m4])
 m4trace:configure.ac:26: -1- AC_INIT([HiFiLES], [0.1], [HiFiLES-dev@lists.stanford.edu], [HiFiLES], [http://hifiles.stanford.edu])
 m4trace:configure.ac:26: -1- m4_pattern_forbid([^_?A[CHUM]_])
 m4trace:configure.ac:26: -1- m4_pattern_forbid([_AC_])
@@ -13,7 +13,7 @@ m4trace:configure.ac:26: -1- m4_pattern_allow([^AS_FLAGS$])
 m4trace:configure.ac:26: -1- m4_pattern_forbid([^_?m4_])
 m4trace:configure.ac:26: -1- m4_pattern_forbid([^dnl$])
 m4trace:configure.ac:26: -1- m4_pattern_forbid([^_?AS_])
-m4trace:configure.ac:26: -1- AC_SUBST([SHELL])
+m4trace:configure.ac:26: -1- AC_SUBST([SHELL], [${CONFIG_SHELL-/bin/sh}])
 m4trace:configure.ac:26: -1- AC_SUBST_TRACE([SHELL])
 m4trace:configure.ac:26: -1- m4_pattern_allow([^SHELL$])
 m4trace:configure.ac:26: -1- AC_SUBST([PATH_SEPARATOR])
@@ -34,9 +34,6 @@ m4trace:configure.ac:26: -1- m4_pattern_allow([^PACKAGE_STRING$])
 m4trace:configure.ac:26: -1- AC_SUBST([PACKAGE_BUGREPORT], [m4_ifdef([AC_PACKAGE_BUGREPORT], ['AC_PACKAGE_BUGREPORT'])])
 m4trace:configure.ac:26: -1- AC_SUBST_TRACE([PACKAGE_BUGREPORT])
 m4trace:configure.ac:26: -1- m4_pattern_allow([^PACKAGE_BUGREPORT$])
-m4trace:configure.ac:26: -1- AC_SUBST([PACKAGE_URL], [m4_ifdef([AC_PACKAGE_URL],       ['AC_PACKAGE_URL'])])
-m4trace:configure.ac:26: -1- AC_SUBST_TRACE([PACKAGE_URL])
-m4trace:configure.ac:26: -1- m4_pattern_allow([^PACKAGE_URL$])
 m4trace:configure.ac:26: -1- AC_SUBST([exec_prefix], [NONE])
 m4trace:configure.ac:26: -1- AC_SUBST_TRACE([exec_prefix])
 m4trace:configure.ac:26: -1- m4_pattern_allow([^exec_prefix$])
@@ -108,27 +105,23 @@ m4trace:configure.ac:26: -1- m4_pattern_allow([^mandir$])
 m4trace:configure.ac:26: -1- AC_DEFINE_TRACE_LITERAL([PACKAGE_NAME])
 m4trace:configure.ac:26: -1- m4_pattern_allow([^PACKAGE_NAME$])
 m4trace:configure.ac:26: -1- AH_OUTPUT([PACKAGE_NAME], [/* Define to the full name of this package. */
-@%:@undef PACKAGE_NAME])
+#undef PACKAGE_NAME])
 m4trace:configure.ac:26: -1- AC_DEFINE_TRACE_LITERAL([PACKAGE_TARNAME])
 m4trace:configure.ac:26: -1- m4_pattern_allow([^PACKAGE_TARNAME$])
 m4trace:configure.ac:26: -1- AH_OUTPUT([PACKAGE_TARNAME], [/* Define to the one symbol short name of this package. */
-@%:@undef PACKAGE_TARNAME])
+#undef PACKAGE_TARNAME])
 m4trace:configure.ac:26: -1- AC_DEFINE_TRACE_LITERAL([PACKAGE_VERSION])
 m4trace:configure.ac:26: -1- m4_pattern_allow([^PACKAGE_VERSION$])
 m4trace:configure.ac:26: -1- AH_OUTPUT([PACKAGE_VERSION], [/* Define to the version of this package. */
-@%:@undef PACKAGE_VERSION])
+#undef PACKAGE_VERSION])
 m4trace:configure.ac:26: -1- AC_DEFINE_TRACE_LITERAL([PACKAGE_STRING])
 m4trace:configure.ac:26: -1- m4_pattern_allow([^PACKAGE_STRING$])
 m4trace:configure.ac:26: -1- AH_OUTPUT([PACKAGE_STRING], [/* Define to the full name and version of this package. */
-@%:@undef PACKAGE_STRING])
+#undef PACKAGE_STRING])
 m4trace:configure.ac:26: -1- AC_DEFINE_TRACE_LITERAL([PACKAGE_BUGREPORT])
 m4trace:configure.ac:26: -1- m4_pattern_allow([^PACKAGE_BUGREPORT$])
 m4trace:configure.ac:26: -1- AH_OUTPUT([PACKAGE_BUGREPORT], [/* Define to the address where bug reports for this package should be sent. */
-@%:@undef PACKAGE_BUGREPORT])
-m4trace:configure.ac:26: -1- AC_DEFINE_TRACE_LITERAL([PACKAGE_URL])
-m4trace:configure.ac:26: -1- m4_pattern_allow([^PACKAGE_URL$])
-m4trace:configure.ac:26: -1- AH_OUTPUT([PACKAGE_URL], [/* Define to the home page for this package. */
-@%:@undef PACKAGE_URL])
+#undef PACKAGE_BUGREPORT])
 m4trace:configure.ac:26: -1- AC_SUBST([DEFS])
 m4trace:configure.ac:26: -1- AC_SUBST_TRACE([DEFS])
 m4trace:configure.ac:26: -1- m4_pattern_allow([^DEFS$])
@@ -155,7 +148,7 @@ m4trace:configure.ac:26: -1- AC_SUBST_TRACE([target_alias])
 m4trace:configure.ac:26: -1- m4_pattern_allow([^target_alias$])
 m4trace:configure.ac:30: -1- AM_INIT_AUTOMAKE([subdir-objects foreign])
 m4trace:configure.ac:30: -1- m4_pattern_allow([^AM_[A-Z]+FLAGS$])
-m4trace:configure.ac:30: -1- AM_AUTOMAKE_VERSION([1.11.3])
+m4trace:configure.ac:30: -1- AM_AUTOMAKE_VERSION([1.11.1])
 m4trace:configure.ac:30: -1- AC_REQUIRE_AUX_FILE([install-sh])
 m4trace:configure.ac:30: -1- AC_SUBST([INSTALL_PROGRAM])
 m4trace:configure.ac:30: -1- AC_SUBST_TRACE([INSTALL_PROGRAM])
@@ -182,11 +175,11 @@ m4trace:configure.ac:30: -1- m4_pattern_allow([^VERSION$])
 m4trace:configure.ac:30: -1- AC_DEFINE_TRACE_LITERAL([PACKAGE])
 m4trace:configure.ac:30: -1- m4_pattern_allow([^PACKAGE$])
 m4trace:configure.ac:30: -1- AH_OUTPUT([PACKAGE], [/* Name of package */
-@%:@undef PACKAGE])
+#undef PACKAGE])
 m4trace:configure.ac:30: -1- AC_DEFINE_TRACE_LITERAL([VERSION])
 m4trace:configure.ac:30: -1- m4_pattern_allow([^VERSION$])
 m4trace:configure.ac:30: -1- AH_OUTPUT([VERSION], [/* Version number of package */
-@%:@undef VERSION])
+#undef VERSION])
 m4trace:configure.ac:30: -1- AC_REQUIRE_AUX_FILE([missing])
 m4trace:configure.ac:30: -1- AC_SUBST([ACLOCAL])
 m4trace:configure.ac:30: -1- AC_SUBST_TRACE([ACLOCAL])
@@ -228,7 +221,7 @@ m4trace:configure.ac:30: -1- m4_pattern_allow([^SET_MAKE$])
 m4trace:configure.ac:30: -1- AC_SUBST([am__leading_dot])
 m4trace:configure.ac:30: -1- AC_SUBST_TRACE([am__leading_dot])
 m4trace:configure.ac:30: -1- m4_pattern_allow([^am__leading_dot$])
-m4trace:configure.ac:30: -1- AC_SUBST([AMTAR], ['$${TAR-tar}'])
+m4trace:configure.ac:30: -1- AC_SUBST([AMTAR])
 m4trace:configure.ac:30: -1- AC_SUBST_TRACE([AMTAR])
 m4trace:configure.ac:30: -1- m4_pattern_allow([^AMTAR$])
 m4trace:configure.ac:30: -1- AC_SUBST([am__tar])
@@ -238,14 +231,6 @@ m4trace:configure.ac:30: -1- AC_SUBST([am__untar])
 m4trace:configure.ac:30: -1- AC_SUBST_TRACE([am__untar])
 m4trace:configure.ac:30: -1- m4_pattern_allow([^am__untar$])
 m4trace:configure.ac:31: -1- AM_SILENT_RULES([yes])
-m4trace:configure.ac:31: -1- AC_SUBST([AM_V])
-m4trace:configure.ac:31: -1- AC_SUBST_TRACE([AM_V])
-m4trace:configure.ac:31: -1- m4_pattern_allow([^AM_V$])
-m4trace:configure.ac:31: -1- _AM_SUBST_NOTMAKE([AM_V])
-m4trace:configure.ac:31: -1- AC_SUBST([AM_DEFAULT_V])
-m4trace:configure.ac:31: -1- AC_SUBST_TRACE([AM_DEFAULT_V])
-m4trace:configure.ac:31: -1- m4_pattern_allow([^AM_DEFAULT_V$])
-m4trace:configure.ac:31: -1- _AM_SUBST_NOTMAKE([AM_DEFAULT_V])
 m4trace:configure.ac:31: -1- AC_SUBST([AM_DEFAULT_VERBOSITY])
 m4trace:configure.ac:31: -1- AC_SUBST_TRACE([AM_DEFAULT_VERBOSITY])
 m4trace:configure.ac:31: -1- m4_pattern_allow([^AM_DEFAULT_VERBOSITY$])
@@ -267,11 +252,11 @@ configure.ac:110: the top level])
 m4trace:configure.ac:110: -1- AC_DEFINE_TRACE_LITERAL([HAVE_METIS])
 m4trace:configure.ac:110: -1- m4_pattern_allow([^HAVE_METIS$])
 m4trace:configure.ac:110: -1- AH_OUTPUT([HAVE_METIS], [/* Flag indicating whether the library will be compiled with Metis support */
-@%:@undef HAVE_METIS])
+#undef HAVE_METIS])
 m4trace:configure.ac:110: -1- _m4_warn([obsolete], [The macro `AC_TRY_COMPILE' is obsolete.
-You should run autoupdate.], [../../lib/autoconf/general.m4:2615: AC_TRY_COMPILE is expanded from...
-../../lib/m4sugar/m4sh.m4:606: AS_IF is expanded from...
-../../lib/autoconf/general.m4:2032: AC_CACHE_VAL is expanded from...
+You should run autoupdate.], [../../lib/autoconf/general.m4:2470: AC_TRY_COMPILE is expanded from...
+../../lib/m4sugar/m4sh.m4:505: AS_IF is expanded from...
+../../lib/autoconf/general.m4:1974: AC_CACHE_VAL is expanded from...
 m4/ax_tls.m4:46: AX_TLS is expanded from...
 m4/metis.m4:4: CONFIGURE_METIS is expanded from...
 configure.ac:110: the top level])
@@ -333,10 +318,6 @@ m4trace:configure.ac:110: -1- AC_SUBST([AMDEPBACKSLASH])
 m4trace:configure.ac:110: -1- AC_SUBST_TRACE([AMDEPBACKSLASH])
 m4trace:configure.ac:110: -1- m4_pattern_allow([^AMDEPBACKSLASH$])
 m4trace:configure.ac:110: -1- _AM_SUBST_NOTMAKE([AMDEPBACKSLASH])
-m4trace:configure.ac:110: -1- AC_SUBST([am__nodep])
-m4trace:configure.ac:110: -1- AC_SUBST_TRACE([am__nodep])
-m4trace:configure.ac:110: -1- m4_pattern_allow([^am__nodep$])
-m4trace:configure.ac:110: -1- _AM_SUBST_NOTMAKE([am__nodep])
 m4trace:configure.ac:110: -1- AC_SUBST([CCDEPMODE], [depmode=$am_cv_CC_dependencies_compiler_type])
 m4trace:configure.ac:110: -1- AC_SUBST_TRACE([CCDEPMODE])
 m4trace:configure.ac:110: -1- m4_pattern_allow([^CCDEPMODE$])
@@ -354,7 +335,7 @@ m4trace:configure.ac:110: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_FALSE])
 m4trace:configure.ac:110: -1- AC_DEFINE_TRACE_LITERAL([TLS])
 m4trace:configure.ac:110: -1- m4_pattern_allow([^TLS$])
 m4trace:configure.ac:110: -1- AH_OUTPUT([TLS], [/* If the compiler supports a TLS storage class define it to that here */
-@%:@undef TLS])
+#undef TLS])
 m4trace:configure.ac:110: -1- AC_SUBST([METIS_INCLUDE])
 m4trace:configure.ac:110: -1- AC_SUBST_TRACE([METIS_INCLUDE])
 m4trace:configure.ac:110: -1- m4_pattern_allow([^METIS_INCLUDE$])
@@ -399,9 +380,9 @@ m4trace:configure.ac:128: -1- m4_pattern_allow([^hifiles_externals_INCLUDES$])
 m4trace:configure.ac:129: -1- AC_SUBST([hifiles_externals_LIBS])
 m4trace:configure.ac:129: -1- AC_SUBST_TRACE([hifiles_externals_LIBS])
 m4trace:configure.ac:129: -1- m4_pattern_allow([^hifiles_externals_LIBS$])
-m4trace:configure.ac:140: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:140: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:140: the top level])
-m4trace:configure.ac:152: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:152: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:152: the top level])
 m4trace:configure.ac:164: -1- AM_CONDITIONAL([BUILD_GPU], [true])
 m4trace:configure.ac:164: -1- AC_SUBST([BUILD_GPU_TRUE])
@@ -436,13 +417,13 @@ m4trace:configure.ac:186: -1- m4_pattern_allow([^CUDA_CXX$])
 m4trace:configure.ac:187: -1- AC_SUBST([NVCCFLAGS])
 m4trace:configure.ac:187: -1- AC_SUBST_TRACE([NVCCFLAGS])
 m4trace:configure.ac:187: -1- m4_pattern_allow([^NVCCFLAGS$])
-m4trace:configure.ac:210: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:210: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:210: the top level])
-m4trace:configure.ac:216: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:216: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:216: the top level])
-m4trace:configure.ac:234: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:234: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:234: the top level])
-m4trace:configure.ac:240: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:240: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:240: the top level])
 m4trace:configure.ac:252: -1- AM_CONDITIONAL([BUILD_PARMETIS], [true])
 m4trace:configure.ac:252: -1- AC_SUBST([BUILD_PARMETIS_TRUE])
@@ -477,11 +458,11 @@ m4trace:configure.ac:265: -1- m4_pattern_allow([^PARMETIS_CXX$])
 m4trace:configure.ac:266: -1- AC_SUBST([PARMETIS_LD])
 m4trace:configure.ac:266: -1- AC_SUBST_TRACE([PARMETIS_LD])
 m4trace:configure.ac:266: -1- m4_pattern_allow([^PARMETIS_LD$])
-m4trace:configure.ac:276: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:276: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:276: the top level])
-m4trace:configure.ac:280: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:280: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:280: the top level])
-m4trace:configure.ac:293: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:293: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:293: the top level])
 m4trace:configure.ac:305: -1- AM_CONDITIONAL([BUILD_TECIO], [true])
 m4trace:configure.ac:305: -1- AC_SUBST([BUILD_TECIO_TRUE])
@@ -507,16 +488,16 @@ m4trace:configure.ac:313: -1- m4_pattern_allow([^TECIO_CXX$])
 m4trace:configure.ac:314: -1- AC_SUBST([TECIO_LD])
 m4trace:configure.ac:314: -1- AC_SUBST_TRACE([TECIO_LD])
 m4trace:configure.ac:314: -1- m4_pattern_allow([^TECIO_LD$])
-m4trace:configure.ac:322: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:322: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:322: the top level])
 m4trace:configure.ac:335: -1- AC_SUBST([MPI_INCLUDE])
 m4trace:configure.ac:335: -1- AC_SUBST_TRACE([MPI_INCLUDE])
 m4trace:configure.ac:335: -1- m4_pattern_allow([^MPI_INCLUDE$])
-m4trace:configure.ac:345: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:345: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:345: the top level])
-m4trace:configure.ac:358: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:358: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:358: the top level])
-m4trace:configure.ac:361: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2778: AC_CHECK_FILE is expanded from...
+m4trace:configure.ac:361: -1- _m4_warn([cross], [cannot check for file existence when cross compiling], [../../lib/autoconf/general.m4:2605: AC_CHECK_FILE is expanded from...
 configure.ac:361: the top level])
 m4trace:configure.ac:389: -1- AC_SUBST([BLAS_CXX])
 m4trace:configure.ac:389: -1- AC_SUBST_TRACE([BLAS_CXX])
@@ -610,7 +591,7 @@ m4trace:configure.ac:397: -1- AM_PROG_CC_C_O
 m4trace:configure.ac:397: -1- AC_DEFINE_TRACE_LITERAL([NO_MINUS_C_MINUS_O])
 m4trace:configure.ac:397: -1- m4_pattern_allow([^NO_MINUS_C_MINUS_O$])
 m4trace:configure.ac:397: -1- AH_OUTPUT([NO_MINUS_C_MINUS_O], [/* Define to 1 if your C compiler doesn\'t accept -c and -o together. */
-@%:@undef NO_MINUS_C_MINUS_O])
+#undef NO_MINUS_C_MINUS_O])
 m4trace:configure.ac:397: -1- AC_REQUIRE_AUX_FILE([compile])
 m4trace:configure.ac:398: -1- _m4_warn([obsolete], [The macro `AM_PROG_LIBTOOL' is obsolete.
 You should run autoupdate.], [m4/libtool.m4:108: AM_PROG_LIBTOOL is expanded from...
@@ -712,7 +693,7 @@ m4trace:configure.ac:398: -1- AC_DEFINE_TRACE_LITERAL([LT_OBJDIR])
 m4trace:configure.ac:398: -1- m4_pattern_allow([^LT_OBJDIR$])
 m4trace:configure.ac:398: -1- AH_OUTPUT([LT_OBJDIR], [/* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
-@%:@undef LT_OBJDIR])
+#undef LT_OBJDIR])
 m4trace:configure.ac:398: -1- LT_SUPPORTED_TAG([CC])
 m4trace:configure.ac:398: -1- AC_SUBST([MANIFEST_TOOL])
 m4trace:configure.ac:398: -1- AC_SUBST_TRACE([MANIFEST_TOOL])
@@ -733,7 +714,7 @@ m4trace:configure.ac:398: -1- AC_SUBST([OTOOL64])
 m4trace:configure.ac:398: -1- AC_SUBST_TRACE([OTOOL64])
 m4trace:configure.ac:398: -1- m4_pattern_allow([^OTOOL64$])
 m4trace:configure.ac:398: -1- AH_OUTPUT([HAVE_DLFCN_H], [/* Define to 1 if you have the <dlfcn.h> header file. */
-@%:@undef HAVE_DLFCN_H])
+#undef HAVE_DLFCN_H])
 m4trace:configure.ac:398: -1- AC_SUBST([CPP])
 m4trace:configure.ac:398: -1- AC_SUBST_TRACE([CPP])
 m4trace:configure.ac:398: -1- m4_pattern_allow([^CPP$])
@@ -746,27 +727,25 @@ m4trace:configure.ac:398: -1- m4_pattern_allow([^CPP$])
 m4trace:configure.ac:398: -1- AC_DEFINE_TRACE_LITERAL([STDC_HEADERS])
 m4trace:configure.ac:398: -1- m4_pattern_allow([^STDC_HEADERS$])
 m4trace:configure.ac:398: -1- AH_OUTPUT([STDC_HEADERS], [/* Define to 1 if you have the ANSI C header files. */
-@%:@undef STDC_HEADERS])
+#undef STDC_HEADERS])
 m4trace:configure.ac:398: -1- AH_OUTPUT([HAVE_SYS_TYPES_H], [/* Define to 1 if you have the <sys/types.h> header file. */
-@%:@undef HAVE_SYS_TYPES_H])
+#undef HAVE_SYS_TYPES_H])
 m4trace:configure.ac:398: -1- AH_OUTPUT([HAVE_SYS_STAT_H], [/* Define to 1 if you have the <sys/stat.h> header file. */
-@%:@undef HAVE_SYS_STAT_H])
+#undef HAVE_SYS_STAT_H])
 m4trace:configure.ac:398: -1- AH_OUTPUT([HAVE_STDLIB_H], [/* Define to 1 if you have the <stdlib.h> header file. */
-@%:@undef HAVE_STDLIB_H])
+#undef HAVE_STDLIB_H])
 m4trace:configure.ac:398: -1- AH_OUTPUT([HAVE_STRING_H], [/* Define to 1 if you have the <string.h> header file. */
-@%:@undef HAVE_STRING_H])
+#undef HAVE_STRING_H])
 m4trace:configure.ac:398: -1- AH_OUTPUT([HAVE_MEMORY_H], [/* Define to 1 if you have the <memory.h> header file. */
-@%:@undef HAVE_MEMORY_H])
+#undef HAVE_MEMORY_H])
 m4trace:configure.ac:398: -1- AH_OUTPUT([HAVE_STRINGS_H], [/* Define to 1 if you have the <strings.h> header file. */
-@%:@undef HAVE_STRINGS_H])
+#undef HAVE_STRINGS_H])
 m4trace:configure.ac:398: -1- AH_OUTPUT([HAVE_INTTYPES_H], [/* Define to 1 if you have the <inttypes.h> header file. */
-@%:@undef HAVE_INTTYPES_H])
+#undef HAVE_INTTYPES_H])
 m4trace:configure.ac:398: -1- AH_OUTPUT([HAVE_STDINT_H], [/* Define to 1 if you have the <stdint.h> header file. */
-@%:@undef HAVE_STDINT_H])
+#undef HAVE_STDINT_H])
 m4trace:configure.ac:398: -1- AH_OUTPUT([HAVE_UNISTD_H], [/* Define to 1 if you have the <unistd.h> header file. */
-@%:@undef HAVE_UNISTD_H])
-m4trace:configure.ac:398: -1- AC_DEFINE_TRACE_LITERAL([HAVE_DLFCN_H])
-m4trace:configure.ac:398: -1- m4_pattern_allow([^HAVE_DLFCN_H$])
+#undef HAVE_UNISTD_H])
 m4trace:configure.ac:398: -1- LT_SUPPORTED_TAG([CXX])
 m4trace:configure.ac:398: -1- AC_SUBST([CXXCPP])
 m4trace:configure.ac:398: -1- AC_SUBST_TRACE([CXXCPP])
