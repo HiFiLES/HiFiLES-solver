@@ -4,7 +4,7 @@
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
  *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
+ *                                by Prof. Jameson. (Aero/Astro Department. Stanford University.
  * \version 1.0.0
  *
  * HiFiLES (High Fidelity Large Eddy Simulation).

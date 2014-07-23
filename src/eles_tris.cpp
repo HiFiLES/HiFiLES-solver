@@ -1,14 +1,26 @@
 /*!
  * \file eles_tris.cpp
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <iomanip>
@@ -659,19 +671,16 @@ void eles_tris::compute_filter_upts(void)
   // Cutoff wavenumber
   k_c = 1.0/run_input.filter_ratio;
 
-  // Approx resolution in element (assumes uniform point spacing)
-  dlt = 2.0/order;
-
   X = loc_upts;
-  X.print();
+
   // Approx resolution in element (assumes uniform point spacing)
   // Interval is [-1:1]
-  dlt = 2.0/order;
+  dlt = 2.0/(order+1.0);
   
-  // Normalised solution point separation: r = sqrt((x_a-x_b)^2 + (y_a-y_b)^2)
+  // Normalised solution point separation: r = sqrt((x_a-x_b)^2 + (y_a-y_b)^2)/delta
   for (i=0;i<N;i++)
     for (j=i;j<N;j++)
-      beta(i,j) = sqrt(pow(X(0,i)-X(0,j),2) + pow(X(1,i)-X(1,j),2));///dlt;
+      beta(i,j) = sqrt(pow(X(0,i)-X(0,j),2) + pow(X(1,i)-X(1,j),2))/dlt;
   for (i=0;i<N;i++)
     for (j=0;j<i;j++)
       beta(i,j) = beta(j,i);
@@ -765,8 +774,145 @@ void eles_tris::compute_filter_upts(void)
     {
       if (rank==0) cout<<"Building modal filter"<<endl;
 
-      // Compute modal filter
-      compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_type);
+      // Output beta to file
+      ofstream coeff_file;
+      coeff_file.open("beta_upts_tri.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << beta(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+
+      // Compute modal cutoff filter
+      compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 2);
+      
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      // Ensure symmetry and normalization
+      for(i=0;i<N2;i++)
+      {
+        for(j=0;j<N;j++)
+        {
+          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+        }
+      }
+      for(i=0;i<N2;i++)
+      {
+        norm = 0.0;
+        for(j=0;j<N;j++)
+          norm += filter_upts(i,j);
+        for(j=0;j<N;j++)
+          filter_upts(i,j) /= norm;
+        for(j=0;j<N;j++)
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+      }
+      sum = 0;
+      for(i=0;i<N;i++)
+        for(j=0;j<N;j++)
+          sum+=filter_upts(i,j);
+      
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      cout<<"filter sum: "<<sum<<endl;
+
+      // Output filter to file
+      coeff_file.open("filter_upts_tri_cutoff.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+      
+      // Compute modal cutoff filter
+      compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 3);
+
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      // Ensure symmetry and normalization
+      for(i=0;i<N2;i++)
+      {
+        for(j=0;j<N;j++)
+        {
+          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+        }
+      }
+      for(i=0;i<N2;i++)
+      {
+        norm = 0.0;
+        for(j=0;j<N;j++)
+          norm += filter_upts(i,j);
+        for(j=0;j<N;j++)
+          filter_upts(i,j) /= norm;
+        for(j=0;j<N;j++)
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+      }
+      sum = 0;
+      for(i=0;i<N;i++)
+        for(j=0;j<N;j++)
+          sum+=filter_upts(i,j);
+      
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      cout<<"filter sum: "<<sum<<endl;
+
+      // Output filter to file
+      coeff_file.open("filter_upts_tri_exp.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+      
+      // Compute modal cutoff filter
+      compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 4);
+      
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      // Ensure symmetry and normalization
+      for(i=0;i<N2;i++)
+      {
+        for(j=0;j<N;j++)
+        {
+          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+        }
+      }
+      for(i=0;i<N2;i++)
+      {
+        norm = 0.0;
+        for(j=0;j<N;j++)
+          norm += filter_upts(i,j);
+        for(j=0;j<N;j++)
+          filter_upts(i,j) /= norm;
+        for(j=0;j<N;j++)
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+      }
+      sum = 0;
+      for(i=0;i<N;i++)
+        for(j=0;j<N;j++)
+          sum+=filter_upts(i,j);
+
+      cout<<"filter_upts:"<<endl;
+      filter_upts.print();
+      cout<<"filter sum: "<<sum<<endl;
+
+      // Output filter to file
+      coeff_file.open("filter_upts_tri_gauss.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
     }
   else // Simple average for low order
     {
@@ -796,36 +942,6 @@ void eles_tris::compute_filter_upts(void)
       for(j=0;j<N;j++)
         filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
     }
-  sum = 0;
-  for(i=0;i<N;i++)
-    for(j=0;j<N;j++)
-      sum+=filter_upts(i,j);
-  
-  cout<<"filter_upts:"<<endl;
-  filter_upts.print();
-  
-  // Output filter and beta to file
-  ofstream coeff_file;
-  coeff_file.open("filter_upts.dat");
-  for(i=0;i<N;++i) {
-    for(j=0;j<N;++j) {
-      coeff_file << setprecision(12) << filter_upts(i,j) << " ";
-    }
-    coeff_file << endl;
-  }
-  
-  coeff_file.close();
-  
-  coeff_file.open("beta_upts.dat");
-  for(i=0;i<N;++i) {
-    for(j=0;j<N;++j) {
-      coeff_file << setprecision(12) << abs(beta(j,i)) << " ";
-    }
-    coeff_file << endl;
-  }
-  
-  coeff_file.close();
-
 }
 
 

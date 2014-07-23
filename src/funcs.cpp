@@ -1,14 +1,26 @@
 /*!
  * \file funcs.cpp
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <iomanip>
@@ -394,10 +406,10 @@ void get_opp_3_dg(array<double>& opp_3_dg, array<double>& loc_upts_tri, array<do
 }
 
 // Compute a 1D modal filter matrix, given Vandermonde matrix and inverse
-void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order, int flt_kernel)
+void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order, double filter_ratio, int flt_kernel)
 {
   int i,j;
-  double Cp=10.;     // filter strength coeff.
+  double Cp=5.;     // filter strength coeff.
   double p=order;    // filter exponent
   double Nc = N-1;   // cutoff mode
   double alpha, eta;
@@ -414,21 +426,20 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
   }
   // Exponential filter
   else if(flt_kernel==3) {
-    alpha = Cp*p;
-    
-    for(i=0;i<p+1;i++) {
-      eta = i/(p+1.0);
+    alpha = filter_ratio*N*pi/2.0;
+    //alpha = N*Cp;
+    for(i=0;i<N;i++) {
+      eta = i/(p+1);
       modal(i,i) = exp(-alpha*pow(eta,2*p));
     }
   }
   // Gaussian filter
   else if(flt_kernel==4) {
-    // Transfer fns suggest a large multiplier on eta to make the filter strong enough
-    //alpha = 20.0; // seems to work
-    alpha = Cp*p; // remove influence of order?
-    for(i=0;i<p+1;i++) {
-      eta = i/(p+1.0);
-      modal(i,i) = exp(-pow(alpha*eta,2)/48.0);
+    alpha = filter_ratio*N*pi/2.0;
+    
+    for(i=0;i<N;i++) {
+      eta = i/(p+1);
+      modal(i,i) = exp(-pow(alpha*eta,2)/24.0);
     }
   }
   
@@ -450,12 +461,12 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 }
 
 // Compute a modal filter matrix for a triangular element, given Vandermonde matrix and inverse
-void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order, int flt_kernel)
+void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order, double filter_ratio, int flt_kernel)
 {
   int i,j,ind=0;
   double Cp=10.;     // Dubiner SVV filter strength coeff.
   double p=order;    // filter exponent
-  double Nc = p-1;   // cutoff mode
+  double Nc = p;     // cutoff mode
   double alpha, eta;
   array <double> modal(N,N), mtemp(N,N);
 
@@ -475,11 +486,11 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
   }
   // Exponential filter
   else if(flt_kernel==3) {
-    alpha = Cp*p;
+    alpha = filter_ratio*(p+1.0)*pi/2.0;
     
     for(i=0;i<p+1;i++) {
       for(j=0;j<p-i+1;j++) {
-        eta = (i+j)/(p+1.0);
+        eta = (i+j)/(p+1);
         modal(ind,ind) = exp(-alpha*pow(eta,2*p));
 
         ind++;
@@ -488,14 +499,12 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
   }
   // Gaussian filter
   else if(flt_kernel==4) {
-    // Transfer fns suggest a large multiplier on eta to make the filter strong enough
-    //alpha = 20.0; // seems to work
-    alpha = Cp; // remove influence of order?
+    alpha = filter_ratio*(p+1.0)*pi/2.0;
 
     for(i=0;i<p+1;i++) {
       for(j=0;j<p-i+1;j++) {
-        eta = (i+j)/(p+2.0);
-        modal(ind,ind) = exp(-pow(alpha*eta,2)/48.0);
+        eta = (i+j)/(p+1);
+        modal(ind,ind) = exp(-pow(alpha*eta,2)/24.0);
         ind++;
       }
     }
@@ -519,38 +528,63 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 }
 
 // Compute a modal filter matrix for a tetrahedral element, given Vandermonde matrix and inverse
-void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order)
+void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vandermonde, array<double>& inv_vandermonde, int N, int order, double filter_ratio, int flt_kernel)
 {
   int i,j,k,ind=0;
-  double Cp=0.1;     // Dubiner SVV filter strength coeff.
+  double Cp=10.;     // Dubiner SVV filter strength coeff.
   double p=order;    // filter exponent
+  double Nc = p;   // cutoff mode
   double alpha, eta;
   array <double> modal(N,N), mtemp(N,N);
 
   zero_array(modal);
   zero_array(filter_upts);
 
-  // Exponential filter (SVV method) (similar to Meister et al 2009)
-
-  // Full form: alpha = Cp*(p+1)*dt/delta
-  //alpha = Cp*p;
-
-  for(i=0;i<p+1;i++) {
-    for(j=0;j<p-i+1;j++) {
-      for(k=0;k<p-i-j+1;k++) {
-        eta = (i+j+k)/(p+1.0);
-        //modal(ind,ind) = exp(-alpha*pow(eta,2*p));
-        modal(ind,ind) = exp(-pow(2.0*eta,2)/48.0); // Gaussian filter
-        ind++;
+  // Sharp cutoff filter
+  if(flt_kernel==2) {
+    for(i=0;i<p+1;i++) {
+      for(j=0;j<p-i+1;j++) {
+        for(k=0;k<p-i-j+1;k++) {
+          if(i < Nc && j < Nc && k < Nc) {
+            modal(ind,ind) = 1.0;
+          }
+          ind++;
+        }
+      }
+    }
+  }
+  // Exponential filter
+  else if(flt_kernel==3) {
+    alpha = filter_ratio*(p+1.0)*pi/2.0;
+    
+    for(i=0;i<p+1;i++) {
+      for(j=0;j<p-i+1;j++) {
+        for(k=0;k<p-i-j+1;k++) {
+          eta = (i+j+k)/(p+1);
+          modal(ind,ind) = exp(-alpha*pow(eta,2*p));
+        
+          ind++;
+        }
+      }
+    }
+  }
+  // Gaussian filter
+  else if(flt_kernel==4) {
+    alpha = filter_ratio*(p+1.0)*pi/2.0;
+    
+    for(i=0;i<p+1;i++) {
+      for(j=0;j<p-i+1;j++) {
+        for(k=0;k<p-i-j+1;k++) {
+          eta = (i+j+k)/(p+1);
+          modal(ind,ind) = exp(-pow(alpha*eta,2)/24.0);
+          ind++;
+        }
       }
     }
   }
 
-  // Sharp modal cutoff filter
-  //modal(N-1,N-1)=0.0;
-
-  //cout<<"modal coeffs:"<<endl;
-  //modal.print();
+  cout<<"modal coeffs:"<<endl;
+  modal.print();
 
   #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
@@ -645,7 +679,7 @@ void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri
   else
     FatalError("VCJH triangular scheme not recognized");
 
-  cout << "c_tri " << c_tri << endl;
+  //cout << "c_tri " << c_tri << endl;
 
   run_input.c_tri = c_tri;
 

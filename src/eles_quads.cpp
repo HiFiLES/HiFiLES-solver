@@ -1,14 +1,26 @@
 /*!
  * \file eles_quads.cpp
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <iomanip>
@@ -478,7 +490,7 @@ void eles_quads::compute_filter_upts(void)
   k_c = 1.0/run_input.filter_ratio;
   // Approx resolution in element (assumes uniform point spacing)
   // Interval is [-1:1]
-  dlt = 2.0/order;
+  dlt = 2.0/(order+1.0);
 
   // Normalised solution point separation
   for (i=0;i<N;i++)
@@ -623,13 +635,52 @@ void eles_quads::compute_filter_upts(void)
     {
       if (rank==0) cout<<"Building modal filter"<<endl;
 
-      // Compute modal filter
-      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_type);
+      // Output beta to file
+      ofstream coeff_file;
+      coeff_file.open("beta_upts_1d.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << abs(beta(j,i)) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
 
-      sum = 0;
-      for(i=0;i<N;i++)
-        for(j=0;j<N;j++)
-          sum+=filter_upts_1D(i,j);
+      // Compute modal filter
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 2);
+      
+      // Output filter to file
+      coeff_file.open("filter_upts_1d_cutoff.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts_1D(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+      
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 3);
+
+      coeff_file.open("filter_upts_1d_exp.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts_1D(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+      
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 4);
+      
+      coeff_file.open("filter_upts_1d_gauss.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts_1D(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+      
     }
   else // Simple average
     {
@@ -648,28 +699,6 @@ void eles_quads::compute_filter_upts(void)
   cout<<"filter_upts:"<<endl;
   filter_upts_1D.print();
   
-  // Output filter and beta to file
-  ofstream coeff_file;
-  coeff_file.open("filter_upts.dat");
-  for(i=0;i<N;++i) {
-    for(j=0;j<N;++j) {
-      coeff_file << setprecision(12) << filter_upts_1D(i,j) << " ";
-    }
-    coeff_file << endl;
-  }
-  
-  coeff_file.close();
-
-  coeff_file.open("beta_upts.dat");
-  for(i=0;i<N;++i) {
-    for(j=0;j<N;++j) {
-      coeff_file << setprecision(12) << abs(beta(j,i)) << " ";
-    }
-    coeff_file << endl;
-  }
-  
-  coeff_file.close();
-
   // Build 2D filter on ideal (reference) element.
   int ii=0;
   filter_upts.setup(n_upts_per_ele,n_upts_per_ele);

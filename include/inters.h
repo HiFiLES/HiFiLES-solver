@@ -1,14 +1,26 @@
 /*!
  * \file inters.h
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -43,10 +55,10 @@ public:
   void right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Rusanov flux */
-  void rusanov_flux(array<double> &q_l, array<double> &q_r, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
+  void rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Roe flux */
-  void roe_flux(array<double> &q_l, array<double> &q_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
+  void roe_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Lax-Friedrich flux (works only for wave equation) */
   void lax_friedrich(array<double> &u_l, array<double> &u_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double lambda, array<double>& wave_speed);
@@ -60,8 +72,8 @@ public:
 	/*! get look up table for flux point connectivity based on rotation tag */
 	void get_lut(int in_rot_tag);
 	
-    /*! Compute common flux at boundaries using convective flux formulation */
-    void convective_flux_boundary(array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields);
+  /*! Compute common flux at boundaries using convective flux formulation */
+  void convective_flux_boundary(array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields);
 
 	protected:
 
@@ -77,15 +89,17 @@ public:
 	int n_fpts_per_inter;
 	int n_fields;
 	int n_dims;
+  int motion;       //!< Mesh motion flag
 	
 	array<double*> disu_fpts_l;
 	array<double*> delta_disu_fpts_l;
 	array<double*> norm_tconf_fpts_l;
 	//array<double*> norm_tconvisf_fpts_l;
 	array<double*> detjac_fpts_l;
-	array<double*> mag_tnorm_dot_inv_detjac_mul_jac_fpts_l;
+	array<double*> tdA_fpts_l;
 	array<double*> norm_fpts;
-	array<double*> loc_fpts;
+	array<double*> pos_fpts;
+  array<double*> pos_dyn_fpts;
 
   array<double> pos_disu_fpts_l;
   array<double*> grad_disu_fpts_l;
@@ -121,4 +135,19 @@ public:
 
   array<double> v_l, v_r, um, du;
 
+  // Dynamic grid variables:
+  // Note: grid velocity is continuous across interfaces
+  array<double*> ndA_dyn_fpts_l;
+  array<double*> norm_dyn_fpts;
+  array<double*> J_dyn_fpts_l;
+  array<double*> grid_vel_fpts;
+  array<double*> disu_GCL_fpts_l;
+  array<double*> norm_tconf_GCL_fpts_l;
+
+  double temp_u_GCL_l;
+  double temp_f_GCL_l;
+
+  array<double> temp_v;
+  array<double> temp_fn_ref_l;
+  array<double> temp_fn_ref_r;
 };

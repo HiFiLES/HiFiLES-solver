@@ -1,0 +1,133 @@
+% !TEX root = ./main.tex
+
+\section{Governing Equations}
+\label{sec:govEq}
+\subsection{Navier Stokes equations}
+
+The Navier-Stokes\cite{Landau1993} equations provide a complete (dynamical) description of a viscous fluid and express the conservation of mass, momentum, and energy. The complete system of equations (without source terms and assuming adiabatic boundary conditions at the solid wall) can be written in the following conservative form:
+
+\begin{equation}\label{ns_simple}
+\frac{\partial U}{\partial t} +  \nabla \cdot {\bf F} = 0
+\end{equation}
+
+where ${\bf F} = (F,G,H) = (F_I,G_I,H_I) - (F_V,G_V,H_V)$ and
+\begin{equation}\label{ns}
+U = \l(
+\begin{tabular}{c}
+$\rho$\\
+$\rho u$\\
+$\rho v$\\
+$\rho w$\\
+$\rho e$
+\end{tabular}
+\r) \;\; 
+F_I = \l(
+\begin{tabular}{c}
+$\rho u$\\
+$\rho u^2 + p$\\
+$\rho uv$\\
+$\rho uw$\\
+$\rho ue + pu$
+\end{tabular}
+\r) \;\; 
+G_I = \l(
+\begin{tabular}{c}
+$\rho v$\\
+$\rho vu$\\
+$\rho v^2 + p$\\
+$\rho vw$\\
+$\rho ve+pv$
+\end{tabular}
+\r) \;\; 
+H_I = \l(
+\begin{tabular}{c}
+$\rho w$\\
+$\rho wu$\\
+$\rho wv$\\
+$\rho w^2 + p$\\
+$\rho we + pw$
+\end{tabular}
+\r) \;\; 
+\end{equation}
+\begin{equation}
+F_V = \l(
+\begin{tabular}{c}
+$0$\\
+$\sigma_{xx}$\\
+$\sigma_{xy}$\\
+$\sigma_{xz}$\\
+$u_i\sigma_{ix}-q_x$
+\end{tabular}
+\r) \;\; 
+G_V = \l(
+\begin{tabular}{c}
+$0$\\
+$\sigma_{yx}$\\
+$\sigma_{yy}$\\
+$\sigma_{yz}$\\
+$u_i\sigma_{iy}-q_y$
+\end{tabular}
+\r) \;\; 
+H_V = \l(
+\begin{tabular}{c}
+$0$\\
+$\sigma_{zx}$\\
+$\sigma_{zy}$\\
+$\sigma_{zz}$\\
+$u_i\sigma_{iz}-q_z$
+\end{tabular}
+\r) \;\; 
+\end{equation}
+
+As usual, $\rho$ is density, $u$, $v$, $w$ are the velocity components in the $x, y, z$ directions, respectively, and $e$ is total energy per unit mass. In HiFiLES, the pressure is determined from the ideal gas equation of state
+\begin{equation}
+p = (\gamma - 1)\rho\l(e - \frac{1}{2}\l(u^2 + v^2 + w^2\r)\r)
+\end{equation}
+the viscous stresses are those of a Newtonian fluid
+\begin{equation}\label{sigma}
+\sigma_{ij} = \mu\l( \frac{\partial u_i}{\partial x_j}
++ \frac{\partial u_j}{\partial x_i} \r)
+- \frac{2}{3}\mu \delta_{ij}\frac{\partial u_k}{\partial x_k}
+\end{equation}
+and the heat fluxes are defined as
+\begin{equation}
+q_i = -k \frac{\partial T}{\partial x_i}
+\end{equation}
+where
+\begin{equation}
+k = \frac{C_p \mu}{\text{Pr}} , \;\; T = \frac{p}{R \rho}
+\end{equation}
+
+Pr is the Prandtl number, $C_p$ is the specific heat at constant pressure and $R$ is the gas constant. In the case of air, $\gamma = 1.4$ and Pr $= 0.72$. The dynamic viscosity $\mu$ in HiFiLES can be a constant or a function of temperature using Sutherland's law.
+
+\subsection{Reynolds Averaged Navier-Stokes (RANS) equations}
+
+The compressible Navier-Stokes equations can be used to solve a variety of different flow physics problems, but for turbulent flows, direct numerical simulation using these equations can become excessively expensive. For engineering applications, it is customary to perform a Favre averaging procedure on the Navier-Stokes equations in order to solve for turbulent mean quantities. 
+This leads to a variety of terms which must be modeled in order to provide closure to the resulting RANS equations \cite{wilcox1998turbulence,oliver2008high}. For example, using the one equation Spalart-Allmaras (SA) turbulence model, the conservative form of the RANS equations is very similar to the Navier-Stokes equations with the following extra terms included in Eq.~\ref{ns}:
+
+\begin{equation}
+U_{\tilde\nu} = \rho\tilde\nu, \;\; 
+F_{I, \tilde\nu} = \rho u \tilde\nu, \;\; 
+G_{I, \tilde\nu} = \rho v \tilde\nu, \;\; 
+H_{I, \tilde\nu} = \rho w \tilde\nu, \;\; 
+\end{equation}
+\begin{equation}
+F_{V, \tilde\nu} = \frac{1}{\sigma}(\mu + \mu \psi)\frac{\partial \tilde \nu}{\partial x}, \;\;
+G_{V, \tilde\nu} = \frac{1}{\sigma}(\mu + \mu \psi)\frac{\partial \tilde \nu}{\partial y}, \;\;
+H_{V, \tilde\nu} = \frac{1}{\sigma}(\mu + \mu \psi)\frac{\partial \tilde \nu}{\partial w}, \;\;
+\end{equation}
+\begin{equation}
+S_{\tilde\nu} = c_{b_1}\tilde S \rho\nu\psi + \frac{1}{\sigma}\left[c_{b_2}\rho\nabla\tilde\nu\cdot\nabla\tilde\nu\right] - c_{w_1}\rho f_w \left(\frac{\nu\psi}{d}\right)^2.
+\end{equation}
+
+Note that the flow variables have been redefined as Favre-averaged quantities and $S_{\tilde\nu}$ is a source term that would appear on the right hand side of Equation~\eqref{ns_simple}. Also, the viscous stresses (Eq.~\ref{sigma}) now include the Boussinesq approximated Reynolds stress terms,
+\begin{equation}
+\sigma_{ij} = (\mu+\mu_t)\l( \frac{\partial u_i}{\partial x_j}
++ \frac{\partial u_j}{\partial x_i} \r)
+- \frac{2}{3}(\mu+\mu_t) \delta_{ij}\frac{\partial u_k}{\partial x_k}
+\end{equation}
+and the heat fluxes are redefined as
+\begin{equation}
+q_i = -C_p\l( \frac{\mu}{\text{Pr}} + \frac{\mu_t}{\text{Pr}_t}\r)\frac{\partial T}{\partial x_i}
+\end{equation}
+where $\mu_t$ is the dynamic eddy viscosity and $\text{Pr}_t$ is the turbulent Prandtl number. The various terms added by the one equation SA turbulence model are more precisely defined in Section~\ref{sec:sa_model}.

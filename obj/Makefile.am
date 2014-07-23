@@ -21,6 +21,7 @@ AM_CPPFLAGS = -I../include/
 
 bin_PROGRAMS = ../bin/HiFiLES
 
+___bin_HiFiLES_CXXFLAGS=
 ___bin_HiFiLES_LDADD=
 ___bin_HiFiLES_LDFLAGS=
 
@@ -78,9 +79,15 @@ ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/output.cpp \
                   ../src/geometry.cpp \
                   ../src/solver.cpp \
+		  ../src/mesh.cpp \
+		  ../src/matrix_structure.cpp \
+		  ../src/vector_structure.cpp \
+		  ../src/linear_solvers_structure.cpp \
                   ../src/HiFiLES.cpp
 
-___bin_HiFiLES_CXXFLAGS=@CXXFLAGS@
+___bin_HiFiLES_CXXFLAGS +=@CXXFLAGS@
+___bin_HiFiLES_CXXFLAGS +=@hifiles_externals_INCLUDES@
+___bin_HiFiLES_LDADD += @hifiles_externals_LIBS@
 
 # ParMETIS
 ___bin_HiFiLES_CXXFLAGS += @PARMETIS_CXX@
@@ -99,3 +106,6 @@ ___bin_HiFiLES_CXXFLAGS += @CUDA_CXX@
 ___bin_HiFiLES_CXXFLAGS += @BLAS_CXX@
 ___bin_HiFiLES_LDFLAGS += @BLAS_LDFLAGS@
 ___bin_HiFiLES_LDADD += @BLAS_LD@
+
+# MPI
+___bin_HiFiLES_CXXFLAGS += @MPI_INCLUDE@
