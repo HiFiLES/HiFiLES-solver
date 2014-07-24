@@ -2680,7 +2680,13 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
 
   // filter width  
   vol = (*this).calc_ele_vol(detjac);
-  delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
+  //delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
+
+  // TODO: test Parsani's definition:
+  delta = run_input.filter_ratio*pow(vol/(order+1.),1./n_dims);
+
+  // test filter width
+  deltaf = 2.0*delta;
 
   // M tensor
   // initial simple version: filtered product of S and Smod is equal to
@@ -2911,8 +2917,11 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       // Delta is the cutoff length-scale representing local grid resolution.
       // Deardorff definition (Deardorff, JFM 1970)
       vol = (*this).calc_ele_vol(detjac);
-      delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
+      //delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
       
+      // TODO: test Parsani's definition:
+      delta = run_input.filter_ratio*pow(vol/(order+1.),1./n_dims);
+
       // Solution gradient
       for (i=0;i<n_dims;i++) {
         drho(i) = temp_grad_u(0,i); // density gradient
