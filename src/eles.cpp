@@ -2685,6 +2685,9 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
   // TODO: test Parsani's definition:
   //delta = run_input.filter_ratio*pow(vol/(order+1.),1./n_dims);
 
+  // test filter width
+  deltaf = 2.0*delta;
+
   // M tensor
   // initial simple version: filtered product of S and Smod is equal to
   // product of filtered S and filtered Smod
@@ -2916,6 +2919,9 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       vol = (*this).calc_ele_vol(detjac);
       delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
       
+      // TODO: test Parsani's definition:
+      //delta = run_input.filter_ratio*pow(vol/(order+1.),1./n_dims);
+
       // Solution gradient
       for (i=0;i<n_dims;i++) {
         drho(i) = temp_grad_u(0,i); // density gradient

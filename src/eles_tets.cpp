@@ -640,7 +640,7 @@ void eles_tets::compute_filter_upts(void)
   k_c = 1.0/run_input.filter_ratio;
 
   // Approx resolution in element (assumes uniform point spacing)
-  dlt = 2.0/order;
+  dlt = 2.0/(order+1.0);
 
   // Normalised solution point separation: r = sqrt((x_a-x_b)^2 + (y_a-y_b)^2)
   for (i=0;i<N;i++)
