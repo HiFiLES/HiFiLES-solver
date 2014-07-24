@@ -165,6 +165,11 @@ void mpi_inters::mv_all_cpu_gpu(void)
       //norm_tconvisf_fpts_l.mv_cpu_gpu();
     }
 
+  ndA_dyn_fpts_l.mv_cpu_gpu();
+  grid_vel_fpts.mv_cpu_gpu();
+  J_dyn_fpts_l.mv_cpu_gpu();
+  norm_dyn_fpts.mv_cpu_gpu();
+
   sgsf_fpts_l.mv_cpu_gpu();
   sgsf_fpts_r.mv_cpu_gpu();
 
@@ -568,7 +573,7 @@ void mpi_inters::calculate_common_invFlux(void)
 
 #ifdef _GPU
   if (n_inters!=0) {
-      calculate_common_invFlux_mpi_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),run_input.riemann_solve_type, delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma,run_input.pen_fact, run_input.viscous, run_input.vis_riemann_solve_type, run_input.wave_speed(0), run_input.wave_speed(1), run_input.wave_speed(2), run_input.lambda);
+      calculate_common_invFlux_mpi_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),ndA_dyn_fpts_l.get_ptr_gpu(),J_dyn_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu(),run_input.riemann_solve_type, delta_disu_fpts_l.get_ptr_gpu(),run_input.gamma, run_input.pen_fact, run_input.viscous, motion, run_input.vis_riemann_solve_type, run_input.wave_speed(0), run_input.wave_speed(1), run_input.wave_speed(2), run_input.lambda);
     }
 #endif
 
@@ -599,12 +604,6 @@ void mpi_inters::calculate_common_viscFlux(void)
               temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
               temp_u_r(k) /= (*J_dyn_fpts_r(j,i));
             }
-            // Get mesh velocity
-            for (int k=0; k<n_dims; k++) {
-              temp_v(k)=(*grid_vel_fpts(j,i,k));
-            }
-          }else{
-            temp_v.initialize_to_zero();
           }
 
           // Interface unit-normal vector
