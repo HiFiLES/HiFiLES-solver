@@ -923,7 +923,7 @@ __device__ double SGS_filter_width(double in_detjac, int in_ele_type, int in_n_d
     vol = in_detjac*8.0;
   }
 
-  delta = in_filter_ratio*pow(vol,1./in_n_dims)/(in_order+1.);
+  //delta = in_filter_ratio*pow(vol,1./in_n_dims)/(in_order+1.);
 
   // Parsani's expression
   delta = in_filter_ratio*pow(vol/(in_order+1.),1./in_n_dims);
@@ -2898,7 +2898,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_
         tw[j] = in_twall_ptr[thread_id + (j+1)*stride];
 
       // heat flux at previous iteration is not needed
-      //qw = in_twall_ptr[thread_id + (in_n_fields-1)*stride];
+      qw = in_twall_ptr[thread_id + (in_n_fields-1)*stride];
 
       // calculate wall flux
       wall_model_kernel<in_n_dims>( wall_model, q[0], urot, &inte, &mu, in_gamma, in_prandtl, y, tw, qw);
