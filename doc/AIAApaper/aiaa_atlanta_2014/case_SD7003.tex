@@ -1,0 +1,93 @@
+% !TEX root = ./main.tex
+\graphicspath{{figures_SD7003/}}% Set graphics path location
+
+\subsection{SD7003 airfoil at 4$\degr$ angle of attack}\label{sd7003airfoil}
+
+Abundant literature documents flow around a SD7003 infinite wing and airfoil. Hence, physical experiments \cite{ol2005comparison,radespiel2007numerical} and numerical simulations \cite{galbraith2008implicit,visbal2009high,castonguay2010simulation,persson2010high,uranga2011implicit} of flow over this geometry can be used to benchmark HiFiLES.
+
+The simulations on the 2D geometry were performed on a circular domain with a radius of $50c$, where $c$ is the airfoil's cord length, centered at the leading edge of the airfoil. The boundary conditions are characteristic on the outer edge and adiabatic no-slip wall on the airfoil. The Mach number for all simulations was $M = 0.2$. The reported lift and drag coefficients in Table \eqref{table:sdAirfoilForce} correspond to the average of lift and drag coefficients over 13 periods after the flow reached a pseudo-periodic state. More details and figures of the detailed meshes are provided by Williams\cite{williams2013thesis}. The total number of elements in the simulation was $N = 25,810$.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{ l| l l| l l| l l} 
+  
+ &  \multicolumn{2}{|c|}{$Re = 10K$}  & \multicolumn{2}{|c|}{$Re = 22K$} & \multicolumn{2}{|c}{$Re = 60K$}  \\ 
+ Source & $C_L$ & $C_D$ & $C_L$ & $C_D$ & $C_L$ & $C_D$   \\ 
+\hline
+ Uranga et al.\cite{uranga2011implicit} & 0.3755 & 0.04978 & 0.6707 & 0.04510 & 0.5730 & 0.02097  \\ 
+$c_{dg},\kappa_{dg}$ & 0.3719 & 0.04940 & 0.6722 & 0.04295 & 0.5831 & 0.01975 \\ 
+$c_{+},\kappa_{+}$ & 0.3713 & 0.04935 & 0.6655 & 0.04275 & 0.5774 & 0.02005  \\ 
+ \end{tabular}
+\caption{Time-averaged values of the lift and drag coefficients for the SD7003 airfoil flows with $Re = 10,000, 22,000, 60,000$. For information on the schemes labeled $c_{dg},\kappa_{dg}$, and $c_{+},\kappa_{+}$, the reader is referred to Williams's thesis \cite{williams2013thesis}}
+\label{table:sdAirfoilForce} 
+ \end{table}
+
+\begin{figure}[htbp]
+\centering
+\subfigure[Density contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_935a}}
+\subfigure[Vorticity contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_935b}}\\
+
+\caption{Density and vorticity contours for the flow with $Re = 10,000$ around the SD7003 airfoil. The results were obtained using a polynomial basis with $p=2$ on an unstructured triangular grid with $N = 25,810$ elements}
+\label{sdairfoilre10k}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\subfigure[Density contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_936a}}
+\subfigure[Vorticity contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_936b}}\\
+
+\caption{Density and vorticity contours for the flow with $Re = 22,000$ around the SD7003 airfoil. The results were obtained using a polynomial basis with $p=2$ on an unstructured triangular grid with $N = 25,810$ elements}
+\label{sdairfoilre22k}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\subfigure[Density contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_937a}}
+\subfigure[Vorticity contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_937b}}\\
+
+\caption{Density and vorticity contours for the flow with $Re = 60,000$ around the SD7003 airfoil. The results were obtained using a polynomial basis with $p=2$ on an unstructured triangular grid with $N = 25,810$ elements}
+\label{sdairfoilre60k}
+\end{figure}
+
+The average lift and drag coefficients are in close agreement with the results by Uranga el. al\cite{uranga2011implicit}. The density contours in Figures \eqref{sdairfoilre10k},\eqref{sdairfoilre22k}, and \eqref{sdairfoilre60k} show that vortical structures are captured for a reasonable distance away from the airfoil despite the fact that elements are coarser away from the airfoil.
+
+
+\newpage
+
+\subsection{SD7003 wing section at 4$\degr$ angle of attack}
+To validate HiFiLES's performance in 3D simulations, we extrude the SD7003 geometry from Section\eqref{sd7003airfoil} by $0.2c$ in the $z$-direction and apply periodic boundary conditions at $z=0$ and $z=0.2c$. Table \eqref{table:sdWingForce} shows the time-averaged lift and drag coefficients. The total number of tetrahedral elements is $N = 711,332$.
+
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{ l| l l| l l| l l} 
+  
+ &  \multicolumn{2}{|c|}{$Re = 10K$}  \\ 
+ Source & $C_L$ & $C_D$    \\ 
+\hline
+ Uranga et al.\cite{uranga2011implicit} & 0.3743 & 0.04967   \\ 
+$c_{dg},\kappa_{dg}$ & 0.3466 & 0.04908  \\ 
+$c_{+},\kappa_{+}$ & 0.3454 & 0.04903 \\ 
+ \end{tabular}
+\caption{Time-averaged values of the lift and drag coefficients for the SD7003 wing-section in a flow with $Re = 10,000$}
+\label{table:sdWingForce} 
+ \end{table}
+
+
+\begin{figure}[htbp]
+\centering
+\subfigure[Density contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_939a}}
+\subfigure[Vorticity contours]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{figure_939b}}\\
+
+\caption{Density and vorticity isosurfaces colored by Mach number for the flow with $Re = 10,000$ around the SD7003 wing-section. The results were obtained using a polynomial basis with order $p=3$ on an unstructured tetrahedral grid with $N = 711,332$ elements.}
+\label{sdwingre10k}
+\end{figure}
+

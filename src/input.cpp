@@ -1,14 +1,26 @@
 /*!
  * \file input.cpp
- * \brief _____________________________
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <iostream>
@@ -31,6 +43,10 @@ using namespace std;
 
 input::input()
 {
+  // Set default values for optional parameters
+  motion = 0;
+  GCL = 0;
+  n_deform_iters = 1;
 }
 
 input::~input()
@@ -105,6 +121,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
       // Section header, ignore next two lines
       in_run_input_file.getline(buf,BUFSIZ);
     }
+    else if (!param_name.compare(0,2,"//"))
+    {
+      // Skip comment line
+    }
     else if (!param_name.compare("equation"))
     {
       in_run_input_file >> equation;
@@ -151,6 +171,12 @@ void input::setup(ifstream& in_run_input_file, int rank)
     else if (!param_name.compare("dt_type"))
     {
       in_run_input_file >> dt_type;
+
+      if (dt_type == 2 && rank == 0)
+      {
+        cout << "Note: Local timestepping is still in an experimental phase," 
+          << " especially for viscous simulations." ;
+      }
     }
     else if (!param_name.compare("dt"))
     {
@@ -310,6 +336,48 @@ void input::setup(ifstream& in_run_input_file, int rank)
     else if (!param_name.compare("mesh_file"))
     {
       in_run_input_file >> mesh_file;
+    }
+    else if (!param_name.compare("motion_flag"))
+    {
+      in_run_input_file >> motion;
+    }
+    else if (!param_name.compare("GCL_flag"))
+    {
+      in_run_input_file >> GCL;
+    }
+    else if (!param_name.compare("moving_boundaries"))
+    {
+      in_run_input_file >> n_moving_bnds;
+      motion_type.setup(n_moving_bnds);
+      bound_vel_simple.setup(n_moving_bnds);
+      boundary_flags.setup(n_moving_bnds);
+      for (int i=0; i<n_moving_bnds; i++) {
+        in_run_input_file.getline(buf,BUFSIZ);
+        in_run_input_file >> boundary_flags(i) >> motion_type(i);
+        bound_vel_simple(i).setup(3);
+        for (int j=0; j<3; j++) {
+          in_run_input_file >> bound_vel_simple(i)(j);
+          cout << bound_vel_simple(i)(j) << " ";
+        }
+      }
+    }
+    else if (!param_name.compare("n_deform_iters"))
+    {
+      in_run_input_file >> n_deform_iters;
+    }
+    else if (!param_name.compare("simple_bound_velocity"))
+    {
+//      bound_vel_simple.setup(3);
+//      for (int i=0; i<3; i++)
+//        in_run_input_file >> bound_vel_simple(i);
+    }
+    else if (!param_name.compare("mesh_output_freq"))
+    {
+      in_run_input_file >> mesh_output_freq;
+    }
+    else if (!param_name.compare("mesh_output_format"))
+    {
+      in_run_input_file >> mesh_output_format;
     }
     else if (!param_name.compare("upts_type_tri"))
     {
@@ -567,8 +635,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
       FatalError("input parameter not recognized");
     }
     
-    // Read end of line
-    in_run_input_file.getline(buf,BUFSIZ);
+    // Read end of line, if not a comment line
+    if (param_name.compare(0,2,"//"))
+      in_run_input_file.getline(buf,BUFSIZ);
   }
   
   // --------------------

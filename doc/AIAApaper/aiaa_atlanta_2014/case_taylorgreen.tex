@@ -1,0 +1,61 @@
+% !TEX root = ./main.tex
+\graphicspath{{figures_taylorgreen/}}% Set graphics path location
+
+\subsection{Taylor-Green Vortex at Re = 1,600}
+
+The Taylor-Green Vortex (TGV) is a simple test of the resolution of the small scales of a turbulent flow by a numerical method.
+The compressible TGV at $Re=1600$ was one of the benchmark problems in the 1st and 2nd International Workshops on High-Order CFD Methods~\cite{wang2013}.
+A reference solution was computed by Debonis~\cite{debonis:13} using a high-order dispersion relation-preserving (DRP) scheme on a mesh of $512^3$ elements.
+The results presented here were obtained by Bull and Jameson using FR to recover the fourth-order-accurate DG and SD schemes in HiFiLES~\cite{bull2014a,bull2014b}.
+We also compare our results to those of Beck and Gassner~\cite{beck:12}, who used a fourth-order filtered DG method on a mesh of $64^3$ elements.
+From a simple initial condition in a triply-periodic box of dimensions $[0:2\pi]^3$, interactions between vortices cause the flow to develop in a prescribed manner into a mass of elongated vortices across a range of scales.
+The initial condition is specified as
+%
+\begin{eqnarray}\label{tgv}
+u(t_0) &&= u_0 \sin (x/L) \cos (y/L) \cos (z/L), \\
+v(t_0) &&= -u_0 \cos (x/L) \sin (y/L) \cos (z/L), \\
+w(t_0) &&= 0, \\
+p(t_0) &&= p_0 + \frac{\rho_0 V^2_0}{16} \left [ \cos \left (\frac{2x}{L} \right ) + \cos \left (\frac{2y}{L} \right ) \right ] \left [ \cos \left (\frac{2z}{L} \right ) + 2 \right ],
+\end{eqnarray}
+%
+where $L = 1$, $u_0 = 1$, $\rho_0 = 1$ and $p_0 = 100$.
+The Mach number is set to 0.08 (consistent with the initial pressure $p_0$) and the initial temperature is 300K.
+
+Figs.~\ref{dissrate} (a) and (b) show the volume-averaged kinetic energy $\langle k \rangle$  on (a) hexahedral meshes of $16^3$, $32^3$ and $64^3$ elements and (b) tetrahedral meshes (formed by splitting the hexahedral meshes in six).
+The reference solution, labelled as`DRP-512' is plotted for comparison.
+Figs.~\ref{dissrate} (c) and (d) show the kinetic energy dissipation rate, given by $\epsilon = -d \langle k \rangle/dt$ versus the reference solution and the results of Beck and Gassner~\cite{beck:12}, labelled as`Beck-DG-64x4'.
+On the finest hexahedral and tetrahedral meshes the kinetic energy and dissipation rate predictions match the reference solution, demonstrating that the high-order numerical scheme is able to resolve the important flow dynamics on a relatively coarse mesh.
+As a qualitative measure of the resolution of the turbulent flow structures, Figure \ref{qcrit} shows isosurfaces of the $q$ criterion at four times during the simulation.
+The evolution of complex small scale structures is evident.
+
+\begin{figure}[htbp]
+\centering
+\subfigure[$\langle k \rangle$, hexahedral meshes]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{tke-SD-hex-mesh}}
+\subfigure[$\langle k \rangle$, tetrahedral meshes]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{tke-SD-tet-mesh.pdf}}\\
+\subfigure[$-d \langle k \rangle/dt$, hexahedral meshes]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{dissrate-SD-hex-mesh.pdf}}
+\subfigure[$-d \langle k \rangle/dt$, tetrahedral meshes]{
+\includegraphics*[trim=0 0 0 0,width=0.48\textwidth]{dissrate-SD-tet-mesh.pdf}}\\
+\caption{\small Taylor-Green vortex results on hexahedral and tetrahedral meshes from Bull and Jameson~\cite{bull2014a}.
+(a, b) Evolution of average kinetic energy $\langle k \rangle$; (c, d) dissipation rate $-d \langle k \rangle/dt$.
+`SD-$M \times N$' refers to $M^3$ mesh, $N$th-order accurate SD scheme.
+(\textbf{- - -}) 4th-order DG on $64^3$ mesh~\cite{beck:12}; ($\circ$) DNS~\cite{debonis:13}.}
+\label{dissrate}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\subfigure[$t = 2.5$, $Q=0.5$]{
+\includegraphics*[width=0.48\textwidth]{TGV-DG3-hex-64-qcriterion-isosurface-005-velocolor-025s-z-small}}
+\subfigure[$t = 5$, $Q=1.5$]{
+\includegraphics*[width=0.48\textwidth]{TGV-DG3-hex-64-qcriterion-isosurface-015-velocolor-05s-z-small}}\\
+\subfigure[$t = 7.5$, $Q=1.5$]{
+\includegraphics*[width=0.48\textwidth]{TGV-DG3-hex-64-qcriterion-isosurface-015-velocolor-075s-z-small}}
+\subfigure[$t = 10.75$, $Q=1.5$]{
+\includegraphics*[width=0.48\textwidth]{TGV-DG3-hex-64-qcriterion-isosurface-015-velocolor-1075s-z-small}}
+\caption{TGV solution on the fine mesh using fourth order accurate DG method, showing isosurfaces of $q$ criterion colored by velocity magnitude at time $t$ = 2.5 to 10.75 seconds.}
+\label{qcrit}
+\end{figure}
+

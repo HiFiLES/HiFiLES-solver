@@ -1,7 +1,9 @@
 pkg_cppflags  = @HIFILES_METIS_CPPFLAGS@
-pkg_cppflags += -I$(srcdir)/include  -I$(srcdir)/GKlib -I$(srcdir)/libmetis
+pkg_cppflags += -I$(srcdir)/libmetis -I$(srcdir)/GKlib -I$(srcdir)/include 
+pkg_cppflags += @MPI_INCLUDE@ -I$(srcdir)/GKlib -I$(srcdir)/libmetis
 pkg_sources = \
 	include/metis.h \
+	GKlib/GKlib.h \
 	GKlib/b64.c \
 	GKlib/blas.c \
 	GKlib/csr.c \
@@ -25,10 +27,8 @@ pkg_sources = \
 	GKlib/gk_proto.h \
 	GKlib/gk_struct.h \
 	GKlib/gk_types.h \
-	GKlib/GKlib.h \
 	GKlib/gkregex.c \
 	GKlib/gkregex.h \
-	GKlib/graph.c \
 	GKlib/htable.c \
 	GKlib/io.c \
 	GKlib/itemsets.c \
@@ -41,7 +41,6 @@ pkg_sources = \
 	GKlib/pdb.c \
 	GKlib/pqueue.c \
 	GKlib/random.c \
-	GKlib/rw.c \
 	GKlib/seq.c \
 	GKlib/sort.c \
 	GKlib/string.c \
@@ -94,11 +93,15 @@ pkg_sources = \
 	libmetis/wspace.c
 
 
+#GKlib/rw.c 
+
+
 
 
 ######################################################################
 AUTOMAKE_OPTIONS = subdir-objects
 
+AM_CXX       = $(CXX)
 AM_CPPFLAGS  = $(pkg_cppflags) # any defined package-specific include paths
 AM_CFLAGS    =
 AM_CXXFLAGS  =

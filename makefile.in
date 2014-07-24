@@ -1,30 +1,55 @@
-# \file makefile.in
-# \brief _____________________________
+# \file Makefile.in
 # \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
 #                          Peter Vincent, David Williams (alphabetical by surname).
-#         - Current development: Aerospace Computing Laboratory (ACL) directed
-#                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
-# \version 1.0.0
+#         - Current development: Aerospace Computing Laboratory (ACL)
+#                                Aero/Astro Department. Stanford University.
+# \version 0.1.0
 #
-# HiFiLES (High Fidelity Large Eddy Simulation).
-# Copyright (C) 2013 Aerospace Computing Laboratory.
+# High Fidelity Large Eddy Simulation (HiFiLES) Code.
+# Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+#
+# HiFiLES is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HiFiLES is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
 
+# CPU or GPU
 NODE=     CPU
+
+# DEBUG or RELEASE
 CODE=     DEBUG
-BLAS=     NO
+
+# *_BLAS: NO, STANDARD, ATLAS, or MKL
+BLAS=     NO_BLAS
+
+# C++ compiler to use
 COMP=     GCC
+
+# MPI or NO
 PARALLEL= NO
-TECIO=    YES
-ATLAS=    NO
 
-BLAS_DIR= /usr/local/atlas
+TECIO=    NO
 
-PARMETIS_DIR = /usr/local
+# Location of libcblas.a
+BLAS_DIR= /usr/local/cblas
 
-PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/lib
+# Location of parmetis.h, metis.h
+PARMETIS_DIR = /usr/local/parmetis-4.0.3
 
-TECIO_DIR = lib/tecio-2008
+# Location of libparmetis.a, libmetis.a
+PARMETIS_BUILD_DIR = /usr/local/parmetis-4.0.3/build/Darwin-x86_64
+
+TECIO_DIR = /usr/local/tecio-2013
 
 CUDA_DIR = /usr/local/cuda-5.0
 
+# Location of mpi.h
 MPI_DIR = /usr/mpi/gcc/mvapich-1.2.0

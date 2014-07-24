@@ -1,14 +1,26 @@
 /*!
  * \file HiFiLES.cpp
- * \brief Main subrotuine of HiFiLES.
  * \author - Original code: SD++ developed by Patrice Castonguay, Antony Jameson,
  *                          Peter Vincent, David Williams (alphabetical by surname).
- *         - Current development: Aerospace Computing Laboratory (ACL) directed
- *                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
- * \version 1.0.0
+ *         - Current development: Aerospace Computing Laboratory (ACL)
+ *                                Aero/Astro Department. Stanford University.
+ * \version 0.1.0
  *
- * HiFiLES (High Fidelity Large Eddy Simulation).
- * Copyright (C) 2013 Aerospace Computing Laboratory.
+ * High Fidelity Large Eddy Simulation (HiFiLES) Code.
+ * Copyright (C) 2014 Aerospace Computing Laboratory (ACL).
+ *
+ * HiFiLES is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HiFiLES is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <iostream>
@@ -44,6 +56,7 @@ int main(int argc, char *argv[]) {
   clock_t init_time, final_time;                /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
   ofstream write_hist;                /*!< Output files (forces, statistics, and history) */
+  mesh Mesh;                          /*!< Store mesh details & perform mesh motion */
   
   /*! Check the command line input. */
   
@@ -85,7 +98,7 @@ int main(int argc, char *argv[]) {
   
   /*! Read the mesh file from a file. */
   
-  GeoPreprocess(&FlowSol);
+  GeoPreprocess(&FlowSol, Mesh);
   
   InitSolution(&FlowSol);
   
@@ -154,7 +167,34 @@ int main(int argc, char *argv[]) {
     if (FlowSol.adv_type == 3) RKSteps = 5;
     
     for(i=0; i < RKSteps; i++) {
-      
+
+      /* If using moving mesh, need to advance the Geometric Conservation Law
+       * (GCL) first to get updated Jacobians. Necessary to preserve freestream
+       * on arbitrarily deforming mesh. See Kui Ou's Ph.D. thesis for details. */
+      if (run_input.motion > 0) {
+
+        /* Update the mesh */
+        Mesh.move(FlowSol.ini_iter+i_steps,i,&FlowSol);
+
+        /* Residual for Geometric Conservation Law (GCL) */
+//        if (run_input.GCL) {
+//          //CalcGCLResidual(&FlowSol);
+
+//          /* Time integration for Geometric Conservation Law (GCL) using a RK scheme */
+//          for(j=0; j<FlowSol.n_ele_types; j++) {
+
+//            // Time Advance
+//            FlowSol.mesh_eles(j)->AdvanceGCL(i, FlowSol.adv_type);
+
+//            // Extrapolate Jacobians to flux points
+//            FlowSol.mesh_eles(j)->extrapolate_GCL_solution(0);
+
+//            // Reset transforms using updated Jacobians
+//            FlowSol.mesh_eles(j)->correct_dynamic_transforms();
+//          }
+//        }
+      }
+
       /*! Spatial integration. */
 
       CalcResidual(&FlowSol);
@@ -172,6 +212,7 @@ int main(int argc, char *argv[]) {
     /*! Update total time, and increase the iteration index. */
     
     FlowSol.time += run_input.dt;
+    run_input.time = FlowSol.time;
     i_steps++;
     
     /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
