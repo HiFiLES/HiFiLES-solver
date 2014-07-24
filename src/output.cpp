@@ -1521,23 +1521,21 @@ void check_stability(struct solution* FlowSol)
 void CopyGPUCPU(struct solution* FlowSol)
 {
   for(int i=0;i<FlowSol->n_ele_types;i++)
+  {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
     {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
-        {
-          // copy solution and gradient to cpu
-          FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
-
-          if (FlowSol->viscous==1)
-            {
-              FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
-            }
-
-          if (run_input.LES==1)
-            {
-              FlowSol->mesh_eles(i)->cp_LES_diagnostics_gpu_cpu();
-            }
-        }
+      FlowSol->mesh_eles(i)->cp_transforms_gpu_cpu();
+      FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+      if (FlowSol->viscous==1)
+      {
+        FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
+      }
+      if (run_input.LES==1)
+      {
+        FlowSol->mesh_eles(i)->cp_LES_diagnostics_gpu_cpu();
+      }
     }
+  }
 }
 #endif
 

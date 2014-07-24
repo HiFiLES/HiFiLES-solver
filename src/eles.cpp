@@ -5122,9 +5122,9 @@ void eles::set_transforms(void)
 
     pos_fpts.cp_cpu_gpu();
     
+    JGinv_fpts.cp_cpu_gpu();
+    detjac_fpts.cp_cpu_gpu();
     /*
-     JGinv_fpts.mv_cpu_gpu();
-     detjac_fpts.mv_cpu_gpu();
      if (viscous)
      {
      tgrad_detjac_fpts.mv_cpu_gpu();
@@ -5138,21 +5138,32 @@ void eles::set_transforms(void)
 
 void eles::set_transforms_dynamic(void)
 {
+  if (n_eles!=0 && motion && first_time) {
+    // Determinant of the dynamic -> static reference transformation matrix ( |G| )
+    J_dyn_upts.setup(n_upts_per_ele,n_eles);
+    // Total dynamic -> static reference transformation matrix ( |G|*G^{-1} )
+    JGinv_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
+    dyn_pos_upts.setup(n_upts_per_ele,n_eles,n_dims);
+
+    J_dyn_fpts.setup(n_fpts_per_ele,n_eles);
+    JGinv_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
+    norm_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+    dyn_pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+
+    ndA_dyn_fpts.setup(n_fpts_per_ele,n_eles);
+  }
+
+#ifdef _CPU
   if (n_eles!=0 && motion)
   {
-
     int i,j,k;
 
     int n_comp;
 
     if(n_dims == 2)
-    {
       n_comp = 3;
-    }
     else if(n_dims == 3)
-    {
       n_comp = 6;
-    }
 
     array<double> pos(n_dims);
     array<double> d_pos(n_dims,n_dims);
@@ -5162,23 +5173,6 @@ void eles::set_transforms_dynamic(void)
     double xr, xs, xt;
     double yr, ys, yt;
     double zr, zs, zt;
-
-    double xrr, xss, xtt, xrs, xrt, xst;
-    double yrr, yss, ytt, yrs, yrt, yst;
-    double zrr, zss, ztt, zrs, zrt, zst;
-
-    if (first_time) {
-      // Determinant of the dynamic -> static reference transformation matrix ( |G| )
-      J_dyn_upts.setup(n_upts_per_ele,n_eles);
-      // Total dynamic -> static reference transformation matrix ( |G|*G^{-1} )
-      JGinv_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
-      dyn_pos_upts.setup(n_upts_per_ele,n_eles,n_dims);
-
-      if (viscous) {
-        // Gradient of the determinant of the Jacobian as seen in the static frame ( del |G| )
-        //tgrad_J_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims);
-      }
-    }
 
     if (rank==0 && first_time) {
       cout << " Setting up dynamic->static transforms at solution points" << endl;
@@ -5228,22 +5222,6 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_upts(j,i,0,1)= -xs;
           JGinv_dyn_upts(j,i,1,0)= -yr;
           JGinv_dyn_upts(j,i,1,1)=  xr;
-
-          // gradient of detjac at solution point
-          /*if(viscous)
-          {
-            xrr = dd_pos(0,0);
-            xss = dd_pos(0,1);
-            xrs = dd_pos(0,2);
-
-            yrr = dd_pos(1,0);
-            yss = dd_pos(1,1);
-            yrs = dd_pos(1,2);
-
-            tgrad_J_dyn_upts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
-            tgrad_J_dyn_upts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
-          }*/
-
         }
         else if(n_dims==3)
         {
@@ -5272,38 +5250,6 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_upts(j,i,2,0) = (yr*zs - ys*zr);
           JGinv_dyn_upts(j,i,2,1) = (xs*zr - xr*zs);
           JGinv_dyn_upts(j,i,2,2) = (xr*ys - xs*yr);
-
-          // gradient of detjac at solution point
-          /*if(viscous)
-          {
-            xrr = dd_pos(0,0);
-            xss = dd_pos(0,1);
-            xtt = dd_pos(0,2);
-            xrs = dd_pos(0,3);
-            xrt = dd_pos(0,4);
-            xst = dd_pos(0,5);
-
-            yrr = dd_pos(1,0);
-            yss = dd_pos(1,1);
-            ytt = dd_pos(1,2);
-            yrs = dd_pos(1,3);
-            yrt = dd_pos(1,4);
-            yst = dd_pos(1,5);
-
-            zrr = dd_pos(2,0);
-            zss = dd_pos(2,1);
-            ztt = dd_pos(2,2);
-            zrs = dd_pos(2,3);
-            zrt = dd_pos(2,4);
-            zst = dd_pos(2,5);
-
-            tgrad_J_dyn_upts(j,i,0) = xrt*(zs*yr - ys*zr) - xrs*(zt*yr - yt*zr) + xrr*(zt*ys - yt*zs) +
-                xr*(-zs*yrt + ys*zrt + zt*yrs - yt*zrs) - xs*(-zr*yrt + yr*zrt + zt*yrr - yt*zrr) + xt*(-zr*yrs + yr*zrs + zs*yrr - ys*zrr);
-            tgrad_J_dyn_upts(j,i,1) = -xss*(zt*yr - yt*zr) + xst*(zs*yr - ys*zr) + xrs*(zt*ys - yt*zs) +
-                xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
-            tgrad_J_dyn_upts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
-                xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
-          }*/
         }
         else
         {
@@ -5315,28 +5261,7 @@ void eles::set_transforms_dynamic(void)
       }
     }
 
-#ifdef _GPU
-    J_dyn_upts.cp_cpu_gpu(); // Copy since need in write_tec
-    JGinv_dyn_upts.cp_cpu_gpu();
-#endif
-
     // Compute metrics term at flux points
-
-    if (first_time) {
-      J_dyn_fpts.setup(n_fpts_per_ele,n_eles);
-      JGinv_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
-      norm_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-      dyn_pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-
-      ndA_dyn_fpts.setup(n_fpts_per_ele,n_eles);
-
-      if (viscous) {
-        //tgrad_J_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims); // NEVER USED
-        // Total static-physical -> dynamic-physical transformation matrix ( {G}/J )
-        JinvG_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
-      }
-    }
-
     if (rank==0 && first_time)
       cout << endl << " at flux points"  << endl;
 
@@ -5401,21 +5326,6 @@ void eles::set_transforms_dynamic(void)
             JinvG_dyn_fpts(j,i,1,1)= ys/J_dyn_fpts(j,i);
           }
 
-          // gradient of detjac at the flux point
-          /*if(viscous)
-          {
-            xrr = dd_pos(0,0);
-            xss = dd_pos(0,1);
-            xrs = dd_pos(0,2);
-
-            yrr = dd_pos(1,0);
-            yss = dd_pos(1,1);
-            yrs = dd_pos(1,2);
-
-            tgrad_J_dyn_fpts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
-            tgrad_J_dyn_fpts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
-          }*/
-
           // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
           norm_dot_JGinv(0)= ( norm_fpts(j,i,0)*ys -norm_fpts(j,i,1)*yr);
           norm_dot_JGinv(1)= (-norm_fpts(j,i,0)*xs +norm_fpts(j,i,1)*xr);
@@ -5458,53 +5368,6 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_fpts(j,i,2,1) = (xs*zr - xr*zs);
           JGinv_dyn_fpts(j,i,2,2) = (xr*ys - xs*yr);
 
-          if (viscous)
-          {
-            // store static->dynamic transformation matrix
-            JinvG_dyn_fpts(j,i,0,0)= xr/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,0,1)= xs/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,0,2)= xt/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,1,0)= yr/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,1,1)= ys/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,1,2)= yt/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,2,0)= zr/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,2,1)= zs/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,2,2)= zt/J_dyn_fpts(j,i);
-          }
-
-          // gradient of detjac at the flux point
-
-          /*if(viscous)
-          {
-            xrr = dd_pos(0,0);
-            xss = dd_pos(0,1);
-            xtt = dd_pos(0,2);
-            xrs = dd_pos(0,3);
-            xrt = dd_pos(0,4);
-            xst = dd_pos(0,5);
-
-            yrr = dd_pos(1,0);
-            yss = dd_pos(1,1);
-            ytt = dd_pos(1,2);
-            yrs = dd_pos(1,3);
-            yrt = dd_pos(1,4);
-            yst = dd_pos(1,5);
-
-            zrr = dd_pos(2,0);
-            zss = dd_pos(2,1);
-            ztt = dd_pos(2,2);
-            zrs = dd_pos(2,3);
-            zrt = dd_pos(2,4);
-            zst = dd_pos(2,5);
-
-            tgrad_J_dyn_fpts(j,i,0) = xrt*(zs*yr - ys*zr) - xrs*(zt*yr - yt*zr) + xrr*(zt*ys - yt*zs) +
-                xr*(-zs*yrt + ys*zrt + zt*yrs - yt*zrs) - xs*(-zr*yrt + yr*zrt + zt*yrr - yt*zrr) + xt*(-zr*yrs + yr*zrs + zs*yrr - ys*zrr);
-            tgrad_J_dyn_fpts(j,i,1) = -xss*(zt*yr - yt*zr) + xst*(zs*yr - ys*zr) + xrs*(zt*ys - yt*zs) +
-                xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
-            tgrad_J_dyn_fpts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
-                xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
-          }*/
-
           // temporarily store moving-physical domain interface normal at the flux point
           // [transformed normal dot determinant of jacobian multiplied by inverse of jacobian]
           norm_dot_JGinv(0)=((norm_fpts(j,i,0)*(ys*zt-yt*zs))+(norm_fpts(j,i,1)*(yt*zr-yr*zt))+(norm_fpts(j,i,2)*(yr*zs-ys*zr)));
@@ -5527,26 +5390,41 @@ void eles::set_transforms_dynamic(void)
         }
       }
     }
-
-#ifdef _GPU
-    ndA_dyn_fpts.cp_cpu_gpu();
-    norm_dyn_fpts.cp_cpu_gpu();
-    dyn_pos_fpts.cp_cpu_gpu();    
-    JGinv_dyn_fpts.cp_cpu_gpu();
-    J_dyn_fpts.cp_cpu_gpu();
-
-    /*if (viscous) {
-      JinvG_dyn_fpts.mv_cpu_gpu();
-    }*/
-#endif
-
     if (rank==0 && first_time) cout << endl;
 
     // To avoid re-setting up ALL transform arrays in the future (for dynamic grids)
     first_time = false;
   }
+#endif
+
 #ifdef _GPU
-  else if (n_eles!=0 && motion==0)
+  if (n_eles!=0 && motion)
+  {
+    if (first_time) {
+      if (rank==0) cout << endl << "Moving dynamic transforms to GPU ... " << flush;
+      J_dyn_upts.cp_cpu_gpu(); // Copy since need in write_tec
+      JGinv_dyn_upts.cp_cpu_gpu();
+
+      ndA_dyn_fpts.cp_cpu_gpu();
+      norm_dyn_fpts.cp_cpu_gpu();
+      dyn_pos_fpts.cp_cpu_gpu();
+      JGinv_dyn_fpts.cp_cpu_gpu();
+      J_dyn_fpts.cp_cpu_gpu();
+
+      n_spts_per_ele.cp_cpu_gpu();
+      shape_dyn.cp_cpu_gpu();
+
+      if (rank==0) cout << "done." << endl;
+    }else{
+      shape_dyn.cp_cpu_gpu();
+    }
+
+    if (rank == 0 && first_time) cout << "Setting dynamic transformations ... " << flush;
+    set_transforms_dynamic_fpts_kernel_wrapper(n_fpts_per_ele,n_eles,n_dims,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),detjac_fpts.get_ptr_gpu(),J_dyn_fpts.get_ptr_gpu(),JGinv_fpts.get_ptr_gpu(),JGinv_dyn_fpts.get_ptr_gpu(),ndA_dyn_fpts.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu(),d_nodal_s_basis_fpts.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
+    set_transforms_dynamic_upts_kernel_wrapper(n_upts_per_ele,n_eles,n_dims,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),d_nodal_s_basis_upts.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
+    if (rank == 0 && first_time) cout << "done." << endl;
+  }
+  else if (n_eles!=0 && motion==0 && first_time)
   {
     // No setup required; just get dummy ptrs on GPU
     J_dyn_upts.cp_cpu_gpu();
@@ -5556,10 +5434,26 @@ void eles::set_transforms_dynamic(void)
     JGinv_dyn_fpts.cp_cpu_gpu();
     ndA_dyn_fpts.cp_cpu_gpu();
     norm_dyn_fpts.cp_cpu_gpu();
-    dyn_pos_fpts.cp_cpu_gpu();    
+    dyn_pos_fpts.cp_cpu_gpu();
   }
+
+  first_time = false;
 #endif
 }
+
+#ifdef _GPU
+void eles::cp_transforms_gpu_cpu(void)
+{
+  J_dyn_upts.cp_gpu_cpu();
+  JGinv_dyn_upts.cp_gpu_cpu();
+
+  J_dyn_fpts.cp_gpu_cpu();
+  JGinv_dyn_fpts.cp_gpu_cpu();
+  ndA_dyn_fpts.cp_gpu_cpu();
+  norm_dyn_fpts.cp_gpu_cpu();
+  dyn_pos_fpts.cp_gpu_cpu();
+}
+#endif
 
 void eles::set_bdy_ele2ele(void)
 {
@@ -7399,6 +7293,9 @@ void eles::store_nodal_s_basis_fpts(void)
       }
     }
   }
+#ifdef _GPU
+  nodal_s_basis_fpts.cp_cpu_gpu();
+#endif
 }
 
 void eles::store_nodal_s_basis_upts(void)
@@ -7415,6 +7312,9 @@ void eles::store_nodal_s_basis_upts(void)
       }
     }
   }
+#ifdef _GPU
+  nodal_s_basis_upts.cp_cpu_gpu();
+#endif
 }
 
 void eles::store_nodal_s_basis_ppts(void)
@@ -7491,6 +7391,9 @@ void eles::store_d_nodal_s_basis_fpts(void)
       }
     }
   }
+#ifdef _GPU
+  d_nodal_s_basis_fpts.cp_cpu_gpu();
+#endif
 }
 
 
@@ -7514,6 +7417,9 @@ void eles::store_d_nodal_s_basis_upts(void)
       }
     }
   }
+#ifdef _GPU
+  d_nodal_s_basis_upts.cp_cpu_gpu();
+#endif
 }
 
 void eles::store_d_nodal_s_basis_vol_cubpts(void)
@@ -7641,12 +7547,14 @@ void eles::initialize_grid_vel(int in_max_n_spts_per_ele)
     /// TODO: after other mesh stuff implemented in CUDA, *.mv_cpu_gpu()
     /// ALSO: *_nodal_s_basis data is redundant: same for every element (of same type)
   }
+#ifdef _GPU
   else
   {
     // Never going to be used, but still need dummy ptr on gpu regardless
     grid_vel_fpts.cp_cpu_gpu();
     grid_vel_upts.cp_cpu_gpu();
   }
+#endif
 }
 
 /*! Interpolate the grid velocity from shape points to flux points
@@ -7655,10 +7563,6 @@ void eles::initialize_grid_vel(int in_max_n_spts_per_ele)
  *  (would have to use sparse BLAS - think block-diag matrix) */
 void eles::set_grid_vel_fpts(int in_rk_step)
 {
-#ifdef _GPU
-//  if (!grid_vel_fpts.cpu_flag)
-//    grid_vel_fpts.mv_gpu_cpu();
-#endif
   int ic,fpt,j,k;
 //  if (run_input.motion==3) {
 //    double rk_time;
@@ -7693,10 +7597,6 @@ void eles::set_grid_vel_fpts(int in_rk_step)
  *  TODO: Implement these routines in CUDA (just 'for' loops - easy!) */
 void eles::set_grid_vel_upts(int in_rk_step)
 {
-#ifdef _GPU
-//  if (grid_vel_upts.gpu_flag)
-//    grid_vel_upts.mv_gpu_cpu();
-#endif
   int ic,upt,j,k;
 //  if (run_input.motion==3) {
 //    double rk_time;
