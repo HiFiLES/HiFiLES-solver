@@ -2416,6 +2416,9 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
   vol = (*this).calc_ele_vol(detjac);
   delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
 
+  // TODO: test Parsani's definition:
+  //delta = run_input.filter_ratio*pow(vol/(order+1.),1./n_dims);
+
   // M tensor
   // initial simple version: filtered product of S and Smod is equal to
   // product of filtered S and filtered Smod
