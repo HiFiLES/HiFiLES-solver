@@ -2806,6 +2806,9 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_
     // viscous flux prep
     vis_NS_flux<in_n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, in_prandtl, in_gamma, in_rt_inf, in_mu_inf, in_c_sth, in_fix_vis, -1);
 
+    // Initialize LES output field to zero
+    in_turb_visc_ptr[thread_id] = 0.0;
+
     // Flux computation for each field
     #pragma unroll
     for (i=0;i<in_n_fields;i++) {

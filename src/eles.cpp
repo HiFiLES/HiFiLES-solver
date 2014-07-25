@@ -2680,10 +2680,10 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
 
   // filter width  
   vol = (*this).calc_ele_vol(detjac);
-  //delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
+  delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
 
   // TODO: test Parsani's definition:
-  delta = run_input.filter_ratio*pow(vol/(order+1.),1./n_dims);
+  //delta = run_input.filter_ratio*pow(vol/(order+1.),1./n_dims);
 
   // test filter width
   deltaf = 2.0*delta;
@@ -2775,9 +2775,10 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
   mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
   
-  // Initialize SGS flux array to zero
+  // Initialize SGS flux array and viscosity ratio field to zero
   zero_array(temp_sgsf);
-  
+  turb_visc(upt,ele) = 0.0;
+
   // Compute SGS flux using wall model if sufficiently close to solid boundary
   wall = 0;
   
@@ -2917,10 +2918,10 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       // Delta is the cutoff length-scale representing local grid resolution.
       // Deardorff definition (Deardorff, JFM 1970)
       vol = (*this).calc_ele_vol(detjac);
-      //delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
+      delta = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
       
       // TODO: test Parsani's definition:
-      delta = run_input.filter_ratio*pow(vol/(order+1.),1./n_dims);
+      //delta = run_input.filter_ratio*pow(vol/(order+1.),1./n_dims);
 
       // Solution gradient
       for (i=0;i<n_dims;i++) {
@@ -3032,12 +3033,19 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         if(n_dims==2) denom += 2.0*(S(2)*S(2));
         else denom += 2.0*(S(3)*S(3)+S(4)*S(4)+S(5)*S(5));
         
-        denom = pow(denom,2.5) + pow(num,1.25);
-        num = pow(num,1.5);
-        mu_t = rho*Cs*Cs*delta*delta*num/(denom+eps);
+        // prevent division by zero
+        if (abs(denom) > eps) {
+          denom = pow(denom,2.5) + pow(num,1.25);
+          num = pow(num,1.5);
 
-        // HACK: prevent negative values
-        mu_t = max(mu_t, 0.0);
+          mu_t = rho*Cs*Cs*delta*delta*num/denom;
+
+          // HACK: prevent negative values
+          mu_t = max(mu_t, 0.0);
+        }
+        else {
+          mu_t = 0.0;
+        }
       }
       
       // Dynamic LES model (Lilly, 1991):
@@ -3092,6 +3100,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       }
 
       // set turbulent viscosity field for output to Paraview
+      //if (abs(mu_t) > 0.0) cout << "mu_t " << mu_t << endl;
       turb_visc(upt,ele) = mu_t;
     }
     
@@ -3120,8 +3129,6 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         temp_sgsf(3,1) += temp_sgsf(2,2);
         temp_sgsf(3,2) += rho*Lu(upt,ele,2);
       }
-      // set turbulent viscosity field for output to Paraview
-      turb_visc(upt,ele) = 0.0;
     }
   }
 }
