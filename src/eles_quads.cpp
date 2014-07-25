@@ -680,7 +680,9 @@ void eles_quads::compute_filter_upts(void)
         coeff_file << endl;
       }
       coeff_file.close();
-      
+   
+      // finally, compute the modal filter we want   
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, run_input.filter_type);
     }
   else // Simple average
     {

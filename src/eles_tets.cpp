@@ -804,6 +804,29 @@ void eles_tets::compute_filter_upts(void)
         coeff_file << endl;
       }
       coeff_file.close();
+
+      // Finally, compute the modal filter we want
+      compute_modal_filter_tet(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, run_input.filter_type);
+      
+      // Ensure symmetry and normalization
+      for(i=0;i<N2;i++)
+      {
+        for(j=0;j<N;j++)
+        {
+          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+        }
+      }
+      for(i=0;i<N2;i++)
+      {
+        norm = 0.0;
+        for(j=0;j<N;j++)
+          norm += filter_upts(i,j);
+        for(j=0;j<N;j++)
+          filter_upts(i,j) /= norm;
+        for(j=0;j<N;j++)
+          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
+      }
     }
   else // Simple average for low order
     {
