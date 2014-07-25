@@ -923,10 +923,10 @@ __device__ double SGS_filter_width(double in_detjac, int in_ele_type, int in_n_d
     vol = in_detjac*8.0;
   }
 
-  //delta = in_filter_ratio*pow(vol,1./in_n_dims)/(in_order+1.);
+  delta = in_filter_ratio*pow(vol,1./in_n_dims)/(in_order+1.);
 
   // Parsani's expression
-  delta = in_filter_ratio*pow(vol/(in_order+1.),1./in_n_dims);
+  //delta = in_filter_ratio*pow(vol/(in_order+1.),1./in_n_dims);
 
   return delta;
 }
@@ -1363,14 +1363,19 @@ __device__ void SGS_flux_kernel(double* q, double* qf, double* grad_vel, double*
       denom += 2.0*(strain[3]*strain[3] + strain[4]*strain[4] + strain[5]*strain[5]);
     }
 
-    denom = pow(denom,2.5) + pow(num,1.25);
-    num = pow(num,1.5);
+    // prevent division by zero
+    if (abs(denom) > eps) {
+      denom = pow(denom,2.5) + pow(num,1.25);
+      num = pow(num,1.5);
 
-    // eddy viscosity
-    *mu_t = q[0]*(*Cs)*(*Cs)*delta*delta*num/(denom+eps);
+      *mu_t = q[0]*(*Cs)*(*Cs)*delta*delta*num/denom;
 
-    // HACK: prevent negative mu_t
-    *mu_t = max(*mu_t,0.0);
+      // HACK: prevent negative values
+      *mu_t = max(*mu_t, 0.0);
+    }
+    else {
+      *mu_t = 0.0;
+    }
   }
   // Dynamic model
   else if(sgs_model==5) {
