@@ -25,6 +25,7 @@
  */
 #include "../include/mesh.h"
 #include "../include/geometry.h"
+#include "../include/cuda_kernels.h"
 #include <string>
 using namespace std;
 
@@ -1300,6 +1301,9 @@ void mesh::update(solution* FlowSol)
       FlowSol->mesh_eles(ele_type)->set_dynamic_shape_node(iv,local_id,pos);
     }
   }
+#ifdef _GPU
+  //FlowSol->mesh_eles(ele_type)->set_dynamic_shape_nodes_kernel_wrapper(n_dims, n_verts, n_eles, max_n_)
+#endif
 
   // Update element transforms
   //if (FlowSol->rank==0) cout << "Deform: updating element transforms ... " << endl;
@@ -1687,8 +1691,9 @@ void mesh::rigid_move(solution* FlowSol) {
   //iter++; // does nothing - iter given in Mesh.move(iter,&FlowSol)
 }
 
-void mesh::perturb(solution* FlowSol) {
-
+void mesh::perturb(solution* FlowSol)
+{
+#ifdef _CPU
   if (rk_step==0) {
     // Push back previous time-advance level
     for (int i=4; i>0; i--) {
@@ -1706,12 +1711,14 @@ void mesh::perturb(solution* FlowSol) {
     xv(0)(i,1) = xv_0(i,1) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*rk_time/10);
   }
 
-//  if (rk_step==0 || run_input.GCL==0) {
-//    update(FlowSol);
-//  }else{
-//    set_grid_velocity(FlowSol,run_input.dt);
-//  }
   update(FlowSol);
+#endif
 
-  iter++;
+#ifdef _GPU
+  for (int i=0;i<FlowSol->n_ele_types;i++) {
+    FlowSol->mesh_eles(i)->perturb_shape(rk_time);
+    FlowSol->mesh_eles(i)->calc_grid_velocity();
+    FlowSol->mesh_eles(i)->set_transforms_dynamic();
+  }
+#endif
 }

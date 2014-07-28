@@ -25,6 +25,8 @@
 
 #pragma once
 
+#define PI 3.141592653589793
+
 void RK45_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_disu1_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_rk4a, double in_rk4b, double in_dt, double in_const_src_term);
 
 void RK11_update_kernel_wrapper(int in_n_upts_per_ele,int in_n_dims,int in_n_fields,int in_n_eles,double* in_disu0_upts_ptr,double* in_div_tconf_upts_ptr, double* in_detjac_upts_ptr, double in_dt, double in_const_src_term);
@@ -76,8 +78,26 @@ void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_p
 /*! wrapper for gpu kernel to calculate Leonard tensors for similarity model */
 void calc_similarity_model_kernel_wrapper(int flag, int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, double* in_disu_upts_ptr, double* in_disuf_upts_ptr, double* in_uu_ptr, double* in_ue_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr);
 
+/*! wrapper for gpu kernel to */
+void perturb_shape_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double rk_time);
+
+/*! wrapper for gpu kernel to */
+void perturb_shape_points_gpu_kernel_wrapper(int n_dims, int n_verts, double* xv, double* xv_0, double rk_time);
+
+/*! wrapper for gpu kernel to */
+void push_back_xv_kernel_wrapper(int n_dims, int n_verts, double* xv_1, double* xv_2);
+
+/*! Wrapper for gpu kernel to calculate the grid velocity at the shape points using backward-difference formula */
+void calc_grid_vel_spts_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape_dyn, double* grid_vel, double dt);
+
+/*! Wrapper for gpu kernel to interpolate the grid veloicty at the shape points to either the solution or flux points */
+void eval_grid_vel_pts_kernel_wrapper(int n_dims, int n_eles, int n_pts_per_ele, int max_n_spts_per_ele, int* n_spts_per_ele, double* nodal_s_basis_pts, double* grid_vel_spts, double* grid_vel_pts);
+
 /*! Wrapper for GPU kernel to update coordinate transformation at flux points for moving grids */
 void set_transforms_dynamic_fpts_kernel_wrapper(int in_n_fpts_per_ele, int in_n_eles, int in_n_dims, int max_n_spts_per_ele, int* n_spts_per_ele, double* J_fpts_ptr, double* J_dyn_fpts_ptr, double* JGinv_fpts_ptr, double* JGinv_dyn_fpts_ptr, double* tdA_dyn_fpts_ptr, double* norm_fpts_ptr, double* norm_dyn_fpts_ptr, double *d_nodal_s_basis_fpts, double *shape_dyn);
 
 /*! Wrapper for GPU kernel to update coordinate transformation at solution points for moving grids */
 void set_transforms_dynamic_upts_kernel_wrapper(int in_n_upts_per_ele, int in_n_eles, int in_n_dims, int max_n_spts_per_ele, int *n_spts_per_ele, double* J_upts_ptr, double *J_dyn_upts_ptr, double *JGinv_upts_ptr, double *JGinv_dyn_upts_ptr, double *d_nodal_s_basis_upts, double *shape_dyn);
+
+/*! Wrapper for GPU kernel to */
+void push_back_shape_dyn_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int n_levels, int* n_spts_per_ele, double* shape_dyn);

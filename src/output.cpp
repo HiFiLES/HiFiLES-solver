@@ -656,7 +656,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 #else
 
   /*! In serial, don't write a .pvtu file. */
-  cout << "Writing Paraview dump number " << dumpnum << " ...." << endl;
+  cout << "Writing Paraview dump number " << dumpnum << " ... " << flush;
 
 #endif
 
@@ -873,6 +873,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
   /*! Close the .vtu file */
   write_vtu.close();
+
+#ifdef _MPI
+
+#else
+  cout << "done." << endl;
+#endif
 }
 
 void write_restart(int in_file_num, struct solution* FlowSol)
