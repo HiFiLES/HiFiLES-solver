@@ -78,6 +78,9 @@ void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_p
 /*! wrapper for gpu kernel to calculate Leonard tensors for similarity model */
 void calc_similarity_model_kernel_wrapper(int flag, int in_n_fields, int in_n_upts_per_ele, int in_n_eles, int in_n_dims, double* in_disu_upts_ptr, double* in_disuf_upts_ptr, double* in_uu_ptr, double* in_ue_ptr, double* in_Leonard_mom_ptr, double* in_Leonard_energy_ptr);
 
+/*! wrapper for gpu kernel to update coordinate transformations for moving grids */
+void rigid_motion_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double* motion_params, double rk_time);
+
 /*! wrapper for gpu kernel to */
 void perturb_shape_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double rk_time);
 
@@ -86,6 +89,12 @@ void perturb_shape_points_gpu_kernel_wrapper(int n_dims, int n_verts, double* xv
 
 /*! wrapper for gpu kernel to */
 void push_back_xv_kernel_wrapper(int n_dims, int n_verts, double* xv_1, double* xv_2);
+
+/*! Wrapper for gpu kernel to calculate the grid velocity at the shape points using backward-difference formula */
+void calc_rigid_grid_vel_spts_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* motion_params, double* grid_vel, double rk_time);
+
+/*! Wrapper for gpu kernel to calculate the grid velocity at the shape points using backward-difference formula */
+void calc_perturb_grid_vel_spts_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* grid_vel, double rk_time);
 
 /*! Wrapper for gpu kernel to calculate the grid velocity at the shape points using backward-difference formula */
 void calc_grid_vel_spts_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape_dyn, double* grid_vel, double dt);

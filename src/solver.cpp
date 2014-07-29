@@ -76,7 +76,6 @@ void CalcResidual(struct solution* FlowSol) {
         }
     }
 
-  //cout << "Extrapolating Solution" << endl;
   /*! Compute the solution at the flux points. */
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->extrapolate_solution(in_disu_upts_from);
@@ -94,7 +93,6 @@ void CalcResidual(struct solution* FlowSol) {
         FlowSol->mesh_eles(i)->calculate_gradient(in_disu_upts_from);
     }
 
-  //cout << "Evaluating Inviscid Flux" << endl;
   /*! Compute the inviscid flux at the solution points and store in total flux storage. */
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->evaluate_invFlux(in_disu_upts_from);
@@ -105,12 +103,11 @@ void CalcResidual(struct solution* FlowSol) {
         FlowSol->mesh_eles(i)->evaluate_bodyForce(FlowSol->body_force);
     }
 
-  //cout << "Calculating Common Interface Flux" << endl;
   /*! Compute the inviscid numerical fluxes.
    Compute the common solution and solution corrections (viscous only). */
   for(i=0; i<FlowSol->n_int_inter_types; i++)
     FlowSol->mesh_int_inters(i).calculate_common_invFlux();
-  //cout << "Calculating Common Boundary Flux" << endl;
+
   for(i=0; i<FlowSol->n_bdy_inter_types; i++)
     FlowSol->mesh_bdy_inters(i).evaluate_boundaryConditions_invFlux(FlowSol->time);
 

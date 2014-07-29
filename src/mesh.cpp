@@ -346,6 +346,14 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
       vel_new(i,1) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10);
     }
   }
+  else if (run_input.motion == 2) {
+    for (int i=0; i<n_verts; i++) {
+      for (int j=0; j<n_dims; j++) {
+        vel_new(i,j) = run_input.bound_vel_simple(0)(2*j  )*run_input.bound_vel_simple(0)(6+j)*sin(run_input.bound_vel_simple(0)(6+j)*rk_time);
+        vel_new(i,j)+= run_input.bound_vel_simple(0)(2*j+1)*run_input.bound_vel_simple(0)(6+j)*cos(run_input.bound_vel_simple(0)(6+j)*rk_time);
+      }
+    }
+  }
   else
   {
     /// calculate velocity using backward difference formula
@@ -1656,17 +1664,7 @@ void mesh::set_boundary_displacements(solution *FlowSol)
 }
 
 void mesh::rigid_move(solution* FlowSol) {
-
-//  if(start) {
-//    for (int i=0; i<n_verts; i++) {
-//      xv(i,0) = xv(i,0) + run_input.bound_vel_simple(0)(0)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
-//      xv(i,1) = xv(i,1) + run_input.bound_vel_simple(0)(1)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
-//      //xv_new(i,0) = xv(i,0);
-//      //xv_new(i,1) = xv(i,1);
-//    }
-//    start = false;
-//  }
-
+#ifdef _CPU
   if (rk_step==0) {
     for (int i=4; i>0; i--) {
       for (int j=0; j<xv(i).get_dim(0); j++) {
@@ -1679,16 +1677,22 @@ void mesh::rigid_move(solution* FlowSol) {
 
   for (int i=0; i<n_verts; i++) {
     // Useful for simple cases / debugging
-    xv(0)(i,0) = xv(0)(i,0) + run_input.bound_vel_simple(0)(0)*cos(0.2*pi*time)*run_input.dt;
-    xv(0)(i,1) = xv(0)(i,1) + run_input.bound_vel_simple(0)(1)*cos(0.2*pi*time)*run_input.dt;
-
-    //xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)(0)*run_input.dt;
-    //xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(0)(1)*run_input.dt;
+    for (int j=0; j<n_dims; j++) {
+      xv(0)(i,j) = xv(0)(i,j) + run_input.bound_vel_simple(0)(2*j  )*run_input.bound_vel_simple(0)(6+j)*sin(run_input.bound_vel_simple(0)(6+j)*time);
+      xv(0)(i,j)+=              run_input.bound_vel_simple(0)(2*j+1)*run_input.bound_vel_simple(0)(6+j)*cos(run_input.bound_vel_simple(0)(6+j)*time);
+    }
   }
 
   update(FlowSol);
+#endif
 
-  //iter++; // does nothing - iter given in Mesh.move(iter,&FlowSol)
+#ifdef _GPU
+  for (int i=0;i<FlowSol->n_ele_types;i++) {
+    FlowSol->mesh_eles(i)->rigid_move(rk_time);
+    FlowSol->mesh_eles(i)->rigid_grid_velocity(rk_time);
+    FlowSol->mesh_eles(i)->set_transforms_dynamic();
+  }
+#endif
 }
 
 void mesh::perturb(solution* FlowSol)
@@ -1717,7 +1721,8 @@ void mesh::perturb(solution* FlowSol)
 #ifdef _GPU
   for (int i=0;i<FlowSol->n_ele_types;i++) {
     FlowSol->mesh_eles(i)->perturb_shape(rk_time);
-    FlowSol->mesh_eles(i)->calc_grid_velocity();
+    //FlowSol->mesh_eles(i)->calc_grid_velocity();
+    FlowSol->mesh_eles(i)->perturb_grid_velocity(rk_time);
     FlowSol->mesh_eles(i)->set_transforms_dynamic();
   }
 #endif

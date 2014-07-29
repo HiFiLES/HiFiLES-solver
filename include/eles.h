@@ -577,8 +577,11 @@ public:
   void cp_transforms_cpu_gpu(void);
 
   void perturb_shape(double rk_time);
+  void rigid_move(double rk_time);
 
   void calc_grid_velocity(void);
+  void rigid_grid_velocity(double rk_time);
+  void perturb_grid_velocity(double rk_time);
 #endif
 protected:
 
