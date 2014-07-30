@@ -1761,7 +1761,7 @@ __global__ void set_transforms_dynamic_upts_kernel(int n_upts_per_ele, int n_ele
 
     /**
     J_dyn_upts(n_upts_per_ele,n_eles): Determinant of the dynamic -> static reference transformation matrix ( |G| )
-    JGinv_dyn_upts(n_upts_per_ele,n_eles,n_dims,n_dims): Total dynamic -> static reference transformation matrix ( |G|*G^{-1} )
+    JGinv_dyn_upts(n_dims,n_dims,n_upts_per_ele,n_eles): Total dynamic -> static reference transformation matrix ( |G|*G^{-1} )
     dyn_pos_upts(n_upts_per_ele,n_eles,n_dims): Physical position of solution points */
 
     n_spts = n_spts_per_ele[ele];
@@ -1807,10 +1807,10 @@ __global__ void set_transforms_dynamic_upts_kernel(int n_upts_per_ele, int n_ele
       //if (J_dyn_upts[thread_id] < 0) *err = 1;
 
       // store determinant of jacobian multiplied by inverse of jacobian at the solution point
-      JGinv_dyn_upts[thread_id + (0*n_dims+0)*stride] =  ys;
-      JGinv_dyn_upts[thread_id + (1*n_dims+0)*stride] = -xs;
-      JGinv_dyn_upts[thread_id + (0*n_dims+1)*stride] = -yr;
-      JGinv_dyn_upts[thread_id + (1*n_dims+1)*stride] =  xr;
+      JGinv_dyn_upts[0+n_dims*(0+n_dims*(upt+n_upts_per_ele*ele))] =  ys;
+      JGinv_dyn_upts[0+n_dims*(1+n_dims*(upt+n_upts_per_ele*ele))] = -xs;
+      JGinv_dyn_upts[1+n_dims*(0+n_dims*(upt+n_upts_per_ele*ele))] = -yr;
+      JGinv_dyn_upts[1+n_dims*(1+n_dims*(upt+n_upts_per_ele*ele))] =  xr;
     }
     else if(n_dims==3)
     {
@@ -1832,15 +1832,15 @@ __global__ void set_transforms_dynamic_upts_kernel(int n_upts_per_ele, int n_ele
       //if (J_dyn_upts[thread_id] < 0) *err = 1;
 
       // store determinant of jacobian multiplied by inverse of jacobian at the solution point
-      JGinv_dyn_upts[thread_id + (0*n_dims+0)*stride] = (ys*zt - yt*zs);
-      JGinv_dyn_upts[thread_id + (1*n_dims+0)*stride] = (xt*zs - xs*zt);
-      JGinv_dyn_upts[thread_id + (2*n_dims+0)*stride] = (xs*yt - xt*ys);
-      JGinv_dyn_upts[thread_id + (0*n_dims+1)*stride] = (yt*zr - yr*zt);
-      JGinv_dyn_upts[thread_id + (1*n_dims+1)*stride] = (xr*zt - xt*zr);
-      JGinv_dyn_upts[thread_id + (2*n_dims+1)*stride] = (xt*yr - xr*yt);
-      JGinv_dyn_upts[thread_id + (0*n_dims+2)*stride] = (yr*zs - ys*zr);
-      JGinv_dyn_upts[thread_id + (1*n_dims+2)*stride] = (xs*zr - xr*zs);
-      JGinv_dyn_upts[thread_id + (2*n_dims+2)*stride] = (xr*ys - xs*yr);
+      JGinv_dyn_upts[0+n_dims*(0+n_dims*(upt+n_upts_per_ele*ele))] = (ys*zt - yt*zs);
+      JGinv_dyn_upts[0+n_dims*(1+n_dims*(upt+n_upts_per_ele*ele))] = (xt*zs - xs*zt);
+      JGinv_dyn_upts[0+n_dims*(2+n_dims*(upt+n_upts_per_ele*ele))] = (xs*yt - xt*ys);
+      JGinv_dyn_upts[1+n_dims*(0+n_dims*(upt+n_upts_per_ele*ele))] = (yt*zr - yr*zt);
+      JGinv_dyn_upts[1+n_dims*(1+n_dims*(upt+n_upts_per_ele*ele))] = (xr*zt - xt*zr);
+      JGinv_dyn_upts[1+n_dims*(2+n_dims*(upt+n_upts_per_ele*ele))] = (xt*yr - xr*yt);
+      JGinv_dyn_upts[2+n_dims*(0+n_dims*(upt+n_upts_per_ele*ele))] = (yr*zs - ys*zr);
+      JGinv_dyn_upts[2+n_dims*(1+n_dims*(upt+n_upts_per_ele*ele))] = (xs*zr - xr*zs);
+      JGinv_dyn_upts[2+n_dims*(2+n_dims*(upt+n_upts_per_ele*ele))] = (xr*ys - xs*yr);
     }
   }
 }
@@ -1910,10 +1910,10 @@ __global__ void set_transforms_dynamic_fpts_kernel(int n_fpts_per_ele, int n_ele
 //      if (J_dyn_fpts[thread_id] < 0) *err = 1;
 
       // store determinant of jacobian multiplied by inverse of jacobian at the solution point
-      JGinv_dyn_fpts[thread_id + (0*n_dims+0)*stride] =  ys;
-      JGinv_dyn_fpts[thread_id + (1*n_dims+0)*stride] = -xs;
-      JGinv_dyn_fpts[thread_id + (0*n_dims+1)*stride] = -yr;
-      JGinv_dyn_fpts[thread_id + (1*n_dims+1)*stride] =  xr;
+      JGinv_dyn_fpts[0+n_dims*(0+n_dims*(fpt+n_fpts_per_ele*ele))] =  ys;
+      JGinv_dyn_fpts[0+n_dims*(1+n_dims*(fpt+n_fpts_per_ele*ele))] = -xs;
+      JGinv_dyn_fpts[1+n_dims*(0+n_dims*(fpt+n_fpts_per_ele*ele))] = -yr;
+      JGinv_dyn_fpts[1+n_dims*(1+n_dims*(fpt+n_fpts_per_ele*ele))] =  xr;
 
       // temporarily store unnormalized transformed normal
       norm[0]= ( norm_fpts[thread_id]*ys -norm_fpts[thread_id+stride]*yr);
@@ -1946,15 +1946,15 @@ __global__ void set_transforms_dynamic_fpts_kernel(int n_fpts_per_ele, int n_ele
       //if (J_dyn_fpts[thread_id] < 0) *err = 1;
 
       // store determinant of jacobian multiplied by inverse of jacobian at the solution point
-      JGinv_dyn_fpts[thread_id + (0*n_dims+0)*stride] = (ys*zt - yt*zs);
-      JGinv_dyn_fpts[thread_id + (1*n_dims+0)*stride] = (xt*zs - xs*zt);
-      JGinv_dyn_fpts[thread_id + (2*n_dims+0)*stride] = (xs*yt - xt*ys);
-      JGinv_dyn_fpts[thread_id + (0*n_dims+1)*stride] = (yt*zr - yr*zt);
-      JGinv_dyn_fpts[thread_id + (1*n_dims+1)*stride] = (xr*zt - xt*zr);
-      JGinv_dyn_fpts[thread_id + (2*n_dims+1)*stride] = (xt*yr - xr*yt);
-      JGinv_dyn_fpts[thread_id + (0*n_dims+2)*stride] = (yr*zs - ys*zr);
-      JGinv_dyn_fpts[thread_id + (1*n_dims+2)*stride] = (xs*zr - xr*zs);
-      JGinv_dyn_fpts[thread_id + (2*n_dims+2)*stride] = (xr*ys - xs*yr);
+      JGinv_dyn_fpts[0+n_dims*(0+n_dims*(fpt+n_fpts_per_ele*ele))] = (ys*zt - yt*zs);
+      JGinv_dyn_fpts[0+n_dims*(1+n_dims*(fpt+n_fpts_per_ele*ele))] = (xt*zs - xs*zt);
+      JGinv_dyn_fpts[0+n_dims*(2+n_dims*(fpt+n_fpts_per_ele*ele))] = (xs*yt - xt*ys);
+      JGinv_dyn_fpts[1+n_dims*(0+n_dims*(fpt+n_fpts_per_ele*ele))] = (yt*zr - yr*zt);
+      JGinv_dyn_fpts[1+n_dims*(1+n_dims*(fpt+n_fpts_per_ele*ele))] = (xr*zt - xt*zr);
+      JGinv_dyn_fpts[1+n_dims*(2+n_dims*(fpt+n_fpts_per_ele*ele))] = (xt*yr - xr*yt);
+      JGinv_dyn_fpts[2+n_dims*(0+n_dims*(fpt+n_fpts_per_ele*ele))] = (yr*zs - ys*zr);
+      JGinv_dyn_fpts[2+n_dims*(1+n_dims*(fpt+n_fpts_per_ele*ele))] = (xs*zr - xr*zs);
+      JGinv_dyn_fpts[2+n_dims*(2+n_dims*(fpt+n_fpts_per_ele*ele))] = (xr*ys - xs*yr);
 
       // temporarily store moving-physical domain interface normal at the flux point
       norm[0]=((norm_fpts[thread_id]*(ys*zt-yt*zs))+(norm_fpts[thread_id+stride]*(yt*zr-yr*zt))+(norm_fpts[thread_id+2*stride]*(yr*zs-ys*zr)));
@@ -2497,7 +2497,7 @@ __global__ void evaluate_invFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_e
         for (int i=0;i<in_n_dims;i++)
 #pragma unroll
           for (int j=0;j<in_n_dims;j++)
-            met_dyn[j][i] = in_JGinv_dyn_upts_ptr[thread_id + (i*in_n_dims+j)*stride];
+            met_dyn[j][i] = in_JGinv_dyn_upts_ptr[j+in_n_dims*(i+in_n_dims*(upt+in_n_upts_per_ele*ele))];
 
         // Get grid velocity
 #pragma unroll
@@ -2943,7 +2943,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int in_n_upts_per_ele, int in_n_
       for (i=0;i<in_n_dims;i++) {
 #pragma unroll
         for (j=0;j<in_n_dims;j++) {
-          met_dyn[j][i] = in_JGinv_dyn_upts_ptr[thread_id + (i*in_n_dims+j)*stride];
+          met_dyn[j][i] = in_JGinv_dyn_upts_ptr[j+in_n_dims*(i+in_n_dims*(upt+in_n_upts_per_ele*ele))];
         }
       }
     }
@@ -3325,7 +3325,7 @@ __global__ void transform_grad_disu_upts_kernel(int in_n_upts_per_ele, int in_n_
         for (int i=0;i<in_n_dims;i++)
 #pragma unroll
           for (int j=0;j<in_n_dims;j++)
-            met[j][i] = in_JGinv_dyn_upts_ptr[thread_id + (i*in_n_dims+j)*stride];
+            met[j][i] = in_JGinv_dyn_upts_ptr[j+in_n_dims*(i+in_n_dims*(upt+in_n_upts_per_ele*ele))];
 
         // Next, transform to dynamic-physical domain
 #pragma unroll

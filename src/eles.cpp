@@ -1226,7 +1226,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
             for(l=0; l<n_dims; l++) {
               temp_f_ref(k,l)=0.;
               for(m=0; m<n_dims; m++) {
-                temp_f_ref(k,l) += JGinv_dyn_upts(j,i,l,m)*temp_f(k,m);
+                temp_f_ref(k,l) += JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
               }
             }
           }
@@ -1254,16 +1254,8 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 #endif
     
 #ifdef _GPU
-    double* blah = J_dyn_upts.get_ptr_gpu();
     evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
-    
-    
-    tdisf_upts.cp_gpu_cpu();
 #endif
-
-    /*for (int i=0;i<n_eles;i++)
-      for (int j=0; j<n_upts_per_ele; j++)
-        cout << "i=" << i << ", j=" << j << ": " << setprecision(12) << tdisf_upts(j,i,0,0) << setprecision(2) << endl;*/
   }
 }
 
@@ -1714,10 +1706,10 @@ void eles::correct_gradient(void)
           detjac = J_dyn_upts(j,i);
           inv_detjac = 1.0/detjac;
 
-          Xx = JGinv_dyn_upts(j,i,0,0)*inv_detjac;
-          Xy = JGinv_dyn_upts(j,i,0,1)*inv_detjac;
-          Yx = JGinv_dyn_upts(j,i,1,0)*inv_detjac;
-          Yy = JGinv_dyn_upts(j,i,1,1)*inv_detjac;
+          Xx = JGinv_dyn_upts(0,0,j,i)*inv_detjac;
+          Xy = JGinv_dyn_upts(0,1,j,i)*inv_detjac;
+          Yx = JGinv_dyn_upts(1,1,j,i)*inv_detjac;
+          Yy = JGinv_dyn_upts(1,1,j,i)*inv_detjac;
 
           //physical gradient
           if(n_dims==2)
@@ -2231,7 +2223,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
             for(k=0;k<n_fields;k++) {
               for(l=0;l<n_dims;l++) {
                 for(m=0;m<n_dims;m++) {
-                  temp_sgsf_ref(k,l)+=JGinv_dyn_upts(j,i,l,m)*temp_sgsf(k,m);
+                  temp_sgsf_ref(k,l)+=JGinv_dyn_upts(l,m,j,i)*temp_sgsf(k,m);
                 }
               }
             }
@@ -2260,7 +2252,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           for(k=0;k<n_fields;k++) {
             for(l=0;l<n_dims;l++) {
               for(m=0;m<n_dims;m++) {
-                temp_f_ref(k,l)+=JGinv_dyn_upts(j,i,l,m)*temp_f(k,m);
+                temp_f_ref(k,l)+=JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
               }
             }
           }
@@ -4539,11 +4531,11 @@ void eles::set_transforms_dynamic(void)
     // Determinant of the dynamic -> static reference transformation matrix ( |G| )
     J_dyn_upts.setup(n_upts_per_ele,n_eles);
     // Total dynamic -> static reference transformation matrix ( |G|*G^{-1} )
-    JGinv_dyn_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
+    JGinv_dyn_upts.setup(n_dims,n_dims,n_upts_per_ele,n_eles);
     dyn_pos_upts.setup(n_upts_per_ele,n_eles,n_dims);
 
     J_dyn_fpts.setup(n_fpts_per_ele,n_eles);
-    JGinv_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
+    JGinv_dyn_fpts.setup(n_dims,n_dims,n_fpts_per_ele,n_eles);
     norm_dyn_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
     dyn_pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
 
@@ -4615,10 +4607,10 @@ void eles::set_transforms_dynamic(void)
           }
 
           // store determinant of jacobian multiplied by inverse of jacobian at the solution point
-          JGinv_dyn_upts(j,i,0,0)=  ys;
-          JGinv_dyn_upts(j,i,0,1)= -xs;
-          JGinv_dyn_upts(j,i,1,0)= -yr;
-          JGinv_dyn_upts(j,i,1,1)=  xr;
+          JGinv_dyn_upts(0,0,j,i)=  ys;
+          JGinv_dyn_upts(0,1,j,i)= -xs;
+          JGinv_dyn_upts(1,1,j,i)= -yr;
+          JGinv_dyn_upts(1,1,j,i)=  xr;
         }
         else if(n_dims==3)
         {
@@ -4638,15 +4630,15 @@ void eles::set_transforms_dynamic(void)
           J_dyn_upts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
 
           // store determinant of jacobian multiplied by inverse of jacobian at the solution point
-          JGinv_dyn_upts(j,i,0,0) = (ys*zt - yt*zs);
-          JGinv_dyn_upts(j,i,0,1) = (xt*zs - xs*zt);
-          JGinv_dyn_upts(j,i,0,2) = (xs*yt - xt*ys);
-          JGinv_dyn_upts(j,i,1,0) = (yt*zr - yr*zt);
-          JGinv_dyn_upts(j,i,1,1) = (xr*zt - xt*zr);
-          JGinv_dyn_upts(j,i,1,2) = (xt*yr - xr*yt);
-          JGinv_dyn_upts(j,i,2,0) = (yr*zs - ys*zr);
-          JGinv_dyn_upts(j,i,2,1) = (xs*zr - xr*zs);
-          JGinv_dyn_upts(j,i,2,2) = (xr*ys - xs*yr);
+          JGinv_dyn_upts(0,0,j,i) = (ys*zt - yt*zs);
+          JGinv_dyn_upts(0,1,j,i) = (xt*zs - xs*zt);
+          JGinv_dyn_upts(0,2,j,i) = (xs*yt - xt*ys);
+          JGinv_dyn_upts(1,1,j,i) = (yt*zr - yr*zt);
+          JGinv_dyn_upts(1,1,j,i) = (xr*zt - xt*zr);
+          JGinv_dyn_upts(1,2,j,i) = (xt*yr - xr*yt);
+          JGinv_dyn_upts(2,0,j,i) = (yr*zs - ys*zr);
+          JGinv_dyn_upts(2,1,j,i) = (xs*zr - xr*zs);
+          JGinv_dyn_upts(2,2,j,i) = (xr*ys - xs*yr);
         }
         else
         {
@@ -4709,19 +4701,19 @@ void eles::set_transforms_dynamic(void)
 
           // store determinant of jacobian multiplied by inverse of jacobian at the flux point
           // (dynamic -> static transformation matrix)
-          JGinv_dyn_fpts(j,i,0,0)=  ys;
-          JGinv_dyn_fpts(j,i,0,1)= -xs;
-          JGinv_dyn_fpts(j,i,1,0)= -yr;
-          JGinv_dyn_fpts(j,i,1,1)=  xr;
+          JGinv_dyn_fpts(0,0,j,i)=  ys;
+          JGinv_dyn_fpts(0,1,j,i)= -xs;
+          JGinv_dyn_fpts(1,0,j,i)= -yr;
+          JGinv_dyn_fpts(1,1,j,i)=  xr;
 
-          if (viscous)
-          {
-            // store static->dynamic transformation matrix
-            JinvG_dyn_fpts(j,i,0,0)= xr/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,0,1)= xs/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,1,0)= yr/J_dyn_fpts(j,i);
-            JinvG_dyn_fpts(j,i,1,1)= ys/J_dyn_fpts(j,i);
-          }
+//          if (viscous)
+//          {
+//            // store static->dynamic transformation matrix
+//            JinvG_dyn_fpts(j,i,0,0)= xr/J_dyn_fpts(j,i);
+//            JinvG_dyn_fpts(j,i,0,1)= xs/J_dyn_fpts(j,i);
+//            JinvG_dyn_fpts(j,i,1,0)= yr/J_dyn_fpts(j,i);
+//            JinvG_dyn_fpts(j,i,1,1)= ys/J_dyn_fpts(j,i);
+//          }
 
           // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
           norm_dot_JGinv(0)= ( norm_fpts(j,i,0)*ys -norm_fpts(j,i,1)*yr);
@@ -4755,15 +4747,15 @@ void eles::set_transforms_dynamic(void)
 
           // store determinant of jacobian multiplied by inverse of jacobian at the flux point
 
-          JGinv_dyn_fpts(j,i,0,0) = (ys*zt - yt*zs);
-          JGinv_dyn_fpts(j,i,0,1) = (xt*zs - xs*zt);
-          JGinv_dyn_fpts(j,i,0,2) = (xs*yt - xt*ys);
-          JGinv_dyn_fpts(j,i,1,0) = (yt*zr - yr*zt);
-          JGinv_dyn_fpts(j,i,1,1) = (xr*zt - xt*zr);
-          JGinv_dyn_fpts(j,i,1,2) = (xt*yr - xr*yt);
-          JGinv_dyn_fpts(j,i,2,0) = (yr*zs - ys*zr);
-          JGinv_dyn_fpts(j,i,2,1) = (xs*zr - xr*zs);
-          JGinv_dyn_fpts(j,i,2,2) = (xr*ys - xs*yr);
+          JGinv_dyn_fpts(0,0,j,i) = (ys*zt - yt*zs);
+          JGinv_dyn_fpts(0,1,j,i) = (xt*zs - xs*zt);
+          JGinv_dyn_fpts(0,2,j,i) = (xs*yt - xt*ys);
+          JGinv_dyn_fpts(1,0,j,i) = (yt*zr - yr*zt);
+          JGinv_dyn_fpts(1,1,j,i) = (xr*zt - xt*zr);
+          JGinv_dyn_fpts(1,2,j,i) = (xt*yr - xr*yt);
+          JGinv_dyn_fpts(2,0,j,i) = (yr*zs - ys*zr);
+          JGinv_dyn_fpts(2,1,j,i) = (xs*zr - xr*zs);
+          JGinv_dyn_fpts(2,2,j,i) = (xr*ys - xs*yr);
 
           // temporarily store moving-physical domain interface normal at the flux point
           // [transformed normal dot determinant of jacobian multiplied by inverse of jacobian]
@@ -4803,11 +4795,6 @@ void eles::set_transforms_dynamic(void)
     set_transforms_dynamic_fpts_kernel_wrapper(n_fpts_per_ele,n_eles,n_dims,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),detjac_fpts.get_ptr_gpu(),J_dyn_fpts.get_ptr_gpu(),JGinv_fpts.get_ptr_gpu(),JGinv_dyn_fpts.get_ptr_gpu(),ndA_dyn_fpts.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu(),d_nodal_s_basis_fpts.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
     set_transforms_dynamic_upts_kernel_wrapper(n_upts_per_ele,n_eles,n_dims,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),d_nodal_s_basis_upts.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
     if (rank == 0 && first_time) cout << "done." << endl;
-  }
-  else if (n_eles!=0 && motion==0 && first_time)
-  {
-    // No setup required; just get dummy ptrs on GPU
-    cp_transforms_cpu_gpu();
   }
 
   first_time = false;
@@ -7078,14 +7065,6 @@ void eles::perturb_grid_velocity(double rk_time)
     calc_perturb_grid_vel_spts_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),shape.get_ptr_gpu(),vel_spts.get_ptr_gpu(),rk_time);
     eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_upts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_upts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu());
     eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_fpts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_fpts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu());
-
-//    grid_vel_upts.cp_gpu_cpu();
-//    for (int i=0; i<n_eles; i++) {
-//      for (int j=0; j<n_upts_per_ele; j++) {
-//        cout << i << "," << j << ": ";
-//        cout << grid_vel_upts(j,i,0) << ", " << grid_vel_upts(j,i,1) << endl;
-//      }
-//    }
   }
 }
 
