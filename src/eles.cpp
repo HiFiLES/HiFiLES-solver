@@ -364,6 +364,23 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       }
     }
 
+    if (motion==1) { // Using linear-elasticity method
+      elas_div_tconf_upts.setup(n_adv_levels);
+      for(int i=0;i<n_adv_levels;i++)
+      {
+        elas_div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
+      }
+
+      // Initialize to zero
+      for (int m=0;m<n_adv_levels;m++)
+        elas_div_tconf_upts(m).initialize_to_zero();
+
+      elas_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+      elas_tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
+      elas_norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+      elas_norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+    }
+
     if(viscous)
     {
       delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
@@ -3152,6 +3169,694 @@ void eles::evaluate_sgsFlux(void)
 #endif
   }
 }
+
+/*! --- Linear-Elasticity Method Functions ---*/
+// calculate the discontinuous solution at the flux points
+void eles::extrapolate_solution_elasticity(void)
+{
+  if (n_eles!=0) {
+
+    /*!
+     Performs C = (alpha*A*B) + (beta*C) where: \n
+     alpha = 1.0 \n
+     beta = 0.0 \n
+     A = opp_0 \n
+     B = disu_upts(0) \n
+     C = disu_fpts
+
+     opp_0 is the polynomial extrapolation matrix;
+     has dimensions n_f_pts_per_ele by n_upts_per_ele
+
+     Recall: opp_0(j,i) = value of the ith nodal basis at the
+     jth flux point location in the reference domain
+
+     (vector of solution values at flux points) = opp_0 * (vector of solution values at nodes)
+     */
+
+    Arows =  n_fpts_per_ele;
+    Acols = n_upts_per_ele;
+
+    Brows = Acols;
+    Bcols = n_dims*n_eles;
+
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+
+#ifdef _CPU
+
+    if(opp_0_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,elas_disu_upts(0).get_ptr_cpu(),Bstride,0.0,elas_disu_fpts.get_ptr_cpu(),Cstride);
+
+#elif defined _NO_BLAS
+      dgemm(Arows,Bcols,Acols,1.0,0.0,opp_0.get_ptr_cpu(),elas_disu_upts(0).get_ptr_cpu(),elas_disu_fpts.get_ptr_cpu());
+
+#endif
+    }
+    else if(opp_0_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+      mkl_dcsrmm(&transa,&n_fpts_per_ele,&Bcols,&n_upts_per_ele,&one,matdescra,opp_0_data.get_ptr_cpu(),opp_0_cols.get_ptr_cpu(),opp_0_b.get_ptr_cpu(),opp_0_e.get_ptr_cpu(),elas_disu_upts(0).get_ptr_cpu(),&n_upts_per_ele,&zero,elas_disu_fpts.get_ptr_cpu(),&n_fpts_per_ele);
+
+#endif
+    }
+    else { cout << "ERROR: Unknown storage for opp_0 ... " << endl; }
+
+#endif
+
+#ifdef _GPU
+    if(opp_0_sparse==0)
+    {
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_0.get_ptr_gpu(),Astride,elas_disu_upts(0).get_ptr_gpu(),Bstride,0.0,elas_disu_fpts.get_ptr_gpu(),Cstride);
+    }
+    else if (opp_0_sparse==1)
+    {
+      bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_dims,n_eles,opp_0_ell_data.get_ptr_gpu(),opp_0_ell_indices.get_ptr_gpu(),opp_0_nnz_per_row,elas_disu_upts(0).get_ptr_gpu(),elas_disu_fpts.get_ptr_gpu(),ele_type,order,0);
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_0 ... " << endl;
+    }
+#endif
+
+  }
+
+}
+
+// calculate the normal transformed discontinuous flux at the flux points
+void eles::extrapolate_flux_elasticity(void)
+{
+  int n_dims_mul_n_eles = n_dims*n_eles;
+
+  if (n_eles!=0)
+  {
+#ifdef _CPU
+
+    if(opp_1_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,elas_tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,elas_norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+      for (int i=1;i<n_dims;i++)
+      {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,elas_tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,elas_norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+      }
+
+#elif defined _NO_BLAS
+      dgemm(n_fpts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,0.0,opp_1(0).get_ptr_cpu(),elas_tdisf_upts.get_ptr_cpu(0,0,0,0),elas_norm_tdisf_fpts.get_ptr_cpu());
+      for (int i=1;i<n_dims;i++)
+      {
+        dgemm(n_fpts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,1.0,opp_1(i).get_ptr_cpu(),elas_tdisf_upts.get_ptr_cpu(0,0,0,i),elas_norm_tdisf_fpts.get_ptr_cpu());
+      }
+#endif
+    }
+    else if(opp_1_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+
+      mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_dims_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_1_data(0).get_ptr_cpu(),opp_1_cols(0).get_ptr_cpu(),opp_1_b(0).get_ptr_cpu(),opp_1_e(0).get_ptr_cpu(),elas_tdisf_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,elas_norm_tdisf_fpts.get_ptr_cpu,&n_fpts_per_ele);
+
+      for (int i=1;i<n_dims;i++) {
+        mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_dims_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_1_data(i).get_ptr_cpu(),opp_1_cols(i).get_ptr_cpu(),opp_1_b(i).get_ptr_cpu(),opp_1_e(i).get_ptr_cpu(),elas_tdisf_upts.get_ptr_cpu(0,0,0,i),&n_upts_per_ele,&one,elas_norm_tdisf_fpts.get_ptr_cpu(),&n_fpts_per_ele);
+      }
+
+#endif
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_1 ... " << endl;
+    }
+
+#endif
+
+#ifdef _GPU
+
+    if (opp_1_sparse==0)
+    {
+      cublasDgemm('N','N',n_fpts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_gpu(),n_fpts_per_ele,elas_tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,elas_norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
+      for (int i=1;i<n_dims;i++)
+      {
+        cublasDgemm('N','N',n_fpts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_gpu(),n_fpts_per_ele,elas_tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,elas_norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
+      }
+    }
+    else if (opp_1_sparse==1)
+    {
+      bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_dims,n_eles,opp_1_ell_data(0).get_ptr_gpu(),opp_1_ell_indices(0).get_ptr_gpu(),opp_1_nnz_per_row(0),elas_tdisf_upts.get_ptr_gpu(0,0,0,0),elas_norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,0);
+      for (int i=1;i<n_dims;i++)
+      {
+        bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_dims,n_eles,opp_1_ell_data(i).get_ptr_gpu(),opp_1_ell_indices(i).get_ptr_gpu(),opp_1_nnz_per_row(i),elas_tdisf_upts.get_ptr_gpu(0,0,0,i),elas_norm_tdisf_fpts.get_ptr_gpu(),ele_type,order,1);
+      }
+    }
+#endif
+
+  }
+}
+
+
+// calculate the divergence of the transformed discontinuous flux at the solution points
+void eles::calculate_divergence_elasticity(void)
+{
+  int n_dims_mul_n_eles = n_dims*n_eles;
+
+  if (n_eles!=0)
+  {
+#ifdef _CPU
+
+    if(opp_2_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_cpu(),n_upts_per_ele,elas_tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,elas_div_tconf_upts(0).get_ptr_cpu(),n_upts_per_ele);
+      for (int i=1;i<n_dims;i++)
+      {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,elas_tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,elas_div_tconf_upts(0).get_ptr_cpu(),n_upts_per_ele);
+      }
+
+#elif defined _NO_BLAS
+      dgemm(n_upts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,0.0,opp_2(0).get_ptr_cpu(),elas_tdisf_upts.get_ptr_cpu(0,0,0,0),elas_div_tconf_upts(0).get_ptr_cpu());
+      for (int i=1;i<n_dims;i++)
+      {
+        dgemm(n_upts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,1.0,opp_2(i).get_ptr_cpu(),elas_tdisf_upts.get_ptr_cpu(0,0,0,i),elas_div_tconf_upts(0).get_ptr_cpu());
+      }
+
+#endif
+    }
+    else if(opp_2_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+
+      mkl_dcsrmm(&transa,&n_upts_per_ele,&n_dims_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_2_data(0).get_ptr_cpu(),opp_2_cols(0).get_ptr_cpu(),opp_2_b(0).get_ptr_cpu(),opp_2_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,div_tconf_upts(0).get_ptr_cpu(),&n_upts_per_ele);
+      for (int i=1;i<n_dims;i++)
+      {
+        mkl_dcsrmm(&transa,&n_upts_per_ele,&n_dims_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_2_data(i).get_ptr_cpu(),opp_2_cols(i).get_ptr_cpu(),opp_2_b(i).get_ptr_cpu(),opp_2_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),&n_upts_per_ele,&one,div_tconf_upts(0).get_ptr_cpu(),&n_upts_per_ele);
+      }
+
+#endif
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_2 ... " << endl;
+    }
+
+#endif
+
+
+#ifdef _GPU
+
+    if (opp_2_sparse==0)
+    {
+      cublasDgemm('N','N',n_upts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_gpu(),n_upts_per_ele,elas_tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,elas_div_tconf_upts(0).get_ptr_gpu(),n_upts_per_ele);
+      for (int i=1;i<n_dims;i++) {
+        cublasDgemm('N','N',n_upts_per_ele,n_dims*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_gpu(),n_upts_per_ele,elas_tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,elas_div_tconf_upts(0).get_ptr_gpu(),n_upts_per_ele);
+      }
+    }
+    else if (opp_2_sparse==1)
+    {
+      bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,n_dims,n_eles,opp_2_ell_data(0).get_ptr_gpu(),opp_2_ell_indices(0).get_ptr_gpu(),opp_2_nnz_per_row(0),elas_tdisf_upts.get_ptr_gpu(0,0,0,0),elas_div_tconf_upts(0).get_ptr_gpu(),ele_type,order,0);
+      for (int i=1;i<n_dims;i++) {
+        bespoke_SPMV(n_upts_per_ele,n_upts_per_ele,n_dims,n_eles,opp_2_ell_data(i).get_ptr_gpu(),opp_2_ell_indices(i).get_ptr_gpu(),opp_2_nnz_per_row(i),elas_tdisf_upts.get_ptr_gpu(0,0,0,i),elas_div_tconf_upts(0).get_ptr_gpu(),ele_type,order,1);
+      }
+
+    }
+#endif
+
+  }
+}
+
+
+// calculate divergence of the transformed continuous flux at the solution points
+void eles::calculate_corrected_divergence_elasticity(void)
+{
+  int n_dims_mul_n_eles = n_dims*n_eles;
+
+  if (n_eles!=0)
+  {
+#ifdef _CPU
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+    cblas_daxpy(n_eles*n_dims*n_fpts_per_ele,-1.0,elas_norm_tdisf_fpts.get_ptr_cpu(),1,elas_norm_tconf_fpts.get_ptr_cpu(),1);
+
+#elif defined _NO_BLAS
+
+    daxpy(n_eles*n_dims*n_fpts_per_ele,-1.0,elas_norm_tdisf_fpts.get_ptr_cpu(),elas_norm_tconf_fpts.get_ptr_cpu());
+
+#endif
+
+    if(opp_3_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_dims*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_cpu(),n_upts_per_ele,elas_norm_tconf_fpts.get_ptr_cpu(),n_fpts_per_ele,1.0,elas_div_tconf_upts(0).get_ptr_cpu(),n_upts_per_ele);
+
+#elif defined _NO_BLAS
+      dgemm(n_upts_per_ele,n_dims*n_eles,n_fpts_per_ele,1.0,1.0,opp_3.get_ptr_cpu(),elas_norm_tconf_fpts.get_ptr_cpu(),elas_div_tconf_upts(0).get_ptr_cpu());
+
+#endif
+    }
+    else if(opp_3_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+
+      mkl_dcsrmm(&transa,&n_upts_per_ele,&n_dims_mul_n_eles,&n_fpts_per_ele,&one,matdescra,opp_3_data.get_ptr_cpu(),opp_3_cols.get_ptr_cpu(),opp_3_b.get_ptr_cpu(),opp_3_e.get_ptr_cpu(),elas_norm_tconf_fpts.get_ptr_cpu(),&n_fpts_per_ele,&one,elas_div_tconf_upts(0).get_ptr_cpu(),&n_upts_per_ele);
+
+#endif
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_3 ... " << endl;
+    }
+
+#endif
+
+#ifdef _GPU
+
+    cublasDaxpy(n_eles*n_dims*n_fpts_per_ele,-1.0,elas_norm_tdisf_fpts.get_ptr_gpu(),1,elas_norm_tconf_fpts.get_ptr_gpu(),1);
+
+    if (opp_3_sparse==0)
+    {
+      cublasDgemm('N','N',n_upts_per_ele,n_dims*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_gpu(),n_upts_per_ele,elas_norm_tconf_fpts.get_ptr_gpu(),n_fpts_per_ele,1.0,elas_div_tconf_upts(0).get_ptr_gpu(),n_upts_per_ele);
+    }
+    else if (opp_3_sparse==1)
+    {
+      bespoke_SPMV(n_upts_per_ele,n_fpts_per_ele,n_dims,n_eles,opp_3_ell_data.get_ptr_gpu(),opp_3_ell_indices.get_ptr_gpu(),opp_3_nnz_per_row,elas_norm_tconf_fpts.get_ptr_gpu(),elas_div_tconf_upts(0).get_ptr_gpu(),ele_type,order,1);
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_3 ... " << endl;
+    }
+#endif
+
+  }
+}
+
+
+// calculate uncorrected transformed gradient of the discontinuous solution at the solution points
+// (mixed derivative)
+void eles::calculate_gradient_elasticity(0)
+{
+  if (n_eles!=0)
+  {
+
+    /*!
+     Performs C = (alpha*A*B) + (beta*C) where: \n
+     alpha = 1.0 \n
+     beta = 0.0 \n
+     A = opp_4 \n
+     B = disu_upts \n
+     C = grad_disu_upts
+
+     opp_4 is the polynomial gradient matrix;
+     has dimensions n_upts_per_ele by n_upts_per_ele
+     Recall: opp_4(i)(k,j) = eval_d_nodal_basis(j,i,loc);
+     = derivative of the jth nodal basis at the
+     kth nodal (solution) point location in the reference domain
+     for the ith dimension
+
+     (vector of gradient values at solution points) = opp_4 *
+     (vector of solution values at solution points in all elements of the same type)
+     */
+
+    Arows =  n_upts_per_ele;
+    Acols = n_upts_per_ele;
+
+    Brows = Acols;
+    Bcols = n_dims*n_eles;
+
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+
+#ifdef _CPU
+
+    if(opp_4_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+      for (int i=0;i<n_dims;i++) {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_4(i).get_ptr_cpu(),Astride,elas_disu_upts(0).get_ptr_cpu(),Bstride,0.0,elas_grad_disu_upts.get_ptr_cpu(0,0,0,i),Cstride);
+      }
+
+#elif defined _NO_BLAS
+      for (int i=0;i<n_dims;i++) {
+        dgemm(Arows,Bcols,Acols,1.0,0.0,opp_4(i).get_ptr_cpu(),elas_disu_upts(0).get_ptr_cpu(),elas_grad_disu_upts.get_ptr_cpu(0,0,0,i));
+      }
+
+#endif
+    }
+    else if(opp_4_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+
+      // implement
+
+#endif
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_4 ... " << endl;
+    }
+
+#endif
+
+#ifdef _GPU
+
+    if (opp_4_sparse==0)
+    {
+      for (int i=0;i<n_dims;i++)
+      {
+        cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_4(i).get_ptr_gpu(),Astride,elas_disu_upts(0).get_ptr_gpu(),Bstride,0.0,elas_grad_disu_upts.get_ptr_gpu(0,0,0,i),Cstride);
+      }
+    }
+    else if (opp_4_sparse==1)
+    {
+      for (int i=0;i<n_dims;i++)
+      {
+        bespoke_SPMV(Arows,Acols,n_dims,n_eles,opp_4_ell_data(i).get_ptr_gpu(),opp_4_ell_indices(i).get_ptr_gpu(),opp_4_nnz_per_row(i),elas_disu_upts(0).get_ptr_gpu(),elas_grad_disu_upts.get_ptr_gpu(0,0,0,i),ele_type,order,0);
+      }
+    }
+#endif
+  }
+}
+
+// calculate corrected gradient of the discontinuous solution at solution points
+void eles::correct_gradient_elasticity(void)
+{
+  if (n_eles!=0)
+  {
+    Arows =  n_upts_per_ele;
+    Acols = n_fpts_per_ele;
+
+    Brows = Acols;
+    Bcols = n_dims*n_eles;
+
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+
+#ifdef _CPU
+
+    if(opp_5_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      for (int i=0;i<n_dims;i++)
+      {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_5(i).get_ptr_cpu(),Astride,elas_delta_disu_fpts.get_ptr_cpu(),Bstride,1.0,elas_grad_disu_upts.get_ptr_cpu(0,0,0,i),Cstride);
+      }
+
+#elif defined _NO_BLAS
+      for (int i=0;i<n_dims;i++) {
+        dgemm(Arows,Bcols,Acols,1.0,1.0,opp_5(i).get_ptr_cpu(),elas_delta_disu_fpts.get_ptr_cpu(),elas_grad_disu_upts.get_ptr_cpu(0,0,0,i));
+      }
+
+#endif
+    }
+    else if(opp_5_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+
+      // impelement
+
+#endif
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_5 ... " << endl;
+    }
+
+    // Transform to physical space
+    double detjac;
+    double inv_detjac;
+    double rx,ry,rz,sx,sy,sz,tx,ty,tz;
+    double Xx,Xy,Xz,Yx,Yy,Yz,Zx,Zy,Zz;
+    double ur,us,ut,uX,uY,uZ;
+
+    for (int i=0;i<n_eles;i++)
+    {
+      for (int j=0;j<n_upts_per_ele;j++)
+      {
+        // Transform to static-physical domain
+        detjac = detjac_upts(j,i);
+        inv_detjac = 1.0/detjac;
+
+        rx = JGinv_upts(0,0,j,i)*inv_detjac;
+        ry = JGinv_upts(0,1,j,i)*inv_detjac;
+        sx = JGinv_upts(1,0,j,i)*inv_detjac;
+        sy = JGinv_upts(1,1,j,i)*inv_detjac;
+
+        //physical gradient
+        if(n_dims==2)
+        {
+          for(int k=0;k<n_dims;k++)
+          {
+            ur = elas_grad_disu_upts(j,i,k,0);
+            us = elas_grad_disu_upts(j,i,k,1);
+
+            elas_grad_disu_upts(j,i,k,0) = ur*rx + us*sx;
+            elas_grad_disu_upts(j,i,k,1) = ur*ry + us*sy;
+          }
+        }
+        if (n_dims==3)
+        {
+          rz = JGinv_upts(0,2,j,i)*inv_detjac;
+          sz = JGinv_upts(1,2,j,i)*inv_detjac;
+
+          tx = JGinv_upts(2,0,j,i)*inv_detjac;
+          ty = JGinv_upts(2,1,j,i)*inv_detjac;
+          tz = JGinv_upts(2,2,j,i)*inv_detjac;
+
+          for (int k=0;k<n_dims;k++)
+          {
+            ur = elas_grad_disu_upts(j,i,k,0);
+            us = elas_grad_disu_upts(j,i,k,1);
+            ut = elas_grad_disu_upts(j,i,k,2);
+
+            elas_grad_disu_upts(j,i,k,0) = ur*rx + us*sx + ut*tx;
+            elas_grad_disu_upts(j,i,k,1) = ur*ry + us*sy + ut*ty;
+            elas_grad_disu_upts(j,i,k,2) = ur*rz + us*sz + ut*tz;
+          }
+        }
+
+        if (motion) {
+          // Transform to dynamic-physical domain
+          detjac = J_dyn_upts(j,i);
+          inv_detjac = 1.0/detjac;
+
+          Xx = JGinv_dyn_upts(0,0,j,i)*inv_detjac;
+          Xy = JGinv_dyn_upts(0,1,j,i)*inv_detjac;
+          Yx = JGinv_dyn_upts(1,1,j,i)*inv_detjac;
+          Yy = JGinv_dyn_upts(1,1,j,i)*inv_detjac;
+
+          //physical gradient
+          if(n_dims==2)
+          {
+            for(int k=0;k<n_dims;k++)
+            {
+              uX = elas_grad_disu_upts(j,i,k,0);
+              uY = elas_grad_disu_upts(j,i,k,1);
+
+              elas_grad_disu_upts(j,i,k,0) = uX*Xx + uY*Yx;
+              elas_grad_disu_upts(j,i,k,1) = uX*Xy + uY*Yy;
+            }
+          }
+          if (n_dims==3)
+          {
+            Xz = JGinv_dyn_upts(j,i,0,2)*inv_detjac;
+            Yz = JGinv_dyn_upts(j,i,1,2)*inv_detjac;
+
+            Zx = JGinv_dyn_upts(j,i,2,0)*inv_detjac;
+            Zy = JGinv_dyn_upts(j,i,2,1)*inv_detjac;
+            Zz = JGinv_dyn_upts(j,i,2,2)*inv_detjac;
+
+            for (int k=0;k<n_dims;k++)
+            {
+              uX = elas_grad_disu_upts(j,i,k,0);
+              uY = elas_grad_disu_upts(j,i,k,1);
+              uZ = elas_grad_disu_upts(j,i,k,2);
+
+              elas_grad_disu_upts(j,i,k,0) = uX*Xx + uY*Yx + uZ*Zx;
+              elas_grad_disu_upts(j,i,k,1) = uX*Xy + uY*Yy + uZ*Zy;
+              elas_grad_disu_upts(j,i,k,2) = uX*Xz + uY*Yz + uZ*Zz;
+            }
+          }
+        }
+      }
+    }
+
+#endif
+
+#ifdef _GPU
+
+    if (opp_5_sparse==0)
+    {
+      for (int i=0;i<n_dims;i++)
+      {
+        cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_5(i).get_ptr_gpu(),Astride,elas_delta_disu_fpts.get_ptr_gpu(),Bstride,1.0,elas_grad_disu_upts.get_ptr_gpu(0,0,0,i),Cstride);
+      }
+    }
+    else if (opp_5_sparse==1)
+    {
+      for (int i=0;i<n_dims;i++)
+      {
+        bespoke_SPMV(Arows,Acols,n_dims,n_eles,opp_5_ell_data(i).get_ptr_gpu(),opp_5_ell_indices(i).get_ptr_gpu(),opp_5_nnz_per_row(i),elas_delta_disu_fpts.get_ptr_gpu(),elas_grad_disu_upts.get_ptr_gpu(0,0,0,i),ele_type,order,1);
+      }
+    }
+
+    transform_grad_disu_upts_kernel_wrapper(n_upts_per_ele,n_dims,n_dims,n_eles,elas_grad_disu_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),run_input.equation,motion);
+
+#endif
+
+  }
+}
+
+
+// calculate corrected gradient of the discontinuous solution at flux points
+void eles::extrapolate_corrected_gradient_elasticity(void)
+{
+  if (n_eles!=0)
+  {
+    Arows =  n_fpts_per_ele;
+    Acols = n_upts_per_ele;
+
+    Brows = Acols;
+    Bcols = n_dims*n_eles;
+
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+
+#ifdef _CPU
+
+    if(opp_6_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      for (int i=0;i<n_dims;i++)
+      {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_6.get_ptr_cpu(),Astride,elas_grad_disu_upts.get_ptr_cpu(0,0,0,i),Bstride,0.0,elas_grad_disu_fpts.get_ptr_cpu(0,0,0,i),Cstride);
+      }
+
+#elif defined _NO_BLAS
+      for (int i=0;i<n_dims;i++) {
+        dgemm(Arows,Bcols,Acols,1.0,0.0,opp_6.get_ptr_cpu(),elas_grad_disu_upts.get_ptr_cpu(0,0,0,i),elas_grad_disu_fpts.get_ptr_cpu(0,0,0,i));
+      }
+#endif
+    }
+    else if(opp_6_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+
+      // implement
+
+#endif
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_6 ... " << endl;
+    }
+
+#endif
+
+#ifdef _GPU
+
+    if (opp_6_sparse==0)
+    {
+      for (int i=0;i<n_dims;i++)
+      {
+        cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_6.get_ptr_gpu(),Astride,elas_grad_disu_upts.get_ptr_gpu(0,0,0,i),Bstride,0.0,elas_grad_disu_fpts.get_ptr_gpu(0,0,0,i),Cstride);
+      }
+    }
+    else if (opp_6_sparse==1)
+    {
+      for (int i=0;i<n_dims;i++)
+      {
+        bespoke_SPMV(Arows,Acols,n_dims,n_eles,opp_6_ell_data.get_ptr_gpu(),opp_6_ell_indices.get_ptr_gpu(),opp_6_nnz_per_row,elas_grad_disu_upts.get_ptr_gpu(0,0,0,i),elas_grad_disu_fpts.get_ptr_gpu(0,0,0,i),ele_type,order,0);
+      }
+    }
+
+#endif
+
+  }
+}
+
+
+// calculate transformed discontinuous linear-elasticity flux at solution points
+void eles::evaluate_flux_elasticity(void)
+{
+  if (n_eles!=0)
+  {
+#ifdef _CPU
+
+    int i,j,k,l,m;
+    double detjac;
+
+    for(i=0;i<n_eles;i++) {
+
+      // Calculate viscous flux
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        detjac = detjac_upts(j,i);
+
+        // solution in static-physical domain
+        for(k=0;k<n_dims;k++)
+        {
+          temp_u(k)=disu_upts(0)(j,i,k);
+
+          // gradient in dynamic-physical domain
+          for (m=0;m<n_dims;m++)
+          {
+            temp_grad_u(k,m) = elas_grad_disu_upts(j,i,k,m);
+          }
+        }
+
+        // Transform to dynamic-physical domain
+        if (motion) {
+          for (k=0; k<n_dims; k++) {
+            temp_u(k) /= J_dyn_upts(j,i);
+          }
+        }
+
+        calc_elasticity_flux(n_dims,temp_grad_u,temp_f);
+
+        // Transfer back to static-phsycial domain
+          temp_f_ref.initialize_to_zero();
+          for(k=0;k<n_dims;k++) {
+            for(l=0;l<n_dims;l++) {
+              for(m=0;m<n_dims;m++) {
+                temp_f_ref(k,l)+=JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
+              }
+            }
+          }
+          // Copy back to original flux array
+          for(l=0; l<n_dims; l++) {
+            for (k=0; k<n_dims; k++) {
+              temp_f(k,l) = temp_f_ref(k,l);
+            }
+          }
+
+        // Transform viscous flux
+        for(k=0;k<n_dims;k++)
+        {
+          for(l=0;l<n_dims;l++)
+          {
+            for(m=0;m<n_dims;m++)
+            {
+              elas_tdisf_upts(j,i,k,l)+=JGinv_upts(l,m,j,i)*temp_f(k,m);
+            }
+          }
+        }
+      }
+    }
+#endif
+
+#ifdef _GPU
+    evaluate_flux_elasticity_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_eles, ele_type, order, elas_tdisf_upts.get_ptr_gpu(), elas_grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu());
+#endif
+  }
+}
+/*! --- End Linear-Elasticity Method Functions --- */
 
 // get the type of element
 
@@ -6658,16 +7363,14 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
     }
 }
 
-/*! Set the grid velocity at one shape point
- *  TODO: CUDA */
+/*! Set the grid velocity at one shape point */
 void eles::set_grid_vel_spt(int in_ele, int in_spt, array<double> in_vel)
 {
   for (int i=0; i<n_dims; i++)
     vel_spts(i,in_spt,in_ele) = in_vel(i);
 }
 
-/*! Store nodal basis at flux points to avoid re-calculating every time
- *  TODO: CUDA (mv to GPU) */
+/*! Store nodal basis at flux points to avoid re-calculating every time */
 void eles::store_nodal_s_basis_fpts(void)
 {
   int ic,fpt,j,k;
@@ -6935,14 +7638,12 @@ void eles::initialize_grid_vel(int in_max_n_spts_per_ele)
     vel_spts.setup(n_dims,in_max_n_spts_per_ele,n_eles);
     vel_spts.initialize_to_zero();
 
-    /// TODO: after other mesh stuff implemented in CUDA, *.mv_cpu_gpu()
-    /// ALSO: *_nodal_s_basis data is redundant: same for every element (of same type)
+    /// TODO: *_nodal_s_basis data is redundant: same for every element (of same type)
   }
 }
 
 /*! Interpolate the grid velocity from shape points to flux points
  *  TODO: Find a way to speed up with BLAS or something
- *  TODO: Implement these routines in CUDA (just 'for' loops - easy!)
  *  (would have to use sparse BLAS - think block-diag matrix) */
 void eles::set_grid_vel_fpts(int in_rk_step)
 {
@@ -6977,8 +7678,7 @@ void eles::set_grid_vel_fpts(int in_rk_step)
 }
 
 /*! Interpolate the grid velocity from shape points to solution points
- *  TODO: Find a way to speed up with BLAS or something
- *  TODO: Implement these routines in CUDA (just 'for' loops - easy!) */
+ *  TODO: Find a way to speed up with BLAS or something */
 void eles::set_grid_vel_upts(int in_rk_step)
 {
   int ic,upt,j,k;

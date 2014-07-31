@@ -54,3 +54,11 @@ void calc_alef_2d(array<double>& in_u, array<double>& in_v, array<double>& out_f
  * \param[in,out] out_f - Modified flux vector
  */
 void calc_alef_3d(array<double>& in_u, array<double>& in_v, array<double>& out_f);
+
+/*!
+ * \brief calculate & add addtional ALE flux term in 3D
+ * \param[in] n_dims - Number of dimensions (number of fields for elasticity)
+ * \param[in] in_grad_u - Gradient of elasticity solution
+ * \param[out] out_f - Linear-elasticity flux vector
+ */
+void calc_elasticity_flux(int n_dims, array<double>& in_grad_u, array<double>& out_f);

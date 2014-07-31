@@ -1052,3 +1052,29 @@ void bdy_inters::set_vis_boundary_conditions(int bdy_type, double* u_l, double* 
 
 }
 
+/*! calculate normal transformed continuous viscous flux at the boundary faces */
+void int_inters::calculate_boundary_flux_elasticity(void)
+{
+
+#ifdef _CPU
+  /*--- By definition of the mesh-deformation problem, flux is 0 on all boundaries
+   * (displacement specified & du/dt=0 during psudeo-time integration of linear-elasticity equations) ---*/
+  for (int i=0; i<n_inters; i++) {
+    for (int j=0; j<n_fpts_per_inter; j++) {
+      for(int k=0;k<n_fields;k++) {
+        (*elas_norm_tconf_fpts_l(j,i,k)) = 0.;
+        (*elas_norm_tconf_fpts_r(j,i,k)) = 0.;
+      }
+    }
+  }
+  /* ... or should the flux just be the left flux?  Starting to think it shouldn't just be 0... must think about this
+  * just because du/dt=0 doesn't mean sigma is 0... there is technically some 'force' required to move mesh in first
+  * place, which means that del-dot-sigma is that non-zero value of the force... but they must sum to 0 anyways at
+  * the boundary... */
+#endif
+
+#ifdef _GPU
+  if (n_inters!=0)
+    calculate_boundary_flux_elasticity_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_inters,elas_norm_tconf_fpts_l.get_ptr_gpu(),elas_norm_tconf_fpts_r.get_ptr_gpu());
+#endif
+}

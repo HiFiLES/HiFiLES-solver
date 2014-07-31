@@ -193,6 +193,60 @@ void CalcResidual(struct solution* FlowSol) {
 
 }
 
+void CalcResidualElasticity(struct solution* FlowSol) {
+
+  int in_disu_upts_from = 0;        /*!< Define... */
+  int in_div_tconf_upts_to = 0;     /*!< Define... */
+  int i;                            /*!< Loop iterator */
+
+  /*! Compute the solution at the flux points. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->extrapolate_solution_elasticity(in_disu_upts_from);
+
+  if (FlowSol->viscous) {
+      /*! Compute the uncorrected gradient of the solution at the solution points. */
+      for(i=0; i<FlowSol->n_ele_types; i++)
+        FlowSol->mesh_eles(i)->calculate_gradient_elasticity(in_disu_upts_from);
+    }
+
+  // Calculate modulus? (i.e E=1/area)  Probably do in flux funciton.
+
+  /*! Calculate body forcing, if switched on (for mesh adaptation). */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->evaluate_bodyForce_elasticity(FlowSol->body_force);
+
+  /*! Compute corrected gradient of the solution at the solution and flux points. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->correct_gradient_elasticity();
+
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->extrapolate_corrected_gradient();
+
+  /*! Compute discontinuous flux at upts. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->evaluate_flux_elasticity();
+
+  /*! Compute the normal discontinuous flux at flux points. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->extrapolate_flux_elasticity();
+
+  /*! Compute the divergence of flux at solution points. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calculate_divergence_elasticity();
+
+  /*! Compute normal continuous interface flux at flux points. */
+  for(i=0; i<FlowSol->n_int_inter_types; i++)
+    FlowSol->mesh_int_inters(i).calculate_common_flux_elasticity();
+
+  for(i=0; i<FlowSol->n_bdy_inter_types; i++)
+    FlowSol->mesh_bdy_inters(i).calculate_boundary_flux_elasticity(elas_time);
+
+  /*! Compute divergence of the continuous flux and add to gradient of discontinuous flux at upts. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calculate_corrected_divergence_elasticity(in_div_tconf_upts_to);
+
+}
+
 #ifdef _MPI
 void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol)
 {

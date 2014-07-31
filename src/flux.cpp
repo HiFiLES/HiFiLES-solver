@@ -390,3 +390,40 @@ void calc_alef_3d(array<double>& in_u, array<double>& in_v, array<double>& out_f
     FatalError("equation not recognized");
   }
 }
+
+void calc_elasticity_flux(int n_dims, array<double>& in_grad_u, array<double>& out_f)
+{
+  double du_dx, du_dy, du_dz;
+  double dv_dx, dv_dy, dv_dz;
+  double dw_dx, dw_dy, dw_dz;
+
+  du_dx = in_grad_u(0,0);
+  dv_dx = in_grad_u(1,0);
+
+  du_dy = in_grad_u(0,1);
+  dv_dy = in_grad_u(1,1);
+
+  out_f(0,0) = -du_dx;
+  out_f(1,0) = dv_dx + du_dy;
+
+  out_f(0,1) = du_dy + dv_dx;
+  out_f(1,1) = -dv_dy;
+
+  if (n_dims==3) {
+    dw_dx = in_grad_u(2,0);
+
+    dw_dy = in_grad_u(2,1);
+
+    du_dz = in_grad_u(0,2);
+    dv_dz = in_grad_u(1,2);
+    dw_dz = in_grad_u(2,2);
+
+    out_f(2,0) = dw_dx + du_dz;
+
+    out_f(2,1) = dv_dz + dw_dy;
+
+    out_f(0,2) = du_dz + dw_dx;
+    out_f(1,2) = dv_dz + dw_dy;
+    out_f(2,2) = -dw_dz;
+  }
+}

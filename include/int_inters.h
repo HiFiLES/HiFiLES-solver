@@ -63,6 +63,9 @@ public:
   /*! calculate normal transformed continuous viscous flux at the flux points */
   void calculate_common_viscFlux(void);
 
+  /*! calculate normal transformed continuous flux for linear-elasticity equations at the flux points */
+  void calculate_common_flux_elasticity(void);
+
   /*! calculate delta in transformed discontinuous solution at flux points */
   void calc_delta_disu_fpts(void);
 

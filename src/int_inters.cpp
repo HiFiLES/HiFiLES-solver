@@ -469,3 +469,54 @@ void int_inters::calculate_common_viscFlux(void)
 #endif
 }
 
+/*! calculate normal transformed continuous viscous flux at the flux points */
+void int_inters::calculate_common_flux_elasticity(void)
+{
+
+#ifdef _CPU
+  array<double> norm(n_dims), fn(n_dims);
+
+  for(int i=0;i<n_inters;i++)
+  {
+    for(int j=0;j<n_fpts_per_inter;j++)
+    {
+      // obtain physical gradient of discontinuous solution at flux points
+      for(int k=0;k<n_dims;k++)
+      {
+        for(int l=0;l<dims;l++)
+        {
+          temp_grad_u_l(l,k) = *elas_grad_disu_fpts_l(j,i,l,k);
+          temp_grad_u_r(l,k) = *elas_grad_disu_fpts_r(j,i,l,k);
+        }
+      }
+
+      // calculate flux from discontinuous solution gradient at flux points
+      calc_elasticity_flux(n_dims,temp_grad_u_l,temp_f_l);
+      calc_elasticity_flux(n_dims,temp_grad_u_r,temp_f_r);
+
+      // storing normal components
+      for (int m=0;m<n_dims;m++)
+        norm(m) = *norm_dyn_fpts(j,i,m);
+
+      // Central difference for normal flux
+      fn.initialize_to_zero();
+      for (int k=0; k<n_dims; k++) {
+        for (int m=0; m<n_dims; m++) {
+          fn(k) += 0.5*norm(m)*(temp_f_l(k,m)+temp_f_r(k,m));
+        }
+      }
+
+      // Transform back to reference space
+      for(int k=0;k<n_fields;k++) {
+        (*elas_norm_tconf_fpts_l(j,i,k))+=  fn(k)*(*tdA_fpts_l(j,i))*(*ndA_dyn_fpts_l(j,i));
+        (*elas_norm_tconf_fpts_r(j,i,k))+= -fn(k)*(*tdA_fpts_r(j,i))*(*ndA_dyn_fpts_r(j,i));
+      }
+    }
+  }
+#endif
+
+#ifdef _GPU
+  if (n_inters!=0)
+    calculate_common_flux_elasticity_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_inters,elas_grad_disu_fpts_l.get_ptr_gpu(),elas_grad_disu_fpts_r.get_ptr_gpu(),elas_norm_tconf_fpts_l.get_ptr_gpu(),elas_norm_tconf_fpts_r.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),tdA_fpts_r.get_ptr_gpu(),ndA_dyn_fpts_l.get_ptr_gpu(),ndA_dyn_fpts_r.get_ptr_gpu(),J_dyn_fpts_l.get_ptr_gpu(),J_dyn_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu());
+#endif
+}

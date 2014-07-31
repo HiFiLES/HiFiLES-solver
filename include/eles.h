@@ -131,6 +131,32 @@ public:
 
   /*! calculate divergence of transformed continuous viscous flux at solution points */
   //void calc_div_tconvisf_upts(int in_div_tconinvf_upts_to);
+
+  /* --- Linear-Elasticity Methods --- */
+  /*! calculate the discontinuous solution at the flux points */
+  void extrapolate_solution_elasticity(void);
+
+  /*! calculate divergence of transformed discontinuous flux at solution points */
+  void calculate_divergence_elasticity(void);
+
+  /*! calculate normal transformed discontinuous flux at flux points */
+  void extrapolate_flux_elasticity(void);
+
+  /*! calculate divergence of transformed continuous flux at solution points */
+  void calculate_corrected_divergence_elasticity(void);
+
+  /*! calculate uncorrected transformed gradient of the discontinuous solution at the solution points */
+  void calculate_gradient_elasticity(void);
+
+  /*! calculate corrected gradient of the discontinuous solution at solution points */
+  void correct_gradient_elasticity(void);
+
+  /*! calculate corrected gradient of the discontinuous solution at flux points */
+  void extrapolate_corrected_gradient_elasticity(void);
+
+  /*! calculate transformed discontinuous inviscid flux at solution points */
+  void evaluate_flux_elasticity(void);
+  /* --- End Linear-Elasticity Methods --- */
   
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolution(int in_step, int adv_type);
@@ -1043,6 +1069,35 @@ protected:
    * indexing: (in_upt, in_ele) \n
    */
   array< array<double> > div_tconf_GCL_upts;
+
+  /*--- Linear-Elasticity Variables ---*/
+  /*! transformed discontinuous linear-elasticity solution at the solution points */
+  array< array<double> > elas_disu_upts;
+
+  /*! description: transformed discontinuous linear-elasticity solution at the flux points */
+  array<double> elas_disu_fpts;
+
+  /*! transformed discontinuous linear-elasticity flux at the solution points */
+  array<double> elas_tdisf_upts;
+
+  /*! normal transformed discontinuous linear-elasticity flux at the flux points */
+  array<double> elas_norm_tdisf_fpts;
+
+  /*! normal transformed continuous linear-elasticity flux at the flux points */
+  array<double> elas_norm_tconf_fpts;
+
+  /*! divergence of transformed continuous linear-elasticity flux at the solution points */
+  array< array<double> > elas_div_tconf_upts;
+
+  /*! delta of the transformed discontinuous linear-elasticity solution at the flux points */
+  array<double> elas_delta_disu_fpts;
+
+  /*! gradient of discontinuous linear-elasticity solution at solution points */
+  array<double> elas_grad_disu_upts;
+
+  /*! gradient of discontinuous linear-elasticity solution at flux points */
+  array<double> elas_grad_disu_fpts;
+  /*--- End Linear-Elasticity Variables ---*/
 
 #ifdef _GPU
   cusparseHandle_t handle;

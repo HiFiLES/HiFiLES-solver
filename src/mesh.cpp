@@ -217,46 +217,46 @@ void mesh::deform(struct solution* FlowSol) {
         elasticity equations (transfers element stiffnesses to point-to-point). ---*/
 
     for (int ic=0; ic<n_eles; ic++) {
-//      //--- NEW ADDITION 3/26/14 ---//
-//      nodes.setup(c2n_v(ic));
-//      for (int iNode=0; iNode<c2n_v(ic); iNode++) {
-//        nodes(iNode) = iv2ivg(c2v(ic,iNode)); // will the iv2ivg be needed for MPI?
-//      }
-//      if (n_dims == 2) {
-//        set_stiffmat_ele_2d(stiff_mat_ele,ic,min_vol);
-//      }else if (n_dims == 3) {
-//        set_stiffmat_ele_3d(stiff_mat_ele,ic,min_vol);
-//      }
-//      add_FEA_stiffMat(stiff_mat_ele,nodes);
-//      //----------------------------//
+      //--- NEW ADDITION 3/26/14 ---//
+      nodes.setup(c2n_v(ic));
+      for (int iNode=0; iNode<c2n_v(ic); iNode++) {
+        nodes(iNode) = iv2ivg(c2v(ic,iNode)); // will the iv2ivg be needed for MPI?
+      }
+      if (n_dims == 2) {
+        set_stiffmat_ele_2d(stiff_mat_ele,ic,min_vol);
+      }else if (n_dims == 3) {
+        set_stiffmat_ele_3d(stiff_mat_ele,ic,min_vol);
+      }
+      add_FEA_stiffMat(stiff_mat_ele,nodes);
+      //----------------------------//
 
-      switch(ctype(ic))
-      {
-        case TRI:
-          pt_0 = iv2ivg(c2v(ic,0));
-          pt_1 = iv2ivg(c2v(ic,1));
-          pt_2 = iv2ivg(c2v(ic,2));
-          check = set_2D_StiffMat_ele_tri(stiff_mat_ele,ic);
-          add_StiffMat_EleTri(stiff_mat_ele,pt_0,pt_1,pt_2);
-          break;
-        case QUAD:
-          pt_0 = iv2ivg(c2v(ic,0));
-          pt_1 = iv2ivg(c2v(ic,1));
-          pt_2 = iv2ivg(c2v(ic,2));
-          pt_3 = iv2ivg(c2v(ic,3));
-          set_2D_StiffMat_ele_quad(stiff_mat_ele,ic);
-          add_StiffMat_EleQuad(stiff_mat_ele,pt_0,pt_1,pt_2,pt_3);
-          break;
-        default:
-          FatalError("Element type not yet supported for mesh motion - supported types are tris and quads");
-          break;
-      }
-      if (!check) {
-        failedIts++;
-        if (failedIts > 5) FatalError("ERROR: negative volumes encountered during mesh motion.");
-      }else{
-        failedIts=0;
-      }
+//      switch(ctype(ic))
+//      {
+//        case TRI:
+//          pt_0 = iv2ivg(c2v(ic,0));
+//          pt_1 = iv2ivg(c2v(ic,1));
+//          pt_2 = iv2ivg(c2v(ic,2));
+//          check = set_2D_StiffMat_ele_tri(stiff_mat_ele,ic);
+//          add_StiffMat_EleTri(stiff_mat_ele,pt_0,pt_1,pt_2);
+//          break;
+//        case QUAD:
+//          pt_0 = iv2ivg(c2v(ic,0));
+//          pt_1 = iv2ivg(c2v(ic,1));
+//          pt_2 = iv2ivg(c2v(ic,2));
+//          pt_3 = iv2ivg(c2v(ic,3));
+//          set_2D_StiffMat_ele_quad(stiff_mat_ele,ic);
+//          add_StiffMat_EleQuad(stiff_mat_ele,pt_0,pt_1,pt_2,pt_3);
+//          break;
+//        default:
+//          FatalError("Element type not yet supported for mesh motion - supported types are tris and quads");
+//          break;
+//      }
+//      if (!check) {
+//        failedIts++;
+//        if (failedIts > 5) FatalError("ERROR: negative volumes encountered during mesh motion.");
+//      }else{
+//        failedIts=0;
+//      }
     }
 
     /*--- Compute the tolerance of the linear solver using MinLength ---*/
@@ -503,6 +503,7 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale
 
   // First, get the ID's & coordinates of the nodes for this element
   int nNodes = c2n_v(ic);
+  int eletype = ctype(ic);
   array<int> nodes(nNodes);
   array<double> coords(nNodes,2);
 
@@ -524,7 +525,7 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale
    integration of the Résumé" by Josselin Delmas (2013) ---*/
 
   // Initialize the stiffness matrix for this element accordingly
-  switch(ctype(ic))
+  switch(eletype)
   {
     case TRI:
       // note that this is for first-order integration only (higher-order [curved-edge] elements not currently supported)
@@ -549,8 +550,8 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale
 
     Xi = Location[iGauss][0]; Eta = Location[iGauss][1];
 
-    if (nNodes == 3) Det = ShapeFunc_Triangle(Xi, Eta, CoordCorners, DShapeFunction);
-    if (nNodes == 4) Det = ShapeFunc_Rectangle(Xi, Eta, CoordCorners, DShapeFunction);
+    if (eletype == TRI) Det = ShapeFunc_Triangle(Xi, Eta, CoordCorners, DShapeFunction);
+    if (eletype == QUAD) Det = ShapeFunc_Rectangle(Xi, Eta, CoordCorners, DShapeFunction);
 
     /*--- Compute the B Matrix ---*/
 
@@ -615,6 +616,7 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale
 
   // First, get the ID's & coordinates of the nodes for this element
   int nNodes = c2n_v(ic);
+  int eletype = ctype(ic);
   array<int> nodes(nNodes);
 
   for (int i=0; i<nNodes; i++) {
@@ -634,7 +636,7 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale
    integration of the Résumé" by Josselin Delmas (2013) ---*/
 
   // Initialize the stiffness matrix for this element accordingly
-  switch(ctype(ic))
+  switch(eletype)
   {
     case TET:
       stiffMat_ele.setup(12,12);
@@ -686,10 +688,10 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale
 
     Xi = Location[iGauss][0]; Eta = Location[iGauss][1];  Mu = Location[iGauss][2];
 
-    if (nNodes == 4) Det = ShapeFunc_Tetra(Xi, Eta, Mu, CoordCorners, DShapeFunction);
-    if (nNodes == 5) Det = ShapeFunc_Pyram(Xi, Eta, Mu, CoordCorners, DShapeFunction);
-    if (nNodes == 6) Det = ShapeFunc_Wedge(Xi, Eta, Mu, CoordCorners, DShapeFunction);
-    if (nNodes == 8) Det = ShapeFunc_Hexa(Xi, Eta, Mu, CoordCorners, DShapeFunction);
+    if (eletype == TET) Det = ShapeFunc_Tetra(Xi, Eta, Mu, CoordCorners, DShapeFunction);
+    if (eletype == PYRAMID) Det = ShapeFunc_Pyram(Xi, Eta, Mu, CoordCorners, DShapeFunction);
+    if (eletype == PRISM) Det = ShapeFunc_Wedge(Xi, Eta, Mu, CoordCorners, DShapeFunction);
+    if (eletype == HEX) Det = ShapeFunc_Hexa(Xi, Eta, Mu, CoordCorners, DShapeFunction);
 
     /*--- Compute the B Matrix ---*/
 
@@ -880,7 +882,7 @@ double mesh::ShapeFunc_Rectangle(double Xi, double Eta, double CoordCorners[8][3
     for (j = 0; j < 2; j++) {
       xs[i][j] = 0.0;
       for (k = 0; k < 4; k++) {
-        xs[i][j] = xs[i][j]+CoordCorners[k][j]*DShapeFunction[k][i];
+        xs[i][j] += CoordCorners[k][j]*DShapeFunction[k][i];
       }
     }
   }
