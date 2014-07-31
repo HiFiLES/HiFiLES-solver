@@ -573,7 +573,15 @@ public:
   void set_dt(int in_step, int adv_type);
 
 #ifdef _GPU
-  void cp_transforms_gpu_cpu();
+  void cp_transforms_gpu_cpu(void);
+  void cp_transforms_cpu_gpu(void);
+
+  void perturb_shape(double rk_time);
+  void rigid_move(double rk_time);
+
+  void calc_grid_velocity(void);
+  void rigid_grid_velocity(double rk_time);
+  void perturb_grid_velocity(double rk_time);
 #endif
 protected:
 

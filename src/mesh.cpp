@@ -25,6 +25,7 @@
  */
 #include "../include/mesh.h"
 #include "../include/geometry.h"
+#include "../include/cuda_kernels.h"
 #include <string>
 using namespace std;
 
@@ -343,6 +344,14 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
     for (int i=0; i<n_verts; i++) {
       vel_new(i,0) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10); // from Kui
       vel_new(i,1) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10);
+    }
+  }
+  else if (run_input.motion == 2) {
+    for (int i=0; i<n_verts; i++) {
+      for (int j=0; j<n_dims; j++) {
+        vel_new(i,j) = run_input.bound_vel_simple(0)(2*j  )*run_input.bound_vel_simple(0)(6+j)*sin(run_input.bound_vel_simple(0)(6+j)*rk_time);
+        vel_new(i,j)+= run_input.bound_vel_simple(0)(2*j+1)*run_input.bound_vel_simple(0)(6+j)*cos(run_input.bound_vel_simple(0)(6+j)*rk_time);
+      }
     }
   }
   else
@@ -1300,6 +1309,9 @@ void mesh::update(solution* FlowSol)
       FlowSol->mesh_eles(ele_type)->set_dynamic_shape_node(iv,local_id,pos);
     }
   }
+#ifdef _GPU
+  //FlowSol->mesh_eles(ele_type)->set_dynamic_shape_nodes_kernel_wrapper(n_dims, n_verts, n_eles, max_n_)
+#endif
 
   // Update element transforms
   //if (FlowSol->rank==0) cout << "Deform: updating element transforms ... " << endl;
@@ -1652,17 +1664,7 @@ void mesh::set_boundary_displacements(solution *FlowSol)
 }
 
 void mesh::rigid_move(solution* FlowSol) {
-
-//  if(start) {
-//    for (int i=0; i<n_verts; i++) {
-//      xv(i,0) = xv(i,0) + run_input.bound_vel_simple(0)(0)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
-//      xv(i,1) = xv(i,1) + run_input.bound_vel_simple(0)(1)/(0.2*pi)*sin(0.2*pi*(time-run_input.dt));
-//      //xv_new(i,0) = xv(i,0);
-//      //xv_new(i,1) = xv(i,1);
-//    }
-//    start = false;
-//  }
-
+#ifdef _CPU
   if (rk_step==0) {
     for (int i=4; i>0; i--) {
       for (int j=0; j<xv(i).get_dim(0); j++) {
@@ -1675,20 +1677,27 @@ void mesh::rigid_move(solution* FlowSol) {
 
   for (int i=0; i<n_verts; i++) {
     // Useful for simple cases / debugging
-    xv(0)(i,0) = xv(0)(i,0) + run_input.bound_vel_simple(0)(0)*cos(0.2*pi*time)*run_input.dt;
-    xv(0)(i,1) = xv(0)(i,1) + run_input.bound_vel_simple(0)(1)*cos(0.2*pi*time)*run_input.dt;
-
-    //xv_new(i,0) = xv(i,0) + run_input.bound_vel_simple(0)(0)*run_input.dt;
-    //xv_new(i,1) = xv(i,1) + run_input.bound_vel_simple(0)(1)*run_input.dt;
+    for (int j=0; j<n_dims; j++) {
+      xv(0)(i,j) = xv(0)(i,j) + run_input.bound_vel_simple(0)(2*j  )*run_input.bound_vel_simple(0)(6+j)*sin(run_input.bound_vel_simple(0)(6+j)*time);
+      xv(0)(i,j)+=              run_input.bound_vel_simple(0)(2*j+1)*run_input.bound_vel_simple(0)(6+j)*cos(run_input.bound_vel_simple(0)(6+j)*time);
+    }
   }
 
   update(FlowSol);
+#endif
 
-  //iter++; // does nothing - iter given in Mesh.move(iter,&FlowSol)
+#ifdef _GPU
+  for (int i=0;i<FlowSol->n_ele_types;i++) {
+    FlowSol->mesh_eles(i)->rigid_move(rk_time);
+    FlowSol->mesh_eles(i)->rigid_grid_velocity(rk_time);
+    FlowSol->mesh_eles(i)->set_transforms_dynamic();
+  }
+#endif
 }
 
-void mesh::perturb(solution* FlowSol) {
-
+void mesh::perturb(solution* FlowSol)
+{
+#ifdef _CPU
   if (rk_step==0) {
     // Push back previous time-advance level
     for (int i=4; i>0; i--) {
@@ -1706,12 +1715,15 @@ void mesh::perturb(solution* FlowSol) {
     xv(0)(i,1) = xv_0(i,1) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*rk_time/10);
   }
 
-//  if (rk_step==0 || run_input.GCL==0) {
-//    update(FlowSol);
-//  }else{
-//    set_grid_velocity(FlowSol,run_input.dt);
-//  }
   update(FlowSol);
+#endif
 
-  iter++;
+#ifdef _GPU
+  for (int i=0;i<FlowSol->n_ele_types;i++) {
+    FlowSol->mesh_eles(i)->perturb_shape(rk_time);
+    //FlowSol->mesh_eles(i)->calc_grid_velocity();
+    FlowSol->mesh_eles(i)->perturb_grid_velocity(rk_time);
+    FlowSol->mesh_eles(i)->set_transforms_dynamic();
+  }
+#endif
 }

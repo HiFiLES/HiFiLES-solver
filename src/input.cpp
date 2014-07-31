@@ -354,10 +354,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
       for (int i=0; i<n_moving_bnds; i++) {
         in_run_input_file.getline(buf,BUFSIZ);
         in_run_input_file >> boundary_flags(i) >> motion_type(i);
-        bound_vel_simple(i).setup(3);
-        for (int j=0; j<3; j++) {
+        bound_vel_simple(i).setup(9);
+        for (int j=0; j<9; j++) {
           in_run_input_file >> bound_vel_simple(i)(j);
-          cout << bound_vel_simple(i)(j) << " ";
+          //cout << bound_vel_simple(i)(j) << " ";
         }
       }
     }

@@ -1066,11 +1066,14 @@ void create_boundpts(array<array<int> >& out_boundpts, array<int>& in_bclist, ar
 
   /** Find boundaries which are moving */
   for (int i=0; i<run_input.n_moving_bnds; i++) {
-    bcflag = get_bc_number(run_input.boundary_flags(i));
-    for (int j=0; j<n_bcs; j++) {
-      if (in_bclist(j)==bcflag) {
-        out_bound_flag(j) = 1;
-        break;
+    if (run_input.boundary_flags(i).compare("FLUID"))  // if NOT 'FLUID'
+    {
+      bcflag = get_bc_number(run_input.boundary_flags(i));
+      for (int j=0; j<n_bcs; j++) {
+        if (in_bclist(j)==bcflag) {
+          out_bound_flag(j) = 1;
+          break;
+        }
       }
     }
   }
@@ -1377,11 +1380,14 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   out_bound_flag.setup(n_bcs);
   out_bound_flag.initialize_to_zero();
   for (int i=0; i<run_input.n_moving_bnds; i++) {
-    bcflag = get_bc_number(run_input.boundary_flags(i));
-    for (int j=0; j<n_bcs; j++) {
-      if (out_bclist(j)==bcflag) {
-        out_bound_flag(j) = 1;
-        break;
+    if (run_input.boundary_flags(i).compare("FLUID"))  // if NOT 'FLUID'
+    {
+      bcflag = get_bc_number(run_input.boundary_flags(i));
+      for (int j=0; j<n_bcs; j++) {
+        if (out_bclist(j)==bcflag) {
+          out_bound_flag(j) = 1;
+          break;
+        }
       }
     }
   }
