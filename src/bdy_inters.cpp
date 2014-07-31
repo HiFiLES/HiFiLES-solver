@@ -1053,7 +1053,7 @@ void bdy_inters::set_vis_boundary_conditions(int bdy_type, double* u_l, double* 
 }
 
 /*! calculate normal transformed continuous viscous flux at the boundary faces */
-void int_inters::calculate_boundary_flux_elasticity(void)
+void bdy_inters::calculate_boundary_flux_elasticity(void)
 {
 
 #ifdef _CPU

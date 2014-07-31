@@ -1056,6 +1056,194 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
   
 }
 
+void eles::AdvanceSolutionElasticity(int in_step, int adv_type) {
+
+  if (n_eles!=0)
+  {
+    /*! Time integration using a forwards Euler integration. */
+    if (adv_type == 0) {
+
+      /*!
+       Performs B = B + (alpha*A) where: \n
+       alpha = -run_input.dt \n
+       A = div_tconf_upts(0)\n
+       B = disu_upts(0)
+       */
+
+#ifdef _CPU
+      // If using global minimum timestep based on CFL, determine
+      // global minimum
+      if (run_input.dt_type == 1)
+      {
+        // Find minimum timestep
+        dt_local(0) = 1e12; // Set to large value
+
+        for (int ic=0; ic<n_eles; ic++)
+        {
+          dt_local_new = calc_dt_local(ic);
+
+          if (dt_local_new < dt_local(0))
+            dt_local(0) = dt_local_new;
+        }
+
+        // If running in parallel, gather minimum timestep values from
+        // each partition and find global minumum across partitions
+#ifdef _MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
+                      1, MPI_DOUBLE, MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        dt_local(0) = dt_local_mpi.get_min();
+#endif
+      }
+
+      // If using local timestepping, just compute and store all local
+      // timesteps
+      if (run_input.dt_type == 2)
+      {
+        for (int ic=0; ic<n_eles; ic++)
+          dt_local(ic) = calc_dt_local(ic);
+      }
+
+      for (int i=0;i<n_dims;i++)
+      {
+        for (int ic=0;ic<n_eles;ic++)
+        {
+          for (int inp=0;inp<n_upts_per_ele;inp++)
+          {
+            // User supplied timestep
+            if (run_input.dt_type == 0)
+              elas_disu_upts(0)(inp,ic,i) -= run_input.dt*(elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - elas_force(inp,ic,i));
+
+            // Global minimum timestep
+            else if (run_input.dt_type == 1)
+              elas_disu_upts(0)(inp,ic,i) -= dt_local(0)*(elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - elas_force(inp,ic,i));
+
+            // Element local timestep
+            else if (run_input.dt_type == 2)
+              elas_disu_upts(0)(inp,ic,i) -= dt_local(ic)*(elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - elas_force(inp,ic,i));
+            else
+              FatalError("ERROR: dt_type not recognized!")
+
+          }
+        }
+      }
+
+#endif
+
+#ifdef _GPU
+      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
+#endif
+
+    }
+
+    /*! Time integration using a RK45 method. */
+
+    else if (adv_type == 3) {
+
+      double rk4a, rk4b;
+      if (in_step==0) {
+        rk4a=    0.0;
+        rk4b=   0.149659021999229;
+      }
+      else if (in_step==1) {
+        rk4a=   -0.417890474499852;
+        rk4b=   0.379210312999627;
+      }
+      else if (in_step==2) {
+        rk4a=   -1.192151694642677;
+        rk4b=   0.822955029386982;
+      }
+      else if (in_step==3) {
+        rk4a=   -1.697784692471528;
+        rk4b=   0.699450455949122;
+      }
+      else if (in_step==4) {
+        rk4a=   -1.514183444257156;
+        rk4b=   0.153057247968152;
+      }
+
+#ifdef _CPU
+      // for first stage only, compute timestep
+      if (in_step == 0)
+      {
+        // For global timestepping, find minimum timestep
+        if (run_input.dt_type == 1)
+        {
+          dt_local(0) = 1e12;
+
+          for (int ic=0; ic<n_eles; ic++)
+          {
+            dt_local_new = calc_dt_local(ic);
+
+            if (dt_local_new < dt_local(0))
+            {
+              dt_local(0) = dt_local_new;
+            }
+          }
+
+
+          // If using MPI, find minimum across partitions
+#ifdef _MPI
+          MPI_Barrier(MPI_COMM_WORLD);
+          MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),1,MPI_DOUBLE,MPI_COMM_WORLD);
+          MPI_Barrier(MPI_COMM_WORLD);
+
+          dt_local(0) = dt_local_mpi.get_min();
+#endif
+        }
+
+        // For local timestepping, find element local timesteps
+        if (run_input.dt_type == 2)
+        {
+          for (int ic=0; ic<n_eles; ic++)
+          {
+            dt_local(ic) = calc_dt_local(ic);
+          }
+        }
+      }
+
+      double res, rhs;
+      for (int ic=0;ic<n_eles;ic++)
+      {
+        for (int i=0;i<n_fields;i++)
+        {
+          for (int inp=0;inp<n_upts_per_ele;inp++)
+          {
+            rhs = -elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + elas_force(inp,ic,i);
+            res = elas_disu_upts(1)(inp,ic,i);
+
+            if (run_input.dt_type == 0)
+              res = rk4a*res + run_input.dt*rhs;
+            else if (run_input.dt_type == 1)
+              res = rk4a*res + dt_local(0)*rhs;
+            else if (run_input.dt_type == 2)
+              res = rk4a*res + dt_local(ic)*rhs;
+
+            disu_upts(1)(inp,ic,i) = res;
+            disu_upts(0)(inp,ic,i) += rk4b*res;
+          }
+        }
+      }
+
+#endif
+
+#ifdef _GPU
+
+      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
+
+#endif
+
+    }
+
+    /*! Time integration not implemented. */
+    else {
+      cout << "ERROR: Time integration type not recognised ... " << endl;
+    }
+  }
+}
+
 double eles::calc_dt_local(int in_ele)
 {
   double lam_inv, lam_inv_new;

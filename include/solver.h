@@ -49,6 +49,12 @@
  */
 void CalcResidual(struct solution* FlowSol);
 
+/*!
+ * \brief Calculate the residual for the linear-elasticity equations (mesh deformation).
+ * \param[in] FlowSol - Structure with the entire solution and mesh information.
+ */
+void CalcResidualElasticity(struct solution* FlowSol);
+
 void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol);
 
 /*! get pointer to transformed discontinuous solution at a flux point */

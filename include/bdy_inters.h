@@ -75,6 +75,9 @@ public:
   /*! calculate normal transformed continuous viscous flux at the flux points on boundaries*/
   void evaluate_boundaryConditions_viscFlux(double time_bound);
 
+  /*! Calculate the linear-elasticity flux at the boundaries (mesh deformation) */
+  void calculate_boundary_flux_elasticity(void);
+
 protected:
 
   // #### members ####
