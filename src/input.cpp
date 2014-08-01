@@ -95,7 +95,8 @@ void input::setup(ifstream& in_run_input_file, int rank)
   char buf[BUFSIZ]={""};
   char section_TXT[100];
   string dummy, param_name;
-  
+  bool blank;
+
   // First loop over the input file and print content to output
   if (rank==0)
   {
@@ -107,7 +108,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
     in_run_input_file.clear();
     in_run_input_file.seekg(0, ios::beg);
   }
-  
+
   // Now read in parameters
   while(!in_run_input_file.eof() )
   {
@@ -115,8 +116,15 @@ void input::setup(ifstream& in_run_input_file, int rank)
     in_run_input_file.getline(buf,BUFSIZ);
     sscanf(buf,"%s",section_TXT);
     param_name.assign(section_TXT,0,99);
-    
-    if (!param_name.compare(0,5,"-----"))
+    blank = false;
+
+    if (in_run_input_file.peek()=='\n') {
+      // Blank line. Funky, but it's the only way
+      while(in_run_input_file.peek()=='\n')
+        in_run_input_file.get();
+      blank = true;
+    }
+    else if (!param_name.compare(0,5,"-----"))
     {
       // Section header, ignore next two lines
       in_run_input_file.getline(buf,BUFSIZ);
@@ -635,8 +643,8 @@ void input::setup(ifstream& in_run_input_file, int rank)
       FatalError("input parameter not recognized");
     }
     
-    // Read end of line, if not a comment line
-    if (param_name.compare(0,2,"//"))
+    // Read end of line, if NOT a comment line or blank line
+    if (param_name.compare(0,2,"//") && !blank)
       in_run_input_file.getline(buf,BUFSIZ);
   }
   
