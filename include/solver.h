@@ -53,7 +53,8 @@ void CalcResidual(struct solution* FlowSol);
  * \brief Calculate the residual for the linear-elasticity equations (mesh deformation).
  * \param[in] FlowSol - Structure with the entire solution and mesh information.
  */
-void CalcResidualElasticity(struct solution* FlowSol);
+void CalcResidualElasticity_start(struct solution* FlowSol);
+void CalcResidualElasticity_finish(struct solution* FlowSol);
 
 void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol);
 
@@ -62,6 +63,12 @@ double* get_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int n_local
 
 /*! get pointer to normal continuous transformed inviscid flux at a flux point */
 double* get_norm_tconf_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol);
+
+/*! get pointer to transformed discontinuous solution at a flux point */
+double* get_elas_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int n_local_inter, int in_fpt, struct solution* FlowSol);
+
+/*! get pointer to normal continuous transformed inviscid flux at a flux point */
+double* get_elas_norm_tconf_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol);
 
 /*! get pointer to subgrid-scale flux at a flux point */
 double* get_sgsf_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol);
@@ -98,6 +105,12 @@ double* get_delta_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int n
 
 /*! get pointer to gradient of the discontinuous solution at a flux point */
 double* get_grad_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol);
+
+/*! get pointer to delta of the transformed discontinuous solution at a flux point */
+double* get_elas_delta_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int n_local_inter, int in_fpt, struct solution* FlowSol);
+
+/*! get pointer to gradient of the discontinuous solution at a flux point */
+double* get_elas_grad_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol);
 
 /*! get pointer to the closest normal point of the discontinuous solution at a flux point */
 double* get_normal_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_fpt, struct solution* FlowSol, array<double> temp_loc, double temp_pos[3]);

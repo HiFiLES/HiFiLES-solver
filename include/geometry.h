@@ -77,7 +77,7 @@ void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, 
 /*! method to read boundaries from mesh */
 void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c2f, array<int>& in_f2v, array<int>& in_f2nv,
                array<int>& in_ctype, array<int>& out_bctype, array<array<int> >& out_boundpts, array<int> &out_bc_list, array<int> &out_bound_flag,
-               array<int>& in_ic2icg, array<int>& in_icvsta, array<int> &in_icvert, array<int> &in_iv2ivg, int &in_n_cells, int &in_n_verts, solution *FlowSol);
+               array<array<int> > &out_bccells, array<array<int> > &out_bcfaces, array<int> &out_bc_ncells, array<int> &in_ic2icg, array<int> &in_icvsta, array<int> &in_icvert, array<int> &in_iv2ivg, int &in_n_cells, int &in_n_verts, solution *FlowSol);
 
 /*! method to read position vertices in a gambit mesh */
 void read_vertices_gambit(string& in_file_name, int in_n_verts, int &out_n_verts_global, array<int> &in_iv2ivg, array<double> &out_xv, solution *FlowSol);
@@ -101,10 +101,10 @@ void read_connectivity_gambit(string& in_file_name, int &out_n_cells, array<int>
 void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n_v, array<int> &out_ctype, array<int> &out_ic2icg, struct solution* FlowSol);
 
 /*! method to read boundary faces in a gambit mesh */
-void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_ic2icg, array<int>& out_bctype, array<int> &out_bclist, array<array<int> > &out_bccells, array<array<int> > &out_bcfaces);
+void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_ic2icg, array<int>& out_bctype, array<int> &out_bclist, array<array<int> > &out_bccells, array<array<int> > &out_bcfaces, array<int> &out_bc_ncells);
 
 /*! method to read boundary faces in a gmsh mesh */
-void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic2icg, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& out_bctype, array<int> &out_bclist, array<int> &out_bound_flag, array<array<int> > &out_boundpts, array<int> &in_iv2ivg, int in_n_verts, array<int>& in_ctype, array<int> &in_icvsta, array<int> &in_icvert, solution *FlowSol);
+void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic2icg, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& out_bctype, array<int> &out_bclist, array<int> &out_bound_flag, array<array<int> > &out_boundpts, array<array<int> > &out_bccells, array<array<int> > &out_bcfaces, array<int>& out_bc_ncells, array<int> &in_iv2ivg, int in_n_verts, array<int> &in_ctype, array<int> &in_icvsta, array<int> &in_icvert, solution *FlowSol);
 
 /*! method to create bounpts array from Gambit reader output (vertex id = boundpts(bcid,i_pt) */
 void create_boundpts(array<array<int> >& out_boundpts, array<int> &in_bclist, array<int> &out_bound_flag, array<array<int> >& in_bccells, array<array<int> > &in_bcfaces, array<int>& in_c2f, array<int>& in_f2v, array<int> &in_f2nv);
@@ -129,7 +129,7 @@ void create_boundpts(array<array<int> >& out_boundpts, array<int> &in_bclist, ar
  * \param[out] out_n_edges - number of edges belonging to processor
  * \param[in] FlowSol - Structure with the entire solution and mesh information.
  */
-void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e, array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv,  array<int>& out_e2v, array<int>& out_v2n_e, array<array<int> >& out_v2e,array<int>& out_rot_tag, array<int>& out_unmatched_faces, int& out_n_unmatched_faces, array<int>& out_icvsta, array<int>& out_icvert, int& out_n_faces, int& out_n_edges, struct solution* FlowSol);
+void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e, array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv,  array<int>& out_e2v, array<int>& out_v2n_e, array<array<int> >& out_v2e,array<int> v2n_c, array<int>& out_rot_tag, array<int> &out_unmatched_faces, int &out_n_unmatched_faces, array<int>& out_icvsta, array<int> &out_icvert, int& out_n_faces, int &out_n_edges, solution *FlowSol);
 
 /*! Method that returns list of local vertices associated to a particular local face */
 void get_vlist_loc_face(int& in_ctype, int& in_nspt, int& in_face, array<int>& out_vlist_loc, int& num_v_per_f);

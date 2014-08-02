@@ -156,6 +156,18 @@ public:
 
   /*! calculate transformed discontinuous inviscid flux at solution points */
   void evaluate_flux_elasticity(void);
+
+  /*! set the displacement (discontinuous linear-elasticity solution) at a shape point */
+  void set_displacement_spt(int in_ele, int in_spt, array<double> in_disp);
+
+  /*! return the displacement (discontinuous linear-elasticity solution) at a shape point */
+  void get_displacement(int in_spt, int in_ele, array<double> &disp);
+
+  /*! Apply linear-elasticity boundary conditions to a boundary face in an element */
+  void apply_boundary_displacement_fpts(int in_local_inter, int in_ele);
+
+  /*! advance solution using a runge-kutta scheme */
+  void AdvanceSolutionElasticity(int in_step, int adv_type);
   /* --- End Linear-Elasticity Methods --- */
   
   /*! advance solution using a runge-kutta scheme */
@@ -192,7 +204,7 @@ public:
   void set_shape(int in_max_n_spts_per_ele);
 
   /*! set shape node */
-  void set_shape_node(int in_spt, int in_ele, array<double>& in_pos);
+  void set_shape_node(int in_spt, int in_ele, int in_vertex, array<double> &in_pos);
 
   /*! Set new position of shape node in dynamic domain */
   void set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos);
@@ -214,6 +226,12 @@ public:
   
   /*! get a pointer to the normal transformed continuous flux at a flux point */
   double* get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
+
+  /*! get a pointer to the transformed discontinuous solution at a flux point */
+  double* get_elas_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
+
+  /*! get a pointer to the normal transformed continuous flux at a flux point */
+  double* get_elas_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
 
   /*! get a pointer to the determinant of the jacobian at a flux point (static->computational) */
   double* get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
@@ -247,6 +265,12 @@ public:
 
   /*! get a pointer to gradient of discontinuous solution at a flux point */
   double* get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_field, int in_ele);
+
+  /*! get a pointer to delta of the transformed discontinuous solution at a flux point */
+  double* get_elas_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
+
+  /*! get a pointer to gradient of discontinuous solution at a flux point */
+  double* get_elas_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_field, int in_ele);
 
   /*! get a pointer to gradient of discontinuous solution at a flux point */
   double* get_normal_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele, array<double> temp_loc, double temp_pos[3]);
@@ -609,6 +633,7 @@ public:
   void rigid_grid_velocity(double rk_time);
   void perturb_grid_velocity(double rk_time);
 #endif
+
 protected:
 
   // #### members ####
@@ -1097,6 +1122,15 @@ protected:
 
   /*! gradient of discontinuous linear-elasticity solution at flux points */
   array<double> elas_grad_disu_fpts;
+
+  /*! array of displacements at all vertices in mesh (to be applied to/from eles spts) */
+  array<double> displacement;
+
+  /*! Set of parameters to control motion of moving boundaries */
+  array<array<double> > motion_params;
+
+  /*! shape point of each ele to global vertex id */
+  array<int> spt2vert;
   /*--- End Linear-Elasticity Variables ---*/
 
 #ifdef _GPU

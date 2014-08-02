@@ -168,33 +168,8 @@ int main(int argc, char *argv[]) {
     
     for(i=0; i < RKSteps; i++) {
 
-      /* If using moving mesh, need to advance the Geometric Conservation Law
-       * (GCL) first to get updated Jacobians. Necessary to preserve freestream
-       * on arbitrarily deforming mesh. See Kui Ou's Ph.D. thesis for details. */
-      if (run_input.motion > 0) {
-
-        /* Update the mesh */
-        Mesh.move(FlowSol.ini_iter+i_steps,i,&FlowSol);
-
-        /* Residual for Geometric Conservation Law (GCL) */
-        /*
-        if (run_input.GCL) {
-          CalcGCLResidual(&FlowSol);
-
-          // Time integration for Geometric Conservation Law (GCL) using a RK scheme
-          for(j=0; j<FlowSol.n_ele_types; j++) {
-
-            // Time Advance
-            FlowSol.mesh_eles(j)->AdvanceGCL(i, FlowSol.adv_type);
-
-            // Extrapolate Jacobians to flux points
-            FlowSol.mesh_eles(j)->extrapolate_GCL_solution(0);
-
-            // Reset transforms using updated Jacobians
-            FlowSol.mesh_eles(j)->correct_dynamic_transforms();
-          }
-        }*/
-      }
+      /*! Update the mesh */
+      if (run_input.motion) Mesh.move(FlowSol.ini_iter+i_steps,i);
 
       /*! Spatial integration. */
 

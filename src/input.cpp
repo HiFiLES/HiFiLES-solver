@@ -114,7 +114,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
     // Read section name
     in_run_input_file.getline(buf,BUFSIZ);
     sscanf(buf,"%s",section_TXT);
-    param_name.assign(section_TXT,0,99);
+    param_name.assign(section_TXT,0,99);    
     
     if (!param_name.compare(0,5,"-----"))
     {
@@ -364,6 +364,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
     else if (!param_name.compare("n_deform_iters"))
     {
       in_run_input_file >> n_deform_iters;
+    }
+    else if (!param_name.compare("elas_dt"))
+    {
+      in_run_input_file >> elas_dt;
     }
     else if (!param_name.compare("simple_bound_velocity"))
     {

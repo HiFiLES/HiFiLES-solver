@@ -116,7 +116,7 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
       norm_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
       pos_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
 
-      if (motion)
+      if (motion!=STATIC_MESH)
       {
         if (run_input.GCL) {
           disu_GCL_fpts_l.setup(n_fpts_per_inter,n_inters);
@@ -130,6 +130,14 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
       }
 
       delta_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
+
+      if (motion==LINEAR_ELASTICITY)
+      {
+        elas_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_dims);
+        elas_norm_tconf_fpts_l.setup(n_fpts_per_inter,n_inters,n_dims);
+        elas_delta_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_dims);
+        elas_grad_disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_dims,n_dims);
+      }
 
       if(viscous)
         {

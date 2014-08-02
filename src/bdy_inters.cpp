@@ -145,11 +145,27 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
         {
           tdA_fpts_l(j,in_inter)=get_tdA_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
 
-          if (motion) {
+          if (motion)
+          {
             ndA_dyn_fpts_l(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
             J_dyn_fpts_l(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
             //if (run_input.GCL)
               //disu_GCL_fpts_l(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+          }
+
+          if (motion==LINEAR_ELASTICITY)
+          {
+            for (int i=0; i<n_dims; i++)
+            {
+              elas_disu_fpts_l(j,in_inter,i)=get_elas_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+              elas_norm_tconf_fpts_l(j,in_inter,i)=get_elas_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+              elas_delta_disu_fpts_l(j,in_inter,i)=get_elas_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+
+              for(int k=0; k<n_dims; k++)
+              {
+                elas_grad_disu_fpts_l(j,in_inter,i,k)=get_elas_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+              }
+            }
           }
 
           for(int k=0;k<n_dims;k++)
@@ -1058,19 +1074,17 @@ void bdy_inters::calculate_boundary_flux_elasticity(void)
 
 #ifdef _CPU
   /*--- By definition of the mesh-deformation problem, flux is 0 on all boundaries
-   * (displacement specified & du/dt=0 during psudeo-time integration of linear-elasticity equations) ---*/
+   * (displacement specified & enforced using delta_disu_fpts & du/dt=0 during psudeo-time
+   * integration of linear-elasticity equations)
+   * There is technically some 'force' required to move mesh in first place, but by setting
+   * the flux to 0, we can also set the body force to 0 at the boundaries & get correct result ---*/
   for (int i=0; i<n_inters; i++) {
     for (int j=0; j<n_fpts_per_inter; j++) {
       for(int k=0;k<n_fields;k++) {
         (*elas_norm_tconf_fpts_l(j,i,k)) = 0.;
-        (*elas_norm_tconf_fpts_r(j,i,k)) = 0.;
       }
     }
   }
-  /* ... or should the flux just be the left flux?  Starting to think it shouldn't just be 0... must think about this
-  * just because du/dt=0 doesn't mean sigma is 0... there is technically some 'force' required to move mesh in first
-  * place, which means that del-dot-sigma is that non-zero value of the force... but they must sum to 0 anyways at
-  * the boundary... */
 #endif
 
 #ifdef _GPU

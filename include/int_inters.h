@@ -63,6 +63,9 @@ public:
   /*! calculate normal transformed continuous viscous flux at the flux points */
   void calculate_common_viscFlux(void);
 
+  /*! calculate common solution for later gradient correction for linear-elasticity equations */
+  void calculate_common_solution_elasticity(void);
+
   /*! calculate normal transformed continuous flux for linear-elasticity equations at the flux points */
   void calculate_common_flux_elasticity(void);
 
@@ -86,6 +89,12 @@ protected:
   array<double*> J_dyn_fpts_r;
   array<double*> disu_GCL_fpts_r;
   array<double*> norm_tconf_GCL_fpts_r;
+
+  // Linear-Elasticity variables:
+  array<double*> elas_disu_fpts_r;
+  array<double*> elas_delta_disu_fpts_r;
+  array<double*> elas_norm_tconf_fpts_r;
+  array<double*> elas_grad_disu_fpts_r;
 
   double temp_u_GCL_r;
   double temp_f_GCL_r;

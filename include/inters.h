@@ -150,4 +150,10 @@ public:
   array<double> temp_v;
   array<double> temp_fn_ref_l;
   array<double> temp_fn_ref_r;
+
+  // Linear-Elasticity variables
+  array<double*> elas_disu_fpts_l;
+  array<double*> elas_delta_disu_fpts_l;
+  array<double*> elas_norm_tconf_fpts_l;
+  array<double*> elas_grad_disu_fpts_l;
 };

@@ -183,15 +183,15 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (FlowSol->rank==0) cout << "Setting up mesh connectivity" << endl;
 
   //CompConnectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, rot_tag, unmatched_inters, n_unmatched_inters, icvsta, icvert, FlowSol->num_inters, FlowSol->num_edges, FlowSol);
-  CompConnectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, Mesh.e2v, Mesh.v2n_e, Mesh.v2e, rot_tag,
+  CompConnectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, Mesh.e2v, Mesh.v2n_e, Mesh.v2e, Mesh.v2n_c, rot_tag,
                    unmatched_inters, n_unmatched_inters, icvsta, icvert, FlowSol->num_inters, FlowSol->num_edges, FlowSol);
 
   if (FlowSol->rank==0) cout << "Done setting up mesh connectivity" << endl;
 
   // Reading boundaries
   //ReadBound(run_input.mesh_file,c2v,c2n_v,ctype,bctype_c,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts, FlowSol);
-  ReadBound(run_input.mesh_file,c2v,c2n_v,c2f,f2v,f2nv,ctype,bctype_c,Mesh.boundPts,Mesh.bc_list,Mesh.bound_flags,ic2icg,
-            icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts,FlowSol);
+  ReadBound(run_input.mesh_file,c2v,c2n_v,c2f,f2v,f2nv,ctype,bctype_c,Mesh.boundPts,Mesh.bc_list,Mesh.bound_flags,Mesh.bccells,Mesh.bcfaces,
+            Mesh.bc_ncells,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts,FlowSol);
 
   // ** TODO: clean up duplicate/redundant data **
   Mesh.c2f = c2f;
@@ -301,6 +301,12 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
   array<double> pos(FlowSol->n_dims);
 
+  array<int> v2n_c(Mesh.n_verts);
+  v2n_c.initialize_to_zero();
+  array<int> v2ctype(Mesh.n_verts,Mesh.v2n_c.get_max());
+  array<int> v2c(Mesh.n_verts,Mesh.v2n_c.get_max());
+  array<int> v2spt(Mesh.n_verts,Mesh.v2n_c.get_max());
+
   if (FlowSol->rank==0) cout << "setting elements shape ... ";
   for (int i=0;i<FlowSol->num_eles;i++) {
       if (ctype(i) == 0) //tri
@@ -310,15 +316,22 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           FlowSol->mesh_eles_tris.set_ele2global_ele(tris_count,ic2icg(i));
 
           for (int j=0;j<c2n_v(i);j++)
-            {
-              pos(0) = xv(c2v(i,j),0);
-              pos(1) = xv(c2v(i,j),1);
-              FlowSol->mesh_eles_tris.set_shape_node(j,tris_count,pos);
-            }
+          {
+            int iv = c2v(i,j);
+
+            pos(0) = xv(iv,0);
+            pos(1) = xv(iv,1);
+            FlowSol->mesh_eles_tris.set_shape_node(j,tris_count,iv,pos);
+
+            v2ctype(iv,v2n_c(iv)) = ctype(i);
+            v2c(iv,v2n_c(iv)) = tris_count;
+            v2spt(iv,v2n_c(iv)) = j;
+            v2n_c(iv)++;
+          }
 
           for (int j=0;j<3;j++) {
-              FlowSol->mesh_eles_tris.set_bctype(tris_count,j,bctype_c(i,j));
-            }
+            FlowSol->mesh_eles_tris.set_bctype(tris_count,j,bctype_c(i,j));
+          }
 
           tris_count++;
         }
@@ -328,15 +341,22 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           FlowSol->mesh_eles_quads.set_n_spts(quads_count,c2n_v(i));
           FlowSol->mesh_eles_quads.set_ele2global_ele(quads_count,ic2icg(i));
           for (int j=0;j<c2n_v(i);j++)
-            {
-              pos(0) = xv(c2v(i,j),0);
-              pos(1) = xv(c2v(i,j),1);
-              FlowSol->mesh_eles_quads.set_shape_node(j,quads_count,pos);
-            }
+          {
+            int iv = c2v(i,j);
+
+            pos(0) = xv(c2v(i,j),0);
+            pos(1) = xv(c2v(i,j),1);
+            FlowSol->mesh_eles_quads.set_shape_node(j,quads_count,iv,pos);
+
+            v2ctype(iv,v2n_c(iv)) = ctype(i);
+            v2c(iv,v2n_c(iv)) = quads_count;
+            v2spt(iv,v2n_c(iv)) = j;
+            v2n_c(iv)++;
+          }
 
           for (int j=0;j<4;j++) {
-              FlowSol->mesh_eles_quads.set_bctype(quads_count,j,bctype_c(i,j));
-            }
+            FlowSol->mesh_eles_quads.set_bctype(quads_count,j,bctype_c(i,j));
+          }
 
           quads_count++;
         }
@@ -346,16 +366,23 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           FlowSol->mesh_eles_tets.set_n_spts(tets_count,c2n_v(i));
           FlowSol->mesh_eles_tets.set_ele2global_ele(tets_count,ic2icg(i));
           for (int j=0;j<c2n_v(i);j++)
-            {
-              pos(0) = xv(c2v(i,j),0);
-              pos(1) = xv(c2v(i,j),1);
-              pos(2) = xv(c2v(i,j),2);
-              FlowSol->mesh_eles_tets.set_shape_node(j,tets_count,pos);
-            }
+          {
+            int iv = c2v(i,j);
+
+            pos(0) = xv(c2v(i,j),0);
+            pos(1) = xv(c2v(i,j),1);
+            pos(2) = xv(c2v(i,j),2);
+            FlowSol->mesh_eles_tets.set_shape_node(j,tets_count,iv,pos);
+
+            v2ctype(iv,v2n_c(iv)) = ctype(i);
+            v2c(iv,v2n_c(iv)) = tets_count;
+            v2spt(iv,v2n_c(iv)) = j;
+            v2n_c(iv)++;
+          }
 
           for (int j=0;j<4;j++) {
-              FlowSol->mesh_eles_tets.set_bctype(tets_count,j,bctype_c(i,j));
-            }
+            FlowSol->mesh_eles_tets.set_bctype(tets_count,j,bctype_c(i,j));
+          }
 
           tets_count++;
         }
@@ -365,16 +392,23 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           FlowSol->mesh_eles_pris.set_n_spts(pris_count,c2n_v(i));
           FlowSol->mesh_eles_pris.set_ele2global_ele(pris_count,ic2icg(i));
           for (int j=0;j<c2n_v(i);j++)
-            {
-              pos(0) = xv(c2v(i,j),0);
-              pos(1) = xv(c2v(i,j),1);
-              pos(2) = xv(c2v(i,j),2);
-              FlowSol->mesh_eles_pris.set_shape_node(j,pris_count,pos);
-            }
+          {
+            int iv = c2v(i,j);
+
+            pos(0) = xv(c2v(i,j),0);
+            pos(1) = xv(c2v(i,j),1);
+            pos(2) = xv(c2v(i,j),2);
+            FlowSol->mesh_eles_pris.set_shape_node(j,pris_count,iv,pos);
+
+            v2ctype(iv,v2n_c(iv)) = ctype(i);
+            v2c(iv,v2n_c(iv)) = pris_count;
+            v2spt(iv,v2n_c(iv)) = j;
+            v2n_c(iv)++;
+          }
 
           for (int j=0;j<5;j++) {
-              FlowSol->mesh_eles_pris.set_bctype(pris_count,j,bctype_c(i,j));
-            }
+            FlowSol->mesh_eles_pris.set_bctype(pris_count,j,bctype_c(i,j));
+          }
 
           pris_count++;
         }
@@ -384,21 +418,32 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           FlowSol->mesh_eles_hexas.set_n_spts(hexas_count,c2n_v(i));
           FlowSol->mesh_eles_hexas.set_ele2global_ele(hexas_count,ic2icg(i));
           for (int j=0;j<c2n_v(i);j++)
-            {
-              pos(0) = xv(c2v(i,j),0);
-              pos(1) = xv(c2v(i,j),1);
-              pos(2) = xv(c2v(i,j),2);
-              FlowSol->mesh_eles_hexas.set_shape_node(j,hexas_count,pos);
-            }
+          {
+            int iv = c2v(i,j);
+
+            pos(0) = xv(c2v(i,j),0);
+            pos(1) = xv(c2v(i,j),1);
+            pos(2) = xv(c2v(i,j),2);
+            FlowSol->mesh_eles_hexas.set_shape_node(j,hexas_count,iv,pos);
+
+            v2ctype(iv,v2n_c(iv)) = ctype(i);
+            v2c(iv,v2n_c(iv)) = hexas_count;
+            v2spt(iv,v2n_c(iv)) = j;
+            v2n_c(iv)++;
+          }
 
           for (int j=0;j<6;j++) {
-              FlowSol->mesh_eles_hexas.set_bctype(hexas_count,j,bctype_c(i,j));
-            }
+            FlowSol->mesh_eles_hexas.set_bctype(hexas_count,j,bctype_c(i,j));
+          }
 
           hexas_count++;
         }
     }
   if (FlowSol->rank==0) cout << "done." << endl;
+
+  Mesh.v2ctype = v2ctype;
+  Mesh.v2c = v2c;
+  Mesh.v2spt = v2spt;
 
   // Pre-compute shape basis - CRITICAL for deforming-mesh performance
   if (FlowSol->rank==0) cout << "pre-computing nodal shape-basis functions ... " << flush;
@@ -1024,6 +1069,7 @@ void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, 
 
 void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c2f, array<int>& in_f2v, array<int>& in_f2nv,
                array<int>& in_ctype, array<int>& out_bctype, array<array<int> >& out_boundpts, array<int> &out_bc_list, array<int>& out_bound_flag,
+               array<array<int> >& out_bccells, array<array<int> >& out_bcfaces, array<int>& out_bc_ncells,
                array<int>& in_ic2icg, array<int>& in_icvsta, array<int>&in_icvert, array<int>& in_iv2ivg, int& in_n_cells, int& in_n_verts,
                struct solution* FlowSol)
 {
@@ -1037,14 +1083,12 @@ void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, a
   out_bctype.initialize_to_zero();
 
   if (run_input.mesh_format==0) {
-    array<array<int> > bccells;
-    array<array<int> > bcfaces;
-    read_boundary_gambit(in_file_name, in_n_cells, in_ic2icg, out_bctype, out_bc_list, bccells, bcfaces);
+    read_boundary_gambit(in_file_name, in_n_cells, in_ic2icg, out_bctype, out_bc_list, out_bccells, out_bcfaces, out_bc_ncells);
     if (run_input.motion != 0)
-      create_boundpts(out_boundpts, out_bc_list, out_bound_flag, bccells, bcfaces, in_c2f, in_f2v, in_f2nv);
+      create_boundpts(out_boundpts, out_bc_list, out_bound_flag, out_bccells, out_bcfaces, in_c2f, in_f2v, in_f2nv);
   }
   else if (run_input.mesh_format==1) {
-    read_boundary_gmsh(in_file_name, in_n_cells, in_ic2icg, in_c2v, in_c2n_v, out_bctype, out_bc_list, out_bound_flag, out_boundpts, in_iv2ivg, in_n_verts, in_ctype, in_icvsta, in_icvert, FlowSol);
+    read_boundary_gmsh(in_file_name, in_n_cells, in_ic2icg, in_c2v, in_c2n_v, out_bctype, out_bc_list, out_bound_flag, out_boundpts, out_bccells, out_bcfaces, out_bc_ncells, in_iv2ivg, in_n_verts, in_ctype, in_icvsta, in_icvert, FlowSol);
   }
   else {
     FatalError("Mesh format not recognized");
@@ -1064,7 +1108,7 @@ void create_boundpts(array<array<int> >& out_boundpts, array<int>& in_bclist, ar
   out_bound_flag.setup(n_bcs);
   out_bound_flag.initialize_to_zero();
 
-  /** Find boundaries which are moving */
+  /* --- Find boundaries which are moving --- */
   for (int i=0; i<run_input.n_moving_bnds; i++) {
     if (run_input.boundary_flags(i).compare("FLUID"))  // if NOT 'FLUID'
     {
@@ -1078,7 +1122,7 @@ void create_boundpts(array<array<int> >& out_boundpts, array<int>& in_bclist, ar
     }
   }
 
-  /** --- CREATE BOUNDARY->POINTS STRUCTURE ---
+  /* --- CREATE BOUNDARY->POINTS STRUCTURE ---
     want: iv = boundpts(bcflag,ivert); */
   out_boundpts.setup(n_bcs);
   array<set<int> > Bounds(n_bcs);
@@ -1109,7 +1153,7 @@ void create_boundpts(array<array<int> >& out_boundpts, array<int>& in_bclist, ar
 
 // Method to read boundary edges in mesh file
 void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_ic2icg, array<int>& out_bctype, array<int> &out_bclist,
-                          array<array<int> >& out_bccells, array<array<int> >& out_bcfaces)
+                          array<array<int> >& out_bccells, array<array<int> >& out_bcfaces, array<int>& out_bc_ncells)
 {
 
   // input: ic2icg
@@ -1198,6 +1242,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
   out_bcfaces.setup(n_bcs);
   out_bccells.setup(n_bcs);
   out_bclist.setup(n_bcs);
+  out_bc_ncells.setup(n_bcs);
 
   for (int i=0;i<n_bcs;i++)
   {
@@ -1214,6 +1259,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
     out_bclist(i) = bcflag;
     out_bcfaces(i).setup(bcNF);
     out_bccells(i).setup(bcNF);
+    out_bc_ncells(i) = bcNF;
 
     int bdy_count = 0;
     int eleType;
@@ -1293,7 +1339,8 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
 }
 
 void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic2icg, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& out_bctype,
-                        array<int> &out_bclist, array<int> &out_bound_flag, array<array<int> >& out_boundpts, array<int>& in_iv2ivg,
+                        array<int> &out_bclist, array<int> &out_bound_flag, array<array<int> >& out_boundpts, array<array<int> >& out_bccells,
+                        array<array<int> >& out_bcfaces, array<int>& out_bc_ncells, array<int>& in_iv2ivg,
                         int in_n_verts, array<int>& in_ctype, array<int>& in_icvsta, array<int>& in_icvert, struct solution* FlowSol)
 {
   string str;
@@ -1314,7 +1361,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   // Read number of boundaries and fields defined
   int dummy;
   int n_bcs;;
-  int id,elmtype,ntags,bcid,bcdim,bcflag;
+  int id,elmtype,ntags,bcid,bcdim,bcflag,bc_num;
 
   char buf[BUFSIZ]={""};
   char bcTXT[100][100];// can read up to 100 different boundary conditions
@@ -1359,6 +1406,10 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   out_boundpts.setup(n_bcs);
   array<set<int> > Bounds;
   Bounds.setup(n_bcs);
+
+  array<vector<int> > bccells(n_bcs),bcfaces(n_bcs);
+  out_bc_ncells.setup(n_bcs);
+  out_bc_ncells.initialize_to_zero();
 
   //--- overwrite bc_list with bcflag (previously held gmsh bcid) ---
   for (int i=0; i<n_bcs; i++) {
@@ -1410,6 +1461,9 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
           bcname.erase(bcname.find_last_not_of(" \n\r\t")+1);
           bcname.erase(bcname.find_last_not_of("\"")+1);
           bcflag = get_bc_number(bcname);
+          for(bc_num=0; bc_num<n_bcs;bc_num++) {
+            if (out_bclist(bc_num)==bcflag) break;
+          }
         }
 
       bdy_count++;
@@ -1486,6 +1540,9 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
                   if (found==1)
                   {
                     out_bctype(ic,k)=bcflag;
+                    bccells(bc_num).push_back(ic); //out_bccells(bc_num,out_bc_ncells(bc_num)) = ic;
+                    bcfaces(bc_num).push_back(k); //out_bcfaces(bc_num,out_bc_ncells(bc_num)) = k;
+                    out_bc_ncells(bc_num)++;
                     break;
                   }
                 }
@@ -1510,6 +1567,24 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
     int j=0;
     for (it=Bounds(i).begin(); it!=Bounds(i).end(); it++) {
       out_boundpts(i)(j) = (*it);
+      j++;
+    }
+  }
+
+  vector<int>::iterator vit;
+  for (int i=0; i<n_bcs; i++) {
+    out_bccells(i).setup(out_bc_ncells(i));
+    out_bcfaces(i).setup(out_bc_ncells(i));
+    // Cells
+    int j=0;
+    for (vit=bccells(i).begin(); vit!=bccells(i).end(); vit++) {
+      out_bccells(i)(j) = *vit;
+      j++;
+    }
+    // Faces
+    j=0;
+    for (vit=bcfaces(i).begin(); vit!=bcfaces(i).end(); vit++) {
+      out_bcfaces(i)(j) = *vit;
       j++;
     }
   }
@@ -2372,7 +2447,7 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
 /*! method to create list of faces & edges from the mesh */
 void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e,
                       array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv,
-                      array<int>& out_e2v, array<int>& out_v2n_e, array<array<int> >& out_v2e,
+                      array<int>& out_e2v, array<int>& out_v2n_e, array<array<int> >& out_v2e, array<int> v2n_c,
                       array<int>& out_rot_tag, array<int>& out_unmatched_faces, int& out_n_unmatched_faces,
                       array<int>& out_icvsta, array<int>& out_icvert, int& out_n_faces, int& out_n_edges,
                       struct solution* FlowSol)
@@ -2394,8 +2469,6 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
 
   //array<int> num_v_per_c(5); // for 5 element types
   array<int> vlist_loc(MAX_V_PER_F),vlist_loc2(MAX_V_PER_F),vlist_glob(MAX_V_PER_F),vlist_glob2(MAX_V_PER_F); // faces cannot have more than 4 vertices
-
-  array<int> v2n_c;
 
   /**
    * "Moving pointer" that points to next unassigned entry in icvert (for each vertex)

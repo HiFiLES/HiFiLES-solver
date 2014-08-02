@@ -193,27 +193,32 @@ void CalcResidual(struct solution* FlowSol) {
 
 }
 
-void CalcResidualElasticity(struct solution* FlowSol) {
-
-  int in_disu_upts_from = 0;        /*!< Define... */
-  int in_div_tconf_upts_to = 0;     /*!< Define... */
+void CalcResidualElasticity_start(struct solution* FlowSol)
+{
   int i;                            /*!< Loop iterator */
 
   /*! Compute the solution at the flux points. */
   for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->extrapolate_solution_elasticity(in_disu_upts_from);
+    FlowSol->mesh_eles(i)->extrapolate_solution_elasticity();
 
-  if (FlowSol->viscous) {
-      /*! Compute the uncorrected gradient of the solution at the solution points. */
-      for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->calculate_gradient_elasticity(in_disu_upts_from);
-    }
+  /*! Compute the uncorrected gradient of the solution at the solution points. */
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calculate_gradient_elasticity();
+
+  /*! Compute common solution at interfaces for later gradient correction */
+  for(i=0; i<FlowSol->n_int_inter_types; i++)
+    FlowSol->mesh_int_inters(i).calculate_common_solution_elasticity();
 
   // Calculate modulus? (i.e E=1/area)  Probably do in flux funciton.
 
   /*! Calculate body forcing, if switched on (for mesh adaptation). */
-  for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->evaluate_bodyForce_elasticity(FlowSol->body_force);
+//  for(i=0; i<FlowSol->n_ele_types; i++)
+//    FlowSol->mesh_eles(i)->evaluate_bodyForce_elasticity(FlowSol->body_force);
+}
+
+void CalcResidualElasticity_finish(struct solution* FlowSol)
+{
+  int i;
 
   /*! Compute corrected gradient of the solution at the solution and flux points. */
   for(i=0; i<FlowSol->n_ele_types; i++)
@@ -239,11 +244,11 @@ void CalcResidualElasticity(struct solution* FlowSol) {
     FlowSol->mesh_int_inters(i).calculate_common_flux_elasticity();
 
   for(i=0; i<FlowSol->n_bdy_inter_types; i++)
-    FlowSol->mesh_bdy_inters(i).calculate_boundary_flux_elasticity(elas_time);
+    FlowSol->mesh_bdy_inters(i).calculate_boundary_flux_elasticity();
 
   /*! Compute divergence of the continuous flux and add to gradient of discontinuous flux at upts. */
   for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calculate_corrected_divergence_elasticity(in_div_tconf_upts_to);
+    FlowSol->mesh_eles(i)->calculate_corrected_divergence_elasticity();
 
 }
 
@@ -268,6 +273,18 @@ double* get_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_loca
 double* get_norm_tconf_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol)
 {
   return FlowSol->mesh_eles(in_ele_type)->get_norm_tconf_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
+}
+
+double* get_elas_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol)
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_elas_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
+}
+
+// get pointer to normal continuous transformed inviscid flux at a flux point
+
+double* get_elas_norm_tconf_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol)
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_elas_norm_tconf_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
 }
 
 // get pointer to subgrid-scale flux at a flux point
@@ -358,6 +375,19 @@ double* get_delta_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int i
 double* get_grad_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol)
 {
   return FlowSol->mesh_eles(in_ele_type)->get_grad_disu_fpts_ptr(in_fpt,in_local_inter,in_dim,in_field,in_ele);
+}
+
+// get pointer to delta of the transformed discontinuous solution at a flux point
+
+double* get_elas_delta_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int in_local_inter, int in_fpt, struct solution* FlowSol)
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_elas_delta_disu_fpts_ptr(in_fpt,in_local_inter,in_field,in_ele);
+}
+
+// get pointer to gradient of the discontinuous solution at a flux point
+double* get_elas_grad_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol)
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_elas_grad_disu_fpts_ptr(in_fpt,in_local_inter,in_dim,in_field,in_ele);
 }
 
 // get pointer to the discontinuous solution (close normal) at a flux point

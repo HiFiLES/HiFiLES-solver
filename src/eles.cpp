@@ -337,7 +337,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
     norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
     
-    if (motion && run_input.GCL) {
+    if (motion!=STATIC_MESH && run_input.GCL) {
       tdisf_GCL_upts.setup(n_upts_per_ele,n_eles,n_dims);
       tdisf_GCL_fpts.setup(n_upts_per_ele,n_eles,n_dims);
       norm_tdisf_GCL_fpts.setup(n_fpts_per_ele,n_eles);
@@ -364,7 +364,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       }
     }
 
-    if (motion==1) { // Using linear-elasticity method
+    // For linear-elasticity method
+    if (motion==LINEAR_ELASTICITY) {
       elas_div_tconf_upts.setup(n_adv_levels);
       for(int i=0;i<n_adv_levels;i++)
       {
@@ -379,6 +380,11 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       elas_tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
       elas_norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
       elas_norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+
+      // Storing displacement at shape points (mesh vertices)
+      displacement.setup(n_dims,in_max_n_spts_per_ele,n_eles);
+      motion_params = run_input.bound_vel_simple;
+      spt2vert.setup(n_upts_per_ele,n_eles);
     }
 
     if(viscous)
@@ -1071,71 +1077,21 @@ void eles::AdvanceSolutionElasticity(int in_step, int adv_type) {
        */
 
 #ifdef _CPU
-      // If using global minimum timestep based on CFL, determine
-      // global minimum
-      if (run_input.dt_type == 1)
-      {
-        // Find minimum timestep
-        dt_local(0) = 1e12; // Set to large value
-
-        for (int ic=0; ic<n_eles; ic++)
-        {
-          dt_local_new = calc_dt_local(ic);
-
-          if (dt_local_new < dt_local(0))
-            dt_local(0) = dt_local_new;
-        }
-
-        // If running in parallel, gather minimum timestep values from
-        // each partition and find global minumum across partitions
-#ifdef _MPI
-        MPI_Barrier(MPI_COMM_WORLD);
-        MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
-                      1, MPI_DOUBLE, MPI_COMM_WORLD);
-        MPI_Barrier(MPI_COMM_WORLD);
-
-        dt_local(0) = dt_local_mpi.get_min();
-#endif
-      }
-
-      // If using local timestepping, just compute and store all local
-      // timesteps
-      if (run_input.dt_type == 2)
-      {
-        for (int ic=0; ic<n_eles; ic++)
-          dt_local(ic) = calc_dt_local(ic);
-      }
-
       for (int i=0;i<n_dims;i++)
       {
         for (int ic=0;ic<n_eles;ic++)
         {
           for (int inp=0;inp<n_upts_per_ele;inp++)
           {
-            // User supplied timestep
-            if (run_input.dt_type == 0)
-              elas_disu_upts(0)(inp,ic,i) -= run_input.dt*(elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - elas_force(inp,ic,i));
-
-            // Global minimum timestep
-            else if (run_input.dt_type == 1)
-              elas_disu_upts(0)(inp,ic,i) -= dt_local(0)*(elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - elas_force(inp,ic,i));
-
-            // Element local timestep
-            else if (run_input.dt_type == 2)
-              elas_disu_upts(0)(inp,ic,i) -= dt_local(ic)*(elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - elas_force(inp,ic,i));
-            else
-              FatalError("ERROR: dt_type not recognized!")
-
+            elas_disu_upts(0)(inp,ic,i) -= run_input.elas_dt*(elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic));// + elas_force(inp,ic,i));
           }
         }
       }
-
 #endif
 
 #ifdef _GPU
-      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
+      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_eles,elas_disu_upts(0).get_ptr_gpu(),elas_div_tconf_upts(0).get_ptr_gpu(),elas_force.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),elas_dt);
 #endif
-
     }
 
     /*! Time integration using a RK45 method. */
@@ -1165,76 +1121,28 @@ void eles::AdvanceSolutionElasticity(int in_step, int adv_type) {
       }
 
 #ifdef _CPU
-      // for first stage only, compute timestep
-      if (in_step == 0)
-      {
-        // For global timestepping, find minimum timestep
-        if (run_input.dt_type == 1)
-        {
-          dt_local(0) = 1e12;
-
-          for (int ic=0; ic<n_eles; ic++)
-          {
-            dt_local_new = calc_dt_local(ic);
-
-            if (dt_local_new < dt_local(0))
-            {
-              dt_local(0) = dt_local_new;
-            }
-          }
-
-
-          // If using MPI, find minimum across partitions
-#ifdef _MPI
-          MPI_Barrier(MPI_COMM_WORLD);
-          MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),1,MPI_DOUBLE,MPI_COMM_WORLD);
-          MPI_Barrier(MPI_COMM_WORLD);
-
-          dt_local(0) = dt_local_mpi.get_min();
-#endif
-        }
-
-        // For local timestepping, find element local timesteps
-        if (run_input.dt_type == 2)
-        {
-          for (int ic=0; ic<n_eles; ic++)
-          {
-            dt_local(ic) = calc_dt_local(ic);
-          }
-        }
-      }
-
       double res, rhs;
       for (int ic=0;ic<n_eles;ic++)
       {
-        for (int i=0;i<n_fields;i++)
+        for (int i=0;i<n_dims;i++)
         {
           for (int inp=0;inp<n_upts_per_ele;inp++)
           {
-            rhs = -elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + elas_force(inp,ic,i);
+            rhs = -elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic);// + elas_force(inp,ic,i);
             res = elas_disu_upts(1)(inp,ic,i);
 
-            if (run_input.dt_type == 0)
-              res = rk4a*res + run_input.dt*rhs;
-            else if (run_input.dt_type == 1)
-              res = rk4a*res + dt_local(0)*rhs;
-            else if (run_input.dt_type == 2)
-              res = rk4a*res + dt_local(ic)*rhs;
+            res = rk4a*res + run_input.elas_dt*rhs;
 
-            disu_upts(1)(inp,ic,i) = res;
-            disu_upts(0)(inp,ic,i) += rk4b*res;
+            elas_disu_upts(1)(inp,ic,i) = res;
+            elas_disu_upts(0)(inp,ic,i) += rk4b*res;
           }
         }
       }
-
 #endif
 
 #ifdef _GPU
-
-      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
-
+      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_eles,elas_disu_upts(0).get_ptr_gpu(),elas_disu_upts(1).get_ptr_gpu(),elas_div_tconf_upts(0).get_ptr_gpu(),elas_force.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a,rk4b,elas_dt);
 #endif
-
     }
 
     /*! Time integration not implemented. */
@@ -3643,7 +3551,7 @@ void eles::calculate_corrected_divergence_elasticity(void)
 
 // calculate uncorrected transformed gradient of the discontinuous solution at the solution points
 // (mixed derivative)
-void eles::calculate_gradient_elasticity(0)
+void eles::calculate_gradient_elasticity(void)
 {
   if (n_eles!=0)
   {
@@ -3827,47 +3735,45 @@ void eles::correct_gradient_elasticity(void)
           }
         }
 
-        if (motion) {
-          // Transform to dynamic-physical domain
-          detjac = J_dyn_upts(j,i);
-          inv_detjac = 1.0/detjac;
+        // Transform to dynamic-physical domain
+        detjac = J_dyn_upts(j,i);
+        inv_detjac = 1.0/detjac;
 
-          Xx = JGinv_dyn_upts(0,0,j,i)*inv_detjac;
-          Xy = JGinv_dyn_upts(0,1,j,i)*inv_detjac;
-          Yx = JGinv_dyn_upts(1,1,j,i)*inv_detjac;
-          Yy = JGinv_dyn_upts(1,1,j,i)*inv_detjac;
+        Xx = JGinv_dyn_upts(0,0,j,i)*inv_detjac;
+        Xy = JGinv_dyn_upts(0,1,j,i)*inv_detjac;
+        Yx = JGinv_dyn_upts(1,1,j,i)*inv_detjac;
+        Yy = JGinv_dyn_upts(1,1,j,i)*inv_detjac;
 
-          //physical gradient
-          if(n_dims==2)
+        //physical gradient
+        if(n_dims==2)
+        {
+          for(int k=0;k<n_dims;k++)
           {
-            for(int k=0;k<n_dims;k++)
-            {
-              uX = elas_grad_disu_upts(j,i,k,0);
-              uY = elas_grad_disu_upts(j,i,k,1);
+            uX = elas_grad_disu_upts(j,i,k,0);
+            uY = elas_grad_disu_upts(j,i,k,1);
 
-              elas_grad_disu_upts(j,i,k,0) = uX*Xx + uY*Yx;
-              elas_grad_disu_upts(j,i,k,1) = uX*Xy + uY*Yy;
-            }
+            elas_grad_disu_upts(j,i,k,0) = uX*Xx + uY*Yx;
+            elas_grad_disu_upts(j,i,k,1) = uX*Xy + uY*Yy;
           }
-          if (n_dims==3)
+        }
+        if (n_dims==3)
+        {
+          Xz = JGinv_dyn_upts(j,i,0,2)*inv_detjac;
+          Yz = JGinv_dyn_upts(j,i,1,2)*inv_detjac;
+
+          Zx = JGinv_dyn_upts(j,i,2,0)*inv_detjac;
+          Zy = JGinv_dyn_upts(j,i,2,1)*inv_detjac;
+          Zz = JGinv_dyn_upts(j,i,2,2)*inv_detjac;
+
+          for (int k=0;k<n_dims;k++)
           {
-            Xz = JGinv_dyn_upts(j,i,0,2)*inv_detjac;
-            Yz = JGinv_dyn_upts(j,i,1,2)*inv_detjac;
+            uX = elas_grad_disu_upts(j,i,k,0);
+            uY = elas_grad_disu_upts(j,i,k,1);
+            uZ = elas_grad_disu_upts(j,i,k,2);
 
-            Zx = JGinv_dyn_upts(j,i,2,0)*inv_detjac;
-            Zy = JGinv_dyn_upts(j,i,2,1)*inv_detjac;
-            Zz = JGinv_dyn_upts(j,i,2,2)*inv_detjac;
-
-            for (int k=0;k<n_dims;k++)
-            {
-              uX = elas_grad_disu_upts(j,i,k,0);
-              uY = elas_grad_disu_upts(j,i,k,1);
-              uZ = elas_grad_disu_upts(j,i,k,2);
-
-              elas_grad_disu_upts(j,i,k,0) = uX*Xx + uY*Yx + uZ*Zx;
-              elas_grad_disu_upts(j,i,k,1) = uX*Xy + uY*Yy + uZ*Zy;
-              elas_grad_disu_upts(j,i,k,2) = uX*Xz + uY*Yz + uZ*Zz;
-            }
+            elas_grad_disu_upts(j,i,k,0) = uX*Xx + uY*Yx + uZ*Zx;
+            elas_grad_disu_upts(j,i,k,1) = uX*Xy + uY*Yy + uZ*Zy;
+            elas_grad_disu_upts(j,i,k,2) = uX*Xz + uY*Yz + uZ*Zz;
           }
         }
       }
@@ -4009,20 +3915,20 @@ void eles::evaluate_flux_elasticity(void)
         calc_elasticity_flux(n_dims,temp_grad_u,temp_f);
 
         // Transfer back to static-phsycial domain
-          temp_f_ref.initialize_to_zero();
-          for(k=0;k<n_dims;k++) {
-            for(l=0;l<n_dims;l++) {
-              for(m=0;m<n_dims;m++) {
-                temp_f_ref(k,l)+=JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
-              }
+        temp_f_ref.initialize_to_zero();
+        for(k=0;k<n_dims;k++) {
+          for(l=0;l<n_dims;l++) {
+            for(m=0;m<n_dims;m++) {
+              temp_f_ref(k,l)+=JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
             }
           }
-          // Copy back to original flux array
-          for(l=0; l<n_dims; l++) {
-            for (k=0; k<n_dims; k++) {
-              temp_f(k,l) = temp_f_ref(k,l);
-            }
+        }
+        // Copy back to original flux array
+        for(l=0; l<n_dims; l++) {
+          for (k=0; k<n_dims; k++) {
+            temp_f(k,l) = temp_f_ref(k,l);
           }
+        }
 
         // Transform viscous flux
         for(k=0;k<n_dims;k++)
@@ -4110,7 +4016,7 @@ void eles::set_shape(int in_max_n_spts_per_ele)
 
 // set a shape node
 
-void eles::set_shape_node(int in_spt, int in_ele, array<double>& in_pos)
+void eles::set_shape_node(int in_spt, int in_ele, int in_vertex, array<double>& in_pos)
 {
   for(int i=0;i<n_dims;i++)
   {
@@ -4118,6 +4024,8 @@ void eles::set_shape_node(int in_spt, int in_ele, array<double>& in_pos)
     for (int j=0; j<5; j++)
       shape_dyn(i,in_spt,in_ele,j)=in_pos(i);
   }
+
+  spt2vert(in_spt,in_ele) = in_vertex;
 }
 
 void eles::set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos)
@@ -5982,6 +5890,51 @@ double* eles::get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
   
 }
 
+// get a pointer to the transformed discontinuous solution at a flux point
+
+double* eles::get_elas_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele)
+{
+  int i;
+
+  int fpt;
+
+  fpt=in_inter_local_fpt;
+
+  for(i=0;i<in_ele_local_inter;i++)
+  {
+    fpt+=n_fpts_per_inter(i);
+  }
+
+#ifdef _GPU
+  return elas_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
+#else
+  return elas_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
+#endif
+}
+
+// get a pointer to the normal transformed continuous inviscid flux at a flux point
+
+double* eles::get_elas_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele)
+{
+  int i;
+
+  int fpt;
+
+  fpt=in_inter_local_fpt;
+
+  for(i=0;i<in_ele_local_inter;i++)
+  {
+    fpt+=n_fpts_per_inter(i);
+  }
+
+#ifdef _GPU
+  return elas_norm_tconf_fpts.get_ptr_gpu(fpt,in_ele,in_field);
+#else
+  return elas_norm_tconf_fpts.get_ptr_cpu(fpt,in_ele,in_field);
+#endif
+
+}
+
 // get a pointer to the determinant of the jacobian at a flux point
 
 double* eles::get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
@@ -6215,6 +6168,50 @@ double* eles::get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_in
   return grad_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field,in_dim);
 #else
   return grad_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field,in_dim);
+#endif
+}
+
+// get a pointer to delta of the transformed discontinuous solution at a flux point
+
+double* eles::get_elas_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele)
+{
+  int i;
+
+  int fpt;
+
+  fpt=in_inter_local_fpt;
+
+  for(i=0;i<in_ele_local_inter;i++)
+  {
+    fpt+=n_fpts_per_inter(i);
+  }
+
+#ifdef _GPU
+  return elas_delta_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field);
+#else
+  return elas_delta_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field);
+#endif
+}
+
+// get a pointer to gradient of discontinuous solution at a flux point
+
+double* eles::get_elas_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_dim, int in_field, int in_ele)
+{
+  int i;
+
+  int fpt;
+
+  fpt=in_inter_local_fpt;
+
+  for(i=0;i<in_ele_local_inter;i++)
+  {
+    fpt+=n_fpts_per_inter(i);
+  }
+
+#ifdef _GPU
+  return elas_grad_disu_fpts.get_ptr_gpu(fpt,in_ele,in_field,in_dim);
+#else
+  return elas_grad_disu_fpts.get_ptr_cpu(fpt,in_ele,in_field,in_dim);
 #endif
 }
 
@@ -7965,3 +7962,42 @@ void eles::calc_grid_velocity(void)
   }
 }
 #endif
+
+/*! Set the grid velocity at one shape point */
+void eles::set_displacement_spt(int in_ele, int in_spt, array<double> in_disp)
+{
+  for (int i=0; i<n_dims; i++)
+    displacement(i,in_spt,in_ele) = in_disp(i);
+}
+
+void eles::get_displacement(int in_spt, int in_ele, array<double> &disp)
+{
+  for (int i=0; i<n_dims; i++)
+    disp(i) = displacement(in_spt,in_ele,i);
+}
+
+void eles::apply_boundary_displacement_fpts(int in_local_inter, int in_ele)
+{
+  int i, j;
+  int fpt, fpt_start;
+  array<double> disp(n_dims);
+
+  fpt_start = 0;
+  for(i=0;i<in_local_inter;i++) {
+    fpt_start+=n_fpts_per_inter(i);
+  }
+
+  for (fpt=fpt_start; fpt<(fpt_start+n_fpts_per_inter(in_local_inter)); fpt++) {
+    // Interpolate displacement from shape points to flux points
+    for(i=0;i<n_dims;i++) {
+      disp(i) = 0;
+      for(j=0;j<n_spts_per_ele(in_ele);j++) {
+       disp(i) += nodal_s_basis_fpts(j,fpt,in_ele)*displacement(i,j,in_ele);
+      }
+    }
+    // Assign value of delta_disu_fpts & transform to static space
+    for (i=0; i<n_dims; i++) {
+      elas_delta_disu_fpts(fpt,in_ele,i) = (disp(i) - elas_disu_fpts(fpt,in_ele,i))*J_dyn_fpts(fpt,in_ele);
+    }
+  }
+}

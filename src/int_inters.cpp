@@ -69,26 +69,34 @@ void int_inters::setup(int in_n_inters,int in_inter_type)
 
   (*this).setup_inters(in_n_inters,in_inter_type);
 
-      disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
-      norm_tconf_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
-      detjac_fpts_r.setup(n_fpts_per_inter,n_inters);
-      tdA_fpts_r.setup(n_fpts_per_inter,n_inters);
+  disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
+  norm_tconf_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
+  detjac_fpts_r.setup(n_fpts_per_inter,n_inters);
+  tdA_fpts_r.setup(n_fpts_per_inter,n_inters);
 
-      if (motion) {
-        if (run_input.GCL) {
-          //disu_GCL_fpts_r.setup(n_fpts_per_inter,n_inters);
-          //norm_tconf_GCL_fpts_r.setup(n_fpts_per_inter,n_inters);
-        }
-        ndA_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
-        J_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
-      }
+  if (motion!=STATIC_MESH) {
+    if (run_input.GCL) {
+      //disu_GCL_fpts_r.setup(n_fpts_per_inter,n_inters);
+      //norm_tconf_GCL_fpts_r.setup(n_fpts_per_inter,n_inters);
+    }
+    ndA_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
+    J_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
+  }
 
-      delta_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
+  delta_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields);
 
-      if(viscous)
-        {
-          grad_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
-        }
+  if(viscous)
+  {
+    grad_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
+  }
+
+  if (motion==LINEAR_ELASTICITY)
+  {
+    elas_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_dims);
+    elas_norm_tconf_fpts_r.setup(n_fpts_per_inter,n_inters,n_dims);
+    elas_delta_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_dims);
+    elas_grad_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_dims,n_dims);
+  }
 }
 
 // set interior interface
@@ -97,84 +105,108 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
   int i,j,k;
   int i_rhs,j_rhs;
 
-      get_lut(rot_tag);
+  get_lut(rot_tag);
 
-      for(i=0;i<n_fields;i++)
+  for(i=0;i<n_fields;i++)
+  {
+    for(j=0;j<n_fpts_per_inter;j++)
+    {
+      j_rhs=lut(j);
+
+      disu_fpts_l(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+      disu_fpts_r(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
+
+      norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+      norm_tconf_fpts_r(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
+
+      for (int k=0;k<n_dims;k++)
+      {
+        if(viscous)
         {
-          for(j=0;j<n_fpts_per_inter;j++)
-            {
-              j_rhs=lut(j);
 
-              disu_fpts_l(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-              disu_fpts_r(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
+          delta_disu_fpts_l(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+          delta_disu_fpts_r(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
 
-              norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-              norm_tconf_fpts_r(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
-
-              for (int k=0;k<n_dims;k++)
-                {
-                  if(viscous)
-                    {
-
-                      delta_disu_fpts_l(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
-                      delta_disu_fpts_r(j,in_inter,i)=get_delta_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
-
-                      grad_disu_fpts_l(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
-                      grad_disu_fpts_r(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
-                    }
-
-                  // Subgrid-scale flux
-                  if(LES)
-                    {
-                      sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
-                      sgsf_fpts_r(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
-                    }
-                }
-            }
+          grad_disu_fpts_l(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+          grad_disu_fpts_r(j,in_inter,i,k) = get_grad_disu_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
         }
 
-      if (motion)
-      {
-        for(j=0;j<n_fpts_per_inter;j++)
+        // Subgrid-scale flux
+        if(LES)
         {
-          j_rhs=lut(j);
-
-          if (run_input.GCL) {
-//            disu_GCL_fpts_l(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-//            disu_GCL_fpts_r(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
-
-//            norm_tconf_GCL_fpts_l(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-//            norm_tconf_GCL_fpts_r(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
-          }
-
-          ndA_dyn_fpts_l(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-          ndA_dyn_fpts_r(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
-
-          // pretty sure these should be the same due to the continuous nature of the dynamic->static mapping.
-          // But, leave it this way for now just in case.
-          J_dyn_fpts_l(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-          J_dyn_fpts_r(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
-
-          for (k=0; k<n_dims; k++) {
-            norm_dyn_fpts(j,in_inter,k)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
-            grid_vel_fpts(j,in_inter,k)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
-            pos_dyn_fpts(j,in_inter,k)=get_pos_dyn_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
-          }
+          sgsf_fpts_l(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+          sgsf_fpts_r(j,in_inter,i,k) = get_sgsf_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
         }
       }
+    }
+  }
 
-      for(i=0;i<n_fpts_per_inter;i++)
+  if (motion!=STATIC_MESH)
+  {
+    for(j=0;j<n_fpts_per_inter;j++)
+    {
+      j_rhs=lut(j);
+
+      if (run_input.GCL) {
+        //disu_GCL_fpts_l(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+        //disu_GCL_fpts_r(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
+
+        //norm_tconf_GCL_fpts_l(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+        //norm_tconf_GCL_fpts_r(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
+      }
+
+      ndA_dyn_fpts_l(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+      ndA_dyn_fpts_r(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
+
+      // pretty sure these should be the same due to the continuous nature of the dynamic->static mapping.
+      // But, leave it this way for now just in case.
+      J_dyn_fpts_l(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+      J_dyn_fpts_r(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
+
+      for (k=0; k<n_dims; k++) {
+        norm_dyn_fpts(j,in_inter,k)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+        grid_vel_fpts(j,in_inter,k)=get_grid_vel_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+        pos_dyn_fpts(j,in_inter,k)=get_pos_dyn_fpts_ptr_cpu(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
+      }
+    }
+  }
+
+  if (motion==LINEAR_ELASTICITY)
+  {
+    for(j=0;j<n_fpts_per_inter;j++)
+    {
+      j_rhs=lut(j);
+      for (i=0; i<n_dims; i++) {
+        elas_disu_fpts_l(j,in_inter,i)=get_elas_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+        elas_disu_fpts_r(j,in_inter,i)=get_elas_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
+
+        elas_norm_tconf_fpts_l(j,in_inter,i)=get_elas_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+        elas_norm_tconf_fpts_r(j,in_inter,i)=get_elas_norm_tconf_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
+
+        for (int k=0;k<n_dims;k++)
         {
-          i_rhs=lut(i);
+          elas_delta_disu_fpts_l(j,in_inter,i)=get_elas_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+          elas_delta_disu_fpts_r(j,in_inter,i)=get_elas_delta_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
 
-          tdA_fpts_l(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
-          tdA_fpts_r(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
-
-          for(j=0;j<n_dims;j++)
-            {
-              norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-            }
+          elas_grad_disu_fpts_l(j,in_inter,i,k) = get_elas_grad_disu_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,k,j,FlowSol);
+          elas_grad_disu_fpts_r(j,in_inter,i,k) = get_elas_grad_disu_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i,k,j_rhs,FlowSol);
         }
+      }
+    }
+  }
+
+  for(i=0;i<n_fpts_per_inter;i++)
+  {
+    i_rhs=lut(i);
+
+    tdA_fpts_l(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
+    tdA_fpts_r(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+
+    for(j=0;j<n_dims;j++)
+    {
+      norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
+    }
+  }
 }
 
 // move all from cpu to gpu
@@ -469,6 +501,42 @@ void int_inters::calculate_common_viscFlux(void)
 #endif
 }
 
+// calculate common solution for later gradient correction
+void int_inters::calculate_common_solution_elasticity(void)
+{
+
+#ifdef _CPU
+  array<double> u_c(n_dims);
+
+  for(int i=0;i<n_inters;i++)
+  {
+    for(int j=0;j<n_fpts_per_inter;j++)
+    {
+
+      // calculate discontinuous solution at flux points
+      for(int k=0;k<n_dims;k++) {
+        temp_u_l(k)=(*disu_fpts_l(j,i,k))/(*J_dyn_fpts_l(j,i));
+        temp_u_r(k)=(*disu_fpts_r(j,i,k))/(*J_dyn_fpts_r(j,i));
+      }
+
+      for (int k=0; k<n_dims; k++) {
+        u_c(k) = 0.5*(temp_u_l(k) + temp_u_r(k));
+      }
+
+      for(int k=0;k<n_fields;k++) {
+        *elas_delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k))*(*J_dyn_fpts_l(j,i));
+        *elas_delta_disu_fpts_r(j,i,k) = (u_c(k) - temp_u_r(k))*(*J_dyn_fpts_r(j,i));
+      }
+    }
+  }
+#endif
+
+#ifdef _GPU
+  if (n_inters!=0)
+    calculate_common_solution_elasticity_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),tdA_fpts_r.get_ptr_gpu(),ndA_dyn_fpts_l.get_ptr_gpu(),ndA_dyn_fpts_r.get_ptr_gpu(),J_dyn_fpts_l.get_ptr_gpu(),J_dyn_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu(),run_input.riemann_solve_type,delta_disu_fpts_l.get_ptr_gpu(),delta_disu_fpts_r.get_ptr_gpu(),run_input.gamma,run_input.pen_fact,viscous,motion,run_input.vis_riemann_solve_type,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.lambda);
+#endif
+}
+
 /*! calculate normal transformed continuous viscous flux at the flux points */
 void int_inters::calculate_common_flux_elasticity(void)
 {
@@ -483,7 +551,7 @@ void int_inters::calculate_common_flux_elasticity(void)
       // obtain physical gradient of discontinuous solution at flux points
       for(int k=0;k<n_dims;k++)
       {
-        for(int l=0;l<dims;l++)
+        for(int l=0;l<n_dims;l++)
         {
           temp_grad_u_l(l,k) = *elas_grad_disu_fpts_l(j,i,l,k);
           temp_grad_u_r(l,k) = *elas_grad_disu_fpts_r(j,i,l,k);
