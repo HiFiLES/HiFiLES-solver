@@ -129,7 +129,7 @@ void create_boundpts(array<array<int> >& out_boundpts, array<int> &in_bclist, ar
  * \param[out] out_n_edges - number of edges belonging to processor
  * \param[in] FlowSol - Structure with the entire solution and mesh information.
  */
-void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e, array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv,  array<int>& out_e2v, array<int>& out_v2n_e, array<array<int> >& out_v2e,array<int> v2n_c, array<int>& out_rot_tag, array<int> &out_unmatched_faces, int &out_n_unmatched_faces, array<int>& out_icvsta, array<int> &out_icvert, int& out_n_faces, int &out_n_edges, solution *FlowSol);
+void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e, array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv,  array<int>& out_e2v, array<int>& out_v2n_e, array<array<int> >& out_v2e,array<int> &v2n_c, array<int>& out_rot_tag, array<int> &out_unmatched_faces, int &out_n_unmatched_faces, array<int>& out_icvsta, array<int> &out_icvert, int& out_n_faces, int &out_n_edges, solution *FlowSol);
 
 /*! Method that returns list of local vertices associated to a particular local face */
 void get_vlist_loc_face(int& in_ctype, int& in_nspt, int& in_face, array<int>& out_vlist_loc, int& num_v_per_f);

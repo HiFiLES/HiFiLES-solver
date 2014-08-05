@@ -209,6 +209,9 @@ void CalcResidualElasticity_start(struct solution* FlowSol)
   for(i=0; i<FlowSol->n_int_inter_types; i++)
     FlowSol->mesh_int_inters(i).calculate_common_solution_elasticity();
 
+  for(i=0; i<FlowSol->n_int_inter_types; i++)
+    FlowSol->mesh_bdy_inters(i).set_boundary_conditions_elasticity();
+
   // Calculate modulus? (i.e E=1/area)  Probably do in flux funciton.
 
   /*! Calculate body forcing, if switched on (for mesh adaptation). */
@@ -225,7 +228,7 @@ void CalcResidualElasticity_finish(struct solution* FlowSol)
     FlowSol->mesh_eles(i)->correct_gradient_elasticity();
 
   for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->extrapolate_corrected_gradient();
+    FlowSol->mesh_eles(i)->extrapolate_corrected_gradient_elasticity();
 
   /*! Compute discontinuous flux at upts. */
   for(i=0; i<FlowSol->n_ele_types; i++)

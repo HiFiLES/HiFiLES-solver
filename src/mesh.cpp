@@ -59,37 +59,37 @@ mesh::mesh(void)
 
   iter = 0;
 
-  bc_name["Sub_In_Simp"] = 1;
-  bc_name["Sub_Out_Simp"] = 2;
-  bc_name["Sub_In_Char"] = 3;
-  bc_name["Sub_Out_Char"] = 4;
-  bc_name["Sup_In"] = 5;
-  bc_name["Sup_Out"] = 6;
-  bc_name["Slip_Wall"] = 7;
-  bc_name["Cyclic"] = 9;
-  bc_name["Isotherm_Fix"] = 11;
-  bc_name["Adiabat_Fix"] = 12;
-  bc_name["Isotherm_Move"] = 13;
-  bc_name["Adiabat_Move"] = 14;
-  bc_name["Char"] = 15;
-  bc_name["Slip_Wall_Dual"] = 16;
-  bc_name["AD_Wall"] = 50;
+  bc_num["Sub_In_Simp"] = 1;
+  bc_num["Sub_Out_Simp"] = 2;
+  bc_num["Sub_In_Char"] = 3;
+  bc_num["Sub_Out_Char"] = 4;
+  bc_num["Sup_In"] = 5;
+  bc_num["Sup_Out"] = 6;
+  bc_num["Slip_Wall"] = 7;
+  bc_num["Cyclic"] = 9;
+  bc_num["Isotherm_Fix"] = 11;
+  bc_num["Adiabat_Fix"] = 12;
+  bc_num["Isotherm_Move"] = 13;
+  bc_num["Adiabat_Move"] = 14;
+  bc_num["Char"] = 15;
+  bc_num["Slip_Wall_Dual"] = 16;
+  bc_num["AD_Wall"] = 50;
 
-  bc_flag[1] = "Sub_In_Simp";
-  bc_flag[2] = "Sub_Out_Simp";
-  bc_flag[3] = "Sub_In_Char";
-  bc_flag[4] = "Sub_Out_Char";
-  bc_flag[5] = "Sup_In";
-  bc_flag[6]= "Sup_Out";
-  bc_flag[7]= "Slip_Wall";
-  bc_flag[9]= "Cyclic";
-  bc_flag[11]= "Isotherm_Fix";
-  bc_flag[12]= "Adiabat_Fix";
-  bc_flag[13]= "Isotherm_Move";
-  bc_flag[14]= "Adiabat_Move";
-  bc_flag[15]= "Char";
-  bc_flag[16]= "Slip_Wall_Dual";
-  bc_flag[50]= "AD_Wall";
+  bc_string[1] = "Sub_In_Simp";
+  bc_string[2] = "Sub_Out_Simp";
+  bc_string[3] = "Sub_In_Char";
+  bc_string[4] = "Sub_Out_Char";
+  bc_string[5] = "Sup_In";
+  bc_string[6]= "Sup_Out";
+  bc_string[7]= "Slip_Wall";
+  bc_string[9]= "Cyclic";
+  bc_string[11]= "Isotherm_Fix";
+  bc_string[12]= "Adiabat_Fix";
+  bc_string[13]= "Isotherm_Move";
+  bc_string[14]= "Adiabat_Move";
+  bc_string[15]= "Char";
+  bc_string[16]= "Slip_Wall_Dual";
+  bc_string[50]= "AD_Wall";
 }
 
 mesh::~mesh(void)
@@ -130,6 +130,15 @@ void mesh::setup(struct solution *in_FlowSol,array<double> &in_xv,array<int> &in
 //  grid_vel(0).initialize_to_zero();
 //  grid_vel(1).initialize_to_zero();
 
+  if (run_input.motion==LINEAR_ELASTICITY) {
+    initialize_displacement();
+
+    n_moving_bnds = run_input.n_moving_bnds;
+    motion_params.setup(n_moving_bnds);
+    for (int i=0; i<n_moving_bnds; i++)
+      motion_params(i) = run_input.bound_vel_simple(i);
+  }
+
   if (run_input.adv_type==0) {
     RK_a.setup(1);
     RK_c.setup(1);
@@ -165,7 +174,10 @@ void mesh::move(int _iter, int in_rk_step) {
   iter = _iter;
   rk_step = in_rk_step;
   time = FlowSol->time;
-  rk_time = time; //+run_input.dt*RK_c(rk_step);
+  if (in_rk_step>0)
+    rk_time = time+run_input.dt*RK_c(rk_step);
+  else
+    rk_time = time;
   run_input.rk_time = rk_time;
 
   if (run_input.motion == 1) {
@@ -182,18 +194,22 @@ void mesh::move(int _iter, int in_rk_step) {
 /*! This will occur after the linear-elasticity problem has been solved */
 void mesh::deform(void)
 {
-  /*! Calculate position of boundary nodes & transfer to eles classes */
-  set_boundary_displacements_eles();
+  for (int i=0; i<5; i++) {
+    /*! Calculate position of boundary nodes & transfer to eles classes */
+    //set_boundary_displacements_eles();
 
-  /*! First steps of FR process up to boundary conditions */
-  CalcResidualElasticity_start(FlowSol);
+    /*! First steps of FR process up to boundary conditions */
+    CalcResidualElasticity_start(FlowSol);
 
-  /*! Apply the boundary conditions to the eles classes */
-  apply_boundary_displacements_fpts();
+    /*! Apply the boundary conditions to the eles classes */
+    //apply_boundary_displacements_fpts();
 
-  /*! Remainder of FR process after boundary conditions */
-  CalcResidualElasticity_finish(FlowSol);
+    /*! Remainder of FR process after boundary conditions */
+    CalcResidualElasticity_finish(FlowSol);
 
+    for(int i=0; i<FlowSol->n_ele_types; i++)
+      FlowSol->mesh_eles(i)->AdvanceSolutionElasticity(rk_step, FlowSol->adv_type);
+  }
   /*! Using the final displacement solution, average values to the mesh vertices */
   update_displacements();
 
@@ -202,6 +218,7 @@ void mesh::deform(void)
 
   /*! Calculate new grid velocities, transformations, etc. */
   update();
+
 }
 
 
@@ -366,7 +383,7 @@ void mesh::write_mesh_gmsh(double sim_time)
       file << i+1  << " " << "\"FLUID\"" << endl;
     }else{
       file << 1 << " ";  // edge
-      file << i+1  << " " << "\"" << bc_flag[bc_list(i)] << "\"" << endl;
+      file << i+1  << " " << "\"" << bc_string[bc_list(i)] << "\"" << endl;
     }
 
   }
@@ -605,7 +622,7 @@ void mesh::perturb(void)
 }
 
 
-void mesh::initialize_displacement(int n_verts)
+void mesh::initialize_displacement()
 {
   displacement.setup(n_verts,n_dims);
   displacement.initialize_to_zero();
@@ -613,17 +630,21 @@ void mesh::initialize_displacement(int n_verts)
 
 void mesh::set_boundary_displacements_eles(void)
 {
-  int ib, ivb, iv, icv, ic, spt, ctype, j;
-  array<double> disp;
+  int ib0, ib1, ivb, iv, icv, ic, spt, ctype, j;
+  array<double> disp(n_dims);
 
   // Calculate displacement for boundaries at next time step
-  for (ib = 0; ib < n_bnds; ib++) {
-    if (bound_flags(ib) == MOTION_ENABLED) {
-      for (ivb = 0; ivb < nBndPts(ib); ivb++) {
-        iv = boundPts(ib)(ivb); // Global id of boundary vertex
+  for (ib0 = 0; ib0 < n_bnds; ib0++) {
+    if (bound_flags(ib0) == MOTION_ENABLED) {
+      for (ib1=0; ib1<n_moving_bnds; ib1++) {
+        if (bc_list(ib0)==bc_num[run_input.boundary_flags(ib1)]) break;
+      }
+      for (ivb = 0; ivb < nBndPts(ib0); ivb++) {
+        iv = boundPts(ib0)(ivb); // Global id of boundary vertex
         for (j = 0; j<n_dims; j++) {
-          displacement(iv,j) = xv(0)(iv,j) + motion_params(ib)(2*j  )*motion_params(ib)(6+j)*sin(motion_params(ib)(6+j)*(time+run_input.dt));
-          displacement(iv,j)+=               motion_params(ib)(2*j+1)*motion_params(ib)(6+j)*cos(motion_params(ib)(6+j)*(time+run_input.dt));
+          //displacement(iv,j) = xv(0)(iv,j) + motion_params(ib1)(2*j  )*motion_params(ib1)(6+j)*sin(motion_params(ib1)(6+j)*(time+run_input.dt));
+          displacement(iv,j) = motion_params(ib1)(2*j  )*sin(motion_params(ib1)(6+j)*(time+run_input.dt));
+          displacement(iv,j)+= motion_params(ib1)(2*j+1)*cos(motion_params(ib1)(6+j)*(time+run_input.dt));
         }
       }
     }
@@ -635,19 +656,22 @@ void mesh::set_boundary_displacements_eles(void)
       disp(j) = displacement(iv,j);
 
     // Set displacement to be average of values from all surrounding cells
-    for (icv=0; ic<v2n_c(iv); icv++) {
+    for (icv=0; icv<v2n_c(iv); icv++) {
       ctype = v2ctype(iv,icv);
       ic = v2c(iv,icv);
       spt = v2spt(iv,icv);
       FlowSol->mesh_eles(ctype)->set_displacement_spt(spt,ic,disp);
     }
   }
+
+  // update solution (elas_disu_upts) in all cells which have been modified above
+
 }
 
 /*! update displacements of mesh nodes using values computed from linear-elasticity solution in each ele */
 void mesh::update_displacements(void)
 {
-  int iv, icv, dim, spt, ic, ctype;
+  int iv, iiv, dim, spt, ic, ctype;
   array<double> disp(n_dims);
 
   for (iv=0; iv<n_verts; iv++) {
@@ -655,10 +679,10 @@ void mesh::update_displacements(void)
       displacement(iv,dim) = 0.;
 
     // Set displacement to be average of values from all surrounding cells
-    for (icv=0; ic<v2n_c(iv); icv++) {
-      ctype = v2ctype(iv,icv);
-      ic = v2c(iv,icv);
-      spt = v2spt(iv,icv);
+    for (iiv=0; iiv<v2n_c(iv); iiv++) {
+      ctype = v2ctype(iv,iiv);
+      ic = v2c(iv,iiv);
+      spt = v2spt(iv,iiv);
       FlowSol->mesh_eles(ctype)->get_displacement(spt,ic,disp);
       for (dim=0; dim<n_dims; dim++)
         displacement(iv,dim) += disp(dim)/v2n_c(iv);

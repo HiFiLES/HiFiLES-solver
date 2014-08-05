@@ -105,7 +105,7 @@ public:
 
   /** #### Boundary information #### */
 
-  int n_bnds, n_faces;
+  int n_bnds, n_moving_bnds, n_faces;
   array<int> nBndPts;
   array<int> v2bc;
 
@@ -125,11 +125,11 @@ public:
   /** HiFiLES 'bcflag' for each boundary */
   array<int> bc_list;
 
-  /** replacing get_bc_name() from geometry.cpp */
-  map<string,int> bc_name;
+  /** replacing get_bc_num() from geometry.cpp */
+  map<string,int> bc_num;
 
   /** inverse of bc_name */
-  map<int,string> bc_flag;
+  map<int,string> bc_string;
 
   // nBndPts.setup(n_bnds); boundPts.setup(nBnds,nPtsPerBnd);
 
@@ -180,7 +180,7 @@ private:
   void set_min_length(void);
 
   /*! setup displacement array for all mesh vertices & initialize to 0 */
-  void initialize_displacement(int n_verts);
+  void initialize_displacement();
 
   /** Set given/known displacements of vertices on moving boundaries in linear system */
   void set_boundary_displacements_eles(void);

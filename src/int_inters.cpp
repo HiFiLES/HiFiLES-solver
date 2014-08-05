@@ -523,7 +523,7 @@ void int_inters::calculate_common_solution_elasticity(void)
         u_c(k) = 0.5*(temp_u_l(k) + temp_u_r(k));
       }
 
-      for(int k=0;k<n_fields;k++) {
+      for(int k=0;k<n_dims;k++) {
         *elas_delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k))*(*J_dyn_fpts_l(j,i));
         *elas_delta_disu_fpts_r(j,i,k) = (u_c(k) - temp_u_r(k))*(*J_dyn_fpts_r(j,i));
       }
@@ -575,7 +575,7 @@ void int_inters::calculate_common_flux_elasticity(void)
       }
 
       // Transform back to reference space
-      for(int k=0;k<n_fields;k++) {
+      for(int k=0;k<n_dims;k++) {
         (*elas_norm_tconf_fpts_l(j,i,k))+=  fn(k)*(*tdA_fpts_l(j,i))*(*ndA_dyn_fpts_l(j,i));
         (*elas_norm_tconf_fpts_r(j,i,k))+= -fn(k)*(*tdA_fpts_r(j,i))*(*ndA_dyn_fpts_r(j,i));
       }

@@ -234,6 +234,10 @@ int main(int argc, char *argv[]) {
       else FatalError("ERROR: Trying to write unrecognized file format ... ");
     }
     
+    if(run_input.motion!=STATIC_MESH && i_steps%run_input.mesh_output_freq==0) {
+      Mesh.write_mesh(FlowSol.time);
+    }
+
     /*! Dump restart file. */
     
     if(i_steps%FlowSol.restart_dump_freq==0) {

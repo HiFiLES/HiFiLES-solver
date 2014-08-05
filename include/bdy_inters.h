@@ -55,7 +55,7 @@ public:
   void set_bdy_params();
 
   /*! Set bdy interface */
-  void set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int in_ele_l, int in_local_inter_l, struct solution* FlowSol);
+  void set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int in_bcflag, solution *FlowSol);
 
   /*! Compute right hand side state at boundaries */
   void set_inv_boundary_conditions(int bdy_type, double* u_l, double* u_r, double* v_g, double *norm, double *loc, double *bdy_params, int n_dims, int n_fields, double gamma, double R_ref, double time_bound, int equation);
@@ -78,6 +78,9 @@ public:
   /*! Calculate the linear-elasticity flux at the boundaries (mesh deformation) */
   void calculate_boundary_flux_elasticity(void);
 
+  /*! Set displacement boundary condition and get delta_disu for later gradient correction */
+  void set_boundary_conditions_elasticity(void);
+
 protected:
 
   // #### members ####
@@ -87,4 +90,8 @@ protected:
   array<int> boundary_type;
   array<double> bdy_params;
 
+  /*! array of input parameters to control motion of all boundaries in mesh */
+  array< array<double> > motion_params;
+
+  array<int> bcflag;
 };

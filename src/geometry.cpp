@@ -441,6 +441,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
     }
   if (FlowSol->rank==0) cout << "done." << endl;
 
+  Mesh.v2ctype.setup(Mesh.n_verts);
   Mesh.v2ctype = v2ctype;
   Mesh.v2c = v2c;
   Mesh.v2spt = v2spt;
@@ -797,11 +798,23 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   int i_tri_bdy=0;
   int i_quad_bdy=0;
 
+  int bcflag = -1;
+
   for(int i=0;i<FlowSol->num_inters;i++)
     {
       bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0) );
       ic_l = f2c(i,0);
       ic_r = f2c(i,1);
+
+      if (run_input.motion==LINEAR_ELASTICITY) {
+        bcflag = -1;
+        for (int ib=0; ib<run_input.n_moving_bnds; ib++) {
+          if (bctype_f==get_bc_number(run_input.boundary_flags(ib))) {
+            bcflag = ib;
+            break;
+          }
+        }
+      }
 
       if(bctype_f!=10) // internal or boundary edge
         {
@@ -825,15 +838,15 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
               if (bctype_f!=99) //  Not a deleted cyclic face
                 {
                   if (f2nv(i)==2){
-                      FlowSol->mesh_bdy_inters(0).set_boundary(i_seg_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),FlowSol);
+                      FlowSol->mesh_bdy_inters(0).set_boundary(i_seg_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),bcflag,FlowSol);
                       i_seg_bdy++;
                     }
                   else if (f2nv(i)==3){
-                      FlowSol->mesh_bdy_inters(1).set_boundary(i_tri_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),FlowSol);
+                      FlowSol->mesh_bdy_inters(1).set_boundary(i_tri_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),bcflag,FlowSol);
                       i_tri_bdy++;
                     }
                   else if (f2nv(i)==4){
-                      FlowSol->mesh_bdy_inters(2).set_boundary(i_quad_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),FlowSol);
+                      FlowSol->mesh_bdy_inters(2).set_boundary(i_quad_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),bcflag,FlowSol);
                       i_quad_bdy++;
                     }
                 }
@@ -1084,7 +1097,7 @@ void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, a
 
   if (run_input.mesh_format==0) {
     read_boundary_gambit(in_file_name, in_n_cells, in_ic2icg, out_bctype, out_bc_list, out_bccells, out_bcfaces, out_bc_ncells);
-    if (run_input.motion != 0)
+    if (run_input.motion != STATIC_MESH)
       create_boundpts(out_boundpts, out_bc_list, out_bound_flag, out_bccells, out_bcfaces, in_c2f, in_f2v, in_f2nv);
   }
   else if (run_input.mesh_format==1) {
@@ -1408,6 +1421,8 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   Bounds.setup(n_bcs);
 
   array<vector<int> > bccells(n_bcs),bcfaces(n_bcs);
+  out_bccells.setup(n_bcs);
+  out_bcfaces.setup(n_bcs);
   out_bc_ncells.setup(n_bcs);
   out_bc_ncells.initialize_to_zero();
 
@@ -2447,7 +2462,7 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
 /*! method to create list of faces & edges from the mesh */
 void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e,
                       array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv,
-                      array<int>& out_e2v, array<int>& out_v2n_e, array<array<int> >& out_v2e, array<int> v2n_c,
+                      array<int>& out_e2v, array<int>& out_v2n_e, array<array<int> >& out_v2e, array<int> &v2n_c,
                       array<int>& out_rot_tag, array<int>& out_unmatched_faces, int& out_n_unmatched_faces,
                       array<int>& out_icvsta, array<int>& out_icvert, int& out_n_faces, int& out_n_edges,
                       struct solution* FlowSol)

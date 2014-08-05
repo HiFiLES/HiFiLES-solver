@@ -119,7 +119,7 @@ void eles_hexas::setup_ele_type_specific()
   set_opp_2(run_input.sparse_hexa);
   set_opp_3(run_input.sparse_hexa);
 
-  if(viscous)
+  if(viscous || motion==LINEAR_ELASTICITY)
     {
       // Compute hex filter matrix
       if(filter) compute_filter_upts();

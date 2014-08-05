@@ -282,6 +282,9 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     temp_v_ref.setup(n_dims);
     temp_v_ref.initialize_to_zero();
 
+    temp_f_ref.setup(n_fields,n_dims);
+    temp_f_ref.initialize_to_zero();
+
     int n_comp;
     if(n_dims == 2)
         n_comp = 3;
@@ -366,20 +369,25 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 
     // For linear-elasticity method
     if (motion==LINEAR_ELASTICITY) {
+      elas_disu_upts.setup(n_adv_levels);
       elas_div_tconf_upts.setup(n_adv_levels);
       for(int i=0;i<n_adv_levels;i++)
       {
-        elas_div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
+        elas_div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_dims);
+        elas_disu_upts(i).setup(n_upts_per_ele,n_eles,n_dims);
       }
 
       // Initialize to zero
       for (int m=0;m<n_adv_levels;m++)
         elas_div_tconf_upts(m).initialize_to_zero();
 
-      elas_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-      elas_tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
-      elas_norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-      elas_norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
+      elas_grad_disu_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
+      elas_grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
+      elas_disu_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+      elas_delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+      elas_tdisf_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
+      elas_norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+      elas_norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
 
       // Storing displacement at shape points (mesh vertices)
       displacement.setup(n_dims,in_max_n_spts_per_ele,n_eles);
@@ -1085,6 +1093,9 @@ void eles::AdvanceSolutionElasticity(int in_step, int adv_type) {
           {
             elas_disu_upts(0)(inp,ic,i) -= run_input.elas_dt*(elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic));// + elas_force(inp,ic,i));
           }
+//          if (i==0 && ic<100) {
+//            cout << "res(" << ic << ",0) = " << elas_div_tconf_upts(0)(0,ic,0)/detjac_upts(0,ic) << endl;
+//          }
         }
       }
 #endif
@@ -3414,11 +3425,10 @@ void eles::extrapolate_flux_elasticity(void)
 // calculate the divergence of the transformed discontinuous flux at the solution points
 void eles::calculate_divergence_elasticity(void)
 {
-  int n_dims_mul_n_eles = n_dims*n_eles;
-
   if (n_eles!=0)
   {
 #ifdef _CPU
+    int n_dims_mul_n_eles = n_dims*n_eles;
 
     if(opp_2_sparse==0) // dense
     {
@@ -3710,6 +3720,9 @@ void eles::correct_gradient_elasticity(void)
             ur = elas_grad_disu_upts(j,i,k,0);
             us = elas_grad_disu_upts(j,i,k,1);
 
+            if (i<100 && j==0)
+              cout << "ur = " << ur << endl;
+
             elas_grad_disu_upts(j,i,k,0) = ur*rx + us*sx;
             elas_grad_disu_upts(j,i,k,1) = ur*ry + us*sy;
           }
@@ -3923,12 +3936,6 @@ void eles::evaluate_flux_elasticity(void)
             }
           }
         }
-        // Copy back to original flux array
-        for(l=0; l<n_dims; l++) {
-          for (k=0; k<n_dims; k++) {
-            temp_f(k,l) = temp_f_ref(k,l);
-          }
-        }
 
         // Transform viscous flux
         for(k=0;k<n_dims;k++)
@@ -3937,9 +3944,12 @@ void eles::evaluate_flux_elasticity(void)
           {
             for(m=0;m<n_dims;m++)
             {
-              elas_tdisf_upts(j,i,k,l)+=JGinv_upts(l,m,j,i)*temp_f(k,m);
+              elas_tdisf_upts(j,i,k,l)+=JGinv_upts(l,m,j,i)*temp_f_ref(k,m);
             }
           }
+        }
+        if (i<100 && j==0) {
+        cout << "elas_tdisf_upts(" << j << "," << i << ",0,0) = " << elas_tdisf_upts(j,i,0,0) << endl;
         }
       }
     }

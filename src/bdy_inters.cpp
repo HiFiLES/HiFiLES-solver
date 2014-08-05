@@ -73,6 +73,9 @@ void bdy_inters::setup(int in_n_inters, int in_inters_type)
   boundary_type.setup(in_n_inters);
   set_bdy_params();
 
+  if (motion==LINEAR_ELASTICITY) {
+    bcflag.setup(in_n_inters);
+  }
 }
 
 void bdy_inters::set_bdy_params()
@@ -100,9 +103,16 @@ void bdy_inters::set_bdy_params()
   bdy_params(11) = run_input.nx_free_stream;
   bdy_params(12) = run_input.ny_free_stream;
   bdy_params(13) = run_input.nz_free_stream;
+
+  if (motion==LINEAR_ELASTICITY) {
+    motion_params.setup(run_input.n_moving_bnds);
+    for (int i=0;i<run_input.n_moving_bnds;i++) {
+      motion_params(i) = run_input.bound_vel_simple(i);
+    }
+  }
 }
 
-void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int in_ele_l, int in_local_inter_l, struct solution* FlowSol)
+void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int in_bcflag, struct solution* FlowSol)
 {
   boundary_type(in_inter) = bdy_type;
 
@@ -160,6 +170,7 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
               elas_disu_fpts_l(j,in_inter,i)=get_elas_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
               elas_norm_tconf_fpts_l(j,in_inter,i)=get_elas_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
               elas_delta_disu_fpts_l(j,in_inter,i)=get_elas_delta_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+              bcflag(in_inter) = in_bcflag;
 
               for(int k=0; k<n_dims; k++)
               {
@@ -1072,16 +1083,68 @@ void bdy_inters::set_vis_boundary_conditions(int bdy_type, double* u_l, double* 
 void bdy_inters::calculate_boundary_flux_elasticity(void)
 {
 
+//#ifdef _CPU
+//  /*--- By definition of the mesh-deformation problem, flux is 0 on all boundaries
+//   * (displacement specified & enforced using delta_disu_fpts & du/dt=0 during psudeo-time
+//   * integration of linear-elasticity equations)
+//   * There is technically some 'force' required to move mesh in first place, but by setting
+//   * the flux to 0, we can also set the body force to 0 at the boundaries & get correct result ---*/
+//  for (int i=0; i<n_inters; i++) {
+//    for (int j=0; j<n_fpts_per_inter; j++) {
+//      for(int k=0;k<n_dims;k++) {
+//        (*elas_norm_tconf_fpts_l(j,i,k)) = 0.;
+//      }
+//    }
+//  }
+//#endif
+
 #ifdef _CPU
-  /*--- By definition of the mesh-deformation problem, flux is 0 on all boundaries
-   * (displacement specified & enforced using delta_disu_fpts & du/dt=0 during psudeo-time
-   * integration of linear-elasticity equations)
-   * There is technically some 'force' required to move mesh in first place, but by setting
-   * the flux to 0, we can also set the body force to 0 at the boundaries & get correct result ---*/
-  for (int i=0; i<n_inters; i++) {
-    for (int j=0; j<n_fpts_per_inter; j++) {
-      for(int k=0;k<n_fields;k++) {
-        (*elas_norm_tconf_fpts_l(j,i,k)) = 0.;
+  array<double> norm(n_dims), fn(n_dims);
+
+  for(int i=0;i<n_inters;i++)
+  {
+    int flag = bcflag(i);
+
+    for(int j=0;j<n_fpts_per_inter;j++)
+    {
+      // obtain physical gradient of discontinuous solution at flux points
+      for(int k=0;k<n_dims;k++) {
+        for(int l=0;l<n_dims;l++) {
+          temp_grad_u_l(l,k) = *elas_grad_disu_fpts_l(j,i,l,k);
+        }
+      }
+
+      // calculate flux from discontinuous solution gradient at flux points
+      calc_elasticity_flux(n_dims,temp_grad_u_l,temp_f_l);
+
+      // storing normal components
+      for (int m=0;m<n_dims;m++)
+        norm(m) = *norm_dyn_fpts(j,i,m);
+
+      // Apply boundary condition to boundary
+      if (flag!=-1)
+      {
+        for (int k=0; k<n_dims; k++) {
+          temp_u_r(k) = motion_params(flag)(2*k  )*sin(motion_params(flag)(6+k)*run_input.rk_time);
+          temp_u_r(k)+= motion_params(flag)(2*k+1)*cos(motion_params(flag)(6+k)*run_input.rk_time);
+        }
+      }else{
+        for (int k=0; k<n_dims; k++)
+          temp_u_r(k) = temp_u_l(k);
+      }
+
+      // Central difference for normal flux
+      fn.initialize_to_zero();
+      for (int k=0; k<n_dims; k++) {
+        for (int m=0; m<n_dims; m++) {
+          fn(k) += norm(m)*(temp_f_l(k,m) + run_input.tau*norm(m)*(temp_u_l(k)-temp_u_r(k)));
+        }
+      }
+
+      // Transform back to reference space
+      for(int k=0;k<n_dims;k++) {
+        (*elas_norm_tconf_fpts_l(j,i,k)) =  fn(k)*(*tdA_fpts_l(j,i))*(*ndA_dyn_fpts_l(j,i));
+        cout << "bdy norm_tconf_fpts = " << (*elas_norm_tconf_fpts_l(j,i,k)) << endl;
       }
     }
   }
@@ -1091,4 +1154,40 @@ void bdy_inters::calculate_boundary_flux_elasticity(void)
   if (n_inters!=0)
     calculate_boundary_flux_elasticity_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_inters,elas_norm_tconf_fpts_l.get_ptr_gpu(),elas_norm_tconf_fpts_r.get_ptr_gpu());
 #endif
+}
+
+void bdy_inters::set_boundary_conditions_elasticity(void)
+{
+  array<double> u_c(n_dims);
+  u_c.initialize_to_zero();
+
+  for(int i=0;i<n_inters;i++)
+  {
+    int flag = bcflag(i);
+
+    for(int j=0;j<n_fpts_per_inter;j++)
+    {
+      for (int k=0; k<n_dims; k++) {
+        temp_u_l(k) = *elas_disu_fpts_l(j,i,k)/(*J_dyn_fpts_l(j,i));
+      }
+
+      // Apply boundary condition to boundary
+      if (flag!=-1)
+      {
+        for (int k=0; k<n_dims; k++) {
+          u_c(k) = motion_params(flag)(2*k  )*sin(motion_params(flag)(6+k)*run_input.rk_time);
+          u_c(k)+= motion_params(flag)(2*k+1)*cos(motion_params(flag)(6+k)*run_input.rk_time);
+        }
+      }else{
+        for (int k=0; k<n_dims; k++)
+          u_c(k) = temp_u_l(k);
+      }
+
+      // Transform back to reference space
+      for(int k=0;k<n_dims;k++) {
+        *elas_delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k))*(*J_dyn_fpts_l(j,i));
+        cout << "blah = " << (*elas_norm_tconf_fpts_l(j,i,k)) << endl;
+      }
+    }
+  }
 }
