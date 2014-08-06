@@ -61,4 +61,4 @@ void calc_alef_3d(array<double>& in_u, array<double>& in_v, array<double>& out_f
  * \param[in] in_grad_u - Gradient of elasticity solution
  * \param[out] out_f - Linear-elasticity flux vector
  */
-void calc_elasticity_flux(int n_dims, array<double>& in_grad_u, array<double>& out_f);
+void calc_elasticity_flux(int n_dims, double elas_mod, array<double>& in_grad_u, array<double>& out_f);

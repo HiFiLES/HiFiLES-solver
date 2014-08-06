@@ -504,6 +504,15 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
     }
   }
 
+  // Setup last 'opp' needed for linear-elasticity
+  if (run_input.motion==LINEAR_ELASTICITY) {
+    for (int i=0; i<FlowSol->n_ele_types; i++) {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+        FlowSol->mesh_eles(i)->set_opp_shape_points();
+      }
+    }
+  }
+
   // set on gpu (important - need to do this before we set connectivity, so that pointers point to GPU memory)
 #ifdef _GPU
       for(int i=0;i<FlowSol->n_ele_types;i++) {

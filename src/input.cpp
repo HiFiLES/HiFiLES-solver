@@ -47,6 +47,9 @@ input::input()
   motion = 0;
   GCL = 0;
   n_deform_iters = 1;
+  elas_max_iter = 10;
+  elas_residual_tol = .001;
+  elas_modulus = 1E6;
 }
 
 input::~input()
@@ -368,6 +371,18 @@ void input::setup(ifstream& in_run_input_file, int rank)
     else if (!param_name.compare("elas_dt"))
     {
       in_run_input_file >> elas_dt;
+    }
+    else if (!param_name.compare("elas_max_iter"))
+    {
+      in_run_input_file >> elas_max_iter;
+    }
+    else if (!param_name.compare("elas_residual_tol"))
+    {
+      in_run_input_file >> elas_residual_tol;
+    }
+    else if (!param_name.compare("elas_modulus"))
+    {
+      in_run_input_file >> elas_modulus;
     }
     else if (!param_name.compare("simple_bound_velocity"))
     {

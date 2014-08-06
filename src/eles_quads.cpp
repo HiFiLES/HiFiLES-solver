@@ -978,6 +978,32 @@ void eles_quads::fill_opp_3(array<double>& opp_3)
     }
 }
 
+void eles_quads::get_loc_spt(int in_spt, int in_ele, array<double> &loc)
+{
+  int nodes_per_side = n_spts_per_ele(in_ele)/4 + 1; // assuming equal # per side & no interior pts
+
+  if (in_spt<(nodes_per_side-1))                                        // Face 1
+  {
+    loc(0) = (in_spt/(nodes_per_side-1))*2 - 1;
+    loc(1) = -1;
+  }
+  else if (in_spt>=(nodes_per_side-1) && in_spt<2*(nodes_per_side-1))   // Face 2
+  {
+    loc(0) = 1;
+    loc(1) = (in_spt%(nodes_per_side-1))/(nodes_per_side-1)*2 - 1;
+  }
+  else if (in_spt>=2*(nodes_per_side-1) && in_spt<3*(nodes_per_side-1)) // Face 3
+  {
+    loc(0) = 1 - (in_spt%(nodes_per_side-1))/(nodes_per_side-1)*2;
+    loc(1) = 1;
+  }
+  else                                                                  // Face 4
+  {
+    loc(0) = -1;
+    loc(1) = 1 - (in_spt%(nodes_per_side-1))/(nodes_per_side-1)*2;
+  }
+}
+
 // evaluate divergence of vcjh basis
 
 double eles_quads::eval_div_vcjh_basis(int in_index, array<double>& loc)

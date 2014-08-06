@@ -374,12 +374,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       for(int i=0;i<n_adv_levels;i++)
       {
         elas_div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_dims);
+        elas_div_tconf_upts(i).initialize_to_zero();
         elas_disu_upts(i).setup(n_upts_per_ele,n_eles,n_dims);
+        elas_disu_upts(i).initialize_to_zero();
       }
-
-      // Initialize to zero
-      for (int m=0;m<n_adv_levels;m++)
-        elas_div_tconf_upts(m).initialize_to_zero();
 
       elas_grad_disu_upts.setup(n_upts_per_ele,n_eles,n_dims,n_dims);
       elas_grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_dims,n_dims);
@@ -390,7 +388,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       elas_norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
 
       // Storing displacement at shape points (mesh vertices)
-      displacement.setup(n_dims,in_max_n_spts_per_ele,n_eles);
+      displacement.setup(in_max_n_spts_per_ele,n_eles,n_dims);
       motion_params = run_input.bound_vel_simple;
       spt2vert.setup(n_upts_per_ele,n_eles);
     }
@@ -1093,9 +1091,13 @@ void eles::AdvanceSolutionElasticity(int in_step, int adv_type) {
           {
             elas_disu_upts(0)(inp,ic,i) -= run_input.elas_dt*(elas_div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic));// + elas_force(inp,ic,i));
           }
-//          if (i==0 && ic<100) {
-//            cout << "res(" << ic << ",0) = " << elas_div_tconf_upts(0)(0,ic,0)/detjac_upts(0,ic) << endl;
-//          }
+          /*if (i==1 && ic>10 && ic<50) {
+            cout << "res(0," << ic << "," << i << ") = " << run_input.elas_dt*(elas_div_tconf_upts(0)(0,ic,i)/detjac_upts(0,ic)) << endl;
+          }
+          if (i==1 && ic>=40 && ic<50) {
+            cout << "elas_disu(0," << ic << "," << i << ") = " << elas_disu_upts(0)(0,ic,i) << endl;
+          }*/
+          //cout << "elas_disu(" << ic << "," << i << ") = " << elas_disu_upts(0)(0,ic,i) << endl;
         }
       }
 #endif
@@ -1386,7 +1388,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 
 // calculate the normal transformed discontinuous flux at the flux points
 
-void eles::extrapolate_totalFlux()
+void eles::extrapolate_totalFlux(void)
 {
   if (n_eles!=0)
   {
@@ -3347,9 +3349,7 @@ void eles::extrapolate_solution_elasticity(void)
       cout << "ERROR: Unknown storage for opp_0 ... " << endl;
     }
 #endif
-
   }
-
 }
 
 // calculate the normal transformed discontinuous flux at the flux points
@@ -3720,8 +3720,8 @@ void eles::correct_gradient_elasticity(void)
             ur = elas_grad_disu_upts(j,i,k,0);
             us = elas_grad_disu_upts(j,i,k,1);
 
-            if (i<100 && j==0)
-              cout << "ur = " << ur << endl;
+            /*if (i<100 && j==0)
+              cout << "ur = " << ur << endl;*/
 
             elas_grad_disu_upts(j,i,k,0) = ur*rx + us*sx;
             elas_grad_disu_upts(j,i,k,1) = ur*ry + us*sy;
@@ -3888,7 +3888,6 @@ void eles::extrapolate_corrected_gradient_elasticity(void)
   }
 }
 
-
 // calculate transformed discontinuous linear-elasticity flux at solution points
 void eles::evaluate_flux_elasticity(void)
 {
@@ -3909,7 +3908,7 @@ void eles::evaluate_flux_elasticity(void)
         // solution in static-physical domain
         for(k=0;k<n_dims;k++)
         {
-          temp_u(k)=disu_upts(0)(j,i,k);
+          temp_u(k)=disu_upts(0)(j,i,k)/detjac;
 
           // gradient in dynamic-physical domain
           for (m=0;m<n_dims;m++)
@@ -3925,7 +3924,7 @@ void eles::evaluate_flux_elasticity(void)
           }
         }
 
-        calc_elasticity_flux(n_dims,temp_grad_u,temp_f);
+        calc_elasticity_flux(n_dims,run_input.elas_modulus,temp_grad_u,temp_f);
 
         // Transfer back to static-phsycial domain
         temp_f_ref.initialize_to_zero();
@@ -3948,9 +3947,9 @@ void eles::evaluate_flux_elasticity(void)
             }
           }
         }
-        if (i<100 && j==0) {
+        /*if (i<100 && j==0) {
         cout << "elas_tdisf_upts(" << j << "," << i << ",0,0) = " << elas_tdisf_upts(j,i,0,0) << endl;
-        }
+        }*/
       }
     }
 #endif
@@ -3958,6 +3957,99 @@ void eles::evaluate_flux_elasticity(void)
 #ifdef _GPU
     evaluate_flux_elasticity_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_eles, ele_type, order, elas_tdisf_upts.get_ptr_gpu(), elas_grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu());
 #endif
+  }
+}
+
+// calculate the discontinuous solution at the shape points
+void eles::extrapolate_solution_spts_elasticity(void)
+{
+  if (n_eles!=0) {
+
+    /*!
+     Performs C = (alpha*A*B) + (beta*C) where: \n
+     alpha = 1.0 \n
+     beta = 0.0 \n
+     A = opp_0 \n
+     B = disu_upts(0) \n
+     C = disu_fpts
+
+     opp_s is the polynomial extrapolation matrix;
+     has dimensions n_spts_per_ele by n_upts_per_ele
+
+     Recall: opp_s(j,i) = value of the ith nodal basis at the
+     jth shape point location in the reference domain
+
+     (vector of solution values at shape points) = opp_0 * (vector of solution values at nodes)
+     */
+
+    Arows = n_spts_per_ele(0);
+    Acols = n_upts_per_ele;
+
+    Brows = Acols;
+    Bcols = n_dims*n_eles;
+
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+
+//    cout << endl << " ------------- BEFORE EXTRAPOLATION ------------ " << endl << endl;
+//    for (int i=0; i<n_eles; i++) {
+//      for (int j=0; j<n_spts_per_ele(0); j++) {
+//        cout << "disp(" << j << "," << i << ",:) = ";
+//        for (int k=0; k<n_dims; k++) {
+//          cout << setprecision(10) << displacement(j,i,k) << ", ";
+//        }
+//        cout << endl;
+//      }
+//    }
+
+#ifdef _CPU
+    if(opp_0_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_s.get_ptr_cpu(),Astride,elas_disu_upts(0).get_ptr_cpu(),Bstride,0.0,displacement.get_ptr_cpu(),Cstride);
+
+#elif defined _NO_BLAS
+      dgemm(Arows,Bcols,Acols,1.0,0.0,opp_s.get_ptr_cpu(),elas_disu_upts(0).get_ptr_cpu(),displacement.get_ptr_cpu());
+
+#endif
+    }
+    else if(opp_0_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+      mkl_dcsrmm(&transa,&n_spts_per_ele(0),&Bcols,&n_upts_per_ele,&one,matdescra,opp_s_data.get_ptr_cpu(),opp_s_cols.get_ptr_cpu(),opp_s_b.get_ptr_cpu(),opp_s_e.get_ptr_cpu(),elas_disu_upts(0).get_ptr_cpu(),&n_upts_per_ele,&zero,displacement.get_ptr_cpu(),&n_spts_per_ele(0));
+
+#endif
+    }
+    else { cout << "ERROR: Unknown storage for opp_0 ... " << endl; }
+
+#endif
+
+#ifdef _GPU
+    if(opp_0_sparse==0)
+    {
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_s.get_ptr_gpu(),Astride,elas_disu_upts(0).get_ptr_gpu(),Bstride,0.0,elas_disu_fpts.get_ptr_gpu(),Cstride);
+    }
+    else if (opp_0_sparse==1)
+    {
+      bespoke_SPMV(Arows,Acols,n_dims,n_eles,opp_s_ell_data.get_ptr_gpu(),opp_s_ell_indices.get_ptr_gpu(),opp_s_nnz_per_row,elas_disu_upts(0).get_ptr_gpu(),displacement.get_ptr_gpu(),ele_type,order,0);
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_s ... " << endl;
+    }
+#endif
+
+//    cout << endl << " ------------- AFTER EXTRAPOLATION ------------ " << endl << endl;
+//    for (int i=0; i<n_eles; i++) {
+//      for (int j=0; j<n_spts_per_ele(0); j++) {
+//        cout << "disp(" << j << "," << i << ",:) = ";
+//        for (int k=0; k<n_dims; k++) {
+//          cout << setprecision(10) << displacement(j,i,k) << ", ";
+//        }
+//        cout << endl;
+//      }
+//    }
   }
 }
 /*! --- End Linear-Elasticity Method Functions --- */
@@ -4621,6 +4713,28 @@ void eles::set_opp_r(void)
   }
 }
 
+// set opp_p (solution at solution points to solution at shape points)
+
+void eles::set_opp_shape_points(void)
+{
+  int i,j,k;
+
+  array<double> loc(n_dims);
+
+  // !! WARNING: Assumes same # of spts for all eles of same type !!
+  opp_s.setup(n_spts_per_ele(0),n_upts_per_ele);
+
+  for(i=0;i<n_upts_per_ele;i++)
+  {
+    for(j=0;j<n_spts_per_ele(0);j++)
+    {
+      get_loc_spt(k,j,loc);
+
+      opp_s(j,i)=eval_nodal_basis(i,loc);
+    }
+  }
+}
+
 // calculate position of the plot points
 
 void eles::calc_pos_ppts(int in_ele, array<double>& out_pos_ppts)
@@ -4895,22 +5009,6 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
   }
 }
 
-// calculate position of solution point
-
-void eles::calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos)
-{
-  int i;
-  
-  array<double> loc(n_dims);
-  
-  for(i=0;i<n_dims;i++)
-  {
-    loc(i)=loc_upts(i,in_upt);
-  }
-  
-  calc_pos(loc,in_ele,out_pos);
-}
-
 double eles::get_loc_upt(int in_upt, int in_dim)
 {
   return loc_upts(in_dim,in_upt);
@@ -4980,7 +5078,8 @@ void eles::set_transforms(void)
           loc(k)=loc_upts(k,j);
         }
         
-        calc_pos(loc,i,pos);
+        //calc_pos(loc,i,pos);
+        calc_pos_upt(j,i,pos);
 
         for(k=0;k<n_dims;k++)
         {
@@ -4988,11 +5087,12 @@ void eles::set_transforms(void)
         }
 
         // calculate first derivatives of shape functions at the solution point
-        calc_d_pos(loc,i,d_pos);
+        //calc_d_pos(loc,i,d_pos);
+        calc_d_pos_upt(j,i,d_pos);
         
         // calculate second derivatives of shape functions at the solution point
-        if (viscous)
-          calc_dd_pos(loc,i,dd_pos);
+        /*if (viscous)
+          calc_dd_pos(loc,i,dd_pos);*/ // NEVER USED
         
         // store quantities at the solution point
         
@@ -5149,7 +5249,8 @@ void eles::set_transforms(void)
           loc(k)=tloc_fpts(k,j);
         }
         
-        calc_pos(loc,i,pos);
+        //calc_pos(loc,i,pos);
+        calc_pos_fpt(j,i,pos);
         
         for(k=0;k<n_dims;k++)
         {
@@ -5158,12 +5259,13 @@ void eles::set_transforms(void)
         
         // calculate first derivatives of shape functions at the flux points
         
-        calc_d_pos(loc,i,d_pos);
+        //calc_d_pos(loc,i,d_pos);
+        calc_d_pos_fpt(j,i,d_pos);
         
         // calculate second derivatives of shape functions at the flux point
         
-        if(viscous)
-          calc_dd_pos(loc,i,dd_pos);
+        /*if(viscous)
+          calc_dd_pos(loc,i,dd_pos);*/  // NEVER USED
         
         // store quantities at the flux point
         
@@ -6343,8 +6445,33 @@ void eles::calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos)
     {
       out_pos(i)+=eval_nodal_s_basis(j,in_loc,n_spts_per_ele(in_ele))*shape(i,j,in_ele);
     }
+  } 
+}
+
+/** find the static-mesh position of a flux point within the element */
+void eles::calc_pos_fpt(int in_fpt, int in_ele, array<double>& out_pos)
+{
+  int i,j;
+
+  out_pos.initialize_to_zero();
+  for(i=0;i<n_dims;i++) {
+    for(j=0;j<n_spts_per_ele(in_ele);j++) {
+      out_pos(i)+=nodal_s_basis_fpts(j,in_fpt,in_ele)*shape(i,j,in_ele);
+    }
   }
-  
+}
+
+/** find the static-mesh position of a solution point within the element */
+void eles::calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos)
+{
+  int i,j;
+
+  out_pos.initialize_to_zero();
+  for(i=0;i<n_dims;i++) {
+    for(j=0;j<n_spts_per_ele(in_ele);j++) {
+      out_pos(i)+=nodal_s_basis_fpts(j,in_upt,in_ele)*shape(i,j,in_ele);
+    }
+  }
 }
 
 /** find the position of a point within the element (r,s,t -> xd,yd,zd) (using positions in dynamic grid) */
@@ -6461,7 +6588,6 @@ void eles::calc_d_pos_upt(int in_upt, int in_ele, array<double>& out_d_pos)
     for(k=0;k<n_dims;k++) {
       for(i=0;i<n_spts_per_ele(in_ele);i++) {
         out_d_pos(j,k)+=d_nodal_s_basis_upts(k,i,in_upt,in_ele)*shape(j,i,in_ele);
-        //out_d_pos(j,k)+=d_nodal_s_basis_upts(in_upt,in_ele,k,i)*shape(j,i,in_ele);
       }
     }
   }
@@ -6484,7 +6610,6 @@ void eles::calc_d_pos_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
     for(k=0;k<n_dims;k++) {
       for(i=0;i<n_spts_per_ele(in_ele);i++) {
         out_d_pos(j,k)+=d_nodal_s_basis_fpts(k,i,in_fpt,in_ele)*shape(j,i,in_ele);
-        //out_d_pos(j,k)+=d_nodal_s_basis_fpts(in_fpt,in_ele,k,i)*shape(j,i,in_ele);
       }
     }
   }
@@ -7977,7 +8102,7 @@ void eles::calc_grid_velocity(void)
 void eles::set_displacement_spt(int in_ele, int in_spt, array<double> in_disp)
 {
   for (int i=0; i<n_dims; i++)
-    displacement(i,in_spt,in_ele) = in_disp(i);
+    displacement(in_spt,in_ele,i) = in_disp(i);
 }
 
 void eles::get_displacement(int in_spt, int in_ele, array<double> &disp)
@@ -8002,12 +8127,41 @@ void eles::apply_boundary_displacement_fpts(int in_local_inter, int in_ele)
     for(i=0;i<n_dims;i++) {
       disp(i) = 0;
       for(j=0;j<n_spts_per_ele(in_ele);j++) {
-       disp(i) += nodal_s_basis_fpts(j,fpt,in_ele)*displacement(i,j,in_ele);
+       disp(i) += nodal_s_basis_fpts(j,fpt,in_ele)*displacement(j,in_ele,i);
       }
     }
     // Assign value of delta_disu_fpts & transform to static space
     for (i=0; i<n_dims; i++) {
       elas_delta_disu_fpts(fpt,in_ele,i) = (disp(i) - elas_disu_fpts(fpt,in_ele,i))*J_dyn_fpts(fpt,in_ele);
     }
+  }
+}
+
+// calculate solution at the plot points
+void eles::calc_elas_disu_ppts(int in_ele, array<double>& out_disu_ppts)
+{
+  if (n_eles!=0)
+  {
+    int i,j;
+
+    array<double> disu_upts_plot(n_upts_per_ele,n_fields);
+
+    for(i=0;i<n_dims;i++)
+    {
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        disu_upts_plot(j,i)=elas_disu_upts(0)(j,in_ele,i)/J_dyn_upts(j,in_ele);
+      }
+    }
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_dims,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,disu_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_ppts.get_ptr_cpu(),n_ppts_per_ele);
+
+#elif defined _NO_BLAS
+
+    dgemm(n_ppts_per_ele,n_dims,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),disu_upts_plot.get_ptr_cpu(),out_disu_ppts.get_ptr_cpu());
+
+#endif
   }
 }

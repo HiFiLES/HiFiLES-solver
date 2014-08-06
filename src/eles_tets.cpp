@@ -1095,6 +1095,10 @@ void eles_tets::get_opp_3_dg_tet(array<double>& opp_3_dg)
     }
 }
 
+void eles_tets::get_loc_spt(int in_spt, int in_ele, array<double> &loc)
+{
+  FatalError("get_loc_spt not yet implemented for tet elements");
+}
 
 // evaluate divergence of dg basis
 

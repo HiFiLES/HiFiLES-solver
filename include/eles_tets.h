@@ -93,6 +93,8 @@ public:
 
   void fill_opp_3(array<double>& opp_3);
 
+  void get_loc_spt(int in_spt, int in_ele, array<double> &loc);
+
   void get_opp_3_dg_tet(array<double>& opp_3_dg);
 
   double eval_div_dg_tet(int in_index, array<double>& loc);

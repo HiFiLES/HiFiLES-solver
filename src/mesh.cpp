@@ -194,7 +194,7 @@ void mesh::move(int _iter, int in_rk_step) {
 /*! This will occur after the linear-elasticity problem has been solved */
 void mesh::deform(void)
 {
-  for (int i=0; i<5; i++) {
+  for (int i=0; i<run_input.elas_max_iter; i++) {
     /*! Calculate position of boundary nodes & transfer to eles classes */
     //set_boundary_displacements_eles();
 
@@ -210,6 +210,11 @@ void mesh::deform(void)
     for(int i=0; i<FlowSol->n_ele_types; i++)
       FlowSol->mesh_eles(i)->AdvanceSolutionElasticity(rk_step, FlowSol->adv_type);
   }
+
+  /*! Extrapolate the displacement to the shape points */
+  for(int i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->extrapolate_solution_spts_elasticity();
+
   /*! Using the final displacement solution, average values to the mesh vertices */
   update_displacements();
 
@@ -390,6 +395,7 @@ void mesh::write_mesh_gmsh(double sim_time)
   file << "$EndPhysicalNames" << endl;
   // write nodes
   file << "$Nodes" << endl << n_verts_global << endl;
+  file << setprecision(12);
   for (int i=0; i<n_verts; i++) {
     file << i+1 << " " << xv(0)(i,0) << " " << xv(0)(i,1) << " ";
     if (n_dims==2) {
@@ -686,6 +692,9 @@ void mesh::update_displacements(void)
       FlowSol->mesh_eles(ctype)->get_displacement(spt,ic,disp);
       for (dim=0; dim<n_dims; dim++)
         displacement(iv,dim) += disp(dim)/v2n_c(iv);
+//      if (disp(0)!=0 || disp(1)!=0) {
+//        cout << "Hooray!" << endl << flush << cin.get();
+//      }
     }
   }
 }

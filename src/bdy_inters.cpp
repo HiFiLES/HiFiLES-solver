@@ -1107,6 +1107,11 @@ void bdy_inters::calculate_boundary_flux_elasticity(void)
 
     for(int j=0;j<n_fpts_per_inter;j++)
     {
+      // obtain discontinuous solution at flux points
+      for(int k=0;k<n_dims;k++) {
+        temp_u_l(k) = *elas_disu_fpts_l(j,i,k);
+      }
+
       // obtain physical gradient of discontinuous solution at flux points
       for(int k=0;k<n_dims;k++) {
         for(int l=0;l<n_dims;l++) {
@@ -1115,7 +1120,7 @@ void bdy_inters::calculate_boundary_flux_elasticity(void)
       }
 
       // calculate flux from discontinuous solution gradient at flux points
-      calc_elasticity_flux(n_dims,temp_grad_u_l,temp_f_l);
+      calc_elasticity_flux(n_dims,run_input.elas_modulus,temp_grad_u_l,temp_f_l);
 
       // storing normal components
       for (int m=0;m<n_dims;m++)
@@ -1137,14 +1142,15 @@ void bdy_inters::calculate_boundary_flux_elasticity(void)
       fn.initialize_to_zero();
       for (int k=0; k<n_dims; k++) {
         for (int m=0; m<n_dims; m++) {
-          fn(k) += norm(m)*(temp_f_l(k,m) + run_input.tau*norm(m)*(temp_u_l(k)-temp_u_r(k)));
+          fn(k) += norm(m)*(0*temp_f_l(k,m) + norm(m)*(temp_u_l(k)-temp_u_r(k)));
         }
       }
 
       // Transform back to reference space
       for(int k=0;k<n_dims;k++) {
         (*elas_norm_tconf_fpts_l(j,i,k)) =  fn(k)*(*tdA_fpts_l(j,i))*(*ndA_dyn_fpts_l(j,i));
-        cout << "bdy norm_tconf_fpts = " << (*elas_norm_tconf_fpts_l(j,i,k)) << endl;
+        /*if (i<100 && k==0)
+          cout << "bdy norm_tconf_fpts_x = " << (*elas_norm_tconf_fpts_l(j,i,k)) << endl;*/
       }
     }
   }
@@ -1186,7 +1192,8 @@ void bdy_inters::set_boundary_conditions_elasticity(void)
       // Transform back to reference space
       for(int k=0;k<n_dims;k++) {
         *elas_delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k))*(*J_dyn_fpts_l(j,i));
-        cout << "blah = " << (*elas_norm_tconf_fpts_l(j,i,k)) << endl;
+        /*if (i<00 && k==0)
+          cout << "delta_disu_x = " << (*elas_delta_disu_fpts_l(j,i,k)) << endl;*/
       }
     }
   }

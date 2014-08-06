@@ -559,8 +559,8 @@ void int_inters::calculate_common_flux_elasticity(void)
       }
 
       // calculate flux from discontinuous solution gradient at flux points
-      calc_elasticity_flux(n_dims,temp_grad_u_l,temp_f_l);
-      calc_elasticity_flux(n_dims,temp_grad_u_r,temp_f_r);
+      calc_elasticity_flux(n_dims,run_input.elas_modulus,temp_grad_u_l,temp_f_l);
+      calc_elasticity_flux(n_dims,run_input.elas_modulus,temp_grad_u_r,temp_f_r);
 
       // storing normal components
       for (int m=0;m<n_dims;m++)

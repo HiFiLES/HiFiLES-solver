@@ -1228,8 +1228,11 @@ void eles_pris::fill_opp_3(array<double>& opp_3)
             }
         }
     }
+}
 
-
+void eles_pris::get_loc_spt(int in_spt, int in_ele, array<double> &loc)
+{
+  FatalError("get_loc_spt not yet implemented for prism elements");
 }
 
 // evaluate divergence of vcjh basis

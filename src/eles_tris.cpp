@@ -652,6 +652,27 @@ void eles_tris::fill_opp_3(array<double>& opp_3)
   get_opp_3_tri(opp_3,loc_upts,loc_1d_fpts,vandermonde,inv_vandermonde,n_upts_per_ele, order, run_input.c_tri, run_input.vcjh_scheme_tri);
 }
 
+void eles_tris::get_loc_spt(int in_spt, int in_ele, array<double> &loc)
+{
+  int nodes_per_side = n_spts_per_ele(in_ele)/3 + 1; // assuming equal # per side & no interior pts
+
+  if (in_spt<(nodes_per_side-1))                                      // Face 1
+  {
+    loc(0) = (in_spt/(nodes_per_side-1))*2 - 1;
+    loc(1) = -1;
+  }
+  else if (in_spt>=(nodes_per_side-1) && in_spt<2*(nodes_per_side-1)) // Face 2
+  {
+    loc(0) = 1 - (in_spt%(nodes_per_side-1))/(nodes_per_side-1)*2;
+    loc(1) = (in_spt%(nodes_per_side-1))/(nodes_per_side-1)*2 - 1;
+  }
+  else                                                                // Face 3
+  {
+    loc(0) = -1;
+    loc(1) = 1 - (in_spt%(nodes_per_side-1))/(nodes_per_side-1)*2;
+  }
+}
+
 // Filtering operators for use in subgrid-scale modelling
 void eles_tris::compute_filter_upts(void)
 {

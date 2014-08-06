@@ -74,6 +74,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
 
   array<double> pos_ppts_temp;
   array<double> disu_ppts_temp;
+  array<double> elas_disu_ppts_temp;
   array<double> grad_disu_ppts_temp;
   array<double> diag_ppts_temp;
   int n_ppts_per_ele;
@@ -168,6 +169,8 @@ void write_tec(int in_file_num, struct solution* FlowSol)
           disu_ppts_temp.setup(n_ppts_per_ele,n_fields);
           grad_disu_ppts_temp.setup(n_ppts_per_ele,n_fields,n_dims);
           diag_ppts_temp.setup(n_ppts_per_ele,n_diag_fields);
+          if (run_input.motion==LINEAR_ELASTICITY)
+            elas_disu_ppts_temp.setup(n_ppts_per_ele,n_dims);
 
           // write element specific header
           if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
@@ -208,6 +211,8 @@ void write_tec(int in_file_num, struct solution* FlowSol)
               FlowSol->mesh_eles(i)->calc_pos_ppts(j,pos_ppts_temp);
               FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
               FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
+              if (run_input.motion==LINEAR_ELASTICITY)
+                FlowSol->mesh_eles(i)->calc_elas_disu_ppts(j,elas_disu_ppts_temp);
 
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
@@ -546,6 +551,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   array<double> pos_ppts_temp;
   /*! Solution data at plot points */
   array<double> disu_ppts_temp;
+  /*! Linear-Elasticity Solution data at plot points */
+  array<double> elas_disu_ppts_temp;
   /*! Solution gradient data at plot points */
   array<double> grad_disu_ppts_temp;
   /*! Diagnostic field data at plot points */
@@ -707,6 +714,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           /*! Temporary solution array at plot points */
           disu_ppts_temp.setup(n_points,n_fields);
 
+          /*! Temporary linear-elasticity solution array at plot points */
+          elas_disu_ppts_temp.setup(n_points,n_dims);
+
           if(n_diag_fields > 0) {
             /*! Temporary solution array at plot points */
             grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
@@ -731,6 +741,10 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
               /*! Calculate the prognostic (solution) fields at the plot points */
               FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
+
+              /*! Calculate the prognostic (solution) fields at the plot points */
+              if (run_input.motion==LINEAR_ELASTICITY)
+                FlowSol->mesh_eles(i)->calc_elas_disu_ppts(j,elas_disu_ppts_temp);
 
               if(n_diag_fields > 0) {
                 /*! Calculate the gradient of the prognostic fields at the plot points */
@@ -807,6 +821,28 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                   else
                   {
                     write_vtu << grid_vel_ppts_temp(2,k,j) << " ";
+                  }
+                }
+                write_vtu << endl;
+                write_vtu << "				</DataArray>" << endl;
+              }
+
+              if (run_input.motion==LINEAR_ELASTICITY) {
+                /*! grid velocity */
+                write_vtu << "				<DataArray type= \"Float32\" NumberOfComponents=\"3\" Name=\"Displacement\" format=\"ascii\">" << endl;
+                for(k=0;k<n_points;k++)
+                {
+                  write_vtu << elas_disu_ppts_temp(k,0) << " " << elas_disu_ppts_temp(k,1) << " ";
+
+                  /*! In 2D the z-component of velocity is not stored, but Paraview needs it so write a 0. */
+                  if(n_dims==2)
+                  {
+                    write_vtu << 0.0 << " ";
+                  }
+                  /*! In 3D just write the z-component of velocity */
+                  else
+                  {
+                    write_vtu << elas_disu_ppts_temp(k,2) << " ";
                   }
                 }
                 write_vtu << endl;

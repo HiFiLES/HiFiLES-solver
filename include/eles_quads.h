@@ -96,6 +96,8 @@ public:
 
   void fill_opp_3(array<double>& opp_3);
 
+  void get_loc_spt(int in_spt, int in_ele, array<double> &loc);
+
   /*! evaluate nodal shape basis */
   double eval_nodal_s_basis(int in_index, array<double> in_loc, int in_n_spts);
 

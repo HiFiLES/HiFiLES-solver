@@ -1323,6 +1323,11 @@ void eles_hexas::fill_opp_3(array<double>& opp_3)
     }
 }
 
+void eles_hexas::get_loc_spt(int in_spt, int in_ele, array<double> &loc)
+{
+  FatalError("get_loc_spt not yet implemented for hex elements");
+}
+
 // evaluate divergence of vcjh basis
 
 double eles_hexas::eval_div_vcjh_basis(int in_index, array<double>& loc)

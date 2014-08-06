@@ -168,6 +168,9 @@ public:
 
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolutionElasticity(int in_step, int adv_type);
+
+  /*! calculate the discontinuous solution at the shape points */
+  void extrapolate_solution_spts_elasticity(void);
   /* --- End Linear-Elasticity Methods --- */
   
   /*! advance solution using a runge-kutta scheme */
@@ -314,6 +317,9 @@ public:
   /*! set opp_r */
   void set_opp_r(void);
 
+  /*! Operator to extrapolate from solution points to shape points */
+  void set_opp_shape_points(void);
+
   /*! calculate position of the plot points */
   void calc_pos_ppts(int in_ele, array<double>& out_pos_ppts);
 
@@ -397,6 +403,8 @@ public:
   virtual double eval_d_nodal_basis(int in_index, int in_cpnt, array<double> in_loc)=0;
 
   virtual void fill_opp_3(array<double>& opp_3)=0;
+
+  virtual void get_loc_spt(int in_spt, int in_ele, array<double>& loc)=0;
 
   /*! evaluate divergence of vcjh basis */
   //virtual double eval_div_vcjh_basis(int in_index, array<double>& loc)=0;
@@ -634,6 +642,7 @@ public:
   void perturb_grid_velocity(double rk_time);
 #endif
 
+  void calc_elas_disu_ppts(int in_ele, array<double> &out_disu_ppts);
 protected:
 
   // #### members ####
@@ -1231,6 +1240,9 @@ protected:
 
   /*! operator to go from discontinuous solution at the solution points to discontinuous solution at the plot points */
   array<double> opp_p;
+
+  /*! operator to go from values at the solution points to values at the shape points */
+  array<double> opp_s;
 
   array< array<double> > opp_inters_cubpts;
   array<double> opp_volume_cubpts;

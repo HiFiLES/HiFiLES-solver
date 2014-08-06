@@ -121,7 +121,10 @@ public:
   array<string> boundary_flags;
   array<array<double> > bound_vel_simple;
   array<int> motion_type;
-  int elas_dt;
+  int elas_max_iter;
+  double elas_dt;
+  double elas_residual_tol;
+  double elas_modulus;
   /* -------------------------------- */
 
   // boundary_conditions
