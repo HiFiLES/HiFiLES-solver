@@ -139,6 +139,10 @@ void write_tec(int in_file_num, struct solution* FlowSol)
         }
     }
 
+  if (run_input.turb_model==1) {
+    fields += ", \"mu_tilde\"";
+  }
+
   // append the names of the diagnostic fields
   if(n_diag_fields>0)
     {
@@ -631,6 +635,11 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
 
+      /*! write out modified turbulent viscosity */
+      if (run_input.turb_model==1) {
+        write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Mu_Tilde\" />" << endl;
+      }
+
       // Optional diagnostic fields
       for(m=0;m<n_diag_fields;m++)
         {
@@ -790,6 +799,27 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 }
               write_vtu << endl;
               write_vtu << "				</DataArray>" << endl;
+
+              /*! modified turbulent viscosity */
+              if (run_input.turb_model == 1) {
+                write_vtu << "				<DataArray type= \"Float32\" Name=\"Nu_Tilde\" format=\"ascii\">" << endl;
+                for(k=0;k<n_points;k++)
+                {
+                  /*! In 2D nu_tilde is the 5th solution component */
+                  if(n_dims==2)
+                  {
+                    write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
+                  }
+                  /*! In 3D nu_tilde is the 6th solution component */
+                  else
+                  {
+                    write_vtu << disu_ppts_temp(k,5)/disu_ppts_temp(k,0) << " ";
+                  }
+                }
+                /*! End the line and finish writing DataArray and PointData objects */
+                write_vtu << endl;
+                write_vtu << "				</DataArray>" << endl;
+              }
 
               if (run_input.motion) {
                 /*! grid velocity */
@@ -1286,11 +1316,15 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 void CalcNormResidual(struct solution* FlowSol) {
   
   int i, j, n_upts = 0, n_fields;
-  double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  double sum[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, norm[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
-  
+
+  if (run_input.turb_model==1) {
+    n_fields++;
+  }
+
   for(i=0; i<FlowSol->n_ele_types; i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
       FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
@@ -1303,7 +1337,7 @@ void CalcNormResidual(struct solution* FlowSol) {
 #ifdef _MPI
   
   int n_upts_global = 0;
-  double sum_global[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   
@@ -1338,6 +1372,10 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
   
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
+
+  if (run_input.turb_model==1) {
+    n_fields++;
+  }
   
   // set write flag
   if (run_input.restart_flag==0) {
@@ -1376,8 +1414,14 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     
     // Write the header
     if (write_heads) {
-      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
-      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
+      if (FlowSol->n_dims==2) {
+        if (n_fields == 4) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
+        else cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total" << endl;
+      }
+      else {
+        if (n_fields == 5) cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
+        else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total       Fz_Total" << endl;
+      }
     }
     
     // Output residuals

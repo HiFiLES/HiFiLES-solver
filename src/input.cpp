@@ -44,6 +44,7 @@ using namespace std;
 input::input()
 {
   // Set default values for optional parameters
+  turb_model = 0;
   motion = 0;
   GCL = 0;
   n_deform_iters = 1;
@@ -197,6 +198,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
     else if (!param_name.compare("n_steps"))
     {
       in_run_input_file >> n_steps;
+    }
+    else if (!param_name.compare("turb_model"))
+    {
+      in_run_input_file >> turb_model;
     }
     else if (!param_name.compare("LES"))
     {
@@ -780,8 +785,24 @@ void input::setup(ifstream& in_run_input_file, int rank)
       p_c_ic   = p_c_ic/p_ref;
       T_c_ic   = T_c_ic/T_ref;
       
+      // SA turblence model parameters
+      prandtl_t = 0.9;
+      if (turb_model == 1)
+      {
+          c_v1 = 7.1;
+          c_v2 = 0.7;
+          c_v3 = 0.9;
+          c_b1 = 0.1355;
+          c_b2 = 0.622;
+          c_w2 = 0.3;
+          c_w3 = 2.0;
+          omega = 2.0/3.0;
+          Kappa = 0.41;
+          mu_tilde_c_ic = 5.0*mu_c_ic;
+          mu_tilde_inf = 5.0*mu_inf;
+      }
+
       // Master node outputs information about the I.C.s to the console
-      
       if (rank==0)
       {
         cout << "uvw_ref: " << uvw_ref << endl;

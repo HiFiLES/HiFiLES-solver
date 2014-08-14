@@ -800,7 +800,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
     Mesh.ic2loc_c = local_c;
 
   // Flag interfaces for calculating LES wall model
-  if(run_input.wall_model>0) {
+  if(run_input.wall_model>0 or run_input.turb_model>0) {
 
     if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
 

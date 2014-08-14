@@ -131,6 +131,9 @@ public:
 
   /*! calculate divergence of transformed continuous viscous flux at solution points */
   //void calc_div_tconvisf_upts(int in_div_tconinvf_upts_to);
+
+  /*! calculate source term for SA turbulence model at solution points */
+  void calc_src_term_SA(int in_disu_upts_from);
   
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolution(int in_step, int adv_type);
@@ -825,6 +828,7 @@ protected:
 	
 	/*! storage for distance of solution points to nearest no-slip boundary */
 	array<double> wall_distance;
+  array<double> wall_distance_mag;
 
 	array<double> twall;
 
@@ -997,6 +1001,9 @@ protected:
 	
 	/*! transformed gradient of determinant of jacobian at flux points */
 	array<double> tgrad_detjac_fpts;
+
+  /*! source term for SA turbulence model at solution points */
+  array<double> src_term;
 
   array<double> d_nodal_s_basis;
   array<double> dd_nodal_s_basis;

@@ -100,6 +100,12 @@ void bdy_inters::set_bdy_params()
   bdy_params(11) = run_input.nx_free_stream;
   bdy_params(12) = run_input.ny_free_stream;
   bdy_params(13) = run_input.nz_free_stream;
+
+  // Boundary parameters for turbulence models
+  if (run_input.turb_model == 1)
+  {
+    bdy_params(14) = run_input.mu_tilde_inf;
+  }
 }
 
 void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int in_ele_l, int in_local_inter_l, struct solution* FlowSol)
@@ -428,6 +434,14 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           for (int i=0; i<n_dims; i++)
             v_sq += (v_r[i]*v_r[i]);
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (run_input.turb_model == 1)
+          {
+            // set turbulent eddy viscosity
+            double mu_tilde_inf = bdy_params[14];
+            u_r[n_dims+2] = mu_tilde_inf;
+          }
         }
 
       // Subsonic outflow simple (fixed pressure) //CONSIDER DELETING
@@ -446,6 +460,13 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
           for (int i=0; i<n_dims; i++)
             v_sq += (v_r[i]*v_r[i]);
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (run_input.turb_model == 1)
+          {
+            // extrapolate turbulent eddy viscosity
+            u_r[n_dims+2] = u_l[n_dims+2];
+          }
         }
 
       // Subsonic inflow characteristic
@@ -530,6 +551,14 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
           // Compute energy
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (run_input.turb_model == 1)
+          {
+            // set turbulent eddy viscosity
+            double mu_tilde_inf = bdy_params[14];
+            u_r[n_dims+2] = mu_tilde_inf;
+          }
         }
 
       // Subsonic outflow characteristic
@@ -578,6 +607,13 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
               v_sq += (v_r[i]*v_r[i]);
             }
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (run_input.turb_model == 1)
+          {
+            // extrapolate turbulent eddy viscosity
+            u_r[n_dims+2] = u_l[n_dims+2];
+          }
         }
 
       // Supersonic inflow
@@ -651,6 +687,13 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
             v_sq += (v_r[i]*v_r[i]);
 
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (run_input.turb_model == 1)
+          {
+            // zero turbulent eddy viscosity at the wall
+            u_r[n_dims+2] = 0.0;
+          }
         }
 
       // Adiabatic, no-slip wall (fixed)
@@ -672,6 +715,13 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
             v_sq += (v_r[i]*v_r[i]);
 
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
+
+          // SA model
+          if (run_input.turb_model == 1)
+          {
+            // zero turbulent eddy viscosity at the wall
+            u_r[n_dims+2] = 0.0;
+          }
         }
 
       // Isothermal, no-slip wall (moving)
@@ -764,6 +814,14 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
               p_r = rho_r/gamma*c_star*c_star;
               e_r = rho_r*h_free_stream - p_r;
+
+              // SA model
+              if (run_input.turb_model == 1)
+              {
+                // set turbulent eddy viscosity
+                double mu_tilde_inf = bdy_params[14];
+                u_r[n_dims+2] = mu_tilde_inf;
+              }
             }
 
           // Outflow
@@ -783,7 +841,14 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
               for (int i=0; i<n_dims; i++)
                 v_sq += (v_r[i]*v_r[i]);
               e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
-            }
+
+              // SA model
+              if (run_input.turb_model == 1)
+              {
+                // extrapolate turbulent eddy viscosity
+                u_r[n_dims+2] = u_l[n_dims+2];
+              }
+          }
         }
 
       // Dual consistent BC (see SD++ for more comments)
