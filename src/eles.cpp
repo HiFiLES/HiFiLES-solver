@@ -26,6 +26,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <sstream>
 
 #if defined _ACCELERATE_BLAS
 #include <Accelerate/Accelerate.h>
@@ -1162,6 +1163,64 @@ void eles::AdvanceSolutionElasticity(int in_step, int adv_type) {
     else {
       cout << "ERROR: Time integration type not recognised ... " << endl;
     }
+  }
+}
+
+void eles::write_disp_upts(int iter)
+{
+  if (n_eles!=0) {
+    array<double> pos(n_dims);
+
+    ofstream file;
+    string filename;
+    ostringstream sstream;
+    sstream << run_input.rk_time << "_" << iter;
+    filename = "disp_upts_" + sstream.str() + ".csv";
+    file.open(filename.c_str());
+
+    for (int i=0; i<n_eles; i++) {
+      for (int j=0; j<n_upts_per_ele; j++) {
+        calc_pos_dyn_upt(j,i,pos);
+        file << i << ", " << j << flush;
+        for (int k=0; k<n_dims; k++) {
+          file << ", " << setprecision(10) << pos(k);
+        }
+        for (int k=0; k<n_dims; k++) {
+          file << ", " << setprecision(10) << elas_disu_upts(0)(j,i,k);
+        }
+        file << endl;
+      }
+    }
+    file.close();
+  }
+}
+
+void eles::write_disp_fpts(int iter)
+{
+  if (n_eles!=0) {
+    array<double> pos(n_dims);
+
+    ofstream file;
+    string filename;
+    ostringstream sstream;
+    sstream << run_input.rk_time << "_" << iter;
+    filename = "disp_fpts_" + sstream.str() + ".csv";
+    file.open(filename.c_str());
+
+    for (int i=0; i<n_eles; i++) {
+      for (int j=0; j<n_fpts_per_ele; j++) {
+        calc_pos_dyn_fpt(j,i,pos);
+        file << i << ", " << j << flush;
+        for (int k=0; k<n_dims; k++) {
+          file << ", " << setprecision(10) << pos(k);
+        }
+        for (int k=0; k<n_dims; k++) {
+          file << ", " << setprecision(10) << elas_disu_fpts(j,i,k);
+        }
+        file << endl;
+      }
+    }
+    file.close();
   }
 }
 
@@ -4050,6 +4109,31 @@ void eles::extrapolate_solution_spts_elasticity(void)
 //        cout << endl;
 //      }
 //    }
+
+
+    if ((run_input.elas_iter+1)%10==0) {
+      ofstream file;
+      string filename;
+      ostringstream sstream;
+      sstream << run_input.rk_time << "_" << run_input.elas_iter;
+      filename = "disp_spts_" + sstream.str() + ".csv";
+      file.open(filename.c_str());
+      for (int i=0; i<n_eles; i++) {
+        for (int j=0; j<n_spts_per_ele(0); j++) {
+          file << i << ", " << j << flush;
+          for (int k=0; k<n_dims; k++) {
+            file << ", " << setprecision(10) << shape(k,j,i);
+          }
+          for (int k=0; k<n_dims; k++) {
+            file << ", " << setprecision(10) << displacement(j,i,k);
+          }
+          file << endl;
+        }
+      }
+      file.close();
+    }
+
+
   }
 }
 /*! --- End Linear-Elasticity Method Functions --- */
@@ -4127,7 +4211,9 @@ void eles::set_shape_node(int in_spt, int in_ele, int in_vertex, array<double>& 
       shape_dyn(i,in_spt,in_ele,j)=in_pos(i);
   }
 
-  spt2vert(in_spt,in_ele) = in_vertex;
+  if (motion==LINEAR_ELASTICITY) {
+    spt2vert(in_spt,in_ele) = in_vertex;
+  }
 }
 
 void eles::set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos)
@@ -4728,7 +4814,7 @@ void eles::set_opp_shape_points(void)
   {
     for(j=0;j<n_spts_per_ele(0);j++)
     {
-      get_loc_spt(k,j,loc);
+      get_loc_spt(j,0,loc);
 
       opp_s(j,i)=eval_nodal_basis(i,loc);
     }
@@ -5487,6 +5573,12 @@ void eles::set_transforms_dynamic(void)
       for(j=0;j<n_upts_per_ele;j++)
       {
         // get coordinates of the solution point
+        // --- DEBUGGING ---
+        if (!first_time) {
+          //calc_pos_upt(j,i,pos);
+          //cout << i << ", " << j << ": " << pos(0) << ", " << pos(1) << endl;
+        }
+        // ----         ----
 
         // calculate first derivatives of shape functions at the solution point
         calc_d_pos_dyn_upt(j,i,d_pos);
@@ -5516,7 +5608,8 @@ void eles::set_transforms_dynamic(void)
 
           if (J_dyn_upts(j,i) < 0)
           {
-            FatalError("Negative Jacobian at solution points");
+            //FatalError("Negative Jacobian at solution points");
+            cout << i << "," << j << ": WARNING: Negative Jacobian at solution point" << endl;
           }
 
           // store determinant of jacobian multiplied by inverse of jacobian at the solution point
@@ -5609,7 +5702,8 @@ void eles::set_transforms_dynamic(void)
 
           if (J_dyn_fpts(j,i) < 0)
           {
-            FatalError("Negative Jacobian at flux points");
+            //FatalError("Negative Jacobian at flux points");
+            //cout << i << "," << j << ": WARNING: Negative Jacobian at flux point" << endl;
           }
 
           // store determinant of jacobian multiplied by inverse of jacobian at the flux point
@@ -6509,7 +6603,7 @@ void eles::calc_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_pos)
     out_pos.initialize_to_zero();
     for(i=0;i<n_dims;i++) {
         for(j=0;j<n_spts_per_ele(in_ele);j++) {
-            out_pos(i)+=nodal_s_basis_fpts(j,in_upt,in_ele)*shape_dyn(i,j,in_ele);
+            out_pos(i)+=nodal_s_basis_upts(j,in_upt,in_ele)*shape_dyn(i,j,in_ele);
         }
     }
 }

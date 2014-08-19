@@ -1130,8 +1130,10 @@ void bdy_inters::calculate_boundary_flux_elasticity(void)
       if (flag!=-1)
       {
         for (int k=0; k<n_dims; k++) {
-          temp_u_r(k) = motion_params(flag)(2*k  )*sin(motion_params(flag)(6+k)*run_input.rk_time);
+          temp_u_r(k) = *pos_fpts(j,i,k);
+          temp_u_r(k)+= motion_params(flag)(2*k  )*sin(motion_params(flag)(6+k)*run_input.rk_time);
           temp_u_r(k)+= motion_params(flag)(2*k+1)*cos(motion_params(flag)(6+k)*run_input.rk_time);
+          temp_u_r(k)-= *pos_dyn_fpts(j,i,k);
         }
       }else{
         for (int k=0; k<n_dims; k++)
@@ -1142,7 +1144,8 @@ void bdy_inters::calculate_boundary_flux_elasticity(void)
       fn.initialize_to_zero();
       for (int k=0; k<n_dims; k++) {
         for (int m=0; m<n_dims; m++) {
-          fn(k) += norm(m)*(0*temp_f_l(k,m) + norm(m)*(temp_u_l(k)-temp_u_r(k)));
+          fn(k) += norm(m)*(temp_f_l(k,m) + norm(m)*(temp_u_l(k)-temp_u_r(k)));
+          //fn(k) = 0;
         }
       }
 
@@ -1177,12 +1180,14 @@ void bdy_inters::set_boundary_conditions_elasticity(void)
         temp_u_l(k) = *elas_disu_fpts_l(j,i,k)/(*J_dyn_fpts_l(j,i));
       }
 
-      // Apply boundary condition to boundary
+      // Apply boundary condition to boundary | displacement = new_pos - old_pos
       if (flag!=-1)
       {
         for (int k=0; k<n_dims; k++) {
-          u_c(k) = motion_params(flag)(2*k  )*sin(motion_params(flag)(6+k)*run_input.rk_time);
+          u_c(k) = *pos_fpts(j,i,k);
+          u_c(k)+= motion_params(flag)(2*k  )*sin(motion_params(flag)(6+k)*run_input.rk_time);
           u_c(k)+= motion_params(flag)(2*k+1)*cos(motion_params(flag)(6+k)*run_input.rk_time);
+          u_c(k)-= *pos_dyn_fpts(j,i,k);
         }
       }else{
         for (int k=0; k<n_dims; k++)

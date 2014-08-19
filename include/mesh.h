@@ -60,7 +60,7 @@ public:
   // #### methods ####
 
   /** Mesh motion wrapper */
-  void move(int _iter, int in_rk_step);
+  void move(int _iter, int in_rk_step, int n_rk_steps);
 
   /** peform prescribed mesh motion using linear elasticity method */
   void deform(void);

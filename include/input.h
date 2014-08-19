@@ -125,6 +125,7 @@ public:
   double elas_dt;
   double elas_residual_tol;
   double elas_modulus;
+  int elas_iter;
   /* -------------------------------- */
 
   // boundary_conditions

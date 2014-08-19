@@ -55,6 +55,7 @@ void CalcResidual(struct solution* FlowSol);
  */
 void CalcResidualElasticity_start(struct solution* FlowSol);
 void CalcResidualElasticity_finish(struct solution* FlowSol);
+void CalcResidualElasticity(struct solution* FlowSol, int iter);
 
 void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol);
 

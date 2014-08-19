@@ -403,13 +403,19 @@ void calc_elasticity_flux(int n_dims, double elas_mod, array<double>& in_grad_u,
   du_dy = in_grad_u(0,1);
   dv_dy = in_grad_u(1,1);
 
-  if (n_dims==3)
+  if (n_dims==2)
   {
     out_f(0,0) = elas_mod*(-du_dx + dv_dy);
     out_f(1,0) = elas_mod*(dv_dx + du_dy);
 
     out_f(0,1) = elas_mod*(du_dy + dv_dx);
     out_f(1,1) = elas_mod*(du_dx - dv_dy);
+    // LAPLACE
+//    out_f(0,0) = elas_mod*du_dx;
+//    out_f(1,0) = 0;
+
+//    out_f(0,1) = 0;
+//    out_f(1,1) = elas_mod*dv_dy;
   }
   else if (n_dims==3)
   {

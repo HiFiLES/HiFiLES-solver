@@ -643,6 +643,8 @@ public:
 #endif
 
   void calc_elas_disu_ppts(int in_ele, array<double> &out_disu_ppts);
+  void write_disp_upts(int iter);
+  void write_disp_fpts(int iter);
 protected:
 
   // #### members ####

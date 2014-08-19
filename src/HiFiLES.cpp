@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
     for(i=0; i < RKSteps; i++) {
 
       /*! Update the mesh */
-      if (run_input.motion) Mesh.move(FlowSol.ini_iter+i_steps,i);
+      if (run_input.motion) Mesh.move(FlowSol.ini_iter+i_steps,i,RKSteps);
 
       /*! Spatial integration. */
 

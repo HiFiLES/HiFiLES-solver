@@ -170,14 +170,14 @@ void mesh::setup(struct solution *in_FlowSol,array<double> &in_xv,array<int> &in
   }
 }
 
-void mesh::move(int _iter, int in_rk_step) {
+void mesh::move(int _iter, int in_rk_step, int n_rk_steps) {
   iter = _iter;
   rk_step = in_rk_step;
   time = FlowSol->time;
-  if (in_rk_step>0)
+  if (n_rk_steps>1)
     rk_time = time+run_input.dt*RK_c(rk_step);
   else
-    rk_time = time;
+    rk_time = time + run_input.dt;
   run_input.rk_time = rk_time;
 
   if (run_input.motion == 1) {
@@ -195,25 +195,39 @@ void mesh::move(int _iter, int in_rk_step) {
 void mesh::deform(void)
 {
   for (int i=0; i<run_input.elas_max_iter; i++) {
+    run_input.elas_iter = i;
+
+//    set_boundary_displacements_eles();
+//    apply_boundary_displacements_fpts();
+
     /*! Calculate position of boundary nodes & transfer to eles classes */
     //set_boundary_displacements_eles();
 
     /*! First steps of FR process up to boundary conditions */
-    CalcResidualElasticity_start(FlowSol);
+    //CalcResidualElasticity_start(FlowSol);
 
     /*! Apply the boundary conditions to the eles classes */
     //apply_boundary_displacements_fpts();
 
     /*! Remainder of FR process after boundary conditions */
-    CalcResidualElasticity_finish(FlowSol);
+    //CalcResidualElasticity_finish(FlowSol);
 
-    for(int i=0; i<FlowSol->n_ele_types; i++)
-      FlowSol->mesh_eles(i)->AdvanceSolutionElasticity(rk_step, FlowSol->adv_type);
+    CalcResidualElasticity(FlowSol,i);
+
+//    for(int j=0; j<FlowSol->n_ele_types; j++) {
+//      FlowSol->mesh_eles(j)->AdvanceSolutionElasticity(0, 0);
+//      if ((i+1)%10==0) {
+//        FlowSol->mesh_eles(j)->write_disp_upts(i);
+//      }
+//    }
+  //}
+
+    if ((i+1)%10==0) {
+      /*! Extrapolate the displacement to the shape points */
+      for(int j=0; j<FlowSol->n_ele_types; j++)
+        FlowSol->mesh_eles(j)->extrapolate_solution_spts_elasticity();
+    }
   }
-
-  /*! Extrapolate the displacement to the shape points */
-  for(int i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->extrapolate_solution_spts_elasticity();
 
   /*! Using the final displacement solution, average values to the mesh vertices */
   update_displacements();
@@ -224,6 +238,9 @@ void mesh::deform(void)
   /*! Calculate new grid velocities, transformations, etc. */
   update();
 
+  /*if ((i+1)%20==0)
+    write_mesh((double)(i+1));
+  }*/
 }
 
 
@@ -373,6 +390,7 @@ void mesh::write_mesh_gmsh(double sim_time)
   if (find != suffix.npos) suffix.replace(find,1,"_");
   filename.insert(filename.size()-4,suffix);
 
+  cout << "Writing new mesh file " << filename << " ... " << flush;
   fstream file;
   file.open(filename.c_str(),ios::out);
 
@@ -490,6 +508,8 @@ void mesh::write_mesh_gmsh(double sim_time)
     }*/
   file << "$EndElements" << endl;
   file.close();
+
+  cout << "done." << endl;
 }
 
 double mesh::check_grid(solution* FlowSol) {
@@ -648,9 +668,10 @@ void mesh::set_boundary_displacements_eles(void)
       for (ivb = 0; ivb < nBndPts(ib0); ivb++) {
         iv = boundPts(ib0)(ivb); // Global id of boundary vertex
         for (j = 0; j<n_dims; j++) {
-          //displacement(iv,j) = xv(0)(iv,j) + motion_params(ib1)(2*j  )*motion_params(ib1)(6+j)*sin(motion_params(ib1)(6+j)*(time+run_input.dt));
-          displacement(iv,j) = motion_params(ib1)(2*j  )*sin(motion_params(ib1)(6+j)*(time+run_input.dt));
-          displacement(iv,j)+= motion_params(ib1)(2*j+1)*cos(motion_params(ib1)(6+j)*(time+run_input.dt));
+          displacement(iv,j) = xv_0(iv,j);
+          displacement(iv,j)+= motion_params(ib1)(2*j  )*sin(motion_params(ib1)(6+j)*rk_time);
+          displacement(iv,j)+= motion_params(ib1)(2*j+1)*cos(motion_params(ib1)(6+j)*rk_time);
+          displacement(iv,j)-= xv(0)(iv,j);
         }
       }
     }
@@ -658,10 +679,11 @@ void mesh::set_boundary_displacements_eles(void)
 
   // Assign displacement values to eles
   for (iv=0; iv<n_verts; iv++) {
-    for (j=0; j<n_dims; j++)
+    for (j=0; j<n_dims; j++) {
       disp(j) = displacement(iv,j);
+    }
 
-    // Set displacement to be average of values from all surrounding cells
+    // Set displacement within eles class
     for (icv=0; icv<v2n_c(iv); icv++) {
       ctype = v2ctype(iv,icv);
       ic = v2c(iv,icv);
@@ -681,8 +703,9 @@ void mesh::update_displacements(void)
   array<double> disp(n_dims);
 
   for (iv=0; iv<n_verts; iv++) {
-    for (dim=0; dim<n_dims; dim++)
+    for (dim=0; dim<n_dims; dim++) {
       displacement(iv,dim) = 0.;
+    }
 
     // Set displacement to be average of values from all surrounding cells
     for (iiv=0; iiv<v2n_c(iv); iiv++) {
@@ -703,7 +726,6 @@ void mesh::update_displacements(void)
 void mesh::update_mesh_nodes(void)
 {
   int iv, dim;
-  double new_coord;
 
   if (rk_step==0) {
     // Push back previous time-advance level w/o de-/re-allocating memory
@@ -718,9 +740,7 @@ void mesh::update_mesh_nodes(void)
 
   for (iv = 0; iv < n_verts; iv++) {
     for (dim = 0; dim < n_dims; dim++) {
-      new_coord = xv(0)(iv,dim) + displacement(iv,dim);
-      if (fabs(new_coord) < eps*eps) new_coord = 0.0; // necessary?
-      xv(0)(iv,dim) = new_coord;
+      xv(0)(iv,dim) += displacement(iv,dim);
     }
   }
 }
@@ -738,6 +758,8 @@ void mesh::apply_boundary_displacements_fpts(void)
       FlowSol->mesh_eles(ctype(icg))->apply_boundary_displacement_fpts(loc_f,loc_c);
     }
   }
+
+  FlowSol->mesh_eles(0)->write_disp_fpts(run_input.elas_iter);
 }
 
 /* If using moving mesh, need to advance the Geometric Conservation Law

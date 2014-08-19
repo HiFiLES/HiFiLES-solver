@@ -1357,7 +1357,7 @@ void CalcNormResidual(struct solution* FlowSol) {
       else FatalError("norm_type not recognized");
       
       if (isnan(FlowSol->norm_residual(i))) {
-        FatalError("NaN residual encountered. Exiting");
+        //FatalError("NaN residual encountered. Exiting");
       }
     }
   }
