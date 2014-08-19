@@ -43,6 +43,10 @@ ifeq ($(PARALLEL),MPI)
 	OPTS    += -D_$(PARALLEL) 
 endif
 
+ifeq ($(MACHINE),ENRICO)
+	OPTS    += -D_$(MACHINE)
+endif
+
 # Includes
 
 OPTS    += -I include 
@@ -50,10 +54,6 @@ OPTS    += -I include
 ifeq ($(NODE),GPU)
 	OPTS	+= -I $(CUDA_DIR)/include 
 endif
-
-#ifeq ($(BLAS),STANDARD_BLAS)
-#	OPTS	+= -I $(BLAS_DIR)/include
-#endif
 
 ifeq ($(TECIO),YES)
 	OPTS += -I $(TECIO_DIR)/tecsrc
