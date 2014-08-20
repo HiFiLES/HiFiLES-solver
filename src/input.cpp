@@ -239,9 +239,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> adv_type;
     }
-    else if (!param_name.compare("const_src_term"))
+    else if (!param_name.compare("const_src"))
     {
-      in_run_input_file >> const_src_term;
+      in_run_input_file >> const_src;
     }
     else if (!param_name.compare("monitor_res_freq"))
     {
@@ -671,9 +671,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
   if (equation==0)
   {
     if (riemann_solve_type==1)
-      FatalError("Lax-Friedrich flux not supported with NS equation");
+      FatalError("Lax-Friedrich flux not supported with NS/RANS equation");
     if (ic_form==2 || ic_form==3 || ic_form==4)
-      FatalError("Initial condition not supported with NS equation");
+      FatalError("Initial condition not supported with NS/RANS equation");
   }
   else if (equation==1)
   {
@@ -681,6 +681,12 @@ void input::setup(ifstream& in_run_input_file, int rank)
       FatalError("Rusanov flux not supported with Advection-Diffusion equation");
     if (ic_form==0 || ic_form==1)
       FatalError("Initial condition not supported with Advection-Diffusion equation");
+  }
+
+  if (turb_model>0)
+  {
+    if (riemann_solve_type==2)
+      FatalError("Roe flux not supported with RANS equation");
   }
   
   

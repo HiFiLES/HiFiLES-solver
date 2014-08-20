@@ -287,8 +287,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     }
 
     // Initialize source term
-    src_term.setup(n_upts_per_ele, n_eles, n_fields);
-    zero_array(src_term);
+    src_upts.setup(n_upts_per_ele, n_eles, n_fields);
+    zero_array(src_upts);
 
     // Allocate array for grid velocity
     temp_v.setup(n_dims);
@@ -727,6 +727,7 @@ void eles::mv_all_cpu_gpu(void)
   {
     disu_upts(0).cp_cpu_gpu();
     div_tconf_upts(0).cp_cpu_gpu();
+    src_upts.cp_cpu_gpu();
     
     for(int i=1;i<n_adv_levels;i++)
     {
@@ -775,13 +776,22 @@ void eles::mv_all_cpu_gpu(void)
 }
 
 // move wall distance array to gpu
-
 void eles::mv_wall_distance_cpu_gpu(void)
 {
 #ifdef _GPU
   
   wall_distance.mv_cpu_gpu();
   
+#endif
+}
+
+// move wall distance magnitude array to gpu
+void eles::mv_wall_distance_mag_cpu_gpu(void)
+{
+#ifdef _GPU
+
+  wall_distance_mag.mv_cpu_gpu();
+
 #endif
 }
 
@@ -820,7 +830,6 @@ void eles::cp_grad_disu_upts_gpu_cpu(void)
 }
 
 // copy determinant of jacobian at solution points to cpu
-
 void eles::cp_detjac_upts_gpu_cpu(void)
 {
 #ifdef _GPU
@@ -831,7 +840,6 @@ void eles::cp_detjac_upts_gpu_cpu(void)
 }
 
 // copy divergence at solution points to cpu
-
 void eles::cp_div_tconf_upts_gpu_cpu(void)
 {
   if (n_eles!=0)
@@ -840,6 +848,19 @@ void eles::cp_div_tconf_upts_gpu_cpu(void)
     
     div_tconf_upts(0).cp_gpu_cpu();
     
+#endif
+  }
+}
+
+// copy source term at solution points to cpu
+void eles::cp_src_upts_gpu_cpu(void)
+{
+  if (n_eles!=0)
+  {
+#ifdef _GPU
+
+    src_upts.cp_gpu_cpu();
+
 #endif
   }
 }
@@ -928,15 +949,15 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
           {
             // User supplied timestep
             if (run_input.dt_type == 0)
-              disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term - src_term(inp,ic,i));
+              disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
             
             // Global minimum timestep
             else if (run_input.dt_type == 1)
-              disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term - src_term(inp,ic,i));
+              disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
             
             // Element local timestep
             else if (run_input.dt_type == 2)
-              disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term - src_term(inp,ic,i));
+              disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
             else
               FatalError("ERROR: dt_type not recognized!")
               
@@ -947,7 +968,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 #endif
       
 #ifdef _GPU
-      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
+      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),run_input.dt,run_input.const_src);
 #endif
       
     }
@@ -1025,7 +1046,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
         {
           for (int inp=0;inp<n_upts_per_ele;inp++)
           {
-            rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term + src_term(inp,ic,i);
+            rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src + src_upts(inp,ic,i);
             res = disu_upts(1)(inp,ic,i);
             
             if (run_input.dt_type == 0)
@@ -1045,7 +1066,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
       
 #ifdef _GPU
       
-      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
+      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),rk4a,rk4b,run_input.dt,run_input.const_src);
       
 #endif
       
@@ -1276,7 +1297,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 #endif
     
 #ifdef _GPU
-    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
+    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.turb_model);
 #endif
   }
 }
@@ -2303,7 +2324,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
     
 #ifdef _GPU
     
-    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, motion, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, motion, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff, run_input.turb_model, run_input.c_v1, run_input.omega, run_input.prandtl_t);
     
 #endif
     
@@ -2637,7 +2658,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
 
 
 // calculate source term for SA turbulence model at solution points
-void eles::calc_src_term_SA(int in_disu_upts_from)
+void eles::calc_src_upts_SA(int in_disu_upts_from)
 {
   if (n_eles!=0)
   {
@@ -2662,9 +2683,9 @@ void eles::calc_src_term_SA(int in_disu_upts_from)
 
         // source term
         if(n_dims==2)
-          calc_source_SA_2d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_term(j,i,n_fields-1));
+          calc_source_SA_2d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_upts(j,i,n_fields-1));
         else if(n_dims==3)
-          calc_source_SA_3d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_term(j,i,n_fields-1));
+          calc_source_SA_3d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_upts(j,i,n_fields-1));
         else
           cout << "ERROR: Invalid number of dimensions ... " << endl;
       }
@@ -2672,9 +2693,9 @@ void eles::calc_src_term_SA(int in_disu_upts_from)
 
 #endif
 
-//#ifdef _GPU
-//        calc_src_term_SA_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),grad_disu_upts.get_ptr_gpu(), wall_distance_mag.get_ptr_gpu(), src_term.get_ptr_gpu(), run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.c_v1,run_input.c_v2,run_input.c_v3,run_input.c_b1,run_input.c_b2,run_input.c_w2,run_input.c_w3,run_input.omega,run_input.Kappa);
-//#endif
+#ifdef _GPU
+    calc_src_upts_SA_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, disu_upts(in_disu_upts_from).get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), wall_distance_mag.get_ptr_gpu(), src_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.c_v1, run_input.c_v2, run_input.c_v3, run_input.c_b1, run_input.c_b2, run_input.c_w2, run_input.c_w3, run_input.omega, run_input.Kappa);
+#endif
 
   }
 }
@@ -5969,10 +5990,10 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
     cell_sum=0;
     for (j=0; j<n_upts_per_ele; j++) {
       if (in_norm_type == 1) {
-        cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src_term-src_term(j,i,in_field));
+        cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
       }
       else if (in_norm_type == 2) {
-        cell_sum += (div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)-run_input.const_src_term-src_term(j,i,in_field))*(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src_term-src_term(j,i,in_field));
+        cell_sum += (div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)-run_input.const_src-src_upts(j,i,in_field))*(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
       }
     }
     sum += cell_sum;

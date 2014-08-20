@@ -974,6 +974,9 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
       if (FlowSol->rank==0) cout << "Moving wall_distance to GPU ... " << endl;
       for(int i=0;i<FlowSol->n_ele_types;i++)
         FlowSol->mesh_eles(i)->mv_wall_distance_cpu_gpu();
+
+      for(int i=0;i<FlowSol->n_ele_types;i++)
+        FlowSol->mesh_eles(i)->mv_wall_distance_mag_cpu_gpu();
 #endif
 
 }

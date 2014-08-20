@@ -74,7 +74,7 @@ public:
   double pen_fact;
   double fix_vis;
   double diff_coeff;
-  double const_src_term;
+  double const_src;
 
   int order;
   int inters_cub_order;

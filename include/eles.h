@@ -67,6 +67,9 @@ public:
 	/*! move wall distance array to from cpu to gpu */
 	void mv_wall_distance_cpu_gpu(void);
 
+  /*! move wall distance magnitude array to from cpu to gpu */
+  void mv_wall_distance_mag_cpu_gpu(void);
+
 	/*! copy transformed discontinuous solution at solution points to cpu */
 	void cp_disu_upts_gpu_cpu(void);
 
@@ -80,6 +83,9 @@ public:
 
   /*! copy divergence at solution points to cpu */
   void cp_div_tconf_upts_gpu_cpu(void);
+
+  /*! copy source term at solution points to cpu */
+  void cp_src_upts_gpu_cpu(void);
 
   /*! remove transformed discontinuous solution at solution points from cpu */
   void rm_disu_upts_cpu(void);
@@ -133,7 +139,7 @@ public:
   //void calc_div_tconvisf_upts(int in_div_tconinvf_upts_to);
 
   /*! calculate source term for SA turbulence model at solution points */
-  void calc_src_term_SA(int in_disu_upts_from);
+  void calc_src_upts_SA(int in_disu_upts_from);
   
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolution(int in_step, int adv_type);
@@ -1003,7 +1009,7 @@ protected:
 	array<double> tgrad_detjac_fpts;
 
   /*! source term for SA turbulence model at solution points */
-  array<double> src_term;
+  array<double> src_upts;
 
   array<double> d_nodal_s_basis;
   array<double> dd_nodal_s_basis;
