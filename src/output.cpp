@@ -141,6 +141,10 @@ void write_tec(int in_file_num, struct solution* FlowSol)
         }
     }
 
+  if (run_input.turb_model==1) {
+    fields += ", \"mu_tilde\"";
+  }
+
   // append the names of the diagnostic fields
   if(n_diag_fields>0)
     {
@@ -558,7 +562,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   array<double> dynamic_coeff_ppts_temp;
   /*! turbulent viscosity at plot points */
   array<double> turb_visc_ppts_temp;
-  
+  /*! Grid velocity at plot points */
+  array<double> grid_vel_ppts_temp;
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
 
@@ -637,6 +642,11 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
 
+      /*! write out modified turbulent viscosity */
+      if (run_input.turb_model==1) {
+        write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Mu_Tilde\" />" << endl;
+      }
+
       // Optional diagnostic fields
       for(m=0;m<n_diag_fields;m++)
         {
@@ -664,7 +674,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 #else
 
   /*! In serial, don't write a .pvtu file. */
-  cout << "Writing Paraview dump number " << dumpnum << " ...." << endl;
+  cout << "Writing Paraview dump number " << dumpnum << " ... " << flush;
 
 #endif
 
@@ -722,6 +732,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
             
             dynamic_coeff_ppts_temp.setup(n_points);
             turb_visc_ppts_temp.setup(n_points);
+          }
+
+          /*! Temporary grid velocity array at plot points */
+          if (run_input.motion) {
+            FlowSol->mesh_eles(i)->set_grid_vel_ppts();
+            grid_vel_ppts_temp = FlowSol->mesh_eles(i)->get_grid_vel_ppts();
           }
 
           con.setup(n_verts,n_cells);
@@ -799,6 +815,49 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 }
               write_vtu << endl;
               write_vtu << "				</DataArray>" << endl;
+
+              /*! modified turbulent viscosity */
+              if (run_input.turb_model == 1) {
+                write_vtu << "				<DataArray type= \"Float32\" Name=\"Nu_Tilde\" format=\"ascii\">" << endl;
+                for(k=0;k<n_points;k++)
+                {
+                  /*! In 2D nu_tilde is the 5th solution component */
+                  if(n_dims==2)
+                  {
+                    write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
+                  }
+                  /*! In 3D nu_tilde is the 6th solution component */
+                  else
+                  {
+                    write_vtu << disu_ppts_temp(k,5)/disu_ppts_temp(k,0) << " ";
+                  }
+                }
+                /*! End the line and finish writing DataArray and PointData objects */
+                write_vtu << endl;
+                write_vtu << "				</DataArray>" << endl;
+              }
+
+              if (run_input.motion) {
+                /*! grid velocity */
+                write_vtu << "				<DataArray type= \"Float32\" NumberOfComponents=\"3\" Name=\"GridVelocity\" format=\"ascii\">" << endl;
+                for(k=0;k<n_points;k++)
+                {
+                  write_vtu << grid_vel_ppts_temp(0,k,j) << " " << grid_vel_ppts_temp(1,k,j) << " ";
+
+                  /*! In 2D the z-component of velocity is not stored, but Paraview needs it so write a 0. */
+                  if(n_fields==4)
+                  {
+                    write_vtu << 0.0 << " ";
+                  }
+                  /*! In 3D just write the z-component of velocity */
+                  else
+                  {
+                    write_vtu << grid_vel_ppts_temp(2,k,j) << " ";
+                  }
+                }
+                write_vtu << endl;
+                write_vtu << "				</DataArray>" << endl;
+              }
 
               /*! Write out optional diagnostic fields */
               for(m=0;m<n_diag_fields;m++)
@@ -890,6 +949,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
   /*! Close the .vtu file */
   write_vtu.close();
+
+#ifdef _MPI
+
+#else
+  cout << "done." << endl;
+#endif
 }
 
 void write_restart(int in_file_num, struct solution* FlowSol)
@@ -1267,14 +1332,19 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 void CalcNormResidual(struct solution* FlowSol) {
   
   int i, j, n_upts = 0, n_fields;
-  double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  double sum[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, norm[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
-  
+
+  if (run_input.turb_model==1) {
+    n_fields++;
+  }
+
   for(i=0; i<FlowSol->n_ele_types; i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
       FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
+      FlowSol->mesh_eles(i)->cp_src_upts_gpu_cpu();
       n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
       for(j=0; j<n_fields; j++)
         sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
@@ -1284,7 +1354,7 @@ void CalcNormResidual(struct solution* FlowSol) {
 #ifdef _MPI
   
   int n_upts_global = 0;
-  double sum_global[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   
@@ -1319,6 +1389,10 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
   
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
+
+  if (run_input.turb_model==1) {
+    n_fields++;
+  }
   
   // set write flag
   if (run_input.restart_flag==0) {
@@ -1357,8 +1431,14 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     
     // Write the header
     if (write_heads) {
-      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
-      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
+      if (FlowSol->n_dims==2) {
+        if (n_fields == 4) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
+        else cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total" << endl;
+      }
+      else {
+        if (n_fields == 5) cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
+        else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total       Fz_Total" << endl;
+      }
     }
     
     // Output residuals
@@ -1524,7 +1604,8 @@ void CopyGPUCPU(struct solution* FlowSol)
   {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
     {
-      FlowSol->mesh_eles(i)->cp_transforms_gpu_cpu();
+      if (run_input.motion)
+        FlowSol->mesh_eles(i)->cp_transforms_gpu_cpu();
       FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
       if (FlowSol->viscous==1)
       {

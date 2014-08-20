@@ -109,6 +109,15 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
       FatalError("ERROR: Invalid interface type ... ");
     }
 
+  if (run_input.turb_model==1)
+  {
+    n_fields++;
+    if (n_dims==3)
+    {
+      FatalError("ERROR: 3D geometry not supported with RANS equation yet ... ");
+    }
+  }
+
       disu_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
       norm_tconf_fpts_l.setup(n_fpts_per_inter,n_inters,n_fields);
       detjac_fpts_l.setup(n_fpts_per_inter,n_inters);

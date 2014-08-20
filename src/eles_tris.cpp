@@ -81,6 +81,9 @@ void eles_tris::setup_ele_type_specific()
   else
     FatalError("Equation not supported");
 
+  if (run_input.turb_model==1)
+    n_fields++;
+
   n_inters_per_ele=3;
 
   n_upts_per_ele=(order+2)*(order+1)/2;

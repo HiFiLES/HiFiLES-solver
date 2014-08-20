@@ -67,6 +67,9 @@ public:
 	/*! move wall distance array to from cpu to gpu */
 	void mv_wall_distance_cpu_gpu(void);
 
+  /*! move wall distance magnitude array to from cpu to gpu */
+  void mv_wall_distance_mag_cpu_gpu(void);
+
 	/*! copy transformed discontinuous solution at solution points to cpu */
 	void cp_disu_upts_gpu_cpu(void);
 
@@ -81,8 +84,11 @@ public:
   /*! copy divergence at solution points to cpu */
   void cp_div_tconf_upts_gpu_cpu(void);
 
-	/*! copy LES diagnostics at solution points to cpu */
-	void cp_LES_diagnostics_gpu_cpu(void);
+  /*! copy LES diagnostics at solution points to cpu */
+  void cp_LES_diagnostics_gpu_cpu(void);
+
+  /*! copy source term at solution points to cpu */
+  void cp_src_upts_gpu_cpu(void);
 
   /*! remove transformed discontinuous solution at solution points from cpu */
   void rm_disu_upts_cpu(void);
@@ -140,6 +146,9 @@ public:
 
   /*! calculate divergence of transformed continuous viscous flux at solution points */
   //void calc_div_tconvisf_upts(int in_div_tconinvf_upts_to);
+
+  /*! calculate source term for SA turbulence model at solution points */
+  void calc_src_upts_SA(int in_disu_upts_from);
   
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolution(int in_step, int adv_type);
@@ -591,7 +600,15 @@ public:
   void set_dt(int in_step, int adv_type);
 
 #ifdef _GPU
-  void cp_transforms_gpu_cpu();
+  void cp_transforms_gpu_cpu(void);
+  void cp_transforms_cpu_gpu(void);
+
+  void perturb_shape(double rk_time);
+  void rigid_move(double rk_time);
+
+  void calc_grid_velocity(void);
+  void rigid_grid_velocity(double rk_time);
+  void perturb_grid_velocity(double rk_time);
 #endif
 protected:
 
@@ -844,6 +861,7 @@ protected:
 	
 	/*! storage for distance of solution points to nearest no-slip boundary */
 	array<double> wall_distance;
+  array<double> wall_distance_mag;
 
 	array<double> twall;
 
@@ -1019,6 +1037,9 @@ protected:
 	
 	/*! transformed gradient of determinant of jacobian at flux points */
 	array<double> tgrad_detjac_fpts;
+
+  /*! source term for SA turbulence model at solution points */
+  array<double> src_upts;
 
   array<double> d_nodal_s_basis;
   array<double> dd_nodal_s_basis;

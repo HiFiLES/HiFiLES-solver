@@ -80,6 +80,9 @@ void eles_hexas::setup_ele_type_specific()
   else
     FatalError("Equation not supported");
 
+  if (run_input.turb_model==1)
+    n_fields++;
+
   n_inters_per_ele=6;
 
   n_upts_per_ele=(order+1)*(order+1)*(order+1);

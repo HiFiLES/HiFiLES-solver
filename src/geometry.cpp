@@ -98,7 +98,7 @@ void SetInput(struct solution* FlowSol) {
 
   // Enrico:
 #ifdef _ENRICO
-  if (FlowSol->rank==0) { cout << "setting CUDA devices on yosemitesam ..." << endl; }
+  if (FlowSol->rank==0) { cout << "setting CUDA devices on enrico ..." << endl; }
   if (FlowSol->rank==0) { cudaSetDevice(2); }
   else if (FlowSol->rank==1) { cudaSetDevice(0); }
   else if (FlowSol->rank==2) { cudaSetDevice(3); }
@@ -800,7 +800,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
     Mesh.ic2loc_c = local_c;
 
   // Flag interfaces for calculating LES wall model
-  if(run_input.wall_model>0) {
+  if(run_input.wall_model>0 or run_input.turb_model>0) {
 
     if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
 
@@ -974,6 +974,9 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
       if (FlowSol->rank==0) cout << "Moving wall_distance to GPU ... " << endl;
       for(int i=0;i<FlowSol->n_ele_types;i++)
         FlowSol->mesh_eles(i)->mv_wall_distance_cpu_gpu();
+
+      for(int i=0;i<FlowSol->n_ele_types;i++)
+        FlowSol->mesh_eles(i)->mv_wall_distance_mag_cpu_gpu();
 #endif
 
 }
@@ -1066,11 +1069,14 @@ void create_boundpts(array<array<int> >& out_boundpts, array<int>& in_bclist, ar
 
   /** Find boundaries which are moving */
   for (int i=0; i<run_input.n_moving_bnds; i++) {
-    bcflag = get_bc_number(run_input.boundary_flags(i));
-    for (int j=0; j<n_bcs; j++) {
-      if (in_bclist(j)==bcflag) {
-        out_bound_flag(j) = 1;
-        break;
+    if (run_input.boundary_flags(i).compare("FLUID"))  // if NOT 'FLUID'
+    {
+      bcflag = get_bc_number(run_input.boundary_flags(i));
+      for (int j=0; j<n_bcs; j++) {
+        if (in_bclist(j)==bcflag) {
+          out_bound_flag(j) = 1;
+          break;
+        }
       }
     }
   }
@@ -1377,11 +1383,14 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   out_bound_flag.setup(n_bcs);
   out_bound_flag.initialize_to_zero();
   for (int i=0; i<run_input.n_moving_bnds; i++) {
-    bcflag = get_bc_number(run_input.boundary_flags(i));
-    for (int j=0; j<n_bcs; j++) {
-      if (out_bclist(j)==bcflag) {
-        out_bound_flag(j) = 1;
-        break;
+    if (run_input.boundary_flags(i).compare("FLUID"))  // if NOT 'FLUID'
+    {
+      bcflag = get_bc_number(run_input.boundary_flags(i));
+      for (int j=0; j<n_bcs; j++) {
+        if (out_bclist(j)==bcflag) {
+          out_bound_flag(j) = 1;
+          break;
+        }
       }
     }
   }

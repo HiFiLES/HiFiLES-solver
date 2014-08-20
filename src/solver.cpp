@@ -191,6 +191,11 @@ void CalcResidual(struct solution* FlowSol) {
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calculate_corrected_divergence(in_div_tconf_upts_to);
 
+  /*! Compute source term */
+  if (run_input.turb_model==1) {
+    for (i=0; i<FlowSol->n_ele_types; i++)
+      FlowSol->mesh_eles(i)->calc_src_upts_SA(in_disu_upts_from);
+  }
 }
 
 #ifdef _MPI

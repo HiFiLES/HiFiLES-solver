@@ -44,6 +44,7 @@ using namespace std;
 input::input()
 {
   // Set default values for optional parameters
+  turb_model = 0;
   motion = 0;
   GCL = 0;
   n_deform_iters = 1;
@@ -95,7 +96,8 @@ void input::setup(ifstream& in_run_input_file, int rank)
   char buf[BUFSIZ]={""};
   char section_TXT[100];
   string dummy, param_name;
-  
+  bool blank;
+
   // First loop over the input file and print content to output
   if (rank==0)
   {
@@ -107,7 +109,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
     in_run_input_file.clear();
     in_run_input_file.seekg(0, ios::beg);
   }
-  
+
   // Now read in parameters
   while(!in_run_input_file.eof() )
   {
@@ -115,8 +117,15 @@ void input::setup(ifstream& in_run_input_file, int rank)
     in_run_input_file.getline(buf,BUFSIZ);
     sscanf(buf,"%s",section_TXT);
     param_name.assign(section_TXT,0,99);
-    
-    if (!param_name.compare(0,5,"-----"))
+    blank = false;
+
+    if (in_run_input_file.peek()=='\n') {
+      // Blank line. Funky, but it's the only way
+      while(in_run_input_file.peek()=='\n')
+        in_run_input_file.get();
+      blank = true;
+    }
+    else if (!param_name.compare(0,5,"-----"))
     {
       // Section header, ignore next two lines
       in_run_input_file.getline(buf,BUFSIZ);
@@ -190,6 +199,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> n_steps;
     }
+    else if (!param_name.compare("turb_model"))
+    {
+      in_run_input_file >> turb_model;
+    }
     else if (!param_name.compare("LES"))
     {
       in_run_input_file >> LES;
@@ -226,9 +239,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> adv_type;
     }
-    else if (!param_name.compare("const_src_term"))
+    else if (!param_name.compare("const_src"))
     {
-      in_run_input_file >> const_src_term;
+      in_run_input_file >> const_src;
     }
     else if (!param_name.compare("monitor_res_freq"))
     {
@@ -354,10 +367,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
       for (int i=0; i<n_moving_bnds; i++) {
         in_run_input_file.getline(buf,BUFSIZ);
         in_run_input_file >> boundary_flags(i) >> motion_type(i);
-        bound_vel_simple(i).setup(3);
-        for (int j=0; j<3; j++) {
+        bound_vel_simple(i).setup(9);
+        for (int j=0; j<9; j++) {
           in_run_input_file >> bound_vel_simple(i)(j);
-          cout << bound_vel_simple(i)(j) << " ";
+          //cout << bound_vel_simple(i)(j) << " ";
         }
       }
     }
@@ -635,8 +648,8 @@ void input::setup(ifstream& in_run_input_file, int rank)
       FatalError("input parameter not recognized");
     }
     
-    // Read end of line, if not a comment line
-    if (param_name.compare(0,2,"//"))
+    // Read end of line, if NOT a comment line or blank line
+    if (param_name.compare(0,2,"//") && !blank)
       in_run_input_file.getline(buf,BUFSIZ);
   }
   
@@ -658,9 +671,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
   if (equation==0)
   {
     if (riemann_solve_type==1)
-      FatalError("Lax-Friedrich flux not supported with NS equation");
+      FatalError("Lax-Friedrich flux not supported with NS/RANS equation");
     if (ic_form==2 || ic_form==3 || ic_form==4)
-      FatalError("Initial condition not supported with NS equation");
+      FatalError("Initial condition not supported with NS/RANS equation");
   }
   else if (equation==1)
   {
@@ -668,6 +681,12 @@ void input::setup(ifstream& in_run_input_file, int rank)
       FatalError("Rusanov flux not supported with Advection-Diffusion equation");
     if (ic_form==0 || ic_form==1)
       FatalError("Initial condition not supported with Advection-Diffusion equation");
+  }
+
+  if (turb_model>0)
+  {
+    if (riemann_solve_type==2)
+      FatalError("Roe flux not supported with RANS equation");
   }
   
   
@@ -772,8 +791,24 @@ void input::setup(ifstream& in_run_input_file, int rank)
       p_c_ic   = p_c_ic/p_ref;
       T_c_ic   = T_c_ic/T_ref;
       
+      // SA turblence model parameters
+      prandtl_t = 0.9;
+      if (turb_model == 1)
+      {
+          c_v1 = 7.1;
+          c_v2 = 0.7;
+          c_v3 = 0.9;
+          c_b1 = 0.1355;
+          c_b2 = 0.622;
+          c_w2 = 0.3;
+          c_w3 = 2.0;
+          omega = 2.0/3.0;
+          Kappa = 0.41;
+          mu_tilde_c_ic = 5.0*mu_c_ic;
+          mu_tilde_inf = 5.0*mu_inf;
+      }
+
       // Master node outputs information about the I.C.s to the console
-      
       if (rank==0)
       {
         cout << "uvw_ref: " << uvw_ref << endl;
