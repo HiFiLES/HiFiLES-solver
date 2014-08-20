@@ -906,6 +906,7 @@ void eles::cp_LES_diagnostics_gpu_cpu(void)
     }
   }
 #endif
+}
 
 // copy source term at solution points to cpu
 void eles::cp_src_upts_gpu_cpu(void)
