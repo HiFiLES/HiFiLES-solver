@@ -983,7 +983,7 @@ __device__ void vis_NS_flux(double* q, double* grad_q, double* grad_vel, double*
 
 
 template<int n_dims>
-__device__ void calc_source_SA(double* u, double* grad_u, double* out_source, double d, double prandtl, double gamma, double rt_inf, double mu_inf, double c_sth, int fix_vis, double c_v1, double c_v2, double c_v3, double c_b1, double c_b2, double c_w2, double c_w3, double omega, double Kappa)
+__device__ void calc_source_SA(double* in_u, double* grad_u, double* out_source, double d, double prandtl, double gamma, double rt_inf, double mu_inf, double c_sth, int fix_vis, double c_v1, double c_v2, double c_v3, double c_b1, double c_b2, double c_w2, double c_w3, double omega, double Kappa)
 {
   if(n_dims == 2)
   {
@@ -999,11 +999,11 @@ __device__ void calc_source_SA(double* u, double* grad_u, double* out_source, do
     double c_w1, r, g, f_w;
 
     // primitive variables
-    rho = u[0];
-    u = u[1]/u[0];
-    v = u[2]/u[0];
-    ene = u[3];
-    nu_tilde = u[4]/u[0];
+    rho = in_u[0];
+    u = in_u[1]/in_u[0];
+    v = in_u[2]/in_u[0];
+    ene = in_u[3];
+    nu_tilde = in_u[4]/in_u[0];
 
     // gradients
     dv_dx = (grad_u[2*n_dims+0]-grad_u[0*n_dims+0]*v)/rho;
@@ -1019,7 +1019,7 @@ __device__ void calc_source_SA(double* u, double* grad_u, double* out_source, do
     mu = mu + fix_vis*(mu_inf - mu);
 
     // regulate eddy viscosity (must not become negative)
-    Chi = u[4]/mu;
+    Chi = in_u[4]/mu;
     if (Chi <= 10.0)
       psi = 0.05*log(1.0 + exp(20.0*Chi));
     else
@@ -1030,7 +1030,7 @@ __device__ void calc_source_SA(double* u, double* grad_u, double* out_source, do
     S = abs(dv_dx - du_dy);
 
     // (solve for S_bar)
-    f_v1 = pow(u[4]/mu, 3.0)/(pow(u[4]/mu, 3.0) + pow(c_v1, 3.0));
+    f_v1 = pow(in_u[4]/mu, 3.0)/(pow(in_u[4]/mu, 3.0) + pow(c_v1, 3.0));
     f_v2 = 1.0 - psi/(1.0 + psi*f_v1);
     S_bar = pow(mu*psi/rho, 2.0)*f_v2/(pow(Kappa, 2.0)*pow(d, 2.0));
 
@@ -3177,7 +3177,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int n_upts_per_ele, int n_eles, 
   double sd[n_dims*n_dims];     // for WALE SGS model
   double lm[n_comp];               // local Leonard tensor for momentum
   double le[n_dims];               // local Leonard tensor for energy
-  double jac, delta, Cs, mu_t;
+  double jac, delta, Cs;
   // dynamic LES variables
   double qf[n_fields];             // filtered solution
   double grad_enef[n_dims];
