@@ -578,6 +578,7 @@ public:
 
   void perturb_shape(double rk_time);
   void rigid_move(double rk_time);
+  void blend_move(int n_bnds, array<int>& boundPts, array<int>& nBndPts, array<int>& bnd_match, array<double>& xv, array<double>& xv_0, double rk_time);
 
   void calc_grid_velocity(void);
   void rigid_grid_velocity(double rk_time);
@@ -1043,6 +1044,9 @@ protected:
    * indexing: (in_upt, in_ele) \n
    */
   array< array<double> > div_tconf_GCL_upts;
+
+  /*! Array of motion parameters for moving boundaries [for passing to GPU] */
+  array<double> motion_params;
 
 #ifdef _GPU
   cusparseHandle_t handle;

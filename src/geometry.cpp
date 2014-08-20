@@ -190,20 +190,11 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
   // Reading boundaries
   //ReadBound(run_input.mesh_file,c2v,c2n_v,ctype,bctype_c,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts, FlowSol);
-  ReadBound(run_input.mesh_file,c2v,c2n_v,c2f,f2v,f2nv,ctype,bctype_c,Mesh.boundPts,Mesh.bc_list,Mesh.bound_flags,ic2icg,
+  ReadBound(run_input.mesh_file,c2v,c2n_v,c2f,f2v,f2nv,ctype,bctype_c,Mesh.boundPts,Mesh.nBndPts,Mesh.bc_list,Mesh.bound_flags,ic2icg,
             icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts,FlowSol);
 
   // ** TODO: clean up duplicate/redundant data **
-  Mesh.c2f = c2f;
-  Mesh.c2e = c2e;
-  Mesh.f2c = f2c;
-  Mesh.f2n_v = f2nv;
-  Mesh.n_faces = FlowSol->num_inters;
-  Mesh.n_bnds = Mesh.bc_list.get_dim(0);
-  Mesh.nBndPts.setup(Mesh.n_bnds);
-  for (int i=0; i<Mesh.n_bnds; i++) {
-      Mesh.nBndPts(i) = Mesh.boundPts(i).get_dim(0);
-  }
+  Mesh.setup_part_2(c2f,c2e,f2c,f2nv,FlowSol->num_inters);
 
   /////////////////////////////////////////////////
   /// Initializing Elements
@@ -796,8 +787,15 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
         }
     }
 
-  if (run_input.motion)
+  if (run_input.motion) {
     Mesh.ic2loc_c = local_c;
+  }
+
+#ifdef _GPU
+  if (run_input.motion==LINEAR_ELASTICITY || run_input.motion==BLENDING) {
+    Mesh.mv_cpu_gpu();
+  }
+#endif
 
   // Flag interfaces for calculating LES wall model
   if(run_input.wall_model>0) {
@@ -1023,9 +1021,9 @@ void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, 
 }
 
 void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c2f, array<int>& in_f2v, array<int>& in_f2nv,
-               array<int>& in_ctype, array<int>& out_bctype, array<array<int> >& out_boundpts, array<int> &out_bc_list, array<int>& out_bound_flag,
-               array<int>& in_ic2icg, array<int>& in_icvsta, array<int>&in_icvert, array<int>& in_iv2ivg, int& in_n_cells, int& in_n_verts,
-               struct solution* FlowSol)
+               array<int>& in_ctype, array<int>& out_bctype, array<int>& out_boundpts, array<int>& out_n_bndPts, array<int> &out_bc_list,
+               array<int>& out_bound_flag, array<int>& in_ic2icg, array<int>& in_icvsta, array<int>&in_icvert, array<int>& in_iv2ivg, int& in_n_cells,
+               int& in_n_verts, struct solution* FlowSol)
 {
 
   if (FlowSol->rank==0) cout << "reading boundary conditions" << endl;
@@ -1041,10 +1039,10 @@ void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, a
     array<array<int> > bcfaces;
     read_boundary_gambit(in_file_name, in_n_cells, in_ic2icg, out_bctype, out_bc_list, bccells, bcfaces);
     if (run_input.motion != 0)
-      create_boundpts(out_boundpts, out_bc_list, out_bound_flag, bccells, bcfaces, in_c2f, in_f2v, in_f2nv);
+      create_boundpts(out_boundpts, out_n_bndPts, out_bc_list, out_bound_flag, bccells, bcfaces, in_c2f, in_f2v, in_f2nv);
   }
   else if (run_input.mesh_format==1) {
-    read_boundary_gmsh(in_file_name, in_n_cells, in_ic2icg, in_c2v, in_c2n_v, out_bctype, out_bc_list, out_bound_flag, out_boundpts, in_iv2ivg, in_n_verts, in_ctype, in_icvsta, in_icvert, FlowSol);
+    read_boundary_gmsh(in_file_name, in_n_cells, in_ic2icg, in_c2v, in_c2n_v, out_bctype, out_bc_list, out_bound_flag, out_boundpts, out_n_bndPts, in_iv2ivg, in_n_verts, in_ctype, in_icvsta, in_icvert, FlowSol);
   }
   else {
     FatalError("Mesh format not recognized");
@@ -1053,7 +1051,7 @@ void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, a
   if (FlowSol->rank==0) cout << "done reading boundary conditions" << endl;
 }
 
-void create_boundpts(array<array<int> >& out_boundpts, array<int>& in_bclist, array<int>& out_bound_flag, array<array<int> >& in_bccells,
+void create_boundpts(array<int>& out_boundpts, array<int>& out_n_bndpts, array<int>& in_bclist, array<int>& out_bound_flag, array<array<int> >& in_bccells,
                      array<array<int> >& in_bcfaces, array<int>& in_c2f, array<int>& in_f2v, array<int>& in_f2nv)
 {
   int iv, ivg, ic, k, loc_k, nv;
@@ -1061,6 +1059,7 @@ void create_boundpts(array<array<int> >& out_boundpts, array<int>& in_bclist, ar
 
   int n_bcs = in_bclist.get_dim(0);
 
+  out_n_bndpts.setup(n_bcs);
   out_bound_flag.setup(n_bcs);
   out_bound_flag.initialize_to_zero();
 
@@ -1098,10 +1097,14 @@ void create_boundpts(array<array<int> >& out_boundpts, array<int>& in_bclist, ar
         Bounds(i).insert(iv);
       }
     }
-    out_boundpts(i).setup(Bounds(i).size());
+    out_n_bndpts(i) = Bounds(i).size();
+  }
+
+  out_boundpts.setup(n_bcs,out_n_bndpts.get_max());
+  for (int i=0; i<n_bcs; i++) {
     int j = 0;
     for (set<int>::iterator it=Bounds(i).begin(); it!=Bounds(i).end(); it++) {
-      out_boundpts(i)(j) = (*it);
+      out_boundpts(i,j) = (*it);
       j++;
     }
   }
@@ -1293,7 +1296,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
 }
 
 void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic2icg, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& out_bctype,
-                        array<int> &out_bclist, array<int> &out_bound_flag, array<array<int> >& out_boundpts, array<int>& in_iv2ivg,
+                        array<int> &out_bclist, array<int> &out_bound_flag, array<int>& out_boundpts, array<int>& out_n_bndPts, array<int>& in_iv2ivg,
                         int in_n_verts, array<int>& in_ctype, array<int>& in_icvsta, array<int>& in_icvert, struct solution* FlowSol)
 {
   string str;
@@ -1356,7 +1359,6 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   int sta_ind,end_ind;
 
   // --- setup vertex->bcflag array ---
-  out_boundpts.setup(n_bcs);
   array<set<int> > Bounds;
   Bounds.setup(n_bcs);
 
@@ -1504,15 +1506,24 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
 
     } // Loop over entities
 
+  out_n_bndPts.setup(n_bcs);
+  int max_n_bndPts=0;
+  for (int i=0; i<n_bcs; i++) {
+    max_n_bndPts = max(max_n_bndPts,(int)Bounds(i).size());
+    out_n_bndPts(i) = Bounds(i).size();
+  }
+  out_boundpts.setup(n_bcs,max_n_bndPts);
+
   set<int>::iterator it;
   for (int i=0; i<n_bcs; i++) {
-    out_boundpts(i).setup(Bounds(i).size());
     int j=0;
     for (it=Bounds(i).begin(); it!=Bounds(i).end(); it++) {
-      out_boundpts(i)(j) = (*it);
+      out_boundpts(i,j) = (*it);
       j++;
     }
   }
+
+
 
   mesh_file.close();
 

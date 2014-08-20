@@ -62,6 +62,14 @@ enum BCFLAG {
   AD_WALL       = 50
 };
 
+enum MOTION_TYPE {
+  STATIC_MESH       = 0,
+  LINEAR_ELASTICITY = 1,
+  RIGID_MOTION      = 2,
+  PERTURB_TEST      = 3,
+  BLENDING          = 4
+};
+
 /** enumeration for mesh motion type */
 enum {MOTION_DISABLED, MOTION_ENABLED};
 

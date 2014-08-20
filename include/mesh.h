@@ -60,28 +60,31 @@ public:
   // #### methods ####
 
   /** Mesh motion wrapper */
-  void move(int _iter, int in_rk_step, solution *FlowSol);
+  void move(int _iter, int in_rk_step, int n_rk_steps);
 
-  /** peform prescribed mesh motion using linear elasticity method */
-  void deform(solution* FlowSol);
+  /** Peform prescribed mesh motion using linear elasticity method */
+  void deform(void);
 
-  /** peform prescribed mesh motion using rigid translation/rotation */
-  void rigid_move(solution *FlowSol);
+  /** Peform prescribed mesh motion using rigid translation/rotation */
+  void rigid_move(void);
 
   /** Perturb the mesh points (test case for freestream preservation) */
-  void perturb(solution *FlowSol);
+  void perturb(void);
+
+  /** Peform prescribed mesh motion using the blending-funciton method */
+  void blend_move(void);
 
   /** update grid velocity & apply to eles */
-  void set_grid_velocity(solution *FlowSol, double dt);
+  void set_grid_velocity(double dt);
 
   /** update the mesh: re-set spts, transforms, etc. */
-  void update(solution *FlowSol);
+  void update(void);
 
   /** setup information for boundary motion */
   //void setup_boundaries(array<int> bctype);
 
   /** write out mesh to file */
-  void write_mesh(int mesh_type, double sim_time);
+  void write_mesh(double sim_time);
 
   /** write out mesh in Gambit .neu format */
   void write_mesh_gambit(double sim_time);
@@ -105,12 +108,12 @@ public:
 
   /** #### Boundary information #### */
 
-  int n_bnds, n_faces;
+  int n_bnds, n_moving_bnds, n_faces, max_n_bndpts;
   array<int> nBndPts;
   array<int> v2bc;
 
   /** vertex id = boundpts(bc_id)(ivert) */
-  array<array<int> > boundPts;
+  array<int> boundPts;
 
   /** Store motion flag for each boundary
      (currently 0=fixed, 1=moving, -1=volume) */
@@ -120,10 +123,13 @@ public:
   array<int> bc_list;
 
   /** replacing get_bc_name() from geometry.cpp */
-  map<string,int> bc_name;
+  map<string,int> bc_num;
 
   /** inverse of bc_name */
-  map<int,string> bc_flag;
+  map<int,string> bc_string;
+
+  /** Array to match index of moving bound (from input file) to index of mesh boundary (from mesh file) */
+  array<int> bnd_match;
 
   // nBndPts.setup(n_bnds); boundPts.setup(nBnds,nPtsPerBnd);
 
@@ -132,6 +138,13 @@ public:
   array< array<double> > grid_vel;
 
   void setup(solution *in_FlowSol, array<double> &in_xv, array<int> &in_c2v, array<int> &in_c2n_v, array<int> &in_iv2ivg, array<int> &in_ctype);
+
+#ifdef _GPU
+  void mv_cpu_gpu();
+#endif
+
+  /*! Additional setup operations (called from geometry.cpp to make things a little cleaner) */
+  void setup_part_2(array<int> &_c2f, array<int> &_c2e, array<int> &_f2c, array<int> &_f2n_v, int _n_faces);
 
 private:
   bool start;
@@ -153,6 +166,13 @@ private:
   double min_vol, min_length, solver_tolerance;
   double time, rk_time;
   int rk_step;
+
+  /*! array of input parameters to control motion of all boundaries in mesh */
+  array< array<double> > motion_params;
+
+  // ---- BLENDING-FUNCTION VARIABLES ----
+  array<double> displacement;
+  // ------                         ------
 
   // Coefficients for LS-RK45 time-stepping
   array<double> RK_a, RK_b, RK_c;
@@ -181,10 +201,10 @@ private:
                             int id_pt_1, int id_pt_2, int id_pt_3);
 
   /** Set given/known displacements of vertices on moving boundaries in linear system */
-  void set_boundary_displacements(solution *FlowSol);
+  void set_boundary_displacements(void);
 
   /** meant to check for any inverted cells (I think) and return minimum volume */
-  double check_grid(solution *FlowSol);
+  double check_grid(void);
 
   /** transfer solution from LinSysSol to xv_new */
   void update_grid_coords(void);

@@ -63,6 +63,11 @@ struct solution {
   int num_edges;
   int num_inters;
   int num_cells_global;
+
+  // Mesh Info
+  array<double> xv;
+  array<int> boundPts;
+
   
   int n_steps;
   int adv_type;

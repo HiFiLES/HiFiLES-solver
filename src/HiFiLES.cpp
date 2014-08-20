@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
       if (run_input.motion > 0) {
 
         /* Update the mesh */
-        Mesh.move(FlowSol.ini_iter+i_steps,i,&FlowSol);
+        Mesh.move(FlowSol.ini_iter+i_steps,i,RKSteps);
 
         /* Residual for Geometric Conservation Law (GCL) */
         /*
@@ -257,6 +257,10 @@ int main(int argc, char *argv[]) {
       if(FlowSol.write_type == 0) write_vtu(FlowSol.ini_iter+i_steps, &FlowSol);
       else if(FlowSol.write_type == 1) write_tec(FlowSol.ini_iter+i_steps, &FlowSol);
       else FatalError("ERROR: Trying to write unrecognized file format ... ");
+    }
+
+    if(run_input.motion!=STATIC_MESH && i_steps%run_input.mesh_output_freq==0) {
+      Mesh.write_mesh(FlowSol.time);
     }
     
     /*! Dump restart file. */

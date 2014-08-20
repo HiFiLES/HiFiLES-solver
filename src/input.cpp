@@ -655,7 +655,8 @@ void input::setup(ifstream& in_run_input_file, int rank)
   if (monitor_res_freq == 0) monitor_res_freq = 100000000;
   if (monitor_cp_freq == 0) monitor_cp_freq = 100000000;
   if (monitor_integrals_freq == 0) monitor_integrals_freq = 100000000;
-  
+  if (mesh_output_freq==-1) mesh_output_freq = plot_freq;
+
   if (!mesh_file.compare(mesh_file.size()-3,3,"neu"))
     mesh_format=0;
   else if (!mesh_file.compare(mesh_file.size()-3,3,"msh"))

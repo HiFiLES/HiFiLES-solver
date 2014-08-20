@@ -337,7 +337,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
     norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
     
-    if (motion && run_input.GCL) {
+    if (motion && run_input.GCL)
+    {
       tdisf_GCL_upts.setup(n_upts_per_ele,n_eles,n_dims);
       tdisf_GCL_fpts.setup(n_upts_per_ele,n_eles,n_dims);
       norm_tdisf_GCL_fpts.setup(n_fpts_per_ele,n_eles);
@@ -361,6 +362,16 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
         //div_tconf_GCL_fpts(i).initialize_to_zero();
         Jbar_upts(i).initialize_to_zero();
         Jbar_fpts(i).initialize_to_zero();
+      }
+    }
+
+    if (motion==LINEAR_ELASTICITY || motion==BLENDING || motion==RIGID_MOTION)
+    {
+      motion_params.setup(run_input.n_moving_bnds,9);
+      for (int i=0; i<run_input.n_moving_bnds; i++) {
+        for (int j=0; j<9; j++) {
+          motion_params(i,j) = run_input.bound_vel_simple(i)(j);
+        }
       }
     }
 
@@ -747,6 +758,9 @@ void eles::mv_all_cpu_gpu(void)
 
     if (motion) {
       run_input.bound_vel_simple(0).mv_cpu_gpu();
+    }
+    if (motion==LINEAR_ELASTICITY || motion==BLENDING) {
+      motion_params.mv_cpu_gpu();
     }
   }
 #endif
@@ -5482,7 +5496,7 @@ void eles::calc_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_pos)
     out_pos.initialize_to_zero();
     for(i=0;i<n_dims;i++) {
         for(j=0;j<n_spts_per_ele(in_ele);j++) {
-            out_pos(i)+=nodal_s_basis_fpts(j,in_upt,in_ele)*shape_dyn(i,j,in_ele);
+            out_pos(i)+=nodal_s_basis_upts(j,in_upt,in_ele)*shape_dyn(i,j,in_ele);
         }
     }
 }
@@ -5561,7 +5575,6 @@ void eles::calc_d_pos_upt(int in_upt, int in_ele, array<double>& out_d_pos)
     for(k=0;k<n_dims;k++) {
       for(i=0;i<n_spts_per_ele(in_ele);i++) {
         out_d_pos(j,k)+=d_nodal_s_basis_upts(k,i,in_upt,in_ele)*shape(j,i,in_ele);
-        //out_d_pos(j,k)+=d_nodal_s_basis_upts(in_upt,in_ele,k,i)*shape(j,i,in_ele);
       }
     }
   }
@@ -5622,7 +5635,7 @@ void eles::calc_d_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_d
  */
 void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
 {
-  if (run_input.motion==4) {
+  if (run_input.motion==5) {
     // Analytical formula for perturbed motion
     out_d_pos(0,0) = 1 + 0.2*pi*cos(pi*pos_fpts(in_fpt,in_ele,0)/10)*sin(pi*pos_fpts(in_fpt,in_ele,1)/10)*sin(2*pi*run_input.rk_time/10);
     out_d_pos(0,1) = 0.2*pi*sin(pi*pos_fpts(in_fpt,in_ele,0)/10)*cos(pi*pos_fpts(in_fpt,in_ele,1)/10)*sin(2*pi*run_input.rk_time/10);
@@ -5667,7 +5680,7 @@ void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
  */
 void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
 {
-  if (run_input.motion==4) {
+  if (run_input.motion==5) {
     // Analytical formula for perturbed motion test case
     out_d_pos(0,0) = 1 + 0.2*pi*cos(pi*pos_upts(in_upt,in_ele,0)/10)*sin(pi*pos_upts(in_upt,in_ele,1)/10)*sin(2*pi*run_input.rk_time/10);
     out_d_pos(0,1) = 0.2*pi*sin(pi*pos_upts(in_upt,in_ele,0)/10)*cos(pi*pos_upts(in_upt,in_ele,1)/10)*sin(2*pi*run_input.rk_time/10);
@@ -7050,6 +7063,14 @@ void eles::perturb_shape(double rk_time)
   }
 }
 
+void eles::blend_move(int n_bnds, array<int>& boundPts, array<int>& nBndPts, int max_n_bndpts, int n_verts, array<int>& bnd_match, array<double>& xv, array<double>& xv_0, double rk_time)
+{
+  if (n_eles!=0) {
+    push_back_shape_dyn_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,5,n_spts_per_ele.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
+    blend_move_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),shape.get_ptr_gpu(),shape_dyn.get_ptr_gpu(),n_bnds,run_input.n_moving_bnds,motion_params.get_ptr_gpu(),boundPts.get_ptr_gpu(),nBndPts.get_ptr_gpu(),max_n_bndpts,n_verts,bnd_match.get_ptr_gpu(),xv.get_ptr_gpu(),xv_0.get_ptr_gpu(),rk_time);
+  }
+}
+
 void eles::rigid_grid_velocity(double rk_time)
 {
   if (n_eles!=0) {
@@ -7077,3 +7098,28 @@ void eles::calc_grid_velocity(void)
   }
 }
 #endif
+
+//void eles::blend_move(void)
+//{
+//  if (n_eles!=0) {
+//    array<double> pos(n_dims), dist(n_dims);
+//    dist.initialize_to_zero();
+
+//    for (int i=0; i<n_eles; i++) {
+//      for (int j=0; j<n_spts_per_ele(i); j++) {
+//        for (int ib=0; ib<run_input.n_moving_bnds; ib++) {
+//          for (int k=0; k<n_dims; k++) pos(k) = shape(j,i,k);
+//          get_dist_bound(ib,pos,dist);
+
+//        }
+//      }
+//    }
+//  }
+//}
+
+//void eles::get_dist_bound(int bnd_id, array<double> &pos, array<double> &dist)
+//{
+//  for (int iv=0; iv<n_bnd_pts(bnd_id); iv++) {
+
+//  }
+//}
