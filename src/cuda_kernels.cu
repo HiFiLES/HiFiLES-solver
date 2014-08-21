@@ -4052,6 +4052,20 @@ __global__ void evaluate_boundaryConditions_viscFlux_gpu_kernel(int n_fpts_per_i
 #pragma unroll
               for (int i=0;i<n_fields;i++)
                 vis_NS_flux<n_dims>(q_r, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, &mu_t, prandtl, gamma, rt_inf, mu_inf, c_sth, fix_vis, i, turb_model, c_v1, omega, prandtl_t);
+
+              // If LES, add SGS flux to viscous flux
+              if(LES)
+                {
+#pragma unroll
+                  for (int i=0;i<n_fields;i++)
+                    {
+#pragma unroll
+                      for (int j=0;j<n_dims;j++)
+                        {
+                          f[i][j] += sgsf[i][j];
+                        }
+                    }
+                }
             }
           if(equation==1)
             {
@@ -5166,6 +5180,8 @@ void evaluate_boundaryConditions_viscFlux_gpu_kernel_wrapper(int n_fpts_per_inte
 
   // HACK: fix 256 threads per block
   int n_blocks=((n_inters*n_fpts_per_inter-1)/256)+1;
+
+  printf("Setting visFlux BC. LES = %d\n", LES);
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
