@@ -3094,6 +3094,7 @@ __global__ void evaluate_boundaryConditions_invFlux_gpu_kernel(int n_fpts_per_in
 
       // Set boundary condition
       bdy_spec = boundary_type[thread_id/n_fpts_per_inter];
+      printf("invFlux: BC = %d\n",bdy_spec);
       set_inv_boundary_conditions_kernel<n_dims,n_fields>(bdy_spec,q_l,q_r,v_g,norm,loc,bdy_params,gamma, R_ref, time_bound, equation, turb_model);
 
       if (bdy_spec==16) // Dual consistent
@@ -4032,6 +4033,7 @@ __global__ void evaluate_boundaryConditions_viscFlux_gpu_kernel(int n_fpts_per_i
 
       // Right solution
       bdy_spec = boundary_type[thread_id/n_fpts_per_inter];
+      printf("visFlux: BC = %d\n",bdy_spec);
       set_inv_boundary_conditions_kernel<n_dims,n_fields>(bdy_spec,q_l,q_r,v_g,norm,loc,bdy_params,gamma,R_ref,time_bound,equation, turb_model);
 
 
@@ -4079,7 +4081,7 @@ __global__ void evaluate_boundaryConditions_viscFlux_gpu_kernel(int n_fpts_per_i
               for (int i=0;i<n_fields;i++)
                 vis_NS_flux<n_dims>(q_l, grad_q, grad_vel, grad_ene, stensor, f[i], &inte, &mu, &mu_t, prandtl, gamma, rt_inf, mu_inf, c_sth, fix_vis, i, turb_model, c_v1, omega, prandtl_t);
 
-              // If LES (but no wall model?), add SGS flux to viscous flux
+              // If LES, add SGS flux to viscous flux
               if(LES)
                 {
 #pragma unroll
