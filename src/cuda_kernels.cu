@@ -1493,7 +1493,6 @@ __global__ void push_back_xv_kernel(int n_verts, double* xv_1, double* xv_2)
   const int iv = blockIdx.x*blockDim.x+threadIdx.x;
   int i;
 
-  /// Taken from Kui, AIAA-2010-5031-661
 #pragma unroll
   for(i=0;i<n_dims;i++) {
     xv_1[iv+i*n_verts] = xv_2[iv+i*n_verts];
@@ -1513,7 +1512,6 @@ __global__ void push_back_shape_dyn_kernel(int n_eles, int max_n_spts_per_ele, i
   if(thread_id<stride) {
     n_spts = n_spts_per_ele[ele];
     if (spt < n_spts) {
-#pragma unroll
       for(i=n_levels-1; i>0; i--) {
         for(k=0; k<n_dims; k++) {
           shape_dyn[k+n_dims*(spt+max_n_spts_per_ele*(ele+n_eles*i))] = shape_dyn[k+n_dims*(spt+max_n_spts_per_ele*(ele+n_eles*(i-1)))];
@@ -1672,25 +1670,30 @@ __global__ void perturb_shape_kernel(int n_dims, int n_eles, int max_n_spts_per_
 }
 
 template<int n_dims>
-__global__ void blend_move_kernel(int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, int n_bnds, int n_moving_bnds, double* motion_params,int* boundPts, int* nBndPts, int max_n_bndpts, int n_verts, int* bnd_match, double* xv, double* xv_0, double rk_time)
+__global__ void blend_move_kernel(int n_eles, int n_eles_global, int max_n_spts_per_ele, int* n_spts_per_ele, int* c2v, int* ic2icg, double* shape_dyn, int n_bnds, int n_moving_bnds, double* motion_params,int* boundPts, int* nBndPts, int max_n_bndpts, int n_verts, int* bnd_match, double* xv, double* xv_0, double rk_time)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   int stride = n_eles*max_n_spts_per_ele;
   int ele = thread_id/max_n_spts_per_ele;
   int spt = thread_id%max_n_spts_per_ele;
   int n_spts;
-  double x,y,z;
-  int ib, iv, ivb, ivb_g, bnd;
+  int ib, iv, ivb, ivb_g, bnd, icg;
   double magDistSq, minDistSq, dist, blendDist;
   double disp[n_dims], disp_tot[n_dims];
+  bool onBound;
 
   if (thread_id<stride) {
     n_spts = n_spts_per_ele[ele];
     if (spt<n_spts)
-    {
+    {      
       for (int k=0; k<n_dims; k++) {
         disp_tot[k]=0.;
       }
+
+      onBound = false;
+      icg = ic2icg[ele];
+      iv = c2v[icg+n_eles_global*spt]; // global vertex ID
+
       for (ib=0; ib<n_moving_bnds; ib++)
       {
         bnd = bnd_match[ib];
@@ -1698,6 +1701,11 @@ __global__ void blend_move_kernel(int n_eles, int max_n_spts_per_ele, int* n_spt
         for (ivb=0; ivb<nBndPts[bnd]; ivb++)
         {
           ivb_g = boundPts[bnd+n_bnds*ivb];
+          if (ivb_g==iv) {
+            onBound = true;
+            minDistSq = 0;
+            break;
+          }
           magDistSq = 0;
           for (int k=0; k<n_dims; k++) {
             dist = shape_dyn[k+(n_dims*(spt+max_n_spts_per_ele*ele))] - xv[ivb_g+n_verts*k];
@@ -1717,13 +1725,13 @@ __global__ void blend_move_kernel(int n_eles, int max_n_spts_per_ele, int* n_spt
         }
 
         // (2) Modification of displacement through blending function [currently linear func for simplicity of testing]
-        blendDist = 1; // distance over which to apply blending [no effect for dist>blendDist]
+        blendDist = 2; // distance over which to apply blending [no effect for dist>blendDist]
         for (int k=0; k<n_dims; k++) {
-          disp[k] = max(blendDist-dist,0.)*disp[k];
+          disp[k] = max(blendDist-dist,0.)/blendDist*disp[k];
         }
 
         // (3) Apply to displacement vector
-        if (dist==0) {
+        if (onBound) {
           // Make sure displacement is ONLY this boundary's displacement
           for (int k=0; k<n_dims; k++) {
             disp_tot[k] = disp[k];
@@ -1732,7 +1740,7 @@ __global__ void blend_move_kernel(int n_eles, int max_n_spts_per_ele, int* n_spt
         }else{
           // Add to displacement from all boundaries
           for (int k=0; k<n_dims; k++) {
-            disp_tot[k]+= disp(k);
+            disp_tot[k]+= disp[k];
           }
         }
       }
@@ -1741,6 +1749,35 @@ __global__ void blend_move_kernel(int n_eles, int max_n_spts_per_ele, int* n_spt
         shape_dyn[k+(n_dims*(spt+max_n_spts_per_ele*ele))] += disp_tot[k];
       }
 
+    }
+  }
+}
+
+template<int n_dims>
+__global__ void blend_move_bounds_kernel(int n_bnds, int n_moving_bnds, double* motion_params, int* boundPts, int* nBndPts, int max_n_bndpts, int n_verts, int* bnd_match, double* xv, double* xv_0, double rk_time)
+{
+  const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
+  int stride = n_bnds*max_n_bndpts;
+  int bnd = thread_id/max_n_bndpts;
+  int ivb = thread_id%max_n_bndpts;
+  int n_verts_bnd;
+  int ib, ivb_g;
+
+  if (thread_id<stride) {
+    n_verts_bnd = nBndPts[bnd];
+    if (ivb<n_verts_bnd)
+    {
+      ivb_g = boundPts[bnd+n_bnds*ivb];
+
+      for (ib=0; ib<n_moving_bnds; ib++) {
+        if (bnd_match[ib]==bnd) break;
+      }
+
+      for (int k=0; k<n_dims; k++) {
+        xv[ivb_g+n_verts*k] = xv_0[ivb_g+n_verts*k];
+        xv[ivb_g+n_verts*k]+= motion_params[ib+n_moving_bnds*(2*k)  ]*sin(2*PI*motion_params[ib+n_moving_bnds*(6+k)]*rk_time);
+        xv[ivb_g+n_verts*k]+= motion_params[ib+n_moving_bnds*(2*k+1)]*cos(2*PI*motion_params[ib+n_moving_bnds*(6+k)]*rk_time);
+      }
     }
   }
 }
@@ -4771,9 +4808,9 @@ void perturb_shape_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele
   check_cuda_error("After",__FILE__, __LINE__);
 }
 
-/*! wrapper for gpu kernel to update coordinate transformations for moving grids */
+/*! wrapper for gpu kernel to move mesh using blending-functions method */
 //
-void blend_move_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, int n_bnds, int n_moving_bnds, double* motion_params,int* boundPts, int* nBndPts, int max_n_bndpts, int n_verts, int* bnd_match, double* xv, double* xv_0, double rk_time)
+void blend_move_kernel_wrapper(int n_dims, int n_eles, int n_eles_global, int max_n_spts_per_ele, int* n_spts_per_ele, int* c2v, int* ic2icg, double* shape_dyn, int n_bnds, int n_moving_bnds, double* motion_params,int* boundPts, int* nBndPts, int max_n_bndpts, int n_verts, int* bnd_match, double* xv, double* xv_0, double rk_time)
 {
   // HACK: fix 256 threads per block
   int block_size=256;
@@ -4782,9 +4819,28 @@ void blend_move_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, i
   check_cuda_error("Before", __FILE__, __LINE__);
 
   if (n_dims==2) {
-    blend_move_kernel<2> <<< n_blocks,block_size >>> (n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele,shape,shape_dyn,n_bnds,n_moving_bnds,motion_params,boundPts,nBndPts,max_n_bndpts,n_verts,bnd_match,xv,xv_0,rk_time);
+    blend_move_kernel<2> <<< n_blocks,block_size >>> (n_eles,n_eles_global,max_n_spts_per_ele,n_spts_per_ele,c2v,ic2icg,shape_dyn,n_bnds,n_moving_bnds,motion_params,boundPts,nBndPts,max_n_bndpts,n_verts,bnd_match,xv,xv_0,rk_time);
   }else if (n_dims==3) {
-    blend_move_kernel<3> <<< n_blocks,block_size >>> (n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele,shape,shape_dyn,n_bnds,n_moving_bnds,motion_params,boundPts,nBndPts,max_n_bndpts,n_verts,bnd_match,xv,xv_0,rk_time);
+    blend_move_kernel<3> <<< n_blocks,block_size >>> (n_eles,n_eles_global,max_n_spts_per_ele,n_spts_per_ele,c2v,ic2icg,shape_dyn,n_bnds,n_moving_bnds,motion_params,boundPts,nBndPts,max_n_bndpts,n_verts,bnd_match,xv,xv_0,rk_time);
+  }
+
+  check_cuda_error("After",__FILE__, __LINE__);
+}
+
+/*! wrapper for gpu kernel to update arrays of positions of moving boundaries */
+//
+void blend_move_bounds_kernel_wrapper(int n_dims, int n_bnds, int n_moving_bnds, double* motion_params,int* boundPts, int* nBndPts, int max_n_bndpts, int n_verts, int* bnd_match, double* xv, double* xv_0, double rk_time)
+{
+  // HACK: fix 256 threads per block
+  int block_size=256;
+  int n_blocks=((n_bnds*max_n_bndpts-1)/block_size)+1;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+  if (n_dims==2) {
+    blend_move_bounds_kernel<2> <<< n_blocks,block_size >>> (n_bnds,n_moving_bnds,motion_params,boundPts,nBndPts,max_n_bndpts,n_verts,bnd_match,xv,xv_0,rk_time);
+  }else if (n_dims==3) {
+    blend_move_bounds_kernel<3> <<< n_blocks,block_size >>> (n_bnds,n_moving_bnds,motion_params,boundPts,nBndPts,max_n_bndpts,n_verts,bnd_match,xv,xv_0,rk_time);
   }
 
   check_cuda_error("After",__FILE__, __LINE__);

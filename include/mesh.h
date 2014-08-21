@@ -97,13 +97,16 @@ public:
   /** Basic parameters of mesh */
   //unsigned long
   int n_eles, n_verts, n_dims, n_verts_global, n_cells_global;
+  int n_ele_types, max_n_eles_type;
   int iter;
 
   /** arrays which define the basic mesh geometry */
   array<double> xv_0;//, xv;
   array< array<double> > xv;
-  array<int> c2v,c2n_v,ctype,bctype_c,ic2icg,iv2ivg,ic2loc_c,
+  array<int> c2v,c2n_v,ctype,bctype_c,iv2ivg,ic2loc_c,
   f2c,f2loc_f,c2f,c2e,f2v,f2n_v,e2v,v2n_e;
+  array<int> n_eles_types;
+  array<array<int> > ic2icg;
   array<array<int> > v2e;
 
   /** #### Boundary information #### */
@@ -141,6 +144,7 @@ public:
 
 #ifdef _GPU
   void mv_cpu_gpu();
+  void cp_gpu_cpu();
 #endif
 
   /*! Additional setup operations (called from geometry.cpp to make things a little cleaner) */
@@ -168,7 +172,7 @@ private:
   int rk_step;
 
   /*! array of input parameters to control motion of all boundaries in mesh */
-  array< array<double> > motion_params;
+  array<double> motion_params;
 
   // ---- BLENDING-FUNCTION VARIABLES ----
   array<double> displacement;

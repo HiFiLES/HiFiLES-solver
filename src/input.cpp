@@ -369,6 +369,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
         }
       }
     }
+//    else if (!param_name.compare("blend_dists"))
+//    {
+//      in_run_input_file >> blend_dist;
+//    }
     else if (!param_name.compare("n_deform_iters"))
     {
       in_run_input_file >> n_deform_iters;

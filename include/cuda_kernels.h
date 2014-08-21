@@ -87,6 +87,12 @@ void perturb_shape_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele
 /*! wrapper for gpu kernel to */
 void perturb_shape_points_gpu_kernel_wrapper(int n_dims, int n_verts, double* xv, double* xv_0, double rk_time);
 
+/*! wrapper for gpu kernel to apply motion to boundaries & blend to interior points */
+void blend_move_kernel_wrapper(int n_dims, int n_eles, int n_eles_global, int max_n_spts_per_ele, int* n_spts_per_ele, int *c2v, int *ic2icg, double *shape_dyn, int n_bnds,int n_moving_bnds, double *motion_params, int *boundPts, int *nBndPts, int max_n_bndpts, int n_verts, int *bnd_match, double *xv, double *xv_0, double rk_time);
+
+/*! wrapper for gpu kernel to apply motion to boundary arrays */
+void blend_move_bounds_kernel_wrapper(int n_dims, int n_bnds, int n_moving_bnds, double *motion_params, int *boundPts, int *nBndPts,int max_n_bndpts, int n_verts, int *bnd_match, double *xv, double *xv_0, double rk_time);
+
 /*! wrapper for gpu kernel to */
 void push_back_xv_kernel_wrapper(int n_dims, int n_verts, double* xv_1, double* xv_2);
 

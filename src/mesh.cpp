@@ -135,9 +135,12 @@ void mesh::setup(struct solution *in_FlowSol,array<double> &in_xv,array<int> &in
     displacement.initialize_to_zero();
 
     n_moving_bnds = run_input.n_moving_bnds;
-    motion_params.setup(n_moving_bnds);
-    for (int i=0; i<n_moving_bnds; i++)
-      motion_params(i) = run_input.bound_vel_simple(i);
+    motion_params.setup(run_input.n_moving_bnds,9);
+    for (int i=0; i<run_input.n_moving_bnds; i++) {
+      for (int j=0; j<9; j++) {
+        motion_params(i,j) = run_input.bound_vel_simple(i)(j);
+      }
+    }
   }
 
   if (run_input.adv_type==0) {
@@ -179,17 +182,33 @@ void mesh::setup_part_2(array<int>& _c2f, array<int>& _c2e, array<int>& _f2c, ar
   f2n_v = _f2n_v;
   n_faces = _n_faces;
   n_bnds = bc_list.get_dim(0);
-  max_n_bndpts = boundPts.get_max();
+  max_n_bndpts = nBndPts.get_max();
 
   bnd_match.setup(n_moving_bnds);
   for (int ib=0; ib<n_moving_bnds; ib++) {
     for (int bnd=0; bnd<n_bnds; bnd++) {
-      cout << bc_list(bnd) << ", " << bc_num[run_input.boundary_flags(ib)] << endl;
       if (bc_list(bnd)==bc_num[run_input.boundary_flags(ib)]) {
         bnd_match(ib) = bnd;
         break;
       }
     }
+  }
+
+  max_n_eles_type=0;
+  n_ele_types = FlowSol->n_ele_types;
+  n_eles_types.setup(n_ele_types);
+  n_eles_types.initialize_to_zero();
+  ic2icg.setup(n_ele_types);
+  for (int i=0; i<n_ele_types; i++) {
+    n_eles_types(i) = FlowSol->mesh_eles(i)->get_n_eles();
+    ic2icg(i).setup(n_eles_types(i));
+    if (n_eles_types(i)>max_n_eles_type) max_n_eles_type=n_eles_types(i);
+  }
+
+  int ic, icg;
+  for (icg=0; icg<n_eles; icg++) {
+    ic = ic2loc_c(icg);
+    ic2icg(ctype(icg))(ic) = icg;
   }
 }
 
@@ -389,8 +408,8 @@ void mesh::set_grid_velocity(double dt)
   else if (run_input.motion == 2) {
     for (int i=0; i<n_verts; i++) {
       for (int j=0; j<n_dims; j++) {
-        vel_new(i,j) = 2*pi*motion_params(0)(2*j  )*motion_params(0)(6+j)*sin(2*pi*motion_params(0)(6+j)*rk_time);
-        vel_new(i,j)+= 2*pi*motion_params(0)(2*j+1)*motion_params(0)(6+j)*cos(2*pi*motion_params(0)(6+j)*rk_time);
+        vel_new(i,j) = 2*pi*motion_params(0,2*j  )*motion_params(0,6+j)*sin(2*pi*motion_params(0,6+j)*rk_time);
+        vel_new(i,j)+= 2*pi*motion_params(0,2*j+1)*motion_params(0,6+j)*cos(2*pi*motion_params(0,6+j)*rk_time);
       }
     }
   }
@@ -1677,7 +1696,7 @@ void mesh::set_boundary_displacements(void)
   /*VarCoord(0) = run_input.bound_vel_simple(0)(0)*run_input.dt;
   VarCoord(1) = run_input.bound_vel_simple(0)(1)*run_input.dt;*/
   VarCoord(0) = 0;
-  VarCoord(1) = motion_params(0)(0)*cos(2*motion_params(0)(1)*pi*rk_time)*run_input.dt;
+  VarCoord(1) = motion_params(0,0)*cos(2*motion_params(0,1)*pi*rk_time)*run_input.dt;
   /// cout << "number of boundaries: " << n_bnds << endl;
   /*--- Set the known displacements, note that some points of the moving surfaces
     could be on on the symmetry plane, we should specify DeleteValsRowi again (just in case) ---*/
@@ -1714,8 +1733,8 @@ void mesh::rigid_move(void) {
   for (int i=0; i<n_verts; i++) {
     // Useful for simple cases / debugging
     for (int j=0; j<n_dims; j++) {
-      xv(0)(i,j) = xv_0(i,j) + motion_params(0)(2*j  )*sin(2*pi*motion_params(0)(6+j)*time);
-      xv(0)(i,j)+=             motion_params(0)(2*j+1)*cos(2*pi*motion_params(0)(6+j)*time);
+      xv(0)(i,j) = xv_0(i,j) + motion_params(0,2*j  )*sin(2*pi*motion_params(0,6+j)*time);
+      xv(0)(i,j)+=             motion_params(0,2*j+1)*cos(2*pi*motion_params(0,6+j)*time);
     }
   }
 
@@ -1766,6 +1785,8 @@ void mesh::perturb(void)
 
 
 void mesh::blend_move(void) {
+
+#ifdef _CPU
   if (rk_step==0) {
     for (int i=4; i>0; i--) {
       for (int j=0; j<xv(i).get_dim(0); j++) {
@@ -1823,13 +1844,13 @@ void mesh::blend_move(void) {
         // (1) Displacement  due to rigid motion of boundary
         //     [disp = new position of boundary point - old position = xv_0 + {params*sin,cos} - xv]
         for (int k=0; k<n_dims; k++) {
-          disp(k) = motion_params(ib)(2*k  )*sin(2*pi*motion_params(ib)(6+k)*rk_time);
-          disp(k)+= motion_params(ib)(2*k+1)*cos(2*pi*motion_params(ib)(6+k)*rk_time);
+          disp(k) = motion_params(ib,2*k  )*sin(2*pi*motion_params(ib,6+k)*rk_time);
+          disp(k)+= motion_params(ib,2*k+1)*cos(2*pi*motion_params(ib,6+k)*rk_time);
           disp(k)+= xv_0(ivb_g,k) - xv(0)(ivb_g,k);
         }
 
         // (2) Modification of displacement through blending function [currently linear func for simplicity of testing]
-        blendDist = 1; // distance over which to apply blending [no effect for dist>blendDist]
+        blendDist = 2; // distance over which to apply blending [no effect for dist>blendDist]
         for (int k=0; k<n_dims; k++) {
           disp(k) = max(blendDist-dist,0.)*disp(k);
         }
@@ -1858,23 +1879,38 @@ void mesh::blend_move(void) {
   }
 
   update();
+#endif
 
 #ifdef _GPU
-  for (int i=0;i<FlowSol->n_ele_types;i++) {
-    FlowSol->mesh_eles(i)->blend_move(n_bnds,boundPts,nBndPts,max_n_bndpts,n_verts,bnd_match,xv(0),xv_0,rk_time);
+  for (int i=0;i<n_ele_types;i++) {
+    FlowSol->mesh_eles(i)->blend_move(rk_step,n_bnds,boundPts,nBndPts,max_n_bndpts,n_verts,bnd_match,xv(0),xv_0,c2v,ic2icg(i),n_eles,rk_time);
     FlowSol->mesh_eles(i)->calc_grid_velocity();
     FlowSol->mesh_eles(i)->set_transforms_dynamic();
   }
+
+  blend_move_bounds_kernel_wrapper(n_dims,n_bnds,n_moving_bnds,motion_params.get_ptr_gpu(),boundPts.get_ptr_gpu(),nBndPts.get_ptr_gpu(),max_n_bndpts,n_verts,bnd_match.get_ptr_gpu(),xv(0).get_ptr_gpu(),xv_0.get_ptr_gpu(),rk_time);
 #endif
 }
 
 #ifdef _GPU
 void mesh::mv_cpu_gpu()
 {
+  motion_params.mv_cpu_gpu();
   bnd_match.mv_cpu_gpu();
   boundPts.mv_cpu_gpu();
   nBndPts.mv_cpu_gpu();
   xv(0).mv_cpu_gpu();
   xv_0.mv_cpu_gpu();
+  c2v.mv_cpu_gpu();
+
+  for (int i=0; i<n_ele_types; i++) {
+    ic2icg(i).cp_cpu_gpu();
+  }
+  ic2icg.cp_cpu_gpu();
+}
+
+void mesh::cp_gpu_cpu()
+{
+  xv(0).cp_gpu_cpu();
 }
 #endif

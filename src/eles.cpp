@@ -756,11 +756,10 @@ void eles::mv_all_cpu_gpu(void)
     grid_vel_upts.mv_cpu_gpu();
     grid_vel_fpts.mv_cpu_gpu();
 
-    if (motion) {
-      run_input.bound_vel_simple(0).mv_cpu_gpu();
-    }
     if (motion==LINEAR_ELASTICITY || motion==BLENDING) {
       motion_params.mv_cpu_gpu();
+    }else if (motion!=STATIC_MESH) {
+      run_input.bound_vel_simple(0).mv_cpu_gpu();
     }
   }
 #endif
@@ -3225,7 +3224,6 @@ void eles::set_shape(int in_max_n_spts_per_ele)
 {
   shape.setup(n_dims,in_max_n_spts_per_ele,n_eles);
   shape_dyn.setup(n_dims,in_max_n_spts_per_ele,n_eles,5);
-  //shape_dyn_old.setup(n_dims,in_max_n_spts_per_ele,n_eles,4);
   n_spts_per_ele.setup(n_eles);
 }
 
@@ -7063,11 +7061,13 @@ void eles::perturb_shape(double rk_time)
   }
 }
 
-void eles::blend_move(int n_bnds, array<int>& boundPts, array<int>& nBndPts, int max_n_bndpts, int n_verts, array<int>& bnd_match, array<double>& xv, array<double>& xv_0, double rk_time)
+void eles::blend_move(int rk_step, int n_bnds, array<int>& boundPts, array<int>& nBndPts, int max_n_bndpts, int n_verts, array<int>& bnd_match, array<double>& xv, array<double>& xv_0, array<int>& c2v, array<int>& ic2icg, int n_eles_global, double rk_time)
 {
   if (n_eles!=0) {
-    push_back_shape_dyn_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,5,n_spts_per_ele.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
-    blend_move_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),shape.get_ptr_gpu(),shape_dyn.get_ptr_gpu(),n_bnds,run_input.n_moving_bnds,motion_params.get_ptr_gpu(),boundPts.get_ptr_gpu(),nBndPts.get_ptr_gpu(),max_n_bndpts,n_verts,bnd_match.get_ptr_gpu(),xv.get_ptr_gpu(),xv_0.get_ptr_gpu(),rk_time);
+    if (rk_step==0) {
+      push_back_shape_dyn_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,5,n_spts_per_ele.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
+    }
+    blend_move_kernel_wrapper(n_dims,n_eles,n_eles_global,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),c2v.get_ptr_gpu(),ic2icg.get_ptr_gpu(),shape_dyn.get_ptr_gpu(),n_bnds,run_input.n_moving_bnds,motion_params.get_ptr_gpu(),boundPts.get_ptr_gpu(),nBndPts.get_ptr_gpu(),max_n_bndpts,n_verts,bnd_match.get_ptr_gpu(),xv.get_ptr_gpu(),xv_0.get_ptr_gpu(),rk_time);
   }
 }
 

@@ -193,9 +193,6 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   ReadBound(run_input.mesh_file,c2v,c2n_v,c2f,f2v,f2nv,ctype,bctype_c,Mesh.boundPts,Mesh.nBndPts,Mesh.bc_list,Mesh.bound_flags,ic2icg,
             icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts,FlowSol);
 
-  // ** TODO: clean up duplicate/redundant data **
-  Mesh.setup_part_2(c2f,c2e,f2c,f2nv,FlowSol->num_inters);
-
   /////////////////////////////////////////////////
   /// Initializing Elements
   /////////////////////////////////////////////////
@@ -790,6 +787,9 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (run_input.motion) {
     Mesh.ic2loc_c = local_c;
   }
+
+  // ** TODO: clean up duplicate/redundant data **
+  Mesh.setup_part_2(c2f,c2e,f2c,f2nv,FlowSol->num_inters);
 
 #ifdef _GPU
   if (run_input.motion==LINEAR_ELASTICITY || run_input.motion==BLENDING) {
@@ -1513,6 +1513,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
     out_n_bndPts(i) = Bounds(i).size();
   }
   out_boundpts.setup(n_bcs,max_n_bndPts);
+  out_boundpts.initialize_to_value(-1);
 
   set<int>::iterator it;
   for (int i=0; i<n_bcs; i++) {
