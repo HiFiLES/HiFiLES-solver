@@ -1901,6 +1901,9 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   if (FlowSol->n_dims != 2 && FlowSol->n_dims != 3) {
     FatalError("Invalid mesh dimensionality. Expected 2D or 3D.");
   }
+  if (run_input.turb_model==1 && FlowSol->n_dims == 3) {
+    FatalError("ERROR: 3D geometry not supported with RANS equation yet ... ");
+  }
 
   // Move cursor to $Elements
   while(1) {
