@@ -3094,7 +3094,6 @@ __global__ void evaluate_boundaryConditions_invFlux_gpu_kernel(int n_fpts_per_in
 
       // Set boundary condition
       bdy_spec = boundary_type[thread_id/n_fpts_per_inter];
-      printf("invFlux: BC = %d\n",bdy_spec);
       set_inv_boundary_conditions_kernel<n_dims,n_fields>(bdy_spec,q_l,q_r,v_g,norm,loc,bdy_params,gamma, R_ref, time_bound, equation, turb_model);
 
       if (bdy_spec==16) // Dual consistent
@@ -3960,13 +3959,14 @@ __global__ void evaluate_boundaryConditions_viscFlux_gpu_kernel(int n_fpts_per_i
 
   if(thread_id<stride)
     {
+      printf("visFlux1: %d\n",thread_id/n_fpts_per_inter);
       // Left solution
 #pragma unroll
       for (int i=0;i<n_fields;i++)
         q_l[i]=(*(disu_fpts_l_ptr[thread_id+i*stride]));
 
       if (motion) {
- #pragma unroll
+#pragma unroll
         for (int i=0;i<n_fields;i++)
           q_l[i]/=(*(detjac_dyn_fpts_ptr[thread_id]));
       }
@@ -4033,7 +4033,6 @@ __global__ void evaluate_boundaryConditions_viscFlux_gpu_kernel(int n_fpts_per_i
 
       // Right solution
       bdy_spec = boundary_type[thread_id/n_fpts_per_inter];
-      printf("visFlux: BC = %d\n",bdy_spec);
       set_inv_boundary_conditions_kernel<n_dims,n_fields>(bdy_spec,q_l,q_r,v_g,norm,loc,bdy_params,gamma,R_ref,time_bound,equation, turb_model);
 
 
@@ -5180,8 +5179,6 @@ void evaluate_boundaryConditions_viscFlux_gpu_kernel_wrapper(int n_fpts_per_inte
 
   // HACK: fix 256 threads per block
   int n_blocks=((n_inters*n_fpts_per_inter-1)/256)+1;
-
-  printf("Setting visFlux BC. LES = %d\n", LES);
 
   check_cuda_error("Before", __FILE__, __LINE__);
 

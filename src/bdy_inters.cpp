@@ -1001,7 +1001,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
             FatalError("ERROR: Invalid number of dimensions ... ");
 
 
-          // If LES (but no wall model?), get SGS flux and add to viscous flux
+          // If LES get SGS flux and add to viscous flux
           if(LES) {
 
             for(int k=0;k<n_dims;k++)
@@ -1041,7 +1041,6 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
 
 #ifdef _GPU
   if (n_inters!=0)
-    printf("Calling viscFlux_gpu_kernel_wrapper. LES = %d\n", LES);
     evaluate_boundaryConditions_viscFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),ndA_dyn_fpts_l.get_ptr_gpu(),J_dyn_fpts_l.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu(),pos_fpts.get_ptr_gpu(),pos_dyn_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),boundary_type.get_ptr_gpu(),bdy_params.get_ptr_gpu(),delta_disu_fpts_l.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.R_ref,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis, time_bound, run_input.equation, run_input.diff_coeff, LES, motion, run_input.turb_model, run_input.c_v1, run_input.omega, run_input.prandtl_t);
 #endif
 }
