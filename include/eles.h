@@ -388,7 +388,7 @@ public:
   void calc_dynamic_coeff(int ele, int upt, double detjac);
 
   /*! Calculate SGS flux */
-  void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double detjac, int ele, int upt, array<double>& temp_sgsf);
+  void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf);
 
   /*! rotate velocity components to surface*/
   array<double> calc_rotation_matrix(array<double>& norm);

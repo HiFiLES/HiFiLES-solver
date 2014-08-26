@@ -1611,10 +1611,10 @@ void CopyGPUCPU(struct solution* FlowSol)
       {
         FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
       }
-      if (run_input.LES==1)
-      {
+      //if (run_input.LES==1)
+      //{
         FlowSol->mesh_eles(i)->cp_LES_diagnostics_gpu_cpu();
-      }
+	//}
     }
   }
 }

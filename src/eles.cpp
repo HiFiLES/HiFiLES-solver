@@ -897,13 +897,13 @@ void eles::cp_LES_diagnostics_gpu_cpu(void)
   if (n_eles!=0)
   {
     // eddy visc models: copy viscosity ratio
-    if(sgs_model==0 || sgs_model==1 || sgs_model==2 || sgs_model==5) {
+    //if(sgs_model==0 || sgs_model==1 || sgs_model==2 || sgs_model==5) {
       turb_visc.cp_gpu_cpu();
-    }
+      //}
     // dynamic model: copy dynamic coeff
-    if(sgs_model==5) {
+    //if(sgs_model==5) {
       dynamic_coeff.cp_gpu_cpu();
-    }
+      //}
   }
 #endif
 }
@@ -2762,7 +2762,7 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
 }
 
 // Calculate SGS flux at solution points
-void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double detjac, int ele, int upt, array<double>& temp_sgsf)
+void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf)
 {
   int i,j,k,l,n_comp;
   int eddy, sim, wall;

@@ -3959,7 +3959,6 @@ __global__ void evaluate_boundaryConditions_viscFlux_gpu_kernel(int n_fpts_per_i
 
   if(thread_id<stride)
     {
-      printf("visFlux1: %d\n",thread_id/n_fpts_per_inter);
       // Left solution
 #pragma unroll
       for (int i=0;i<n_fields;i++)
