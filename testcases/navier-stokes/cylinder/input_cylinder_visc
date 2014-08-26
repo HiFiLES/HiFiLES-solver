@@ -18,30 +18,15 @@ order                             // Order of basis polynomials
 dt_type
 0
 dt 
-0.0005
+0.0001
 n_steps
-10000
+100
 adv_type                          // 0: Forward Euler, 3: RK45
 0
 tau 
 1.0
 pen_fact 
 0.5
------------------------
-LES options
------------------------
-LES                               // 0: no LES, 1: LES
-1
-filter_type                       // 0: Vasilyev high-order, 1: discrete Gaussian, 2: Modal cutoff, 3: Modal exponential, 4: Modal Gaussian
-2
-filter_ratio                      // Filter width = filter_ratio*local resolution. Default: 1.5; try range 1:2. Not used for Modal Vandermonde filter.
-1
-SGS_model                         // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity, 5: dynamic
-2
-wall_model                        // Select near-wall model for solid boundaries. 0: none, 1: Werner-Wengle, 2: Breuer & Rodi Three-layer
-0
-wall_layer_thickness              // Set thickness of layer within which wall model is applied
-0
 -----------------------
 Restart options
 -----------------------
@@ -66,23 +51,23 @@ dz_cyclic
 Monitoring, plotting parameters
 -----------------------------------
 p_res                             // Plotting resolution, number of nodes per direction
-2
+4
 write_type                        // 0: Paraview, 1: Tecplot
 0
 n_diagnostic_fields
-1 viscosity_ratio
+0
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 6
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
 6
 plot_freq
-100
+1000
 restart_dump_freq
 10000
 monitor_integrals_freq
 0
 monitor_res_freq
-10
+1
 monitor_cp_freq                   // specify output frequency of file containing cp point values on surface. 0: no output.
 100
 res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
@@ -183,7 +168,7 @@ ny_free_stream
 nz_free_stream
 0.
 Re_free_stream 
-1000
+20.
 L_free_stream 
 1.
 T_free_stream 
@@ -207,7 +192,7 @@ ny_c_ic
 nz_c_ic
 0.
 Re_c_ic
-1000
+20
 T_c_ic
 300
 -----------

@@ -73,18 +73,12 @@ p_res                             // Plotting resolution, number of nodes per di
 4
 write_type                        // 0: Paraview, 1: Tecplot
 0
-n_diagnostic_fields
-1 dynamic_coeff
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 4
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
 4
 plot_freq
-<<<<<<< HEAD:testcases/navier-stokes/square_cylinder/input_sqcyl_wsm_tet
-1
-=======
 500
->>>>>>> master:testcases/euler/moving_mesh/input_uniform
 restart_dump_freq
 5000000
 monitor_res_freq

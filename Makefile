@@ -43,6 +43,10 @@ ifeq ($(PARALLEL),MPI)
 	OPTS    += -D_$(PARALLEL) 
 endif
 
+ifeq ($(MACHINE),ENRICO)
+	OPTS    += -D_$(MACHINE)
+endif
+
 # Includes
 
 OPTS    += -I include 
@@ -50,10 +54,6 @@ OPTS    += -I include
 ifeq ($(NODE),GPU)
 	OPTS	+= -I $(CUDA_DIR)/include 
 endif
-
-#ifeq ($(BLAS),STANDARD_BLAS)
-#	OPTS	+= -I $(BLAS_DIR)/include
-#endif
 
 ifeq ($(TECIO),YES)
 	OPTS += -I $(TECIO_DIR)/tecsrc
@@ -233,11 +233,11 @@ $(OBJ)cubature_hexa.o: cubature_hexa.cpp cubature_hexa.h error.h
 $(OBJ)cubature_tet.o: cubature_tet.cpp cubature_tet.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
-$(OBJ)flux.o: flux.cpp flux.h array.h error.h input.h error.h
+$(OBJ)flux.o: flux.cpp flux.h array.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
 $(OBJ)source.o: source.cpp source.h array.h input.h error.h
-	$(CC) $(OPTS) -c -o $@ $<
+	$(CC) $(OPTS)  -c -o $@ $<
 
 $(OBJ)input.o: input.cpp input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
