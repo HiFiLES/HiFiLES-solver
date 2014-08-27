@@ -48,6 +48,16 @@ input::input()
   motion = 0;
   GCL = 0;
   n_deform_iters = 1;
+
+  // Set shock capturing parameters to 0 in case they are not used
+  ArtifOn = 0;
+  artif_only = 0;
+  artif_type = 0;
+  epsilon0 = 0;
+  s0 = 0;
+  kappa = 0;
+  shock_vortex_restart = 0;
+  p_bound_out = 0;
 }
 
 input::~input()
@@ -642,6 +652,34 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> perturb_ic;
     }
+    else if (!param_name.compare("ArtifOn"))
+    {
+      in_run_input_file >> ArtifOn;
+    }
+    else if (!param_name.compare("artif_only"))
+    {
+      in_run_input_file >> artif_only;
+    }
+    else if (!param_name.compare("artif_type"))
+    {
+      in_run_input_file >> artif_type;
+    }
+    else if (!param_name.compare("epsilon0"))
+    {
+      in_run_input_file >> epsilon0;
+    }
+    else if (!param_name.compare("s0"))
+    {
+      in_run_input_file >> s0;
+    }
+    else if (!param_name.compare("kappa"))
+    {
+      in_run_input_file >> kappa;
+    }
+    else if (!param_name.compare("shock_vortex_restart"))
+    {
+      in_run_input_file >> shock_vortex_restart;
+    }
     else
     {
       cout << "input parameter =" << param_name << endl;
@@ -698,7 +736,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
     
     // If we have chosen an isentropic vortex case as the initial condition
     
-    if(ic_form == 0)  {
+    if(ic_form == 0 || artif_only || ic_form == 8)   {
       
       fix_vis  = 1.;
       R_ref     = 1.;

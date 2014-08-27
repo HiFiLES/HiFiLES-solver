@@ -76,6 +76,12 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   array<double> disu_ppts_temp;
   array<double> grad_disu_ppts_temp;
   array<double> diag_ppts_temp;
+
+  /*! Sensor data for artificial viscosity at plot points */
+  array<double> sensor_ppts_temp;
+  /*! Artificial viscosity co-efficient values for artificial viscosity at plot points */
+  array<double> epsilon_ppts_temp;
+
   int n_ppts_per_ele;
   int n_dims = FlowSol->n_dims;
   int n_fields;
@@ -173,6 +179,12 @@ void write_tec(int in_file_num, struct solution* FlowSol)
           grad_disu_ppts_temp.setup(n_ppts_per_ele,n_fields,n_dims);
           diag_ppts_temp.setup(n_ppts_per_ele,n_diag_fields);
 
+          /*! Temporary field for sensor array at plot points */
+          sensor_ppts_temp.setup(n_ppts_per_ele);
+
+          /*! Temporary field for artificial viscosity co-efficients at plot points */
+          epsilon_ppts_temp.setup(n_ppts_per_ele);
+
           // write element specific header
           if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
             {
@@ -213,10 +225,20 @@ void write_tec(int in_file_num, struct solution* FlowSol)
               FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
               FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
 
+              if(run_input.ArtifOn)
+              {
+                /*! Calculate the sensor at the plot points */
+                FlowSol->mesh_eles(i)->calc_sensor_ppts(j,sensor_ppts_temp);
+
+                if(run_input.artif_type == 0)
+                  /*! Calculate the artificial viscosity co-efficients at plot points */
+                  FlowSol->mesh_eles(i)->calc_epsilon_ppts(j,epsilon_ppts_temp);
+              }
+
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
                 {
-                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
+                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp);
                 }
 
               for(k=0;k<n_ppts_per_ele;k++)
@@ -556,6 +578,10 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   array<double> diag_ppts_temp;
   /*! Grid velocity at plot points */
   array<double> grid_vel_ppts_temp;
+  /*! Sensor data for artificial viscosity at plot points */
+  array<double> sensor_ppts_temp;
+  /*! Artificial viscosity co-efficient values for artificial viscosity at plot points */
+  array<double> epsilon_ppts_temp;
 
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
@@ -722,6 +748,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
             /*! Temporary diagnostic field array at plot points */
             diag_ppts_temp.setup(n_points,n_diag_fields);
+
+            /*! Temporary field for sensor array at plot points */
+            sensor_ppts_temp.setup(n_points);
+
+            /*! Temporary field for artificial viscosity co-efficients at plot points */
+            epsilon_ppts_temp.setup(n_points);
           }
 
           /*! Temporary grid velocity array at plot points */
@@ -745,8 +777,18 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 /*! Calculate the gradient of the prognostic fields at the plot points */
                 FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
 
+                if(run_input.ArtifOn)
+                {
+                  /*! Calculate the sensor at the plot points */
+                  FlowSol->mesh_eles(i)->calc_sensor_ppts(j,sensor_ppts_temp);
+
+                  if(run_input.artif_type == 0)
+                    /*! Calculate the artificial viscosity co-efficients at plot points */
+                    FlowSol->mesh_eles(i)->calc_epsilon_ppts(j,epsilon_ppts_temp);
+                }
+
                 /*! Calculate the diagnostic fields at the plot points */
-                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
+                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp);
               }
 
               /*! write out solution to file */
@@ -1596,6 +1638,13 @@ void CopyGPUCPU(struct solution* FlowSol)
       if (FlowSol->viscous==1)
       {
         FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
+      }
+
+      if(run_input.ArtifOn)
+      {
+        FlowSol->mesh_eles(i)->cp_sensor_gpu_cpu();
+        if(run_input.artif_type==0)
+          FlowSol->mesh_eles(i)->cp_epsilon_upts_gpu_cpu();
       }
     }
   }

@@ -123,6 +123,13 @@ public:
   array<int> motion_type;
   /* -------------------------------- */
 
+  /* --- Shock Capturing options --- */
+  int artif_only, artif_type, ArtifOn;
+  double epsilon0, s0, kappa;
+  int shock_vortex_restart;
+  double p_bound_out;
+  /* -------------------------------- */
+
   // boundary_conditions
   double rho_bound;
   array<double> v_bound;

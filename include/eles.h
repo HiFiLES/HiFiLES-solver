@@ -87,6 +87,12 @@ public:
   /*! copy source term at solution points to cpu */
   void cp_src_upts_gpu_cpu(void);
 
+  /*! copy elemental sensor values to cpu */
+  void cp_sensor_gpu_cpu(void);
+
+  /*! copy AV co-eff values at solution points to cpu */
+  void cp_epsilon_upts_gpu_cpu(void);
+
   /*! remove transformed discontinuous solution at solution points from cpu */
   void rm_disu_upts_cpu(void);
 
@@ -290,8 +296,14 @@ public:
   /*! calculate gradient of solution at the plot points */
   void calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts);
 
+  /*! calculate sensor at the plot points */
+  void calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts);
+
+  /*! calculate AV-co-efficients at the plot points */
+  void calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts);
+
   /*! calculate diagnostic fields at the plot points */
-  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double> &in_epsilon_ppts, array<double>& out_diag_field_ppts);
 
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
@@ -592,6 +604,11 @@ public:
   void rigid_grid_velocity(double rk_time);
   void perturb_grid_velocity(double rk_time);
 #endif
+
+  /* --- Shock capturing functions --- */
+
+  void shock_capture_concentration(int in_disu_upts_from);
+
 protected:
 
   // #### members ####
@@ -1195,5 +1212,24 @@ protected:
   array<double> dt_local;
   double dt_local_new;
   array<double> dt_local_mpi;
+
+  /*! Artificial Viscosity variables */
+  array<double> vandermonde;
+  array<double> inv_vandermonde;
+  array<double> vandermonde2D;
+  array<double> inv_vandermonde2D;
+  array<double> area_coord_upts;
+  array<double> area_coord_fpts;
+  array<double> epsilon;
+  array<double> epsilon_upts;
+  array<double> epsilon_fpts;
+  array<double> concentration_array;
+  array<double> sensor;
+  array<double> sigma;
+
+  array<double> min_dt_local;
+
+  /*! Global cell number of element as in the code */
+  array<int> ele2global_ele_code;
 
 };

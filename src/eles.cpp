@@ -384,6 +384,22 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
       grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
     }
+
+    if(run_input.ArtifOn)
+    {
+      if(run_input.artif_type == 1)
+        sensor.setup(n_eles);
+
+      if(run_input.artif_type == 0)
+      {
+          epsilon.setup(n_eles);
+          epsilon_upts.setup(n_upts_per_ele,n_eles);
+          epsilon_fpts.setup(n_fpts_per_ele,n_eles);
+          sensor.setup(n_eles);
+          //dt_local.setup(n_eles);
+          min_dt_local.setup(1);
+      }
+    }
     
     // Set connectivity array. Needed for Paraview output.
     if (ele_type==3) // prism
@@ -771,6 +787,33 @@ void eles::mv_all_cpu_gpu(void)
     if (motion) {
       run_input.bound_vel_simple(0).mv_cpu_gpu();
     }
+
+    if(run_input.ArtifOn){
+        // Needed for shock capturing routines
+        sensor.cp_cpu_gpu();
+        inv_vandermonde.mv_cpu_gpu();
+        inv_vandermonde2D.mv_cpu_gpu();
+        vandermonde2D.mv_cpu_gpu();
+
+        if(run_input.artif_type == 1)
+        {
+          concentration_array.mv_cpu_gpu();
+          sigma.mv_cpu_gpu();
+        }
+
+        if(run_input.artif_type == 0)
+        {
+          epsilon.mv_cpu_gpu();
+          epsilon_upts.cp_cpu_gpu();
+          epsilon_fpts.cp_cpu_gpu();
+          ele2global_ele_code.mv_cpu_gpu();
+          area_coord_upts.mv_cpu_gpu();
+          area_coord_fpts.mv_cpu_gpu();
+          n_spts_per_ele.mv_cpu_gpu();
+          dt_local.cp_cpu_gpu();
+          min_dt_local.cp_cpu_gpu();
+        }
+    }
   }
 #endif
 }
@@ -863,6 +906,28 @@ void eles::cp_src_upts_gpu_cpu(void)
 
 #endif
   }
+}
+
+// copy sensor in each element to cpu
+void eles::cp_sensor_gpu_cpu(void)
+{
+#ifdef _GPU
+  if (n_eles!=0)
+    {
+      sensor.cp_gpu_cpu();
+    }
+#endif
+}
+
+// copy sensor in each element to cpu
+void eles::cp_epsilon_upts_gpu_cpu(void)
+{
+#ifdef _GPU
+  if (n_eles!=0)
+    {
+      epsilon_upts.cp_gpu_cpu();
+    }
+#endif
 }
 
 // remove transformed discontinuous solution at solution points from cpu
@@ -3247,6 +3312,17 @@ void eles::evaluate_sgsFlux(void)
   }
 }
 
+// sense shock and filter (for concentration method) - only on GPUs
+
+void eles::shock_capture_concentration(int in_disu_upts_from)
+{
+  if (n_eles!=0){
+    #ifdef _GPU
+      shock_capture_concentration_gpu_kernel_wrapper(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), vandermonde2D.get_ptr_gpu(), concentration_array.get_ptr_gpu(), sensor.get_ptr_gpu(), sigma.get_ptr_gpu());
+    #endif
+  }
+}
+
 // get the type of element
 
 int eles::get_ele_type(void)
@@ -4042,8 +4118,59 @@ void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
   }
 }
 
+// calculate the sensor values at plot points
+void eles::calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts)
+{
+    if (n_eles!=0)
+    {
+      for(int i=0;i<n_ppts_per_ele;i++)
+        out_sensor_ppts(i) = sensor(in_ele);
+    }
+}
+
+// calculate solution at the plot points
+void eles::calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts)
+{
+  if (n_eles!=0)
+  {
+
+      int i,j,k;
+
+      array<double> epsilon_upts_plot(n_upts_per_ele);
+
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        epsilon_upts_plot(j)=epsilon_upts(j,in_ele);
+      }
+
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,1,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,epsilon_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_epsilon_ppts.get_ptr_cpu(),n_ppts_per_ele);
+
+#else
+
+      //HACK (inefficient, but useful if cblas is unavailible)
+
+      for(i=0;i<n_ppts_per_ele;i++)
+      {
+        out_epsilon_ppts(i) = 0.;
+
+        for(j=0;j<n_upts_per_ele;j++)
+        {
+          out_epsilon_ppts(i) += opp_p(i,j)*epsilon_upts_plot(j);
+        }
+
+      }
+
+#endif
+
+  }
+}
+
 // calculate diagnostic fields at the plot points
-void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts)
+// calculate diagnostic fields at the plot points
+void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double>& in_epsilon_ppts, array<double>& out_diag_field_ppts)
 {
   int i,j,k,m;
   double diagfield_upt;
@@ -4166,6 +4293,17 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
         double av=0.0;
         diagfield_upt = av;
       }
+
+      // Artificial Viscosity diagnostics
+      else if (run_input.diagnostic_fields(k)=="sensor")
+      {
+        diagfield_upt = in_sensor_ppts(j);
+      }
+      else if (run_input.diagnostic_fields(k)=="epsilon")
+      {
+        diagfield_upt = in_epsilon_ppts(j);
+      }
+
       else
         FatalError("plot_quantity not recognized");
       

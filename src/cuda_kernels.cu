@@ -4079,6 +4079,190 @@ __global__ void calc_src_upts_gpu_kernel(int n_upts_per_ele,int n_eles,double* d
   }
 }
 
+__global__ void shock_capture_concentration_gpu_kernel(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma)
+{
+    const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
+
+    if(thread_id < in_n_eles)
+    {
+        int stride = in_n_upts_per_ele*in_n_eles;
+        double sensor = 0;
+
+        double nodal_rho[8];  // Array allocated so that it can handle upto p=7
+        double modal_rho[8];
+        double uE[8];
+        double temp;
+        double p = 3;	// exponent in concentration method
+        double J = 0.15;
+        int shock_found = 0;
+
+        // X-slices
+        for(int i=0; i<in_order+1; i++)
+        {
+            for(int j=0; j<in_order+1; j++){
+                nodal_rho[j] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + i*(in_order+1) + j];
+            }
+
+            for(int j=0; j<in_order+1; j++){
+                modal_rho[j] = 0;
+                for(int k=0; k<in_order+1; k++){
+                    modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)]*nodal_rho[k];
+                }
+            }
+
+            for(int j=0; j<in_order+1; j++){
+                uE[j] = 0;
+                for(int k=0; k<in_order+1; k++)
+                    uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+
+                uE[j] = abs((3.1415/(in_order+1))*uE[j]);
+                temp = pow(uE[j],p)*pow(in_order+1,p/2);
+
+                if(temp >= J)
+                    shock_found++;
+
+                if(temp > sensor)
+                    sensor = temp;
+            }
+
+        }
+
+        // Y-slices
+        for(int i=0; i<in_order+1; i++)
+        {
+            for(int j=0; j<in_order+1; j++){
+                nodal_rho[j] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + j*(in_order+1) + i];
+            }
+
+            for(int j=0; j<in_order+1; j++){
+                modal_rho[j] = 0;
+                for(int k=0; k<in_order+1; k++)
+                    modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)]*nodal_rho[k];
+            }
+
+            for(int j=0; j<in_order+1; j++){
+                uE[j] = 0;
+                for(int k=0; k<in_order+1; k++)
+                    uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+
+                uE[j] = (3.1415/(in_order+1))*uE[j];
+                temp = pow(abs(uE[j]),p)*pow(in_order+1,p/2);
+
+                if(temp >= J)
+                    shock_found++;
+
+                if(temp > sensor)
+                    sensor = temp;
+            }
+        }
+
+        out_sensor[thread_id] = sensor;
+
+    /* -------------------------------------------------------------------------------------- */
+                    /* Modal Order Reduction */
+
+    //      if(sensor > s0 + kappa && in_artif_type == 1) {
+    //            double nodal_sol[36];
+    //            double modal_sol[36];
+    //            int n_trun_modes = 1;
+    //            //printf("Sensor value is %f in thread %d \n",sensor, thread_id);
+
+    //            for(int k=0; k<in_n_fields; k++) {
+
+    //                for(int i=0; i<in_n_upts_per_ele; i++){
+    //                    nodal_sol[i] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + k*stride + i];
+    //                }
+    //                // Nodal to modal only upto 1st order
+    //                for(int i=0; i<in_n_upts_per_ele; i++){
+    //                    modal_sol[i] = 0;
+    //                    if(i < n_trun_modes){
+    //                        for(int j=0; j<in_n_upts_per_ele; j++)
+    //                            modal_sol[i] += in_inv_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*nodal_sol[j];
+    //                    }
+    //                }
+
+    //                // Change back to nodal
+    //                for(int i=0; i<in_n_upts_per_ele; i++){
+    //                    nodal_sol[i] = 0;
+    //                    for(int j=0; j<in_n_upts_per_ele; j++)
+    //                        nodal_sol[i] += in_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*modal_sol[j];
+
+    //                    in_disu_upts_ptr[thread_id*in_n_upts_per_ele + k*stride + i] = nodal_sol[i];
+    //                }
+    //            }
+    //        }
+
+    //        if(sensor <= s0 && sensor > s0 - kappa){
+    //            double nodal_sol[36];
+    //            double modal_sol[36];
+    //            int n_trun_modes = 3;
+    //            //printf("Sensor value is %f in thread %d \n",sensor, thread_id);
+
+    //            for(int k=0; k<in_n_fields; k++) {
+
+    //                for(int i=0; i<in_n_upts_per_ele; i++){
+    //                    nodal_sol[i] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + k*stride + i];
+    //                }
+    //                // Nodal to modal only upto 1st order
+    //                for(int i=0; i<in_n_upts_per_ele; i++){
+    //                    modal_sol[i] = 0;
+    //                    if(i < n_trun_modes){
+    //                        for(int j=0; j<in_n_upts_per_ele; j++)
+    //                            modal_sol[i] += in_inv_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*nodal_sol[j];
+    //                    }
+    //                }
+
+    //                // Change back to nodal
+    //                for(int i=0; i<in_n_upts_per_ele; i++){
+    //                    nodal_sol[i] = 0;
+    //                    for(int j=0; j<in_n_upts_per_ele; j++)
+    //                        nodal_sol[i] += in_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*modal_sol[j];
+
+    //                    in_disu_upts_ptr[thread_id*in_n_upts_per_ele + k*stride + i] = nodal_sol[i];
+    //                }
+    //            }
+
+    //            out_epsilon_ptr[thread_id] = out_epsilon_ptr[thread_id] + 1;
+    //            epsilon_global_eles[global_ele_num] = out_epsilon_ptr[thread_id];
+    //        }
+
+
+/* -------------------------------------------------------------------------------------- */
+            /* Exponential modal filter */
+
+        if(sensor > s0 + kappa && in_artif_type == 1) {
+            double nodal_sol[36];
+            double modal_sol[36];
+
+            for(int k=0; k<in_n_fields; k++) {
+
+                for(int i=0; i<in_n_upts_per_ele; i++){
+                    nodal_sol[i] = in_disu_upts_ptr[thread_id*in_n_upts_per_ele + k*stride + i];
+                }
+
+                // Nodal to modal only upto 1st order
+                for(int i=0; i<in_n_upts_per_ele; i++){
+                    modal_sol[i] = 0;
+                    for(int j=0; j<in_n_upts_per_ele; j++)
+                        modal_sol[i] += in_inv_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*nodal_sol[j];
+
+                    modal_sol[i] = modal_sol[i]*sigma[i];
+                    //printf("The exp filter values are %f \n",modal_sol[i]);
+                }
+
+                // Change back to nodal
+                for(int i=0; i<in_n_upts_per_ele; i++){
+                    nodal_sol[i] = 0;
+                    for(int j=0; j<in_n_upts_per_ele; j++)
+                        nodal_sol[i] += in_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*modal_sol[j];
+
+                    in_disu_upts_ptr[thread_id*in_n_upts_per_ele + k*stride + i] = nodal_sol[i];
+                }
+            }
+        }
+  }
+}
+
 
 #ifdef _MPI
 
@@ -5340,6 +5524,26 @@ void set_transforms_dynamic_fpts_kernel_wrapper(int n_fpts_per_ele, int n_eles, 
     cout << "ERROR: Negative Jacobian found at flux point!" << endl;*/
 
   check_cuda_error("After",__FILE__, __LINE__);
+}
+
+// Wrapper for gpu kernel for shock capturing using artificial viscosity
+void shock_capture_concentration_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma)
+{
+    cudaError_t err;
+
+    // HACK: fix 256 threads per block
+    int n_blocks=((in_n_eles-1)/256)+1;
+
+  check_cuda_error("Before", __FILE__, __LINE__);
+
+    shock_capture_concentration_gpu_kernel<<<n_blocks,256>>>(in_n_eles, in_n_upts_per_ele, in_n_fields, in_order, in_ele_type, in_artif_type, s0, kappa, in_disu_upts_ptr, in_inv_vandermonde_ptr, in_inv_vandermonde2D_ptr, in_vandermonde2D_ptr, concentration_array_ptr, out_sensor, sigma);
+
+    // This thread synchronize may not be necessary
+    err=cudaThreadSynchronize();
+    if( err != cudaSuccess)
+            printf("cudaThreadSynchronize error: %s\n", cudaGetErrorString(err));
+
+      check_cuda_error("After",__FILE__, __LINE__);
 }
 
 #ifdef _MPI

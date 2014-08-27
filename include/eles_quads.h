@@ -120,6 +120,24 @@ public:
   /*! Element reference length calculation */
   double calc_h_ref_specific(int in_ele);
 
+  /*! set area coordinates of solution points and flux point */
+  void set_area_coord(void);
+
+  /*! set area coordinates of solution points and flux point */
+  void set_vandermonde2D(void);
+
+  /*! setup the concentration array required for concentration method for shock capturing */
+  void set_concentration_array(void);
+
+  /*! set filter array */
+  void set_filter_array(void);
+
+  /*! exponential filter */
+  double exponential_filter(int, int);
+
+  /*! Evaluate 2D Legendre Basis */
+  double eval_legendre_basis_2D_hierarchical(int, array<double>, int in_order);
+
 protected:
 
   // methods
@@ -127,8 +145,8 @@ protected:
   void set_vandermonde();
 
   // members
-  array<double> vandermonde;
-  array<double> inv_vandermonde;
+  //array<double> vandermonde;
+  //array<double> inv_vandermonde;
 
   /*! return position of 1d solution point */
   double get_loc_1d_upt(int in_index);
