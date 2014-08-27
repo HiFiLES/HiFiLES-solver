@@ -3866,8 +3866,6 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
       {
         if (motion) {
           disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i)/J_dyn_upts(j,in_ele);
-          //disu_upts_plot(j,i)=1/J_dyn_upts(j,in_ele);
-          //cout << in_ele << "," << j << "," << i << ": " << disu_upts(0)(j,in_ele,i) << ", " << J_dyn_upts(j,in_ele) << endl;
         }else{
           disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
         }

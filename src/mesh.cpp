@@ -34,7 +34,7 @@ void displayMatrix(array<T> matrix) {
   int i,j;
   for (i=0; i<matrix.get_dim(0); i++) {
     for (j=0; j<matrix.get_dim(1); j++) {
-      cout << matrix(i,j) << " ";
+      cout << setw(15) << setprecision(10) << matrix(i,j) << " ";
     }
     cout << endl;
   }
@@ -249,9 +249,10 @@ void mesh::deform(void) {
 
   min_vol = check_grid();
   set_min_length();
-  /* cout << "n_verts: " << n_verts << ", ";
-    cout << "n_dims: " << n_dims << ", ";
-    cout << "min_vol = " << min_vol << endl; */
+
+  if (rk_step==0) {
+    push_back_xv();
+  }
 
   // Setup stiffness matrices for each individual element,
   // combine all element-level matrices into global matrix
@@ -264,7 +265,7 @@ void mesh::deform(void) {
     deformation can be divided into increments to help with stability. In
     particular, the linear elasticity equations hold only for small deformations. ---*/
   for (int iGridDef_Iter = 0; iGridDef_Iter < run_input.n_deform_iters; iGridDef_Iter++) {
-    //cout << ">>Iteration " << iGridDef_Iter+1 << " of " << run_input.n_deform_iters << endl;
+
     /*--- Initialize vector and sparse matrix ---*/
 
     LinSysSol.SetValZero();
@@ -276,46 +277,16 @@ void mesh::deform(void) {
         elasticity equations (transfers element stiffnesses to point-to-point). ---*/
 
     for (int ic=0; ic<n_eles; ic++) {
-//      //--- NEW ADDITION 3/26/14 ---//
-//      nodes.setup(c2n_v(ic));
-//      for (int iNode=0; iNode<c2n_v(ic); iNode++) {
-//        nodes(iNode) = iv2ivg(c2v(ic,iNode)); // will the iv2ivg be needed for MPI?
-//      }
-//      if (n_dims == 2) {
-//        set_stiffmat_ele_2d(stiff_mat_ele,ic,min_vol);
-//      }else if (n_dims == 3) {
-//        set_stiffmat_ele_3d(stiff_mat_ele,ic,min_vol);
-//      }
-//      add_FEA_stiffMat(stiff_mat_ele,nodes);
-//      //----------------------------//
-
-      switch(ctype(ic))
-      {
-        case TRI:
-          pt_0 = iv2ivg(c2v(ic,0));
-          pt_1 = iv2ivg(c2v(ic,1));
-          pt_2 = iv2ivg(c2v(ic,2));
-          check = set_2D_StiffMat_ele_tri(stiff_mat_ele,ic);
-          add_StiffMat_EleTri(stiff_mat_ele,pt_0,pt_1,pt_2);
-          break;
-        case QUAD:
-          pt_0 = iv2ivg(c2v(ic,0));
-          pt_1 = iv2ivg(c2v(ic,1));
-          pt_2 = iv2ivg(c2v(ic,2));
-          pt_3 = iv2ivg(c2v(ic,3));
-          set_2D_StiffMat_ele_quad(stiff_mat_ele,ic);
-          add_StiffMat_EleQuad(stiff_mat_ele,pt_0,pt_1,pt_2,pt_3);
-          break;
-        default:
-          FatalError("Element type not yet supported for mesh motion - supported types are tris and quads");
-          break;
+      nodes.setup(c2n_v(ic));
+      for (int iNode=0; iNode<c2n_v(ic); iNode++) {
+        nodes(iNode) = iv2ivg(c2v(ic,iNode)); // iv2ivg will be needed for MPI, right?
       }
-      if (!check) {
-        failedIts++;
-        if (failedIts > 5) FatalError("ERROR: negative volumes encountered during mesh motion.");
-      }else{
-        failedIts=0;
+      if (n_dims == 2) {
+        set_stiffmat_ele_2d(stiff_mat_ele,nodes,ic,min_vol);
+      }else if (n_dims == 3) {
+        set_stiffmat_ele_3d(stiff_mat_ele,nodes,ic,min_vol);
       }
+      add_FEA_stiffMat(stiff_mat_ele,nodes);
     }
 
     /*--- Compute the tolerance of the linear solver using MinLength ---*/
@@ -327,9 +298,9 @@ void mesh::deform(void) {
 
     /*--- Fix the location of any points in the domain, if requested. ---*/
     /*
-        if (config->GetHold_GridFixed())
-            SetDomainDisplacements(FlowSol);
-        */
+    if (config->GetHold_GridFixed())
+      SetDomainDisplacements(FlowSol);
+    */
 
     /*--- Communicate any prescribed boundary displacements via MPI,
         so that all nodes have the same solution and r.h.s. entries
@@ -550,7 +521,7 @@ bool mesh::set_2D_StiffMat_ele_quad(array<double> &stiffMat_ele,int ele_id) {
 
 
 // ---- **NEW** Added 3/26/14 ---- //
-void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale)
+void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, array<int>& nodes, int ic, double scale)
 {
   double B_Matrix[3][8], D_Matrix[3][3], Aux_Matrix[8][3];
   double Xi = 0.0, Eta = 0.0, Det, E, Lambda, Mu;
@@ -562,14 +533,10 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale
 
   // First, get the ID's & coordinates of the nodes for this element
   int nNodes = c2n_v(ic);
-  array<int> nodes(nNodes);
-  array<double> coords(nNodes,2);
 
   for (int i=0; i<nNodes; i++) {
-    nodes(i) = iv2ivg(c2v(ic,i));
     for (int j=0; j<n_dims; j++) {
       CoordCorners[i][j] = xv(0)(nodes(i),j);
-      coords(i,j) = xv(0)(nodes(i),j);
     }
   }
 
@@ -662,7 +629,7 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale
 
 
 // ---- **NEW** Added 3/26/14 ---- //
-void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale)
+void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, array<int>& nodes, int ic, double scale)
 {
   double B_Matrix[6][24], D_Matrix[6][6], Aux_Matrix[24][6];
   double Xi = 0.0, Eta = 0.0, Mu = 0.0, Det, E, Lambda, Nu, Avg_Wall_Dist;
@@ -674,10 +641,8 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale
 
   // First, get the ID's & coordinates of the nodes for this element
   int nNodes = c2n_v(ic);
-  array<int> nodes(nNodes);
 
   for (int i=0; i<nNodes; i++) {
-    nodes(i) = iv2ivg(c2v(ic,i));
     for (int j=0; j<n_dims; j++) {
       CoordCorners[i][j] = xv(0)(nodes(i),j);
     }
@@ -813,43 +778,31 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale
 }
 
 // ---- **NEW** 3/26/14
-void mesh::add_FEA_stiffMat(array<double> &stiffMat_ele, array<int> &PointCorners) {
-  unsigned short iVar, jVar, iDim, jDim;
-  unsigned short nVar = (unsigned short)n_dims;
-  unsigned short nNodes = (unsigned short)PointCorners.get_dim(0);
+void mesh::add_FEA_stiffMat(array<double>& stiffMat_ele, array<int>& Nodes) {
+  unsigned short iVert, jVert, iDim, jDim;
+  unsigned short nVar = n_dims;
+  unsigned short nNodes = (unsigned short)Nodes.get_dim(0);
 
-  double **StiffMatrix_Node;
-  StiffMatrix_Node = new double* [nVar];
-  for (iVar = 0; iVar < nVar; iVar++)
-    StiffMatrix_Node[iVar] = new double [nVar];
-
-  for (iVar = 0; iVar < nVar; iVar++)
-    for (jVar = 0; jVar < nVar; jVar++)
-      StiffMatrix_Node[iVar][jVar] = 0.0;
+  array<double> StiffMatrix_Node;
+  StiffMatrix_Node.setup(nVar,nVar);
+  StiffMatrix_Node.initialize_to_zero();
 
   /*--- Transform the stiffness matrix for the hexahedral element into the
    contributions for the individual nodes relative to each other. ---*/
 
-  for (iVar = 0; iVar < nNodes; iVar++) {
-    for (jVar = 0; jVar < nNodes; jVar++) {
+  for (iVert = 0; iVert < nNodes; iVert++) {
+    for (jVert = 0; jVert < nNodes; jVert++) {
 
       for (iDim = 0; iDim < nVar; iDim++) {
         for (jDim = 0; jDim < nVar; jDim++) {
-          StiffMatrix_Node[iDim][jDim] = stiffMat_ele((iVar*nVar)+iDim,(jVar*nVar)+jDim);
+          StiffMatrix_Node(iDim,jDim) = stiffMat_ele((iVert*nVar)+iDim,(jVert*nVar)+jDim);
         }
       }
 
-      StiffnessMatrix.AddBlock(PointCorners(iVar), PointCorners(jVar), StiffMatrix_Node);
+      StiffnessMatrix.AddBlock(iv2ivg(Nodes(iVert)), iv2ivg(Nodes(jVert)), StiffMatrix_Node);
 
     }
   }
-
-  /*--- Deallocate memory and exit ---*/
-
-  for (iVar = 0; iVar < nVar; iVar++)
-    delete StiffMatrix_Node[iVar];
-  delete [] StiffMatrix_Node;
-
 }
 
 double mesh::ShapeFunc_Triangle(double Xi, double Eta, double CoordCorners[8][3], double DShapeFunction[8][4]) {
@@ -1286,56 +1239,35 @@ double mesh::ShapeFunc_Wedge(double Xi, double Eta, double Mu, double CoordCorne
  * Transform element-defined stiffness matrix into node-base stiffness matrix for inclusion
  * into global stiffness matrix 'StiffMatrix'
  */
-void mesh::add_StiffMat_EleTri(array<double> StiffMatrix_Elem, int id_pt_0,
-                               int id_pt_1, int id_pt_2) {
+void mesh::add_StiffMat_EleTri(array<double> &StiffMatrix_Elem, int id_pt_0, int id_pt_1, int id_pt_2) {
   unsigned short nVar = n_dims;
-
-  // Transform local -> global node ID
-  id_pt_0 = iv2ivg(id_pt_0);
-  id_pt_1 = iv2ivg(id_pt_1);
-  id_pt_2 = iv2ivg(id_pt_1);
 
   array<double> StiffMatrix_Node;
   StiffMatrix_Node.setup(nVar,nVar);
   StiffMatrix_Node.initialize_to_zero();
 
+  int nNodes = 3;
+  array<int> Nodes(nNodes);
+  Nodes(0) = id_pt_0;
+  Nodes(1) = id_pt_1;
+  Nodes(2) = id_pt_2;
+
   /*--- Transform the stiffness matrix for the triangular element into the
    contributions for the individual nodes relative to each other. ---*/
-  StiffMatrix_Node(0,0) = StiffMatrix_Elem(0,0);	StiffMatrix_Node(0,1) = StiffMatrix_Elem(0,1);
-  StiffMatrix_Node(1,0) = StiffMatrix_Elem(1,0);	StiffMatrix_Node(1,1) = StiffMatrix_Elem(1,1);
-  StiffnessMatrix.AddBlock(id_pt_0, id_pt_0, StiffMatrix_Node);
 
-  StiffMatrix_Node(0,0) = StiffMatrix_Elem(0,2);	StiffMatrix_Node(0,1) = StiffMatrix_Elem(0,3);
-  StiffMatrix_Node(1,0) = StiffMatrix_Elem(1,2);	StiffMatrix_Node(1,1) = StiffMatrix_Elem(1,3);
-  StiffnessMatrix.AddBlock(id_pt_0, id_pt_1, StiffMatrix_Node);
+  for (int iVert = 0; iVert < nNodes; iVert++) {
+    for (int jVert = 0; jVert < nNodes; jVert++) {
 
-  StiffMatrix_Node(0,0) = StiffMatrix_Elem(0,4);	StiffMatrix_Node(0,1) = StiffMatrix_Elem(0,5);
-  StiffMatrix_Node(1,0) = StiffMatrix_Elem(1,4);	StiffMatrix_Node(1,1) = StiffMatrix_Elem(1,5);
-  StiffnessMatrix.AddBlock(id_pt_0, id_pt_2, StiffMatrix_Node);
+      for (int iDim = 0; iDim < nVar; iDim++) {
+        for (int jDim = 0; jDim < nVar; jDim++) {
+          StiffMatrix_Node(iDim,jDim) = StiffMatrix_Elem((iVert*nVar)+iDim,(jVert*nVar)+jDim);
+        }
+      }
 
-  StiffMatrix_Node(0,0) = StiffMatrix_Elem(2,0);	StiffMatrix_Node(0,1) = StiffMatrix_Elem(2,1);
-  StiffMatrix_Node(1,0) = StiffMatrix_Elem(3,0);	StiffMatrix_Node(1,1) = StiffMatrix_Elem(3,1);
-  StiffnessMatrix.AddBlock(id_pt_1, id_pt_0, StiffMatrix_Node);
+      StiffnessMatrix.AddBlock(Nodes(iVert), Nodes(jVert), StiffMatrix_Node);
 
-  StiffMatrix_Node(0,0) = StiffMatrix_Elem(2,2);	StiffMatrix_Node(0,1) = StiffMatrix_Elem(2,3);
-  StiffMatrix_Node(1,0) = StiffMatrix_Elem(3,2);	StiffMatrix_Node(1,1) = StiffMatrix_Elem(3,3);
-  StiffnessMatrix.AddBlock(id_pt_1, id_pt_1, StiffMatrix_Node);
-
-  StiffMatrix_Node(0,0) = StiffMatrix_Elem(2,4);	StiffMatrix_Node(0,1) = StiffMatrix_Elem(2,5);
-  StiffMatrix_Node(1,0) = StiffMatrix_Elem(3,4);	StiffMatrix_Node(1,1) = StiffMatrix_Elem(3,5);
-  StiffnessMatrix.AddBlock(id_pt_1, id_pt_2, StiffMatrix_Node);
-
-  StiffMatrix_Node(0,0) = StiffMatrix_Elem(4,0);	StiffMatrix_Node(0,1) = StiffMatrix_Elem(4,1);
-  StiffMatrix_Node(1,0) = StiffMatrix_Elem(5,0);	StiffMatrix_Node(1,1) = StiffMatrix_Elem(5,1);
-  StiffnessMatrix.AddBlock(id_pt_2, id_pt_0, StiffMatrix_Node);
-
-  StiffMatrix_Node(0,0) = StiffMatrix_Elem(4,2);	StiffMatrix_Node(0,1) = StiffMatrix_Elem(4,3);
-  StiffMatrix_Node(1,0) = StiffMatrix_Elem(5,2);	StiffMatrix_Node(1,1) = StiffMatrix_Elem(5,3);
-  StiffnessMatrix.AddBlock(id_pt_2, id_pt_1, StiffMatrix_Node);
-
-  StiffMatrix_Node(0,0) = StiffMatrix_Elem(4,4);	StiffMatrix_Node(0,1) = StiffMatrix_Elem(4,5);
-  StiffMatrix_Node(1,0) = StiffMatrix_Elem(5,4);	StiffMatrix_Node(1,1) = StiffMatrix_Elem(5,5);
-  StiffnessMatrix.AddBlock(id_pt_2, id_pt_2, StiffMatrix_Node);
+    }
+  }
 }
 
 void mesh::add_StiffMat_EleQuad(array<double> StiffMatrix_Elem, int id_pt_0,
@@ -1352,19 +1284,17 @@ void mesh::update(void)
   int ele_type, local_id;
   array<double> pos(n_dims);
 
+  // Update the shape nodes in the eles classes
   for (int ic=0; ic<n_eles; ic++) {
     ele_type = ctype(ic);
     local_id = ic2loc_c(ic);
     for (int iv=0; iv<c2n_v(ic); iv++) {
       for (int k=0; k<n_dims; k++) {
-        pos(k) = xv(0)(c2v(ic,iv),k);
+        pos(k) = xv(0)(iv2ivg(c2v(ic,iv)),k);
       }
       FlowSol->mesh_eles(ele_type)->set_dynamic_shape_node(iv,local_id,pos);
     }
   }
-#ifdef _GPU
-  //FlowSol->mesh_eles(ele_type)->set_dynamic_shape_nodes_kernel_wrapper(n_dims, n_verts, n_eles, max_n_)
-#endif
 
   // Update element transforms
   for(int i=0;i<FlowSol->n_ele_types;i++) {
@@ -1373,23 +1303,16 @@ void mesh::update(void)
     }
   }
 
-  /// if (iter%FlowSol->plot_freq == 0 || iter%FlowSol->restart_dump_freq == 0) {
-//    // Set metrics at interface cubpts
+/// if (iter%FlowSol->plot_freq == 0 || iter%FlowSol->restart_dump_freq == 0) {
+//    // Set metrics at interface & volume cubpts
 //    //if (FlowSol->rank==0) cout << "Deform: setting element transforms at interface cubature points ... " << endl;
 //    for(int i=0;i<FlowSol->n_ele_types;i++) {
 //      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 //        FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
-//      }
-//    }
-
-//    // Set metrics at volume cubpts
-//    //if (FlowSol->rank==0) cout << "Deform: setting element transforms at volume cubature points ... " << endl;
-//    for(int i=0;i<FlowSol->n_ele_types;i++) {
-//      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 //        FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
 //      }
 //    }
-  /// }
+/// }
 }
 
 void mesh::write_mesh(double sim_time)
@@ -1542,6 +1465,17 @@ void mesh::write_mesh_gmsh(double sim_time)
   cout << endl;
 }
 
+void mesh::push_back_xv(void)
+{
+  for (int i=4; i>0; i--) {
+    for (int j=0; j<xv(i).get_dim(0); j++) {
+      for (int k=0; k<n_dims; k++) {
+        xv(i)(j,k) = xv(i-1)(j,k);
+      }
+    }
+  }
+}
+
 void mesh::update_grid_coords(void)
 {
   unsigned short iDim;
@@ -1550,10 +1484,6 @@ void mesh::update_grid_coords(void)
 
   /*--- Update the grid coordinates using the solution of the linear system
    after grid deformation (LinSysSol contains the x, y, z displacements). ---*/
-
-  for (int i=4; i>0; i--) {
-    xv(i) = xv(i-1);
-  }
 
   for (iPoint = 0; iPoint < n_verts; iPoint++) {
     for (iDim = 0; iDim < n_dims; iDim++) {
@@ -1692,27 +1622,33 @@ void mesh::set_boundary_displacements(void)
         }
     }*/
 
-  array<double> VarCoord(n_dims);
-  /*VarCoord(0) = run_input.bound_vel_simple(0)(0)*run_input.dt;
-  VarCoord(1) = run_input.bound_vel_simple(0)(1)*run_input.dt;*/
-  VarCoord(0) = 0;
-  VarCoord(1) = motion_params(0,0)*cos(2*motion_params(0,1)*pi*rk_time)*run_input.dt;
-  /// cout << "number of boundaries: " << n_bnds << endl;
-  /*--- Set the known displacements, note that some points of the moving surfaces
-    could be on on the symmetry plane, we should specify DeleteValsRowi again (just in case) ---*/
-  for (iBound = 0; iBound < n_bnds; iBound++) {
-    if (bound_flags(iBound) == MOTION_ENABLED) {
-      for (iVertex = 0; iVertex < nBndPts(iBound); iVertex++) {
-        iPoint = boundPts(iBound,iVertex);
-        // get amount which each point is supposed to move at this time step
-        // **for now, set to a constant (setup data structure(s) later)**
-        //VarCoord = geometry->vertex[iBound][iVertex]->GetVarCoord();
-        for (iDim = 0; iDim < nDim; iDim++) {
-          total_index = iPoint*nDim + iDim;
-          LinSysRes[total_index] = VarCoord(iDim) * VarIncrement;
-          LinSysSol[total_index] = VarCoord(iDim) * VarIncrement;
-          StiffnessMatrix.DeleteValsRowi(total_index);
-        }
+  unsigned short ib, bnd, ivb, ivb_g;
+  array<double> disp(n_dims);
+  for (bnd = 0; bnd < n_bnds; bnd++)
+  {
+    // Match up the mesh-file boundary to the input-file boundary
+    for (ib=0; ib<n_moving_bnds; ib++) {
+      if (bc_list(bnd)==bc_num[run_input.boundary_flags(ib)]) break;
+    }
+
+    // Apply displacement (new pos - old pos) to each point on boundary
+    for (ivb=0; ivb<nBndPts(bnd); ivb++)
+    {
+      // Calculate next displacement
+      ivb_g = iv2ivg(boundPts(bnd,ivb)); // iv != ivg if MPI
+      for (unsigned short k=0; k<n_dims; k++) {
+        disp(k) = motion_params(ib,2*k  )*sin(2*pi*motion_params(ib,6+k)*rk_time);
+        disp(k)+= motion_params(ib,2*k+1)*cos(2*pi*motion_params(ib,6+k)*rk_time);
+        disp(k)+= xv_0(ivb_g,k) - xv(0)(ivb_g,k);
+      }
+
+      /*--- Set the known displacements, note that some points of the moving surfaces
+          could be on on the symmetry plane, we should specify DeleteValsRowi again (just in case) ---*/
+      for (iDim=0; iDim<n_dims; iDim++) {
+        total_index = ivb_g*nDim + iDim;
+        LinSysRes[total_index] = disp(iDim) * VarIncrement;
+        LinSysSol[total_index] = disp(iDim) * VarIncrement;
+        StiffnessMatrix.DeleteValsRowi(total_index);
       }
     }
   }
@@ -1809,7 +1745,8 @@ void mesh::blend_move(void) {
     // Calculate displacement for boundaries at next time step
     for (bnd = 0; bnd < n_bnds; bnd++)
     {
-      if (bound_flags(bnd) == MOTION_ENABLED && !onBound)
+      //if (bound_flags(bnd) == MOTION_ENABLED && !onBound)
+      if (!onBound)
       {
         // Match up the mesh-file boundary to the input-file boundary
         for (ib=0; ib<n_moving_bnds; ib++) {
@@ -1850,9 +1787,14 @@ void mesh::blend_move(void) {
         }
 
         // (2) Modification of displacement through blending function [currently linear func for simplicity of testing]
-        blendDist = 2; // distance over which to apply blending [no effect for dist>blendDist]
+        blendDist = 5; // distance over which to apply blending [no effect for dist>blendDist]
         for (int k=0; k<n_dims; k++) {
-          disp(k) = max(blendDist-dist,0.)*disp(k);
+          //disp[k] = max(blendDist-dist,0.)/blendDist*disp[k];
+          if (dist<blendDist) {
+            disp(k) = (1 - (10*pow(dist/blendDist,3) - 15*pow(dist/blendDist,4) + 6*pow(dist/blendDist,5)))*disp(k);
+          }else{
+            disp(k) = 0;
+          }
         }
 
         // (3) Apply to displacement vector
@@ -1861,6 +1803,7 @@ void mesh::blend_move(void) {
           for (int k=0; k<n_dims; k++) {
             displacement(iv,k) = disp(k);
           }
+          break;
         }else{
           // Add to displacement from all boundaries
           for (int k=0; k<n_dims; k++) {

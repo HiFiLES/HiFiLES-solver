@@ -1727,7 +1727,12 @@ __global__ void blend_move_kernel(int n_eles, int n_eles_global, int max_n_spts_
         // (2) Modification of displacement through blending function [currently linear func for simplicity of testing]
         blendDist = 2; // distance over which to apply blending [no effect for dist>blendDist]
         for (int k=0; k<n_dims; k++) {
-          disp[k] = max(blendDist-dist,0.)/blendDist*disp[k];
+          //disp[k] = max(blendDist-dist,0.)/blendDist*disp[k];
+          if (dist<blendDist) {
+            disp[k] = (1 - (10*pow(dist/blendDist,3) - 15*pow(dist/blendDist,4) + 6*pow(dist/blendDist,5)))*disp[k];
+          }else{
+            disp[k] = 0;
+          }
         }
 
         // (3) Apply to displacement vector

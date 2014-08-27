@@ -150,6 +150,7 @@ public:
   /*! Additional setup operations (called from geometry.cpp to make things a little cleaner) */
   void setup_part_2(array<int> &_c2f, array<int> &_c2e, array<int> &_f2c, array<int> &_f2n_v, int _n_faces);
 
+  void push_back_xv();
 private:
   bool start;
   array<double> xv_nm1, xv_nm2, xv_nm3;//, xv_new, vel_old, vel_new;
@@ -197,7 +198,7 @@ private:
      * transfrom single-element stiffness matrix to nodal contributions in order to
      * add to global stiffness matrix
      */
-  void add_StiffMat_EleTri(array<double> StiffMatrix_Elem, int id_pt_0,
+  void add_StiffMat_EleTri(array<double> &StiffMatrix_Elem, int id_pt_0,
                            int id_pt_1, int id_pt_2);
 
 
@@ -228,7 +229,7 @@ private:
    * \param[in] StiffMatrix_Elem - Element stiffness matrix to be filled.
    * \param[in] PointCornders - Element vertex ID's
    */
-  void add_FEA_stiffMat(array<double> &stiffMat_ele, array<int> &PointCorners);
+  void add_FEA_stiffMat(array<double> &stiffMat_ele, array<int> &Nodes);
 
   /*!
    * \brief Build the stiffness matrix for a 3-D hexahedron element. The result will be placed in StiffMatrix_Elem.
@@ -236,7 +237,7 @@ private:
    * \param[in] StiffMatrix_Elem - Element stiffness matrix to be filled.
    * \param[in] CoordCorners[8][3] - Index value for Node 1 of the current hexahedron.
    */
-  void set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale);
+  void set_stiffmat_ele_3d(array<double> &stiffMat_ele, array<int> &nodes, int ic, double scale);
 
   /*!
    * \brief Build the stiffness matrix for a 3-D hexahedron element. The result will be placed in StiffMatrix_Elem.
@@ -244,7 +245,7 @@ private:
    * \param[in] StiffMatrix_Elem - Element stiffness matrix to be filled.
    * \param[in] CoordCorners[8][3] - Index value for Node 1 of the current hexahedron.
    */
-  void set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale);
+  void set_stiffmat_ele_2d(array<double> &stiffMat_ele, array<int> &nodes, int ic, double scale);
 
   /*!
    * \brief Shape functions and derivative of the shape functions
