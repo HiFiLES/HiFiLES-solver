@@ -1001,7 +1001,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
             FatalError("ERROR: Invalid number of dimensions ... ");
 
 
-          // If LES (but no wall model?), get SGS flux and add to viscous flux
+          // If LES get SGS flux and add to viscous flux
           if(LES) {
 
             for(int k=0;k<n_dims;k++)
