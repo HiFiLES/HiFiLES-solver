@@ -76,6 +76,22 @@ void CalcResidual(struct solution* FlowSol) {
         }
     }
 
+  /*! Shock capturing part - only concentration method on GPU and on quads for now */
+  /*! TO be added: Persson's method for triangles with artificial viscosity structure */
+
+  if(run_input.ArtifOn) {
+
+    #ifdef _GPU
+
+      if(run_input.artif_type == 1){
+          /*! This routine does shock detection. For concentration method filter is also applied in this routine itself */
+          for(i=0;i<FlowSol->n_ele_types;i++)
+            FlowSol->mesh_eles(i)->shock_capture_concentration(in_disu_upts_from);
+      }
+
+    #endif
+  }
+
   /*! Compute the solution at the flux points. */
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->extrapolate_solution(in_disu_upts_from);
@@ -191,6 +207,11 @@ void CalcResidual(struct solution* FlowSol) {
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calculate_corrected_divergence(in_div_tconf_upts_to);
 
+  /*! Compute source term */
+  if (run_input.turb_model==1) {
+    for (i=0; i<FlowSol->n_ele_types; i++)
+      FlowSol->mesh_eles(i)->calc_src_upts_SA(in_disu_upts_from);
+  }
 }
 
 #ifdef _MPI

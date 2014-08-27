@@ -38,7 +38,8 @@ SOURCES += \
     src/linear_solvers_structure.cpp \
     include/vector_structure.inl \
     include/linear_solvers_structure.inl \
-    include/matrix_structure.inl
+    include/matrix_structure.inl \
+    src/source.cpp
 
 HEADERS += \
     $$INCLUDE_DIR/util.h \
@@ -74,7 +75,8 @@ HEADERS += \
     include/vector_structure.hpp \
     include/linear_solvers_structure.hpp \
     include/matrix_structure.hpp \
-    include/mesh.h
+    include/mesh.h \
+    include/source.h
 
 OTHER_FILES += \
     $$DATA_DIR/loc_tri_inter_pts.dat \

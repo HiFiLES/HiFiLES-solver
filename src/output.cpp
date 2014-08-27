@@ -76,6 +76,12 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   array<double> disu_ppts_temp;
   array<double> grad_disu_ppts_temp;
   array<double> diag_ppts_temp;
+
+  /*! Sensor data for artificial viscosity at plot points */
+  array<double> sensor_ppts_temp;
+  /*! Artificial viscosity co-efficient values for artificial viscosity at plot points */
+  array<double> epsilon_ppts_temp;
+
   int n_ppts_per_ele;
   int n_dims = FlowSol->n_dims;
   int n_fields;
@@ -139,6 +145,10 @@ void write_tec(int in_file_num, struct solution* FlowSol)
         }
     }
 
+  if (run_input.turb_model==1) {
+    fields += ", \"mu_tilde\"";
+  }
+
   // append the names of the diagnostic fields
   if(n_diag_fields>0)
     {
@@ -168,6 +178,12 @@ void write_tec(int in_file_num, struct solution* FlowSol)
           disu_ppts_temp.setup(n_ppts_per_ele,n_fields);
           grad_disu_ppts_temp.setup(n_ppts_per_ele,n_fields,n_dims);
           diag_ppts_temp.setup(n_ppts_per_ele,n_diag_fields);
+
+          /*! Temporary field for sensor array at plot points */
+          sensor_ppts_temp.setup(n_ppts_per_ele);
+
+          /*! Temporary field for artificial viscosity co-efficients at plot points */
+          epsilon_ppts_temp.setup(n_ppts_per_ele);
 
           // write element specific header
           if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
@@ -209,10 +225,20 @@ void write_tec(int in_file_num, struct solution* FlowSol)
               FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
               FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
 
+              if(run_input.ArtifOn)
+              {
+                /*! Calculate the sensor at the plot points */
+                FlowSol->mesh_eles(i)->calc_sensor_ppts(j,sensor_ppts_temp);
+
+                if(run_input.artif_type == 0)
+                  /*! Calculate the artificial viscosity co-efficients at plot points */
+                  FlowSol->mesh_eles(i)->calc_epsilon_ppts(j,epsilon_ppts_temp);
+              }
+
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
                 {
-                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
+                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp);
                 }
 
               for(k=0;k<n_ppts_per_ele;k++)
@@ -552,6 +578,10 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   array<double> diag_ppts_temp;
   /*! Grid velocity at plot points */
   array<double> grid_vel_ppts_temp;
+  /*! Sensor data for artificial viscosity at plot points */
+  array<double> sensor_ppts_temp;
+  /*! Artificial viscosity co-efficient values for artificial viscosity at plot points */
+  array<double> epsilon_ppts_temp;
 
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
@@ -630,6 +660,11 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Density\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
       write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
+
+      /*! write out modified turbulent viscosity */
+      if (run_input.turb_model==1) {
+        write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Mu_Tilde\" />" << endl;
+      }
 
       // Optional diagnostic fields
       for(m=0;m<n_diag_fields;m++)
@@ -713,6 +748,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
             /*! Temporary diagnostic field array at plot points */
             diag_ppts_temp.setup(n_points,n_diag_fields);
+
+            /*! Temporary field for sensor array at plot points */
+            sensor_ppts_temp.setup(n_points);
+
+            /*! Temporary field for artificial viscosity co-efficients at plot points */
+            epsilon_ppts_temp.setup(n_points);
           }
 
           /*! Temporary grid velocity array at plot points */
@@ -736,8 +777,18 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 /*! Calculate the gradient of the prognostic fields at the plot points */
                 FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
 
+                if(run_input.ArtifOn)
+                {
+                  /*! Calculate the sensor at the plot points */
+                  FlowSol->mesh_eles(i)->calc_sensor_ppts(j,sensor_ppts_temp);
+
+                  if(run_input.artif_type == 0)
+                    /*! Calculate the artificial viscosity co-efficients at plot points */
+                    FlowSol->mesh_eles(i)->calc_epsilon_ppts(j,epsilon_ppts_temp);
+                }
+
                 /*! Calculate the diagnostic fields at the plot points */
-                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,diag_ppts_temp);
+                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp);
               }
 
               /*! write out solution to file */
@@ -790,6 +841,27 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 }
               write_vtu << endl;
               write_vtu << "				</DataArray>" << endl;
+
+              /*! modified turbulent viscosity */
+              if (run_input.turb_model == 1) {
+                write_vtu << "				<DataArray type= \"Float32\" Name=\"Nu_Tilde\" format=\"ascii\">" << endl;
+                for(k=0;k<n_points;k++)
+                {
+                  /*! In 2D nu_tilde is the 5th solution component */
+                  if(n_dims==2)
+                  {
+                    write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
+                  }
+                  /*! In 3D nu_tilde is the 6th solution component */
+                  else
+                  {
+                    write_vtu << disu_ppts_temp(k,5)/disu_ppts_temp(k,0) << " ";
+                  }
+                }
+                /*! End the line and finish writing DataArray and PointData objects */
+                write_vtu << endl;
+                write_vtu << "				</DataArray>" << endl;
+              }
 
               if (run_input.motion) {
                 /*! grid velocity */
@@ -1286,14 +1358,19 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 void CalcNormResidual(struct solution* FlowSol) {
   
   int i, j, n_upts = 0, n_fields;
-  double sum[5] = {0.0, 0.0, 0.0, 0.0, 0.0}, norm[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  double sum[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, norm[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
-  
+
+  if (run_input.turb_model==1) {
+    n_fields++;
+  }
+
   for(i=0; i<FlowSol->n_ele_types; i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
       FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
+      FlowSol->mesh_eles(i)->cp_src_upts_gpu_cpu();
       n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
       for(j=0; j<n_fields; j++)
         sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
@@ -1303,7 +1380,7 @@ void CalcNormResidual(struct solution* FlowSol) {
 #ifdef _MPI
   
   int n_upts_global = 0;
-  double sum_global[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   
@@ -1338,6 +1415,10 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
   
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
+
+  if (run_input.turb_model==1) {
+    n_fields++;
+  }
   
   // set write flag
   if (run_input.restart_flag==0) {
@@ -1376,8 +1457,14 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     
     // Write the header
     if (write_heads) {
-      if (FlowSol->n_dims==2) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
-      else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
+      if (FlowSol->n_dims==2) {
+        if (n_fields == 4) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
+        else cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total" << endl;
+      }
+      else {
+        if (n_fields == 5) cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
+        else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total       Fz_Total" << endl;
+      }
     }
     
     // Output residuals
@@ -1551,6 +1638,13 @@ void CopyGPUCPU(struct solution* FlowSol)
       if (FlowSol->viscous==1)
       {
         FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
+      }
+
+      if(run_input.ArtifOn)
+      {
+        FlowSol->mesh_eles(i)->cp_sensor_gpu_cpu();
+        if(run_input.artif_type==0)
+          FlowSol->mesh_eles(i)->cp_epsilon_upts_gpu_cpu();
       }
     }
   }

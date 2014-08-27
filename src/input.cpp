@@ -44,9 +44,20 @@ using namespace std;
 input::input()
 {
   // Set default values for optional parameters
+  turb_model = 0;
   motion = 0;
   GCL = 0;
   n_deform_iters = 1;
+
+  // Set shock capturing parameters to 0 in case they are not used
+  ArtifOn = 0;
+  artif_only = 0;
+  artif_type = 0;
+  epsilon0 = 0;
+  s0 = 0;
+  kappa = 0;
+  shock_vortex_restart = 0;
+  p_bound_out = 0;
 }
 
 input::~input()
@@ -198,6 +209,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> n_steps;
     }
+    else if (!param_name.compare("turb_model"))
+    {
+      in_run_input_file >> turb_model;
+    }
     else if (!param_name.compare("LES"))
     {
       in_run_input_file >> LES;
@@ -234,9 +249,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> adv_type;
     }
-    else if (!param_name.compare("const_src_term"))
+    else if (!param_name.compare("const_src"))
     {
-      in_run_input_file >> const_src_term;
+      in_run_input_file >> const_src;
     }
     else if (!param_name.compare("monitor_res_freq"))
     {
@@ -641,6 +656,34 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> perturb_ic;
     }
+    else if (!param_name.compare("ArtifOn"))
+    {
+      in_run_input_file >> ArtifOn;
+    }
+    else if (!param_name.compare("artif_only"))
+    {
+      in_run_input_file >> artif_only;
+    }
+    else if (!param_name.compare("artif_type"))
+    {
+      in_run_input_file >> artif_type;
+    }
+    else if (!param_name.compare("epsilon0"))
+    {
+      in_run_input_file >> epsilon0;
+    }
+    else if (!param_name.compare("s0"))
+    {
+      in_run_input_file >> s0;
+    }
+    else if (!param_name.compare("kappa"))
+    {
+      in_run_input_file >> kappa;
+    }
+    else if (!param_name.compare("shock_vortex_restart"))
+    {
+      in_run_input_file >> shock_vortex_restart;
+    }
     else
     {
       cout << "input parameter =" << param_name << endl;
@@ -671,9 +714,9 @@ void input::setup(ifstream& in_run_input_file, int rank)
   if (equation==0)
   {
     if (riemann_solve_type==1)
-      FatalError("Lax-Friedrich flux not supported with NS equation");
+      FatalError("Lax-Friedrich flux not supported with NS/RANS equation");
     if (ic_form==2 || ic_form==3 || ic_form==4)
-      FatalError("Initial condition not supported with NS equation");
+      FatalError("Initial condition not supported with NS/RANS equation");
   }
   else if (equation==1)
   {
@@ -681,6 +724,12 @@ void input::setup(ifstream& in_run_input_file, int rank)
       FatalError("Rusanov flux not supported with Advection-Diffusion equation");
     if (ic_form==0 || ic_form==1)
       FatalError("Initial condition not supported with Advection-Diffusion equation");
+  }
+
+  if (turb_model>0)
+  {
+    if (riemann_solve_type==2)
+      FatalError("Roe flux not supported with RANS equation");
   }
   
   
@@ -692,7 +741,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
     
     // If we have chosen an isentropic vortex case as the initial condition
     
-    if(ic_form == 0)  {
+    if(ic_form == 0 || artif_only || ic_form == 8)   {
       
       fix_vis  = 1.;
       R_ref     = 1.;
@@ -785,8 +834,24 @@ void input::setup(ifstream& in_run_input_file, int rank)
       p_c_ic   = p_c_ic/p_ref;
       T_c_ic   = T_c_ic/T_ref;
       
+      // SA turblence model parameters
+      prandtl_t = 0.9;
+      if (turb_model == 1)
+      {
+          c_v1 = 7.1;
+          c_v2 = 0.7;
+          c_v3 = 0.9;
+          c_b1 = 0.1355;
+          c_b2 = 0.622;
+          c_w2 = 0.3;
+          c_w3 = 2.0;
+          omega = 2.0/3.0;
+          Kappa = 0.41;
+          mu_tilde_c_ic = 5.0*mu_c_ic;
+          mu_tilde_inf = 5.0*mu_inf;
+      }
+
       // Master node outputs information about the I.C.s to the console
-      
       if (rank==0)
       {
         cout << "uvw_ref: " << uvw_ref << endl;

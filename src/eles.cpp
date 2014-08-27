@@ -59,6 +59,7 @@ extern "C"
 #include "../include/global.h"
 #include "../include/array.h"
 #include "../include/flux.h"
+#include "../include/source.h"
 #include "../include/eles.h"
 #include "../include/funcs.h"
 
@@ -256,16 +257,25 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       Le.setup(1);
       ue.setup(1);
     }
-    
-    // Allocate array for wall distance if using a wall model
-    if(wall_model > 0) {
+
+    // Allocate array for wall distance if using a RANS-based turbulence model or LES wall model
+    if (run_input.turb_model > 0) {
+      wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
+      wall_distance_mag.setup(n_upts_per_ele,n_eles);
+      zero_array(wall_distance);
+      zero_array(wall_distance_mag);
+      twall.setup(1);
+    }
+    else if (wall_model > 0) {
       wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
       twall.setup(n_upts_per_ele,n_eles,n_fields);
       zero_array(wall_distance);
       zero_array(twall);
+      wall_distance_mag.setup(1);
     }
     else {
       wall_distance.setup(1);
+      wall_distance_mag.setup(1);
       twall.setup(1);
     }
     
@@ -275,6 +285,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       if(motion)
         temp_sgsf_ref.setup(n_fields,n_dims);
     }
+
+    // Initialize source term
+    src_upts.setup(n_upts_per_ele, n_eles, n_fields);
+    zero_array(src_upts);
 
     // Allocate array for grid velocity
     temp_v.setup(n_dims);
@@ -381,6 +395,22 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
       grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
     }
+
+    if(run_input.ArtifOn)
+    {
+      if(run_input.artif_type == 1)
+        sensor.setup(n_eles);
+
+      if(run_input.artif_type == 0)
+      {
+          epsilon.setup(n_eles);
+          epsilon_upts.setup(n_upts_per_ele,n_eles);
+          epsilon_fpts.setup(n_fpts_per_ele,n_eles);
+          sensor.setup(n_eles);
+          //dt_local.setup(n_eles);
+          min_dt_local.setup(1);
+      }
+    }
     
     // Set connectivity array. Needed for Paraview output.
     if (ele_type==3) // prism
@@ -483,11 +513,19 @@ void eles::set_ics(double& time)
         if(n_dims==2)
         {
           ics(3)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)));
+
+          if (run_input.turb_model==1) {
+            ics(4) = run_input.mu_tilde_c_ic;
+          }
         }
         else if(n_dims==3)
         {
           ics(3)=rho*vz;
           ics(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));
+
+          if(run_input.turb_model==1) {
+            ics(5) = run_input.mu_tilde_c_ic;
+          }
         }
         else
         {
@@ -716,6 +754,7 @@ void eles::mv_all_cpu_gpu(void)
   {
     disu_upts(0).cp_cpu_gpu();
     div_tconf_upts(0).cp_cpu_gpu();
+    src_upts.cp_cpu_gpu();
     
     for(int i=1;i<n_adv_levels;i++)
     {
@@ -761,18 +800,54 @@ void eles::mv_all_cpu_gpu(void)
     }else if (motion!=STATIC_MESH) {
       run_input.bound_vel_simple(0).mv_cpu_gpu();
     }
+
+    if(run_input.ArtifOn){
+        // Needed for shock capturing routines
+        sensor.cp_cpu_gpu();
+        inv_vandermonde.mv_cpu_gpu();
+        inv_vandermonde2D.mv_cpu_gpu();
+        vandermonde2D.mv_cpu_gpu();
+
+        if(run_input.artif_type == 1)
+        {
+          concentration_array.mv_cpu_gpu();
+          sigma.mv_cpu_gpu();
+        }
+
+        if(run_input.artif_type == 0)
+        {
+          epsilon.mv_cpu_gpu();
+          epsilon_upts.cp_cpu_gpu();
+          epsilon_fpts.cp_cpu_gpu();
+          ele2global_ele_code.mv_cpu_gpu();
+          area_coord_upts.mv_cpu_gpu();
+          area_coord_fpts.mv_cpu_gpu();
+          n_spts_per_ele.mv_cpu_gpu();
+          dt_local.cp_cpu_gpu();
+          min_dt_local.cp_cpu_gpu();
+        }
+    }
   }
 #endif
 }
 
 // move wall distance array to gpu
-
 void eles::mv_wall_distance_cpu_gpu(void)
 {
 #ifdef _GPU
   
   wall_distance.mv_cpu_gpu();
   
+#endif
+}
+
+// move wall distance magnitude array to gpu
+void eles::mv_wall_distance_mag_cpu_gpu(void)
+{
+#ifdef _GPU
+
+  wall_distance_mag.mv_cpu_gpu();
+
 #endif
 }
 
@@ -811,7 +886,6 @@ void eles::cp_grad_disu_upts_gpu_cpu(void)
 }
 
 // copy determinant of jacobian at solution points to cpu
-
 void eles::cp_detjac_upts_gpu_cpu(void)
 {
 #ifdef _GPU
@@ -822,7 +896,6 @@ void eles::cp_detjac_upts_gpu_cpu(void)
 }
 
 // copy divergence at solution points to cpu
-
 void eles::cp_div_tconf_upts_gpu_cpu(void)
 {
   if (n_eles!=0)
@@ -833,6 +906,41 @@ void eles::cp_div_tconf_upts_gpu_cpu(void)
     
 #endif
   }
+}
+
+// copy source term at solution points to cpu
+void eles::cp_src_upts_gpu_cpu(void)
+{
+  if (n_eles!=0)
+  {
+#ifdef _GPU
+
+    src_upts.cp_gpu_cpu();
+
+#endif
+  }
+}
+
+// copy sensor in each element to cpu
+void eles::cp_sensor_gpu_cpu(void)
+{
+#ifdef _GPU
+  if (n_eles!=0)
+    {
+      sensor.cp_gpu_cpu();
+    }
+#endif
+}
+
+// copy sensor in each element to cpu
+void eles::cp_epsilon_upts_gpu_cpu(void)
+{
+#ifdef _GPU
+  if (n_eles!=0)
+    {
+      epsilon_upts.cp_gpu_cpu();
+    }
+#endif
 }
 
 // remove transformed discontinuous solution at solution points from cpu
@@ -919,15 +1027,15 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
           {
             // User supplied timestep
             if (run_input.dt_type == 0)
-              disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+              disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
             
             // Global minimum timestep
             else if (run_input.dt_type == 1)
-              disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+              disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
             
             // Element local timestep
             else if (run_input.dt_type == 2)
-              disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src_term);
+              disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
             else
               FatalError("ERROR: dt_type not recognized!")
               
@@ -938,7 +1046,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 #endif
       
 #ifdef _GPU
-      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),run_input.dt,run_input.const_src_term);
+      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),run_input.dt,run_input.const_src);
 #endif
       
     }
@@ -1016,7 +1124,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
         {
           for (int inp=0;inp<n_upts_per_ele;inp++)
           {
-            rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src_term;
+            rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src + src_upts(inp,ic,i);
             res = disu_upts(1)(inp,ic,i);
             
             if (run_input.dt_type == 0)
@@ -1036,7 +1144,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
       
 #ifdef _GPU
       
-      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),rk4a, rk4b,run_input.dt,run_input.const_src_term);
+      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),rk4a,rk4b,run_input.dt,run_input.const_src);
       
 #endif
       
@@ -1267,7 +1375,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 #endif
     
 #ifdef _GPU
-    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2));
+    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.turb_model);
 #endif
   }
 }
@@ -2294,7 +2402,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
     
 #ifdef _GPU
     
-    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, motion, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff);
+    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, motion, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff, run_input.turb_model, run_input.c_v1, run_input.omega, run_input.prandtl_t);
     
 #endif
     
@@ -2626,6 +2734,51 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   }
 }
 
+
+// calculate source term for SA turbulence model at solution points
+void eles::calc_src_upts_SA(int in_disu_upts_from)
+{
+  if (n_eles!=0)
+  {
+#ifdef _CPU
+
+    int i,j,k,l,m;
+
+    for(i=0; i<n_eles; i++) {
+      for(j=0; j<n_upts_per_ele; j++) {
+
+        // physical solution
+        for(k=0; k<n_fields; k++) {
+          temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
+        }
+
+        // physical gradient
+        for(k=0; k<n_fields; k++) {
+          for (m=0; m<n_dims; m++) {
+            temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
+          }
+        }
+
+        // source term
+        if(n_dims==2)
+          calc_source_SA_2d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_upts(j,i,n_fields-1));
+        else if(n_dims==3)
+          calc_source_SA_3d(temp_u, temp_grad_u, wall_distance_mag(j,i), src_upts(j,i,n_fields-1));
+        else
+          cout << "ERROR: Invalid number of dimensions ... " << endl;
+      }
+    }
+
+#endif
+
+#ifdef _GPU
+    calc_src_upts_SA_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, disu_upts(in_disu_upts_from).get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), wall_distance_mag.get_ptr_gpu(), src_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.c_v1, run_input.c_v2, run_input.c_v3, run_input.c_b1, run_input.c_b2, run_input.c_w2, run_input.c_w3, run_input.omega, run_input.Kappa);
+#endif
+
+  }
+}
+
+
 /*! If using a RANS or LES near-wall model, calculate distance
  of each solution point to nearest no-slip wall by a brute-force method */
 
@@ -2722,7 +2875,10 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
       }
       
       for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
-      
+
+      if (run_input.turb_model > 0) {
+        wall_distance_mag(j,i) = distmin;
+      }
     }
   }
 }
@@ -2825,7 +2981,10 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
         }
         
         for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
-        
+
+        if (run_input.turb_model > 0) {
+          wall_distance_mag(j,i) = distmin;
+        }
       }
     }
   }
@@ -3163,6 +3322,17 @@ void eles::evaluate_sgsFlux(void)
       cout << "ERROR: Unknown storage for opp_0 ... " << endl;
     }
 #endif
+  }
+}
+
+// sense shock and filter (for concentration method) - only on GPUs
+
+void eles::shock_capture_concentration(int in_disu_upts_from)
+{
+  if (n_eles!=0){
+    #ifdef _GPU
+      shock_capture_concentration_gpu_kernel_wrapper(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), vandermonde2D.get_ptr_gpu(), concentration_array.get_ptr_gpu(), sensor.get_ptr_gpu(), sigma.get_ptr_gpu());
+    #endif
   }
 }
 
@@ -3958,8 +4128,59 @@ void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
   }
 }
 
+// calculate the sensor values at plot points
+void eles::calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts)
+{
+    if (n_eles!=0)
+    {
+      for(int i=0;i<n_ppts_per_ele;i++)
+        out_sensor_ppts(i) = sensor(in_ele);
+    }
+}
+
+// calculate solution at the plot points
+void eles::calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts)
+{
+  if (n_eles!=0)
+  {
+
+      int i,j,k;
+
+      array<double> epsilon_upts_plot(n_upts_per_ele);
+
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        epsilon_upts_plot(j)=epsilon_upts(j,in_ele);
+      }
+
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,1,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,epsilon_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_epsilon_ppts.get_ptr_cpu(),n_ppts_per_ele);
+
+#else
+
+      //HACK (inefficient, but useful if cblas is unavailible)
+
+      for(i=0;i<n_ppts_per_ele;i++)
+      {
+        out_epsilon_ppts(i) = 0.;
+
+        for(j=0;j<n_upts_per_ele;j++)
+        {
+          out_epsilon_ppts(i) += opp_p(i,j)*epsilon_upts_plot(j);
+        }
+
+      }
+
+#endif
+
+  }
+}
+
 // calculate diagnostic fields at the plot points
-void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts)
+// calculate diagnostic fields at the plot points
+void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double>& in_epsilon_ppts, array<double>& out_diag_field_ppts)
 {
   int i,j,k,m;
   double diagfield_upt;
@@ -4082,6 +4303,17 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
         double av=0.0;
         diagfield_upt = av;
       }
+
+      // Artificial Viscosity diagnostics
+      else if (run_input.diagnostic_fields(k)=="sensor")
+      {
+        diagfield_upt = in_sensor_ppts(j);
+      }
+      else if (run_input.diagnostic_fields(k)=="epsilon")
+      {
+        diagfield_upt = in_epsilon_ppts(j);
+      }
+
       else
         FatalError("plot_quantity not recognized");
       
@@ -5905,10 +6137,10 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
     cell_sum=0;
     for (j=0; j<n_upts_per_ele; j++) {
       if (in_norm_type == 1) {
-        cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i));
+        cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
       }
       else if (in_norm_type == 2) {
-        cell_sum += div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)*div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i);
+        cell_sum += (div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)-run_input.const_src-src_upts(j,i,in_field))*(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
       }
     }
     sum += cell_sum;

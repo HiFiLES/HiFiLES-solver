@@ -1,0 +1,237 @@
+----------------------------
+ Solver parameters
+----------------------------
+equation                          // 0: Euler/Navier-Stokes, 1:Advection/Adv-Diffusion
+0
+viscous
+1
+riemann_solve_type                // 0: Rusanov, 1: Lax-Friedrich, 2: Roe
+0
+vis_riemann_solve_type            // 0: LDG
+0
+ic_form                           // 0: Isentropic Vortex, 1: Uniform flow, 2: Sine Wave
+1
+test_case                         // 0: Normal (doesn't have an analytical solution), 1:Isentropic Vortex, 2: Advection-Equation
+0
+order                             // Order of basis polynomials
+2
+dt_type
+0
+dt 
+0.00001
+n_steps
+1000000
+adv_type                          // 0: Forward Euler, 3: RK45
+3
+tau 
+1.0
+pen_fact 
+0.5
+-----------------------
+Restart options
+-----------------------
+restart_flag
+1
+restart_iter
+145000
+n_restart_files
+1
+-----------------------
+Mesh options
+-----------------------
+mesh_file
+Naca_0012_8K_visc.neu
+dx_cyclic
+200000000.0
+dy_cyclic
+200000000.0
+dz_cyclic
+200000000.0
+-----------------------------------
+Monitoring, plotting parameters
+-----------------------------------
+p_res                             // Plotting resolution, number of nodes per direction
+6
+write_type                        // 0: Paraview, 1: Tecplot
+0
+n_diagnostic_fields
+2 pressure sensor //epsilon
+inters_cub_order                  // Order of cubature rule for integrating over element interfaces
+12
+volume_cub_order                  // Order of cubature rule for integrating over element volumes
+12
+plot_freq
+1000
+restart_dump_freq
+5000
+monitor_integrals_freq
+0
+monitor_res_freq
+1000
+monitor_cp_freq
+10000
+res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
+2
+error_norm_type                   // 0:infinity norm, 1:L1 norm, 2:L2 norm
+2
+res_norm_field                    // Density
+0
+---------------------------
+Wave Equation parameters
+---------------------------
+wave_speed_x
+1.
+wave_speed_y
+0.
+wave_speed_z
+0.
+lambda                            // 1: upwind
+1
+---------------------------
+Element parameters
+---------------------------
+upts_type_tri
+0
+fpts_type_tri
+0
+vcjh_scheme_tri
+4
+c_tri
+2.0e-4
+sparse_tri
+0
+upts_type_quad
+1
+vcjh_scheme_quad
+4
+eta_quad
+0.0
+sparse_quad
+0
+upts_type_hexa
+0
+vcjh_scheme_hexa
+4
+eta_hexa
+0.
+sparse_hexa
+0
+upts_type_tet
+0
+fpts_type_tet
+0
+vcjh_scheme_tet
+4
+c_tet
+2.0e-4
+eta_tet
+0.0
+sparse_tet
+0
+upts_type_pri_tri
+0
+upts_type_pri_1d
+0
+vcjh_scheme_pri_1d
+0
+eta_pri
+0.0
+sparse_pri
+0
+------------------------------------
+Fluid Parameters
+------------------------------------
+gamma
+1.4
+prandtl 
+0.72
+S_gas
+120.
+T_gas
+291.15
+R_gas
+286.9
+mu_gas
+1.827E-05
+-----------------------------------
+Boundary conditions
+-----------------------------------
+---------
+Viscous
+---------
+fix_vis                               // 0: Sutherland's law, 1: Constant viscosity
+1.
+Mach_free_stream 
+1.2
+nx_free_stream 
+0.984807753        //0.996194
+ny_free_stream 
+0.173648178        //0.087155
+nz_free_stream
+0.
+Re_free_stream 
+10000.
+L_free_stream 
+1.
+T_free_stream 
+300 
+Mach_wall 
+0.
+nx_wall
+1.
+ny_wall
+0.
+nz_wall 
+0.
+T_wall    
+300
+Mach_c_ic
+1.2
+nx_c_ic
+0.984807753   //0.996194
+ny_c_ic 
+0.173648178   //0.087155
+nz_c_ic
+0.
+Re_c_ic
+20000
+T_c_ic
+300
+-----------
+Inviscid
+-----------
+rho_c_ic
+1.0
+u_c_ic
+5.5
+v_c_ic
+0.1
+w_c_ic
+0.0
+p_c_ic
+17.857142857142854098
+rho_bound 
+1.
+u_bound  
+5.5
+v_bound 
+0.1
+w_bound 
+0.0
+p_bound 
+17.857142857142854098
+---------------------------------
+Artificial Viscosity Parameters
+---------------------------------
+artif_only			  // To run inviscid case with artificial viscosity (mu = 0), set this to 1 - don't use it for concentration method
+0
+artif_type			  // Type of artificial viscosity - 0 for Persson's method and 1 for Concentration method
+1
+ArtifOn
+1
+epsilon0                          // Set this to 0 if you don't want artificial viscosity at all
+-0.000
+s0
+2.0
+kappa
+0.0

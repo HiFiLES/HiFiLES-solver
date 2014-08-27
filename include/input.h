@@ -74,7 +74,7 @@ public:
   double pen_fact;
   double fix_vis;
   double diff_coeff;
-  double const_src_term;
+  double const_src;
 
   int order;
   int inters_cub_order;
@@ -121,6 +121,13 @@ public:
   array<string> boundary_flags;
   array<array<double> > bound_vel_simple;
   array<int> motion_type;
+  /* -------------------------------- */
+
+  /* --- Shock Capturing options --- */
+  int artif_only, artif_type, ArtifOn;
+  double epsilon0, s0, kappa;
+  int shock_vortex_restart;
+  double p_bound_out;
   /* -------------------------------- */
 
   // boundary_conditions
@@ -229,6 +236,21 @@ public:
   double v_c_ic;
   double w_c_ic;
   double mu_c_ic;
+
+  // SA turblence model parameters
+  int turb_model;
+  double c_v1;
+  double c_v2;
+  double c_v3;
+  double c_b1;
+  double c_b2;
+  double c_w2;
+  double c_w3;
+  double omega;
+  double prandtl_t;
+  double Kappa;
+  double mu_tilde_c_ic;
+  double mu_tilde_inf;
 
   double a_init, b_init;
   int bis_ind, file_lines;

@@ -81,6 +81,9 @@ void eles_quads::setup_ele_type_specific()
   else
     FatalError("Equation not supported");
 
+  if (run_input.turb_model==1)
+    n_fields++;
+
   n_inters_per_ele=4;
   length.setup(4);
 
@@ -89,6 +92,9 @@ void eles_quads::setup_ele_type_specific()
   set_loc_1d_upts();
   set_loc_upts();
   set_vandermonde();
+  set_vandermonde2D();
+  set_concentration_array();
+  set_filter_array();
 
   n_ppts_per_ele=p_res*p_res;
   n_peles_per_ele=(p_res-1)*(p_res-1);
@@ -133,6 +139,8 @@ void eles_quads::setup_ele_type_specific()
 
   temp_u.setup(n_fields);
   temp_f.setup(n_fields,n_dims);
+
+  set_area_coord();  // Not sure if this is the right place to call it - check later (some differences in the master version)
 }
 
 void eles_quads::set_connectivity_plot()
@@ -745,6 +753,103 @@ void eles_quads::set_vandermonde(void)
   inv_vandermonde = inv_array(vandermonde);
 }
 
+// Set the 2D inverse Vandermonde array needed for shock capturing
+void eles_quads::set_vandermonde2D()
+{
+  vandermonde2D.setup(n_upts_per_ele,n_upts_per_ele);
+  //inv_vandermonde2D.setup(n_upts_per_ele*n_upts_per_ele);
+  array <double> loc(n_dims);
+
+  // create the vandermonde matrix
+  for (int i=0;i<n_upts_per_ele;i++){
+      loc(0) = loc_upts(0,i);
+      loc(1) = loc_upts(1,i);
+
+      for (int j=0;j<n_upts_per_ele;j++)
+          vandermonde2D(i,j) = eval_legendre_basis_2D_hierarchical(j,loc,order);
+  }
+
+  //vandermonde2D.print();
+
+  // Store its inverse
+  inv_vandermonde2D = inv_array(vandermonde2D);
+}
+
+// Set the 2D inverse Vandermonde array needed for shock capturing
+void eles_quads::set_filter_array()
+{
+  sigma.setup(n_upts_per_ele);
+
+  // create the vandermonde matrix
+  for (int i=0;i<n_upts_per_ele;i++)
+     sigma(i) = exponential_filter(i,order);
+     //sigma.print();
+}
+
+// Set the 1D concentration matrix based on 1D-loc_upts
+void eles_quads::set_concentration_array()
+{
+  int concen_type = 1;
+  array<double> concentration_factor(order+1);
+  array<double> grad_vandermonde;
+  grad_vandermonde.setup(order+1,order+1);
+  concentration_array.setup((order+1)*(order+1));
+
+    // create the vandermonde matrix
+    for (int i=0;i<order+1;i++)
+        for (int j=0;j<order+1;j++)
+            grad_vandermonde(i,j) = eval_d_legendre(loc_1d_upts(i),j);
+
+    // create concentration factor array
+    for(int j=0; j <order+1; j++){
+        if(concen_type == 0){ // exponential
+            if(j==0)
+                concentration_factor(j) = 0;
+            else
+                concentration_factor(j) = exp(1/(6*j*(j+1)));
+        }
+        else if(concen_type == 1) // linear
+            concentration_factor(j) = 1;
+
+        else
+            cout<<"Concentration factor not setup"<<endl;
+        }
+
+
+    for (int i=0;i<order+1;i++)
+                for (int j=0;j<order+1;j++)
+                        concentration_array(j + i*(order+1)) = concentration_factor(j)*sqrt(1 - loc_1d_upts(i)*loc_1d_upts(i))*grad_vandermonde(i,j);
+}
+
+// Set area co-ordinates/shape functions for bilinear interpolation used in AV routines
+void eles_quads::set_area_coord(void)
+{
+  area_coord_upts.setup(4,n_upts_per_ele);
+  area_coord_fpts.setup(4,n_fpts_per_ele);
+
+  if(n_dims == 2)
+  {
+     for(int i=0;i<n_upts_per_ele;i++)
+     {
+        area_coord_upts(0,i) = 0.25*(1 - loc_upts(0,i))*(1 - loc_upts(1,i));
+        area_coord_upts(2,i) = 0.25*(1 - loc_upts(0,i))*(1 + loc_upts(1,i));
+        area_coord_upts(3,i) = 0.25*(1 + loc_upts(0,i))*(1 + loc_upts(1,i));
+        area_coord_upts(1,i) = 0.25*(1 + loc_upts(0,i))*(1 - loc_upts(1,i));
+     }
+
+//     for(int i=0;i<n_fpts_per_ele;i++)
+//     {
+//        area_coord_fpts(0,i) = 0.25*(1 - loc_fpts(0,i))*(1 - loc_fpts(1,i));
+//        area_coord_fpts(2,i) = 0.25*(1 - loc_fpts(0,i))*(1 + loc_fpts(1,i));
+//        area_coord_fpts(3,i) = 0.25*(1 + loc_fpts(0,i))*(1 + loc_fpts(1,i));
+//        area_coord_fpts(1,i) = 0.25*(1 + loc_fpts(0,i))*(1 - loc_fpts(1,i));
+//     }
+  }
+
+  else
+        cout<<"Area coordinate calculation has not yet been implemented for this dimension" << endl;
+}
+
 // evaluate nodal basis
 
 double eles_quads::eval_nodal_basis(int in_index, array<double> in_loc)
@@ -957,6 +1062,83 @@ void eles_quads::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<do
       exit(1);
     }
 }
+
+// Evaluate 2D legendre basis
+double eles_quads::eval_legendre_basis_2D_hierarchical(int in_mode, array<double> in_loc, int in_basis_order)
+{
+        double leg_basis;
+
+        int n_dof=(in_basis_order+1)*(in_basis_order+1);
+
+        if(in_mode<n_dof)
+          {
+            int i,j,k;
+            int mode;
+
+            mode = 0;
+            for (k=0;k<in_basis_order*in_basis_order+1;k++)
+              {
+                for (j=0;j<k+1;j++)
+                  {
+                    i = k-j;
+                    if(i<=in_basis_order && j<=in_basis_order){
+
+                        if(mode==in_mode) // found the correct mode
+                            leg_basis=eval_legendre(in_loc(0),i)*eval_legendre(in_loc(1),j);
+
+                        mode++;
+                    }
+                  }
+              }
+          }
+        else
+          {
+            cout << "ERROR: Invalid mode when evaluating Legendre basis ...." << endl;
+          }
+
+        return leg_basis;
+}
+
+// Evaluate exponential filter
+double eles_quads::exponential_filter(int in_mode, int in_basis_order)
+{
+        double sigma, eta;
+
+        int n_dof=(in_basis_order+1)*(in_basis_order+1);
+
+        if(in_mode<n_dof)
+          {
+            int i,j,k;
+            int mode;
+
+            mode = 0;
+            for (k=0;k<in_basis_order*in_basis_order+1;k++)
+              {
+                for (j=0;j<k+1;j++)
+                  {
+                    i = k-j;
+                    if(i<=in_basis_order && j<=in_basis_order){
+
+                        if(mode==in_mode) // found the correct mode
+                          {
+                            eta = (double)(i+j)/n_dof;
+                            sigma = exp(-1*pow(eta,2.0));
+                            //cout<<"sigma values are "<<sigma<<endl;
+                          }
+
+                        mode++;
+                    }
+                  }
+              }
+          }
+        else
+          {
+            cout << "ERROR: Invalid mode when evaluating exponential filter ...." << endl;
+          }
+
+        return sigma;
+}
+
 
 void eles_quads::fill_opp_3(array<double>& opp_3)
 {

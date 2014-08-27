@@ -67,6 +67,9 @@ public:
 	/*! move wall distance array to from cpu to gpu */
 	void mv_wall_distance_cpu_gpu(void);
 
+  /*! move wall distance magnitude array to from cpu to gpu */
+  void mv_wall_distance_mag_cpu_gpu(void);
+
 	/*! copy transformed discontinuous solution at solution points to cpu */
 	void cp_disu_upts_gpu_cpu(void);
 
@@ -80,6 +83,15 @@ public:
 
   /*! copy divergence at solution points to cpu */
   void cp_div_tconf_upts_gpu_cpu(void);
+
+  /*! copy source term at solution points to cpu */
+  void cp_src_upts_gpu_cpu(void);
+
+  /*! copy elemental sensor values to cpu */
+  void cp_sensor_gpu_cpu(void);
+
+  /*! copy AV co-eff values at solution points to cpu */
+  void cp_epsilon_upts_gpu_cpu(void);
 
   /*! remove transformed discontinuous solution at solution points from cpu */
   void rm_disu_upts_cpu(void);
@@ -131,6 +143,9 @@ public:
 
   /*! calculate divergence of transformed continuous viscous flux at solution points */
   //void calc_div_tconvisf_upts(int in_div_tconinvf_upts_to);
+
+  /*! calculate source term for SA turbulence model at solution points */
+  void calc_src_upts_SA(int in_disu_upts_from);
   
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolution(int in_step, int adv_type);
@@ -281,8 +296,14 @@ public:
   /*! calculate gradient of solution at the plot points */
   void calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts);
 
+  /*! calculate sensor at the plot points */
+  void calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts);
+
+  /*! calculate AV-co-efficients at the plot points */
+  void calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts);
+
   /*! calculate diagnostic fields at the plot points */
-  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double> &in_epsilon_ppts, array<double>& out_diag_field_ppts);
 
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
@@ -584,6 +605,11 @@ public:
   void rigid_grid_velocity(double rk_time);
   void perturb_grid_velocity(double rk_time);
 #endif
+
+  /* --- Shock capturing functions --- */
+
+  void shock_capture_concentration(int in_disu_upts_from);
+
 protected:
 
   // #### members ####
@@ -826,6 +852,7 @@ protected:
 	
 	/*! storage for distance of solution points to nearest no-slip boundary */
 	array<double> wall_distance;
+  array<double> wall_distance_mag;
 
 	array<double> twall;
 
@@ -998,6 +1025,9 @@ protected:
 	
 	/*! transformed gradient of determinant of jacobian at flux points */
 	array<double> tgrad_detjac_fpts;
+
+  /*! source term for SA turbulence model at solution points */
+  array<double> src_upts;
 
   array<double> d_nodal_s_basis;
   array<double> dd_nodal_s_basis;
@@ -1186,5 +1216,24 @@ protected:
   array<double> dt_local;
   double dt_local_new;
   array<double> dt_local_mpi;
+
+  /*! Artificial Viscosity variables */
+  array<double> vandermonde;
+  array<double> inv_vandermonde;
+  array<double> vandermonde2D;
+  array<double> inv_vandermonde2D;
+  array<double> area_coord_upts;
+  array<double> area_coord_fpts;
+  array<double> epsilon;
+  array<double> epsilon_upts;
+  array<double> epsilon_fpts;
+  array<double> concentration_array;
+  array<double> sensor;
+  array<double> sigma;
+
+  array<double> min_dt_local;
+
+  /*! Global cell number of element as in the code */
+  array<int> ele2global_ele_code;
 
 };

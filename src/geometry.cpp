@@ -798,7 +798,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 #endif
 
   // Flag interfaces for calculating LES wall model
-  if(run_input.wall_model>0) {
+  if(run_input.wall_model>0 or run_input.turb_model>0) {
 
     if (FlowSol->rank==0) cout << "calculating wall distance... " << endl;
 
@@ -972,6 +972,9 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
       if (FlowSol->rank==0) cout << "Moving wall_distance to GPU ... " << endl;
       for(int i=0;i<FlowSol->n_ele_types;i++)
         FlowSol->mesh_eles(i)->mv_wall_distance_cpu_gpu();
+
+      for(int i=0;i<FlowSol->n_ele_types;i++)
+        FlowSol->mesh_eles(i)->mv_wall_distance_mag_cpu_gpu();
 #endif
 
 }
@@ -1909,6 +1912,9 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   }
   if (FlowSol->n_dims != 2 && FlowSol->n_dims != 3) {
     FatalError("Invalid mesh dimensionality. Expected 2D or 3D.");
+  }
+  if (run_input.turb_model==1 && FlowSol->n_dims == 3) {
+    FatalError("ERROR: 3D geometry not supported with RANS equation yet ... ");
   }
 
   // Move cursor to $Elements
