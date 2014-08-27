@@ -493,7 +493,7 @@ void eles_quads::compute_filter_upts(void)
   k_c = 1.0/run_input.filter_ratio;
   // Approx resolution in element (assumes uniform point spacing)
   // Interval is [-1:1]
-  dlt = 2.0/order;
+  dlt = 2.0/(order+1.0);
 
   // Normalised solution point separation
   for (i=0;i<N;i++)
@@ -634,17 +634,58 @@ void eles_quads::compute_filter_upts(void)
             }
         }
     }
-  else if(run_input.filter_type==2) // Modal coefficient filter
+  else if(run_input.filter_type==2 || run_input.filter_type==3 || run_input.filter_type==4) // Modal filter (3 choices of kernel)
     {
       if (rank==0) cout<<"Building modal filter"<<endl;
 
-      // Compute modal filter
-      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order);
+      // Output beta to file
+      ofstream coeff_file;
+      coeff_file.open("beta_upts_1d.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << abs(beta(j,i)) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
 
-      sum = 0;
-      for(i=0;i<N;i++)
-        for(j=0;j<N;j++)
-          sum+=filter_upts_1D(i,j);
+      // Compute modal filter
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 2);
+      
+      // Output filter to file
+      coeff_file.open("filter_upts_1d_cutoff.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts_1D(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+      
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 3);
+
+      coeff_file.open("filter_upts_1d_exp.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts_1D(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+      
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 4);
+      
+      coeff_file.open("filter_upts_1d_gauss.dat");
+      for(i=0;i<N;++i) {
+        for(j=0;j<N;++j) {
+          coeff_file << setprecision(12) << filter_upts_1D(i,j) << " ";
+        }
+        coeff_file << endl;
+      }
+      coeff_file.close();
+   
+      // finally, compute the modal filter we want   
+      compute_modal_filter_1d(filter_upts_1D, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, run_input.filter_type);
     }
   else // Simple average
     {
@@ -660,6 +701,9 @@ void eles_quads::compute_filter_upts(void)
         }
     }
 
+  cout<<"filter_upts:"<<endl;
+  filter_upts_1D.print();
+  
   // Build 2D filter on ideal (reference) element.
   int ii=0;
   filter_upts.setup(n_upts_per_ele,n_upts_per_ele);
