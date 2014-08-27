@@ -4893,7 +4893,7 @@ void evaluate_boundaryConditions_invFlux_gpu_kernel_wrapper(int n_fpts_per_inter
 }
 
 // wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points
-void evaluate_viscFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, int ele_type, int order, double filter_ratio, int LES, int motion, int sgs_model, int wall_model, double wall_thickness, double* wall_dist_ptr, double* twall_ptr, double* Lu_ptr, double* Le_ptr, double* disu_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* grad_disu_upts_ptr, double* detjac_upts_ptr, double* detjac_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double gamma, double prandtl, double rt_inf, double mu_inf, double c_sth, double fix_vis, int equation, double diff_coeff, int turb_model, double c_v1, double omega, double prandtl_t)
+void evaluate_viscFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, int ele_type, int order, double filter_ratio, int LES, int motion, int sgs_model, int wall_model, double wall_thickness, double* wall_dist_ptr, double* twall_ptr, double* Lu_ptr, double* Le_ptr, double* turb_visc_ptr, double* dynamic_coeff_ptr, double* disu_upts_ptr, double* disuf_upts_ptr, double* out_tdisf_upts_ptr, double* out_sgsf_upts_ptr, double* grad_disu_upts_ptr, double* grad_disuf_upts_ptr, double* detjac_upts_ptr, double* detjac_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double gamma, double prandtl, double rt_inf, double mu_inf, double c_sth, double fix_vis, int equation, double diff_coeff, int turb_model, double c_v1, double omega, double prandtl_t)
 {
 
   // HACK: fix 256 threads per block

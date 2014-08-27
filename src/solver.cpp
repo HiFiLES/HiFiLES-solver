@@ -70,7 +70,7 @@ void CalcResidual(struct solution* FlowSol) {
 
   /*! If at first RK step and using certain LES models, compute some model-related quantities. */
   if(run_input.LES==1 && in_disu_upts_from==0) {
-      if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
+      if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4 || run_input.SGS_model==5) {
           for(i=0; i<FlowSol->n_ele_types; i++)
             FlowSol->mesh_eles(i)->calc_sgs_terms(in_disu_upts_from);
         }

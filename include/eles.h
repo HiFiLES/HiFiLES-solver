@@ -84,6 +84,9 @@ public:
   /*! copy divergence at solution points to cpu */
   void cp_div_tconf_upts_gpu_cpu(void);
 
+  /*! copy LES diagnostics at solution points to cpu */
+  void cp_LES_diagnostics_gpu_cpu(void);
+
   /*! copy source term at solution points to cpu */
   void cp_src_upts_gpu_cpu(void);
 
@@ -116,6 +119,12 @@ public:
   
   /*! calculate uncorrected transformed gradient of the discontinuous solution at the solution points */
   void calculate_gradient(int in_disu_upts_from);
+
+  /*! calculate gradient of the filtered solution at the solution points for dynamic LES model */
+  void calculate_filtered_gradient(void);
+
+  /*! calculate filtered strain product for dynamic LES model */
+  void calculate_strainproduct(int in_disu_upts_from, int n_comp, array <double>& SSmod);
 
   /*! calculate corrected gradient of the discontinuous solution at solution points */
   void correct_gradient(void);
@@ -290,8 +299,14 @@ public:
   /*! calculate gradient of solution at the plot points */
   void calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts);
 
+  /*! calculate dynamic LES coeff at the plot points */
+  void calc_dynamic_coeff_ppts(int in_ele, array<double>& out_coeff_ppts);
+
+  /*! calculate turbulent at the plot points */
+  void calc_turb_visc_ppts(int in_ele, array<double>& out_turb_visc_ppts);
+
   /*! calculate diagnostic fields at the plot points */
-  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_coeff_ppts, array<double>& in_turb_visc_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
 
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
@@ -368,6 +383,9 @@ public:
 
   /*! evaluate second derivative of nodal shape basis */
   virtual void eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)=0;
+
+  /*! Calculate dynamic coefficient */
+  void calc_dynamic_coeff(int ele, int upt, double detjac);
 
   /*! Calculate SGS flux */
   void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf);
@@ -820,6 +838,15 @@ protected:
 	/*! extra arrays for similarity model: Leonard tensors, velocity/energy products */
 	array<double> Lu, Le, uu, ue;
 
+  /*! array for writing dynamic LES coeff to output */
+  array<double> dynamic_coeff;
+  
+  /*! filtered strain product array for dynamic LES */
+  array<double> strainproduct;
+
+  /*! array for writing turbulent viscosity to output */
+  array<double> turb_visc;
+
 	/*! temporary flux storage */
 	array<double> temp_f;
 
@@ -989,7 +1016,10 @@ protected:
 
 	/*! gradient of discontinuous solution at solution points */
 	array<double> grad_disu_upts;
-	
+
+  /*! gradient of discontinuous filtered solution at solution points */
+	array<double> grad_disuf_upts;
+
 	/*! gradient of discontinuous solution at flux points */
 	array<double> grad_disu_fpts;
 
