@@ -58,6 +58,14 @@ input::input()
   kappa = 0;
   shock_vortex_restart = 0;
   p_bound_out = 0;
+
+  // Initialize initial-condition values
+  Mach_c_ic = INFINITY;
+  nx_c_ic = INFINITY;
+  ny_c_ic = INFINITY;
+  nz_c_ic = INFINITY;
+  Re_c_ic = INFINITY;
+  T_c_ic = INFINITY;
 }
 
 input::~input()
@@ -690,7 +698,30 @@ void input::setup(ifstream& in_run_input_file, int rank)
     if (param_name.compare(0,2,"//") && !blank)
       in_run_input_file.getline(buf,BUFSIZ);
   }
-  
+
+  // -------------------------------------------
+  // SETUP INITIAL CONDITIONS IF NOT SPECIFIED
+  // -------------------------------------------
+
+  if (Mach_c_ic == INFINITY) {
+    Mach_c_ic = Mach_free_stream;
+  }
+  if (nx_c_ic == INFINITY) {
+    nx_c_ic = nx_free_stream;
+  }
+  if (ny_c_ic == INFINITY) {
+    ny_c_ic = ny_free_stream;
+  }
+  if (nz_c_ic == INFINITY) {
+    nz_c_ic = nz_free_stream;
+  }
+  if (Re_c_ic == INFINITY) {
+    Re_c_ic = Re_free_stream;
+  }
+  if (T_c_ic == INFINITY) {
+    T_c_ic = T_free_stream;
+  }
+
   // --------------------
   // ERROR CHECKING
   // --------------------
