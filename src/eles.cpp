@@ -2859,12 +2859,11 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
             }
           }
         }
-      }
-      
-      for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+        for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
 
-      if (run_input.turb_model > 0) {
-        wall_distance_mag(j,i) = distmin;
+        if (run_input.turb_model > 0) {
+          wall_distance_mag(j,i) = distmin;
+        }
       }
     }
   }
