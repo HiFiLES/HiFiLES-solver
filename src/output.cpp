@@ -994,28 +994,30 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 
 #ifdef _MPI
   sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
-  if (FlowSol->rank==0) cout << "Writing Restart file number " << in_file_num << " ...." << endl;
+  if (FlowSol->rank==0) cout << "Writing Restart file number " << in_file_num << " ...." << flush;
 #else
   sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,0);
-  cout << "Writing Restart file number " << in_file_num << " ...." << endl;
+  cout << "Writing Restart file number " << in_file_num << " ...." << flush;
 #endif
 
 
   file_name = &file_name_s[0];
   restart_file.open(file_name);
 
-  restart_file << &time << endl;
+  restart_file << FlowSol->time << endl;
   //header
   for (int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          FlowSol->mesh_eles(i)->write_restart_info(restart_file);
-          FlowSol->mesh_eles(i)->write_restart_data(restart_file);
+      FlowSol->mesh_eles(i)->write_restart_info(restart_file);
+      FlowSol->mesh_eles(i)->write_restart_data(restart_file);
 
-        }
     }
+  }
 
   restart_file.close();
+
+  cout << " done." << endl;
 
 }
 

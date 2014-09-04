@@ -190,8 +190,8 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
   // Reading boundaries
   //ReadBound(run_input.mesh_file,c2v,c2n_v,ctype,bctype_c,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts, FlowSol);
-  ReadBound(run_input.mesh_file,c2v,c2n_v,c2f,f2v,f2nv,ctype,bctype_c,Mesh.boundPts,Mesh.nBndPts,Mesh.bc_list,Mesh.bound_flags,ic2icg,
-            icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts,FlowSol);
+  ReadBound(run_input.mesh_file,c2v,c2n_v,c2f,f2v,f2nv,ctype,bctype_c,Mesh.boundPts,Mesh.nBndPts,Mesh.bc_list,Mesh.bound_flags,
+            Mesh.boundFaces,Mesh.faceType,Mesh.faceBC,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts,FlowSol);
 
   /////////////////////////////////////////////////
   /// Initializing Elements
@@ -1025,8 +1025,8 @@ void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, 
 
 void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c2f, array<int>& in_f2v, array<int>& in_f2nv,
                array<int>& in_ctype, array<int>& out_bctype, array<int>& out_boundpts, array<int>& out_n_bndPts, array<int> &out_bc_list,
-               array<int>& out_bound_flag, array<int>& in_ic2icg, array<int>& in_icvsta, array<int>&in_icvert, array<int>& in_iv2ivg, int& in_n_cells,
-               int& in_n_verts, struct solution* FlowSol)
+               array<int>& out_bound_flag, vector<vector<int> >& boundFaces, vector<int>& faceType, vector<int>& faceBC, array<int>& in_ic2icg,
+               array<int>& in_icvsta, array<int>&in_icvert, array<int>& in_iv2ivg, int& in_n_cells, int& in_n_verts, struct solution* FlowSol)
 {
 
   if (FlowSol->rank==0) cout << "reading boundary conditions" << endl;
@@ -1045,7 +1045,8 @@ void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, a
       create_boundpts(out_boundpts, out_n_bndPts, out_bc_list, out_bound_flag, bccells, bcfaces, in_c2f, in_f2v, in_f2nv);
   }
   else if (run_input.mesh_format==1) {
-    read_boundary_gmsh(in_file_name, in_n_cells, in_ic2icg, in_c2v, in_c2n_v, out_bctype, out_bc_list, out_bound_flag, out_boundpts, out_n_bndPts, in_iv2ivg, in_n_verts, in_ctype, in_icvsta, in_icvert, FlowSol);
+    read_boundary_gmsh(in_file_name, in_n_cells, in_ic2icg, in_c2v, in_c2n_v, out_bctype, out_bc_list, out_bound_flag, out_boundpts, out_n_bndPts,
+                       boundFaces, faceType, faceBC, in_iv2ivg, in_n_verts, in_ctype, in_icvsta, in_icvert, FlowSol);
   }
   else {
     FatalError("Mesh format not recognized");
@@ -1299,8 +1300,9 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
 }
 
 void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic2icg, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& out_bctype,
-                        array<int> &out_bclist, array<int> &out_bound_flag, array<int>& out_boundpts, array<int>& out_n_bndPts, array<int>& in_iv2ivg,
-                        int in_n_verts, array<int>& in_ctype, array<int>& in_icvsta, array<int>& in_icvert, struct solution* FlowSol)
+                        array<int> &out_bclist, array<int> &out_bound_flag, array<int>& out_boundpts, array<int>& out_n_bndPts, vector<vector<int> >& boundFaces,
+                        vector<int>& faceType, vector<int>& faceBC, array<int>& in_iv2ivg, int in_n_verts, array<int>& in_ctype, array<int>& in_icvsta,
+                        array<int>& in_icvert, struct solution* FlowSol)
 {
   string str;
 
@@ -1361,9 +1363,18 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
 
   int sta_ind,end_ind;
 
-  // --- setup vertex->bcflag array ---
+  // --- setup Boundary->vertices array ---
   array<set<int> > Bounds;
   Bounds.setup(n_bcs);
+
+  // --- setup Boundary->Faces array ---
+  //array<vector<vector<int> > > boundFaces;
+  //boundFaces.setup(n_bcs);
+  //array<vector<int> > faceType;
+  /*vector<vector<int> > boundFaces;
+  vector<int> faceType;
+  vector<int> faceBC;*/
+  vector<int> face;
 
   //--- overwrite bc_list with bcflag (previously held gmsh bcid) ---
   for (int i=0; i<n_bcs; i++) {
@@ -1442,10 +1453,16 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
       }
 
       // Shift by -1 (1-indexed -> 0-indexed)
+      face.resize(num_face_vert);
       for (int j=0;j<num_face_vert;j++)
       {
         vlist_bound(j)--;
+        face[j] = vlist_bound(j);
       }
+      //boundFaces(bcid-1).push_back(face);  // just in case it turns out I need faces split up by boundaries
+      boundFaces.push_back(face);
+      faceType.push_back(elmtype);  // Gmsh element type
+      faceBC.push_back(bcid);       // Gmsh boundary/region ID
 
       mesh_file.getline(buf,BUFSIZ);  // Get rest of line
 
@@ -1881,10 +1898,27 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   ifstream mesh_file;
 
   string str;
-  
-  mesh_file.open(&in_file_name[0]);
-  if (!mesh_file)
-    FatalError("Unable to open mesh file");
+
+  // ----------------
+  //mesh_file.compare(mesh_file.size()-3,3,"neu")
+  if (run_input.restart_flag!=0 && run_input.motion!=STATIC_MESH) {
+    // Load mesh which matches the restart iter
+    char file_name_s[50];
+    string file_name = in_file_name;
+    file_name.resize(file_name.size()-4);
+    sprintf(file_name_s,"%s_%.09d.msh",&file_name[0],run_input.restart_iter);
+    mesh_file.open(&file_name_s[0]);
+    if (!mesh_file) {
+      mesh_file.open(&in_file_name[0]);
+      if (!mesh_file)
+        FatalError("Unable to open mesh file");
+    }
+  }else{
+    mesh_file.open(&in_file_name[0]);
+    if (!mesh_file)
+      FatalError("Unable to open mesh file");
+  }
+  // ----------------
 
   int id,elmtype,ntags,bcid,bcdim;
 
@@ -1951,7 +1985,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   }
   n_cells_global=icount;
 
-  cout << "n_cell_global=" << n_cells_global << endl;
+  FlowSol->num_cells_global = n_cells_global;
 
   // Now assign kstart to each processor
   int kstart;

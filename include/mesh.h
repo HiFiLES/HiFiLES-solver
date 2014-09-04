@@ -84,13 +84,13 @@ public:
   //void setup_boundaries(array<int> bctype);
 
   /** write out mesh to file */
-  void write_mesh(double sim_time);
+  void write_mesh(double sim_time, int iteration);
 
   /** write out mesh in Gambit .neu format */
-  void write_mesh_gambit(double sim_time);
+  void write_mesh_gambit(double sim_time, int iteration);
 
   /** write out mesh in Gmsh .msh format */
-  void write_mesh_gmsh(double sim_time);
+  void write_mesh_gmsh(double sim_time, int iteration);
 
   // #### members ####
 
@@ -114,6 +114,9 @@ public:
   int n_bnds, n_moving_bnds, n_faces, max_n_bndpts;
   array<int> nBndPts;
   array<int> v2bc;
+
+  vector<vector<int> > boundFaces;
+  vector<int> faceType, faceBC;
 
   /** vertex id = boundpts(bc_id)(ivert) */
   array<int> boundPts;

@@ -1315,55 +1315,63 @@ void mesh::update(void)
 /// }
 }
 
-void mesh::write_mesh(double sim_time)
+void mesh::write_mesh(double sim_time, int iteration)
 {
   if (run_input.mesh_format==0) {
-    write_mesh_gambit(sim_time);
+    write_mesh_gambit(sim_time,iteration);
   }else if (run_input.mesh_format==1) {
-    write_mesh_gmsh(sim_time);
+    write_mesh_gmsh(sim_time,iteration);
   }else{
     cerr << "Mesh Output Type: " << run_input.mesh_format << endl;
     FatalError("ERROR: Trying to write unrecognized mesh format ... ");
   }
 }
 
-void mesh::write_mesh_gambit(double sim_time)
+void mesh::write_mesh_gambit(double sim_time, int iteration)
 {
   cout << "Gambit mesh writer not yet implemented!" << endl;
 }
 
-void mesh::write_mesh_gmsh(double sim_time)
+void mesh::write_mesh_gmsh(double sim_time, int iteration)
 {
+  char file_name_s[50];
+  string file_name = run_input.mesh_file;
+  file_name.resize(file_name.size()-4);
+  sprintf(file_name_s,"%s_%.09d.msh",&file_name[0],iteration);
 
-  string filename (run_input.mesh_file);
-  ostringstream sstream;
-  sstream << sim_time;
-  string suffix = "_" + sstream.str();
-  int find = suffix.find_first_of(".");
-  if (find != suffix.npos) suffix.replace(find,1,"_");
-  filename.insert(filename.size()-4,suffix);
+//  string filename (run_input.mesh_file);
+//  ostringstream sstream;
+//  sstream << sim_time;
+//  string suffix = "_" + sstream.str();
+//  int find = suffix.find_first_of(".");
+//  if (find != suffix.npos) suffix.replace(find,1,"_");
+//  filename.insert(filename.size()-4,suffix);
 
-  cout << "Writing new mesh file " << filename << " ... " << flush;
+//  cout << "Writing new mesh file " << filename << " ... " << flush;
+  cout << "Writing new mesh file " << file_name_s << " ... " << flush;
   fstream file;
-  file.open(filename.c_str(),ios::out);
+//  file.open(filename.c_str(),ios::out);
+  file.open(&file_name_s[0],ios::out);
 
   // write header
   file << "$MeshFormat" << endl << "2.2 0 8" << endl;
   file << "$EndMeshFormat" << endl;
 
   // write boundary info
+  int fluidID;
   file << "$PhysicalNames" << endl << n_bnds << endl;
   for (int i=0; i<n_bnds; i++) {
     if (bc_list(i) == -1) {
       file << n_dims << " "; // volume cell
       file << i+1  << " " << "\"FLUID\"" << endl;
+      fluidID = i+1;
     }else{
       file << 1 << " ";  // edge
       file << i+1  << " " << "\"" << bc_string[bc_list(i)] << "\"" << endl;
     }
-
   }
   file << "$EndPhysicalNames" << endl;
+
   // write nodes
   file << "$Nodes" << endl << n_verts_global << endl;
   for (int i=0; i<n_verts; i++) {
@@ -1371,21 +1379,18 @@ void mesh::write_mesh_gmsh(double sim_time)
     if (n_dims==2) {
       file << 0;
     }else{
-      file << xv(0)(i,2);
+      file << setprecision(15) << xv(0)(i,2);
     }
     file << endl;
   }
   file << "$EndNodes" << endl;
 
-  // write elements
-  // note: n_cells_global not currently defined.  Fix!!  Needed for MPI.
-  file << "$Elements" << endl << n_eles << endl;
+  // Write Fluid (interior) Elements
+  file << "$Elements" << endl << n_cells_global + boundFaces.size() << endl;
   int gmsh_type, bcid;
   int ele_start = 0; // more setup needed for writing from parallel
-  for (int i=ele_start; i<ele_start+n_eles; i++) {
-    for (bcid=1; bcid<n_bnds+1; bcid++) {
-      if (bc_list(bcid-1)==bctype_c(i)) break; // bc_list wrong size?
-    }
+  bcid = fluidID;
+  for (int i=ele_start; i<ele_start+n_eles; i++) {    
     if (ctype(i)==0) {
       // triangle
       if (c2n_v(i)==3) {
@@ -1432,37 +1437,51 @@ void mesh::write_mesh_gmsh(double sim_time)
   //cout << "N_FACES: " << n_faces << endl;
   /* write non-interior 'elements' (boundary faces) */
   /** ONLY FOR 2D CURRENTLY -- To fix, add array<array<int>> boundFaces to mesh class
-      * (same as boundPts, but for faces) - since since faces, not edges, needed for 3D */
+      * (same as boundPts, but for faces) - since faces, not edges, needed for 3D */
   // also, only for linear edges currently [Gmsh: 1==linear edge, 8==quadtratic edge]
-  /*int faceid = n_cells_global + 1;
-    int nv = 0;
-    for (int i=0; i<n_bnds; i++) {
-        nv = boundPts(i).get_dim(0);
-        set<int> edges;
-        int iv;
-        for (int j=0; j<nv; j++) {
-            iv = boundPts(i)(j);
-            for (int k=0; k<v2n_e(iv); k++) {
-                edges.insert(v2e(j)(k));
-                cout << "Edge #: " << v2e(j)(k) << endl;
-                if (v2e(j)(k) > n_faces) {
-                    cout << "** n_faces=" << n_faces << " but v2e(" << j << ")(" << k << ")=" << v2e(j)(k) << "!!" << endl;
-                    cin.get();
-                }
-            }
-        }
-        set<int>::iterator it;
-        for (it=edges.begin(); it!=edges.end(); it++) {
-            file << faceid << " 1 2 " << i+1 << " " << i+1 << " " << e2v(*it,0)+1 << " " << e2v(*it,1)+1 << endl;
-            cout << faceid << " 1 2 " << i+1 << " " << i+1 << " " << e2v(*it,0)+1 << " " << e2v(*it,1)+1 << endl;
-            faceid++;
-        }
-    }*/
+//  int faceid = n_cells_global + 1;
+//  int nv = 0;
+//  for (int i=0; i<n_bnds; i++) {
+//    nv = nBndPts(i);
+//    set<int> edges;
+//    int iv;
+//    for (int j=0; j<nv; j++) {
+//      iv = boundPts(i,j);
+//      for (int k=0; k<v2n_e(iv); k++) {
+//        edges.insert(v2e(j)(k));
+//        cout << "Edge #: " << v2e(j)(k) << endl;
+//        if (v2e(j)(k) > n_faces) {
+//          cout << "** n_faces=" << n_faces << " but v2e(" << j << ")(" << k << ")=" << v2e(j)(k) << "!!" << endl;
+//          cin.get();
+//        }
+//      }
+//    }
+//    set<int>::iterator it;
+//    for (it=edges.begin(); it!=edges.end(); it++) {
+//      file << faceid << " 1 2 " << i+1 << " " << i+1 << " " << e2v(*it,0)+1 << " " << e2v(*it,1)+1 << endl;
+//      cout << faceid << " 1 2 " << i+1 << " " << i+1 << " " << e2v(*it,0)+1 << " " << e2v(*it,1)+1 << endl;
+//      faceid++;
+//    }
+//  }
+
+  /** --- Write out boundary faces --- */
+  int faceid = n_cells_global + 1;
+  int nFaces = boundFaces.size();
+  for (int i=0; i<nFaces; i++) {
+    file << faceid << " " << faceType[i] << " 2 " << faceBC[i] << " " << faceBC[i];
+    int nv = boundFaces[i].size();
+    for (int j=0; j<nv; j++)
+      file << " " << boundFaces[i][j]+1;
+
+    file << endl;
+    faceid++;
+  }
+  /** ----------------------------- */
+
   file << "$EndElements" << endl;
-  //cout << "$EndElements" << endl;
   file.close();
 
-  cout << endl;
+  cout << "done." << endl;
 }
 
 void mesh::push_back_xv(void)

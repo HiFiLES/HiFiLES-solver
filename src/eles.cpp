@@ -704,6 +704,35 @@ void eles::read_restart_data(ifstream& restart_file)
         getline(restart_file,str);
     }
   }
+
+  // Read in grid velocity (if applicable)
+  if (motion!=STATIC_MESH) {
+      // Clear end of line & skip Grid-Velocity header line
+      getline(restart_file,str);
+      getline(restart_file,str);
+
+      // Read grid velocity for this element type (note: already know num_eles_to_read from before)
+      int n_spts;
+      for (int i=0;i<num_eles_to_read;i++)
+      {
+          restart_file >> ele >> n_spts;
+          index = index_locate_int(ele,ele2global_ele.get_ptr_cpu(),n_eles);
+
+          if (index!=-1) // Ele belongs to processor
+          {
+            for (int j=0;j<n_spts;j++)
+              for (int k=0;k<n_fields;k++)
+                restart_file >> vel_spts(k,j,index);
+          }
+          else // Skip the data (doesn't belong to current processor)
+          {
+            // Skip rest of ele line
+            getline(restart_file,str);
+            for (int j=0;j<n_spts;j++)
+              getline(restart_file,str);
+          }
+      }
+  }
   
   // If required, calculate element reference lengths
   if (run_input.dt_type != 0)
@@ -730,6 +759,7 @@ void eles::write_restart_data(ofstream& restart_file)
   
   restart_file << "data" << endl;
   
+  // Write Solution Data
   for (int i=0;i<n_eles;i++)
   {
     restart_file << ele2global_ele(i) << endl;
@@ -742,7 +772,27 @@ void eles::write_restart_data(ofstream& restart_file)
       restart_file << endl;
     }
   }
+
+  // Write Grid Velocity
+  if (motion) {
+    restart_file << "QUADS GRID VELOCITY" << endl;
+    for (int i=0;i<n_eles;i++)
+    {
+      restart_file << ele2global_ele(i) << " " << n_spts_per_ele(i) << endl;
+      for (int j=0;j<n_spts_per_ele(i);j++)
+      {
+        for (int k=0;k<n_dims;k++)
+        {
+          restart_file << vel_spts(k,j,i) << " ";
+        }
+        restart_file << endl;
+      }
+    }
+    restart_file << endl;
+  }
+
   restart_file << endl;
+
 }
 
 // move all to from cpu to gpu

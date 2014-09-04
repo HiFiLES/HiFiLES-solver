@@ -695,7 +695,7 @@ int eles_quads::read_restart_info(ifstream& restart_file)
 {
 
   string str;
-  // Move to triangle element
+  // Move to quad element
   while(1) {
       getline(restart_file,str);
       if (str=="QUADS") break;
