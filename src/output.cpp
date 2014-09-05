@@ -983,7 +983,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 #endif
 }
 
-void write_restart(int in_file_num, struct solution* FlowSol)
+void write_restart(int in_file_num, struct solution* FlowSol, mesh &Mesh)
 {
 
   char file_name_s[50];
@@ -1012,6 +1012,19 @@ void write_restart(int in_file_num, struct solution* FlowSol)
       FlowSol->mesh_eles(i)->write_restart_info(restart_file);
       FlowSol->mesh_eles(i)->write_restart_data(restart_file);
 
+    }
+  }
+
+  // Also write out current grid positions for moving-mesh cases
+  if (run_input.motion!=STATIC_MESH) {
+    restart_file << "CURRENT GRID" << endl;
+    for (int k=0; k<5; k++) {
+      for (int j=0; j<Mesh.n_dims; j++) {
+        for (int i=0; i<Mesh.n_verts; i++) {
+          restart_file << Mesh.xv(k)(i,j) << " ";
+        }
+        restart_file << endl;
+      }
     }
   }
 

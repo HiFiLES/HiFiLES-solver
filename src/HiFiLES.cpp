@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
   
   GeoPreprocess(&FlowSol, Mesh);
   
-  InitSolution(&FlowSol);
+  InitSolution(&FlowSol, Mesh);
   
   init_time = clock();
   
@@ -259,19 +259,15 @@ int main(int argc, char *argv[]) {
       else FatalError("ERROR: Trying to write unrecognized file format ... ");
     }
 
-//    if(run_input.motion!=STATIC_MESH && i_steps%run_input.mesh_output_freq==0) {
-//      Mesh.write_mesh(FlowSol.time,FlowSol.ini_iter+i_steps);
-//    }
-    
     /*! Dump restart file. */
     
     if(i_steps%FlowSol.restart_dump_freq==0) {
 
-      write_restart(FlowSol.ini_iter+i_steps, &FlowSol);
+      write_restart(FlowSol.ini_iter+i_steps, &FlowSol, Mesh);
 
-      if (run_input.motion!=STATIC_MESH) {
+      if (run_input.motion!=STATIC_MESH)
         Mesh.write_mesh(FlowSol.time,FlowSol.ini_iter+i_steps);
-      }
+
     }
     
   }

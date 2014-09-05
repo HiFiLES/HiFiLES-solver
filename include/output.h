@@ -54,7 +54,7 @@ void write_tec(int in_file_num, struct solution* FlowSol);
 void write_vtu(int in_file_num, struct solution* FlowSol);
 
 /*! writing a restart file */
-void write_restart(int in_file_num, struct solution* FlowSol);
+void write_restart(int in_file_num, struct solution* FlowSol, mesh &Mesh);
 
 /*! compute forces on wall faces*/
 void CalcForces(int in_file_num, struct solution* FlowSol);

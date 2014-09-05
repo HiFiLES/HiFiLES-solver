@@ -100,10 +100,10 @@ double* get_normal_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter
 double* get_grid_vel_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol);
 
 // Initialize the solution in the mesh
-void InitSolution(struct solution* FlowSol);
+void InitSolution(struct solution* FlowSol, mesh &Mesh);
 
 /*! reading a restart file */
-void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol);
+void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol, mesh &Mesh);
 
 
 

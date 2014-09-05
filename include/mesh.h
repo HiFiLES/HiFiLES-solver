@@ -74,11 +74,14 @@ public:
   /** Peform prescribed mesh motion using the blending-funciton method */
   void blend_move(void);
 
+  /** update the mesh: re-set spts, transforms, etc. */
+  void update(void);
+
   /** update grid velocity & apply to eles */
   void set_grid_velocity(double dt);
 
-  /** update the mesh: re-set spts, transforms, etc. */
-  void update(void);
+  /** update shape points & dynamic grid transforms in eles classes */
+  void update_eles_shape();
 
   /** setup information for boundary motion */
   //void setup_boundaries(array<int> bctype);
@@ -91,6 +94,21 @@ public:
 
   /** write out mesh in Gmsh .msh format */
   void write_mesh_gmsh(double sim_time, int iteration);
+
+  void setup(solution *in_FlowSol, array<double> &in_xv, array<int> &in_c2v, array<int> &in_c2n_v, array<int> &in_iv2ivg, array<int> &in_ctype);
+
+  /*! Additional setup operations (called from geometry.cpp to make things a little cleaner) */
+  void setup_part_2(array<int> &_c2f, array<int> &_c2e, array<int> &_f2c, array<int> &_f2n_v, array<int> &_ic2loc_c, int _n_faces);
+
+  /*! Initialize dynamic shape points, dynamic transforms, etc. */
+  void initialize_restart(void);
+
+  void push_back_xv();
+
+#ifdef _GPU
+  void mv_cpu_gpu();
+  void cp_gpu_cpu();
+#endif
 
   // #### members ####
 
@@ -143,17 +161,6 @@ public:
 
   array< array<double> > grid_vel;
 
-  void setup(solution *in_FlowSol, array<double> &in_xv, array<int> &in_c2v, array<int> &in_c2n_v, array<int> &in_iv2ivg, array<int> &in_ctype);
-
-#ifdef _GPU
-  void mv_cpu_gpu();
-  void cp_gpu_cpu();
-#endif
-
-  /*! Additional setup operations (called from geometry.cpp to make things a little cleaner) */
-  void setup_part_2(array<int> &_c2f, array<int> &_c2e, array<int> &_f2c, array<int> &_f2n_v, int _n_faces);
-
-  void push_back_xv();
 private:
   bool start;
   array<double> xv_nm1, xv_nm2, xv_nm3;//, xv_new, vel_old, vel_new;

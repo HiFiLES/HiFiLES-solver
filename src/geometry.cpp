@@ -784,12 +784,8 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
         }
     }
 
-  if (run_input.motion) {
-    Mesh.ic2loc_c = local_c;
-  }
-
   // ** TODO: clean up duplicate/redundant data **
-  Mesh.setup_part_2(c2f,c2e,f2c,f2nv,FlowSol->num_inters);
+  Mesh.setup_part_2(c2f,c2e,f2c,f2nv,local_c,FlowSol->num_inters);
 
 #ifdef _GPU
   if (run_input.motion==LINEAR_ELASTICITY || run_input.motion==BLENDING) {
@@ -1901,23 +1897,23 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
 
   // ----------------
   //mesh_file.compare(mesh_file.size()-3,3,"neu")
-  if (run_input.restart_flag!=0 && run_input.motion!=STATIC_MESH) {
-    // Load mesh which matches the restart iter
-    char file_name_s[50];
-    string file_name = in_file_name;
-    file_name.resize(file_name.size()-4);
-    sprintf(file_name_s,"%s_%.09d.msh",&file_name[0],run_input.restart_iter);
-    mesh_file.open(&file_name_s[0]);
-    if (!mesh_file) {
-      mesh_file.open(&in_file_name[0]);
-      if (!mesh_file)
-        FatalError("Unable to open mesh file");
-    }
-  }else{
+//  if (run_input.restart_flag!=0 && run_input.motion!=STATIC_MESH) {
+//    // Load mesh which matches the restart iter
+//    char file_name_s[50];
+//    string file_name = in_file_name;
+//    file_name.resize(file_name.size()-4);
+//    sprintf(file_name_s,"%s_%.09d.msh",&file_name[0],run_input.restart_iter);
+//    mesh_file.open(&file_name_s[0]);
+//    if (!mesh_file) {
+//      mesh_file.open(&in_file_name[0]);
+//      if (!mesh_file)
+//        FatalError("Unable to open mesh file");
+//    }
+//  }else{
     mesh_file.open(&in_file_name[0]);
     if (!mesh_file)
       FatalError("Unable to open mesh file");
-  }
+//  }
   // ----------------
 
   int id,elmtype,ntags,bcid,bcdim;

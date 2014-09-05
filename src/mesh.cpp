@@ -123,11 +123,6 @@ void mesh::setup(struct solution *in_FlowSol,array<double> &in_xv,array<int> &in
   vel_new.setup(in_xv.get_dim(0),n_dims);
   vel_old.initialize_to_zero();
   vel_new.initialize_to_zero();
-//  grid_vel.setup(2);
-//  grid_vel(0).setup(xv.get_dim(0),Mesh.n_dims);
-//  grid_vel(1).setup(xv.get_dim(0),Mesh.n_dims);
-//  grid_vel(0).initialize_to_zero();
-//  grid_vel(1).initialize_to_zero();
 
   // Blending-Function method variables
   if (run_input.motion==LINEAR_ELASTICITY || run_input.motion==BLENDING) {
@@ -174,12 +169,13 @@ void mesh::setup(struct solution *in_FlowSol,array<double> &in_xv,array<int> &in
   }
 }
 
-void mesh::setup_part_2(array<int>& _c2f, array<int>& _c2e, array<int>& _f2c, array<int>& _f2n_v, int _n_faces)
+void mesh::setup_part_2(array<int>& _c2f, array<int>& _c2e, array<int>& _f2c, array<int>& _f2n_v, array<int>& _ic2loc_c, int _n_faces)
 {
   c2f = _c2f;
   c2e = _c2e;
   f2c = _f2c;
   f2n_v = _f2n_v;
+  ic2loc_c = _ic2loc_c;
   n_faces = _n_faces;
   n_bnds = bc_list.get_dim(0);
   max_n_bndpts = nBndPts.get_max();
@@ -212,6 +208,25 @@ void mesh::setup_part_2(array<int>& _c2f, array<int>& _c2e, array<int>& _f2c, ar
   }
 }
 
+void mesh::initialize_restart(void) {
+  iter = run_input.restart_iter;
+  rk_step = 0;
+  time = FlowSol->time;
+  rk_time = time;
+  run_input.time = time;
+  run_input.rk_time = rk_time;
+
+  // xv(0) set from restart file in read_restart in solver.cpp
+  xv(1) = xv(0);
+  xv(2) = xv(0);
+  xv(3) = xv(0);
+  xv(4) = xv(0);
+
+  /* Skip udating grid velocity, as have it from restart file
+     (will want to add some logic around this later) */
+  update_eles_shape();
+}
+
 void mesh::move(int _iter, int in_rk_step, int n_rk_steps)
 {
   iter = _iter;
@@ -221,7 +236,7 @@ void mesh::move(int _iter, int in_rk_step, int n_rk_steps)
     rk_time = time+run_input.dt*RK_c(rk_step);
   else
     rk_time = time + run_input.dt;
-  run_input.rk_time = rk_time;
+
   run_input.rk_time = rk_time;
 
   if (run_input.motion == 1) {
@@ -1281,6 +1296,11 @@ void mesh::update(void)
 {
   set_grid_velocity(run_input.dt);
 
+  update_eles_shape();
+}
+
+void mesh::update_eles_shape(void)
+{
   int ele_type, local_id;
   array<double> pos(n_dims);
 

@@ -721,7 +721,7 @@ void eles::read_restart_data(ifstream& restart_file)
           if (index!=-1) // Ele belongs to processor
           {
             for (int j=0;j<n_spts;j++)
-              for (int k=0;k<n_fields;k++)
+              for (int k=0;k<n_dims;k++)
                 restart_file >> vel_spts(k,j,index);
           }
           else // Skip the data (doesn't belong to current processor)
