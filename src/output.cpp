@@ -1639,7 +1639,7 @@ void check_stability(struct solution* FlowSol)
 }
 
 #ifdef _GPU
-void CopyGPUCPU(struct solution* FlowSol)
+void CopyGPUCPU(struct solution* FlowSol, mesh &Mesh)
 {
   // copy solution to cpu
 
@@ -1649,7 +1649,9 @@ void CopyGPUCPU(struct solution* FlowSol)
     {
       if (run_input.motion)
         FlowSol->mesh_eles(i)->cp_transforms_gpu_cpu();
+
       FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+
       if (FlowSol->viscous==1)
       {
         FlowSol->mesh_eles(i)->cp_grad_disu_upts_gpu_cpu();
@@ -1663,6 +1665,8 @@ void CopyGPUCPU(struct solution* FlowSol)
       }
     }
   }
+
+  Mesh.get_eles_shape();
 }
 #endif
 

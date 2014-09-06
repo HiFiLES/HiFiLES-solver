@@ -186,6 +186,12 @@ public:
   /*! Set new position of shape node in dynamic domain */
   void set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos);
 
+  /*! Set new position of shape node in dynamic domain during restarting (all 5 most recent iterations) */
+  void set_dynamic_shape_node_restart(int in_spt, int in_ele, array<double> &in_pos);
+
+  /*! Get position of shape node in dynamic domain over previous 5 iterations */
+  void get_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos);
+
   /*! set bc type */
   void set_bctype(int in_ele, int in_inter, int in_bctype);
 
@@ -596,6 +602,7 @@ public:
 #ifdef _GPU
   void cp_transforms_gpu_cpu(void);
   void cp_transforms_cpu_gpu(void);
+  void cp_shape_cpu_gpu(void);
 
   void perturb_shape(double rk_time);
   void rigid_move(double rk_time);

@@ -412,42 +412,44 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol, mes
         }
     }
 
-  /* --- For moving-mesh cases, read in the initial mesh vertex positions for use
-  in calculation of future positions --- */
-  if (run_input.motion!=STATIC_MESH) {
-    sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,0);
-    file_name = &file_name_s[0];
-    restart_file.open(file_name);
-    bool haveXV = true;
+//  /* --- For moving-mesh cases, read in the initial mesh vertex positions for use
+//  in calculation of future positions --- */
+//  if (run_input.motion!=STATIC_MESH) {
+//    sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,0);
+//    file_name = &file_name_s[0];
+//    restart_file.open(file_name);
+//    bool haveXV = false;
 
-    // Find the start of the vertex-position listing
-    string str;
-    while(1) {
-      getline(restart_file,str);
-      if (str=="CURRENT GRID") break;
+//    // Find the start of the vertex-position listing
+//    string str;
+//    while(1) {
+//      getline(restart_file,str);
+//      if (str=="CURRENT GRID") {
+//        haveXV = true;
+//        break;
+//      }
 
-      if (restart_file.eof()) {
-        // do nothing - xv_0 already setup in geo.cpp
-        cout << "WARNING: Restarting a moving-mesh case but no current grid position provided." << endl;
-        cout << "Using provided grid as starting mesh." << endl;
-        haveXV = false;
-        break;
-      }
-    }
+//      if (restart_file.eof()) {
+//        // do nothing - xv_0 already setup in geo.cpp
+//        cout << "WARNING: Restarting a moving-mesh case but no current grid position provided." << endl;
+//        cout << "Using provided grid as starting mesh." << endl;
+//        break;
+//      }
+//    }
 
-    // Read the vertices
-    if (haveXV) {
-      for (int k=0; k<5; k++) {
-        for (int j=0; j<FlowSol->n_dims; j++) {
-          for (int i=0; i<Mesh.n_verts; i++) {
-            restart_file >> Mesh.xv(k)(i,j);
-          }
-        }
-      }
-    }
+//    // Read the vertices
+//    if (haveXV) {
+//      for (int k=0; k<5; k++) {
+//        for (int j=0; j<FlowSol->n_dims; j++) {
+//          for (int i=0; i<Mesh.n_verts; i++) {
+//            restart_file >> Mesh.xv(k)(i,j);
+//          }
+//        }
+//      }
+//    }
 
-    restart_file.close();
-  }
+//    restart_file.close();
+//  }
 
   // Now open all the restart files one by one and store data belonging to you
 

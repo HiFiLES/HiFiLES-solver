@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
   /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
 #ifdef _GPU
 
-  CopyGPUCPU(&FlowSol);
+  CopyGPUCPU(&FlowSol, Mesh);
 
 #endif
 
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
     if(i_steps == 1 || i_steps%FlowSol.plot_freq == 0 ||
        i_steps%run_input.monitor_res_freq == 0 || i_steps%FlowSol.restart_dump_freq==0) {
 
-      CopyGPUCPU(&FlowSol);
+      CopyGPUCPU(&FlowSol, Mesh);
 
     }
 
@@ -265,8 +265,8 @@ int main(int argc, char *argv[]) {
 
       write_restart(FlowSol.ini_iter+i_steps, &FlowSol, Mesh);
 
-      if (run_input.motion!=STATIC_MESH)
-        Mesh.write_mesh(FlowSol.time,FlowSol.ini_iter+i_steps);
+      /*if (run_input.motion!=STATIC_MESH)
+        Mesh.write_mesh(FlowSol.time,FlowSol.ini_iter+i_steps);*/
 
     }
     

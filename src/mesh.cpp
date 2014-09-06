@@ -96,31 +96,32 @@ mesh::~mesh(void)
   // not currently needed
 }
 
-void mesh::setup(struct solution *in_FlowSol,array<double> &in_xv,array<int> &in_c2v,array<int> &in_c2n_v,array<int> &in_iv2ivg,array<int> &in_ctype)
+void mesh::setup(struct solution *in_FlowSol,array<int> &in_c2v,array<int> &in_c2n_v,array<int> &in_iv2ivg,array<int> &in_ctype)
 {
   FlowSol = in_FlowSol;
   n_dims = FlowSol->n_dims;
   n_eles = FlowSol->num_eles;
-  n_verts = FlowSol->num_verts;
+  n_verts = FlowSol->num_verts;  
   n_cells_global = FlowSol->num_cells_global;
+  n_verts_global = xv(0).get_dim(0);
 
-  // Setup for 4th-order backward difference
-  xv.setup(5);
-  xv(0) = in_xv;
-  xv(1) = in_xv;
-  xv(2) = in_xv;
-  xv(3) = in_xv;
-  xv(4) = in_xv;
+//  // Setup for 4th-order backward difference
+//  xv.setup(5);
+//  xv(0) = in_xv;
+//  xv(1) = in_xv;
+//  xv(2) = in_xv;
+//  xv(3) = in_xv;
+//  xv(4) = in_xv;
 
-  xv_0 = in_xv;
+//  xv_0 = in_xv;
 
   c2v = in_c2v;
   c2n_v = in_c2n_v;
   iv2ivg = in_iv2ivg;
   ctype = in_ctype;
 
-  vel_old.setup(in_xv.get_dim(0),n_dims);
-  vel_new.setup(in_xv.get_dim(0),n_dims);
+  vel_old.setup(n_verts,n_dims);
+  vel_new.setup(n_verts,n_dims);
   vel_old.initialize_to_zero();
   vel_new.initialize_to_zero();
 
@@ -216,15 +217,43 @@ void mesh::initialize_restart(void) {
   run_input.time = time;
   run_input.rk_time = rk_time;
 
-  // xv(0) set from restart file in read_restart in solver.cpp
-  xv(1) = xv(0);
-  xv(2) = xv(0);
-  xv(3) = xv(0);
-  xv(4) = xv(0);
+  rk_step = -1; // to avoid pushing back xv(0)
+
+#ifdef _CPU
+  update();
 
   /* Skip udating grid velocity, as have it from restart file
      (will want to add some logic around this later) */
-  update_eles_shape();
+  // not needed now, as all 5 xv(_) levels in restart file...?
+  //update_eles_shape();
+#endif
+
+#ifdef _GPU
+
+  // Copy updated shape to GPU
+  //cp_restart_cpu_gpu();
+
+  // Need to update shape_dyn & dynamic transforms for GPU routines using now-correct 'xv'
+  //update_eles_shape();
+
+  /* --- Already have all current xv levels; calculate grid velocity and
+     apply to solution & flux points, then re-set dynamic transforms with
+     correct xv from restart file --- */
+  for (int i=0;i<n_ele_types;i++) {
+    if (run_input.motion == 1) {
+      FatalError("Linear Elasticity not implemented on GPUs");
+    }else if (run_input.motion == 2) {
+      FlowSol->mesh_eles(i)->rigid_grid_velocity(rk_time);
+    }else if (run_input.motion == 3) {
+      FlowSol->mesh_eles(i)->perturb_grid_velocity(rk_time);
+    }else if (run_input.motion == 4) {
+      FlowSol->mesh_eles(i)->calc_grid_velocity();
+    }else{
+      // Do Nothing
+    }
+  }
+
+#endif
 }
 
 void mesh::move(int _iter, int in_rk_step, int n_rk_steps)
@@ -1316,6 +1345,13 @@ void mesh::update_eles_shape(void)
     }
   }
 
+#ifdef _GPU
+  // Copy new positions to GPU before performing transforms
+  for(int i=0;i<FlowSol->n_ele_types;i++) {
+    FlowSol->mesh_eles(i)->cp_shape_cpu_gpu();
+  }
+#endif
+
   // Update element transforms
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
@@ -1333,6 +1369,59 @@ void mesh::update_eles_shape(void)
 //      }
 //    }
 /// }
+}
+
+void mesh::update_eles_shape_restart(void)
+{
+  int ele_type, local_id;
+  array<double> pos(5,n_dims);
+
+  // Update the shape nodes in the eles classes
+  for (int ic=0; ic<n_eles; ic++) {
+    ele_type = ctype(ic);
+    local_id = ic2loc_c(ic);
+    for (int iv=0; iv<c2n_v(ic); iv++) {
+      for (int j=0; j<5; j++) {
+        for (int k=0; k<n_dims; k++) {
+          pos(j,k) = xv(j)(iv2ivg(c2v(ic,iv)),k);
+        }
+      }
+      FlowSol->mesh_eles(ele_type)->set_dynamic_shape_node_restart(iv,local_id,pos);
+    }
+  }
+
+#ifdef _GPU
+  // Copy new positions to GPU before performing transforms
+  for(int i=0;i<FlowSol->n_ele_types;i++) {
+    FlowSol->mesh_eles(i)->cp_shape_cpu_gpu();
+  }
+#endif
+
+  // Update element transforms
+  for(int i=0;i<FlowSol->n_ele_types;i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      FlowSol->mesh_eles(i)->set_transforms_dynamic();
+    }
+  }
+}
+
+void mesh::get_eles_shape(void) {
+  array<double> pos(5,n_dims);
+  int ele_type, local_id;
+
+  for (int ic=0; ic<n_eles; ic++) {
+    ele_type = ctype(ic);
+    local_id = ic2loc_c(ic);
+    for (int iv=0; iv<c2n_v(ic); iv++) {
+      FlowSol->mesh_eles(ele_type)->get_dynamic_shape_node(iv,local_id,pos);
+
+      for (int level=0; level<5; level++) {
+        for (int dim=0; dim<n_dims; dim++) {
+          xv(level)(iv2ivg(c2v(ic,iv)),dim) = pos(level,dim);
+        }
+      }
+    }
+  }
 }
 
 void mesh::write_mesh(double sim_time, int iteration)
@@ -1881,9 +1970,9 @@ void mesh::mv_cpu_gpu()
   bnd_match.mv_cpu_gpu();
   boundPts.mv_cpu_gpu();
   nBndPts.mv_cpu_gpu();
-  xv(0).mv_cpu_gpu();
+  xv(0).cp_cpu_gpu(); // needed on CPU for restart files
   xv_0.mv_cpu_gpu();
-  c2v.mv_cpu_gpu();
+  c2v.cp_cpu_gpu(); // needed on CPU for restart files
 
   for (int i=0; i<n_ele_types; i++) {
     ic2icg(i).cp_cpu_gpu();
@@ -1894,5 +1983,11 @@ void mesh::mv_cpu_gpu()
 void mesh::cp_gpu_cpu()
 {
   xv(0).cp_gpu_cpu();
+}
+
+
+void mesh::cp_restart_cpu_gpu(void)
+{
+  xv(0).cp_cpu_gpu();
 }
 #endif

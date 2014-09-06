@@ -143,10 +143,11 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   array<int> c2v,c2n_v,ctype,bctype_c,ic2icg,iv2ivg;
 
   /*! Reading vertices and cells. */
-  ReadMesh(run_input.mesh_file, xv, c2v, c2n_v, ctype, ic2icg, iv2ivg, FlowSol->num_eles, FlowSol->num_verts, Mesh.n_verts_global, FlowSol);
+  ReadMesh(run_input.mesh_file, Mesh.xv_0, Mesh.xv, c2v, c2n_v, ctype, ic2icg, iv2ivg, FlowSol->num_eles, FlowSol->num_verts, Mesh.n_verts_global, FlowSol);
 
   // ** TODO: clean up duplicate/redundant data between Mesh and FlowSol **
-  Mesh.setup(FlowSol,xv,c2v,c2n_v,iv2ivg,ctype);
+  xv = Mesh.xv_0;
+  Mesh.setup(FlowSol,c2v,c2n_v,iv2ivg,ctype);
 
   /////////////////////////////////////////////////
   /// Set connectivity
@@ -288,46 +289,62 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   int hexas_count = 0;
 
   array<double> pos(FlowSol->n_dims);
+  array<double> dyn_pos(5,FlowSol->n_dims);
 
   if (FlowSol->rank==0) cout << "setting elements shape ... ";
   for (int i=0;i<FlowSol->num_eles;i++) {
       if (ctype(i) == 0) //tri
+      {
+        local_c(i) = tris_count;
+        FlowSol->mesh_eles_tris.set_n_spts(tris_count,c2n_v(i));
+        FlowSol->mesh_eles_tris.set_ele2global_ele(tris_count,ic2icg(i));
+
+        for (int j=0;j<c2n_v(i);j++)
         {
-          local_c(i) = tris_count;
-          FlowSol->mesh_eles_tris.set_n_spts(tris_count,c2n_v(i));
-          FlowSol->mesh_eles_tris.set_ele2global_ele(tris_count,ic2icg(i));
+          pos(0) = xv(c2v(i,j),0);
+          pos(1) = xv(c2v(i,j),1);
+          FlowSol->mesh_eles_tris.set_shape_node(j,tris_count,pos);
 
-          for (int j=0;j<c2n_v(i);j++)
-            {
-              pos(0) = xv(c2v(i,j),0);
-              pos(1) = xv(c2v(i,j),1);
-              FlowSol->mesh_eles_tris.set_shape_node(j,tris_count,pos);
+          for (int level=0; level<5; level++) {
+            for (int dim=0; dim<2; dim++) {
+              dyn_pos(level,dim) = Mesh.xv(level)(c2v(i,j),dim);
             }
+          }
+          FlowSol->mesh_eles_tris.set_dynamic_shape_node_restart(j,tris_count,dyn_pos);
 
-          for (int j=0;j<3;j++) {
-              FlowSol->mesh_eles_tris.set_bctype(tris_count,j,bctype_c(i,j));
-            }
-
-          tris_count++;
         }
+
+        for (int j=0;j<3;j++) {
+          FlowSol->mesh_eles_tris.set_bctype(tris_count,j,bctype_c(i,j));
+        }
+
+        tris_count++;
+      }
       else if (ctype(i) == 1) // quad
+      {
+        local_c(i) = quads_count;
+        FlowSol->mesh_eles_quads.set_n_spts(quads_count,c2n_v(i));
+        FlowSol->mesh_eles_quads.set_ele2global_ele(quads_count,ic2icg(i));
+        for (int j=0;j<c2n_v(i);j++)
         {
-          local_c(i) = quads_count;
-          FlowSol->mesh_eles_quads.set_n_spts(quads_count,c2n_v(i));
-          FlowSol->mesh_eles_quads.set_ele2global_ele(quads_count,ic2icg(i));
-          for (int j=0;j<c2n_v(i);j++)
-            {
-              pos(0) = xv(c2v(i,j),0);
-              pos(1) = xv(c2v(i,j),1);
-              FlowSol->mesh_eles_quads.set_shape_node(j,quads_count,pos);
-            }
+          pos(0) = xv(c2v(i,j),0);
+          pos(1) = xv(c2v(i,j),1);
+          FlowSol->mesh_eles_quads.set_shape_node(j,quads_count,pos);
 
-          for (int j=0;j<4;j++) {
-              FlowSol->mesh_eles_quads.set_bctype(quads_count,j,bctype_c(i,j));
+          for (int level=0; level<5; level++) {
+            for (int dim=0; dim<2; dim++) {
+              dyn_pos(level,dim) = Mesh.xv(level)(c2v(i,j),dim);
             }
-
-          quads_count++;
+          }
+          FlowSol->mesh_eles_quads.set_dynamic_shape_node_restart(j,quads_count,dyn_pos);
         }
+
+        for (int j=0;j<4;j++) {
+          FlowSol->mesh_eles_quads.set_bctype(quads_count,j,bctype_c(i,j));
+        }
+
+        quads_count++;
+      }
       else if (ctype(i) == 2) //tet
         {
           local_c(i) = tets_count;
@@ -339,6 +356,13 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
               pos(1) = xv(c2v(i,j),1);
               pos(2) = xv(c2v(i,j),2);
               FlowSol->mesh_eles_tets.set_shape_node(j,tets_count,pos);
+
+              for (int level=0; level<5; level++) {
+                for (int dim=0; dim<3; dim++) {
+                  dyn_pos(level,dim) = Mesh.xv(level)(c2v(i,j),dim);
+                }
+              }
+              FlowSol->mesh_eles_tets.set_dynamic_shape_node_restart(j,tets_count,dyn_pos);
             }
 
           for (int j=0;j<4;j++) {
@@ -358,6 +382,13 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
               pos(1) = xv(c2v(i,j),1);
               pos(2) = xv(c2v(i,j),2);
               FlowSol->mesh_eles_pris.set_shape_node(j,pris_count,pos);
+
+              for (int level=0; level<5; level++) {
+                for (int dim=0; dim<3; dim++) {
+                  dyn_pos(level,dim) = Mesh.xv(level)(c2v(i,j),dim);
+                }
+              }
+              FlowSol->mesh_eles_pris.set_dynamic_shape_node_restart(j,pris_count,dyn_pos);
             }
 
           for (int j=0;j<5;j++) {
@@ -377,6 +408,13 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
               pos(1) = xv(c2v(i,j),1);
               pos(2) = xv(c2v(i,j),2);
               FlowSol->mesh_eles_hexas.set_shape_node(j,hexas_count,pos);
+
+              for (int level=0; level<5; level++) {
+                for (int dim=0; dim<3; dim++) {
+                  dyn_pos(level,dim) = Mesh.xv(level)(c2v(i,j),dim);
+                }
+              }
+              FlowSol->mesh_eles_hexas.set_dynamic_shape_node_restart(j,hexas_count,dyn_pos);
             }
 
           for (int j=0;j<6;j++) {
@@ -975,7 +1013,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
 }
 
-void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg,
+void ReadMesh(string& in_file_name, array<double>& out_xv, array<array<double> >& out_xv_move, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg,
               array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, int& out_n_verts_global, struct solution* FlowSol)
 {
   if (FlowSol->rank==0)
@@ -1013,6 +1051,16 @@ void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, 
   if (run_input.mesh_format==0) { read_vertices_gambit(in_file_name, n_verts, out_n_verts_global, out_iv2ivg, out_xv, FlowSol); }
   else if (run_input.mesh_format==1) { read_vertices_gmsh(in_file_name, n_verts, out_n_verts_global, out_iv2ivg, out_xv, FlowSol); }
   else { FatalError("Mesh format not recognized"); }
+
+  /* --- For restarting of moving-mesh cases, read in the initial mesh vertex positions for use
+  in calculation of future positions --- */
+  if (run_input.restart_flag!=0 && run_input.motion!=STATIC_MESH) {
+    read_vertices_restart(out_xv_move,out_n_verts_global,FlowSol);
+  }else{
+    out_xv_move.setup(5);
+    for (int i=0; i<5; i++)
+      out_xv_move(i) = out_xv;
+  }
 
   out_n_verts = n_verts;
   if (FlowSol->rank==0) cout << "done reading vertices" << endl;
@@ -1643,6 +1691,56 @@ void read_vertices_gmsh(string& in_file_name, int in_n_verts, int& out_n_verts_g
 
   mesh_file.close();
 
+}
+
+void read_vertices_restart(array<array<double> > &out_xv, int n_verts, struct solution *FlowSol)
+{
+  out_xv.setup(5);
+  for (int i=0; i<5; i++)
+    out_xv(i).setup(n_verts,FlowSol->n_dims);
+
+  char file_name_s[50];
+  char *file_name;
+  ifstream restart_file;
+  restart_file.precision(15);
+
+  sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",run_input.restart_iter,0);
+  file_name = &file_name_s[0];
+  restart_file.open(file_name);
+  bool haveXV = false;
+
+  // Read the simulation time
+  restart_file >> FlowSol->time;
+
+  // Find the start of the vertex-position listing
+  string str;
+  while(1) {
+    getline(restart_file,str);
+    if (str=="CURRENT GRID") {
+      haveXV = true;
+      break;
+    }
+
+    if (restart_file.eof()) {
+      // do nothing - xv_0 already setup in geo.cpp
+      cout << "WARNING: Restarting a moving-mesh case but no current grid position provided." << endl;
+      cout << "Using provided grid as starting mesh." << endl;
+      break;
+    }
+  }
+
+  // Read the vertices
+  if (haveXV) {
+    for (int level=0; level<5; level++) {
+      for (int dim=0; dim<FlowSol->n_dims; dim++) {
+        for (int iv=0; iv<n_verts; iv++) {
+          restart_file >> out_xv(level)(iv,dim);
+        }
+      }
+    }
+  }
+
+  restart_file.close();
 }
 
 void create_iv2ivg(array<int> &inout_iv2ivg, array<int> &inout_c2v, int &out_n_verts, int in_n_cells)

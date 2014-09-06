@@ -72,7 +72,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh);
  * \param[out] out_n_verts - Number of vertices assigned to processor.
  * \param[in] FlowSol - Structure with the entire solution and mesh information.
  */
-void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg,
+void ReadMesh(string& in_file_name, array<double>& out_xv, array<array<double> > &out_xv_move, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg,
               array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, int& out_n_verts_global, struct solution* FlowSol);
 
 /*! method to read boundaries from mesh */
@@ -86,6 +86,9 @@ void read_vertices_gambit(string& in_file_name, int in_n_verts, int &out_n_verts
 
 /*! method to read position vertices in a gmsh mesh */
 void read_vertices_gmsh(string& in_file_name, int in_n_verts, int& out_n_verts_global, array<int> &in_iv2ivg, array<double> &out_xv, struct solution* FlowSol);
+
+/*! Read in the current mesh vertex positions (for moving-mesh cases) from the given restart file */
+void read_vertices_restart(array<array<double> > &out_xv, int n_verts, struct solution *FlowSol);
 
 /*!
  * \brief Method to setup iv2ivg & modify c2v

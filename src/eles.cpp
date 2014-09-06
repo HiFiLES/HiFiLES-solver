@@ -458,7 +458,6 @@ void eles::set_ics(double& time)
   double gamma=run_input.gamma;
   time = 0.;
   
-  array<double> loc(n_dims);
   array<double> pos(n_dims);
   array<double> ics(n_fields);
   
@@ -468,14 +467,9 @@ void eles::set_ics(double& time)
   {
     for(j=0;j<n_upts_per_ele;j++)
     {
-      for(k=0;k<n_dims;k++)
-      {
-        loc(k)=loc_upts(k,j);
-      }
-      
       // calculate position of solution point
       
-      calc_pos(loc,i,pos);
+      calc_pos_upt(j,i,pos);
       
       // evaluate solution at solution point
       if(run_input.ic_form==0)
@@ -705,34 +699,34 @@ void eles::read_restart_data(ifstream& restart_file)
     }
   }
 
-  // Read in grid velocity (if applicable)
-  if (motion!=STATIC_MESH) {
-      // Clear end of line & skip Grid-Velocity header line
-      getline(restart_file,str);
-      getline(restart_file,str);
+//  // Read in grid velocity (if applicable)
+//  if (motion!=STATIC_MESH) {
+//      // Clear end of line & skip Grid-Velocity header line
+//      getline(restart_file,str);
+//      getline(restart_file,str);
 
-      // Read grid velocity for this element type (note: already know num_eles_to_read from before)
-      int n_spts;
-      for (int i=0;i<num_eles_to_read;i++)
-      {
-          restart_file >> ele >> n_spts;
-          index = index_locate_int(ele,ele2global_ele.get_ptr_cpu(),n_eles);
+//      // Read grid velocity for this element type (note: already know num_eles_to_read from before)
+//      int n_spts;
+//      for (int i=0;i<num_eles_to_read;i++)
+//      {
+//          restart_file >> ele >> n_spts;
+//          index = index_locate_int(ele,ele2global_ele.get_ptr_cpu(),n_eles);
 
-          if (index!=-1) // Ele belongs to processor
-          {
-            for (int j=0;j<n_spts;j++)
-              for (int k=0;k<n_dims;k++)
-                restart_file >> vel_spts(k,j,index);
-          }
-          else // Skip the data (doesn't belong to current processor)
-          {
-            // Skip rest of ele line
-            getline(restart_file,str);
-            for (int j=0;j<n_spts;j++)
-              getline(restart_file,str);
-          }
-      }
-  }
+//          if (index!=-1) // Ele belongs to processor
+//          {
+//            for (int j=0;j<n_spts;j++)
+//              for (int k=0;k<n_dims;k++)
+//                restart_file >> vel_spts(k,j,index);
+//          }
+//          else // Skip the data (doesn't belong to current processor)
+//          {
+//            // Skip rest of ele line
+//            getline(restart_file,str);
+//            for (int j=0;j<n_spts;j++)
+//              getline(restart_file,str);
+//          }
+//      }
+//  }
   
   // If required, calculate element reference lengths
   if (run_input.dt_type != 0)
@@ -773,23 +767,22 @@ void eles::write_restart_data(ofstream& restart_file)
     }
   }
 
-  // Write Grid Velocity
-  if (motion) {
-    restart_file << "QUADS GRID VELOCITY" << endl;
-    for (int i=0;i<n_eles;i++)
-    {
-      restart_file << ele2global_ele(i) << " " << n_spts_per_ele(i) << endl;
-      for (int j=0;j<n_spts_per_ele(i);j++)
-      {
-        for (int k=0;k<n_dims;k++)
-        {
-          restart_file << vel_spts(k,j,i) << " ";
-        }
-        restart_file << endl;
-      }
-    }
-    restart_file << endl;
-  }
+//  // Write Grid Velocity
+//  if (motion) {
+//    restart_file << "QUADS GRID VELOCITY" << endl;
+//    for (int i=0;i<n_eles;i++)
+//    {
+//      restart_file << ele2global_ele(i) << " " << n_spts_per_ele(i) << endl;
+//      for (int j=0;j<n_spts_per_ele(i);j++)
+//      {
+//        for (int k=0;k<n_dims;k++)
+//        {
+//          restart_file << vel_spts(k,j,i) << " ";
+//        }
+//        restart_file << endl;
+//      }
+//    }
+//  }
 
   restart_file << endl;
 
@@ -3454,8 +3447,8 @@ void eles::set_shape_node(int in_spt, int in_ele, array<double>& in_pos)
   for(int i=0;i<n_dims;i++)
   {
     shape(i,in_spt,in_ele)=in_pos(i);
-    for (int j=0; j<5; j++)
-      shape_dyn(i,in_spt,in_ele,j)=in_pos(i);
+//    for (int j=0; j<5; j++)
+//      shape_dyn(i,in_spt,in_ele,j)=in_pos(i);
   }
 }
 
@@ -3463,6 +3456,25 @@ void eles::set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos)
 {
   for(int i=0;i<n_dims;i++) {
     shape_dyn(i,in_spt,in_ele)=in_pos(i);
+  }
+}
+
+void eles::set_dynamic_shape_node_restart(int in_spt, int in_ele, array<double> &in_pos)
+{
+  for (int level=0; level<5; level++) {
+    for(int dim=0; dim<n_dims; dim++) {
+      shape_dyn(dim,in_spt,in_ele,level) = in_pos(level,dim);
+    }
+  }
+}
+
+void eles::get_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos)
+{
+  // Get for all 5 most recent iterations
+  for (int level=0; level<5; level++) {
+    for(int dim=0;dim<n_dims;dim++) {
+      in_pos(level,dim) = shape_dyn(dim,in_spt,in_ele,level);
+    }
   }
 }
 
@@ -4380,16 +4392,26 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
 
 void eles::calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos)
 {
-  int i;
-  
-  array<double> loc(n_dims);
-  
-  for(i=0;i<n_dims;i++)
-  {
-    loc(i)=loc_upts(i,in_upt);
+  int i,j;
+
+  out_pos.initialize_to_zero();
+  for(i=0;i<n_dims;i++) {
+      for(j=0;j<n_spts_per_ele(in_ele);j++) {
+          out_pos(i)+=nodal_s_basis_upts(j,in_upt,in_ele)*shape(i,j,in_ele);
+      }
   }
-  
-  calc_pos(loc,in_ele,out_pos);
+}
+
+void eles::calc_pos_fpt(int in_fpt, int in_ele, array<double>& out_pos)
+{
+  int i,j;
+
+  out_pos.initialize_to_zero();
+  for(i=0;i<n_dims;i++) {
+      for(j=0;j<n_spts_per_ele(in_ele);j++) {
+          out_pos(i)+=nodal_s_basis_fpts(j,in_fpt,in_ele)*shape(i,j,in_ele);
+      }
+  }
 }
 
 double eles::get_loc_upt(int in_upt, int in_dim)
@@ -4456,12 +4478,7 @@ void eles::set_transforms(void)
       {
         // get coordinates of the solution point
         
-        for(k=0;k<n_dims;k++)
-        {
-          loc(k)=loc_upts(k,j);
-        }
-        
-        calc_pos(loc,i,pos);
+        calc_pos_upt(j,i,pos);
 
         for(k=0;k<n_dims;k++)
         {
@@ -4469,11 +4486,11 @@ void eles::set_transforms(void)
         }
 
         // calculate first derivatives of shape functions at the solution point
-        calc_d_pos(loc,i,d_pos);
+        calc_d_pos_upt(j,i,d_pos);
         
         // calculate second derivatives of shape functions at the solution point
-        if (viscous)
-          calc_dd_pos(loc,i,dd_pos);
+        /*if (viscous)
+          calc_dd_pos(loc,i,dd_pos);*/
         
         // store quantities at the solution point
         
@@ -4490,6 +4507,10 @@ void eles::set_transforms(void)
           
           if (detjac_upts(j,i) < 0)
           {
+            cout << "At x = " << pos(0) << ", y = " << pos(1);
+            if (n_dims==3)
+              cout << ", z = " << pos(2);
+            cout << ":" << endl;
             FatalError("Negative Jacobian at solution points");
           }
           
@@ -4624,13 +4645,8 @@ void eles::set_transforms(void)
       for(j=0;j<n_fpts_per_ele;j++)
       {
         // get coordinates of the flux point
-        
-        for(k=0;k<n_dims;k++)
-        {
-          loc(k)=tloc_fpts(k,j);
-        }
-        
-        calc_pos(loc,i,pos);
+                
+        calc_pos_fpt(j,i,pos);
         
         for(k=0;k<n_dims;k++)
         {
@@ -4639,12 +4655,12 @@ void eles::set_transforms(void)
         
         // calculate first derivatives of shape functions at the flux points
         
-        calc_d_pos(loc,i,d_pos);
+        calc_d_pos_fpt(j,i,d_pos);
         
         // calculate second derivatives of shape functions at the flux point
         
-        if(viscous)
-          calc_dd_pos(loc,i,dd_pos);
+        /*if(viscous)
+          calc_dd_pos(loc,i,dd_pos);*/
         
         // store quantities at the flux point
         
@@ -4662,6 +4678,10 @@ void eles::set_transforms(void)
           
           if (detjac_fpts(j,i) < 0)
           {
+            cout << "At x = " << pos(0) << ", y = " << pos(1);
+            if (n_dims==3)
+              cout << ", z = " << pos(2);
+            cout << ":" << endl;
             FatalError("Negative Jacobian at flux points");
           }
           
@@ -5126,6 +5146,12 @@ void eles::cp_transforms_cpu_gpu(void)
   shape_dyn.cp_cpu_gpu();
 
   //grid_vel_upts.cp_cpu_gpu();
+}
+
+/** Used for restarting moving-mesh cases - update shape_dyn from restart file */
+void eles::cp_shape_cpu_gpu(void)
+{
+  shape_dyn.cp_cpu_gpu();
 }
 #endif
 

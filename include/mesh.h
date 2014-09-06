@@ -81,7 +81,15 @@ public:
   void set_grid_velocity(double dt);
 
   /** update shape points & dynamic grid transforms in eles classes */
-  void update_eles_shape();
+  void update_eles_shape(void);
+
+  /** update shape points & dynamic grid transforms in eles classes during restarting
+      (assign positions from all 5 most recent iterations) */
+  void update_eles_shape_restart(void);
+
+  /** Update the classe's 'xv' variable from the eles' 'shape_dyn' variable
+      (used in GPU cases where shape_dyn updated instead of xv) */
+  void get_eles_shape(void);
 
   /** setup information for boundary motion */
   //void setup_boundaries(array<int> bctype);
@@ -95,7 +103,7 @@ public:
   /** write out mesh in Gmsh .msh format */
   void write_mesh_gmsh(double sim_time, int iteration);
 
-  void setup(solution *in_FlowSol, array<double> &in_xv, array<int> &in_c2v, array<int> &in_c2n_v, array<int> &in_iv2ivg, array<int> &in_ctype);
+  void setup(solution *in_FlowSol, array<int> &in_c2v, array<int> &in_c2n_v, array<int> &in_iv2ivg, array<int> &in_ctype);
 
   /*! Additional setup operations (called from geometry.cpp to make things a little cleaner) */
   void setup_part_2(array<int> &_c2f, array<int> &_c2e, array<int> &_f2c, array<int> &_f2n_v, array<int> &_ic2loc_c, int _n_faces);
@@ -106,8 +114,11 @@ public:
   void push_back_xv();
 
 #ifdef _GPU
-  void mv_cpu_gpu();
-  void cp_gpu_cpu();
+  void mv_cpu_gpu(void);
+  void cp_gpu_cpu(void);
+
+  /** Put xv(0) back on GPU after reading current positions from restart file */
+  void cp_restart_cpu_gpu(void);
 #endif
 
   // #### members ####
