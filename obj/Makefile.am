@@ -60,6 +60,7 @@ endif
 ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/input.cpp \
                   ../src/flux.cpp \
+									../src/source.cpp \
                   ../src/cubature_tet.cpp \
                   ../src/cubature_hexa.cpp \
                   ../src/cubature_quad.cpp \
