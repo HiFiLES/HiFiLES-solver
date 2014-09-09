@@ -37,11 +37,18 @@ The compiled executable will be located in ./bin/HiFiLES relative to this README
 To specify a BLAS library, compile for MPI, etc., additional options are available during the configuration process.
 The BASH shell script "configure_run.sh" contains example usage of all relevant configuration options, and can either 
 be used as-is or as a template for a custem configuration script. 
+
 For example, to enable MPI support, simply change the PARALLEL="NO" flag to PARALLEL="YES", and change the value of
 MPICC (the MPI C compiler) if needed.  Likewise, for linking with BLAS, simply select which type of BLAS you will be 
 using (the basic CBLAS library and the ATLAS BLAS library are both supported for Linux users, and Accelerate BLAS is 
 supported for Mac users), and then specify the location of the library (.a) and header (.h) files as shown in the 
-BLAS_LIB and BLAS_HEADER variables. Once the "configure_run.sh" has been modified to suit your needs, simply use the
+BLAS_LIB and BLAS_HEADER variables. 
+
+For building on GPU-enabled devices, the process is very similar to enabling MPI or BLAS support.  Simply specify the
+compiler (typically 'nvcc'), the location of header & library files, and (optionally) the architecture you are 
+compiling for.  Options for the architecture are listed in configure_run.sh.
+
+Once the "configure_run.sh" shell script has been modified to suit your needs, simply use the
 following commands to install (assuming you are using a BASH-based Linux distro):
 
   1) bash configure_run.sh
@@ -51,10 +58,6 @@ If you encounter problems with the above procedure, you can copy the supplied ha
 directory and edit as required for your system. You will also need a file makefile.in tailored to your system - see the supplied
 examples in the makefiles subdirectory for guidance.
 
-Unfortunately, the AutoTools build system supplied with HiFiLES does not currently support building with CUDA on GPUs.
-To build for GPUs, follow the manual procedure described above using the supplied handwritten file makefiles/Makefile
-and a makefile.in similar to the input file makefile.cluster.in found in the "makefiles" subdirectory.
-If you figure out how to compile and link CUDA files to C++ code using AutoTools, please let us know!
 
 Thanks for building, and happy running!
 - The HiFiLES Development Team
