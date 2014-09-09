@@ -6,7 +6,7 @@
 #         - Current development: Aerospace Computing Laboratory (ACL) directed
 #                                by Prof. Jameson. (Aero/Astro Dept. Stanford University).
 # \version 1.0.0
-# \date Modified on 3/14/14
+# \date Modified on 9/8/14
 #
 # HiFiLES (High Fidelity Large Eddy Simulation).
 # Copyright (C) 2013 Aerospace Computing Laboratory.
@@ -26,40 +26,16 @@ ___bin_HiFiLES_LDADD=
 ___bin_HiFiLES_LDFLAGS=
 
 # -------------- GPU --------------
-if BUILD_GPU
-# Tell AutoMake how to compile CUDA files
-# See http://www.clusterchimps.org/autotools.php
-# GPU Architechture Selection: -gencode=arch=compute_xx,code=sm_xx
-#   compute_10	 Basic features
-#   compute_11	 + atomic memory operations on global memory
-#   compute_12	 + atomic memory operations on shared memory
-#                + vote instructions
-#   compute_13	 + double precision floating point support
-#   compute_20	 + Fermi support
-#   compute_30	 + Kepler support
-# cuda_kernels.o:
-#	$(NVCC) $(NVCCFLAGS) -gencode=arch=compute_20,code=sm_20 --ptxas-options=-v -o $@ -c $<
-
-cuda_kernals.cu.o:
-	$(NVCC) -gencode=arch=compute_20,code=sm_20 -o $@ -c $<
-
-libcudafiles_la_LINK= $(LIBTOOL) --mode=link $(CXX) -o $@ $(CUDA_LDFLAGS) $(CUDA_LIBS)
-
-noinst_LTLIBRARIES = libcudafiles.la
-libcudafiles_la_SOURCES = ../src/cuda_kernels.cu
-# libcudafiles_a_LIBADD = @CUDA_LIBS@
-# libcudafiles_a_CFLAGS = @NVCCFLAGS@
-___bin_HiFiLES_LDADD += @top_dir@/obj/libcudafiles.la 
-___bin_HiFiLES_LDFLAGS += -static
-# __bin_HiFiLES_LDFLAGS = @CUDA_LDFLAGS@ -lm -static
-endif
-# ------------ END GPU ------------
+# Tell AutoMake how to compile CUDA (.cu) files
+.cu.o:
+	nvcc $(NVCCFLAGS) $(CUDA_ARCH) $(NVCC_FLAGS) -Xcudafe "--diag_suppress=subscript_out_of_range" -c -o $@ $<
 
 # NOTE: '___bin_' is due to AM substituting the non-variable-name-friendly 
 # characters in the given expression above with an underscore
 ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/input.cpp \
                   ../src/flux.cpp \
+                  ../src/source.cpp \
                   ../src/cubature_tet.cpp \
                   ../src/cubature_hexa.cpp \
                   ../src/cubature_quad.cpp \
@@ -69,7 +45,6 @@ ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/inters.cpp \
                   ../src/bdy_inters.cpp \
                   ../src/int_inters.cpp \
-                  ../src/mpi_inters.cpp \
                   ../src/eles.cpp \
                   ../src/eles_tris.cpp \
                   ../src/eles_quads.cpp \
@@ -79,11 +54,19 @@ ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/output.cpp \
                   ../src/geometry.cpp \
                   ../src/solver.cpp \
-		  ../src/mesh.cpp \
-		  ../src/matrix_structure.cpp \
-		  ../src/vector_structure.cpp \
-		  ../src/linear_solvers_structure.cpp \
+                  ../src/mesh.cpp \
+                  ../src/matrix_structure.cpp \
+                  ../src/vector_structure.cpp \
+                  ../src/linear_solvers_structure.cpp \
                   ../src/HiFiLES.cpp
+
+if BUILD_GPU
+___bin_HiFiLES_SOURCES += ../src/cuda_kernels.cu
+endif
+
+if BUILD_MPI
+___bin_HiFiLES_SOURCES += ../src/mpi_inters.cpp
+endif
 
 ___bin_HiFiLES_CXXFLAGS +=@CXXFLAGS@
 ___bin_HiFiLES_CXXFLAGS +=@hifiles_externals_INCLUDES@
@@ -99,8 +82,8 @@ ___bin_HiFiLES_LDADD += @TECIO_LD@
 
 # CUDA
 ___bin_HiFiLES_CXXFLAGS += @CUDA_CXX@
-#___bin_HiFiLES_LDFLAGS += @CUDA_LDFLAGS@
-#___bin_HiFiLES_LDADD += @CUDA_LIBS@
+___bin_HiFiLES_LDFLAGS += @CUDA_LDFLAGS@
+___bin_HiFiLES_LDADD += @CUDA_LIBS@
 
 # BLAS
 ___bin_HiFiLES_CXXFLAGS += @BLAS_CXX@
