@@ -586,9 +586,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! Plot sub-element connectivity array (node IDs) */
   array<int> con;
 
-  /*! VTK element types (different to HiFiLES element type) */
-  /*! tri, quad, tet, prism (undefined), hex */
-  /*! See vtkCellType.h for full list */
+  /*! VTK element types (different to HiFiLES element type)
+   *  tri, quad, tet, prism (undefined), hex
+   *  See vtkCellType.h for full list */
   int vtktypes[5] = {5,9,10,0,12};
 
   /*! File names */
@@ -1666,7 +1666,10 @@ void CopyGPUCPU(struct solution* FlowSol, mesh &Mesh)
     }
   }
 
-  Mesh.get_eles_shape();
+  if (run_input.motion!=STATIC_MESH)
+  {
+    Mesh.get_eles_shape();
+  }
 }
 #endif
 

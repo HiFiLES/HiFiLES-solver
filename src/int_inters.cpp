@@ -207,13 +207,13 @@ void int_inters::mv_all_cpu_gpu(void)
   grid_vel_fpts.mv_cpu_gpu();
 
   if(viscous)
-    {
-      grad_disu_fpts_l.mv_cpu_gpu();
-      //norm_tconvisf_fpts_l.mv_cpu_gpu();
+  {
+    grad_disu_fpts_l.mv_cpu_gpu();
+    //norm_tconvisf_fpts_l.mv_cpu_gpu();
 
-      grad_disu_fpts_r.mv_cpu_gpu();
-      //norm_tconvisf_fpts_r.mv_cpu_gpu();
-    }
+    grad_disu_fpts_r.mv_cpu_gpu();
+    //norm_tconvisf_fpts_r.mv_cpu_gpu();
+  }
 
   sgsf_fpts_l.mv_cpu_gpu();
   sgsf_fpts_r.mv_cpu_gpu();

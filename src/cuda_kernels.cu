@@ -2335,7 +2335,11 @@ __device__ __host__ void rusanov_flux(double* q_l, double *q_r, double* v_g, dou
   inv_NS_flux<n_dims>(q_r,v_g,&p_r,f,gamma,-1,turb_model);
 
   vn_av_mag=0.5*fabs(vn_l+vn_r);
-  c_av=sqrt((gamma*(p_l+p_r))/(q_l[0]+q_r[0]));
+  double csq_l, csq_r;
+  csq_l = max(gamma*p_l/q_l[0],0.);
+  csq_r = max(gamma*p_r/q_r[0],0.);
+  c_av = max(csq_l,csq_r);  // jcrabill addition (from conversation with kartikey) - 8/20/14
+  //c_av=sqrt((gamma*(p_l+p_r))/(q_l[0]+q_r[0]));
 
 #pragma unroll
   for (int i=0;i<n_fields;i++)

@@ -123,22 +123,19 @@ int main(int argc, char *argv[]) {
   
   /*! Initialize forces, integral quantities, and residuals. */
 
-  if (FlowSol.rank == 0) {
-    
-    FlowSol.inv_force.setup(5);
-    FlowSol.vis_force.setup(5);
-    FlowSol.norm_residual.setup(5);
-    FlowSol.integral_quantities.setup(run_input.n_integral_quantities);
-    
-    for (i=0; i<5; i++) {
-      FlowSol.inv_force(i)=0.0;
-      FlowSol.vis_force(i)=0.0;
-      FlowSol.norm_residual(i)=0.0;
-    }
-    for (i=0; i<run_input.n_integral_quantities; i++)
-      FlowSol.integral_quantities(i)=0.0;
+  //if (FlowSol.rank == 0) {
 
-  }
+  FlowSol.inv_force.setup(5);
+  FlowSol.vis_force.setup(5);
+  FlowSol.norm_residual.setup(5);
+  FlowSol.integral_quantities.setup(run_input.n_integral_quantities);
+
+  FlowSol.inv_force.initialize_to_zero();
+  FlowSol.vis_force.initialize_to_zero();
+  FlowSol.norm_residual.initialize_to_zero();
+  FlowSol.integral_quantities.initialize_to_zero();
+
+  //}
   
   /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
 #ifdef _GPU
@@ -148,7 +145,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   /*! Dump initial Paraview or tecplot file. */
-  
+
   if (FlowSol.write_type == 0) write_vtu(FlowSol.ini_iter+i_steps, &FlowSol);
   else if (FlowSol.write_type == 1) write_tec(FlowSol.ini_iter+i_steps, &FlowSol);
   else FatalError("ERROR: Trying to write unrecognized file format ... ");
@@ -168,32 +165,11 @@ int main(int argc, char *argv[]) {
     
     for(i=0; i < RKSteps; i++) {
 
-      /* If using moving mesh, need to advance the Geometric Conservation Law
-       * (GCL) first to get updated Jacobians. Necessary to preserve freestream
-       * on arbitrarily deforming mesh. See Kui Ou's Ph.D. thesis for details. */
-      if (run_input.motion > 0) {
+      /*! Update the mesh. */
+      if (run_input.motion != STATIC_MESH) {
 
-        /* Update the mesh */
         Mesh.move(FlowSol.ini_iter+i_steps,i,RKSteps);
 
-        /* Residual for Geometric Conservation Law (GCL) */
-        /*
-        if (run_input.GCL) {
-          CalcGCLResidual(&FlowSol);
-
-          // Time integration for Geometric Conservation Law (GCL) using a RK scheme
-          for(j=0; j<FlowSol.n_ele_types; j++) {
-
-            // Time Advance
-            FlowSol.mesh_eles(j)->AdvanceGCL(i, FlowSol.adv_type);
-
-            // Extrapolate Jacobians to flux points
-            FlowSol.mesh_eles(j)->extrapolate_GCL_solution(0);
-
-            // Reset transforms using updated Jacobians
-            FlowSol.mesh_eles(j)->correct_dynamic_transforms();
-          }
-        }*/
       }
 
       /*! Spatial integration. */

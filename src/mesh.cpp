@@ -103,7 +103,7 @@ void mesh::setup(struct solution *in_FlowSol,array<int> &in_c2v,array<int> &in_c
   n_eles = FlowSol->num_eles;
   n_verts = FlowSol->num_verts;  
   n_cells_global = FlowSol->num_cells_global;
-  n_verts_global = xv(0).get_dim(0);
+  //n_verts_global = xv(0).get_dim(0); // already set in 'ReadMesh'
 
 //  // Setup for 4th-order backward difference
 //  xv.setup(5);
@@ -120,19 +120,23 @@ void mesh::setup(struct solution *in_FlowSol,array<int> &in_c2v,array<int> &in_c
   iv2ivg = in_iv2ivg;
   ctype = in_ctype;
 
-  vel_old.setup(n_verts,n_dims);
+  //vel_old.setup(n_verts,n_dims);
   vel_new.setup(n_verts,n_dims);
-  vel_old.initialize_to_zero();
+  //vel_old.initialize_to_zero();
   vel_new.initialize_to_zero();
 
+  if (run_input.motion==STATIC_MESH) {
+    n_moving_bnds = 0;
+  }else{
+    n_moving_bnds = run_input.n_moving_bnds;
+  }
   // Blending-Function method variables
   if (run_input.motion==LINEAR_ELASTICITY || run_input.motion==BLENDING) {
     displacement.setup(n_verts,n_dims);
     displacement.initialize_to_zero();
 
-    n_moving_bnds = run_input.n_moving_bnds;
-    motion_params.setup(run_input.n_moving_bnds,9);
-    for (int i=0; i<run_input.n_moving_bnds; i++) {
+    motion_params.setup(n_moving_bnds,9);
+    for (int i=0; i<n_moving_bnds; i++) {
       for (int j=0; j<9; j++) {
         motion_params(i,j) = run_input.bound_vel_simple(i)(j);
       }
@@ -181,12 +185,14 @@ void mesh::setup_part_2(array<int>& _c2f, array<int>& _c2e, array<int>& _f2c, ar
   n_bnds = bc_list.get_dim(0);
   max_n_bndpts = nBndPts.get_max();
 
-  bnd_match.setup(n_moving_bnds);
-  for (int ib=0; ib<n_moving_bnds; ib++) {
-    for (int bnd=0; bnd<n_bnds; bnd++) {
-      if (bc_list(bnd)==bc_num[run_input.boundary_flags(ib)]) {
-        bnd_match(ib) = bnd;
-        break;
+  if (n_moving_bnds > 0 ) {
+    bnd_match.setup(n_moving_bnds);
+    for (int ib=0; ib<n_moving_bnds; ib++) {
+      for (int bnd=0; bnd<n_bnds; bnd++) {
+        if (bc_list(bnd)==bc_num[run_input.boundary_flags(ib)]) {
+          bnd_match(ib) = bnd;
+          break;
+        }
       }
     }
   }

@@ -158,12 +158,12 @@ void mpi_inters::mv_all_cpu_gpu(void)
   delta_disu_fpts_l.mv_cpu_gpu();
 
   if(viscous)
-    {
-      grad_disu_fpts_l.mv_cpu_gpu();
-      grad_disu_fpts_r.mv_cpu_gpu();
+  {
+    grad_disu_fpts_l.mv_cpu_gpu();
+    grad_disu_fpts_r.mv_cpu_gpu();
 
-      //norm_tconvisf_fpts_l.mv_cpu_gpu();
-    }
+    //norm_tconvisf_fpts_l.mv_cpu_gpu();
+  }
 
   ndA_dyn_fpts_l.mv_cpu_gpu();
   grid_vel_fpts.mv_cpu_gpu();
@@ -234,13 +234,13 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
         {
           j_rhs=lut(j);
 
-          if (run_input.GCL) {
+//          if (run_input.GCL) {
 //            disu_GCL_fpts_l(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
 //            disu_GCL_fpts_r(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
 
 //            norm_tconf_GCL_fpts_l(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
 //            norm_tconf_GCL_fpts_r(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
-          }
+//          }
 
           ndA_dyn_fpts_l(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
           //ndA_dyn_fpts_r(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
