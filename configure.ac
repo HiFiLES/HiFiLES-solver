@@ -45,6 +45,9 @@ AC_ARG_WITH(CUDA-lib,
 AC_ARG_WITH(CUDA-include,
     AS_HELP_STRING([--with-CUDA-include[=ARG]], [CUDA include directory, ARG = path to cuda.h]), 
     [with_CUDA_include=$withval], [with_CUDA_include="NO"])
+AC_ARG_WITH(CUDA-arch,
+    AS_HELP_STRING([--with-CUDA-arch[=ARG]], [CUDA device architecture, compute_xx (default: 20)]), 
+    [with_CUDA_arch=$withval], [with_CUDA_arch=20])
 
 AC_ARG_WITH(MPI,
     AS_HELP_STRING([--with-MPI[=ARG]], [Build parallel version with MPI tools, ARG = MPI C++ compiler]), 
@@ -173,17 +176,20 @@ then
     fi
 	CUDA_LDFLAGS="-L$with_CUDA_lib"
 	CUDA_LIBS="-lcudart -lcublas -lcusparse -lm"
+	CUDA_ARCH="-gencode=arch=compute_$with_CUDA_arch,code=sm_$with_CUDA_arch"
     NVCC=$with_CUDA
 else
 	AM_CONDITIONAL(BUILD_GPU,false)
 	CUDA_CXX="-D_CPU"
 	CUDA_LDFLAGS=
 	CUDA_LIBS=
+	CUDA_ARCH=
 fi
 AC_SUBST([NVCC])
 AC_SUBST([CUDA_LIBS])
 AC_SUBST([CUDA_LDFLAGS])
 AC_SUBST([CUDA_CXX])
+AC_SUBST([CUDA_ARCH])
 AC_SUBST([NVCCFLAGS])
 
 ########################### ParMETIS
@@ -326,13 +332,23 @@ then
     have_MPI="YES"
     CXXFLAGS=$CXXFLAGS" -D_MPI"
     MPI_INCLUDE="-I$with_MPI_include"
+    AM_CONDITIONAL(BUILD_MPI,true)
+	
+	# Add MPI flag to CUDA flag if needed
+	if test "$have_CUDA" != "NO"
+	then
+		NVCCFLAGS=$NVCCFLAGS" -D_MPI $MPI_INCLUDE"
+	fi
   else
     AC_MSG_ERROR([MPI requested but header file not found.])
   fi
 else
   MPI_INCLUDE=
+  AM_CONDITIONAL(BUILD_MPI,false)
 fi
 AC_SUBST([MPI_INCLUDE])
+
+
 
 ########################### BLAS
 if test "$with_BLAS" == "ACCELERATE"
@@ -414,11 +430,12 @@ Build Configuration Summary:
     Code Type:            ${code_type}
     Compiler:             ${CXX}
     Preprocessor flags:   ${CPPFLAGS} ${BLAS_CXX} ${PARMETIS_CXX} ${CUDA_CXX} ${MPI_INCLUDE}
-    Compiler flags:       ${CXXFLAGS}
-    Linker flags:         ${LDFLAGS} ${BLAS_LD} ${BLAS_LDFLAGS} ${PARMETIS_LD} ${CUDA_LD}
+    Compiler flags:       ${CXXFLAGS} ${NVCCFLAGS}
+    Linker flags:         ${LDFLAGS} ${BLAS_LDFLAGS} ${CUDA_LDFLSGS}
+    Libraries:            ${BLAS_LD} ${PARMETIS_LD} ${CUDA_LIBS}
     BLAS support:         $have_BLAS
     MPI support:          $have_MPI
-    CUDA support:         $have_CUDA
+    CUDA support:         $have_CUDA $CUDA_ARCH
     TecIO support:        $have_Tecio
 
 Additionally, don't forget to set the environment variable HIFILES_HOME

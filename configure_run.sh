@@ -40,14 +40,11 @@ NVCC="nvcc"             # NVidia CUDA compiler
 MPICC="mpicxx"          # MPI C compiler
 # ---------------------------------------------------------------
 # Library & Header File Locations [Change filepaths as needed]
-BLAS_LIB="/usr/lib/atlas-base"
-BLAS_INCLUDE="/usr/include"
+BLAS_LIB="/usr/local/atlas/lib"
+BLAS_INCLUDE="/usr/local/atlas/include"
 
 TECIO_LIB="lib/tecio-2008/lib"
 TECIO_INCLUDE="lib/tecio-2008/include"
-
-CUDA_LIB="/usr/local/cuda/lib64"
-CUDA_INCLUDE="/usr/local/cuda/include"
 
 # If building the supplied ParMETIS libraries, need the MPI header location
 MPI_INCLUDE="/usr/include/mpich2"       # location of mpi.h
@@ -59,6 +56,17 @@ PARMETIS_INCLUDE="/usr/local/include"   # location of parmetis.h
 METIS_LIB="/usr/local/lib"              # location of libmetis.a
 METIS_INCLUDE="/usr/local/include"      # location of metis.h
 
+# GPU Architechture Selection: -gencode=arch=compute_xx,code=sm_xx (default: 20)
+#   compute_10	 Basic features
+#   compute_11	 + atomic memory operations on global memory
+#   compute_12	 + atomic memory operations on shared memory
+#                + vote instructions
+#   compute_13	 + double precision floating point support
+#   compute_20	 + Fermi support
+#   compute_30	 + Kepler support
+CUDA_ARCH="20"
+CUDA_LIB="/usr/local/cuda-5.0/lib64"
+CUDA_INCLUDE="/usr/local/cuda-5.0/include"
 
 # ---------------------------------------------------------------
 # Run configure using the chosen options [Should not change this]
@@ -91,6 +99,7 @@ fi
             --with-CUDA=$_GPU \
             --with-CUDA-lib=$CUDA_LIB \
             --with-CUDA-include=$CUDA_INCLUDE \
+            --with-CUDA-arch=$CUDA_ARCH \
             --with-ParMetis-lib=$PARMETIS_LIB \
             --with-ParMetis-include=$PARMETIS_INCLUDE \
             --with-Metis-lib=$METIS_LIB \

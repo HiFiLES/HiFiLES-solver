@@ -656,6 +656,8 @@ BLAS_LD
 BLAS_LDFLAGS
 BLAS_CXX
 MPI_INCLUDE
+BUILD_MPI_FALSE
+BUILD_MPI_TRUE
 TECIO_LD
 TECIO_CXX
 BUILD_TECIO_FALSE
@@ -665,6 +667,7 @@ PARMETIS_CXX
 BUILD_PARMETIS_FALSE
 BUILD_PARMETIS_TRUE
 NVCCFLAGS
+CUDA_ARCH
 CUDA_CXX
 CUDA_LDFLAGS
 CUDA_LIBS
@@ -768,6 +771,7 @@ enable_silent_rules
 with_CUDA
 with_CUDA_lib
 with_CUDA_include
+with_CUDA_arch
 with_MPI
 with_MPI_include
 with_Tecio_lib
@@ -1445,6 +1449,7 @@ Optional Packages:
                           CUDA compiler
   --with-CUDA-lib=ARG     CUDA library directory, ARG = path to libcuda.a
   --with-CUDA-include=ARG CUDA include directory, ARG = path to cuda.h
+  --with-CUDA-arch=ARG    CUDA device architecture, compute_xx (default: 20)
   --with-MPI=ARG          Build parallel version with MPI tools, ARG = MPI C++
                           compiler
   --with-MPI-include=ARG  MPI include directory, ARG = path to mpi.h, needed
@@ -2879,6 +2884,14 @@ else
 fi
 
 
+# Check whether --with-CUDA-arch was given.
+if test "${with_CUDA_arch+set}" = set; then :
+  withval=$with_CUDA_arch; with_CUDA_arch=$withval
+else
+  with_CUDA_arch=20
+fi
+
+
 
 # Check whether --with-MPI was given.
 if test "${with_MPI+set}" = set; then :
@@ -4227,6 +4240,7 @@ fi
     fi
 	CUDA_LDFLAGS="-L$with_CUDA_lib"
 	CUDA_LIBS="-lcudart -lcublas -lcusparse -lm"
+	CUDA_ARCH="-gencode=arch=compute_$with_CUDA_arch,code=sm_$with_CUDA_arch"
     NVCC=$with_CUDA
 else
 	 if false; then
@@ -4240,7 +4254,9 @@ fi
 	CUDA_CXX="-D_CPU"
 	CUDA_LDFLAGS=
 	CUDA_LIBS=
+	CUDA_ARCH=
 fi
+
 
 
 
@@ -4598,12 +4614,36 @@ fi
     have_MPI="YES"
     CXXFLAGS=$CXXFLAGS" -D_MPI"
     MPI_INCLUDE="-I$with_MPI_include"
+     if true; then
+  BUILD_MPI_TRUE=
+  BUILD_MPI_FALSE='#'
+else
+  BUILD_MPI_TRUE='#'
+  BUILD_MPI_FALSE=
+fi
+
+
+	# Add MPI flag to CUDA flag if needed
+	if test "$have_CUDA" != "NO"
+	then
+		NVCCFLAGS=$NVCCFLAGS" -D_MPI $MPI_INCLUDE"
+	fi
   else
     as_fn_error $? "MPI requested but header file not found." "$LINENO" 5
   fi
 else
   MPI_INCLUDE=
+   if false; then
+  BUILD_MPI_TRUE=
+  BUILD_MPI_FALSE='#'
+else
+  BUILD_MPI_TRUE='#'
+  BUILD_MPI_FALSE=
 fi
+
+fi
+
+
 
 
 ########################### BLAS
@@ -7241,7 +7281,7 @@ linux* | k*bsd*-gnu | kopensolaris*-gnu)
   lt_cv_deplibs_check_method=pass_all
   ;;
 
-netbsd* | netbsdelf*-gnu)
+netbsd*)
   if echo __ELF__ | $CC -E - | $GREP __ELF__ > /dev/null; then
     lt_cv_deplibs_check_method='match_pattern /lib[^/]+(\.so\.[0-9]+\.[0-9]+|_pic\.a)$'
   else
@@ -10652,9 +10692,6 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
   openbsd*)
     with_gnu_ld=no
     ;;
-  linux* | k*bsd*-gnu | gnu*)
-    link_all_deplibs=no
-    ;;
   esac
 
   ld_shlibs=yes
@@ -10876,7 +10913,7 @@ _LT_EOF
       fi
       ;;
 
-    netbsd* | netbsdelf*-gnu)
+    netbsd*)
       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
 	archive_cmds='$LD -Bshareable $libobjs $deplibs $linker_flags -o $lib'
 	wlarc=
@@ -11053,7 +11090,6 @@ _LT_EOF
 	if test "$aix_use_runtimelinking" = yes; then
 	  shared_flag="$shared_flag "'${wl}-G'
 	fi
-	link_all_deplibs=no
       else
 	# not using gcc
 	if test "$host_cpu" = ia64; then
@@ -11507,7 +11543,7 @@ $as_echo "$lt_cv_irix_exported_symbol" >&6; }
       link_all_deplibs=yes
       ;;
 
-    netbsd* | netbsdelf*-gnu)
+    netbsd*)
       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
 	archive_cmds='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'  # a.out
       else
@@ -12520,10 +12556,14 @@ fi
   # before this can be enabled.
   hardcode_into_libs=yes
 
+  # Add ABI-specific directories to the system library path.
+  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
+
   # Append ld.so.conf contents to the search path
   if test -f /etc/ld.so.conf; then
     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
+
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -12533,18 +12573,6 @@ fi
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
-  ;;
-
-netbsdelf*-gnu)
-  version_type=linux
-  need_lib_prefix=no
-  need_version=no
-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
-  soname_spec='${libname}${release}${shared_ext}$major'
-  shlibpath_var=LD_LIBRARY_PATH
-  shlibpath_overrides_runpath=no
-  hardcode_into_libs=yes
-  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 netbsd*)
@@ -15382,7 +15410,7 @@ lt_prog_compiler_static_CXX=
 	    ;;
 	esac
 	;;
-      netbsd* | netbsdelf*-gnu)
+      netbsd*)
 	;;
       *qnx* | *nto*)
         # QNX uses GNU C++, but need to define -shared option too, otherwise
@@ -15752,9 +15780,6 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
       exclude_expsyms_CXX='[_]+GLOBAL_OFFSET_TABLE_|[_]+GLOBAL__[FID]_.*|[_]+head_[A-Za-z0-9_]+_dll|[A-Za-z0-9_]+_dll_iname'
       ;;
     esac
-    ;;
-  linux* | k*bsd*-gnu | gnu*)
-    link_all_deplibs_CXX=no
     ;;
   *)
     export_symbols_cmds_CXX='$NM $libobjs $convenience | $global_symbol_pipe | $SED '\''s/.* //'\'' | sort | uniq > $export_symbols'
@@ -16366,10 +16391,14 @@ fi
   # before this can be enabled.
   hardcode_into_libs=yes
 
+  # Add ABI-specific directories to the system library path.
+  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
+
   # Append ld.so.conf contents to the search path
   if test -f /etc/ld.so.conf; then
     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
+
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -16379,18 +16408,6 @@ fi
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
-  ;;
-
-netbsdelf*-gnu)
-  version_type=linux
-  need_lib_prefix=no
-  need_version=no
-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
-  soname_spec='${libname}${release}${shared_ext}$major'
-  shlibpath_var=LD_LIBRARY_PATH
-  shlibpath_overrides_runpath=no
-  hardcode_into_libs=yes
-  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 netbsd*)
@@ -16921,6 +16938,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_TECIO_TRUE}" && test -z "${BUILD_TECIO_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_TECIO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BUILD_MPI_TRUE}" && test -z "${BUILD_MPI_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_MPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BUILD_MPI_TRUE}" && test -z "${BUILD_MPI_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_MPI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
@@ -19272,11 +19297,12 @@ Build Configuration Summary:
     Code Type:            ${code_type}
     Compiler:             ${CXX}
     Preprocessor flags:   ${CPPFLAGS} ${BLAS_CXX} ${PARMETIS_CXX} ${CUDA_CXX} ${MPI_INCLUDE}
-    Compiler flags:       ${CXXFLAGS}
-    Linker flags:         ${LDFLAGS} ${BLAS_LD} ${BLAS_LDFLAGS} ${PARMETIS_LD} ${CUDA_LD}
+    Compiler flags:       ${CXXFLAGS} ${NVCCFLAGS}
+    Linker flags:         ${LDFLAGS} ${BLAS_LDFLAGS} ${CUDA_LDFLSGS}
+    Libraries:            ${BLAS_LD} ${PARMETIS_LD} ${CUDA_LIBS}
     BLAS support:         $have_BLAS
     MPI support:          $have_MPI
-    CUDA support:         $have_CUDA
+    CUDA support:         $have_CUDA $CUDA_ARCH
     TecIO support:        $have_Tecio
 
 Additionally, don't forget to set the environment variable HIFILES_HOME
@@ -19292,11 +19318,12 @@ Build Configuration Summary:
     Code Type:            ${code_type}
     Compiler:             ${CXX}
     Preprocessor flags:   ${CPPFLAGS} ${BLAS_CXX} ${PARMETIS_CXX} ${CUDA_CXX} ${MPI_INCLUDE}
-    Compiler flags:       ${CXXFLAGS}
-    Linker flags:         ${LDFLAGS} ${BLAS_LD} ${BLAS_LDFLAGS} ${PARMETIS_LD} ${CUDA_LD}
+    Compiler flags:       ${CXXFLAGS} ${NVCCFLAGS}
+    Linker flags:         ${LDFLAGS} ${BLAS_LDFLAGS} ${CUDA_LDFLSGS}
+    Libraries:            ${BLAS_LD} ${PARMETIS_LD} ${CUDA_LIBS}
     BLAS support:         $have_BLAS
     MPI support:          $have_MPI
-    CUDA support:         $have_CUDA
+    CUDA support:         $have_CUDA $CUDA_ARCH
     TecIO support:        $have_Tecio
 
 Additionally, don't forget to set the environment variable HIFILES_HOME
