@@ -358,8 +358,9 @@ void InitSolution(struct solution* FlowSol,mesh &Mesh)
       FlowSol->ini_iter = run_input.restart_iter;
       read_restart(run_input.restart_iter,run_input.n_restart_files,FlowSol,Mesh);
 
-      if (run_input.motion!=STATIC_MESH)
+      if (run_input.motion!=STATIC_MESH) {
         Mesh.initialize_restart();
+      }
     }
 
   for (int i=0;i<FlowSol->n_ele_types;i++) {

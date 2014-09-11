@@ -1122,6 +1122,7 @@ double eles_quads::exponential_filter(int in_mode, int in_basis_order)
                         if(mode==in_mode) // found the correct mode
                           {
                             eta = (double)(i+j)/n_dof;
+                            //sigma = exp(-10*pow(eta,2.0));
                             sigma = exp(-1*pow(eta,2.0));
                             //cout<<"sigma values are "<<sigma<<endl;
                           }

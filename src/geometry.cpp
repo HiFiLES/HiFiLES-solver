@@ -183,14 +183,12 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   // Compute connectivity
   if (FlowSol->rank==0) cout << "Setting up mesh connectivity" << endl;
 
-  //CompConnectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, rot_tag, unmatched_inters, n_unmatched_inters, icvsta, icvert, FlowSol->num_inters, FlowSol->num_edges, FlowSol);
   CompConnectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, Mesh.e2v, Mesh.v2n_e, Mesh.v2e, rot_tag,
                    unmatched_inters, n_unmatched_inters, icvsta, icvert, FlowSol->num_inters, FlowSol->num_edges, FlowSol);
 
   if (FlowSol->rank==0) cout << "Done setting up mesh connectivity" << endl;
 
   // Reading boundaries
-  //ReadBound(run_input.mesh_file,c2v,c2n_v,ctype,bctype_c,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts, FlowSol);
   ReadBound(run_input.mesh_file,c2v,c2n_v,c2f,f2v,f2nv,ctype,bctype_c,Mesh.boundPts,Mesh.nBndPts,Mesh.bc_list,Mesh.bound_flags,
             Mesh.boundFaces,Mesh.faceType,Mesh.faceBC,ic2icg,icvsta,icvert,iv2ivg,FlowSol->num_eles,FlowSol->num_verts,FlowSol);
 
@@ -1668,7 +1666,7 @@ void read_vertices_gmsh(string& in_file_name, int in_n_verts, int& out_n_verts_g
 
   double pos;
 
-  mesh_file >> out_n_verts_global ;// num vertices in mesh
+  mesh_file >> out_n_verts_global; // num vertices in entire mesh
   mesh_file.getline(buf,BUFSIZ);
 
   int id;
@@ -2210,7 +2208,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
                   FatalError("element type not recognized");
                 }
 
-              // Shift every values of c2v by -1
+              // Shift values of c2v by -1 (1-indexed to 0-indexed)
               for(int k=0;k<out_c2n_v(i);k++)
                 {
                   if(out_c2v(i,k)!=0)
