@@ -726,35 +726,46 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   int n_quad_bdy_inters = 0;
 
   for (int i=0; i<FlowSol->num_inters; i++)
-    {
-      bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0));
-      ic_r = f2c(i,1);
+  {
+    bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0));
+    ic_r = f2c(i,1);
 
-      if (bctype_f!=10)
+    if (bctype_f!=10)
+    {
+      if (bctype_f==0)  // internal interface
+      {
+        if (ic_r==-1)
         {
-          if (bctype_f==0)  // internal interface
-            {
-              if (ic_r==-1)
-                {
-                  FatalError("Error: Interior interface has i_cell_right=-1. Should not be here, exiting");
-                }
-              n_int_inters++;
-              if (f2nv(i)==2) n_seg_int_inters++;
-              if (f2nv(i)==3) n_tri_int_inters++;
-              if (f2nv(i)==4) n_quad_int_inters++;
-            }
-          else // boundary interface
-            {
-              if (bctype_f!=99) //  Not a deleted cyclic interface
-                {
-                  n_bdy_inters++;
-                  if (f2nv(i)==2) n_seg_bdy_inters++;
-                  if (f2nv(i)==3) n_tri_bdy_inters++;
-                  if (f2nv(i)==4) n_quad_bdy_inters++;
-                }
-            }
+          int ic_l, loc_f, iv1, iv2;
+          ic_l = f2c(i,0);
+          loc_f = f2loc_f(i,0);
+          iv1 = c2v(ic_l,loc_f);
+          iv2;
+          if (loc_f==c2n_v(ic_l)-1) {
+            iv2 = c2v(ic_l,0);
+          }else{
+            iv2 = c2v(ic_l,loc_f+1);
+          }
+          cout << "x1,y1 = " << xv(iv1,0) << "," << xv(iv1,1) << "  |  x2,y2 = " << xv(iv2,0) << "," << xv(iv2,1) << endl;
+          FatalError("Error: Interior interface has i_cell_right=-1. Should not be here, exiting");
         }
+        n_int_inters++;
+        if (f2nv(i)==2) n_seg_int_inters++;
+        if (f2nv(i)==3) n_tri_int_inters++;
+        if (f2nv(i)==4) n_quad_int_inters++;
+      }
+      else // boundary interface
+      {
+        if (bctype_f!=99) //  Not a deleted cyclic interface
+        {
+          n_bdy_inters++;
+          if (f2nv(i)==2) n_seg_bdy_inters++;
+          if (f2nv(i)==3) n_tri_bdy_inters++;
+          if (f2nv(i)==4) n_quad_bdy_inters++;
+        }
+      }
     }
+  }
 
   FlowSol->n_int_inter_types=3;
   FlowSol->mesh_int_inters.setup(FlowSol->n_int_inter_types);

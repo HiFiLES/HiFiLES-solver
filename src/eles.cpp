@@ -1081,8 +1081,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
               disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
             else
               FatalError("ERROR: dt_type not recognized!")
-              
-              }
+          }
         }
       }
       
