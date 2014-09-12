@@ -82,7 +82,7 @@ void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_p
 void calc_similarity_model_kernel_wrapper(int flag, int n_fields, int n_upts_per_ele, int n_eles, int n_dims, double* disu_upts_ptr, double* disuf_upts_ptr, double* uu_ptr, double* ue_ptr, double* Leonard_mom_ptr, double* Leonard_energy_ptr);
 
 /*! wrapper for gpu kernel to update coordinate transformations for moving grids */
-void rigid_motion_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double* motion_params, double rk_time);
+void rigid_motion_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double* motion_params, double *pitch_axis, double rk_time);
 
 /*! wrapper for gpu kernel to */
 void perturb_shape_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double rk_time);

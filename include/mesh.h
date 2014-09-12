@@ -195,9 +195,14 @@ private:
 
   /*! array of input parameters to control motion of all boundaries in mesh */
   array<double> motion_params;
+  array<double> rigid_motion_params;
+
+  /*! center point for pitching motion */
+  array<double> pitch_axis;
 
   // ---- BLENDING-FUNCTION VARIABLES ----
   array<double> displacement;
+  double blend_dist;
   // ------                         ------
 
   // Coefficients for LS-RK45 time-stepping

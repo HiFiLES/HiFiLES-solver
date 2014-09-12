@@ -130,8 +130,10 @@ void mesh::setup(struct solution *in_FlowSol,array<int> &in_c2v,array<int> &in_c
   }else{
     n_moving_bnds = run_input.n_moving_bnds;
   }
+
   // Blending-Function method variables
-  if (run_input.motion==LINEAR_ELASTICITY || run_input.motion==BLENDING) {
+  if (run_input.motion==LINEAR_ELASTICITY || run_input.motion==BLENDING)
+  {
     displacement.setup(n_verts,n_dims);
     displacement.initialize_to_zero();
 
@@ -141,6 +143,15 @@ void mesh::setup(struct solution *in_FlowSol,array<int> &in_c2v,array<int> &in_c
         motion_params(i,j) = run_input.bound_vel_simple(i)(j);
       }
     }
+  }
+  else if (run_input.motion==RIGID_MOTION)
+  {
+    rigid_motion_params = run_input.rigid_motion_params;
+    pitch_axis = run_input.pitch_axis;
+  }
+
+  if (run_input.motion==BLENDING) {
+    blend_dist = run_input.blend_dist;
   }
 
   if (run_input.adv_type==0) {
@@ -1800,11 +1811,41 @@ void mesh::rigid_move(void) {
     }
   }
 
+  double r, theta, theta0;
+  array<double> new_xv(n_dims);
+
   for (int i=0; i<n_verts; i++) {
-    // Useful for simple cases / debugging
+    new_xv.initialize_to_zero();
+
+    /*! --- Pitching Motion Contribution --- */
+    if (motion_params(3)!=0)
+    {
+      // ** AROUND Z-AXIS ONLY **
+      r = 0;
+      for (int j=0; j<2; j++) {
+        r += (xv_0(i,j)-pitch_axis(j))*(xv_0(i,j)-pitch_axis(j));
+      }
+      r = sqrt(r);
+      theta0 = atan2(xv_0(i,1),xv_0(i,0));
+      theta = theta0 + rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
+      new_xv(0) = r*cos(theta) + pitch_axis(0);
+      new_xv(1) = r*sin(theta) + pitch_axis(1);
+    }
+    else
+    {
+      new_xv(0) = xv_0(i,0);
+      new_xv(1) = xv_0(i,1);
+    };
+    if (n_dims==3) new_xv(2) = xv_0(i,2);
+
+    // Add in contribution due to plunging
     for (int j=0; j<n_dims; j++) {
-      xv(0)(i,j) = xv_0(i,j) + motion_params(0,2*j  )*sin(2*pi*motion_params(0,6+j)*time);
-      xv(0)(i,j)+=             motion_params(0,2*j+1)*cos(2*pi*motion_params(0,6+j)*time);
+      new_xv(j) += rigid_motion_params(j)*sin(2*pi*rigid_motion_params(4+j)*rk_time);
+    }
+
+    // Assign new node position
+    for (int j=0; j<n_dims; j++) {
+      xv(0)(i,j) = new_xv(j);
     }
   }
 
@@ -1868,7 +1909,7 @@ void mesh::blend_move(void) {
   }
 
   array<double> disp(n_dims);//, dist(n_dims);
-  double magDistSq, minDistSq, dist, blendDist;
+  double magDistSq, minDistSq, dist;
   int bnd, ib, ivb_g;
   bool onBound;
 
@@ -1921,11 +1962,10 @@ void mesh::blend_move(void) {
         }
 
         // (2) Modification of displacement through blending function [currently linear func for simplicity of testing]
-        blendDist = 5; // distance over which to apply blending [no effect for dist>blendDist]
         for (int k=0; k<n_dims; k++) {
-          //disp[k] = max(blendDist-dist,0.)/blendDist*disp[k];
-          if (dist<blendDist) {
-            disp(k) = (1 - (10*pow(dist/blendDist,3) - 15*pow(dist/blendDist,4) + 6*pow(dist/blendDist,5)))*disp(k);
+          //disp[k] = max(blend_dist-dist,0.)/blend_dist*disp[k];
+          if (dist<blend_dist) {
+            disp(k) = (1 - (10*pow(dist/blend_dist,3) - 15*pow(dist/blend_dist,4) + 6*pow(dist/blend_dist,5)))*disp(k);
           }else{
             disp(k) = 0;
           }

@@ -841,7 +841,8 @@ void eles::mv_all_cpu_gpu(void)
     if (motion==LINEAR_ELASTICITY || motion==BLENDING) {
       motion_params.mv_cpu_gpu();
     }else if (motion!=STATIC_MESH) {
-      run_input.bound_vel_simple(0).mv_cpu_gpu();
+      run_input.rigid_motion_params.mv_cpu_gpu();
+      run_input.pitch_axis.mv_cpu_gpu();
     }
 
     if(run_input.ArtifOn){
@@ -7353,7 +7354,7 @@ array<double> eles::get_grid_vel_ppts(void)
 void eles::rigid_move(double rk_time)
 {
   if (n_eles!=0) {
-    rigid_motion_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),shape.get_ptr_gpu(),shape_dyn.get_ptr_gpu(),run_input.bound_vel_simple(0).get_ptr_gpu(),rk_time);
+    rigid_motion_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),shape.get_ptr_gpu(),shape_dyn.get_ptr_gpu(),run_input.rigid_motion_params.get_ptr_gpu(),run_input.pitch_axis.get_ptr_gpu(),rk_time);
   }
 }
 

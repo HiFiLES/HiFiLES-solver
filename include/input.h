@@ -118,7 +118,10 @@ public:
   int mesh_output_format;
   array<string> boundary_flags;
   array<array<double> > bound_vel_simple;
+  array<double> rigid_motion_params;
   array<int> motion_type;
+  array<double> pitch_axis;
+  double blend_dist;
   /* -------------------------------- */
 
   /* --- Shock Capturing options --- */

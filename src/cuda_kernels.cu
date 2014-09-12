@@ -1790,23 +1790,50 @@ __global__ void eval_grid_vel_pts_kernel(int n_dims, int n_eles, int n_pts_per_e
   }
 }
 
-__global__ void rigid_motion_kernel(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double* motion_params, double rk_time)
+__global__ void rigid_motion_kernel(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double* motion_params, double* pitch_axis, double rk_time)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   int stride = n_eles*max_n_spts_per_ele;
   int ele = thread_id/max_n_spts_per_ele;
   int spt = thread_id%max_n_spts_per_ele;
   int n_spts, j;
-  double xv0;
+  double xv_0[n_dims], r, theta0, theta, new_xv[n_dims];
 
   if (thread_id<stride) {
     n_spts = n_spts_per_ele[ele];
     if (spt<n_spts) {
-      for (j=0; j<n_dims; j++) {
-        xv0 = shape[j+(n_dims*(spt+max_n_spts_per_ele*ele))];
+      for (int j=0; j<n_dims; j++) {
+        xv_0[j] = shape[j+(n_dims*(spt+max_n_spts_per_ele*ele))];
+      }
 
-        shape_dyn[j+(n_dims*(spt+max_n_spts_per_ele*ele))] = xv0 + motion_params[2*j  ]*sin(motion_params[6+j]*rk_time);
-        shape_dyn[j+(n_dims*(spt+max_n_spts_per_ele*ele))]+=       motion_params[2*j+1]*cos(motion_params[6+j]*rk_time);
+      /* --- Pitching Motion Contribution --- */
+      if (motion_params[3]!=0)
+      {
+        // Get distance to pitching axis
+        r = (xv_0[0]-pitch_axis[0])*(xv_0[0]-pitch_axis[0]);
+        r+= (xv_0[1]-pitch_axis[1])*(xv_0[1]-pitch_axis[1]);
+        r = sqrt(r);
+
+        theta0 = atan2(xv_0[1],xv_0[0]);
+
+        theta = theta0 + motion_params[3]*sin(2*PI*motion_params[7]*rk_time);
+        new_xv[0] = r*cos(theta) + pitch_axis[0];
+        new_xv[1] = r*sin(theta) + pitch_axis[1];
+      }
+      else
+      {
+        new_xv[0] = xv_0[0];
+        new_xv[1] = xv_0[1];
+      }
+      if (n_dims==3) new_xv[2] = xv_0[2];
+
+      /* --- Plunging Motion Contribution --- */
+      for (j=0; j<n_dims; j++) {
+        new_xv[j] += motion_params[j]*sin(2*PI*motion_params[4+j]*rk_time);
+      }
+
+      for (j=0; j<n_dims; j++) {
+        shape_dyn[j+(n_dims*(spt+max_n_spts_per_ele*ele))] = new_xv[j];
       }
     }
   }
@@ -5479,7 +5506,7 @@ void calc_similarity_model_kernel_wrapper(int flag, int n_fields, int n_upts_per
 }
 
 /*! wrapper for gpu kernel to update coordinate transformations for moving grids */
-void rigid_motion_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double* motion_params, double rk_time)
+void rigid_motion_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double* motion_params, double* pitch_axis, double rk_time)
 {
   // HACK: fix 256 threads per block
   int block_size=256;
@@ -5487,7 +5514,7 @@ void rigid_motion_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele,
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
-  rigid_motion_kernel <<< n_blocks,block_size >>> (n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele,shape,shape_dyn,motion_params,rk_time);
+  rigid_motion_kernel <<< n_blocks,block_size >>> (n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele,shape,shape_dyn,motion_params,pitch_axis,rk_time);
 
   check_cuda_error("After",__FILE__, __LINE__);
 }

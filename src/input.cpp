@@ -60,12 +60,20 @@ input::input()
   p_bound_out = 0;
 
   // Initialize initial-condition values
+  // Viscous Params
   Mach_c_ic = INFINITY;
   nx_c_ic = INFINITY;
   ny_c_ic = INFINITY;
   nz_c_ic = INFINITY;
   Re_c_ic = INFINITY;
   T_c_ic = INFINITY;
+
+  // Inviscid Params
+  rho_c_ic = INFINITY;
+  u_c_ic = INFINITY;
+  v_c_ic = INFINITY;
+  w_c_ic = INFINITY;
+  p_c_ic = INFINITY;
 }
 
 input::~input()
@@ -388,23 +396,28 @@ void input::setup(ifstream& in_run_input_file, int rank)
         bound_vel_simple(i).setup(9);
         for (int j=0; j<9; j++) {
           in_run_input_file >> bound_vel_simple(i)(j);
-          //cout << bound_vel_simple(i)(j) << " ";
         }
       }
     }
-//    else if (!param_name.compare("blend_dists"))
-//    {
-//      in_run_input_file >> blend_dist;
-//    }
+    else if (!param_name.compare("pitch_axis"))
+    {
+      pitch_axis.setup(2);
+      in_run_input_file >> pitch_axis(0);
+      in_run_input_file >> pitch_axis(1);
+    }
+    else if (!param_name.compare("blend_dist"))
+    {
+      in_run_input_file >> blend_dist;
+    }
     else if (!param_name.compare("n_deform_iters"))
     {
       in_run_input_file >> n_deform_iters;
     }
-    else if (!param_name.compare("simple_bound_velocity"))
+    else if (!param_name.compare("rigid_motion_params"))
     {
-//      bound_vel_simple.setup(3);
-//      for (int i=0; i<3; i++)
-//        in_run_input_file >> bound_vel_simple(i);
+      rigid_motion_params.setup(8);
+      for (int i=0; i<8; i++)
+        in_run_input_file >> rigid_motion_params(i);
     }
     else if (!param_name.compare("mesh_output_freq"))
     {
@@ -724,6 +737,21 @@ void input::setup(ifstream& in_run_input_file, int rank)
   }
   if (T_c_ic == INFINITY) {
     T_c_ic = T_free_stream;
+  }
+  if (u_c_ic == INFINITY) {
+    u_c_ic = u_free_stream;
+  }
+  if (v_c_ic == INFINITY) {
+    v_c_ic = v_free_stream;
+  }
+  if (w_c_ic == INFINITY) {
+    w_c_ic = w_free_stream;
+  }
+  if (p_c_ic == INFINITY) {
+    p_c_ic = p_free_stream;
+  }
+  if (rho_c_ic == INFINITY) {
+    rho_c_ic = rho_free_stream;
   }
 
   // --------------------
