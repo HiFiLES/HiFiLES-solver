@@ -438,11 +438,35 @@ void mesh::set_grid_velocity(double dt)
     }
   }
   else if (run_input.motion == 2) {
-    for (int i=0; i<n_verts; i++) {
-      for (int j=0; j<n_dims; j++) {
-        vel_new(i,j) = 2*pi*motion_params(0,2*j  )*motion_params(0,6+j)*sin(2*pi*motion_params(0,6+j)*rk_time);
-        vel_new(i,j)+= 2*pi*motion_params(0,2*j+1)*motion_params(0,6+j)*cos(2*pi*motion_params(0,6+j)*rk_time);
-      }
+//    double r, theta0, theta, thetadot;
+//    for (int i=0; i<n_verts; i++) {
+//      /* --- Pitching Motion Contribution --- */
+//      if (rigid_motion_params(3)!=0) {
+//        /* --- Calculate distance to pitching axis --- */
+//        r = sqrt((xv_0(i,0)-pitch_axis(0))*(xv_0(i,0)-pitch_axis(0))
+//                 +(xv_0(i,1)-pitch_axis(1))*(xv_0(i,1)-pitch_axis(1)));
+//        theta0 = atan2(xv_0(i,1),xv_0(i,0));
+
+//        /* --- Find angle from x-axis & angular rotation rate --- */
+//        theta = theta0 + rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
+//        thetadot = 2*pi*rigid_motion_params(3)*rigid_motion_params(7)*cos(2*pi*rigid_motion_params(7)*rk_time);
+
+//        /* --- Assign linear velocity based on angular velocity --- */
+//        vel_new(i,0) = -r*thetadot*sin(theta);
+//        vel_new(i,1) =  r*thetadot*cos(theta);
+//      }else{
+//        vel_new(i,0) = 0;
+//        vel_new(i,1) = 0;
+//      }
+//      if (n_dims==3) vel_new(i,2) = 0;
+
+//      /* --- Plunging Contribution --- */
+//      for (int j=0; j<n_dims; j++) {
+//        vel_new(i,j) += 2*pi*rigid_motion_params(j)*rigid_motion_params(4+j)*sin(2*pi*rigid_motion_params(4+j)*rk_time);
+//      }
+//    }
+    for (int i=0; i<FlowSol->n_ele_types; i++) {
+      FlowSol->mesh_eles(i)->rigid_grid_velocity(rk_time);
     }
   }
   else
@@ -1343,6 +1367,8 @@ void mesh::update(void)
   set_grid_velocity(run_input.dt);
 
   update_eles_shape();
+
+  update_eles_dynamic_transforms();
 }
 
 void mesh::update_eles_shape(void)
@@ -1368,7 +1394,10 @@ void mesh::update_eles_shape(void)
     FlowSol->mesh_eles(i)->cp_shape_cpu_gpu();
   }
 #endif
+}
 
+void mesh::update_eles_dynamic_transforms(void)
+{
   // Update element transforms
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
@@ -1849,14 +1878,18 @@ void mesh::rigid_move(void) {
     }
   }
 
+  // Update velocity; apply velocity & shape to eles classes
   update();
+  /*set_grid_velocity(run_input.dt);
+  update_eles_shape();*/
+
 #endif
 
 #ifdef _GPU
   for (int i=0;i<FlowSol->n_ele_types;i++) {
     FlowSol->mesh_eles(i)->rigid_move(rk_time);
     FlowSol->mesh_eles(i)->rigid_grid_velocity(rk_time);
-    FlowSol->mesh_eles(i)->set_transforms_dynamic();
+    FlowSol->mesh_eles(i)->set_transforms_dynamic(); // new detjac not needed for rigid motion... but norm_dyn is
   }
 #endif
 }

@@ -83,6 +83,9 @@ public:
   /** update shape points & dynamic grid transforms in eles classes */
   void update_eles_shape(void);
 
+  /** update dynamic coordinate transformations for all eles classes */
+  void update_eles_dynamic_transforms(void);
+
   /** update shape points & dynamic grid transforms in eles classes during restarting
       (assign positions from all 5 most recent iterations) */
   void update_eles_shape_restart(void);

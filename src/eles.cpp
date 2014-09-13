@@ -7350,6 +7350,85 @@ array<double> eles::get_grid_vel_ppts(void)
   return vel_ppts;
 }
 
+void eles::rigid_grid_velocity(double rk_time)
+{
+#ifdef _CPU
+  array<double> rigid_motion_params = run_input.rigid_motion_params;
+  array<double> pitch_axis = run_input.pitch_axis;
+  double r, theta0, theta, thetadot;
+
+  if (n_eles!=0) {
+    /* -- Grid Velocity At Solution Points --- */
+    for (int i=0; i<n_eles; i++) {
+      for (int j=0; j<n_upts_per_ele; j++) {
+        /* --- Pitching Motion Contribution --- */
+        if (rigid_motion_params(3)!=0) {
+          /* --- Calculate distance to pitching axis --- */
+          r = sqrt((pos_upts(j,i,0)-pitch_axis(0))*(pos_upts(j,i,0)-pitch_axis(0))
+                   +(pos_upts(j,i,1)-pitch_axis(1))*(pos_upts(j,i,1)-pitch_axis(1)));
+          theta0 = atan2(pos_upts(j,i,1),pos_upts(j,i,0));
+
+          /* --- Find angle from x-axis & angular rotation rate --- */
+          theta = theta0 + rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
+          thetadot = 2*pi*rigid_motion_params(3)*rigid_motion_params(7)*cos(2*pi*rigid_motion_params(7)*rk_time);
+
+          /* --- Assign linear velocity based on angular velocity --- */
+          grid_vel_upts(j,i,0) = -r*thetadot*sin(theta);
+          grid_vel_upts(j,i,1) =  r*thetadot*cos(theta);
+        }else{
+          grid_vel_upts(j,i,0) = 0;
+          grid_vel_upts(j,i,1) = 0;
+        }
+        if (n_dims==3) grid_vel_upts(j,i,2) = 0;
+
+        /* --- Plunging Contribution --- */
+        for (int k=0; k<n_dims; k++) {
+          grid_vel_upts(j,i,k) += 2*pi*rigid_motion_params(k)*rigid_motion_params(4+k)*sin(2*pi*rigid_motion_params(4+k)*rk_time);
+        }
+      }
+    }
+
+    /* -- Grid Velocity At Flux Points --- */
+    for (int i=0; i<n_eles; i++) {
+      for (int j=0; j<n_fpts_per_ele; j++) {
+        /* --- Pitching Motion Contribution --- */
+        if (rigid_motion_params(3)!=0) {
+          /* --- Calculate distance to pitching axis --- */
+          r = sqrt((pos_fpts(j,i,0)-pitch_axis(0))*(pos_fpts(j,i,0)-pitch_axis(0))
+                   +(pos_fpts(j,i,1)-pitch_axis(1))*(pos_fpts(j,i,1)-pitch_axis(1)));
+          theta0 = atan2(pos_fpts(j,i,1),pos_fpts(j,i,0));
+
+          /* --- Find angle from x-axis & angular rotation rate --- */
+          theta = theta0 + rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
+          thetadot = 2*pi*rigid_motion_params(3)*rigid_motion_params(7)*cos(2*pi*rigid_motion_params(7)*rk_time);
+
+          /* --- Assign linear velocity based on angular velocity --- */
+          grid_vel_fpts(j,i,0) = -r*thetadot*sin(theta);
+          grid_vel_fpts(j,i,1) =  r*thetadot*cos(theta);
+        }else{
+          grid_vel_fpts(j,i,0) = 0;
+          grid_vel_fpts(j,i,1) = 0;
+        }
+        if (n_dims==3) grid_vel_fpts(j,i,2) = 0;
+
+        /* --- Plunging Contribution --- */
+        for (int k=0; k<n_dims; k++) {
+          grid_vel_fpts(j,i,k) += 2*pi*rigid_motion_params(k)*rigid_motion_params(4+k)*sin(2*pi*rigid_motion_params(4+k)*rk_time);
+        }
+      }
+    }
+  }
+#endif
+
+#ifdef _GPU
+  if (n_eles!=0) {
+    calc_rigid_grid_vel_spts_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),shape.get_ptr_gpu(),run_input.rigid_motion_params.get_ptr_gpu(),run_input.pitch_axis.get_ptr_gpu(),vel_spts.get_ptr_gpu(),rk_time);
+    eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_upts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_upts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu());
+    eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_fpts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_fpts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu());
+  }
+#endif
+}
+
 #ifdef _GPU
 void eles::rigid_move(double rk_time)
 {
@@ -7373,15 +7452,6 @@ void eles::blend_move(int rk_step, int n_bnds, array<int>& boundPts, array<int>&
       push_back_shape_dyn_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,5,n_spts_per_ele.get_ptr_gpu(),shape_dyn.get_ptr_gpu());
     }
     blend_move_kernel_wrapper(n_dims,n_eles,n_eles_global,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),c2v.get_ptr_gpu(),ic2icg.get_ptr_gpu(),shape_dyn.get_ptr_gpu(),n_bnds,run_input.n_moving_bnds,motion_params.get_ptr_gpu(),boundPts.get_ptr_gpu(),nBndPts.get_ptr_gpu(),max_n_bndpts,n_verts,bnd_match.get_ptr_gpu(),xv.get_ptr_gpu(),xv_0.get_ptr_gpu(),rk_time);
-  }
-}
-
-void eles::rigid_grid_velocity(double rk_time)
-{
-  if (n_eles!=0) {
-    calc_rigid_grid_vel_spts_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),run_input.bound_vel_simple(0).get_ptr_gpu(),vel_spts.get_ptr_gpu(),rk_time);
-    eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_upts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_upts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu());
-    eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_fpts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_fpts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu());
   }
 }
 

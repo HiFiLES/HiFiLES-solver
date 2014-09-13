@@ -100,7 +100,7 @@ void blend_move_bounds_kernel_wrapper(int n_dims, int n_bnds, int n_moving_bnds,
 void push_back_xv_kernel_wrapper(int n_dims, int n_verts, double* xv_1, double* xv_2);
 
 /*! Wrapper for gpu kernel to calculate the grid velocity at the shape points using backward-difference formula */
-void calc_rigid_grid_vel_spts_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* motion_params, double* grid_vel, double rk_time);
+void calc_rigid_grid_vel_spts_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* motion_params, double *pitch_axis, double* grid_vel, double rk_time);
 
 /*! Wrapper for gpu kernel to calculate the grid velocity at the shape points using backward-difference formula */
 void calc_perturb_grid_vel_spts_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* grid_vel, double rk_time);
