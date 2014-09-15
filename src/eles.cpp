@@ -7358,6 +7358,36 @@ void eles::rigid_grid_velocity(double rk_time)
   double r, theta0, theta, thetadot;
 
   if (n_eles!=0) {
+    /* -- Grid Velocity At Shape Points --- */
+    for (int i=0; i<n_eles; i++) {
+      for (int j=0; j<n_spts_per_ele(i); j++) {
+        /* --- Pitching Motion Contribution --- */
+        if (rigid_motion_params(3)!=0) {
+          /* --- Calculate distance to pitching axis --- */
+          r = sqrt((shape(j,i,0)-pitch_axis(0))*(shape(j,i,0)-pitch_axis(0))
+                   +(shape(j,i,1)-pitch_axis(1))*(shape(j,i,1)-pitch_axis(1)));
+          theta0 = atan2(pos_upts(j,i,1),pos_upts(j,i,0));
+
+          /* --- Find angle from x-axis & angular rotation rate --- */
+          theta = theta0 + rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
+          thetadot = 2*pi*rigid_motion_params(3)*rigid_motion_params(7)*cos(2*pi*rigid_motion_params(7)*rk_time);
+
+          /* --- Assign linear velocity based on angular velocity --- */
+          vel_spts(0,j,i) = -r*thetadot*sin(theta);
+          vel_spts(1,j,i) =  r*thetadot*cos(theta);
+        }else{
+          vel_spts(0,j,i) = 0;
+          vel_spts(1,j,i) = 0;
+        }
+        if (n_dims==3) vel_spts(2,j,i) = 0;
+
+        /* --- Plunging Contribution --- */
+        for (int k=0; k<n_dims; k++) {
+          vel_spts(k,j,i) += 2*pi*rigid_motion_params(k)*rigid_motion_params(4+k)*sin(2*pi*rigid_motion_params(4+k)*rk_time);
+        }
+      }
+    }
+
     /* -- Grid Velocity At Solution Points --- */
     for (int i=0; i<n_eles; i++) {
       for (int j=0; j<n_upts_per_ele; j++) {
