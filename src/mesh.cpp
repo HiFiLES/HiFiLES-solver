@@ -260,7 +260,7 @@ void mesh::initialize_restart(void) {
     if (run_input.motion == 1) {
       FatalError("Linear Elasticity not implemented on GPUs");
     }else if (run_input.motion == 2) {
-      FlowSol->mesh_eles(i)->rigid_grid_velocity(rk_time);
+      FlowSol->mesh_eles(i)->rigid_move(rk_time);
     }else if (run_input.motion == 3) {
       FlowSol->mesh_eles(i)->perturb_grid_velocity(rk_time);
     }else if (run_input.motion == 4) {
@@ -285,13 +285,13 @@ void mesh::move(int _iter, int in_rk_step, int n_rk_steps)
 
   run_input.rk_time = rk_time;
 
-  if (run_input.motion == 1) {
+  if (run_input.motion == LINEAR_ELASTICITY) {
     deform();
-  }else if (run_input.motion == 2) {
+  }else if (run_input.motion == RIGID_MOTION) {
     rigid_move();
-  }else if (run_input.motion == 3) {
+  }else if (run_input.motion == PERTURB_TEST) {
     perturb();
-  }else if (run_input.motion == 4) {
+  }else if (run_input.motion == BLENDING) {
     blend_move();
   }else{
     // Do Nothing

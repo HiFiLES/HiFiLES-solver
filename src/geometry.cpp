@@ -435,8 +435,6 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
       FlowSol->mesh_eles(i)->store_d_nodal_s_basis_upts();
       FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_fpts();
       FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_upts();
-      FlowSol->mesh_eles(i)->store_nodal_s_basis_inters_cubpts();
-      FlowSol->mesh_eles(i)->store_d_nodal_s_basis_inters_cubpts();
     }
   }
   if (FlowSol->rank==0) cout << "done." << endl;
@@ -464,10 +462,12 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   // Set metrics at interface cubpts
   if (FlowSol->rank==0) cout << "setting element transforms at interface cubpts ... ";
   for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
-        }
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      FlowSol->mesh_eles(i)->store_nodal_s_basis_inters_cubpts();
+      FlowSol->mesh_eles(i)->store_d_nodal_s_basis_inters_cubpts();
+      FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
     }
+  }
   if (FlowSol->rank==0) cout << "done." << endl;
 
   // Set metrics at volume cubpts. Only needed for computing error and integral diagnostic quantities.
@@ -484,13 +484,13 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
   // set on gpu (important - need to do this before we set connectivity, so that pointers point to GPU memory)
 #ifdef _GPU
-      for(int i=0;i<FlowSol->n_ele_types;i++) {
-          if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+  for(int i=0;i<FlowSol->n_ele_types;i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-              if (FlowSol->rank==0) cout << "Moving eles to GPU ... " << endl;
-              FlowSol->mesh_eles(i)->mv_all_cpu_gpu();
-            }
-        }
+      if (FlowSol->rank==0) cout << "Moving eles to GPU ... " << endl;
+      FlowSol->mesh_eles(i)->mv_all_cpu_gpu();
+    }
+  }
 #endif
 
   // ------------------------------------
@@ -746,7 +746,9 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           }else{
             iv2 = c2v(ic_l,loc_f+1);
           }
+          cout << endl;
           cout << "x1,y1 = " << xv(iv1,0) << "," << xv(iv1,1) << "  |  x2,y2 = " << xv(iv2,0) << "," << xv(iv2,1) << endl;
+          cout << "ERROR: Probably forgot to set a boundary condition on a line/face." << endl;
           FatalError("Error: Interior interface has i_cell_right=-1. Should not be here, exiting");
         }
         n_int_inters++;

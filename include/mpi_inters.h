@@ -113,11 +113,11 @@ protected:
 #endif
 
   // Dynamic grid variables:
-  array<double*> ndA_dyn_fpts_r;
-  array<double*> J_dyn_fpts_r;
-  array<double*> disu_GCL_fpts_r;
-  array<double*> norm_tconf_GCL_fpts_r;
+//  array<double*> ndA_dyn_fpts_r;
+//  array<double*> J_dyn_fpts_r;
+//  array<double*> disu_GCL_fpts_r;
+//  array<double*> norm_tconf_GCL_fpts_r;
 
-  double temp_u_GCL_r;
-  double temp_f_GCL_r;
+//  double temp_u_GCL_r;
+//  double temp_f_GCL_r;
 };
