@@ -5615,7 +5615,7 @@ void eles::set_transforms_dynamic(void)
           // store determinant of jacobian multiplied by inverse of jacobian at the solution point
           JGinv_dyn_upts(0,0,j,i)=  ys;
           JGinv_dyn_upts(0,1,j,i)= -xs;
-          JGinv_dyn_upts(1,1,j,i)= -yr;
+          JGinv_dyn_upts(1,0,j,i)= -yr;
           JGinv_dyn_upts(1,1,j,i)=  xr;
         }
         else if(n_dims==3)
@@ -5639,7 +5639,7 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_upts(0,0,j,i) = (ys*zt - yt*zs);
           JGinv_dyn_upts(0,1,j,i) = (xt*zs - xs*zt);
           JGinv_dyn_upts(0,2,j,i) = (xs*yt - xt*ys);
-          JGinv_dyn_upts(1,1,j,i) = (yt*zr - yr*zt);
+          JGinv_dyn_upts(1,0,j,i) = (yt*zr - yr*zt);
           JGinv_dyn_upts(1,1,j,i) = (xr*zt - xt*zr);
           JGinv_dyn_upts(1,2,j,i) = (xt*yr - xr*yt);
           JGinv_dyn_upts(2,0,j,i) = (yr*zs - ys*zr);
