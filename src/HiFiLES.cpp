@@ -123,8 +123,6 @@ int main(int argc, char *argv[]) {
   
   /*! Initialize forces, integral quantities, and residuals. */
 
-  //if (FlowSol.rank == 0) {
-
   FlowSol.inv_force.setup(5);
   FlowSol.vis_force.setup(5);
   FlowSol.norm_residual.setup(5);
@@ -134,8 +132,6 @@ int main(int argc, char *argv[]) {
   FlowSol.vis_force.initialize_to_zero();
   FlowSol.norm_residual.initialize_to_zero();
   FlowSol.integral_quantities.initialize_to_zero();
-
-  //}
   
   /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
 #ifdef _GPU

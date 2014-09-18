@@ -466,7 +466,7 @@ void mesh::set_grid_velocity(double dt)
 //      }
 //    }
     for (int i=0; i<FlowSol->n_ele_types; i++) {
-      FlowSol->mesh_eles(i)->rigid_grid_velocity(rk_time);
+      //FlowSol->mesh_eles(i)->rigid_grid_velocity(rk_time);
     }
   }
   else
@@ -481,24 +481,24 @@ void mesh::set_grid_velocity(double dt)
     }
   }
 
-  // Apply velocity to the eles classes at the shape points
-  int local_ic;
-  array<double> vel(n_dims);
-  for (int ic=0; ic<n_eles; ic++) {
-    for (int j=0; j<c2n_v(ic); j++) {
-      for (int idim=0; idim<n_dims; idim++) {
-        vel(idim) = vel_new(iv2ivg(c2v(ic,j)),idim);
-      }
-      local_ic = ic2loc_c(ic);
-      FlowSol->mesh_eles(ctype(ic))->set_grid_vel_spt(local_ic,j,vel);
-    }
-  }
+//  // Apply velocity to the eles classes at the shape points
+//  int local_ic;
+//  array<double> vel(n_dims);
+//  for (int ic=0; ic<n_eles; ic++) {
+//    for (int j=0; j<c2n_v(ic); j++) {
+//      for (int idim=0; idim<n_dims; idim++) {
+//        vel(idim) = vel_new(iv2ivg(c2v(ic,j)),idim);
+//      }
+//      local_ic = ic2loc_c(ic);
+//      FlowSol->mesh_eles(ctype(ic))->set_grid_vel_spt(local_ic,j,vel);
+//    }
+//  }
 
-  // Interpolate grid vel @ spts to fpts & upts
-  for (int i=0; i<FlowSol->n_ele_types; i++) {
-    FlowSol->mesh_eles(i)->set_grid_vel_fpts(rk_step);
-    FlowSol->mesh_eles(i)->set_grid_vel_upts(rk_step);
-  }
+//  // Interpolate grid vel @ spts to fpts & upts
+//  for (int i=0; i<FlowSol->n_ele_types; i++) {
+//    FlowSol->mesh_eles(i)->set_grid_vel_fpts(rk_step);
+//    FlowSol->mesh_eles(i)->set_grid_vel_upts(rk_step);
+//  }
 }
 
 /*! set individual-element stiffness matrix for a triangle */
@@ -1400,19 +1400,15 @@ void mesh::update_eles_dynamic_transforms(void)
 {
   // Update element transforms
   for(int i=0;i<FlowSol->n_ele_types;i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->set_transforms_dynamic();
-    }
+    FlowSol->mesh_eles(i)->set_transforms_dynamic();
   }
 
 /// if (iter%FlowSol->plot_freq == 0 || iter%FlowSol->restart_dump_freq == 0) {
 //    // Set metrics at interface & volume cubpts
 //    //if (FlowSol->rank==0) cout << "Deform: setting element transforms at interface cubature points ... " << endl;
 //    for(int i=0;i<FlowSol->n_ele_types;i++) {
-//      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-//        FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
-//        FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
-//      }
+//      FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
+//      FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
 //    }
 /// }
 }
@@ -1829,69 +1825,10 @@ void mesh::set_boundary_displacements(void)
 }
 
 void mesh::rigid_move(void) {
-#ifdef _CPU
-  if (rk_step==0) {
-    for (int i=4; i>0; i--) {
-      for (int j=0; j<xv(i).get_dim(0); j++) {
-        for (int k=0; k<n_dims; k++) {
-          xv(i)(j,k) = xv(i-1)(j,k);
-        }
-      }
-    }
-  }
-
-  double r, theta, theta0;
-  array<double> new_xv(n_dims);
-
-  for (int i=0; i<n_verts; i++) {
-    new_xv.initialize_to_zero();
-
-    /*! --- Pitching Motion Contribution --- */
-    if (motion_params(3)!=0)
-    {
-      // ** AROUND Z-AXIS ONLY **
-      r = 0;
-      for (int j=0; j<2; j++) {
-        r += (xv_0(i,j)-pitch_axis(j))*(xv_0(i,j)-pitch_axis(j));
-      }
-      r = sqrt(r);
-      theta0 = atan2(xv_0(i,1),xv_0(i,0));
-      theta = theta0 + rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
-      new_xv(0) = r*cos(theta) + pitch_axis(0);
-      new_xv(1) = r*sin(theta) + pitch_axis(1);
-    }
-    else
-    {
-      new_xv(0) = xv_0(i,0);
-      new_xv(1) = xv_0(i,1);
-    };
-    if (n_dims==3) new_xv(2) = xv_0(i,2);
-
-    // Add in contribution due to plunging
-    for (int j=0; j<n_dims; j++) {
-      new_xv(j) += rigid_motion_params(j)*sin(2*pi*rigid_motion_params(4+j)*rk_time);
-    }
-
-    // Assign new node position
-    for (int j=0; j<n_dims; j++) {
-      xv(0)(i,j) = new_xv(j);
-    }
-  }
-
-  // Update velocity; apply velocity & shape to eles classes
-  update();
-  /*set_grid_velocity(run_input.dt);
-  update_eles_shape();*/
-
-#endif
-
-#ifdef _GPU
   for (int i=0;i<FlowSol->n_ele_types;i++) {
     FlowSol->mesh_eles(i)->rigid_move(rk_time);
-    FlowSol->mesh_eles(i)->rigid_grid_velocity(rk_time);
-    FlowSol->mesh_eles(i)->set_transforms_dynamic(); // new detjac not needed for rigid motion... but norm_dyn is
+    FlowSol->mesh_eles(i)->set_transforms_dynamic();
   }
-#endif
 }
 
 void mesh::perturb(void)

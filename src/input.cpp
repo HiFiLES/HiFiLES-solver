@@ -739,19 +739,19 @@ void input::setup(ifstream& in_run_input_file, int rank)
     T_c_ic = T_free_stream;
   }
   if (u_c_ic == INFINITY) {
-    u_c_ic = u_free_stream;
+    u_c_ic = v_bound(0);
   }
   if (v_c_ic == INFINITY) {
-    v_c_ic = v_free_stream;
+    v_c_ic = v_bound(1);
   }
   if (w_c_ic == INFINITY) {
-    w_c_ic = w_free_stream;
+    w_c_ic = v_bound(2);
   }
   if (p_c_ic == INFINITY) {
-    p_c_ic = p_free_stream;
+    p_c_ic = p_bound;
   }
   if (rho_c_ic == INFINITY) {
-    rho_c_ic = rho_free_stream;
+    rho_c_ic = rho_bound;
   }
 
   // --------------------

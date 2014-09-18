@@ -154,8 +154,6 @@ void bdy_inters::set_boundary(int in_inter, int bdy_type, int in_ele_type_l, int
           if (motion) {
             ndA_dyn_fpts_l(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
             J_dyn_fpts_l(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-            //if (run_input.GCL)
-              //disu_GCL_fpts_l(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
           }
 
           for(int k=0;k<n_dims;k++)
@@ -294,20 +292,12 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 
         /*! calculate flux from discontinuous solution at flux points */
         if(n_dims==2) {
-          calc_invf_2d(temp_u_l,temp_f_l);
-          calc_invf_2d(temp_u_r,temp_f_r);
-          if(motion) {
-            calc_alef_2d(temp_u_l,temp_v,temp_f_l);
-            calc_alef_2d(temp_u_r,temp_v,temp_f_r);
-          }
+          calc_invf_2d(temp_u_l,temp_v,temp_f_l);
+          calc_invf_2d(temp_u_r,temp_v,temp_f_r);
         }
         else if(n_dims==3) {
-          calc_invf_3d(temp_u_l,temp_f_l);
-          calc_invf_3d(temp_u_r,temp_f_r);
-          if(motion) {
-            calc_alef_3d(temp_u_l,temp_v,temp_f_l);
-            calc_alef_3d(temp_u_r,temp_v,temp_f_r);
-          }
+          calc_invf_3d(temp_u_l,temp_v,temp_f_l);
+          calc_invf_3d(temp_u_r,temp_v,temp_f_r);
         }
         else
           FatalError("ERROR: Invalid number of dimensions ... ");
@@ -419,7 +409,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       p_l = (gamma-1.0)*(e_l - 0.5*rho_l*v_sq);
 
       // Subsonic inflow simple (free pressure) //CONSIDER DELETING
-      if(bdy_type == 1)
+      if(bdy_type == SUB_IN_SIMP)
         {
           // fix density and velocity
           rho_r = rho_bound;
@@ -445,7 +435,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         }
 
       // Subsonic outflow simple (fixed pressure) //CONSIDER DELETING
-      else if(bdy_type == 2)
+      else if(bdy_type == SUB_OUT_SIMP)
         {
           // extrapolate density and velocity
           rho_r = rho_l;
@@ -474,7 +464,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       // all but one state variable at the inlet. The outgoing Riemann invariant
       // provides the final piece of info. Adapted from an implementation in
       // SU2.
-      else if(bdy_type == 3)
+      else if(bdy_type == SUB_IN_CHAR)
         {
           double V_r;
           double c_l, c_r_sq, c_total_sq;
@@ -567,7 +557,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
       // variables. Compute the entropy and the acoustic Riemann variable.
       // These invariants, as well as the tangential velocity components,
       // are extrapolated. Adapted from an implementation in SU2.
-      else if(bdy_type == 4)
+      else if(bdy_type == SUB_OUT_CHAR)
         {
           double c_l, c_r;
           double R_plus, s;
@@ -617,7 +607,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         }
 
       // Supersonic inflow
-      else if(bdy_type == 5)
+      else if(bdy_type == SUP_IN)
         {
           // fix density and velocity
           rho_r = rho_bound;
@@ -633,10 +623,8 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
             v_sq += (v_r[i]*v_r[i]);
           e_r = (p_r/(gamma-1.0)) + 0.5*rho_r*v_sq;
         }
-
-
       // Supersonic outflow
-      else if(bdy_type == 6)
+      else if(bdy_type == SUP_OUT)
         {
           // extrapolate density, velocity, energy
           rho_r = rho_l;
@@ -646,7 +634,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         }
 
       // Slip wall
-      else if(bdy_type == 7)
+      else if(bdy_type == SLIP_WALL)
         {
           // extrapolate density
           rho_r = rho_l;
@@ -665,7 +653,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         }
 
       // Isothermal, no-slip wall (fixed)
-      else if(bdy_type == 11)
+      else if(bdy_type == ISOTHERM_FIX)
         {
           // Set state for the right side
           // extrapolate pressure
@@ -697,7 +685,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         }
 
       // Adiabatic, no-slip wall (fixed)
-      else if(bdy_type == 12)
+      else if(bdy_type == ADIABAT_FIX)
         {
           // extrapolate density
           rho_r = rho_l; // only useful part
@@ -725,7 +713,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         }
 
       // Isothermal, no-slip wall (moving)
-      else if(bdy_type == 13)
+      else if(bdy_type == ISOTHERM_MOVE)
         {
           // extrapolate pressure
           p_r = p_l;
@@ -749,7 +737,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         }
 
       // Adiabatic, no-slip wall (moving)
-      else if(bdy_type == 14)
+      else if(bdy_type == ADIABAT_MOVE)
         {
           // extrapolate density
           rho_r = rho_l;
@@ -769,7 +757,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         }
 
       // Characteristic
-      else if (bdy_type == 15)
+      else if (bdy_type == CHAR)
         {
           double c_star;
           double vn_star;
@@ -852,7 +840,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
         }
 
       // Dual consistent BC (see SD++ for more comments)
-      else if (bdy_type==16)
+      else if (bdy_type==SLIP_WALL_DUAL)
         {
           // extrapolate density
           rho_r = rho_l;

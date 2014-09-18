@@ -499,20 +499,12 @@ void mpi_inters::calculate_common_invFlux(void)
             {
               // calculate flux from discontinuous solution at flux points
               if(n_dims==2) {
-                  calc_invf_2d(temp_u_l,temp_f_l);
-                  calc_invf_2d(temp_u_r,temp_f_r);
-                  if (motion) {
-                    calc_alef_2d(temp_u_l,temp_v,temp_f_l);
-                    calc_alef_2d(temp_u_r,temp_v,temp_f_r);
-                  }
+                  calc_invf_2d(temp_u_l,temp_v,temp_f_l);
+                  calc_invf_2d(temp_u_r,temp_v,temp_f_r);
                 }
               else if(n_dims==3) {
-                  calc_invf_3d(temp_u_l,temp_f_l);
-                  calc_invf_3d(temp_u_r,temp_f_r);
-                  if (motion) {
-                    calc_alef_3d(temp_u_l,temp_v,temp_f_l);
-                    calc_alef_3d(temp_u_r,temp_v,temp_f_r);
-                  }
+                  calc_invf_3d(temp_u_l,temp_v,temp_f_l);
+                  calc_invf_3d(temp_u_r,temp_v,temp_f_r);
                 }
               else
                 FatalError("ERROR: Invalid number of dimensions ... ");

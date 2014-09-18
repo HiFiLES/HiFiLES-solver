@@ -354,16 +354,16 @@ void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> 
   else
     FatalError("ERROR: Invalid number of dimensions ... ");
 
+  // jcrabill addition (from conversation with kartikey) - 8/20/14
   double csq_l, csq_r, eig_l, eig_r;
   csq_l = max(gamma*p_l/u_l(0),0.);
   csq_r = max(gamma*p_r/u_r(0),0.);
-  c_av = max(csq_l,csq_r);  // jcrabill addition (from conversation with kartikey) - 8/20/14
-  eig_l = fabs(vn_l) + sqrt(csq_l);
-  eig_r = fabs(vn_r) + sqrt(csq_r);
+  eig_l = fabs(vn_l-vn_g) + sqrt(csq_l);
+  eig_r = fabs(vn_r-vn_g) + sqrt(csq_r);
   eig = max(eig_l,eig_r);
 
 // Previous Version
-//  vn_av_mag=sqrt(0.25*(vn_l+vn_r)*(vn_l+vn_r));
+//  vn_av_mag=0.5*fabs(vn_l+vn_r);
 //  c_av=sqrt((gamma*(p_l+p_r))/(u_l(0)+u_r(0)));
 //  eig = fabs(vn_av_mag - vn_g + c_av);
 

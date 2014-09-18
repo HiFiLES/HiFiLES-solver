@@ -605,12 +605,12 @@ public:
   void cp_shape_cpu_gpu(void);
 
   void perturb_shape(double rk_time);
-  void rigid_move(double rk_time);
   void blend_move(int rk_step, int n_bnds, array<int>& boundPts, array<int>& nBndPts, int max_n_bndpts, int n_verts, array<int>& bnd_match, array<double>& xv, array<double>& xv_0, array<int>& c2v, array<int>& ic2icg, int n_eles_global, double rk_time);
 
   void calc_grid_velocity(void);
   void perturb_grid_velocity(double rk_time);
 #endif
+  void rigid_move(double rk_time);
   void rigid_grid_velocity(double rk_time);
 
   /* --- Shock capturing functions --- */

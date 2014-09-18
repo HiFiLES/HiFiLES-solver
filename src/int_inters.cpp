@@ -75,10 +75,6 @@ void int_inters::setup(int in_n_inters,int in_inter_type)
       tdA_fpts_r.setup(n_fpts_per_inter,n_inters);
 
       if (motion) {
-        if (run_input.GCL) {
-          //disu_GCL_fpts_r.setup(n_fpts_per_inter,n_inters);
-          //norm_tconf_GCL_fpts_r.setup(n_fpts_per_inter,n_inters);
-        }
         ndA_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
         J_dyn_fpts_r.setup(n_fpts_per_inter,n_inters);
       }
@@ -139,14 +135,6 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
         {
           j_rhs=lut(j);
 
-          if (run_input.GCL) {
-//            disu_GCL_fpts_l(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-//            disu_GCL_fpts_r(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
-
-//            norm_tconf_GCL_fpts_l(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-//            norm_tconf_GCL_fpts_r(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
-          }
-
           ndA_dyn_fpts_l(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
           ndA_dyn_fpts_r(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
 
@@ -164,17 +152,17 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
       }
 
       for(i=0;i<n_fpts_per_inter;i++)
+      {
+        i_rhs=lut(i);
+
+        tdA_fpts_l(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
+        tdA_fpts_r(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+
+        for(j=0;j<n_dims;j++)
         {
-          i_rhs=lut(i);
-
-          tdA_fpts_l(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
-          tdA_fpts_r(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
-
-          for(j=0;j<n_dims;j++)
-            {
-              norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
-            }
+          norm_fpts(i,in_inter,j)=get_norm_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,j,FlowSol);
         }
+      }
 }
 
 // move all from cpu to gpu
@@ -270,20 +258,12 @@ void int_inters::calculate_common_invFlux(void)
       {
         // calculate flux from discontinuous solution at flux points
         if(n_dims==2) {
-          calc_invf_2d(temp_u_l,temp_f_l);
-          calc_invf_2d(temp_u_r,temp_f_r);
-          if (motion) {
-            calc_alef_2d(temp_u_l,temp_v,temp_f_l);
-            calc_alef_2d(temp_u_r,temp_v,temp_f_r);
-          }
+          calc_invf_2d(temp_u_l,temp_v,temp_f_l);
+          calc_invf_2d(temp_u_r,temp_v,temp_f_r);
         }
         else if(n_dims==3) {
-          calc_invf_3d(temp_u_l,temp_f_l);
-          calc_invf_3d(temp_u_r,temp_f_r);
-          if (motion) {
-            calc_alef_3d(temp_u_l,temp_v,temp_f_l);
-            calc_alef_3d(temp_u_r,temp_v,temp_f_r);
-          }
+          calc_invf_3d(temp_u_l,temp_v,temp_f_l);
+          calc_invf_3d(temp_u_r,temp_v,temp_f_r);
         }
         else
           FatalError("ERROR: Invalid number of dimensions ... ");

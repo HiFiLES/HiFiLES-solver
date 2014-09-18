@@ -33,32 +33,34 @@ using namespace std;
 
 // calculate inviscid flux in 2D
 
-void calc_invf_2d(array<double>& in_u, array<double>& out_f)
+void calc_invf_2d(array<double>& in_u, array<double>& in_vg, array<double>& out_f)
 {	
   if (run_input.equation==0) // Euler and NS equation
     {
-      double vx;
-      double vy;
+      double vx, vgx;
+      double vy, vgy;
       double p;
 
       vx=in_u(1)/in_u(0);
       vy=in_u(2)/in_u(0);
+      vgx=in_vg(0);
+      vgy=in_vg(1);
       p=(run_input.gamma-1.0)*(in_u(3)-(0.5*in_u(0)*((vx*vx)+(vy*vy))));
 
-      out_f(0,0)=in_u(1);
-      out_f(1,0)=p+(in_u(1)*vx);
-      out_f(2,0)=in_u(2)*vx;
-      out_f(3,0)=vx*(in_u(3)+p);
+      out_f(0,0)=in_u(0)*(vx-vgx);
+      out_f(1,0)=in_u(1)*(vx-vgx) + p;
+      out_f(2,0)=in_u(2)*(vx-vgx);
+      out_f(3,0)=in_u(3)*(vx-vgx) + p*vx;
 
-      out_f(0,1)=in_u(2);
-      out_f(1,1)=in_u(1)*vy;
-      out_f(2,1)=p+(in_u(2)*vy);
-      out_f(3,1)=vy*(in_u(3)+p);
+      out_f(0,1)=in_u(0)*(vy-vgy);
+      out_f(1,1)=in_u(1)*(vy-vgy);
+      out_f(2,1)=in_u(2)*(vy-vgy) + p;
+      out_f(3,1)=in_u(3)*(vy-vgy) + p*vy;
 
       if(run_input.turb_model==1) // SA model
       {
-        out_f(4,0) = in_u(4)*vx;
-        out_f(4,1) = in_u(4)*vy;
+        out_f(4,0) = in_u(4)*(vx-vgx);
+        out_f(4,1) = in_u(4)*(vy-vgy);
       }
     }
   else if (run_input.equation==1) // Advection-diffusion equation
@@ -74,46 +76,50 @@ void calc_invf_2d(array<double>& in_u, array<double>& out_f)
 
 // calculate inviscid flux in 3D
 
-void calc_invf_3d(array<double>& in_u, array<double>& out_f)
+void calc_invf_3d(array<double>& in_u, array<double>& in_vg, array<double>& out_f)
 {
 
   if (run_input.equation==0) // Euler and NS Equation
+  {
+    // Flow velocity, grid velocity
+    double vx, vgx;
+    double vy, vgy;
+    double vz, vgz;
+    double p;
+
+    vx=in_u(1)/in_u(0);
+    vy=in_u(2)/in_u(0);
+    vz=in_u(3)/in_u(0);
+    vgx = in_vg(0);
+    vgy = in_vg(1);
+    vgz = in_vg(2);
+    p=(run_input.gamma-1.0)*(in_u(4)-(0.5*in_u(0)*((vx*vx)+(vy*vy)+(vz*vz))));
+
+    out_f(0,0)=in_u(0)*(vx-vgx);
+    out_f(1,0)=in_u(1)*(vx-vgx) + p;
+    out_f(2,0)=in_u(2)*(vx-vgx);
+    out_f(3,0)=in_u(3)*(vx-vgx);
+    out_f(4,0)=in_u(4)*(vx-vgx) + p*vx;
+
+    out_f(0,1)=in_u(0)*(vy-vgy);
+    out_f(1,1)=in_u(1)*(vy-vgy);
+    out_f(2,1)=in_u(2)*(vy-vgy) + p;
+    out_f(3,1)=in_u(3)*(vy-vgy);
+    out_f(4,1)=in_u(4)*(vy-vgy) + p*vy;
+
+    out_f(0,2)=in_u(0)*(vz-vgz);
+    out_f(1,2)=in_u(1)*(vz-vgz);
+    out_f(2,2)=in_u(2)*(vz-vgz);
+    out_f(3,2)=in_u(3)*(vz-vgz) + p;
+    out_f(4,2)=in_u(4)*(vz-vgz) + p*vz;
+
+    if(run_input.turb_model==1) // SA model
     {
-      double vx;
-      double vy;
-      double vz;
-      double p;
-
-      vx=in_u(1)/in_u(0);
-      vy=in_u(2)/in_u(0);
-      vz=in_u(3)/in_u(0);
-      p=(run_input.gamma-1.0)*(in_u(4)-(0.5*in_u(0)*((vx*vx)+(vy*vy)+(vz*vz))));
-
-      out_f(0,0)=in_u(1);
-      out_f(1,0)=p+(in_u(1)*vx);
-      out_f(2,0)=in_u(2)*vx;
-      out_f(3,0)=in_u(3)*vx;
-      out_f(4,0)=vx*(in_u(4)+p);
-
-      out_f(0,1)=in_u(2);
-      out_f(1,1)=in_u(1)*vy;
-      out_f(2,1)=p+(in_u(2)*vy);
-      out_f(3,1)=in_u(3)*vy;
-      out_f(4,1)=vy*(in_u(4)+p);
-
-      out_f(0,2)=in_u(3);
-      out_f(1,2)=in_u(1)*vz;
-      out_f(2,2)=in_u(2)*vz;
-      out_f(3,2)=p+(in_u(3)*vz);
-      out_f(4,2)=vz*(in_u(4)+p);
-
-      if(run_input.turb_model==1) // SA model
-      {
-        out_f(5,0) = in_u(5)*vx;
-        out_f(5,1) = in_u(5)*vy;
-        out_f(5,2) = in_u(5)*vz;
-      }
+      out_f(5,0) = in_u(5)*(vx-vgx);
+      out_f(5,1) = in_u(5)*(vy-vgy);
+      out_f(5,2) = in_u(5)*(vz-vgz);
     }
+  }
   else if (run_input.equation==1) // Advection-diffusion equation
     {
       out_f(0,0) = run_input.wave_speed(0)*in_u(0);

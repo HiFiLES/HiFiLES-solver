@@ -28,10 +28,10 @@
 #include "array.h"
 
 /*! calculate inviscid flux in 2D */
-void calc_invf_2d(array<double>& in_u, array<double>& out_f);
+void calc_invf_2d(array<double>& in_u, array<double> &in_vg, array<double>& out_f);
 
 /*! calculate inviscid flux in 3D */
-void calc_invf_3d(array<double>& in_u, array<double>& out_f);
+void calc_invf_3d(array<double>& in_u, array<double> &in_vg, array<double>& out_f);
 
 /*! calculate viscous flux in 2D */
 void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& out_f);

@@ -1063,6 +1063,8 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
           dt_local(ic) = calc_dt_local(ic);
       }
       
+      cout << endl << " ------------ Solution Advance --------------" << endl;
+
       for (int i=0;i<n_fields;i++)
       {
         for (int ic=0;ic<n_eles;ic++)
@@ -1369,15 +1371,11 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
         
         if(n_dims==2)
         {
-          calc_invf_2d(temp_u,temp_f);
-          if (motion)
-            calc_alef_2d(temp_u, temp_v, temp_f);
+          calc_invf_2d(temp_u,temp_v,temp_f);
         }
         else if(n_dims==3)
         {
-          calc_invf_3d(temp_u,temp_f);
-          if (motion)
-            calc_alef_3d(temp_u, temp_v, temp_f);
+          calc_invf_3d(temp_u,temp_v,temp_f);
         }
         else
         {
@@ -1408,7 +1406,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           for(l=0;l<n_dims;l++) {
             tdisf_upts(j,i,k,l)=0.;
             for(m=0;m<n_dims;m++) {
-              tdisf_upts(j,i,k,l) += JGinv_upts(l,m,j,i)*temp_f(k,m);//JGinv_upts(j,i,l,m)*temp_f(k,m);
+              tdisf_upts(j,i,k,l) += JGinv_upts(l,m,j,i)*temp_f(k,m);
             }
           }
         }
@@ -3601,10 +3599,6 @@ void eles::set_opp_1(int in_sparse)
         opp_1(i)(k,j)=eval_nodal_basis(j,loc)*tnorm_fpts(i,k);
       }
     }
-    //cout << "opp_1,i =" << i << endl;
-    //cout << "ele_type=" << ele_type << endl;
-    //opp_1(i).print();
-    //cout << endl;
   }
   
 #ifdef _GPU
@@ -3671,26 +3665,14 @@ void eles::set_opp_2(int in_sparse)
         
         opp_2(i)(k,j)=eval_d_nodal_basis(j,i,loc);
       }
-    }
-    
-    //cout << "opp_2,i =" << i << endl;
-    //cout << "ele_type=" << ele_type << endl;
-    //opp_2(i).print();
-    //cout << endl;
-    
-    //cout << "opp_2,i=" << i << endl;
-    //opp_2(i).print();
-    
+    }    
   }
   
 #ifdef _GPU
   for (int i=0;i<n_dims;i++)
     opp_2(i).cp_cpu_gpu();
 #endif
-  
-  //cout << "opp 2" << endl;
-  //opp_2.print();
-  
+   
   if(in_sparse==0)
   {
     opp_2_sparse=0;
@@ -3729,12 +3711,7 @@ void eles::set_opp_3(int in_sparse)
   
   opp_3.setup(n_upts_per_ele,n_fpts_per_ele);
   (*this).fill_opp_3(opp_3);
-  
-  //cout << "OPP_3" << endl;
-  //cout << "ele_type=" << ele_type << endl;
-  //opp_3.print();
-  //cout << endl;
-  
+
 #ifdef _GPU
   opp_3.cp_cpu_gpu();
 #endif
@@ -3846,14 +3823,6 @@ void eles::set_opp_5(int in_sparse)
     {
       for(k=0;k<n_upts_per_ele;k++)
       {
-        /*
-         for(l=0;l<n_dims;l++)
-         {
-         loc(l)=loc_upts(l,k);
-         }
-         */
-        
-        //opp_5(i)(k,j) = eval_div_vcjh_basis(j,loc)*tnorm_fpts(i,j);
         opp_5(i)(k,j) = opp_3(k,j)*tnorm_fpts(i,j);
       }
     }
@@ -3863,10 +3832,7 @@ void eles::set_opp_5(int in_sparse)
   for (int i=0;i<n_dims;i++)
     opp_5(i).cp_cpu_gpu();
 #endif
-  
-  //cout << "opp_5" << endl;
-  //opp_5.print();
-  
+
   if(in_sparse==0)
   {
     opp_5_sparse=0;
@@ -3919,10 +3885,7 @@ void eles::set_opp_6(int in_sparse)
       opp_6(l,j) = eval_nodal_basis(j,loc);
     }
   }
-  
-  //cout << "opp_6" << endl;
-  //opp_6.print();
-  
+
 #ifdef _GPU
   opp_6.cp_cpu_gpu();
 #endif
@@ -4438,19 +4401,13 @@ void eles::set_transforms(void)
       n_comp = 6;
     }
     
-    array<double> loc(n_dims);
     array<double> pos(n_dims);
     array<double> d_pos(n_dims,n_dims);
-    array<double> dd_pos(n_dims,n_comp);
     array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
     
     double xr, xs, xt;
     double yr, ys, yt;
     double zr, zs, zt;
-    
-    double xrr, xss, xtt, xrs, xrt, xst;
-    double yrr, yss, ytt, yrs, yrt, yst;
-    double zrr, zss, ztt, zrs, zrt, zst;
     
     // Determinant of Jacobian (transformation matrix) (J = |G|)
     detjac_upts.setup(n_upts_per_ele,n_eles);
@@ -4459,11 +4416,6 @@ void eles::set_transforms(void)
     // Static-Physical position of solution points
     pos_upts.setup(n_upts_per_ele,n_eles,n_dims);
 
-    // NEVER USED??
-    /*if (viscous) {
-      tgrad_detjac_upts.setup(n_upts_per_ele,n_eles,n_dims);
-    }*/
-    
     if (rank==0) {
       cout << " at solution points" << endl;
     }
@@ -4486,10 +4438,6 @@ void eles::set_transforms(void)
 
         // calculate first derivatives of shape functions at the solution point
         calc_d_pos_upt(j,i,d_pos);
-        
-        // calculate second derivatives of shape functions at the solution point
-        /*if (viscous)
-          calc_dd_pos(loc,i,dd_pos);*/
         
         // store quantities at the solution point
         
@@ -4517,23 +4465,7 @@ void eles::set_transforms(void)
           JGinv_upts(0,0,j,i)= ys;
           JGinv_upts(0,1,j,i)= -xs;
           JGinv_upts(1,0,j,i)= -yr;
-          JGinv_upts(1,1,j,i)= xr;
-          
-          // gradient of detjac at solution point -- NEVER USED??
-          /*if(viscous)
-          {
-            xrr = dd_pos(0,0);
-            xss = dd_pos(0,1);
-            xrs = dd_pos(0,2);
-            
-            yrr = dd_pos(1,0);
-            yss = dd_pos(1,1);
-            yrs = dd_pos(1,2);
-            
-            tgrad_detjac_upts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
-            tgrad_detjac_upts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
-          }*/
-          
+          JGinv_upts(1,1,j,i)= xr;          
         }
         else if(n_dims==3)
         {
@@ -4553,8 +4485,8 @@ void eles::set_transforms(void)
           
           detjac_upts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
           
-          //cout << "jac=" << detjac_upts(j,i) << endl;
-          
+          // store inverse of determinant of jacobian multiplied by jacobian at the solution point
+
           JGinv_upts(0,0,j,i) = ys*zt - yt*zs;
           JGinv_upts(0,1,j,i) = xt*zs - xs*zt;
           JGinv_upts(0,2,j,i) = xs*yt - xt*ys;
@@ -4564,41 +4496,6 @@ void eles::set_transforms(void)
           JGinv_upts(2,0,j,i) = yr*zs - ys*zr;
           JGinv_upts(2,1,j,i) = xs*zr - xr*zs;
           JGinv_upts(2,2,j,i) = xr*ys - xs*yr;
-          
-          // store inverse of determinant of jacobian multiplied by jacobian at the solution point
-          
-          // gradient of detjac at solution point -- NEVER USED
-          
-          /*if(viscous)
-          {
-            xrr = dd_pos(0,0);
-            xss = dd_pos(0,1);
-            xtt = dd_pos(0,2);
-            xrs = dd_pos(0,3);
-            xrt = dd_pos(0,4);
-            xst = dd_pos(0,5);
-            
-            yrr = dd_pos(1,0);
-            yss = dd_pos(1,1);
-            ytt = dd_pos(1,2);
-            yrs = dd_pos(1,3);
-            yrt = dd_pos(1,4);
-            yst = dd_pos(1,5);
-            
-            zrr = dd_pos(2,0);
-            zss = dd_pos(2,1);
-            ztt = dd_pos(2,2);
-            zrs = dd_pos(2,3);
-            zrt = dd_pos(2,4);
-            zst = dd_pos(2,5);
-            
-            tgrad_detjac_upts(j,i,0) = xrt*(zs*yr - ys*zr) - xrs*(zt*yr - yt*zr) + xrr*(zt*ys - yt*zs) +
-            xr*(-zs*yrt + ys*zrt + zt*yrs - yt*zrs) - xs*(-zr*yrt + yr*zrt + zt*yrr - yt*zrr) + xt*(-zr*yrs + yr*zrs + zs*yrr - ys*zrr);
-            tgrad_detjac_upts(j,i,1) = -xss*(zt*yr - yt*zr) + xst*(zs*yr - ys*zr) + xrs*(zt*ys - yt*zs) +
-            xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
-            tgrad_detjac_upts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
-            xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
-          }*/
         }
         else
         {
@@ -4610,11 +4507,6 @@ void eles::set_transforms(void)
 #ifdef _GPU
     detjac_upts.cp_cpu_gpu(); // Copy since need in write_tec
     JGinv_upts.cp_cpu_gpu(); // Copy since needed for calc_d_pos_dyn
-    /*
-     if (viscous) {
-     tgrad_detjac_upts.mv_cpu_gpu();
-     }
-     */
 #endif
     
     // Compute metrics term at flux points
@@ -4626,12 +4518,6 @@ void eles::set_transforms(void)
     norm_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
     // Static-Physical position of solution points
     pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-
-    // NEVER USED??
-    /*if (viscous)
-    {
-      tgrad_detjac_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-    }*/
     
     if (rank==0)
       cout << endl << " at flux points"  << endl;
@@ -4655,11 +4541,6 @@ void eles::set_transforms(void)
         // calculate first derivatives of shape functions at the flux points
         
         calc_d_pos_fpt(j,i,d_pos);
-        
-        // calculate second derivatives of shape functions at the flux point
-        
-        /*if(viscous)
-          calc_dd_pos(loc,i,dd_pos);*/
         
         // store quantities at the flux point
         
@@ -4691,22 +4572,6 @@ void eles::set_transforms(void)
           JGinv_fpts(1,0,j,i)= -yr;
           JGinv_fpts(1,1,j,i)= xr;
           
-          // gradient of detjac at the flux point -- NEVER USED??
-          
-          /*if(viscous)
-          {
-            xrr = dd_pos(0,0);
-            xss = dd_pos(0,1);
-            xrs = dd_pos(0,2);
-            
-            yrr = dd_pos(1,0);
-            yss = dd_pos(1,1);
-            yrs = dd_pos(1,2);
-            
-            tgrad_detjac_fpts(j,i,0) = xrr*ys + yrs*xr - yrr*xs - xrs*yr;
-            tgrad_detjac_fpts(j,i,1) = yss*xr + xrs*ys - xss*yr - yrs*xs;
-          }*/
-          
           // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
           
           tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_fpts(0,j)*d_pos(1,1))-(tnorm_fpts(1,j)*d_pos(1,0));
@@ -4715,8 +4580,7 @@ void eles::set_transforms(void)
           // store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
           
           tdA_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
-                                                          tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
-          
+                             tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
           
           // store normal at flux point
           
@@ -4752,39 +4616,6 @@ void eles::set_transforms(void)
           JGinv_fpts(2,0,j,i) = yr*zs - ys*zr;
           JGinv_fpts(2,1,j,i) = xs*zr - xr*zs;
           JGinv_fpts(2,2,j,i) = xr*ys - xs*yr;
-          
-          // gradient of detjac at the flux point -- NEVER USED
-          
-          /*if(viscous)
-          {
-            xrr = dd_pos(0,0);
-            xss = dd_pos(0,1);
-            xtt = dd_pos(0,2);
-            xrs = dd_pos(0,3);
-            xrt = dd_pos(0,4);
-            xst = dd_pos(0,5);
-            
-            yrr = dd_pos(1,0);
-            yss = dd_pos(1,1);
-            ytt = dd_pos(1,2);
-            yrs = dd_pos(1,3);
-            yrt = dd_pos(1,4);
-            yst = dd_pos(1,5);
-            
-            zrr = dd_pos(2,0);
-            zss = dd_pos(2,1);
-            ztt = dd_pos(2,2);
-            zrs = dd_pos(2,3);
-            zrt = dd_pos(2,4);
-            zst = dd_pos(2,5);
-            
-            tgrad_detjac_fpts(j,i,0) = xrt*(zs*yr - ys*zr) - xrs*(zt*yr - yt*zr) + xrr*(zt*ys - yt*zs) +
-            xr*(-zs*yrt + ys*zrt + zt*yrs - yt*zrs) - xs*(-zr*yrt + yr*zrt + zt*yrr - yt*zrr) + xt*(-zr*yrs + yr*zrs + zs*yrr - ys*zrr);
-            tgrad_detjac_fpts(j,i,1) = -xss*(zt*yr - yt*zr) + xst*(zs*yr - ys*zr) + xrs*(zt*ys - yt*zs) +
-            xr*(-zs*yst + ys*zst + zt*yss - yt*zss) - xs*(zst*yr - yst*zr + zt*yrs - yt*zrs) + xt*(zss*yr - yss*zr + zs*yrs - ys*zrs);
-            tgrad_detjac_fpts(j,i,2) = -xst*(zt*yr - yt*zr) + xtt*(zs*yr - ys*zr) + xrt*(zt*ys - yt*zs) +
-            xr*(ztt*ys - ytt*zs + zt*yst - yt*zst) - xs*(ztt*yr - ytt*zr + zt*yrt - yt*zrt) + xt*(zst*yr - yst*zr + zs*yrt - ys*zrt);
-          }*/
           
           // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
           
@@ -4827,9 +4658,6 @@ void eles::set_transforms(void)
       // move the dummy dynamic-transform pointers to GPUs
       cp_transforms_cpu_gpu();
     }
-
-    /*if (viscous)
-     tgrad_detjac_fpts.mv_cpu_gpu();*/
 #endif
     
     if (rank==0) cout << endl;
@@ -4889,11 +4717,6 @@ void eles::set_transforms_dynamic(void)
         // calculate first derivatives of shape functions at the solution point
         calc_d_pos_dyn_upt(j,i,d_pos);
 
-        // calculate second derivatives of shape functions at the solution point
-        if (viscous) {
-          calc_dd_pos_dyn_upt(j,i,dd_pos);
-        }
-
         // store quantities at the solution point
 
         if(n_dims==2)
@@ -4920,7 +4743,7 @@ void eles::set_transforms_dynamic(void)
           // store determinant of jacobian multiplied by inverse of jacobian at the solution point
           JGinv_dyn_upts(0,0,j,i)=  ys;
           JGinv_dyn_upts(0,1,j,i)= -xs;
-          JGinv_dyn_upts(1,1,j,i)= -yr;
+          JGinv_dyn_upts(1,0,j,i)= -yr;
           JGinv_dyn_upts(1,1,j,i)=  xr;
         }
         else if(n_dims==3)
@@ -4944,7 +4767,7 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_upts(0,0,j,i) = (ys*zt - yt*zs);
           JGinv_dyn_upts(0,1,j,i) = (xt*zs - xs*zt);
           JGinv_dyn_upts(0,2,j,i) = (xs*yt - xt*ys);
-          JGinv_dyn_upts(1,1,j,i) = (yt*zr - yr*zt);
+          JGinv_dyn_upts(1,0,j,i) = (yt*zr - yr*zt);
           JGinv_dyn_upts(1,1,j,i) = (xr*zt - xt*zr);
           JGinv_dyn_upts(1,2,j,i) = (xt*yr - xr*yt);
           JGinv_dyn_upts(2,0,j,i) = (yr*zs - ys*zr);
@@ -4982,11 +4805,6 @@ void eles::set_transforms_dynamic(void)
         // calculate first derivatives of shape functions at the flux points
         calc_d_pos_dyn_fpt(j,i,d_pos);
 
-        // calculate second derivatives of shape functions at the flux point
-        if(viscous) {
-          calc_dd_pos_dyn_fpt(j,i,dd_pos);
-        }
-
         // store quantities at the flux point
 
         if(n_dims==2)
@@ -5016,15 +4834,6 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_fpts(0,1,j,i)= -xs;
           JGinv_dyn_fpts(1,0,j,i)= -yr;
           JGinv_dyn_fpts(1,1,j,i)=  xr;
-
-//          if (viscous)
-//          {
-//            // store static->dynamic transformation matrix
-//            JinvG_dyn_fpts(j,i,0,0)= xr/J_dyn_fpts(j,i);
-//            JinvG_dyn_fpts(j,i,0,1)= xs/J_dyn_fpts(j,i);
-//            JinvG_dyn_fpts(j,i,1,0)= yr/J_dyn_fpts(j,i);
-//            JinvG_dyn_fpts(j,i,1,1)= ys/J_dyn_fpts(j,i);
-//          }
 
           // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
           norm_dot_JGinv(0)= ( norm_fpts(j,i,0)*ys -norm_fpts(j,i,1)*yr);
@@ -7350,12 +7159,26 @@ array<double> eles::get_grid_vel_ppts(void)
   return vel_ppts;
 }
 
-void eles::rigid_grid_velocity(double rk_time)
+void eles::rigid_move(double rk_time)
 {
 #ifdef _CPU
   array<double> rigid_motion_params = run_input.rigid_motion_params;
   array<double> pitch_axis = run_input.pitch_axis;
-  double r, theta0, theta, thetadot;
+  array<double> v_translate(n_dims), translate(n_dims);
+  double theta, thetadot, sinTheta, cosTheta, dx, dy, xc, yc;
+
+  xc = pitch_axis(0);  yc = pitch_axis(1);
+
+  /* --- Calculate current pitch angle & rotation rate --- */
+  theta = rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
+  thetadot = 2*pi*rigid_motion_params(3)*rigid_motion_params(7)*cos(2*pi*rigid_motion_params(7)*rk_time);
+  sinTheta = sin(theta);  cosTheta = cos(theta);
+
+  /* --- Calculate current translation rate --- */
+  for (int k=0; k<n_dims; k++) {
+    v_translate(k) = 2*pi*rigid_motion_params(k)*rigid_motion_params(4+k)*cos(2*pi*rigid_motion_params(4+k)*rk_time);
+    translate(k) = rigid_motion_params(k)*sin(2*pi*rigid_motion_params(4+k)*rk_time);
+  }
 
   if (n_eles!=0) {
     /* -- Grid Velocity At Shape Points --- */
@@ -7363,48 +7186,43 @@ void eles::rigid_grid_velocity(double rk_time)
       for (int j=0; j<n_spts_per_ele(i); j++) {
         /* --- Pitching Motion Contribution --- */
         if (rigid_motion_params(3)!=0) {
-          /* --- Calculate distance to pitching axis --- */
-          r = sqrt((shape(j,i,0)-pitch_axis(0))*(shape(j,i,0)-pitch_axis(0))
-                   +(shape(j,i,1)-pitch_axis(1))*(shape(j,i,1)-pitch_axis(1)));
-          theta0 = atan2(pos_upts(j,i,1),pos_upts(j,i,0));
-
-          /* --- Find angle from x-axis & angular rotation rate --- */
-          theta = theta0 + rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
-          thetadot = 2*pi*rigid_motion_params(3)*rigid_motion_params(7)*cos(2*pi*rigid_motion_params(7)*rk_time);
-
           /* --- Assign linear velocity based on angular velocity --- */
-          vel_spts(0,j,i) = -r*thetadot*sin(theta);
-          vel_spts(1,j,i) =  r*thetadot*cos(theta);
+          dx = shape(0,j,i) - xc;
+          dy = shape(1,j,i) - yc;
+          vel_spts(0,j,i) = thetadot*(-sinTheta*dx - cosTheta*dy);
+          vel_spts(1,j,i) = thetadot*( cosTheta*dx - sinTheta*dy);
+          /* --- Assign new shape-point position --- */
+          shape_dyn(0,j,i) = cosTheta*dx - sinTheta*dy + xc;
+          shape_dyn(1,j,i) = sinTheta*dx + cosTheta*dy + yc;
         }else{
           vel_spts(0,j,i) = 0;
           vel_spts(1,j,i) = 0;
+          shape_dyn(0,j,i) = shape(0,j,i);
+          shape_dyn(1,j,i) = shape(1,j,i);
         }
-        if (n_dims==3) vel_spts(2,j,i) = 0;
+        if (n_dims==3) {
+          vel_spts(2,j,i)  = 0;
+          shape_dyn(2,j,i) = shape(2,j,i);
+        }
 
         /* --- Plunging Contribution --- */
         for (int k=0; k<n_dims; k++) {
-          vel_spts(k,j,i) += 2*pi*rigid_motion_params(k)*rigid_motion_params(4+k)*sin(2*pi*rigid_motion_params(4+k)*rk_time);
+          vel_spts(k,j,i)  += v_translate(k);
+          shape_dyn(k,j,i) += translate(k);
         }
       }
     }
 
-    /* -- Grid Velocity At Solution Points --- */
+    /* --- Grid Velocity At Solution Points --- */
     for (int i=0; i<n_eles; i++) {
       for (int j=0; j<n_upts_per_ele; j++) {
         /* --- Pitching Motion Contribution --- */
         if (rigid_motion_params(3)!=0) {
-          /* --- Calculate distance to pitching axis --- */
-          r = sqrt((pos_upts(j,i,0)-pitch_axis(0))*(pos_upts(j,i,0)-pitch_axis(0))
-                   +(pos_upts(j,i,1)-pitch_axis(1))*(pos_upts(j,i,1)-pitch_axis(1)));
-          theta0 = atan2(pos_upts(j,i,1),pos_upts(j,i,0));
-
-          /* --- Find angle from x-axis & angular rotation rate --- */
-          theta = theta0 + rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
-          thetadot = 2*pi*rigid_motion_params(3)*rigid_motion_params(7)*cos(2*pi*rigid_motion_params(7)*rk_time);
-
           /* --- Assign linear velocity based on angular velocity --- */
-          grid_vel_upts(j,i,0) = -r*thetadot*sin(theta);
-          grid_vel_upts(j,i,1) =  r*thetadot*cos(theta);
+          dx = pos_upts(j,i,0) - xc;
+          dy = pos_upts(j,i,1) - yc;
+          grid_vel_upts(j,i,0) = thetadot*(-sinTheta*dx - cosTheta*dy);
+          grid_vel_upts(j,i,1) = thetadot*( cosTheta*dx - sinTheta*dy);
         }else{
           grid_vel_upts(j,i,0) = 0;
           grid_vel_upts(j,i,1) = 0;
@@ -7413,7 +7231,7 @@ void eles::rigid_grid_velocity(double rk_time)
 
         /* --- Plunging Contribution --- */
         for (int k=0; k<n_dims; k++) {
-          grid_vel_upts(j,i,k) += 2*pi*rigid_motion_params(k)*rigid_motion_params(4+k)*sin(2*pi*rigid_motion_params(4+k)*rk_time);
+          grid_vel_upts(j,i,k) += v_translate(k);
         }
       }
     }
@@ -7423,18 +7241,11 @@ void eles::rigid_grid_velocity(double rk_time)
       for (int j=0; j<n_fpts_per_ele; j++) {
         /* --- Pitching Motion Contribution --- */
         if (rigid_motion_params(3)!=0) {
-          /* --- Calculate distance to pitching axis --- */
-          r = sqrt((pos_fpts(j,i,0)-pitch_axis(0))*(pos_fpts(j,i,0)-pitch_axis(0))
-                   +(pos_fpts(j,i,1)-pitch_axis(1))*(pos_fpts(j,i,1)-pitch_axis(1)));
-          theta0 = atan2(pos_fpts(j,i,1),pos_fpts(j,i,0));
-
-          /* --- Find angle from x-axis & angular rotation rate --- */
-          theta = theta0 + rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
-          thetadot = 2*pi*rigid_motion_params(3)*rigid_motion_params(7)*cos(2*pi*rigid_motion_params(7)*rk_time);
-
           /* --- Assign linear velocity based on angular velocity --- */
-          grid_vel_fpts(j,i,0) = -r*thetadot*sin(theta);
-          grid_vel_fpts(j,i,1) =  r*thetadot*cos(theta);
+          dx = pos_fpts(j,i,0) - xc;
+          dy = pos_fpts(j,i,1) - yc;
+          grid_vel_fpts(j,i,0) = thetadot*(-sinTheta*dx - cosTheta*dy);
+          grid_vel_fpts(j,i,1) = thetadot*( cosTheta*dx - sinTheta*dy);
         }else{
           grid_vel_fpts(j,i,0) = 0;
           grid_vel_fpts(j,i,1) = 0;
@@ -7443,7 +7254,7 @@ void eles::rigid_grid_velocity(double rk_time)
 
         /* --- Plunging Contribution --- */
         for (int k=0; k<n_dims; k++) {
-          grid_vel_fpts(j,i,k) += 2*pi*rigid_motion_params(k)*rigid_motion_params(4+k)*sin(2*pi*rigid_motion_params(4+k)*rk_time);
+          grid_vel_fpts(j,i,k) += v_translate(k);
         }
       }
     }
@@ -7452,6 +7263,7 @@ void eles::rigid_grid_velocity(double rk_time)
 
 #ifdef _GPU
   if (n_eles!=0) {
+    rigid_motion_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),shape.get_ptr_gpu(),shape_dyn.get_ptr_gpu(),run_input.rigid_motion_params.get_ptr_gpu(),run_input.pitch_axis.get_ptr_gpu(),rk_time);
     calc_rigid_grid_vel_spts_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),shape.get_ptr_gpu(),run_input.rigid_motion_params.get_ptr_gpu(),run_input.pitch_axis.get_ptr_gpu(),vel_spts.get_ptr_gpu(),rk_time);
     eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_upts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_upts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu());
     eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_fpts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_fpts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu());
@@ -7460,13 +7272,6 @@ void eles::rigid_grid_velocity(double rk_time)
 }
 
 #ifdef _GPU
-void eles::rigid_move(double rk_time)
-{
-  if (n_eles!=0) {
-    rigid_motion_kernel_wrapper(n_dims,n_eles,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),shape.get_ptr_gpu(),shape_dyn.get_ptr_gpu(),run_input.rigid_motion_params.get_ptr_gpu(),run_input.pitch_axis.get_ptr_gpu(),rk_time);
-  }
-}
-
 void eles::perturb_shape(double rk_time)
 {
   if (n_eles!=0) {
