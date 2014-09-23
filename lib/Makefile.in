@@ -51,9 +51,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @BUILD_TECIO_TRUE@am__append_1 = tecio-2008
-@BUILD_METIS_TRUE@am__append_2 = parmetis-4.0.2/ \
-@BUILD_METIS_TRUE@	   parmetis-4.0.2/metis
-
+@BUILD_METIS_TRUE@am__append_2 = parmetis-4.0.2 
 subdir = lib
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -94,7 +92,7 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = tecio-2008 parmetis-4.0.2/ parmetis-4.0.2/metis
+DIST_SUBDIRS = tecio-2008 parmetis-4.0.2
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
