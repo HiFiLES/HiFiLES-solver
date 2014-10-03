@@ -109,6 +109,7 @@ public:
   int restart_flag;
   int restart_iter;
   int n_restart_files;
+  int restart_mesh_out; // Print out separate restart file with X,Y,Z of all sol'n points?
 
   int ic_form;
 

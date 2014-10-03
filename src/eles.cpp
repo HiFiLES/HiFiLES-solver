@@ -734,6 +734,35 @@ void eles::write_restart_data(ofstream& restart_file)
   restart_file << endl;
 }
 
+void eles::write_restart_mesh(ofstream& restart_file)
+{
+  restart_file << "n_eles" << endl;
+  restart_file << n_eles << endl;
+  restart_file << "ele2global_ele array" << endl;
+  for (int i=0;i<n_eles;i++)
+    restart_file << ele2global_ele(i) << " ";
+  restart_file << endl;
+
+  restart_file << "data" << endl;
+
+  for (int i=0;i<n_eles;i++)
+  {
+    restart_file << ele2global_ele(i) << endl;
+    for (int j=0;j<n_upts_per_ele;j++)
+    {
+      for (int k=0;k<n_dims;k++)
+      {
+        if (motion!=STATIC_MESH)
+          restart_file << dyn_pos_upts(j,i,k) << " ";
+        else
+          restart_file << pos_upts(j,i,k) << " ";
+      }
+      restart_file << endl;
+    }
+  }
+  restart_file << endl;
+}
+
 // move all to from cpu to gpu
 
 void eles::mv_all_cpu_gpu(void)

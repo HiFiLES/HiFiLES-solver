@@ -61,6 +61,9 @@ public:
   /*! write data to restart file */
   void write_restart_data(ofstream& restart_file);
 
+  /*! write extra restart file containing x,y,z of solution points instead of solution data */
+  void write_restart_mesh(ofstream& restart_file);
+
 	/*! move all to from cpu to gpu */
 	void mv_all_cpu_gpu(void);
 

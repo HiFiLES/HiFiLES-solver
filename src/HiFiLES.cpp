@@ -176,24 +176,6 @@ int main(int argc, char *argv[]) {
         /* Update the mesh */
         Mesh.move(FlowSol.ini_iter+i_steps,i,&FlowSol);
 
-        /* Residual for Geometric Conservation Law (GCL) */
-        /*
-        if (run_input.GCL) {
-          CalcGCLResidual(&FlowSol);
-
-          // Time integration for Geometric Conservation Law (GCL) using a RK scheme
-          for(j=0; j<FlowSol.n_ele_types; j++) {
-
-            // Time Advance
-            FlowSol.mesh_eles(j)->AdvanceGCL(i, FlowSol.adv_type);
-
-            // Extrapolate Jacobians to flux points
-            FlowSol.mesh_eles(j)->extrapolate_GCL_solution(0);
-
-            // Reset transforms using updated Jacobians
-            FlowSol.mesh_eles(j)->correct_dynamic_transforms();
-          }
-        }*/
       }
 
       /*! Spatial integration. */

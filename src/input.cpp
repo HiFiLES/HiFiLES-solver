@@ -48,6 +48,7 @@ input::input()
   motion = 0;
   GCL = 0;
   n_deform_iters = 1;
+  restart_mesh_out = 0;
 
   // Set shock capturing parameters to 0 in case they are not used
   ArtifOn = 0;
@@ -60,12 +61,20 @@ input::input()
   p_bound_out = 0;
 
   // Initialize initial-condition values
+  // Viscous Params
   Mach_c_ic = INFINITY;
   nx_c_ic = INFINITY;
   ny_c_ic = INFINITY;
   nz_c_ic = INFINITY;
   Re_c_ic = INFINITY;
   T_c_ic = INFINITY;
+
+  // Inviscid Params
+  rho_c_ic = INFINITY;
+  u_c_ic = INFINITY;
+  v_c_ic = INFINITY;
+  w_c_ic = INFINITY;
+  p_c_ic = INFINITY;
 }
 
 input::~input()
@@ -252,6 +261,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
     else if (!param_name.compare("restart_dump_freq"))
     {
       in_run_input_file >> restart_dump_freq;
+    }
+    else if (!param_name.compare("restart_mesh_out"))
+    {
+      in_run_input_file >> restart_mesh_out;
     }
     else if (!param_name.compare("adv_type"))
     {
@@ -720,6 +733,21 @@ void input::setup(ifstream& in_run_input_file, int rank)
   }
   if (T_c_ic == INFINITY) {
     T_c_ic = T_free_stream;
+  }
+  if (u_c_ic == INFINITY) {
+    u_c_ic = v_bound(0);
+  }
+  if (v_c_ic == INFINITY) {
+    v_c_ic = v_bound(1);
+  }
+  if (w_c_ic == INFINITY) {
+    w_c_ic = v_bound(2);
+  }
+  if (p_c_ic == INFINITY) {
+    p_c_ic = p_bound;
+  }
+  if (rho_c_ic == INFINITY) {
+    rho_c_ic = rho_bound;
   }
 
   // --------------------
