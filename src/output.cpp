@@ -77,6 +77,9 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   array<double> grad_disu_ppts_temp;
   array<double> diag_ppts_temp;
 
+  /*! Grid velocity at plot points */
+  array<double> grid_vel_ppts_temp;
+
   /*! Sensor data for artificial viscosity at plot points */
   array<double> sensor_ppts_temp;
   /*! Artificial viscosity co-efficient values for artificial viscosity at plot points */
@@ -160,6 +163,11 @@ void write_tec(int in_file_num, struct solution* FlowSol)
       fields += "\"" + run_input.diagnostic_fields(n_diag_fields-1) + "\"";
     }
 
+  if (run_input.motion!=STATIC_MESH) {
+    fields += ", \"grid_vel_x\", \"grid_vel_y\"";
+    if (n_dims==3) fields += ", \"grid_vel_z\"";
+  }
+
   // write field names to file
   write_tec << fields << endl;
 
@@ -178,6 +186,12 @@ void write_tec(int in_file_num, struct solution* FlowSol)
           disu_ppts_temp.setup(n_ppts_per_ele,n_fields);
           grad_disu_ppts_temp.setup(n_ppts_per_ele,n_fields,n_dims);
           diag_ppts_temp.setup(n_ppts_per_ele,n_diag_fields);
+
+          /*! Temporary grid velocity array at plot points */
+          if (run_input.motion) {
+            FlowSol->mesh_eles(i)->set_grid_vel_ppts();
+            grid_vel_ppts_temp = FlowSol->mesh_eles(i)->get_grid_vel_ppts();
+          }
 
           /*! Temporary field for sensor array at plot points */
           sensor_ppts_temp.setup(n_ppts_per_ele);
@@ -268,6 +282,13 @@ void write_tec(int in_file_num, struct solution* FlowSol)
                           write_tec << diag_ppts_temp(k,l) << " ";
                         }
                     }
+
+                  /*! Write out the grid velocity (for moving-mesh cases) */
+                  if (run_input.motion!=STATIC_MESH) {
+                    for (l=0; l<n_dims; l++) {
+                      write_tec << grid_vel_ppts_temp(l,k,j) << " ";
+                    }
+                  }
 
                   write_tec << endl;
                 }
@@ -1110,12 +1131,10 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
 #endif
   
   // zero the forces and coeffs
-  for (int m=0;m<FlowSol->n_dims;m++)
-  {
-    FlowSol->inv_force(m) = 0.;
-    FlowSol->vis_force(m) = 0.;
-  }
-  
+  FlowSol->inv_force.initialize_to_zero();
+  FlowSol->vis_force.initialize_to_zero();
+  FlowSol->cur_work.initialize_to_zero();
+
   FlowSol->coeff_lift = 0.0;
   FlowSol->coeff_drag = 0.0;
 
@@ -1189,13 +1208,13 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   FlowSol->prev_time = FlowSol->time;
 
   if (FlowSol->rank==0) {
-    cout << setw(16) << "Total Work: " << setprecision(12) << setw(16) << FlowSol->total_work(0) << ", " << setw(16) << FlowSol->total_work(1) << ", " << setw(16) << FlowSol->total_work(2) << endl;
-    cout << setw(16) << "Total Impulse: " << setprecision(12) << setw(16) << FlowSol->total_impulse(0) << ", " << setw(16) << FlowSol->total_impulse(1) << ", " << setw(16) << FlowSol->total_impulse(2) << endl;
+    //cout << setw(16) << "Total Work: " << setprecision(12) << setw(16) << FlowSol->total_work(0) << ", " << setw(16) << FlowSol->total_work(1) << ", " << setw(16) << FlowSol->total_work(2) << endl;
+    //cout << setw(16) << "Total Impulse: " << setprecision(12) << setw(16) << FlowSol->total_impulse(0) << ", " << setw(16) << FlowSol->total_impulse(1) << ", " << setw(16) << FlowSol->total_impulse(2) << endl;
 
     work_file.open("tot_work_impulse.txt", std::ofstream::out | std::ofstream::app);
-    work_file << FlowSol->time;
-    work_file << setprecision(12) << setw(16) << FlowSol->total_work(0) << ", " << setw(16) << FlowSol->total_work(1) << ", " << setw(16) << FlowSol->total_work(2);
-    work_file << setprecision(12) << setw(16) << FlowSol->total_impulse(0) << ", " << setw(16) << FlowSol->total_impulse(1) << ", " << setw(16) << FlowSol->total_impulse(2);
+    work_file << setprecision(10) << FlowSol->time << ", ";
+    work_file << setprecision(12) << FlowSol->total_work(0) << ", " << FlowSol->total_work(1) << ", " << FlowSol->total_work(2) << ", " ;
+    work_file << setprecision(12) << FlowSol->total_impulse(0) << ", " << FlowSol->total_impulse(1) << ", " << FlowSol->total_impulse(2);
     work_file << endl;
     work_file.close();
   }
@@ -1698,10 +1717,10 @@ void CopyGPUCPU(struct solution* FlowSol, mesh &Mesh)
     }
   }
 
-  if (run_input.motion!=STATIC_MESH)
-  {
-    Mesh.get_eles_shape();
-  }
+//  if (run_input.motion!=STATIC_MESH)
+//  {
+//    Mesh.get_eles_shape();
+//  }
 }
 #endif
 

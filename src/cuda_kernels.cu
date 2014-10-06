@@ -1813,7 +1813,8 @@ __global__ void rigid_motion_kernel(int n_eles, int max_n_spts_per_ele, int* n_s
         dx = xv_0[0]-pitch_axis[0];
         dy = xv_0[1]-pitch_axis[1];
 
-        theta = motion_params[3]*sin(2*PI*motion_params[7]*rk_time);
+        //theta = motion_params[3]*sin(2*PI*motion_params[7]*rk_time);
+        theta = motion_params[3]*(1-cos(2*PI*motion_params[7]*rk_time))/2;
         new_xv[0] = cos(theta)*dx - sin(theta)*dy + pitch_axis[0];
         new_xv[1] = sin(theta)*dx + cos(theta)*dy + pitch_axis[1];
       }
@@ -1826,7 +1827,8 @@ __global__ void rigid_motion_kernel(int n_eles, int max_n_spts_per_ele, int* n_s
 
       /* --- Plunging Motion Contribution --- */
       for (j=0; j<n_dims; j++) {
-        new_xv[j] += motion_params[j]*sin(2*PI*motion_params[4+j]*rk_time);
+        //new_xv[j] += motion_params[j]*sin(2*PI*motion_params[4+j]*rk_time);
+        new_xv[j] += motion_params[j]*(1-cos(2*PI*motion_params[4+j]*rk_time))/2;
       }
 
       for (j=0; j<n_dims; j++) {
@@ -1859,8 +1861,10 @@ __global__ void rigid_motion_velocity_spts_kernel(int n_eles, int max_n_spts_per
         dx = xv_0[0] - pitch_axis[0];
         dy = xv_0[1] - pitch_axis[1];
 
-        theta = motion_params[3]*sin(2*PI*motion_params[7]*rk_time);
-        thetadot = 2*PI*motion_params[3]*motion_params[7]*cos(2*PI*motion_params[7]*rk_time);
+        //theta = motion_params[3]*sin(2*PI*motion_params[7]*rk_time);
+        //thetadot = 2*PI*motion_params[3]*motion_params[7]*cos(2*PI*motion_params[7]*rk_time-PI/2);
+        theta = motion_params[3]*(1-cos(2*PI*motion_params[7]*rk_time))/2;
+        thetadot = PI*motion_params[3]*motion_params[7]*sin(2*PI*motion_params[7]*rk_time);
 
         /* --- Add Pitching Contribution --- */
         vel_new[0] = thetadot*(-sin(theta)*dx - cos(theta)*dy);
@@ -1875,7 +1879,8 @@ __global__ void rigid_motion_velocity_spts_kernel(int n_eles, int max_n_spts_per
 
       /* --- Add Plunging Contribution --- */
       for (j=0; j<n_dims; j++) {
-        vel_new[j] += 2*PI*motion_params[j]*motion_params[4+j]*sin(2*PI*motion_params[4+j]*rk_time);
+        //vel_new[j] += 2*PI*motion_params[j]*motion_params[4+j]*cos(2*PI*motion_params[4+j]*rk_time);
+        vel_new[j] += PI*motion_params[j]*motion_params[4+j]*sin(2*PI*motion_params[4+j]*rk_time);
       }
 
       for (j=0; j<n_dims; j++) {

@@ -88,7 +88,7 @@ void read_vertices_gambit(string& in_file_name, int in_n_verts, int &out_n_verts
 void read_vertices_gmsh(string& in_file_name, int in_n_verts, int& out_n_verts_global, array<int> &in_iv2ivg, array<double> &out_xv, struct solution* FlowSol);
 
 /*! Read in the current mesh vertex positions (for moving-mesh cases) from the given restart file */
-void read_vertices_restart(array<array<double> > &out_xv, int n_verts, struct solution *FlowSol);
+void read_vertices_restart(array<array<double> > &out_xv, array<double> &xv_0, int n_verts, struct solution *FlowSol);
 
 /*!
  * \brief Method to setup iv2ivg & modify c2v

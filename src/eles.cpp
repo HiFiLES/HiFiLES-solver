@@ -400,8 +400,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 
     if(run_input.ArtifOn)
     {
-      if(run_input.artif_type == 1)
+      if(run_input.artif_type == 1) {
         sensor.setup(n_eles);
+        sensor.initialize_to_zero();
+      }
 
       if(run_input.artif_type == 0)
       {
@@ -409,6 +411,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
           epsilon_upts.setup(n_upts_per_ele,n_eles);
           epsilon_fpts.setup(n_fpts_per_ele,n_eles);
           sensor.setup(n_eles);
+          sensor.initialize_to_zero();
           //dt_local.setup(n_eles);
           min_dt_local.setup(1);
       }
@@ -837,14 +840,15 @@ void eles::mv_all_cpu_gpu(void)
 
     // Grid Velocity-related arrays for moving meshes
     vel_spts.cp_cpu_gpu();
-    grid_vel_upts.mv_cpu_gpu();
+    //grid_vel_upts.mv_cpu_gpu();
+    grid_vel_upts.cp_cpu_gpu(); // cp since needed for integrated force calc
     grid_vel_fpts.mv_cpu_gpu();
 
     if (motion==LINEAR_ELASTICITY || motion==BLENDING) {
       motion_params.mv_cpu_gpu();
     }else if (motion!=STATIC_MESH) {
-      run_input.rigid_motion_params.mv_cpu_gpu();
-      run_input.pitch_axis.mv_cpu_gpu();
+      run_input.rigid_motion_params.cp_cpu_gpu(); // can only use mv if in eles class, not global run_input
+      run_input.pitch_axis.cp_cpu_gpu();
     }
 
     if(run_input.ArtifOn){
@@ -4391,7 +4395,7 @@ void eles::set_transforms(void)
 {
   if (n_eles!=0)
   {
-    
+
     int i,j,k;
     
     int n_comp;
@@ -7050,7 +7054,6 @@ void eles::store_d_nodal_s_basis_fpts(void)
       for (j=0; j<n_spts_per_ele(ic); j++) {
         for (k=0; k<n_dims; k++) {
           d_nodal_s_basis_fpts(k,j,fpt,ic) = d_nodal_basis(j,k);
-          //d_nodal_s_basis_fpts(fpt,ic,k,j) = d_nodal_basis(j,k);
         }
       }
     }
@@ -7076,7 +7079,6 @@ void eles::store_d_nodal_s_basis_upts(void)
       eval_d_nodal_s_basis(d_nodal_basis,loc,n_spts_per_ele(ic));
       for (j=0; j<n_spts_per_ele(ic); j++) {
         for (k=0; k<n_dims; k++) {
-          //d_nodal_s_basis_upts(upt,ic,k,j) = d_nodal_basis(j,k);
           d_nodal_s_basis_upts(k,j,upt,ic) = d_nodal_basis(j,k);
         }
       }
@@ -7220,6 +7222,7 @@ void eles::initialize_grid_vel(int in_max_n_spts_per_ele)
  *  (would have to use sparse BLAS - think block-diag matrix) */
 void eles::set_grid_vel_fpts(int in_rk_step)
 {
+#ifdef _CPU
   int ic,fpt,j,k;
 //  if (run_input.motion==3) {
 //    double rk_time;
@@ -7244,6 +7247,8 @@ void eles::set_grid_vel_fpts(int in_rk_step)
       }
     }
 //  }
+#endif
+
 #ifdef _GPU
   //grid_vel_fpts.cp_cpu_gpu();
   eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_fpts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_fpts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu());

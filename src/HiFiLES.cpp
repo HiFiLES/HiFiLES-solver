@@ -135,11 +135,11 @@ int main(int argc, char *argv[]) {
 
   /*! Initialize integrated work, impulse arrays (for moving-body simulations, i.e. pitching airfoil) */
 
-  FlowSol.prev_work.setup(3);
-  FlowSol.cur_work.setup(3);
-  FlowSol.total_work.setup(3);
-  FlowSol.prev_impulse.setup(3);
-  FlowSol.total_impulse.setup(3);
+  FlowSol.prev_work.setup(5);
+  FlowSol.cur_work.setup(5);
+  FlowSol.total_work.setup(5);
+  FlowSol.prev_impulse.setup(5);
+  FlowSol.total_impulse.setup(5);
 
   FlowSol.prev_work.initialize_to_zero();
   FlowSol.cur_work.initialize_to_zero();
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 
 #endif
 
-  /*! Dump initial Paraview or tecplot file. */
+  /*! Dump initial Paraview or Tecplot file. */
 
   if (FlowSol.write_type == 0) write_vtu(FlowSol.ini_iter+i_steps, &FlowSol);
   else if (FlowSol.write_type == 1) write_tec(FlowSol.ini_iter+i_steps, &FlowSol);

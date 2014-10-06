@@ -246,7 +246,6 @@ void mesh::initialize_restart(void) {
 #endif
 
 #ifdef _GPU
-
   // Copy updated shape to GPU
   //cp_restart_cpu_gpu();
 
@@ -269,7 +268,6 @@ void mesh::initialize_restart(void) {
       // Do Nothing
     }
   }
-
 #endif
 }
 
