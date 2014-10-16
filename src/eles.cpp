@@ -6432,15 +6432,15 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
     body_force(1) = vis_force(0)/vol; // x-momentum forcing
     body_force(n_fields-1) = body_force(1)*ubulk; // energy forcing
     
-    /*#ifdef _MPI
-     array<double> bodyforce_global(n_fields);
+#ifdef _MPI
+     array<double> body_force_global(n_fields);
      for (m=0;m<n_fields;m++)
      {
-     bodyforce_global(m) = 0.;
-     MPI_Reduce(&bodyforce(m),&bodyforce_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-     bodyforce(m) = bodyforce_global(m);
+       body_force_global(m) = 0.;
+       MPI_Reduce(&body_force(m),&body_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+       body_force(m) = body_force_global(m);
      }
-     #endif*/
+#endif
     
     cout<<"Channel body force: " << setprecision(10)<<body_force(1)<<", "<<body_force(n_fields-1)<<endl;
     if(isnan(body_force(1)) or isnan(body_force(n_fields-1)))
@@ -6456,7 +6456,7 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
 #endif
 }
 
-void eles::evaluate_bodyForce(array <double>& body_force)
+void eles::evaluate_body_force(array <double>& body_force)
 {
   if (n_eles!=0) {
     int i,j,k,l,m;

@@ -116,7 +116,7 @@ void CalcResidual(struct solution* FlowSol) {
   /*! Calculate body forcing, if switched on, and add to flux. */
   if(run_input.equation==0 && run_input.forcing==1) {
       for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->evaluate_bodyForce(FlowSol->body_force);
+        FlowSol->mesh_eles(i)->evaluate_body_force(FlowSol->body_force);
     }
 
   /*! Compute the inviscid numerical fluxes.

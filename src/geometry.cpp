@@ -491,7 +491,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
       delta_cyclic(2) = run_input.dz_cyclic;
     }
 
-  double tol = 1.e-8;
+  double tol = 1.e-6;
   int bctype_f, found, rtag;
   int ic_l,ic_r;
 
@@ -1146,7 +1146,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
                   >> n_mats         // num material groups
                   >> n_bcs          // num boundary groups
                   >> dummy;         // num space dimensions
-
+  cout << "Gambit mesh specs from header: " << ", " << n_verts_global << ", " << n_cells_global << ", " << n_mats << ", " << n_bcs << ", " << dummy << endl;
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   mesh_file.getline(buf,BUFSIZ);  // Skip 2 lines
   mesh_file.getline(buf,BUFSIZ);
@@ -1180,9 +1180,11 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
   for (int i=0;i<n_mats;i++)
     {
       mesh_file.getline(buf,BUFSIZ); // Read GROUP: 1 ELEMENTS
+      cout << buf << endl;
       int nread = sscanf(buf,"%*s%d%*s%d%*s%d",&dummy,&gnel,&dummy2);
       if (3!=nread) {cout << "ERROR while reading Gambit file" << endl; cout << "nread =" << nread << endl; exit(1); }
       mesh_file.getline(buf,BUFSIZ); // Read group name
+      cout << buf << endl;
       mesh_file.getline(buf,BUFSIZ); // Skip solver dependant flag
       for (int k=0;k<gnel;k++) mesh_file >> dummy;
       mesh_file.getline(buf,BUFSIZ); // Clear end of line
@@ -1347,8 +1349,8 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   mesh_file   >> n_entities;   // num cells in mesh
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
-  array<int> vlist_bound(4), vlist_cell(4);
-  array<int> vlist_local(4);
+  array<int> vlist_bound(9), vlist_cell(9);
+  array<int> vlist_local(9);
 
   int found, num_v_per_f;
   int num_face_vert;
@@ -1433,6 +1435,14 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
         num_face_vert = 3;
         mesh_file >> vlist_bound(0) >> vlist_bound(1) >> vlist_bound(2);
       }
+      else if (elmtype==10) // Quadratic quad face
+      {
+        num_face_vert = 9;
+        mesh_file >> vlist_bound(0) >> vlist_bound(2) >> vlist_bound(8) >> vlist_bound(6);
+        mesh_file >> vlist_bound(1) >> vlist_bound(5) >> vlist_bound(7) >> vlist_bound(3) >> vlist_bound(4);
+        cout << "vlist_bound: " << endl;
+        vlist_bound.print();
+      }
       else 
       {
         cout << "Gmsh boundary element type: " << elmtype << endl;
@@ -1473,8 +1483,14 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
               int ic=in_icvert(ind);
               for (int k=0;k<FlowSol->num_f_per_c(in_ctype(ic));k++)
                 {
+                  cout << "vlist_local: " << endl;
+                  vlist_local.print();
+
                   // Get local vertices of local face k of cell ic
                   get_vlist_loc_face(in_ctype(ic),in_c2n_v(ic),k,vlist_cell,num_v_per_f);
+
+                  cout << "num_face_vert: " << num_face_vert << endl;
+                  cout << "num_v_per_f: " << num_v_per_f << endl;
 
                   if (num_v_per_f!= num_face_vert)
                     continue;
@@ -1483,6 +1499,9 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
                   {
                     vlist_cell(j) = in_c2v(ic,vlist_cell(j));
                   }
+
+                  cout << "vlist_cell: " << endl;
+                  vlist_cell.print();
 
                   compare_faces_boundary(vlist_local,vlist_cell,num_v_per_f,found);
 
@@ -1644,6 +1663,8 @@ void create_iv2ivg(array<int> &inout_iv2ivg, array<int> &inout_c2v, int &out_n_v
           break;
         }
     }
+
+  cout << "vrtlist: " << in_n_cells << ", " << MAX_V_PER_C << ", " << sizeof(int) << ", " << sizeof(vrtlist) << endl;
 
   // Get rid of repeated digits
   temp(0) = vrtlist(staind);
@@ -1922,12 +1943,17 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   mesh_file >> n_entities;   // num cells in mesh
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
+  cout << "n_entities=" << n_entities << endl;
+
   int icount=0;
 
   for (int i=0;i<n_entities;i++)
   {
     mesh_file >> id >> elmtype >> ntags;
     mesh_file >> bcid;
+
+    cout << "id, elmtype, ntags, bcid =" << id << ", " << elmtype << ", " << ntags << ", " << bcid << endl;
+
     for (int tag=0; tag<ntags-1; tag++)
       mesh_file >> dummy;
 
@@ -2036,6 +2062,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
                   else if (elmtype==10) // quadratic quadrangle
                     {
                       out_c2n_v(i) = 9;
+                      // not sure this is correct
                       mesh_file >> out_c2v(i,0) >> out_c2v(i,2) >> out_c2v(i,8) >> out_c2v(i,6) >> out_c2v(i,1) >> out_c2v(i,5) >> out_c2v(i,7) >> out_c2v(i,3) >> out_c2v(i,4);
                     }
                 }
@@ -2054,7 +2081,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
                   mesh_file >> out_c2v(i,6) >> out_c2v(i,7) >> out_c2v(i,4) >> out_c2v(i,9) >> out_c2v(i,1); 
                 }
               }
-              else if (elmtype==5) // Hexahedron
+              else if (elmtype==5 || elmtype==12) // Hexahedron
                 {
                   out_ctype(i) = 4;
                   if (elmtype==5) // linear quadrangle
@@ -2062,6 +2089,19 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
                       out_c2n_v(i) = 8;
                       mesh_file >> out_c2v(i,0) >> out_c2v(i,1) >> out_c2v(i,3) >> out_c2v(i,2);
                       mesh_file >> out_c2v(i,4) >> out_c2v(i,5) >> out_c2v(i,7) >> out_c2v(i,6);
+                    }
+                  else if (elmtype==12) // 27-node quadratic hexahedron
+                    {
+                      out_c2n_v(i) = 27;
+                      // vertices
+                      mesh_file >> out_c2v(i,0) >> out_c2v(i,1) >> out_c2v(i,2) >> out_c2v(i,3) >> out_c2v(i,4) >> out_c2v(i,5) >> out_c2v(i,6) >> out_c2v(i,7);
+                      // edges
+                      mesh_file >> out_c2v(i,8) >> out_c2v(i,9) >> out_c2v(i,10) >> out_c2v(i,11) >> out_c2v(i,12) >> out_c2v(i,13);
+                      mesh_file >> out_c2v(i,14) >> out_c2v(i,15) >> out_c2v(i,16) >> out_c2v(i,17) >> out_c2v(i,18) >> out_c2v(i,19);
+                      // faces
+                      mesh_file >> out_c2v(i,20) >> out_c2v(i,21) >> out_c2v(i,22) >> out_c2v(i,23) >> out_c2v(i,24) >> out_c2v(i,25);
+                      // volume
+                      mesh_file >> out_c2v(i,26);
                     }
                 }
               else
@@ -3401,6 +3441,8 @@ void compare_cyclic_faces(array<double> &xvert1, array<double> &xvert2, int& num
     {
       if(num_v_per_f==4) // quad face
         {
+          //printf("cell 1, x1=%2.8f, x2=%2.8f, x3=%2.8f\n cell 2(1), x1=%2.8f, x2=%2.8f, x3=%2.8f\n",xvert1(0,0),xvert1(0,1),xvert1(0,2),xvert2(0,0),xvert2(0,1),xvert2(0,2));
+          //printf("cell 2(2), x1=%2.8f, x2=%2.8f, x3=%2.8f\n cell 2(3), x1=%2.8f, x2=%2.8f, x3=%2.8f\n cell 2(4), x1=%2.8f, x2=%2.8f, x3=%2.8f\n",xvert2(1,0),xvert2(1,1),xvert2(1,2),xvert2(2,0),xvert2(2,1),xvert2(2,2),xvert2(3,0),xvert2(3,1),xvert2(3,2));
           // Determine rot_tag based on xvert1(0)
           // vert1(0) matches vert2(1), rot_tag=0
           if(

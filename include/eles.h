@@ -402,7 +402,7 @@ public:
   void calc_body_force_upts(array <double>& vis_force, array <double>& body_force);
 
   /*! add body forcing at solution points */
-  void evaluate_bodyForce(array <double>& body_force);
+  void evaluate_body_force(array <double>& body_force);
 
   /*! Compute volume integral of diagnostic quantities */
   void CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities);

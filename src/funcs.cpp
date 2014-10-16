@@ -1833,6 +1833,14 @@ void eval_couette_flow(array<double>& pos, double in_gamma, double in_R_ref, dou
 // TODO: allow mixed terms e.g. xy, yz^2
 void eval_poly_ic(array<double>& pos, double rho, array<double>& ics, int n_dims)
 {
+  // HACK: do not use profile outside the vertical bounds of the inlet in periodic hill case
+  if(pos(1)<1.0)
+    {
+      ics(1) = 0.0;
+      ics(2) = 0.0;
+      ics(3) = 0.0;
+    }
+  else {
   // Take N user-specified coefficients {a,b,c,...,n} to construct a polynomial of the form
   // u = a + bx + cx^2 + ... + nx^N (1D)
   // In 2D and 3D, add extra coeffs for mixed terms xy, xyz, x^2y etc.
@@ -1857,6 +1865,7 @@ void eval_poly_ic(array<double>& pos, double rho, array<double>& ics, int n_dims
         c(i) = run_input.z_coeffs(i);
       ics(3) = c(0)+c(1)*pos(0)+c(2)*pow(pos(0),2)+c(3)*pow(pos(0),3)+c(4)*pow(pos(0),4)+c(5)*pos(1)+c(6)*pow(pos(1),2)+c(7)*pow(pos(1),3)+c(8)*pow(pos(1),4)+c(9)*pos(2)+c(10)*pow(pos(2),2)+c(11)*pow(pos(2),3)+c(12)*pow(pos(2),4);
     }
+  }
 }
 
 /*! Functions used in evaluation of shape functions and its 1st and 2nd derivatives
