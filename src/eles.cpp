@@ -6470,12 +6470,16 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
     }
 
     if (rank == 0) {
-      write_mdot.open("massflux.dat", ios::out);
-      write_mdot.precision(15);
+      // write file header
       if(open_mdot)
       {
+        write_mdot.open("massflux.dat", ios::out);
         write_mdot << "Iteration, massflux, Ubulk, bodyforce(x)" << endl;
+        write_mdot.close();
       }
+      // append subsequent dqata
+      write_mdot.open("massflux.dat", ios::app);
+      write_mdot.precision(15);
       write_mdot << in_file_num;
       write_mdot << ", " << mass_flux;
       write_mdot << ", " << ubulk;
