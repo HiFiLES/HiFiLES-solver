@@ -399,7 +399,7 @@ public:
   double compute_res_upts(int in_norm_type, int in_field);
 
   /*! calculate body forcing at solution points */
-  void calc_body_force_upts(array <double>& vis_force, array <double>& body_force);
+  void calc_body_force_upts(int in_file_num, array <double>& vis_force, array <double>& body_force);
 
   /*! add body forcing at solution points */
   void evaluate_body_force(array <double>& body_force);
@@ -1204,6 +1204,9 @@ protected:
 
   int rank;
   int nproc;
+
+  /*! mass flux through inlet */
+  double mass_flux;
 
   /*! reference element length */
   array<double> h_ref;

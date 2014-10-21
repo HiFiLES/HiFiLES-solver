@@ -1119,6 +1119,12 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
         }
     }
   
+  // Calculate body forcing, if running periodic channel or periodic hill cases
+  if(run_input.equation==0 and run_input.forcing==1 and FlowSol->n_dims==3) {
+    for(int i=0;i<FlowSol->n_ele_types;i++)
+      FlowSol->mesh_eles(i)->calc_body_force_upts(in_file_num, FlowSol->vis_force, FlowSol->body_force);
+  }
+
 #ifdef _MPI
 
   array<double> inv_force_global(FlowSol->n_dims);
@@ -1146,12 +1152,6 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   FlowSol->coeff_drag = coeff_drag_global;
 
 #endif
-
-  // Calculate body forcing, if running periodic channel, and add to viscous flux
-  if(run_input.equation==0 and run_input.forcing==1 and FlowSol->n_dims==3) {
-    for(int i=0;i<FlowSol->n_ele_types;i++)
-      FlowSol->mesh_eles(i)->calc_body_force_upts(FlowSol->vis_force, FlowSol->body_force);
-  }
 
   if (write_forces) { coeff_file.close(); }
 }

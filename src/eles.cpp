@@ -6325,30 +6325,29 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
 
 // Calculate body forcing term for periodic channel flow. HARDCODED FOR THE CHANNEL!
 
-void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_force)
+void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, array <double>& body_force)
 {
-#ifdef _CPU
+//#ifdef _CPU
   
   if (n_eles!=0) {
     int i,j,k,l,m;
-    double lenx, areayz, vol, detjac, sum;
-    array <double> cubwgts(n_cubpts_per_ele);
-    double mdot, ubulk, wallf, dpdx;
-    double alpha=0.1; // relaxation parameter
-    double mdot0 = 1.0; // initial mass flow rate
-    array <double> disu_cubpt(2);
-    array <double> solint(2);
+    double lenx, areayz, vol, detjac, ubulk, wgt;
     array <int> inflowinters(n_bdy_eles,n_inters_per_ele);
+    array <double> disu_cubpt(4);
+    array <double> solint(4);
     array <double> norm(n_dims), flow(n_dims);
-    double wgt;
-    
-    solint(0)=0.0; solint(1)=0.0;
-    
+    ofstream write_mdot;
+
+    for (i=0;i<4;i++)
+    {
+      solint(i)=0.0;
+    }
+
     // Calculate mass flux as area integral
     for (i=0;i<n_bdy_eles;i++)
       for (l=0;l<n_inters_per_ele;l++)
         inflowinters(i,l)=0;
-    sum=0;
+
     // Mass flux on inflow boundary
     // Integrate density and x-velocity over inflow area
     for (i=0;i<n_bdy_eles;i++)
@@ -6367,7 +6366,7 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
               // Get the normal
               for (m=0;m<n_dims;m++)
                 norm(m) = norm_inters_cubpts(l)(0,i,m);
-              
+
               if(norm(0)==-1)
               {
                 inflowinters(i,l)=1; // Flag this interface
@@ -6383,7 +6382,6 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
             }
           }
         }
-        sum+=inflowinters(i,l);
       }
     }
     
@@ -6401,59 +6399,82 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
             detjac = inter_detjac_inters_cubpts(l)(j,i);
             
             // Get the solution at cubature point
-            disu_cubpt(0) = 0.; disu_cubpt(1) = 0.;
+            disu_cubpt(0) = 0.; disu_cubpt(1) = 0.; disu_cubpt(2) = 0.; disu_cubpt(3) = 0.;
             for (k=0;k<n_upts_per_ele;k++)
             {
               disu_cubpt(0) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,0); // density
               disu_cubpt(1) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,1); // x-momentum
+              disu_cubpt(2) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,2); // y-momentum
+              disu_cubpt(3) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,3); // z-momentum
             }
             solint(0) += wgt*disu_cubpt(0)*detjac;
             solint(1) += wgt*disu_cubpt(1)*detjac;
+            solint(2) += wgt*disu_cubpt(2)*detjac;
+            solint(3) += wgt*disu_cubpt(3)*detjac;
           }
         }
       }
     }
     
-    if(solint(0)==0.0 or solint(1)==0.0)
+#ifdef _MPI
+
+    array<double> solint_global(4);
+    for (m=0;m<4;m++)
     {
-      cout<<"Body force error diagnostics:"<<endl;
-      cout<<disu_cubpt(0)<<", "<<disu_cubpt(1)<<", "<<wgt<<", "<<detjac<<", "<<solint(0)<<", "<<solint(1)<<", "<<sum<<", "<<n_bdy_eles<<endl;
+      solint_global(m) = 0.;
+      MPI_Allreduce(&solint(m), &solint_global(m), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      solint(m) = solint_global(m);
     }
-    
-    lenx = 2*pi;
-    areayz = 2*pi;
-    vol = areayz*lenx;
-    mdot = solint(1)/areayz;
+
+#endif
+
+    // periodic channel:
+    //lenx = 2*pi;
+    //areayz = 2*pi;
+    //vol = areayz*lenx;
+
+    // periodic hill (HIOCFD3 Case 3.4):
+    areayz = 9.162;
+    vol = 114.34;
+
+    // compute mass flux for output
+    mass_flux = sqrt(pow(solint(1),2)+pow(solint(2),2)+pow(solint(3),2));
+
+    // bulk velocity
     if(solint(0)==0)
       ubulk = 0.0;
     else
       ubulk = solint(1)/solint(0);
     
+    body_force(0) = 0.; // density forcing
     body_force(1) = vis_force(0)/vol; // x-momentum forcing
-    body_force(n_fields-1) = body_force(1)*ubulk; // energy forcing
-    
-#ifdef _MPI
-     array<double> body_force_global(n_fields);
-     for (m=0;m<n_fields;m++)
-     {
-       body_force_global(m) = 0.;
-       MPI_Reduce(&body_force(m),&body_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-       body_force(m) = body_force_global(m);
-     }
-#endif
-    
-    cout<<"Channel body force: " << setprecision(10)<<body_force(1)<<", "<<body_force(n_fields-1)<<endl;
-    if(isnan(body_force(1)) or isnan(body_force(n_fields-1)))
+    body_force(2) = 0.; // y-momentum forcing
+    body_force(3) = 0.; // z-momentum forcing
+    body_force(4) = vis_force(0)/vol*ubulk; // energy forcing
+
+    // error checking
+    if(isnan(body_force(1)) or isnan(body_force(4)))
     {
-      cout<<"ERROR: NaN body force, exiting"<<endl;
-      cout<<"timestep, vol: "<< run_input.dt<<", "<<vol<<endl;
-      cout<<"Channel mass flux: " << setprecision(10)<<mdot<<endl;
-      cout<<"Channel bulk velocity: " << setprecision(10)<<ubulk<<endl;
-      cout<<"Channel viscous force: " << setprecision(10)<<vis_force(0)<<endl;
-      exit(1);
+      FatalError("ERROR: NaN body force, exiting");
+    }
+
+    // write out mass flux to file
+    if (rank == 0) {
+      write_mdot.open("massflux.dat", ios::out);
+      write_mdot.precision(15);
+      write_mdot << "Iteration, massflux, Ubulk, bodyforce(x)" << endl;
+      write_mdot << in_file_num;
+      write_mdot << ", " << mass_flux;
+      write_mdot << ", " << ubulk;
+      write_mdot << ", " << body_force(1) << endl;
+      write_mdot.close();
     }
   }
-#endif
+//#endif
+
+//#ifdef _GPU
+
+//#endif
 }
 
 void eles::evaluate_body_force(array <double>& body_force)
@@ -6602,8 +6623,7 @@ void eles::CalcIntegralQuantities(int n_integral_quantities, array <double>& int
         }
         else
         {
-          cout<<"Error: integral diagnostic quantity not recognized"<<endl;
-          exit(1);
+          FatalError("integral diagnostic quantity not recognized");
         }
         // Add contribution to global integral
         integral_quantities(m) += diagnostic*weight_volume_cubpts(j)*detjac;
