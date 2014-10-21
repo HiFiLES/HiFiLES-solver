@@ -6337,6 +6337,7 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
     array <double> solint(4);
     array <double> norm(n_dims), flow(n_dims);
     ofstream write_mdot;
+    bool open_mdot;
 
     for (i=0;i<4;i++)
     {
@@ -6459,10 +6460,22 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
     }
 
     // write out mass flux to file
+
+    // set write flag
+    if (run_input.restart_flag==0) {
+      open_mdot = (in_file_num == 1);
+    }
+    else {
+      open_mdot = (in_file_num == run_input.restart_iter+1);
+    }
+
     if (rank == 0) {
       write_mdot.open("massflux.dat", ios::out);
       write_mdot.precision(15);
-      write_mdot << "Iteration, massflux, Ubulk, bodyforce(x)" << endl;
+      if(open_mdot)
+      {
+        write_mdot << "Iteration, massflux, Ubulk, bodyforce(x)" << endl;
+      }
       write_mdot << in_file_num;
       write_mdot << ", " << mass_flux;
       write_mdot << ", " << ubulk;
