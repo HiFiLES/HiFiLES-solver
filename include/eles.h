@@ -93,6 +93,9 @@ public:
   /*! copy AV co-eff values at solution points to cpu */
   void cp_epsilon_upts_gpu_cpu(void);
 
+  /*! copy body force to cpu */
+  //void cp_body_force_gpu_cpu(void);
+
   /*! remove transformed discontinuous solution at solution points from cpu */
   void rm_disu_upts_cpu(void);
 

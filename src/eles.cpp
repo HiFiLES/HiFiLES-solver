@@ -6323,7 +6323,7 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
   return error;
 }
 
-// Calculate body forcing term for periodic channel flow. HARDCODED FOR THE CHANNEL!
+// Calculate body forcing term for periodic channel flow. HARDCODED FOR THE CHANNEL AND PERIODIC HILL!
 
 void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, array <double>& body_force)
 {
@@ -6416,7 +6416,7 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
         }
       }
     }
-    
+
 #ifdef _MPI
 
     array<double> solint_global(4);
@@ -6497,6 +6497,9 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
 void eles::evaluate_body_force(array <double>& body_force)
 {
   if (n_eles!=0) {
+
+#ifdef _CPU
+
     int i,j,k,l,m;
     // Add to viscous flux at solution points
     for (i=0;i<n_eles;i++)
@@ -6505,6 +6508,13 @@ void eles::evaluate_body_force(array <double>& body_force)
           for(l=0;l<n_dims;l++)
             for(m=0;m<n_dims;m++)
               tdisf_upts(j,i,k,l)+=JGinv_upts(l,m,j,i)*body_force(k);
+
+#endif
+
+#ifdef _GPU
+    body_force.cp_cpu_gpu();
+    evaluate_body_force_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,tdisf_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),body_force.get_ptr_gpu());
+#endif
   }
 }
 

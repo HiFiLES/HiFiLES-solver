@@ -61,6 +61,8 @@ void evaluate_boundaryConditions_viscFlux_gpu_kernel_wrapper(int n_fpts_per_inte
 /*! wrapper for gpu kernel to calculate source term for SA turbulence model at solution points */
 void calc_src_upts_SA_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* in_disu_upts_ptr, double* grad_disu_upts_ptr, double* wall_distance_mag_ptr, double* src_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, int in_fix_vis, double in_c_v1, double in_c_v2, double in_c_v3, double in_c_b1, double in_c_b2, double in_c_w2, double in_c_w3, double in_omega, double in_Kappa);
 
+void evaluate_body_force_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* out_tdisf_upts_ptr, double* JGinv_upts_ptr, double* body_force_ptr);
+
 #ifdef _MPI
 
 void pack_out_buffer_disu_gpu_kernel_wrapper(int n_fpts_per_inter,int n_inters,int n_fields,double** disu_fpts_l_ptr, double* out_buffer_disu_ptr);
