@@ -6331,7 +6331,7 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
   
   if (n_eles!=0) {
     int i,j,k,l,m;
-    double lenx, areayz, vol, detjac, ubulk, wgt;
+    double lenx, areayz, vol, detjac, ubulk, wgt, mdot0, alpha, dt;
     array <int> inflowinters(n_bdy_eles,n_inters_per_ele);
     array <double> disu_cubpt(4);
     array <double> solint(4);
@@ -6430,31 +6430,39 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
 #endif
 
     // periodic channel:
-    //lenx = 2*pi;
     //areayz = 2*pi;
-    //vol = areayz*lenx;
+    //vol = 4*pi**2;
 
     // periodic hill (HIOCFD3 Case 3.4):
     areayz = 9.162;
     vol = 114.34;
-
-    // compute mass flux for output
-    mass_flux = sqrt(pow(solint(1),2)+pow(solint(2),2)+pow(solint(3),2));
+    mdot0 = areayz; // initial mass flux
+    alpha = 0.3; // relaxation parameter
+ 
+    if (run_input.dt_type == 0)
+      dt = run_input.dt;
+    else if (run_input.dt_type == 1)
+      dt = dt_local(0);
+    else if (run_input.dt_type == 2)
+      FatalError("Not sure what value of timestep to use in body force term when using local timestepping.");
 
     // bulk velocity
     if(solint(0)==0)
       ubulk = 0.0;
     else
-      ubulk = solint(1)/solint(0);
+      ubulk = sqrt(pow(solint(1),2)+pow(solint(2),2)+pow(solint(3),2))/solint(0);
     
+    // compute mass flux for output
+    mass_flux = ubulk*solint(0);
+
     body_force(0) = 0.; // density forcing
-    body_force(1) = vis_force(0)/vol; // x-momentum forcing
+    body_force(1) = alpha/dt*(mdot0 - mass_flux); // x-momentum forcing
     body_force(2) = 0.; // y-momentum forcing
     body_force(3) = 0.; // z-momentum forcing
-    body_force(4) = vis_force(0)/vol*ubulk; // energy forcing
+    body_force(4) = body_force(1)*ubulk; // energy forcing
 
     // error checking
-    if(isnan(body_force(1)) or isnan(body_force(4)))
+    if(isnan(body_force(1)))
     {
       FatalError("ERROR: NaN body force, exiting");
     }
