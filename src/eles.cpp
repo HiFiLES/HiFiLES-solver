@@ -6331,7 +6331,8 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
   
   if (n_eles!=0) {
     int i,j,k,l,m;
-    double lenx, areayz, vol, detjac, ubulk, wgt, mdot0, alpha, dt;
+    double area, vol, detjac, ubulk, wgt;
+    double mdot0, mdot_old, alpha, dt;
     array <int> inflowinters(n_bdy_eles,n_inters_per_ele);
     array <double> disu_cubpt(4);
     array <double> solint(4);
@@ -6429,16 +6430,6 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
 
 #endif
 
-    // periodic channel:
-    //areayz = 2*pi;
-    //vol = 4*pi**2;
-
-    // periodic hill (HIOCFD3 Case 3.4):
-    areayz = 9.162;
-    vol = 114.34;
-    mdot0 = areayz; // initial mass flux
-    alpha = 0.3; // relaxation parameter
- 
     if (run_input.dt_type == 0)
       dt = run_input.dt;
     else if (run_input.dt_type == 1)
@@ -6446,26 +6437,42 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
     else if (run_input.dt_type == 2)
       FatalError("Not sure what value of timestep to use in body force term when using local timestepping.");
 
+    // periodic channel:
+    //area = 2*pi;
+    //vol = 4*pi**2;
+
+    // periodic hill (HIOCFD3 Case 3.4):
+    area = 9.162;
+    vol = 114.34;
+    mdot0 = 9.16025; // initial mass flux
+ 
+    alpha = 0.01; // relaxation parameter
+
     // bulk velocity
     if(solint(0)==0)
       ubulk = 0.0;
     else
-      ubulk = sqrt(pow(solint(1),2)+pow(solint(2),2)+pow(solint(3),2))/solint(0);
-    
+      ubulk = solint(1)/solint(0);//sqrt(pow(solint(1),2)+pow(solint(2),2)+pow(solint(3),2))/solint(0);
+
+    // get old mass flux
+    if(run_input.restart_flag==0 and in_file_num == 1)
+      mdot_old = mdot0;
+    else if(run_input.restart_flag==1 and in_file_num == run_input.restart_iter+1)
+      mdot_old = mdot0;
+    else
+      mdot_old = mass_flux;
+
     // compute mass flux for output
     mass_flux = ubulk*solint(0);
 
-    body_force(0) = 0.; // density forcing
-    body_force(1) = alpha/dt*(mdot0 - mass_flux); // x-momentum forcing
-    body_force(2) = 0.; // y-momentum forcing
-    body_force(3) = 0.; // z-momentum forcing
+    body_force(0) = 0.;
+    //body_force(1) = alpha/dt*(mdot0 - mass_flux); // SD3D version
+    body_force(1) = -1.0*alpha/area/dt*(mdot0 - 2.0*mass_flux + mdot_old); // HIOCFD C3.4 version
+    body_force(2) = 0.;
+    body_force(3) = 0.;
     body_force(4) = body_force(1)*ubulk; // energy forcing
 
-    // error checking
-    if(isnan(body_force(1)))
-    {
-      FatalError("ERROR: NaN body force, exiting");
-    }
+    //if (rank == 0) cout << "mdot_old, mass_flux, body_force(1): " << setprecision(8) << mdot_old << ", " << mass_flux << ", " << body_force(1) << endl;
 
     // write out mass flux to file
     if (rank == 0) {
@@ -6485,6 +6492,10 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
         write_mdot << ", " << body_force(1) << endl;
         write_mdot.close();
       }
+    }
+    // error checking
+    if(isnan(body_force(1))) {
+      FatalError("ERROR: NaN body force, exiting");
     }
   }
 //#endif
