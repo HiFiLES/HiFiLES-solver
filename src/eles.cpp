@@ -6430,13 +6430,7 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
 
 #endif
 
-    if (run_input.dt_type == 0)
-      dt = run_input.dt;
-    else if (run_input.dt_type == 1)
-      dt = dt_local(0);
-    else if (run_input.dt_type == 2)
-      FatalError("Not sure what value of timestep to use in body force term when using local timestepping.");
-
+    // case-specific parameters
     // periodic channel:
     //area = 2*pi;
     //vol = 4*pi**2;
@@ -6444,15 +6438,9 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
     // periodic hill (HIOCFD3 Case 3.4):
     area = 9.162;
     vol = 114.34;
-    mdot0 = 9.16025; // initial mass flux
+    mdot0 = 9.162; // initial mass flux
  
     alpha = 0.01; // relaxation parameter
-
-    // bulk velocity
-    if(solint(0)==0)
-      ubulk = 0.0;
-    else
-      ubulk = solint(1)/solint(0);//sqrt(pow(solint(1),2)+pow(solint(2),2)+pow(solint(3),2))/solint(0);
 
     // get old mass flux
     if(run_input.restart_flag==0 and in_file_num == 1)
@@ -6462,17 +6450,32 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
     else
       mdot_old = mass_flux;
 
-    // compute mass flux for output
+    // get timestep
+    if (run_input.dt_type == 0)
+      dt = run_input.dt;
+    else if (run_input.dt_type == 1)
+      dt = dt_local(0);
+    else if (run_input.dt_type == 2)
+      FatalError("Not sure what value of timestep to use in body force term when using local timestepping.");
+
+    // bulk velocity
+    if(solint(0)==0)
+      ubulk = 0.0;
+    else
+      ubulk = solint(1)/solint(0);//sqrt(pow(solint(1),2)+pow(solint(2),2)+pow(solint(3),2))/solint(0);
+
+    // compute new mass flux
     mass_flux = ubulk*solint(0);
 
     body_force(0) = 0.;
-    //body_force(1) = alpha/dt*(mdot0 - mass_flux); // SD3D version
+    //body_force(1) = -1.0*alpha/area/dt*(mdot0 - mass_flux); // modified SD3D version
     body_force(1) = -1.0*alpha/area/dt*(mdot0 - 2.0*mass_flux + mdot_old); // HIOCFD C3.4 version
     body_force(2) = 0.;
     body_force(3) = 0.;
     body_force(4) = body_force(1)*ubulk; // energy forcing
+    //body_force(4) = 0.;
 
-    //if (rank == 0) cout << "mdot_old, mass_flux, body_force(1): " << setprecision(8) << mdot_old << ", " << mass_flux << ", " << body_force(1) << endl;
+    if (rank == 0) cout << "mdot_old, mass_flux, body_force(1): " << setprecision(8) << mdot_old << ", " << mass_flux << ", " << body_force(1) << endl;
 
     // write out mass flux to file
     if (rank == 0) {
