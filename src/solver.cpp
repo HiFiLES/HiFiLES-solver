@@ -116,14 +116,18 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 
   // If running periodic channel or periodic hill cases,
   // calculate body forcing and add to source term
+  if(in_file_num%run_input.monitor_res_freq == 0 and run_input.forcing==1 and in_rk_stage==0) {
+    if(run_input.equation==0 and FlowSol->n_dims==3) {
+
 #ifdef _GPU
-  // copy disu_upts for body force calculation
-  for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+    // copy disu_upts for body force calculation
+    //for(i=0; i<FlowSol->n_ele_types; i++)
+      //FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
 #endif
-  if(run_input.equation==0 and run_input.forcing==1 and FlowSol->n_dims==3 and in_rk_stage==0) {
-    for(int i=0;i<FlowSol->n_ele_types;i++) {
-      FlowSol->mesh_eles(i)->evaluate_body_force(in_file_num);
+
+      for(i=0;i<FlowSol->n_ele_types;i++) {
+        FlowSol->mesh_eles(i)->evaluate_body_force(in_file_num);
+      }
     }
   }
 
