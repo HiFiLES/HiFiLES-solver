@@ -6325,7 +6325,7 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
 
 // Calculate body forcing term for periodic channel flow. HARDCODED FOR THE CHANNEL AND PERIODIC HILL!
 
-void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
+void eles::evaluate_body_force(int in_file_num)
 {
 //#ifdef _CPU
   
@@ -6334,18 +6334,19 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
     double area, vol, detjac, ubulk, wgt;
     double mdot0, mdot_old, alpha, dt;
     array <int> inflowinters(n_bdy_eles,n_inters_per_ele);
+    array <double> body_force(n_fields);
     array <double> disu_cubpt(4);
-    array <double> solint(4);
+    array <double> integral(4);
     array <double> norm(n_dims), flow(n_dims), loc(n_dims), pos(n_dims);
     ofstream write_mdot;
     bool open_mdot;
 
     for (i=0;i<4;i++)
     {
-      solint(i)=0.0;
+      integral(i)=0.0;
     }
 
-    // Calculate mass flux as area integral
+    // zero the interface flags
     for (i=0;i<n_bdy_eles;i++)
     {
       for (l=0;l<n_inters_per_ele;l++)
@@ -6363,7 +6364,7 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
       {
         if(inflowinters(i,l)!=1) // only unflagged inters
         {
-          // Inlet is always a Cyclic (9) BC
+          // HACK: Inlet is always a Cyclic (9) BC
           if(bctype(ele,l) == 9)
           {
             // Get the normal
@@ -6395,14 +6396,6 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
             wgt = weight_inters_cubpts(l)(j);
             detjac = inter_detjac_inters_cubpts(l)(j,i);
 
-            // Get position of cubature point
-            //for (m=0;m<n_dims;m++)
-              //loc(m) = loc_inters_cubpts(l)(m,j);
-
-            //calc_pos(loc,ele,pos);
-            //cout << "pos: " << endl;
-            //pos.print();
-
             for (m=0;m<4;m++)
             {
               disu_cubpt(m) = 0.;
@@ -6418,7 +6411,7 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
             }
             for (m=0;m<4;m++)
             {
-              solint(m) += wgt*disu_cubpt(m)*detjac;
+              integral(m) += wgt*disu_cubpt(m)*detjac;
             }
           }
         }
@@ -6427,12 +6420,12 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
 
 #ifdef _MPI
 
-    array<double> solint_global(4);
+    array<double> integral_global(4);
     for (m=0;m<4;m++)
     {
-      solint_global(m) = 0.;
-      MPI_Allreduce(&solint(m), &solint_global(m), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-      solint(m) = solint_global(m);
+      integral_global(m) = 0.;
+      MPI_Allreduce(&integral(m), &integral_global(m), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      integral(m) = integral_global(m);
     }
 
 #endif
@@ -6446,8 +6439,6 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
     area = 9.162;
     vol = 114.34;
     mdot0 = 9.162; // initial mass flux
- 
-    alpha = 0.1; // relaxation parameter
 
     // get old mass flux
     if(run_input.restart_flag==0 and in_file_num == 0)
@@ -6466,21 +6457,23 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
       FatalError("Not sure what value of timestep to use in body force term when using local timestepping.");
 
     // bulk velocity
-    if(solint(0)==0)
+    if(integral(0)==0)
       ubulk = 0.0;
     else
-      ubulk = solint(1)/solint(0);//sqrt(pow(solint(1),2)+pow(solint(2),2)+pow(solint(3),2))/solint(0);
+      ubulk = integral(1)/integral(0);
 
     // compute new mass flux
-    mass_flux = ubulk*solint(0);
+    mass_flux = ubulk*integral(0);
 
+    //alpha = 1; // relaxation parameter
+
+    // set body force for streamwise momentum and energy
     body_force(0) = 0.;
     //body_force(1) = alpha/area/dt*(mdot0 - mass_flux); // modified SD3D version
-    body_force(1) = alpha/area/dt*(mdot0 - 2.0*mass_flux + mdot_old); // HIOCFD C3.4 version
+    body_force(1) = 1.0/area/dt*(mdot0 - 2.0*mass_flux + mdot_old); // HIOCFD C3.4 version
     body_force(2) = 0.;
     body_force(3) = 0.;
     body_force(4) = body_force(1)*ubulk; // energy forcing
-    //body_force(4) = 0.;
 
     if (rank == 0) cout << "iter, mdot0, mdot_old, mass_flux, body_force(1): " << in_file_num << ", " << setprecision(8) << mdot0 << ", " << mdot_old << ", " << mass_flux << ", " << body_force(1) << endl;
 
@@ -6517,19 +6510,17 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
 
 #ifdef _CPU
 
-    // Add to viscous flux at solution points
+    // Add to source term at solution points
     for (i=0;i<n_eles;i++)
       for (j=0;j<n_upts_per_ele;j++)
         for(k=0;k<n_fields;k++)
-          for(l=0;l<n_dims;l++)
-            for(m=0;m<n_dims;m++)
-              tdisf_upts(j,i,k,l)+=JGinv_upts(l,m,j,i)*body_force(k);
+          src_upts(j,i,k) += body_force(k);
 
 #endif
 
 #ifdef _GPU
     body_force.cp_cpu_gpu();
-    evaluate_body_force_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,tdisf_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),body_force.get_ptr_gpu());
+    evaluate_body_force_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,src_upts.get_ptr_gpu(),body_force.get_ptr_gpu());
 #endif
   }
 }

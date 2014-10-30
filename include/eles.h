@@ -399,7 +399,7 @@ public:
   double compute_res_upts(int in_norm_type, int in_field);
 
   /*! calculate body forcing at solution points */
-  void evaluate_body_force(int in_file_num, array <double>& body_force);
+  void evaluate_body_force(int in_file_num);
 
   /*! Compute volume integral of diagnostic quantities */
   void CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities);

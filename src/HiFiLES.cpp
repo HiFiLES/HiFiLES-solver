@@ -113,14 +113,7 @@ int main(int argc, char *argv[]) {
   error_state = 0;
   FlowSol.ene_hist = 1000.;
   FlowSol.grad_ene_hist = 1000.;
-  
-  /*! Initialize body forcing term for periodic channel. */
-
-  if (run_input.equation == 0 && run_input.forcing == 1) {
-    FlowSol.body_force.setup(5);
-    for (i=0; i<5; i++) FlowSol.body_force(i)=0.0;
-  }
-  
+    
   /*! Initialize forces, integral quantities, and residuals. */
 
   if (FlowSol.rank == 0) {

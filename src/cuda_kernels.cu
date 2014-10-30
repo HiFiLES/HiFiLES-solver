@@ -4264,39 +4264,20 @@ __global__ void shock_capture_concentration_gpu_kernel(int in_n_eles, int in_n_u
 }
 
 // kernel to add body force to viscous flux
+//TODO: implement body force calculation from eles.cpp
 template<int n_dims, int n_fields>
-__global__ void evaluate_body_force_gpu_kernel(int n_upts_per_ele, int n_eles, double* out_tdisf_upts_ptr, double* JGinv_upts_ptr, double* body_force_ptr)
+__global__ void evaluate_body_force_gpu_kernel(int n_upts_per_ele, int n_eles, double* src_upts_ptr, double* body_force_ptr)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
-  int ele = thread_id/n_upts_per_ele;
-  int upt = thread_id%n_upts_per_ele;
-  double met[n_dims][n_dims];
-  int index, i, j;
+  int i;
 
   int stride = n_upts_per_ele*n_eles;
 
   if(thread_id<(n_upts_per_ele*n_eles)) {
-#pragma unroll
-    for (i=0;i<n_dims;i++) {
-#pragma unroll
-      for (j=0;j<n_dims;j++) {
-        met[j][i] = JGinv_upts_ptr[j+n_dims*(i+n_dims*(upt+n_upts_per_ele*ele))];
-      }
-    }
 
 #pragma unroll
     for (i=0;i<n_fields;i++) {
-      index = thread_id + i*stride;
-
-      if (n_dims==2) {
-        out_tdisf_upts_ptr[index                  ] += (met[0][0] + met[0][1])*body_force_ptr[i];
-        out_tdisf_upts_ptr[index+  stride*n_fields] += (met[1][0] + met[1][1])*body_force_ptr[i];
-      }
-      else if (n_dims==3) {
-        out_tdisf_upts_ptr[index                  ] += (met[0][0] + met[0][1] + met[0][2])*body_force_ptr[i];
-        out_tdisf_upts_ptr[index+  stride*n_fields] += (met[1][0] + met[1][1] + met[1][2])*body_force_ptr[i];
-        out_tdisf_upts_ptr[index+2*stride*n_fields] += (met[2][0] + met[2][1] + met[2][2])*body_force_ptr[i];
-      }
+      src_upts_ptr[thread_id + i*stride] += body_force_ptr[i];
     }
   }
 }
@@ -5584,7 +5565,7 @@ void shock_capture_concentration_gpu_kernel_wrapper(int in_n_eles, int in_n_upts
 }
 
 // wrapper for gpu kernel to add body force to viscous flux
-void evaluate_body_force_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* out_tdisf_upts_ptr, double* JGinv_upts_ptr, double* body_force_ptr)
+void evaluate_body_force_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* src_upts_ptr, double* body_force_ptr)
 {
 
   // HACK: fix 256 threads per block
@@ -5594,20 +5575,20 @@ void evaluate_body_force_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int 
 
   if (n_dims==2) {
     if (n_fields==4) {
-      evaluate_body_force_gpu_kernel<2,4> <<<n_blocks,256>>>(n_upts_per_ele,n_eles,out_tdisf_upts_ptr,JGinv_upts_ptr,body_force_ptr);
+      evaluate_body_force_gpu_kernel<2,4> <<<n_blocks,256>>>(n_upts_per_ele,n_eles,src_upts_ptr,body_force_ptr);
     }
     else if (n_fields==5) {
-      evaluate_body_force_gpu_kernel<2,5> <<<n_blocks,256>>>(n_upts_per_ele,n_eles,out_tdisf_upts_ptr,JGinv_upts_ptr,body_force_ptr);
+      evaluate_body_force_gpu_kernel<2,5> <<<n_blocks,256>>>(n_upts_per_ele,n_eles,src_upts_ptr,body_force_ptr);
     }
     else
       FatalError("ERROR: Invalid number of fields for this dimension ... ")
   }
   else if (n_dims==3) {
     if (n_fields==5) {
-      evaluate_body_force_gpu_kernel<3,5> <<<n_blocks,256>>>(n_upts_per_ele,n_eles,out_tdisf_upts_ptr,JGinv_upts_ptr,body_force_ptr);
+      evaluate_body_force_gpu_kernel<3,5> <<<n_blocks,256>>>(n_upts_per_ele,n_eles,src_upts_ptr,body_force_ptr);
     }
     else if (n_fields==6) {
-      evaluate_body_force_gpu_kernel<3,6> <<<n_blocks,256>>>(n_upts_per_ele,n_eles,out_tdisf_upts_ptr,JGinv_upts_ptr,body_force_ptr);
+      evaluate_body_force_gpu_kernel<3,6> <<<n_blocks,256>>>(n_upts_per_ele,n_eles,src_upts_ptr,body_force_ptr);
     }
     else
       FatalError("ERROR: Invalid number of fields for this dimension ... ")
