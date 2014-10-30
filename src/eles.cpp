@@ -6330,13 +6330,13 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
 //#ifdef _CPU
   
   if (n_eles!=0) {
-    int i,j,k,l,m;
+    int i,j,k,l,m,ele;
     double area, vol, detjac, ubulk, wgt;
     double mdot0, mdot_old, alpha, dt;
     array <int> inflowinters(n_bdy_eles,n_inters_per_ele);
     array <double> disu_cubpt(4);
     array <double> solint(4);
-    array <double> norm(n_dims), flow(n_dims);
+    array <double> norm(n_dims), flow(n_dims), loc(n_dims), pos(n_dims);
     ofstream write_mdot;
     bool open_mdot;
 
@@ -6347,38 +6347,33 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
 
     // Calculate mass flux as area integral
     for (i=0;i<n_bdy_eles;i++)
+    {
       for (l=0;l<n_inters_per_ele;l++)
+      {
         inflowinters(i,l)=0;
+      }
+    }
 
     // Mass flux on inflow boundary
     // Integrate density and x-velocity over inflow area
     for (i=0;i<n_bdy_eles;i++)
     {
-      int ele = bdy_ele2ele(i);
+      ele = bdy_ele2ele(i);
       for (l=0;l<n_inters_per_ele;l++)
       {
         if(inflowinters(i,l)!=1) // only unflagged inters
         {
-          // Inlet has either Sub_In_Simp (1), Sub_In_Char (3), Sup_In (5) or Cyclic (9) BC
-          if(bctype(ele,l) == 1 || bctype(ele,l) == 3 || bctype(ele,l) == 5 || bctype(ele,l) == 9)
+          // Inlet is always a Cyclic (9) BC
+          if(bctype(ele,l) == 9)
           {
-            // HACK NUMBER UMPTEEN: inflow plane normal direction is -x
-            if(bctype(ele,l) == 9)
+            // Get the normal
+            for (m=0;m<n_dims;m++)
             {
-              // Get the normal
-              for (m=0;m<n_dims;m++)
-                norm(m) = norm_inters_cubpts(l)(0,i,m);
-
-              if(norm(0)==-1)
-              {
-                inflowinters(i,l)=1; // Flag this interface
-              }
-              else
-              {
-                inflowinters(i,l)=0;
-              }
+              norm(m) = norm_inters_cubpts(l)(0,i,m);
             }
-            else
+
+            // HACK: inflow plane normal direction is -x
+            if(norm(0)==-1)
             {
               inflowinters(i,l)=1; // Flag this interface
             }
@@ -6390,7 +6385,7 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
     // Now loop over flagged inters
     for (i=0;i<n_bdy_eles;i++)
     {
-      int ele = bdy_ele2ele(i);
+      ele = bdy_ele2ele(i);
       for (l=0;l<n_inters_per_ele;l++)
       {
         if(inflowinters(i,l)==1)
@@ -6399,20 +6394,32 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
           {
             wgt = weight_inters_cubpts(l)(j);
             detjac = inter_detjac_inters_cubpts(l)(j,i);
-            
+
+            // Get position of cubature point
+            //for (m=0;m<n_dims;m++)
+              //loc(m) = loc_inters_cubpts(l)(m,j);
+
+            //calc_pos(loc,ele,pos);
+            //cout << "pos: " << endl;
+            //pos.print();
+
+            for (m=0;m<4;m++)
+            {
+              disu_cubpt(m) = 0.;
+            }
+
             // Get the solution at cubature point
-            disu_cubpt(0) = 0.; disu_cubpt(1) = 0.; disu_cubpt(2) = 0.; disu_cubpt(3) = 0.;
             for (k=0;k<n_upts_per_ele;k++)
             {
-              disu_cubpt(0) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,0); // density
-              disu_cubpt(1) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,1); // x-momentum
-              disu_cubpt(2) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,2); // y-momentum
-              disu_cubpt(3) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,3); // z-momentum
+              for (m=0;m<4;m++)
+              {
+                disu_cubpt(m) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,m);
+              }
             }
-            solint(0) += wgt*disu_cubpt(0)*detjac;
-            solint(1) += wgt*disu_cubpt(1)*detjac;
-            solint(2) += wgt*disu_cubpt(2)*detjac;
-            solint(3) += wgt*disu_cubpt(3)*detjac;
+            for (m=0;m<4;m++)
+            {
+              solint(m) += wgt*disu_cubpt(m)*detjac;
+            }
           }
         }
       }
@@ -6503,6 +6510,7 @@ void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
 
 //#endif
 
+//TODO: GPU version of above?
 //#ifdef _GPU
 
 //#endif
@@ -6921,6 +6929,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                             }
 
                           // viscous component of the lift and drag coefficients
+                          // TODO: make this work for any orientation of axes
                           
                           cl += -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
                           cd += Fvis(0)*cos(aoa)*cos(aos) + Fvis(1)*sin(aoa) + Fvis(2)*sin(aoa)*cos(aos);
