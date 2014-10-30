@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
 
       /*! Spatial integration. */
 
-      CalcResidual(&FlowSol);
+      CalcResidual(FlowSol.ini_iter+i_steps, i, &FlowSol);
       
       /*! Time integration usign a RK scheme */
       

@@ -93,9 +93,6 @@ public:
   /*! copy AV co-eff values at solution points to cpu */
   void cp_epsilon_upts_gpu_cpu(void);
 
-  /*! copy body force to cpu */
-  //void cp_body_force_gpu_cpu(void);
-
   /*! remove transformed discontinuous solution at solution points from cpu */
   void rm_disu_upts_cpu(void);
 
@@ -402,10 +399,7 @@ public:
   double compute_res_upts(int in_norm_type, int in_field);
 
   /*! calculate body forcing at solution points */
-  void calc_body_force_upts(int in_file_num, array <double>& vis_force, array <double>& body_force);
-
-  /*! add body forcing at solution points */
-  void evaluate_body_force(array <double>& body_force);
+  void evaluate_body_force(int in_file_num, array <double>& body_force);
 
   /*! Compute volume integral of diagnostic quantities */
   void CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities);

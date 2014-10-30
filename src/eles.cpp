@@ -6325,7 +6325,7 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
 
 // Calculate body forcing term for periodic channel flow. HARDCODED FOR THE CHANNEL AND PERIODIC HILL!
 
-void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, array <double>& body_force)
+void eles::evaluate_body_force(int in_file_num, array <double>& body_force)
 {
 //#ifdef _CPU
   
@@ -6440,12 +6440,12 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
     vol = 114.34;
     mdot0 = 9.162; // initial mass flux
  
-    alpha = 0.01; // relaxation parameter
+    alpha = 0.1; // relaxation parameter
 
     // get old mass flux
-    if(run_input.restart_flag==0 and in_file_num == 1)
+    if(run_input.restart_flag==0 and in_file_num == 0)
       mdot_old = mdot0;
-    else if(run_input.restart_flag==1 and in_file_num == run_input.restart_iter+1)
+    else if(run_input.restart_flag==1 and in_file_num == run_input.restart_iter)
       mdot_old = mdot0;
     else
       mdot_old = mass_flux;
@@ -6468,14 +6468,14 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
     mass_flux = ubulk*solint(0);
 
     body_force(0) = 0.;
-    //body_force(1) = -1.0*alpha/area/dt*(mdot0 - mass_flux); // modified SD3D version
-    body_force(1) = -1.0*alpha/area/dt*(mdot0 - 2.0*mass_flux + mdot_old); // HIOCFD C3.4 version
+    //body_force(1) = alpha/area/dt*(mdot0 - mass_flux); // modified SD3D version
+    body_force(1) = alpha/area/dt*(mdot0 - 2.0*mass_flux + mdot_old); // HIOCFD C3.4 version
     body_force(2) = 0.;
     body_force(3) = 0.;
     body_force(4) = body_force(1)*ubulk; // energy forcing
     //body_force(4) = 0.;
 
-    if (rank == 0) cout << "mdot_old, mass_flux, body_force(1): " << setprecision(8) << mdot_old << ", " << mass_flux << ", " << body_force(1) << endl;
+    if (rank == 0) cout << "iter, mdot0, mdot_old, mass_flux, body_force(1): " << in_file_num << ", " << setprecision(8) << mdot0 << ", " << mdot_old << ", " << mass_flux << ", " << body_force(1) << endl;
 
     // write out mass flux to file
     if (rank == 0) {
@@ -6500,21 +6500,15 @@ void eles::calc_body_force_upts(int in_file_num, array <double>& vis_force, arra
     if(isnan(body_force(1))) {
       FatalError("ERROR: NaN body force, exiting");
     }
-  }
+
 //#endif
 
 //#ifdef _GPU
 
 //#endif
-}
-
-void eles::evaluate_body_force(array <double>& body_force)
-{
-  if (n_eles!=0) {
 
 #ifdef _CPU
 
-    int i,j,k,l,m;
     // Add to viscous flux at solution points
     for (i=0;i<n_eles;i++)
       for (j=0;j<n_upts_per_ele;j++)

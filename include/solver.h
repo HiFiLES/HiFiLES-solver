@@ -47,7 +47,7 @@
  * \brief Calculate the residual.
  * \param[in] FlowSol - Structure with the entire solution and mesh information.
  */
-void CalcResidual(struct solution* FlowSol);
+void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol);
 
 void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol);
 

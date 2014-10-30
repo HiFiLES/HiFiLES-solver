@@ -62,7 +62,7 @@ using namespace std;
 #define MULTI_ZONE
 //#define SINGLE_ZONE
 
-void CalcResidual(struct solution* FlowSol) {
+void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 
   int in_disu_upts_from = 0;        /*!< Define... */
   int in_div_tconf_upts_to = 0;     /*!< Define... */
@@ -113,11 +113,14 @@ void CalcResidual(struct solution* FlowSol) {
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->evaluate_invFlux(in_disu_upts_from);
 
-  /*! Add body forcing to flux, if switched on. */
-  if(run_input.equation==0 && run_input.forcing==1) {
-      for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->evaluate_body_force(FlowSol->body_force);
+
+  // if running periodic channel or periodic hill cases,
+  // Calculate body forcing and Add body forcing to flux
+  if(run_input.equation==0 and run_input.forcing==1 and FlowSol->n_dims==3 and in_rk_stage==0) {
+    for(int i=0;i<FlowSol->n_ele_types;i++) {
+      FlowSol->mesh_eles(i)->evaluate_body_force(in_file_num, FlowSol->body_force);
     }
+  }
 
   /*! Compute the inviscid numerical fluxes.
    Compute the common solution and solution corrections (viscous only). */
