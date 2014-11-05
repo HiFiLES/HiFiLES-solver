@@ -234,21 +234,11 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
         {
           j_rhs=lut(j);
 
-//          if (run_input.GCL) {
-//            disu_GCL_fpts_l(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-//            disu_GCL_fpts_r(j,in_inter)=get_disu_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
-
-//            norm_tconf_GCL_fpts_l(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-//            norm_tconf_GCL_fpts_r(j,in_inter)=get_norm_tconf_GCL_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
-//          }
-
           ndA_dyn_fpts_l(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-          //ndA_dyn_fpts_r(j,in_inter)=get_ndA_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
 
           // pretty sure these should be the same due to the continuous nature of the dynamic->static mapping.
           // But, leave it this way for now just in case.
           J_dyn_fpts_l(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
-          //J_dyn_fpts_r(j,in_inter)=get_detjac_dyn_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
 
           for (k=0; k<n_dims; k++) {
             norm_dyn_fpts(j,in_inter,k)=get_norm_dyn_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,k,FlowSol);
@@ -594,7 +584,7 @@ void mpi_inters::calculate_common_viscFlux(void)
             // Transform solution to dynamic space
             for (int k=0; k<n_fields; k++) {
               temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
-              temp_u_r(k) /= (*J_dyn_fpts_r(j,i));
+              temp_u_r(k) /= (*J_dyn_fpts_l(j,i));
             }
           }
 
@@ -671,7 +661,6 @@ void mpi_inters::calculate_common_viscFlux(void)
         }
     }
 
-  //cout << "done viscous mpi" << endl;
 #endif
 
 #ifdef _GPU

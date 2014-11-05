@@ -413,7 +413,8 @@ public:
   /*! Compute volume integral of diagnostic quantities */
   void CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities);
 
-  void compute_wall_forces(array<double>& inv_force, array<double>& vis_force, double& temp_cl, double& temp_cd, ofstream& coeff_file, bool write_forces);
+  /*! Compute total force acting on wall boundaries */
+  void compute_wall_forces(array<double>& inv_force, array<double>& vis_force, array<double>& work, double& temp_cl, double& temp_cd, ofstream& coeff_file, bool write_forces);
 
   array<double> compute_error(int in_norm_type, double& time);
   
@@ -447,19 +448,36 @@ public:
   void calc_pos_dyn_ppt(int in_ppt, int in_ele, array<double> &out_pos);
 
   /*!
+   * Calculate static position of volume cubature point
+   * \param[in] in_cubpt - ID of cubature point within element to evaluate at
+   * \param[in] in_ele - local element ID
+   * \param[out] out_pos - array of size n_dims
+   */
+  void calc_pos_vol_cubpt(int in_cubpt, int in_ele, array<double> &out_pos);
+
+  /*!
    * Calculate dynamic position of volume cubature point
    * \param[in] in_cubpt - ID of cubature point within element to evaluate at
    * \param[in] in_ele - local element ID
-   * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+   * \param[out] out_pos - array of size n_dims
    */
   void calc_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, array<double> &out_pos);
+
+  /*!
+   * Calculate static position of interface cubature point
+   * \param[in] in_cubpt - ID of cubature point on element face to evaluate at
+   * \param[in] in_face - local face ID within element
+   * \param[in] in_ele - local element ID
+   * \param[out] out_pos - array of size n_dims
+   */
+  void calc_pos_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double> &out_pos);
 
   /*!
    * Calculate dynamic position of interface cubature point
    * \param[in] in_cubpt - ID of cubature point on element face to evaluate at
    * \param[in] in_face - local face ID within element
    * \param[in] in_ele - local element ID
-   * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+   * \param[out] out_pos - array of size n_dims
    */
   void calc_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double> &out_pos);
 
@@ -488,6 +506,15 @@ public:
   void calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double> &out_d_pos);
 
   /*!
+   * Calculate derivative of static position wrt reference (initial,static) position at
+     volume cubature point
+   * \param[in] in_cubpt - ID of cubature point within element to evaluate at
+   * \param[in] in_ele - local element ID
+   * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+   */
+  void calc_d_pos_vol_cubpt(int in_cubpt, int in_ele, array<double> &out_d_pos);
+
+  /*!
    * Calculate derivative of dynamic position wrt reference (initial,static) position at
      volume cubature point
    * \param[in] in_cubpt - ID of cubature point within element to evaluate at
@@ -498,7 +525,17 @@ public:
 
   /*!
    * Calculate derivative of dynamic position wrt reference (initial,static) position at
-     volume cubature point
+     interface cubature point
+   * \param[in] in_cubpt - ID of cubature point on face to evaluate at
+   * \param[in] in_face - local face ID within element
+   * \param[in] in_ele - local element ID
+   * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+   */
+  void calc_d_pos_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double> &out_d_pos);
+
+  /*!
+   * Calculate derivative of dynamic position wrt reference (initial,static) position at
+     interface cubature point
    * \param[in] in_cubpt - ID of cubature point on face to evaluate at
    * \param[in] in_face - local face ID within element
    * \param[in] in_ele - local element ID
@@ -622,7 +659,7 @@ protected:
   // #### members ####
 
   /// flag to avoid re-setting-up transform arrays
-  bool first_time;
+  bool first_time, first_time_inters, first_time_vol;
 
   /*! mesh motion flag */
   int motion;

@@ -106,6 +106,14 @@ struct solution {
   double coeff_lift;
   double coeff_drag;
 
+  /*! Variables for integrated work over time (i.e. pitching-plunging airfoil) */
+  array<double> prev_work;
+  array<double> cur_work;
+  array<double> total_work;
+  array<double> prev_impulse;
+  array<double> total_impulse;
+  double prev_time;
+
   /*! Plotting resolution. */
   
   int p_res;

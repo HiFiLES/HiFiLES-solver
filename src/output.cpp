@@ -77,6 +77,9 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   array<double> grad_disu_ppts_temp;
   array<double> diag_ppts_temp;
 
+  /*! Grid velocity at plot points */
+  array<double> grid_vel_ppts_temp;
+
   /*! Sensor data for artificial viscosity at plot points */
   array<double> sensor_ppts_temp;
   /*! Artificial viscosity co-efficient values for artificial viscosity at plot points */
@@ -101,10 +104,10 @@ void write_tec(int in_file_num, struct solution* FlowSol)
 #ifdef _MPI
   MPI_Barrier(MPI_COMM_WORLD);
   sprintf(file_name_s,"Mesh_%.09d_p%.04d.plt",in_file_num,FlowSol->rank);
-  if (FlowSol->rank==0) cout << "Writing Tecplot file number " << in_file_num << " ...." << endl;
+  if (FlowSol->rank==0) cout << "Writing Tecplot file number " << in_file_num << " ... " << flush;
 #else
   sprintf(file_name_s,"Mesh_%.09d_p%.04d.plt",in_file_num,0);
-  cout << "Writing Tecplot file number " << in_file_num << " on rank " << FlowSol->rank << endl;
+  cout << "Writing Tecplot file number " << in_file_num << " ... " << flush;
 #endif
 
   file_name = &file_name_s[0];
@@ -160,6 +163,11 @@ void write_tec(int in_file_num, struct solution* FlowSol)
       fields += "\"" + run_input.diagnostic_fields(n_diag_fields-1) + "\"";
     }
 
+  if (run_input.motion!=STATIC_MESH) {
+    fields += ", \"grid_vel_x\", \"grid_vel_y\"";
+    if (n_dims==3) fields += ", \"grid_vel_z\"";
+  }
+
   // write field names to file
   write_tec << fields << endl;
 
@@ -178,6 +186,12 @@ void write_tec(int in_file_num, struct solution* FlowSol)
           disu_ppts_temp.setup(n_ppts_per_ele,n_fields);
           grad_disu_ppts_temp.setup(n_ppts_per_ele,n_fields,n_dims);
           diag_ppts_temp.setup(n_ppts_per_ele,n_diag_fields);
+
+          /*! Temporary grid velocity array at plot points */
+          if (run_input.motion) {
+            FlowSol->mesh_eles(i)->set_grid_vel_ppts();
+            grid_vel_ppts_temp = FlowSol->mesh_eles(i)->get_grid_vel_ppts();
+          }
 
           /*! Temporary field for sensor array at plot points */
           sensor_ppts_temp.setup(n_ppts_per_ele);
@@ -268,6 +282,13 @@ void write_tec(int in_file_num, struct solution* FlowSol)
                           write_tec << diag_ppts_temp(k,l) << " ";
                         }
                     }
+
+                  /*! Write out the grid velocity (for moving-mesh cases) */
+                  if (run_input.motion!=STATIC_MESH) {
+                    for (l=0; l<n_dims; l++) {
+                      write_tec << grid_vel_ppts_temp(l,k,j) << " ";
+                    }
+                  }
 
                   write_tec << endl;
                 }
@@ -528,9 +549,9 @@ void write_tec(int in_file_num, struct solution* FlowSol)
 
 #ifdef _MPI
   MPI_Barrier(MPI_COMM_WORLD);
-  if (FlowSol->rank==0) cout << "Done writing Tecplot file number " << in_file_num << " ...." << endl;
+  if (FlowSol->rank==0) cout << "Done." << endl;
 #else
-  cout << "Done writing Tecplot file number " << in_file_num << " ...." << endl;
+  cout << "Done." << endl;
 #endif
 
 }
@@ -994,10 +1015,10 @@ void write_restart(int in_file_num, struct solution* FlowSol, mesh &Mesh)
 
 #ifdef _MPI
   sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
-  if (FlowSol->rank==0) cout << "Writing Restart file number " << in_file_num << " ...." << flush;
+  if (FlowSol->rank==0) cout << "Writing Restart file number " << in_file_num << " ... " << flush;
 #else
   sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,0);
-  cout << "Writing Restart file number " << in_file_num << " ...." << flush;
+  cout << "Writing Restart file number " << in_file_num << " ... " << flush;
 #endif
 
 
@@ -1029,8 +1050,11 @@ void write_restart(int in_file_num, struct solution* FlowSol, mesh &Mesh)
   }
 
   restart_file.close();
-
-  cout << " done." << endl;
+#ifdef _MPI
+  if (FlowSol->rank==0) cout << "Done." << endl;
+#else
+  cout << "Done." << endl;
+#endif
 
 }
 
@@ -1040,9 +1064,11 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   char forcedir_s[50], *forcedir;
   struct stat st = {0};
   ofstream coeff_file;
+  ofstream work_file;
   bool write_dir, write_forces;
   array<double> temp_inv_force(FlowSol->n_dims);
   array<double> temp_vis_force(FlowSol->n_dims);
+  array<double> temp_work(FlowSol->n_dims);
   double temp_cl, temp_cd;
   int my_rank;
 
@@ -1067,95 +1093,97 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
 
   // Master node creates a subdirectory to store cp_*.dat files
   if ((my_rank == 0) && (write_dir))
+  {
+    if (stat(forcedir, &st) == -1)
     {
-      if (stat(forcedir, &st) == -1)
-        {
-          mkdir(forcedir, 0755);
-        }
+      mkdir(forcedir, 0755);
     }
+  }
 
   if (write_forces)
-    {
-      sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,my_rank);
-      file_name = &file_name_s[0];
+  {
+    sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,my_rank);
+    file_name = &file_name_s[0];
     
-      // open files for writing
-      coeff_file.open(file_name);
-    }
+    // open files for writing
+    coeff_file.open(file_name);
+  }
 
 #else
 
   if (write_dir)
+  {
+    if (stat(forcedir, &st) == -1)
     {
-      if (stat(forcedir, &st) == -1)
-        {
-          mkdir(forcedir, 0755);
-        }
+      mkdir(forcedir, 0755);
     }
+  }
 
   if (write_forces)
-    {
-      sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,0);
-      file_name = &file_name_s[0];
+  {
+    sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,0);
+    file_name = &file_name_s[0];
     
-      // open file for writing
-      coeff_file.open(file_name);
-    }
+    // open file for writing
+    coeff_file.open(file_name);
+  }
 
 #endif
   
   // zero the forces and coeffs
-  for (int m=0;m<FlowSol->n_dims;m++)
-    {
-      FlowSol->inv_force(m) = 0.;
-      FlowSol->vis_force(m) = 0.;
-    }
-  
+  FlowSol->inv_force.initialize_to_zero();
+  FlowSol->vis_force.initialize_to_zero();
+  FlowSol->cur_work.initialize_to_zero();
+
   FlowSol->coeff_lift = 0.0;
   FlowSol->coeff_drag = 0.0;
 
   // loop over elements and compute forces on solid surfaces
   for(int i=0;i<FlowSol->n_ele_types;i++)
+  {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
     {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
-        {
-          // compute surface forces and coefficients
-          FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force, temp_vis_force, temp_cl, temp_cd, coeff_file, write_forces);
+      // compute surface forces and coefficients
+      FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force, temp_vis_force, temp_work, temp_cl, temp_cd, coeff_file, write_forces);
 
-          // set surface forces
-          for (int m=0;m<FlowSol->n_dims;m++) {
-              FlowSol->inv_force(m) += temp_inv_force(m);
-              FlowSol->vis_force(m) += temp_vis_force(m);
-            }
+      // set surface forces
+      for (int m=0;m<FlowSol->n_dims;m++) {
+        FlowSol->inv_force(m) += temp_inv_force(m);
+        FlowSol->vis_force(m) += temp_vis_force(m);
+        FlowSol->cur_work(m) += temp_work(m);
+      }
 
-          // set lift and drag coefficients
-          FlowSol->coeff_lift += temp_cl;
-          FlowSol->coeff_drag += temp_cd;
-        }
+      // set lift and drag coefficients
+      FlowSol->coeff_lift += temp_cl;
+      FlowSol->coeff_drag += temp_cd;
     }
+  }
   
 #ifdef _MPI
 
   array<double> inv_force_global(FlowSol->n_dims);
   array<double> vis_force_global(FlowSol->n_dims);
+  array<double> work_global(FlowSol->n_dims);
   double coeff_lift_global=0.0;
   double coeff_drag_global=0.0;
 
   for (int m=0;m<FlowSol->n_dims;m++) {
-      inv_force_global(m) = 0.;
-      vis_force_global(m) = 0.;
-      MPI_Reduce(&FlowSol->inv_force(m),&inv_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      MPI_Reduce(&FlowSol->vis_force(m),&vis_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-    }
+    inv_force_global(m) = 0.;
+    vis_force_global(m) = 0.;
+    MPI_Reduce(&FlowSol->inv_force(m),&inv_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+    MPI_Reduce(&FlowSol->vis_force(m),&vis_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+    MPI_Reduce(&FlowSol->cur_work(m),&work_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  }
 
   MPI_Reduce(&FlowSol->coeff_lift,&coeff_lift_global,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&FlowSol->coeff_drag,&coeff_drag_global,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
   
   for (int m=0;m<FlowSol->n_dims;m++)
-    {
-      FlowSol->inv_force(m) = inv_force_global(m);
-      FlowSol->vis_force(m) = vis_force_global(m);
-    }
+  {
+    FlowSol->inv_force(m) = inv_force_global(m);
+    FlowSol->vis_force(m) = vis_force_global(m);
+    FlowSol->cur_work(m) = work_global(m);
+  }
   
   FlowSol->coeff_lift = coeff_lift_global;
   FlowSol->coeff_drag = coeff_drag_global;
@@ -1166,6 +1194,29 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   if(run_input.equation==0 and run_input.forcing==1 and FlowSol->n_dims==3) {
     for(int i=0;i<FlowSol->n_ele_types;i++)
       FlowSol->mesh_eles(i)->calc_body_force_upts(FlowSol->vis_force, FlowSol->body_force);
+  }
+
+  // Integrating total work & impulse done by a moving body on the fluid over time of simulation
+  // --- Implemented for the 3rd International High-Order Workshop pitching-plunging airfoil test case, Jan. 2015 ---
+  for (int i=0; i<FlowSol->n_dims; i++) {
+    FlowSol->total_work(i) += (FlowSol->time - FlowSol->prev_time)*(FlowSol->prev_work(i) + FlowSol->cur_work(i)) / 2;
+    FlowSol->prev_work(i) = FlowSol->cur_work(i);
+
+    FlowSol->total_impulse(i) += (FlowSol->time - FlowSol->prev_time)*(FlowSol->prev_impulse(i) + FlowSol->inv_force(i) + FlowSol->vis_force(i)) / 2;
+    FlowSol->prev_impulse(i) = FlowSol->inv_force(i) + FlowSol->vis_force(i);
+  }
+  FlowSol->prev_time = FlowSol->time;
+
+  if (FlowSol->rank==0) {
+    //cout << setw(16) << "Total Work: " << setprecision(12) << setw(16) << FlowSol->total_work(0) << ", " << setw(16) << FlowSol->total_work(1) << ", " << setw(16) << FlowSol->total_work(2) << endl;
+    //cout << setw(16) << "Total Impulse: " << setprecision(12) << setw(16) << FlowSol->total_impulse(0) << ", " << setw(16) << FlowSol->total_impulse(1) << ", " << setw(16) << FlowSol->total_impulse(2) << endl;
+
+    work_file.open("tot_work_impulse.txt", std::ofstream::out | std::ofstream::app);
+    work_file << setprecision(10) << FlowSol->time << ", ";
+    work_file << setprecision(12) << FlowSol->total_work(0) << ", " << FlowSol->total_work(1) << ", " << FlowSol->total_work(2) << ", " ;
+    work_file << setprecision(12) << FlowSol->total_impulse(0) << ", " << FlowSol->total_impulse(1) << ", " << FlowSol->total_impulse(2);
+    work_file << endl;
+    work_file.close();
   }
 
   if (write_forces) { coeff_file.close(); }
@@ -1666,10 +1717,10 @@ void CopyGPUCPU(struct solution* FlowSol, mesh &Mesh)
     }
   }
 
-  if (run_input.motion!=STATIC_MESH)
-  {
-    Mesh.get_eles_shape();
-  }
+//  if (run_input.motion!=STATIC_MESH)
+//  {
+//    Mesh.get_eles_shape();
+//  }
 }
 #endif
 

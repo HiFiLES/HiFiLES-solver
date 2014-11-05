@@ -433,10 +433,8 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
       FlowSol->mesh_eles(i)->store_nodal_s_basis_ppts();
       FlowSol->mesh_eles(i)->store_d_nodal_s_basis_fpts();
       FlowSol->mesh_eles(i)->store_d_nodal_s_basis_upts();
-      FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_fpts();
-      FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_upts();
-      FlowSol->mesh_eles(i)->store_nodal_s_basis_inters_cubpts();
-      FlowSol->mesh_eles(i)->store_d_nodal_s_basis_inters_cubpts();
+      //FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_fpts();
+      //FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_upts();
     }
   }
   if (FlowSol->rank==0) cout << "done." << endl;
@@ -462,17 +460,19 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (FlowSol->rank==0) cout << "done." << endl;
 
   // Set metrics at interface cubpts
-  if (FlowSol->rank==0) cout << "setting element transforms at interface cubpts ... ";
+  if (FlowSol->rank==0) cout << "setting element transforms at interface cubpts ... " << flush;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
-        }
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      FlowSol->mesh_eles(i)->store_nodal_s_basis_inters_cubpts();
+      FlowSol->mesh_eles(i)->store_d_nodal_s_basis_inters_cubpts();
+      FlowSol->mesh_eles(i)->set_transforms_inters_cubpts();
     }
+  }
   if (FlowSol->rank==0) cout << "done." << endl;
 
   // Set metrics at volume cubpts. Only needed for computing error and integral diagnostic quantities.
   if (run_input.test_case != 0 || run_input.monitor_integrals_freq!=0) {
-    if (FlowSol->rank==0) cout << "setting element transforms at volume cubpts ... " << endl;
+    if (FlowSol->rank==0) cout << "setting element transforms at volume cubpts ... " << flush;
     for(int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
         FlowSol->mesh_eles(i)->store_nodal_s_basis_vol_cubpts();
@@ -480,17 +480,18 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
         FlowSol->mesh_eles(i)->set_transforms_vol_cubpts();
       }
     }
+    if (FlowSol->rank==0) cout << "done." << endl;
   }
 
   // set on gpu (important - need to do this before we set connectivity, so that pointers point to GPU memory)
 #ifdef _GPU
-      for(int i=0;i<FlowSol->n_ele_types;i++) {
-          if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+  for(int i=0;i<FlowSol->n_ele_types;i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-              if (FlowSol->rank==0) cout << "Moving eles to GPU ... " << endl;
-              FlowSol->mesh_eles(i)->mv_all_cpu_gpu();
-            }
-        }
+      if (FlowSol->rank==0) cout << "Moving eles to GPU ... " << endl;
+      FlowSol->mesh_eles(i)->mv_all_cpu_gpu();
+    }
+  }
 #endif
 
   // ------------------------------------
@@ -746,7 +747,9 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           }else{
             iv2 = c2v(ic_l,loc_f+1);
           }
+          cout << endl;
           cout << "x1,y1 = " << xv(iv1,0) << "," << xv(iv1,1) << "  |  x2,y2 = " << xv(iv2,0) << "," << xv(iv2,1) << endl;
+          cout << "ERROR: Probably forgot to set a boundary condition on a line/face." << endl;
           FatalError("Error: Interior interface has i_cell_right=-1. Should not be here, exiting");
         }
         n_int_inters++;
@@ -1064,7 +1067,7 @@ void ReadMesh(string& in_file_name, array<double>& out_xv, array<array<double> >
   /* --- For restarting of moving-mesh cases, read in the initial mesh vertex positions for use
   in calculation of future positions --- */
   if (run_input.restart_flag!=0 && run_input.motion!=STATIC_MESH) {
-    read_vertices_restart(out_xv_move,out_n_verts_global,FlowSol);
+    read_vertices_restart(out_xv_move,out_xv,out_n_verts_global,FlowSol);
   }else{
     out_xv_move.setup(5);
     for (int i=0; i<5; i++)
@@ -1597,11 +1600,9 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
     }
   }
 
-
-
   mesh_file.close();
 
-  cout << "  Number of Boundary Faces: " << bdy_count << endl;
+  if (FlowSol->rank==0) cout << "  Number of Boundary Faces: " << bdy_count << endl;
 }
 
 void read_vertices_gambit(string& in_file_name, int in_n_verts, int &out_n_verts_global, array<int> &in_iv2ivg, array<double> &out_xv, solution *FlowSol)
@@ -1702,7 +1703,7 @@ void read_vertices_gmsh(string& in_file_name, int in_n_verts, int& out_n_verts_g
 
 }
 
-void read_vertices_restart(array<array<double> > &out_xv, int n_verts, struct solution *FlowSol)
+void read_vertices_restart(array<array<double> > &out_xv, array<double>& xv_0, int n_verts, struct solution *FlowSol)
 {
   out_xv.setup(5);
   for (int i=0; i<5; i++)
@@ -1734,6 +1735,8 @@ void read_vertices_restart(array<array<double> > &out_xv, int n_verts, struct so
       // do nothing - xv_0 already setup in geo.cpp
       cout << "WARNING: Restarting a moving-mesh case but no current grid position provided." << endl;
       cout << "Using provided grid as starting mesh." << endl;
+      for (int level=0; level<5; level++)
+        out_xv(level) = xv_0;
       break;
     }
   }
