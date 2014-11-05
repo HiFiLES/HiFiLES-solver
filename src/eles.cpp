@@ -398,8 +398,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 
     if(run_input.ArtifOn)
     {
-      if(run_input.artif_type == 1)
+      if(run_input.artif_type == 1) {
         sensor.setup(n_eles);
+        sensor.initialize_to_zero();
+      }
 
       if(run_input.artif_type == 0)
       {
@@ -407,6 +409,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
           epsilon_upts.setup(n_upts_per_ele,n_eles);
           epsilon_fpts.setup(n_fpts_per_ele,n_eles);
           sensor.setup(n_eles);
+          sensor.initialize_to_zero();
           //dt_local.setup(n_eles);
           min_dt_local.setup(1);
       }
@@ -1602,7 +1605,7 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
 #ifdef _CPU
     
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-    
+    // Subtract the discontinous flux from the continuous flux to get the difference (for the correction function)
     cblas_daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
     
 #elif defined _NO_BLAS
@@ -1614,7 +1617,7 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
     if(opp_3_sparse==0) // dense
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-      
+      // Get the divergence of the correction polynomial & add to the existing divergence
       cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_cpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_cpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
       
 #elif defined _NO_BLAS
