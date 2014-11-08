@@ -117,7 +117,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
   
   if (n_eles!=0)
   {
-    
+
     order=run_input.order;
     p_res=run_input.p_res;
     viscous =run_input.viscous;
@@ -135,10 +135,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     inters_cub_order = run_input.inters_cub_order;
     volume_cub_order = run_input.volume_cub_order;
     n_bdy_eles=0;
-    
+
     // Initialize the element specific static members
     (*this).setup_ele_type_specific();
-    
+
     if(run_input.adv_type==0)
     {
       n_adv_levels=1;
@@ -159,14 +159,14 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     {
       cout << "ERROR: Type of time integration scheme not recongized ... " << endl;
     }
-    
+
     // Allocate storage for solution
     disu_upts.setup(n_adv_levels);
     for(int i=0;i<n_adv_levels;i++)
     {
       disu_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
     }
-    
+
     // Allocate storage for timestep
     // If using global minimum, only one timestep
     if (run_input.dt_type == 1)
@@ -603,18 +603,26 @@ void eles::set_ics(double& time)
       }
     }
   }
-  
+
   // If required, calculate element reference lengths
-  if (run_input.dt_type != 0)
-  {
+  if (run_input.dt_type > 0) {
     // Allocate array
-    h_ref.setup(n_eles);
-    h_ref.initialize_to_zero();
+    h_ref.setup(n_upts_per_ele,n_eles);
     
     // Call element specific function to obtain length
-    for (int i=0; i<n_eles; i++)
-      h_ref(i) = (*this).calc_h_ref_specific(i);
+    double h_ref_dumb;
+    for (int i=0;i<n_eles;i++) {
+      h_ref_dumb = (*this).calc_h_ref_specific(i);
+      for (int j=0;j<n_upts_per_ele;j++) {
+        // TODO: Make more memory efficient!!!
+        h_ref(j,i) = h_ref_dumb;
+      }
+    }
   }
+  else {
+    h_ref.setup(1);
+  }
+  h_ref.cp_cpu_gpu();
 }
 
 
@@ -695,16 +703,24 @@ void eles::read_restart_data(ifstream& restart_file)
   }
   
   // If required, calculate element reference lengths
-  if (run_input.dt_type != 0)
-  {
+  if (run_input.dt_type > 0) {
     // Allocate array
-    h_ref.setup(n_eles);
-    h_ref.initialize_to_zero();
-    
+    h_ref.setup(n_upts_per_ele,n_eles);
+
     // Call element specific function to obtain length
-    for (int i=0; i<n_eles; i++)
-      h_ref(i) = (*this).calc_h_ref_specific(i);
+    double h_ref_dumb;
+    for (int i=0;i<n_eles;i++) {
+      h_ref_dumb = (*this).calc_h_ref_specific(i);
+      for (int j=0;j<n_upts_per_ele;j++) {
+        // TODO: Make more memory efficient!!!
+        h_ref(j,i) = h_ref_dumb;
+      }
+    }
   }
+  else {
+    h_ref.setup(1);
+  }
+  h_ref.cp_cpu_gpu();
 }
 
 
@@ -924,6 +940,16 @@ void eles::cp_div_tconf_upts_gpu_cpu(void)
   }
 }
 
+// copy local time stepping reference length at solution points to cpu
+void eles::cp_h_ref_gpu_cpu(void)
+{
+#ifdef _GPU
+
+  h_ref.cp_gpu_cpu();
+
+#endif
+}
+
 // copy source term at solution points to cpu
 void eles::cp_src_upts_gpu_cpu(void)
 {
@@ -1062,7 +1088,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 #endif
       
 #ifdef _GPU
-      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),run_input.dt,run_input.const_src);
+      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),h_ref.get_ptr_gpu(),run_input.dt,run_input.const_src,run_input.CFL,run_input.gamma,run_input.mu_inf,run_input.order,viscous,run_input.dt_type);
 #endif
       
     }
@@ -1160,7 +1186,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
       
 #ifdef _GPU
       
-      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),rk4a,rk4b,run_input.dt,run_input.const_src);
+      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),h_ref.get_ptr_gpu(),rk4a,rk4b,run_input.dt,run_input.const_src,run_input.CFL,run_input.gamma,run_input.mu_inf,run_input.order,viscous,run_input.dt_type,in_step);
       
 #endif
       
@@ -1211,13 +1237,13 @@ double eles::calc_dt_local(int in_ele)
 
     if (viscous)
     {
-      dt_visc = (run_input.CFL * 0.25 * h_ref(in_ele) * h_ref(in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
-      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
+      dt_visc = (run_input.CFL * 0.25 * h_ref(0,in_ele) * h_ref(0,in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
+      dt_inv = run_input.CFL*h_ref(0,in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
     }
     else
     {
       dt_visc = 1e16;
-      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv * 1.0/(2.0*run_input.order + 1.0);
+      dt_inv = run_input.CFL*h_ref(0,in_ele)/lam_inv * 1.0/(2.0*run_input.order + 1.0);
     }
       out_dt_local = min(dt_visc,dt_inv);
   }
