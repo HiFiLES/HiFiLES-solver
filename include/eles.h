@@ -87,6 +87,9 @@ public:
   /*! copy divergence at solution points to cpu */
   void cp_div_tconf_upts_gpu_cpu(void);
 
+  /*! copy local time stepping reference length at solution points to cpu */
+  void cp_h_ref_gpu_cpu(void);
+
   /*! copy source term at solution points to cpu */
   void cp_src_upts_gpu_cpu(void);
 

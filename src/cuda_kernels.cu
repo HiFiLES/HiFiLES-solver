@@ -1058,8 +1058,10 @@ __device__ void calc_source_SA(double* in_u, double* in_grad_u, double* out_sour
     // construct source term
     (*out_source) = nu_t_prod + nu_t_diff + nu_t_dest;
   }
-
-  // NOTE: 3d Source term not implemented yet!!!
+  else if (n_dims == 3)
+  {
+    // 3d Source term not implemented yet!!!
+  }
 }
 
 
@@ -2572,53 +2574,119 @@ __device__ __host__ void ldg_flux(double q_l, double q_r, double* f_l, double* f
 }
 
 
-template< int n_fields >
-__global__ void RK11_update_kernel(double *g_q_qpts, double *g_div_tfg_con_qpts, double *g_jac_det_qpts, double *src_upts,
-                                   const int n_cells, const int n_qpts, const double dt, const double const_src)
+template<int n_dims>
+__device__ void calc_dt_local(double* in_u, double* out_dt_local, double h_ref, double CFL, double gamma, double mu_inf, int order, int viscous)
 {
-  int n = blockIdx.x*blockDim.x + threadIdx.x;
-  const int m = n;
-  double jac;
-  int stride = n_cells*n_qpts;
+  double lam_inv, lam_visc;
+  double dt_inv, dt_visc;
 
-  if (n<n_cells*n_qpts)
+  // 2-D Elements
+  if (n_dims == 2)
+  {
+    double rho, u, v, ene, p, c;
+
+    // primitive variables
+    rho = in_u[0];
+    u = in_u[1]/in_u[0];
+    v = in_u[2]/in_u[0];
+    ene = in_u[3];
+    p = (gamma - 1.0) * (ene - 0.5*rho*(u*u+v*v));
+    c = sqrt(gamma * p/rho);
+
+    // Calculate internal wavespeed at each solution point
+    lam_inv = sqrt(u*u + v*v) + c;
+    lam_visc = 4.0/3.0*mu_inf/rho;
+
+    if (viscous)
     {
-      jac = g_jac_det_qpts[m];
-      // Update 5 fields
-#pragma unroll
-      for (int i=0;i<n_fields;i++)
-        {
-          g_q_qpts[n] -= dt*(g_div_tfg_con_qpts[n]/jac - const_src - src_upts[n]);
-          n += stride;
-        }
+      dt_visc = (CFL * 0.25 * h_ref * h_ref)/(lam_visc) * 1.0/(2.0*order+1.0);
+      dt_inv = CFL*h_ref/lam_inv*1.0/(2.0*order + 1.0);
     }
+    else
+    {
+      dt_visc = 1e16;
+      dt_inv = CFL*h_ref/lam_inv*1.0/(2.0*order + 1.0);
+    }
+    (*out_dt_local) = min(dt_visc,dt_inv);
+  }
+
+  else if (n_dims == 3)
+  {
+    // Timestep type is not implemented in 3D yet!!!
+  }
 }
 
 
-template< int n_fields >
-__global__ void RK45_update_kernel(double *g_q_qpts, double *div_tconf_upts, double *g_res_qpts, double *detjac_upts, double *src_upts,
-                                   const int n_cells, const int n_qpts, const double fa, const double fb, const double dt, const double const_src)
+template<int n_dims, int n_fields>
+__global__ void RK11_update_kernel(double* disu0_upts_ptr, double* div_tconf_upts_ptr, double* detjac_upts_ptr, double* src_upts, double* h_ref,
+                                   int n_eles, int n_upts_per_ele, double dt, double const_src, double CFL, double gamma, double mu_inf, int order, int viscous, int dt_type)
 {
-  int n = blockIdx.x*blockDim.x + threadIdx.x;
-  const int m = n;
-  double rhs,res,jac;
-  int stride = n_cells*n_qpts;
+  const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
 
-  if (n<n_cells*n_qpts)
-    {
-      jac = detjac_upts[m];
-      // Update 5 fields
+  int ind;
+  int stride = n_upts_per_ele*n_eles;
+
+  double q[n_fields];
+
+  if (thread_id<(n_upts_per_ele*n_eles))
+  {
+    // Compute local timestep
+    if (dt_type == 2) {
+      // Physical solution
 #pragma unroll
       for (int i=0;i<n_fields;i++)
-        {
-          rhs = -(div_tconf_upts[n]/jac - const_src - src_upts[n]);
-          res = g_res_qpts[n];
-          res = fa*res + dt*rhs;
-          g_res_qpts[n] = res;
-          g_q_qpts[n] += fb*res;
-          n += stride;
-        }
+        q[i] = disu0_upts_ptr[thread_id + i*stride];
+
+      calc_dt_local<n_dims>(q,&dt,h_ref[thread_id],CFL,gamma,mu_inf,order,viscous);
     }
+
+    // Update 5 fields
+#pragma unroll
+    for (int i=0;i<n_fields;i++)
+    {
+      ind = thread_id + i*stride;
+      disu0_upts_ptr[ind] -= dt*(div_tconf_upts_ptr[ind]/detjac_upts_ptr[thread_id] - const_src - src_upts[ind]);
+    }
+  }
+}
+
+
+template<int n_dims, int n_fields>
+__global__ void RK45_update_kernel(double *disu0_upts_ptr, double *div_tconf_upts_ptr, double *disu1_upts_ptr, double *detjac_upts_ptr, double *src_upts, double* h_ref,
+                                   int n_eles, int n_upts_per_ele, double rk4a, double rk4b, double dt, double const_src, double CFL, double gamma, double mu_inf, int order, int viscous, int dt_type, int step)
+{
+  const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
+
+  int ind;
+  int stride = n_upts_per_ele*n_eles;
+
+  double q[n_fields];
+  double rhs,res;
+
+  if (thread_id<(n_upts_per_ele*n_eles))
+  {
+    // Compute local timestep
+    if (step == 0 && dt_type == 2) {
+      // Physical solution
+#pragma unroll
+      for (int i=0;i<n_fields;i++)
+        q[i] = disu0_upts_ptr[thread_id + i*stride];
+
+      calc_dt_local<n_dims>(q,&dt,h_ref[thread_id],CFL,gamma,mu_inf,order,viscous);
+    }
+
+    // Update 5 fields
+#pragma unroll
+    for (int i=0;i<n_fields;i++)
+    {
+      ind = thread_id + i*stride;
+      rhs = -(div_tconf_upts_ptr[ind]/detjac_upts_ptr[thread_id] - const_src - src_upts[ind]);
+      res = disu1_upts_ptr[ind];
+      res = rk4a*res + dt*rhs;
+      disu1_upts_ptr[ind] = res;
+      disu0_upts_ptr[ind] += rk4b*res;
+    }
+  }
 }
 
 
@@ -4766,58 +4834,92 @@ __global__ void  pack_out_buffer_sgsf_gpu_kernel(int n_fpts_per_inter, int n_int
 
 #endif
 
-void RK45_update_kernel_wrapper(int n_upts_per_ele,int n_dims,int n_fields,int n_eles,double* disu0_upts_ptr,double* disu1_upts_ptr,double* div_tconf_upts_ptr, double* detjac_upts_ptr, double* src_upts_ptr, double rk4a, double rk4b, double dt, double const_src)
+void RK45_update_kernel_wrapper(int n_upts_per_ele,int n_dims,int n_fields,int n_eles,double* disu0_upts_ptr,double* disu1_upts_ptr,double* div_tconf_upts_ptr, double* detjac_upts_ptr, double* src_upts_ptr, double* h_ref, double rk4a, double rk4b, double dt, double const_src, double CFL, double gamma, double mu_inf, int order, int viscous, int dt_type, int step)
 {
 
   // HACK: fix 256 threads per block
   int n_blocks=((n_eles*n_upts_per_ele-1)/256)+1;
 
-  if (n_fields==1)
+  if (n_dims == 2)
   {
-    RK45_update_kernel <1> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, disu1_upts_ptr, detjac_upts_ptr, src_upts_ptr, n_eles, n_upts_per_ele, rk4a, rk4b, dt, const_src);
+    if (n_fields==1)
+    {
+      RK45_update_kernel <2,1> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, disu1_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, rk4a, rk4b, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type, step);
+    }
+    else if (n_fields==4)
+    {
+      RK45_update_kernel <2,4> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, disu1_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, rk4a, rk4b, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type, step);
+    }
+    else if (n_fields==5)
+    {
+      RK45_update_kernel <2,5> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, disu1_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, rk4a, rk4b, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type, step);
+    }
+    else
+      FatalError("ERROR: Invalid number of fields for this dimension ... ")
   }
-  else if (n_fields==4)
+  else if (n_dims == 3)
   {
-    RK45_update_kernel <4> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, disu1_upts_ptr, detjac_upts_ptr, src_upts_ptr, n_eles, n_upts_per_ele, rk4a, rk4b, dt, const_src);
-  }
-  else if (n_fields==5)
-  {
-    RK45_update_kernel <5> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, disu1_upts_ptr, detjac_upts_ptr, src_upts_ptr, n_eles, n_upts_per_ele, rk4a, rk4b, dt, const_src);
-  }
-  else if (n_fields==6)
-  {
-    RK45_update_kernel <6> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, disu1_upts_ptr, detjac_upts_ptr, src_upts_ptr, n_eles, n_upts_per_ele, rk4a, rk4b, dt, const_src);
+    if (n_fields==1)
+    {
+      RK45_update_kernel <3,1> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, disu1_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, rk4a, rk4b, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type, step);
+    }
+    else if (n_fields==5)
+    {
+      RK45_update_kernel <3,5> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, disu1_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, rk4a, rk4b, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type, step);
+    }
+    else if (n_fields==6)
+    {
+      RK45_update_kernel <3,6> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, disu1_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, rk4a, rk4b, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type, step);
+    }
+    else
+      FatalError("ERROR: Invalid number of fields for this dimension ... ")
   }
   else
-    FatalError("n_fields not supported");
-
+    FatalError("ERROR: Invalid number of dimensions ... ");
 }
 
-void RK11_update_kernel_wrapper(int n_upts_per_ele,int n_dims,int n_fields,int n_eles,double* disu0_upts_ptr,double* div_tconf_upts_ptr, double* detjac_upts_ptr, double* src_upts_ptr, double dt, double const_src)
+void RK11_update_kernel_wrapper(int n_upts_per_ele,int n_dims,int n_fields,int n_eles,double* disu0_upts_ptr,double* div_tconf_upts_ptr, double* detjac_upts_ptr, double* src_upts_ptr, double* h_ref, double dt, double const_src, double CFL, double gamma, double mu_inf, int order, int viscous, int dt_type)
 {
 
   // HACK: fix 256 threads per block
   int n_blocks=((n_eles*n_upts_per_ele-1)/256)+1;
 
-  if (n_fields==1)
+  if (n_dims == 2)
   {
-    RK11_update_kernel <1> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, detjac_upts_ptr, src_upts_ptr, n_eles, n_upts_per_ele, dt, const_src);
+    if (n_fields==1)
+    {
+      RK11_update_kernel <2,1> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type);
+    }
+    else if (n_fields==4)
+    {
+      RK11_update_kernel <2,4> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type);
+    }
+    else if (n_fields==5)
+    {
+      RK11_update_kernel <2,5> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type);
+    }
+    else
+      FatalError("ERROR: Invalid number of fields for this dimension ... ")
   }
-  else if (n_fields==4)
+  else if (n_dims==3)
   {
-    RK11_update_kernel <4> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, detjac_upts_ptr, src_upts_ptr, n_eles, n_upts_per_ele, dt, const_src);
-  }
-  else if (n_fields==5)
-  {
-    RK11_update_kernel <5> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, detjac_upts_ptr, src_upts_ptr, n_eles, n_upts_per_ele, dt, const_src);
-  }
-  else if (n_fields==6)
-  {
-    RK11_update_kernel <6> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, detjac_upts_ptr, src_upts_ptr, n_eles, n_upts_per_ele, dt, const_src);
+    if (n_fields==1)
+    {
+      RK11_update_kernel <3,1> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type);
+    }
+    else if (n_fields==5)
+    {
+      RK11_update_kernel <3,5> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type);
+    }
+    else if (n_fields==6)
+    {
+      RK11_update_kernel <3,6> <<< n_blocks,256>>> (disu0_upts_ptr, div_tconf_upts_ptr, detjac_upts_ptr, src_upts_ptr, h_ref, n_eles, n_upts_per_ele, dt, const_src, CFL, gamma, mu_inf, order, viscous, dt_type);
+    }
+    else
+      FatalError("ERROR: Invalid number of fields for this dimension ... ")
   }
   else
-    FatalError("n_fields not supported");
-
+    FatalError("ERROR: Invalid number of dimensions ... ");
 }
 
 
