@@ -339,6 +339,12 @@ double* get_grid_vel_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, i
   return FlowSol->mesh_eles(in_ele_type)->get_grid_vel_fpts_ptr(in_ele,in_local_inter,in_fpt,in_dim);
 }
 
+// get a pointer to the numerical wavespeed at a flux point
+double* get_wavespeed_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, struct solution* FlowSol)
+{
+  return FlowSol->mesh_eles(in_ele_type)->get_wavespeed_fpts_ptr(in_fpt,in_local_inter,in_ele);
+}
+
 void InitSolution(struct solution* FlowSol)
 {
   // set initial conditions

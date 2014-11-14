@@ -119,6 +119,9 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
       norm_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
       pos_fpts.setup(n_fpts_per_inter,n_inters,n_dims);
 
+      // Numerical wavespeed
+      wavespeed_fpts_l.setup(n_fpts_per_inter,n_inters);
+
       if (motion)
       {
         if (run_input.GCL) {
@@ -308,9 +311,9 @@ void inters::right_flux(array<double> &f_r, array<double> &norm, array<double> &
 }
 
 // Rusanov inviscid numerical flux
-void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma)
+void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, double &eig, int n_dims, int n_fields, double gamma)
 {
-  double vx_l,vy_l,vx_r,vy_r,vz_l,vz_r,vn_l,vn_r,p_l,p_r,vn_g,vn_av_mag,c_av,eig;
+  double vx_l,vy_l,vx_r,vy_r,vz_l,vz_r,vn_l,vn_r,p_l,p_r,vn_g,vn_av_mag,c_av;
   array<double> fn_l(n_fields),fn_r(n_fields);
 
   // calculate normal flux from discontinuous solution at flux points

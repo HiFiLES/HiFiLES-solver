@@ -86,4 +86,8 @@ protected:
 
   double temp_u_GCL_r;
   double temp_f_GCL_r;
+
+  // Numerical wavespeed
+  array<double*> wavespeed_fpts_r;
+
 };

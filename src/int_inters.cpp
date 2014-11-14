@@ -74,6 +74,9 @@ void int_inters::setup(int in_n_inters,int in_inter_type)
       detjac_fpts_r.setup(n_fpts_per_inter,n_inters);
       tdA_fpts_r.setup(n_fpts_per_inter,n_inters);
 
+      // Numerical wavespeed
+      wavespeed_fpts_r.setup(n_fpts_per_inter,n_inters);
+
       if (motion) {
         if (run_input.GCL) {
           //disu_GCL_fpts_r.setup(n_fpts_per_inter,n_inters);
@@ -132,6 +135,14 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
                 }
             }
         }
+
+      // Get numerical wavespeed pointer from eles
+      for(j=0;j<n_fpts_per_inter;j++) {
+        j_rhs=lut(j);
+
+        wavespeed_fpts_l(j,in_inter)=get_wavespeed_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,j,FlowSol);
+        wavespeed_fpts_r(j,in_inter)=get_wavespeed_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,j_rhs,FlowSol);
+      }
 
       if (motion)
       {
@@ -227,6 +238,7 @@ void int_inters::calculate_common_invFlux(void)
 
 #ifdef _CPU
   array<double> norm(n_dims), fn(n_fields);
+  double wavespeed;
 
   //viscous
   array<double> u_c(n_fields);
@@ -288,7 +300,7 @@ void int_inters::calculate_common_invFlux(void)
         else
           FatalError("ERROR: Invalid number of dimensions ... ");
 
-        rusanov_flux(temp_u_l,temp_u_r,temp_v,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.gamma);
+        rusanov_flux(temp_u_l,temp_u_r,temp_v,temp_f_l,temp_f_r,norm,fn,wavespeed,n_dims,n_fields,run_input.gamma);
       }
       else if (run_input.riemann_solve_type==1) { // Lax-Friedrich
         lax_friedrich(temp_u_l,temp_u_r,norm,fn,n_dims,n_fields,run_input.lambda,run_input.wave_speed);
@@ -298,6 +310,10 @@ void int_inters::calculate_common_invFlux(void)
       }
       else
         FatalError("Riemann solver not implemented");
+
+      // Pass back numerical wavespeed to eles
+      (*wavespeed_fpts_l(j,i)) = wavespeed;
+      (*wavespeed_fpts_r(j,i)) = wavespeed;
 
       // Transform back to computational space from dynamic physical space
       if (motion)

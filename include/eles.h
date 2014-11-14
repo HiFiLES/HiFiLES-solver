@@ -249,6 +249,9 @@ public:
   /*! get a pointer to the subgrid-scale flux at a flux point */
   double* get_sgsf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_dim, int in_ele);
 
+  /*! get a pointer to the numerical wavespeed at a flux point */
+  double* get_wavespeed_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
+
   /*! set opp_0 */
   void set_opp_0(int in_sparse);
   
@@ -1235,5 +1238,8 @@ protected:
 
   /*! Global cell number of element as in the code */
   array<int> ele2global_ele_code;
+
+  /*! Numerical wavespeed at the flux points */
+  array<double> wavespeed_fpts;
 
 };

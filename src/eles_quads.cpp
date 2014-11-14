@@ -1241,11 +1241,13 @@ double eles_quads::calc_h_ref_specific(int in_ele)
 
     // Compute edge lengths
     length(0) = sqrt(pow(shape(0,0,in_ele) - shape(0,1,in_ele),2.0) + pow(shape(1,0,in_ele) - shape(1,1,in_ele),2.0));
-    length(1) = sqrt(pow(shape(0,1,in_ele) - shape(0,2,in_ele),2.0) + pow(shape(1,1,in_ele) - shape(1,2,in_ele),2.0));
+    length(1) = sqrt(pow(shape(0,1,in_ele) - shape(0,3,in_ele),2.0) + pow(shape(1,1,in_ele) - shape(1,3,in_ele),2.0));
     length(2) = sqrt(pow(shape(0,2,in_ele) - shape(0,3,in_ele),2.0) + pow(shape(1,2,in_ele) - shape(1,3,in_ele),2.0));
-    length(3) = sqrt(pow(shape(0,3,in_ele) - shape(0,0,in_ele),2.0) + pow(shape(1,3,in_ele) - shape(1,0,in_ele),2.0));
+    length(3) = sqrt(pow(shape(0,0,in_ele) - shape(0,2,in_ele),2.0) + pow(shape(1,0,in_ele) - shape(1,2,in_ele),2.0));
 
     // Get minimum edge length
+    //cout << "Shape Points X: " << setprecision(12) << shape(0,0,in_ele) << ", " << shape(0,1,in_ele) << ", " << shape(0,2,in_ele) << ", " << shape(0,3,in_ele) << ", " << endl;
+    //cout << "Shape Points Y: " << setprecision(12) << shape(1,0,in_ele) << ", " << shape(1,1,in_ele) << ", " << shape(1,2,in_ele) << ", " << shape(1,3,in_ele) << ", " << endl;
     out_h_ref = length.get_min();
 
     return out_h_ref;

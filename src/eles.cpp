@@ -167,6 +167,9 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       disu_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
     }
     
+    // Allocate storage for numerical wavespeed at flux points
+    wavespeed_fpts.setup(n_fpts_per_ele,n_eles);
+
     // Allocate storage for timestep
     // If using global minimum, only one timestep
     if (run_input.dt_type == 1)
@@ -700,7 +703,7 @@ void eles::read_restart_data(ifstream& restart_file)
     // Allocate array
     h_ref.setup(n_eles);
     h_ref.initialize_to_zero();
-    
+
     // Call element specific function to obtain length
     for (int i=0; i<n_eles; i++)
       h_ref(i) = (*this).calc_h_ref_specific(i);
@@ -1111,7 +1114,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
               dt_local(0) = dt_local_new;
             }
           }
-          
+          cout << "Global Time Step: " << setprecision(12) << dt_local(0) << endl;
           
           // If using MPI, find minimum across partitions
 #ifdef _MPI
@@ -1126,10 +1129,32 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
         // For local timestepping, find element local timesteps
         if (run_input.dt_type == 2)
         {
+          /* Testing local time stepping
+          dt_local_new = 1e12;
+
           for (int ic=0; ic<n_eles; ic++)
           {
             dt_local(ic) = calc_dt_local(ic);
+
+            if (dt_local(ic) < dt_local_new)
+            {
+              dt_local_new = dt_local(ic);
+            }
           }
+          for (int ic=0; ic<n_eles; ic++)
+          {
+            double alp = 2.0;
+            dt_local(ic) = dt_local_new*(1.0 + alp*(h_ref(ic) - h_ref.get_min())/h_ref.get_max());
+          }
+          */
+
+          for (int ic=0; ic<n_eles; ic++)
+          {
+            dt_local(ic) = calc_dt_local(ic);
+            //cout << "Element Size: " << setprecision(12) << h_ref(ic) << ", X Pos: " << pos_upts(0,ic,0) << ", Y Pos: " << pos_upts(0,ic,1)  << ", Time Step: " << dt_local(ic) << endl;
+          }
+          cout << "Local Time Step Max: " << setprecision(12) << dt_local.get_max() << endl;
+          cout << "Local Time Step Min: " << setprecision(12) << dt_local.get_min() << endl;
         }
       }
       
@@ -1209,17 +1234,33 @@ double eles::calc_dt_local(int in_ele)
         lam_visc = lam_visc_new;
     }
 
+    // Find maximum numerical wavespeed from flux points
+    lam_inv = 0;
+    for (int i=0; i<n_fpts_per_ele; i++) {
+      if (lam_inv < wavespeed_fpts(i,in_ele))
+        lam_inv = wavespeed_fpts(i,in_ele);
+    }
+
     if (viscous)
     {
       dt_visc = (run_input.CFL * 0.25 * h_ref(in_ele) * h_ref(in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
-      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
+      dt_inv = run_input.CFL*h_ref(in_ele)/(lam_inv + run_input.mu_inf/h_ref(in_ele))*1.0/(2.0*run_input.order + 1.0);
+      //dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
     }
     else
     {
       dt_visc = 1e16;
       dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv * 1.0/(2.0*run_input.order + 1.0);
     }
-      out_dt_local = min(dt_visc,dt_inv);
+    /*
+    if (dt_visc > dt_inv)
+    {
+      cout << "Inviscid Time Step: " << setprecision(12) << dt_inv << endl;
+      cout << "Viscous Time Step: " << setprecision(12) << dt_visc << endl;
+    }
+    */
+    //out_dt_local = min(dt_visc,dt_inv);
+    out_dt_local = dt_inv;
   }
   
   else if (n_dims == 3)
@@ -5803,6 +5844,27 @@ double* eles::get_sgsf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
   return sgsf_fpts.get_ptr_gpu(fpt,in_ele,in_field,in_dim);
 #else
   return sgsf_fpts.get_ptr_cpu(fpt,in_ele,in_field,in_dim);
+#endif
+}
+
+// get a pointer to the normal transformed continuous inviscid flux at a flux point
+double* eles::get_wavespeed_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele)
+{
+  int i;
+
+  int fpt;
+
+  fpt=in_inter_local_fpt;
+
+  for(i=0;i<in_ele_local_inter;i++)
+  {
+    fpt+=n_fpts_per_inter(i);
+  }
+
+#ifdef _GPU
+  return wavespeed_fpts.get_ptr_gpu(fpt,in_ele);
+#else
+  return wavespeed_fpts.get_ptr_cpu(fpt,in_ele);
 #endif
 }
 
