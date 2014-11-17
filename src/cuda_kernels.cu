@@ -1655,9 +1655,9 @@ __device__ void SGS_flux_kernel(double* q, double* qf, double* grad_vel, double*
     *Cs = 0.5*num/(denom+eps);
         
     // limit value to prevent instability
-    *Cs=min(max((*Cs),0.0),0.04);
+    *Cs=max((*Cs),0.0);
         
-    // eddy viscosity
+    // eddy viscosity (note that in dynamic method Cs = Cs^2 in other models)
     *mu_t = qf[0]*(*Cs)*delta*delta*Smod;
 
   }

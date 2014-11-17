@@ -2745,8 +2745,7 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
   }
   
   // prevent division by zero
-  if (abs(denom) > eps) Cs = 0.5*num/denom;
-  else Cs = 0.0;
+  Cs = 0.5*num/(denom+eps);
   
   // limit value to prevent instability
   //Cs=min(max(Cs,0.0),0.04);
