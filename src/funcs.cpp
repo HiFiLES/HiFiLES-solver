@@ -443,8 +443,8 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
     }
   }
   
-  cout<<"modal coeffs:"<<endl;
-  modal.print();
+  //cout<<"modal coeffs:"<<endl;
+  //modal.print();
   
   #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
@@ -510,8 +510,8 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
     }
   }
   
-  cout<<"modal coeffs:"<<endl;
-  modal.print();
+  //cout<<"modal coeffs:"<<endl;
+  //modal.print();
 
   #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
@@ -583,8 +583,8 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
     }
   }
 
-  cout<<"modal coeffs:"<<endl;
-  modal.print();
+  //cout<<"modal coeffs:"<<endl;
+  //modal.print();
 
   #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 

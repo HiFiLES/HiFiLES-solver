@@ -2471,6 +2471,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
     
     int i,j,k,l,m;
     double detjac;
+    double eps = 1.0e-12;
 
     for(i=0;i<n_eles;i++) {
       
@@ -2485,13 +2486,11 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
         // average value over element
         double Csav=0.0;
         for(j=0;j<n_upts_per_ele;j++) {
-          Csav += dynamic_coeff(i,j);
+          Csav += dynamic_coeff(j,i);
         }
         for(j=0;j<n_upts_per_ele;j++) {
-          dynamic_coeff(i,j) = Csav/n_upts_per_ele;
+          dynamic_coeff(j,i) = Csav/n_upts_per_ele;
         }
-        //if(abs(Csav) > eps)
-        //cout << "Csav " << setprecision(12) << Csav << endl;
       }
 
       // Calculate viscous flux
@@ -2749,12 +2748,11 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
   if (abs(denom) > eps) Cs = 0.5*num/denom;
   else Cs = 0.0;
   
-  //cout << "num, denom, Cs: " << setprecision(10) << num << ", " << denom << ", " << Cs << endl;
-  
   // limit value to prevent instability
-  Cs=min(max(Cs,0.0),0.04);
+  //Cs=min(max(Cs,0.0),0.04);
+  Cs=max(Cs,0.0);
 
-  //cout << "Cs: " << setprecision(7) << Cs << endl;
+  //cout << "Cs: " << setprecision(12) << Cs << endl;
 
   // set coeff field for output to Paraview
   dynamic_coeff(upt,ele) = Cs;

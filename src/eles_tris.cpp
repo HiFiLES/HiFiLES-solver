@@ -675,6 +675,8 @@ void eles_tris::compute_filter_upts(void)
   k_c = 1.0/run_input.filter_ratio;
 
   X = loc_upts;
+  if (rank==0) cout<<"X:"<<endl;
+  if (rank==0) X.print();
 
   // Approx resolution in element (assumes uniform point spacing)
   // Interval is [-1:1]
@@ -688,10 +690,83 @@ void eles_tris::compute_filter_upts(void)
     for (j=0;j<i;j++)
       beta(i,j) = beta(j,i);
 
-  
   if(run_input.filter_type==0) // Vasilyev filter
     {
-      FatalError("Vasilyev filters not implemented for tris. Exiting.");
+      //FatalError("Vasilyev filters not implemented for tris. Exiting.");
+      if (rank==0) cout<<"Building high-order-commuting Vasilyev filter"<<endl;
+
+      array<double> A(N,N);
+
+      if (rank==0) {
+        cout<<"beta:"<<endl;
+        beta.print();
+        cout<<"Vandermonde:"<<endl;
+        vandermonde.print();
+      }
+
+      for (i=0;i<N;i++)
+        {
+          B(i) = 0.0;
+          for (j=0;j<N;j++) A(i,j) = 0.0;
+
+        }
+
+      // Populate coefficient matrix
+      for (i=0;i<N;i++)
+        {
+          // Populate constraints matrix
+          B(0) = 1.0;
+
+          // Box filter weights
+          //B(1) =  2.0/pi;
+          //B(2) = -B(1)/k_c; 
+
+          // Gauss filter weights
+          B(1) =  exp(-pow(pi,2)/24.0);
+          B(2) = -B(1)*pow(pi,2)/k_c/12.0;
+
+          if(N % 2 == 1 && i+1 == N2) B(2) = 0.0;
+
+          for (j=0;j<N;j++)
+            {
+              A(j,0) = 1.0;
+              A(j,1) = cos(pi*k_c*beta(j,i));
+              A(j,2) = -beta(j,i)*pi*sin(pi*k_c*beta(j,i));
+
+              if(N % 2 == 1 && i+1 == N2) A(j,2) = pow(beta(j,i),3);
+
+            }
+
+          // Enforce filter moments
+          for (k=3;k<N;k++)
+            {
+              for (j=0;j<N;j++)
+                A(j,k) = pow(beta(j,i),k+1);
+
+              B(k) = 0.0;
+            }
+
+          // Vasilyev et al (2001):
+          A = vandermonde;
+          for (j=0;j<N;j++) B(j) = 0.0;
+          B(0) = (1);
+
+          // Solve linear system by inverting A using
+          // Gauss-Jordan method
+          gaussj(N,A,B);
+
+          for (j=0;j<N;j++)
+            filter_upts(j,i) = B(j);
+
+        }
+
+      // normalisation
+      for(i=0;i<N;i++)
+        {
+          norm = 0.0;
+          for(j=0;j<N;j++) norm += filter_upts(i,j);
+          for(j=0;j<N;j++) filter_upts(i,j) /= norm;
+        }
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
@@ -757,7 +832,6 @@ void eles_tris::compute_filter_upts(void)
             alpha(i) = k_c;
         }
 
-      sum = 0.0;
       for(i=0;i<N;i++)
         {
           norm = 0.0;
@@ -769,7 +843,6 @@ void eles_tris::compute_filter_upts(void)
           for(j=0;j<N;j++)
             {
               filter_upts(i,j) /= norm;
-              sum += filter_upts(i,j);
             }
         }
     }
@@ -791,36 +864,6 @@ void eles_tris::compute_filter_upts(void)
       // Compute modal cutoff filter
       compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 2);
       
-      cout<<"filter_upts:"<<endl;
-      filter_upts.print();
-      // Ensure symmetry and normalization
-      for(i=0;i<N2;i++)
-      {
-        for(j=0;j<N;j++)
-        {
-          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
-          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
-        }
-      }
-      for(i=0;i<N2;i++)
-      {
-        norm = 0.0;
-        for(j=0;j<N;j++)
-          norm += filter_upts(i,j);
-        for(j=0;j<N;j++)
-          filter_upts(i,j) /= norm;
-        for(j=0;j<N;j++)
-          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
-      }
-      sum = 0;
-      for(i=0;i<N;i++)
-        for(j=0;j<N;j++)
-          sum+=filter_upts(i,j);
-      
-      cout<<"filter_upts:"<<endl;
-      filter_upts.print();
-      cout<<"filter sum: "<<sum<<endl;
-
       // Output filter to file
       coeff_file.open("filter_upts_tri_cutoff.dat");
       for(i=0;i<N;++i) {
@@ -833,37 +876,7 @@ void eles_tris::compute_filter_upts(void)
       
       // Compute modal cutoff filter
       compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 3);
-
-      cout<<"filter_upts:"<<endl;
-      filter_upts.print();
-      // Ensure symmetry and normalization
-      for(i=0;i<N2;i++)
-      {
-        for(j=0;j<N;j++)
-        {
-          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
-          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
-        }
-      }
-      for(i=0;i<N2;i++)
-      {
-        norm = 0.0;
-        for(j=0;j<N;j++)
-          norm += filter_upts(i,j);
-        for(j=0;j<N;j++)
-          filter_upts(i,j) /= norm;
-        for(j=0;j<N;j++)
-          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
-      }
-      sum = 0;
-      for(i=0;i<N;i++)
-        for(j=0;j<N;j++)
-          sum+=filter_upts(i,j);
       
-      cout<<"filter_upts:"<<endl;
-      filter_upts.print();
-      cout<<"filter sum: "<<sum<<endl;
-
       // Output filter to file
       coeff_file.open("filter_upts_tri_exp.dat");
       for(i=0;i<N;++i) {
@@ -877,36 +890,6 @@ void eles_tris::compute_filter_upts(void)
       // Compute modal cutoff filter
       compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, 4);
       
-      cout<<"filter_upts:"<<endl;
-      filter_upts.print();
-      // Ensure symmetry and normalization
-      for(i=0;i<N2;i++)
-      {
-        for(j=0;j<N;j++)
-        {
-          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
-          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
-        }
-      }
-      for(i=0;i<N2;i++)
-      {
-        norm = 0.0;
-        for(j=0;j<N;j++)
-          norm += filter_upts(i,j);
-        for(j=0;j<N;j++)
-          filter_upts(i,j) /= norm;
-        for(j=0;j<N;j++)
-          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
-      }
-      sum = 0;
-      for(i=0;i<N;i++)
-        for(j=0;j<N;j++)
-          sum+=filter_upts(i,j);
-
-      cout<<"filter_upts:"<<endl;
-      filter_upts.print();
-      cout<<"filter sum: "<<sum<<endl;
-
       // Output filter to file
       coeff_file.open("filter_upts_tri_gauss.dat");
       for(i=0;i<N;++i) {
@@ -920,25 +903,6 @@ void eles_tris::compute_filter_upts(void)
       // Finally, compute the modal filter we want
       compute_modal_filter_tri(filter_upts, vandermonde, inv_vandermonde, N, order, run_input.filter_ratio, run_input.filter_type);
       
-      // Ensure symmetry and normalization
-      for(i=0;i<N2;i++)
-      {
-        for(j=0;j<N;j++)
-        {
-          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
-          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
-        }
-      }
-      for(i=0;i<N2;i++)
-      {
-        norm = 0.0;
-        for(j=0;j<N;j++)
-          norm += filter_upts(i,j);
-        for(j=0;j<N;j++)
-          filter_upts(i,j) /= norm;
-        for(j=0;j<N;j++)
-          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
-      }
     }
   else // Simple average for low order
     {
@@ -948,26 +912,9 @@ void eles_tris::compute_filter_upts(void)
           filter_upts(i,j) = 1.0/N;
 
     }
-  // Ensure symmetry and normalisation
-  for(i=0;i<N2;i++)
-    {
-      for(j=0;j<N;j++)
-        {
-          filter_upts(i,j) = 0.5*filter_upts(i,j) + filter_upts(N-i-1,N-j-1);
-          filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
-        }
-    }
 
-  for(i=0;i<N2;i++)
-    {
-      norm = 0.0;
-      for(j=0;j<N;j++)
-        norm += filter_upts(i,j);
-      for(j=0;j<N;j++)
-        filter_upts(i,j) /= norm;
-      for(j=0;j<N;j++)
-        filter_upts(N-i-1,N-j-1) = filter_upts(i,j);
-    }
+  if (rank==0) cout<<"filter_upts:"<<endl;
+  if (rank==0) filter_upts.print();
 }
 
 

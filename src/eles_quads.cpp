@@ -486,7 +486,8 @@ void eles_quads::compute_filter_upts(void)
   filter_upts_1D.setup(N,N);
 
   X = loc_1d_upts;
-
+  cout<<"X:"<<endl;
+  X.print();
   N2 = N/2;
   if(N % 2 != 0){N2 += 1;}
   // Cutoff wavenumber
@@ -500,20 +501,20 @@ void eles_quads::compute_filter_upts(void)
     for (j=0;j<N;j++)
       beta(j,i) = (X(j)-X(i))/dlt;
 
+  cout<<"beta:"<<endl;
+  beta.print();
   // Build high-order-commuting Vasilyev filter
   // Only use high-order filters for high enough order
   if(run_input.filter_type==0 and N>=3)
     {
       if (rank==0) cout<<"Building high-order-commuting Vasilyev filter"<<endl;
-      array<double> C(N);
+
       array<double> A(N,N);
 
       for (i=0;i<N;i++)
         {
           B(i) = 0.0;
-          C(i) = 0.0;
-          for (j=0;j<N;j++)
-            A(i,j) = 0.0;
+          for (j=0;j<N;j++) A(i,j) = 0.0;
 
         }
       // Populate coefficient matrix
@@ -521,21 +522,26 @@ void eles_quads::compute_filter_upts(void)
         {
           // Populate constraints matrix
           B(0) = 1.0;
+
+          // Box filter weights
+          //B(1) =  2.0/pi;
+          //B(2) = -B(1)/k_c; 
+
           // Gauss filter weights
           B(1) =  exp(-pow(pi,2)/24.0);
           B(2) = -B(1)*pow(pi,2)/k_c/12.0;
 
-          if(N % 2 == 1 && i+1 == N2)
-            B(2) = 0.0;
+          if(N % 2 == 1 && i+1 == N2) B(2) = 0.0;
 
           for (j=0;j<N;j++)
             {
+              cout << "j,i,beta(j,i) " << j << ", " << i << ", " << beta(j,i) << endl;
               A(j,0) = 1.0;
               A(j,1) = cos(pi*k_c*beta(j,i));
               A(j,2) = -beta(j,i)*pi*sin(pi*k_c*beta(j,i));
+              cout << "A(j,0),A(j,1),A(j,2) " << A(j,0) << ", " << A(j,1) << ", " << A(j,2) << endl;
 
-              if(N % 2 == 1 && i+1 == N2)
-                A(j,2) = pow(beta(j,i),3);
+              if(N % 2 == 1 && i+1 == N2) A(j,2) = pow(beta(j,i),3);
 
             }
 
@@ -548,13 +554,30 @@ void eles_quads::compute_filter_upts(void)
               B(k) = 0.0;
             }
 
+          cout << "row " << i << " A, B before solve:" << endl;
+          A.print();
+          B.print();
+
           // Solve linear system by inverting A using
           // Gauss-Jordan method
           gaussj(N,A,B);
-          sum=0;
+
+          cout << "row " << i << " A, B after solve:" << endl;
+          A.print();
+          B.print();
+
           for (j=0;j<N;j++)
             filter_upts_1D(j,i) = B(j);
 
+        }
+      cout << endl;
+
+      // Ensure normalisation
+      for(i=0;i<N;i++)
+        {
+          norm = 0.0;
+          for(j=0;j<N;j++) norm += filter_upts_1D(i,j);
+          for(j=0;j<N;j++) filter_upts_1D(i,j) /= norm;
         }
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
@@ -701,7 +724,7 @@ void eles_quads::compute_filter_upts(void)
         }
     }
 
-  cout<<"filter_upts:"<<endl;
+  cout<<"filter_upts:"<<setprecision(12)<<endl;
   filter_upts_1D.print();
   
   // Build 2D filter on ideal (reference) element.
