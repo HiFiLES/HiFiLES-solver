@@ -1069,8 +1069,6 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
           dt_local(ic) = calc_dt_local(ic);
       }
       
-      cout << endl << " ------------ Solution Advance --------------" << endl;
-
       for (int i=0;i<n_fields;i++)
       {
         for (int ic=0;ic<n_eles;ic++)
@@ -4430,7 +4428,7 @@ void eles::set_transforms(void)
     
     for(i=0;i<n_eles;i++)
     {
-      if ((i%(n_eles/10))==0 && rank==0)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
       
       for(j=0;j<n_upts_per_ele;j++)
@@ -4532,7 +4530,7 @@ void eles::set_transforms(void)
     
     for(i=0;i<n_eles;i++)
     {
-      if ((i%(n_eles/10))==0 && rank==0)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
       
       for(j=0;j<n_fpts_per_ele;j++)
@@ -4715,7 +4713,7 @@ void eles::set_transforms_dynamic(void)
     }
 
     for(i=0;i<n_eles;i++) {
-      if ((i%(n_eles/10))==0 && rank==0 && first_time)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0 && first_time)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
       for(j=0;j<n_upts_per_ele;j++)
@@ -4797,7 +4795,7 @@ void eles::set_transforms_dynamic(void)
       cout << endl << " at flux points"  << endl;
 
     for(i=0;i<n_eles;i++) {
-      if ((i%(n_eles/10))==0 && rank==0 && first_time)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0 && first_time)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
       for(j=0;j<n_fpts_per_ele;j++)
@@ -7331,7 +7329,7 @@ void eles::rigid_move(double rk_time)
   /* --- Calculate current translation rate --- */
   for (int k=0; k<n_dims; k++) {
     v_translate(k) = 2*pi*rigid_motion_params(k)*rigid_motion_params(4+k)*cos(2*pi*rigid_motion_params(4+k)*rk_time);
-    translate(k) = rigid_motion_params(k)*sin(2*pi*rigid_motion_params(4+k)*rk_time);
+    translate(k)   =                             rigid_motion_params( k )*sin(2*pi*rigid_motion_params(4+k)*rk_time);
   }
 
   if (n_eles!=0) {

@@ -2000,8 +2000,8 @@ __global__ void blend_move_kernel(int n_eles, int n_eles_global, int max_n_spts_
         // (1) Displacement  due to rigid motion of boundary
         //     [disp = new position of boundary point - old position = xv_0 + {params*sin,cos} - xv]
         for (int k=0; k<n_dims; k++) {
-          disp[k] = motion_params[ib+n_moving_bnds*(2*k)  ]*sin(2*PI*motion_params[ib+n_moving_bnds*(6+k)]*rk_time);
-          disp[k]+= motion_params[ib+n_moving_bnds*(2*k+1)]*cos(2*PI*motion_params[ib+n_moving_bnds*(6+k)]*rk_time);
+          disp[k] = motion_params[ib+n_moving_bnds*(k)  ]*sin(2*PI*motion_params[ib+n_moving_bnds*(4+k)]*rk_time);
+          //disp[k]+= motion_params[ib+n_moving_bnds*(2*k+1)]*cos(2*PI*motion_params[ib+n_moving_bnds*(6+k)]*rk_time);
           disp[k]+= xv_0[ivb_g+n_verts*k] - xv[ivb_g+n_verts*k];
         }
 
@@ -2061,8 +2061,8 @@ __global__ void blend_move_bounds_kernel(int n_bnds, int n_moving_bnds, double* 
 
       for (int k=0; k<n_dims; k++) {
         xv[ivb_g+n_verts*k] = xv_0[ivb_g+n_verts*k];
-        xv[ivb_g+n_verts*k]+= motion_params[ib+n_moving_bnds*(2*k)  ]*sin(2*PI*motion_params[ib+n_moving_bnds*(6+k)]*rk_time);
-        xv[ivb_g+n_verts*k]+= motion_params[ib+n_moving_bnds*(2*k+1)]*cos(2*PI*motion_params[ib+n_moving_bnds*(6+k)]*rk_time);
+        xv[ivb_g+n_verts*k]+= motion_params[ib+n_moving_bnds*(k)  ]*sin(2*PI*motion_params[ib+n_moving_bnds*(4+k)]*rk_time);
+        //xv[ivb_g+n_verts*k]+= motion_params[ib+n_moving_bnds*(k+1)]*(1-cos(2*PI*motion_params[ib+n_moving_bnds*(6+k)]*rk_time));
       }
     }
   }

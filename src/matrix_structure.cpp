@@ -67,42 +67,67 @@ CSysMatrix::~CSysMatrix(void) {
     LineletPoint      = NULL;
 }
 
-void CSysMatrix::Initialize(int n_verts, int n_verts_global, int n_var, int n_eqns, array<array<int> > &v2e, array<int> &v2n_e, array<int> &e2v) {
+void CSysMatrix::Initialize(int n_verts, int n_verts_global, int n_var, int n_eqns, array<array<int> > &v2e, array<int> &v2n_e, array<int> &e2v, array<int> &c2v, array<int> &c2n_v) {
 	unsigned long iPoint, *row_ptr, *col_ind, *vneighs, index, nnz;
-    unsigned short iNeigh, nNeigh, Max_nNeigh, iEdge;
+  unsigned short iNeigh, nNeigh, Max_nNeigh, iEdge;
 
-    nPoint = n_verts;              // Assign number of points in the mesh (on processor)
+  nPoint = n_verts;              // Assign number of points in the mesh (on processor)
+
+  /* Quads weren't working due to no space being allocated for kitty-corner nodes
+     (i.e. contributions from node 3 on node 1; node 4 on node 2; and vice-versa)
+     FIXED 11/18/2014 */
+  array<set<int> > v2c(nPoint), v2v_(nPoint);
+  array<int> v2n_c(nPoint), v2n_v(nPoint), v2v;
+
+  // Get 'umbrella' of cells surrounding each point
+  int n_cells = c2v.get_dim(0);
+  for (int ic=0; ic<n_cells; ic++) {
+    for (int iv=0; iv<c2n_v(ic); iv++) {
+      v2c(c2v(ic,iv)).insert(ic);
+    }
+  }
+
+  // Get unique listing of vertices within each vertices' 'umbrella'
+  for (int iv=0; iv<nPoint; iv++) {
+    v2n_c(iv) = v2c(iv).size();
+    for (set<int>::iterator icit=v2c(iv).begin(); icit!=v2c(iv).end(); ++icit) {
+      for (int iv2=0; iv2<c2n_v(*icit); iv2++) {
+        v2v_(iv).insert(c2v(*icit,iv2));
+      }
+    }
+    v2n_v(iv) = v2v_(iv).size();
+  }
+
+  // Copy to an 'array' for easier use
+  Max_nNeigh = v2n_v.get_max();
+  v2v.setup(nPoint,Max_nNeigh);
+  for (int iv=0; iv<nPoint; iv++) {
+    int iv_2 = 0;
+    for (set<int>::iterator ivit=v2v_(iv).begin(); ivit!=v2v_(iv).end(); ++ivit) {
+      v2v(iv,iv_2) = *ivit;
+      iv_2++;
+    }
+  }
 
 	/*--- Don't delete *row_ptr, *col_ind because they are asigned to the Jacobian structure. ---*/
 	row_ptr = new unsigned long [nPoint+1];
 	row_ptr[0] = 0;
-	for (iPoint = 0; iPoint < nPoint; iPoint++)
-        row_ptr[iPoint+1] = row_ptr[iPoint]+(v2n_e(iPoint)+1); // +1 -> to include diagonal element
+  for (iPoint = 0; iPoint < nPoint; iPoint++)
+        row_ptr[iPoint+1] = row_ptr[iPoint]+(v2n_v(iPoint)); // this includes the diagonal point itself
 	nnz = row_ptr[nPoint];
   
 	col_ind = new unsigned long [nnz];
   
-    Max_nNeigh = 0;
-    for (iPoint = 0; iPoint < nPoint; iPoint++) {
-        nNeigh = v2n_e(iPoint);
-        if (nNeigh > Max_nNeigh) Max_nNeigh = nNeigh;
-    }
-	vneighs = new unsigned long [Max_nNeigh+1]; // +1 -> to include diagonal
+  vneighs = new unsigned long [Max_nNeigh];
   
 	for (iPoint = 0; iPoint < nPoint; iPoint++) {
-        nNeigh = v2n_e(iPoint);
+        nNeigh = v2n_v(iPoint);
         for (iNeigh = 0; iNeigh < nNeigh; iNeigh++) {
-            iEdge = v2e(iPoint)(iNeigh);
-            if (e2v(iEdge,0) == iPoint) {
-                vneighs[iNeigh] = e2v(iEdge,1);
-            }else{
-                vneighs[iNeigh] = e2v(iEdge,0);
-            }
+            vneighs[iNeigh] = v2v(iPoint,iNeigh);
         }
-		vneighs[nNeigh] = iPoint;
-		sort(vneighs,vneighs+nNeigh+1);
+    sort(vneighs,vneighs+nNeigh);
 		index = row_ptr[iPoint];
-		for (iNeigh = 0; iNeigh <= nNeigh; iNeigh++) {
+    for (iNeigh = 0; iNeigh < nNeigh; iNeigh++) { // <=
 			col_ind[index] = vneighs[iNeigh];
 			index++;
 		}
@@ -148,11 +173,13 @@ void CSysMatrix::SetIndexes(int n_verts, int n_verts_global, int n_var, int n_eq
 void CSysMatrix::GetBlock(unsigned long block_i, unsigned long block_j) {
 	unsigned long step = 0, index, iVar;
 	
+  // Initialize to 0 (so if no block(i,j) exists, return empty matrix)
+  for (iVar = 0; iVar < nVar*nEqn; iVar++)
+    block[iVar] = 0.;
+
 	for (index = row_ptr[block_i]; index < row_ptr[block_i+1]; index++) {
-        //step++;
 		if (col_ind[index] == block_j) {
 			for (iVar = 0; iVar < nVar*nEqn; iVar++)
-                //block[iVar] = matrix[(row_ptr[block_i]+step-1)*nVar*nEqn+iVar];
                 block[iVar] = matrix[(index)*nVar*nEqn+iVar];
 			break;
 		}
@@ -169,6 +196,24 @@ void CSysMatrix::DisplayBlock(void) {
 	}
 }
 
+//void CSysMatrix::DisplayMatrix(void) {
+//  unsigned long iVar, jVar, index;
+
+//	for (index = row_ptr[block_i]; index < row_ptr[block_i+1]; index++) {
+//		if (col_ind[index] == block_j) {
+//			for (iVar = 0; iVar < nVar; iVar++)
+//				for (jVar = 0; jVar < nEqn; jVar++)
+//          matrix[index*nVar*nEqn+iVar*nEqn+jVar] = val_block[iVar][jVar];
+//			break;
+//		}
+//	}
+//  for (iVar = 0; iVar < nVar; iVar++) {
+//    for (jVar = 0; jVar < nEqn; jVar++)
+//      cout << block[iVar*nEqn+jVar] << "  ";
+//    cout << endl;
+//  }
+//}
+
 void CSysMatrix::ReturnBlock(double **val_block) {
 	unsigned short iVar, jVar;
 	for (iVar = 0; iVar < nVar; iVar++)
@@ -180,11 +225,10 @@ void CSysMatrix::SetBlock(unsigned long block_i, unsigned long block_j, double *
 	unsigned long iVar, jVar, index, step = 0;
 	
 	for (index = row_ptr[block_i]; index < row_ptr[block_i+1]; index++) {
-		step++;
 		if (col_ind[index] == block_j) {
 			for (iVar = 0; iVar < nVar; iVar++)
 				for (jVar = 0; jVar < nEqn; jVar++)
-					matrix[(row_ptr[block_i]+step-1)*nVar*nEqn+iVar*nEqn+jVar] = val_block[iVar][jVar];
+          matrix[index*nVar*nEqn+iVar*nEqn+jVar] = val_block[iVar][jVar];
 			break;
 		}
 	}

@@ -318,7 +318,7 @@ void mesh::deform(void) {
   //stiff_mat.setup(n_eles);
   LinSysSol.Initialize(n_verts,n_dims,0.0); /// should it be n_verts or n_verts_global?
   LinSysRes.Initialize(n_verts,n_dims,0.0);
-  StiffnessMatrix.Initialize(n_verts,n_verts_global,n_dims,n_dims,v2e,v2n_e,e2v);
+  StiffnessMatrix.Initialize(n_verts,n_verts_global,n_dims,n_dims,v2e,v2n_e,e2v,c2v,c2n_v);
 
   /*--- Loop over the total number of grid deformation iterations. The surface
     deformation can be divided into increments to help with stability. In
@@ -340,16 +340,40 @@ void mesh::deform(void) {
       for (int iNode=0; iNode<c2n_v(ic); iNode++) {
         nodes(iNode) = iv2ivg(c2v(ic,iNode)); // iv2ivg will be needed for MPI, right?
       }
+      // Hack-ish currently - if linear quad, switch to 'standard' CCW node ordering
+      // (HiFiLES uses zig-zag ordering)
+      if (ctype(ic)==QUAD) {
+        int tmpNode = nodes(3);
+        nodes(3) = nodes(2);
+        nodes(2) = tmpNode;
+      }
       if (n_dims == 2) {
         set_stiffmat_ele_2d(stiff_mat_ele,nodes,ic,min_vol);
       }else if (n_dims == 3) {
         set_stiffmat_ele_3d(stiff_mat_ele,nodes,ic,min_vol);
       }
       add_FEA_stiffMat(stiff_mat_ele,nodes);
+//      displayMatrix(stiff_mat_ele);
     }
 
     /*--- Compute the tolerance of the linear solver using MinLength ---*/
     solver_tolerance = min_length * 1E-2;
+
+    /// DEBUGGING QUAD ELEMENTS
+//    cout << "Node Positions:" << endl;
+//    for (int iv=0; iv<n_verts; iv++) {
+//      cout << "x = " << xv_0(iv,0) << ", y = " << xv_0(iv,1) << endl;
+//    }
+//    cout << endl;
+//    for (int iv=0; iv<n_verts; iv++) {
+//      cout << "-- Node " << iv << " --" << endl;
+//      for (int jv=iv; jv<n_verts; jv++) {
+//        cout << " -- " << jv << " --" << endl;
+//        StiffnessMatrix.GetBlock(iv,jv);
+//        StiffnessMatrix.DisplayBlock();
+//      }
+//    }
+    /// -----------------------
 
     /*--- Set the boundary displacements (as prescribed by the design variable
         perturbations controlling the surface shape) as a Dirichlet BC. ---*/
@@ -683,7 +707,7 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, array<int>& nodes, i
 
     /*--- Compute the D Matrix (for plane strain and 3-D)---*/
 
-    D_Matrix[0][0] = Lambda + 2.0*Mu;		D_Matrix[0][1] = Lambda;            D_Matrix[0][2] = 0.0;
+    D_Matrix[0][0] = Lambda + 2.0*Mu;   D_Matrix[0][1] = Lambda;            D_Matrix[0][2] = 0.0;
     D_Matrix[1][0] = Lambda;            D_Matrix[1][1] = Lambda + 2.0*Mu;   D_Matrix[1][2] = 0.0;
     D_Matrix[2][0] = 0.0;               D_Matrix[2][1] = 0.0;               D_Matrix[2][2] = Mu;
 
@@ -707,6 +731,13 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, array<int>& nodes, i
         }
       }
     }
+//    for (int ii=0; ii<3; ii++) {
+//      for (int jj=0; jj<8; jj++) {
+//        cout << setprecision(8) << B_Matrix[ii][jj] << " ";
+//      }
+//      cout << endl;
+//    }
+    //displayMatrix(stiffMat_ele);
   }
 }
 
@@ -870,7 +901,7 @@ void mesh::add_FEA_stiffMat(array<double>& stiffMat_ele, array<int>& Nodes) {
   StiffMatrix_Node.setup(nVar,nVar);
   StiffMatrix_Node.initialize_to_zero();
 
-  /*--- Transform the stiffness matrix for the hexahedral element into the
+  /*--- Transform the stiffness matrix for the element into the
    contributions for the individual nodes relative to each other. ---*/
 
   for (iVert = 0; iVert < nNodes; iVert++) {
@@ -1657,7 +1688,7 @@ void mesh::update_grid_coords(void)
     for (iDim = 0; iDim < n_dims; iDim++) {
       total_index = iPoint*n_dims + iDim;
       new_coord = xv(0)(iPoint,iDim) + LinSysSol[total_index];
-      if (fabs(new_coord) < eps*eps) new_coord = 0.0;
+      //if (fabs(new_coord) < eps*eps) new_coord = 0.0;
       xv(0)(iPoint,iDim) = new_coord;
     }
   }
@@ -1751,8 +1782,9 @@ void mesh::set_boundary_displacements(void)
   for (iBound = 0; iBound < n_bnds; iBound++) {
     //        my version: if ((bound_flag(ibound) != SYMMETRY_PLANE) && bound_flag(iBound) != MPI_BOUND)) {
     for (iVertex = 0; iVertex < nBndPts(iBound); iVertex++) {
-      /// is iv2ivg needed for this?
-      iPoint = iv2ivg(boundPts(iBound,iVertex));
+      /// is iv2ivg needed for this? [probably for MPI, but not now]
+      /// iv2ivg(boundPts(iBound,iVertex));
+      iPoint = boundPts(iBound,iVertex);
       for (iDim = 0; iDim < n_dims; iDim++) {
         total_index = iPoint*n_dims + iDim;
         LinSysRes[total_index] = 0.0;
@@ -1796,27 +1828,33 @@ void mesh::set_boundary_displacements(void)
   {
     // Match up the mesh-file boundary to the input-file boundary
     for (ib=0; ib<n_moving_bnds; ib++) {
-      if (bc_list(bnd)==bc_num[run_input.boundary_flags(ib)]) break;
-    }
+      //cout << "bclist(bnd) = " << bc_list(bnd) << "; bc_num[ib] = " << bc_num[run_input.boundary_flags(ib)] << endl;
+      if (bc_list(bnd)==bc_num[run_input.boundary_flags(ib)]) {
+        //break;
+        //}
+        //}
 
-    // Apply displacement (new pos - old pos) to each point on boundary
-    for (ivb=0; ivb<nBndPts(bnd); ivb++)
-    {
-      // Calculate next displacement
-      ivb_g = iv2ivg(boundPts(bnd,ivb)); // iv != ivg if MPI
-      for (unsigned short k=0; k<n_dims; k++) {
-        disp(k) = motion_params(ib,2*k  )*sin(2*pi*motion_params(ib,6+k)*rk_time);
-        disp(k)+= motion_params(ib,2*k+1)*cos(2*pi*motion_params(ib,6+k)*rk_time);
-        disp(k)+= xv_0(ivb_g,k) - xv(0)(ivb_g,k);
-      }
+        // Apply displacement (new pos - old pos) to each point on boundary
+        for (ivb=0; ivb<nBndPts(bnd); ivb++)
+        {
+          // Calculate next displacement
+          ivb_g = iv2ivg(boundPts(bnd,ivb)); // iv != ivg if MPI
+          for (unsigned short k=0; k<n_dims; k++) {
+            disp(k) = motion_params(ib,k  )*sin(2*pi*motion_params(ib,4+k)*rk_time);
+            //disp(k)+= motion_params(ib,k+1)*cos(2*pi*motion_params(ib,6+k)*rk_time);
+            disp(k)+= xv_0(ivb_g,k) - xv(0)(ivb_g,k);
+          }
+          //cout << "ivb_g = " << ivb_g << ", x=" << xv_0(ivb_g,0) << ", y=" << xv_0(ivb_g,1) << endl;
 
-      /*--- Set the known displacements, note that some points of the moving surfaces
+          /*--- Set the known displacements, note that some points of the moving surfaces
           could be on on the symmetry plane, we should specify DeleteValsRowi again (just in case) ---*/
-      for (iDim=0; iDim<n_dims; iDim++) {
-        total_index = ivb_g*nDim + iDim;
-        LinSysRes[total_index] = disp(iDim) * VarIncrement;
-        LinSysSol[total_index] = disp(iDim) * VarIncrement;
-        StiffnessMatrix.DeleteValsRowi(total_index);
+          for (iDim=0; iDim<n_dims; iDim++) {
+            total_index = ivb_g*nDim + iDim;
+            LinSysRes[total_index] = disp(iDim) * VarIncrement;
+            LinSysSol[total_index] = disp(iDim) * VarIncrement;
+            StiffnessMatrix.DeleteValsRowi(total_index);
+          }
+        }
       }
     }
   }
@@ -1863,8 +1901,8 @@ void mesh::perturb(void)
 }
 
 
-void mesh::blend_move(void) {
-
+void mesh::blend_move(void)
+{
 #ifdef _CPU
   if (rk_step==0) {
     for (int i=4; i>0; i--) {
@@ -1893,63 +1931,64 @@ void mesh::blend_move(void) {
       {
         // Match up the mesh-file boundary to the input-file boundary
         for (ib=0; ib<n_moving_bnds; ib++) {
-          if (bc_list(bnd)==bc_num[run_input.boundary_flags(ib)]) break;
-        }
+          if (bc_list(bnd)==bc_num[run_input.boundary_flags(ib)]) {
 //    for (ib=0; ib<n_moving_bnds; ib++)
 //    {
 //      bnd = bnd_match(ib);
 //      if (bound_flags(bnd)==MOTION_ENABLED) {
 
 
-        // Find minimum distance to boundary
-        minDistSq=INFINITY;
-        for (int ivb=0; ivb<nBndPts(bnd); ivb++)
-        {
-          ivb_g = boundPts(bnd,ivb);
-          if (iv==ivb_g) {
-            minDistSq=0;
-            onBound = true;
-            break;
-          }
-          magDistSq = 0;
-          for (int k=0; k<n_dims; k++) {
-            dist = xv(0)(iv,k) - xv(0)(ivb_g,k); // distance from point to bnd pt
-            magDistSq += dist*dist;
-          }
-          if (magDistSq<minDistSq) minDistSq = magDistSq;
-        }
-        dist = sqrt(minDistSq);
+            // Find minimum distance to boundary
+            minDistSq=INFINITY;
+            for (int ivb=0; ivb<nBndPts(bnd); ivb++)
+            {
+              ivb_g = boundPts(bnd,ivb);
+              if (iv==ivb_g) {
+                minDistSq=0;
+                onBound = true;
+                break;
+              }
+              magDistSq = 0;
+              for (int k=0; k<n_dims; k++) {
+                dist = xv(0)(iv,k) - xv(0)(ivb_g,k); // distance from point to bnd pt
+                magDistSq += dist*dist;
+              }
+              if (magDistSq<minDistSq) minDistSq = magDistSq;
+            }
+            dist = sqrt(minDistSq);
 
-        // Calculate blending contribution from boundary
-        // (1) Displacement  due to rigid motion of boundary
-        //     [disp = new position of boundary point - old position = xv_0 + {params*sin,cos} - xv]
-        for (int k=0; k<n_dims; k++) {
-          disp(k) = motion_params(ib,2*k  )*sin(2*pi*motion_params(ib,6+k)*rk_time);
-          disp(k)+= motion_params(ib,2*k+1)*cos(2*pi*motion_params(ib,6+k)*rk_time);
-          disp(k)+= xv_0(ivb_g,k) - xv(0)(ivb_g,k);
-        }
+            // Calculate blending contribution from boundary
+            // (1) Displacement  due to rigid motion of boundary
+            //     [disp = new position of boundary point - old position = xv_0 + {params*sin,cos} - xv]
+            for (int k=0; k<n_dims; k++) {
+              disp(k) = motion_params(ib,k  )*sin(2*pi*motion_params(ib,4+k)*rk_time);
+              //disp(k)+= motion_params(ib,4+k)*(1-cos(2*pi*motion_params(ib,8+k)*rk_time));
+              disp(k)+= xv_0(ivb_g,k) - xv(0)(ivb_g,k);
+            }
 
-        // (2) Modification of displacement through blending function [currently linear func for simplicity of testing]
-        for (int k=0; k<n_dims; k++) {
-          //disp[k] = max(blend_dist-dist,0.)/blend_dist*disp[k];
-          if (dist<blend_dist) {
-            disp(k) = (1 - (10*pow(dist/blend_dist,3) - 15*pow(dist/blend_dist,4) + 6*pow(dist/blend_dist,5)))*disp(k);
-          }else{
-            disp(k) = 0;
-          }
-        }
+            // (2) Modification of displacement through blending function [currently linear func for simplicity of testing]
+            for (int k=0; k<n_dims; k++) {
+              //disp[k] = max(blend_dist-dist,0.)/blend_dist*disp[k];
+              if (dist<blend_dist) {
+                disp(k) = (1 - (10*pow(dist/blend_dist,3) - 15*pow(dist/blend_dist,4) + 6*pow(dist/blend_dist,5)))*disp(k);
+              }else{
+                disp(k) = 0;
+              }
+            }
 
-        // (3) Apply to displacement vector
-        if (onBound) {
-          // Make sure displacement is ONLY this boundary's displacement
-          for (int k=0; k<n_dims; k++) {
-            displacement(iv,k) = disp(k);
-          }
-          break;
-        }else{
-          // Add to displacement from all boundaries
-          for (int k=0; k<n_dims; k++) {
-            displacement(iv,k)+= disp(k);
+            // (3) Apply to displacement vector
+            if (onBound) {
+              // Make sure displacement is ONLY this boundary's displacement
+              for (int k=0; k<n_dims; k++) {
+                displacement(iv,k) = disp(k);
+              }
+              break;
+            }else{
+              // Add to displacement from all boundaries
+              for (int k=0; k<n_dims; k++) {
+                displacement(iv,k)+= disp(k);
+              }
+            }
           }
         }
       }

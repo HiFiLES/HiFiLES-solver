@@ -26,6 +26,7 @@
 #include <iostream>
 #include <sstream>
 #include <cmath>
+#include <map>
 
 #include "../include/global.h"
 #include "../include/array.h"
@@ -1383,6 +1384,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
   char buf[BUFSIZ]={""};
   char bcTXT[100][100];// can read up to 100 different boundary conditions
   char bc_txt_temp[100];
+  map<int,int> bcmap;
 
   mesh_file >> n_bcs;
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
@@ -1393,6 +1395,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
     sscanf(buf,"%d %d \"%s", &bcdim, &bcid, bc_txt_temp);
     strcpy(bcTXT[bcid],bc_txt_temp);
     out_bclist(i) = bcid;
+    bcmap[bcid] = i;
   }
 
   // Move cursor to $Elements
@@ -1530,7 +1533,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
           if (vlist_local(j) == -1)
             belong_to_proc = false;
 
-          Bounds(bcid-1).insert(vlist_local(j));
+          Bounds(bcmap[bcid]).insert(vlist_local(j));
         }
 
       if (belong_to_proc)

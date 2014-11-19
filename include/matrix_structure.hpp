@@ -28,6 +28,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
+#include <set>
+// ^ added 11/18/14 for debugging/fixing v2v setup
 
 #include "linear_solvers_structure.hpp"
 #include "array.h"
@@ -81,7 +83,7 @@ public:
      * \param[in] geometry - Geometrical definition of the problem.
 	 * \param[in] config - Definition of the particular problem.
 	 */
-    void Initialize(int n_verts, int n_verts_global, int n_var, int n_eqns, array<array<int> > &v2e, array<int> &v2n_e, array<int> &e2v);
+    void Initialize(int n_verts, int n_verts_global, int n_var, int n_eqns, array<array<int> > &v2e, array<int> &v2n_e, array<int> &e2v, array<int> &c2v, array<int> &c2n_v);
   
     /*!
 	 * \brief Assings values to the sparse-matrix structure.
@@ -118,6 +120,9 @@ public:
 	 */
 	void DisplayBlock(void);
   
+  /*! Only to be used for debugging with very, very small matrices. */
+  void DisplayMatrix(void);
+
 	/*!
 	 * \brief Returns the content of the internal variable <i>*block</i> (for debug purposes).
 	 */
