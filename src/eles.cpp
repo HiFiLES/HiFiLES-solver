@@ -4562,7 +4562,7 @@ void eles::set_transforms(void)
     
     for(i=0;i<n_eles;i++)
     {
-      if ((i%(n_eles/10))==0 && rank==0)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
       
       for(j=0;j<n_upts_per_ele;j++)
@@ -4731,7 +4731,7 @@ void eles::set_transforms(void)
     
     for(i=0;i<n_eles;i++)
     {
-      if ((i%(n_eles/10))==0 && rank==0)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
       
       for(j=0;j<n_fpts_per_ele;j++)
@@ -4973,7 +4973,7 @@ void eles::set_transforms_dynamic(void)
     }
 
     for(i=0;i<n_eles;i++) {
-      if ((i%(n_eles/10))==0 && rank==0 && first_time)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0 && first_time)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
       for(j=0;j<n_upts_per_ele;j++)
@@ -5060,7 +5060,7 @@ void eles::set_transforms_dynamic(void)
       cout << endl << " at flux points"  << endl;
 
     for(i=0;i<n_eles;i++) {
-      if ((i%(n_eles/10))==0 && rank==0 && first_time)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0 && first_time)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
       for(j=0;j<n_fpts_per_ele;j++)
