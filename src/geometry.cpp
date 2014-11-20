@@ -491,7 +491,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
       delta_cyclic(2) = run_input.dz_cyclic;
     }
 
-  double tol = 1.e-8;
+  double tol = 1.e-6;
   int bctype_f, found, rtag;
   int ic_l,ic_r;
 
