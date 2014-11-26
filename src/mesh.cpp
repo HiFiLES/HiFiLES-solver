@@ -300,9 +300,7 @@ void mesh::deform(void) {
   array<double> stiff_mat_ele;
   int failedIts = 0;
 
-  array<int> nodes; // NEW ADDITION 3/26/2014
-
-  /// cout << endl << ">>>>>>>>> Beginning Mesh Deformation >>>>>>>>>" << endl;
+  array<int> nodes;
   int pt_0,pt_1,pt_2,pt_3;
   bool check;
 
@@ -315,7 +313,6 @@ void mesh::deform(void) {
 
   // Setup stiffness matrices for each individual element,
   // combine all element-level matrices into global matrix
-  //stiff_mat.setup(n_eles);
   LinSysSol.Initialize(n_verts,n_dims,0.0); /// should it be n_verts or n_verts_global?
   LinSysRes.Initialize(n_verts,n_dims,0.0);
   StiffnessMatrix.Initialize(n_verts,n_verts_global,n_dims,n_dims,v2e,v2n_e,e2v,c2v,c2n_v);
@@ -353,27 +350,15 @@ void mesh::deform(void) {
         set_stiffmat_ele_3d(stiff_mat_ele,nodes,ic,min_vol);
       }
       add_FEA_stiffMat(stiff_mat_ele,nodes);
-//      displayMatrix(stiff_mat_ele);
     }
 
     /*--- Compute the tolerance of the linear solver using MinLength ---*/
     solver_tolerance = min_length * 1E-2;
 
-    /// DEBUGGING QUAD ELEMENTS
-//    cout << "Node Positions:" << endl;
-//    for (int iv=0; iv<n_verts; iv++) {
-//      cout << "x = " << xv_0(iv,0) << ", y = " << xv_0(iv,1) << endl;
-//    }
-//    cout << endl;
-//    for (int iv=0; iv<n_verts; iv++) {
-//      cout << "-- Node " << iv << " --" << endl;
-//      for (int jv=iv; jv<n_verts; jv++) {
-//        cout << " -- " << jv << " --" << endl;
-//        StiffnessMatrix.GetBlock(iv,jv);
-//        StiffnessMatrix.DisplayBlock();
-//      }
-//    }
-    /// -----------------------
+
+    /*--- Set the RHS force vector (for adaptive mesh redistribution) using
+          Abhishek's concentration sensor ---*/
+    set_FEA_force_vector();
 
     /*--- Set the boundary displacements (as prescribed by the design variable
         perturbations controlling the surface shape) as a Dirichlet BC. ---*/
@@ -523,111 +508,17 @@ void mesh::set_grid_velocity(double dt)
 //  }
 }
 
-/*! set individual-element stiffness matrix for a triangle */
-bool mesh::set_2D_StiffMat_ele_tri(array<double> &stiffMat_ele, int ele_id)
+void mesh::set_FEA_force_vector(void)
 {
-  int iPoint;
-  int n_spts = c2n_v(ele_id);
+  /* Applying point forces to points, so just add the forces to RHS at each point
+     [No need for any special integration / quadrature / use of shape funcs] */
 
-  array<double> pos_spts;
-  pos_spts.setup(n_spts,n_dims);
-
-  for (int i=0; i<n_spts; i++) {
-    iPoint = c2v(ele_id,i);
-    for (int j=0; j<n_dims; j++) {
-      pos_spts(i,j) = xv(0)(iPoint,j);
-    }
-  }
-
-  stiffMat_ele.setup(6,6);
-  stiffMat_ele.initialize_to_zero();
-
-  // ----------- Create single-element stiffness matrix ---------------
-  // Copied from SU2
-  unsigned short iDim, iVar, jVar, kVar;
-  double B_Matrix[6][12], BT_Matrix[12][6], D_Matrix[6][6], Aux_Matrix[12][6];
-  double a[3], b[3], c[3], Area, E, Mu, Lambda;
-
-  for (iDim = 0; iDim < n_dims; iDim++) {
-    a[iDim] = pos_spts(0,iDim)-pos_spts(2,iDim);
-    b[iDim] = pos_spts(1,iDim)-pos_spts(2,iDim);
-  }
-
-  Area = 0.5*fabs(a[0]*b[1]-a[1]*b[0]);
-
-  if (Area < 0.0) {
-
-    /*--- The initial grid has degenerate elements ---*/
-    return false;
-  }else{
-
-    /*--- Each element uses their own stiffness which is inversely
-        proportional to the area/volume of the cell. Using Mu = E & Lambda = -E
-        is a modification to help allow rigid rotation of elements (see
-        "Robust Mesh Deformation using the Linear Elasticity Equations" by
-        R. P. Dwight. ---*/
-
-    E = 1.0 / Area * fabs(min_vol);
-    Mu = E;
-    Lambda = -E;
-
-    a[0] = 0.5 * (pos_spts(1,0)*pos_spts(2,1)-pos_spts(2,0)*pos_spts(1,1)) / Area;
-    a[1] = 0.5 * (pos_spts(2,0)*pos_spts(0,1)-pos_spts(0,0)*pos_spts(2,1)) / Area;
-    a[2] = 0.5 * (pos_spts(0,0)*pos_spts(1,1)-pos_spts(1,0)*pos_spts(0,1)) / Area;
-
-    b[0] = 0.5 * (pos_spts(1,1)-pos_spts(2,1)) / Area;
-    b[1] = 0.5 * (pos_spts(2,1)-pos_spts(0,1)) / Area;
-    b[2] = 0.5 * (pos_spts(0,1)-pos_spts(1,1)) / Area;
-
-    c[0] = 0.5 * (pos_spts(2,0)-pos_spts(1,0)) / Area;
-    c[1] = 0.5 * (pos_spts(0,0)-pos_spts(2,0)) / Area;
-    c[2] = 0.5 * (pos_spts(1,0)-pos_spts(0,0)) / Area;
-
-    /*--- Compute the B Matrix ---*/
-    B_Matrix[0][0] = b[0];  B_Matrix[0][1] = 0.0;   B_Matrix[0][2] = b[1];  B_Matrix[0][3] = 0.0;   B_Matrix[0][4] = b[2];  B_Matrix[0][5] = 0.0;
-    B_Matrix[1][0] = 0.0;   B_Matrix[1][1] = c[0];  B_Matrix[1][2] = 0.0;   B_Matrix[1][3] = c[1];  B_Matrix[1][4] = 0.0;   B_Matrix[1][5] = c[2];
-    B_Matrix[2][0] = c[0];  B_Matrix[2][1] = b[0];  B_Matrix[2][2] = c[1];  B_Matrix[2][3] = b[1];  B_Matrix[2][4] = c[2];  B_Matrix[2][5] = b[2];
-
-    for (iVar = 0; iVar < 3; iVar++)
-      for (jVar = 0; jVar < 6; jVar++)
-        BT_Matrix[jVar][iVar] = B_Matrix[iVar][jVar];
-
-    /*--- Compute the D Matrix (for plane strain and 3-D)---*/
-    D_Matrix[0][0] = Lambda + 2.0*Mu;		D_Matrix[0][1] = Lambda;            D_Matrix[0][2] = 0.0;
-    D_Matrix[1][0] = Lambda;            D_Matrix[1][1] = Lambda + 2.0*Mu;   D_Matrix[1][2] = 0.0;
-    D_Matrix[2][0] = 0.0;               D_Matrix[2][1] = 0.0;               D_Matrix[2][2] = Mu;
-
-    /*--- Compute the BT.D Matrix ---*/
-    /// IMPLEMENT BLAS?
-    for (iVar = 0; iVar < 6; iVar++) {
-      for (jVar = 0; jVar < 3; jVar++) {
-        Aux_Matrix[iVar][jVar] = 0.0;
-        for (kVar = 0; kVar < 3; kVar++)
-          Aux_Matrix[iVar][jVar] += BT_Matrix[iVar][kVar]*D_Matrix[kVar][jVar];
-      }
-    }
-
-    /*--- Compute the BT.D.B Matrix (stiffness matrix) ---*/
-    /// IMPLEMENT BLAS?
-    for (iVar = 0; iVar < 6; iVar++) {
-      for (jVar = 0; jVar < 6; jVar++) {
-        stiffMat_ele(iVar,jVar) = 0.0;
-        for (kVar = 0; kVar < 3; kVar++)
-          stiffMat_ele(iVar,jVar) += Area * Aux_Matrix[iVar][kVar]*B_Matrix[kVar][jVar];
-      }
-    }
-
-    return true;
-  }
+  // 1) Use 'sensor' array to get desired elements to adapt 2
+  // 2) Calculate distances to the above points
+  // 3) Calculate forces based on those distances & some blending function
+  // 4) Put into RHS for each individual node
 }
 
-/*! set individual-element stiffness matrix for a quadrilateral */
-bool mesh::set_2D_StiffMat_ele_quad(array<double> &stiffMat_ele,int ele_id) {
-  FatalError("ERROR: Sorry, mesh motion on quads not yet implemented.  :( ");
-}
-
-
-// ---- **NEW** Added 3/26/14 ---- //
 void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, array<int>& nodes, int ic, double scale)
 {
   double B_Matrix[3][8], D_Matrix[3][3], Aux_Matrix[8][3];
@@ -731,18 +622,9 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, array<int>& nodes, i
         }
       }
     }
-//    for (int ii=0; ii<3; ii++) {
-//      for (int jj=0; jj<8; jj++) {
-//        cout << setprecision(8) << B_Matrix[ii][jj] << " ";
-//      }
-//      cout << endl;
-//    }
-    //displayMatrix(stiffMat_ele);
   }
 }
 
-
-// ---- **NEW** Added 3/26/14 ---- //
 void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, array<int>& nodes, int ic, double scale)
 {
   double B_Matrix[6][24], D_Matrix[6][6], Aux_Matrix[24][6];
@@ -761,6 +643,9 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, array<int>& nodes, i
       CoordCorners[i][j] = xv(0)(nodes(i),j);
     }
   }
+
+  cout << endl << " *** WARNING *** " << endl;
+  cout << "These routines have not been tested in 3D, and will not currently work on hex elements." << endl;
 
   /*--- Each element uses their own stiffness which is inversely
    proportional to the area/volume of the cell. Using Mu = E & Lambda = -E
@@ -891,7 +776,6 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, array<int>& nodes, i
   }
 }
 
-// ---- **NEW** 3/26/14
 void mesh::add_FEA_stiffMat(array<double>& stiffMat_ele, array<int>& Nodes) {
   unsigned short iVert, jVert, iDim, jDim;
   unsigned short nVar = n_dims;
@@ -1346,48 +1230,6 @@ double mesh::ShapeFunc_Wedge(double Xi, double Eta, double Mu, double CoordCorne
 
   return xsj;
 
-}
-
-
-/*!
- * Transform element-defined stiffness matrix into node-base stiffness matrix for inclusion
- * into global stiffness matrix 'StiffMatrix'
- */
-void mesh::add_StiffMat_EleTri(array<double> &StiffMatrix_Elem, int id_pt_0, int id_pt_1, int id_pt_2) {
-  unsigned short nVar = n_dims;
-
-  array<double> StiffMatrix_Node;
-  StiffMatrix_Node.setup(nVar,nVar);
-  StiffMatrix_Node.initialize_to_zero();
-
-  int nNodes = 3;
-  array<int> Nodes(nNodes);
-  Nodes(0) = id_pt_0;
-  Nodes(1) = id_pt_1;
-  Nodes(2) = id_pt_2;
-
-  /*--- Transform the stiffness matrix for the triangular element into the
-   contributions for the individual nodes relative to each other. ---*/
-
-  for (int iVert = 0; iVert < nNodes; iVert++) {
-    for (int jVert = 0; jVert < nNodes; jVert++) {
-
-      for (int iDim = 0; iDim < nVar; iDim++) {
-        for (int jDim = 0; jDim < nVar; jDim++) {
-          StiffMatrix_Node(iDim,jDim) = StiffMatrix_Elem((iVert*nVar)+iDim,(jVert*nVar)+jDim);
-        }
-      }
-
-      StiffnessMatrix.AddBlock(Nodes(iVert), Nodes(jVert), StiffMatrix_Node);
-
-    }
-  }
-}
-
-void mesh::add_StiffMat_EleQuad(array<double> StiffMatrix_Elem, int id_pt_0,
-                                int id_pt_1, int id_pt_2, int id_pt_3)
-{
-  FatalError("ERROR: Mesh motion not setup on quads yet  :( ");
 }
 
 

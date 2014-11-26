@@ -211,31 +211,11 @@ private:
   // Coefficients for LS-RK45 time-stepping
   array<double> RK_a, RK_b, RK_c;
 
-  /** create individual-element stiffness matrix - triangles */
-  bool set_2D_StiffMat_ele_tri(array<double> &stiffMat_ele,int ele_id);
-
-  /** create individual-element stiffness matrix - quadrilaterals */
-  bool set_2D_StiffMat_ele_quad(array<double> &stiffMat_ele,int ele_id);
-
-  /** create individual-element stiffness matrix - tetrahedrons */
-  //bool set_2D_StiffMat_ele_tet(array<double> &stiffMat_ele,int ele_id, solution *FlowSol);
-
-  /** create individual-element stiffness matrix - hexahedrons */
-  //bool set_2D_StiffMat_ele_hex(array<double> &stiffMat_ele,int ele_id, solution *FlowSol);
-
-  /**
-     * transfrom single-element stiffness matrix to nodal contributions in order to
-     * add to global stiffness matrix
-     */
-  void add_StiffMat_EleTri(array<double> &StiffMatrix_Elem, int id_pt_0,
-                           int id_pt_1, int id_pt_2);
-
-
-  void add_StiffMat_EleQuad(array<double> StiffMatrix_Elem, int id_pt_0,
-                            int id_pt_1, int id_pt_2, int id_pt_3);
-
   /** Set given/known displacements of vertices on moving boundaries in linear system */
   void set_boundary_displacements(void);
+
+  /** RHS (forcing for adaptive mesh redistribution) */
+  void set_FEA_force_vector(void);
 
   /** meant to check for any inverted cells (I think) and return minimum volume */
   double check_grid(void);
