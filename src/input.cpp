@@ -43,12 +43,71 @@ using namespace std;
 
 input::input()
 {
+  // ** Set default values for commonly-used parameters **
+  // -- Simulation Parameters
+  equation = 0;            // Euler / Navier-Stokes
+  viscous = 0;             // Inviscid
+  riemann_solve_type = 0;  // Rusanov
+  ic_form = 1;             // Uniform flow
+  test_case = 0;           // Not a test case
+  dt_type = 0;             // User-supplied constant time step
+  tau = 0;                 // Used in LDG flux
+  pen_fact = 0.5;          // Used in LDG flux
+  // -- Restart Options
+  restart_flag = 0;        // Not restarting
+  // -- Mesh Options
+  dx_cyclic = INFINITY;    // Not periodic in x
+  dy_cyclic = INFINITY;    // Not periodic in y
+  dz_cyclic = INFINITY;    // Not periodic in z
+  // -- Data Output Options
+  monitor_cp_freq = 0;     // No output
+  res_norm_type = 2;       // Use L2 norm on residual
+  error_norm_type = 2;     // Use L2 norm on residual
+  // -- Fluid Properties
+  R_gas = 286.9;           // Typical value of ideal gas constant for air (J/kg-K)
+  gamma = 1.4;             // Typical value of gamma for air
+  prandtl = .72;           // Typical value of Prandtl number for air
+  S_gas = 120;             // Typical value of S from Sutherland's Law
+  T_gas = 291.15;          // Typical temperature for Sutherland's Law (Kelvin)
+  mu_gas = 1.827E-5;       // Typical value of mu for air (kg/m-s)
+  // -- Boundary Conditions
+  L_free_stream = 1;       // Reference length of 1
+  T_free_stream = 300;     // Typical temperature (Kelvin)
+  Mach_wall = 0;           // Mach number of "moving wall" b.c.
+  T_wall = 300;
+  // -- Element Parameters
+  upts_type_tri = 0;
+  fpts_type_tri = 0;
+  vcjh_scheme_tri = 1;
+  c_tri = 0.0;
+  sparse_tri = 0;
+  upts_type_quad = 0;
+  vcjh_scheme_quad = 0;
+  eta_quad = 0.0;
+  sparse_quad = 0;
+  upts_type_hexa = 0;
+  vcjh_scheme_hexa = 0;
+  eta_hexa = 0;
+  sparse_hexa = 0;
+  upts_type_tet = 1;
+  fpts_type_tet = 0;
+  vcjh_scheme_tet = 0;
+  eta_tet =  0;
+  sparse_tet = 0;
+  upts_type_pri_tri = 0;
+  upts_type_pri_1d = 0;
+  vcjh_scheme_pri_1d = 0;
+  eta_pri = 0;
+  sparse_pri = 0;
+
   // Set default values for optional parameters
   turb_model = 0;
   motion = 0;
   GCL = 0;
   n_deform_iters = 1;
   restart_mesh_out = 0;
+  mesh_output_freq = INFINITY;
+  mesh_output_format = 1;
 
   // Set shock capturing parameters to 0 in case they are not used
   ArtifOn = 0;
@@ -862,7 +921,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
       T_total_bound = (T_free_stream/T_ref)*(1.0 + 0.5*(gamma-1.0)*Mach_free_stream*Mach_free_stream);
       p_total_bound = p_bound*pow(1.0 + 0.5*(gamma-1.0)*Mach_free_stream*Mach_free_stream, gamma/(gamma-1.0));
       
-      // Set up the dimensionless conditions @ free-stream boundaries
+      // Set up the dimensionless conditions @ moving boundaries
 
       uvw_wall  = Mach_wall*sqrt(gamma*R_gas*T_wall);
       v_wall(0) = (uvw_wall*nx_wall)/uvw_ref;
@@ -919,132 +978,3 @@ void input::setup(ifstream& in_run_input_file, int rank)
     }
   }
 }
-
-
-void input::reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, int dev_ind, int dim_ind)
-{
-  int n_freq;
-  int t_flag = 1;  //0 period based, 1 runs indefinitely
-  int d_flag = dim_ind;
-  
-  //Set scheme
-  vcjh_scheme_tet = c_ind;
-  vcjh_scheme_tri = c_ind;
-  
-  //Set order
-  order = p_ind;
-  
-  //set device
-  device_num = dev_ind;
-  
-  //Set Tau
-  if(tau_ind == 1)
-  {
-    tau = 0.001;
-  }
-  else if(tau_ind == 2)
-  {
-    tau = 0.01;
-  }
-  else if(tau_ind == 3)
-  {
-    tau = 0.1;
-  }
-  else if(tau_ind == 4)
-  {
-    tau = 1.0;
-  }
-  else
-  {
-    cout << "Invalid value of tau" << endl;
-    exit(1);
-  }
-  
-  
-  //Grid
-  if(grid_ind == 1)
-  {
-    if(d_flag == 2)
-    {
-      mesh_file = "tri_2_1.neu";
-    }
-    if(d_flag == 3)
-    {
-      mesh_file = "sd7003_711K.neu";
-    }
-  }
-  else if(grid_ind == 2)
-  {
-    if(d_flag == 2)
-    {
-      mesh_file = "tri_4_2.neu";
-    }
-    if(d_flag == 3)
-    {
-      mesh_file = "sd7003_390K.neu";
-    }
-  }
-  else if(grid_ind == 3)
-  {
-    if(d_flag == 2)
-    {
-      mesh_file = "tri_6_3.neu";
-    }
-    if(d_flag == 3)
-    {
-      mesh_file = "sd7003_450K.neu";
-    }
-  }
-  else if(grid_ind == 4)
-  {
-    if(d_flag == 2)
-    {
-      mesh_file = "tri_8_4.neu";
-    }
-    if(d_flag == 3)
-    {
-      mesh_file = "sd7003_430K.neu";
-    }
-  }
-  else
-  {
-    cout << "Invalid grid" << endl;
-    exit(1);
-  }
-  
-  mesh_format = 0;
-  //mesh_format = 1;
-  
-  
-  // Time
-  //dt = 1.0e-5;
-  dt = 1.25e-5;
-  //dt = 1.0e-4;
-  
-  //dt = dt*(1.0/(((double) (order*order))/4.0));
-  
-  if(t_flag==0)
-  {
-    double tperiod = 1.0;
-    n_steps = (int) ceil(tperiod/dt);
-    dt = tperiod/n_steps;
-    
-    plot_freq = n_steps;
-    monitor_res_freq = n_steps;
-  }
-  if(t_flag==1)
-  {
-    n_steps = 50000000;
-    n_freq = 1000;
-    
-    plot_freq = 100000;
-    monitor_res_freq = n_freq;
-  }
-  
-  cout << endl;
-  cout <<"dt " << dt << endl;
-  cout <<"steps " << n_steps << endl;
-  cout << endl;
-  
-}
-
