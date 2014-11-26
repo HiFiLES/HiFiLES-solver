@@ -1007,18 +1007,21 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 void write_restart(int in_file_num, struct solution* FlowSol, mesh &Mesh)
 {
 
-  char file_name_s[50];
+  char file_name_s[50], file_name_s2[50];
   char *file_name;
-  ofstream restart_file;
+  ofstream restart_file, restart_mesh;
   restart_file.precision(15);
+  restart_mesh.precision(15);
 
 
 #ifdef _MPI
   sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
-  if (FlowSol->rank==0) cout << "Writing Restart file number " << in_file_num << " ... " << flush;
+  sprintf(file_name_s2,"Rest_Mesh_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
+  if (FlowSol->rank==0) cout << "Writing Restart file number " << in_file_num << " ...." << endl;
 #else
   sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,0);
-  cout << "Writing Restart file number " << in_file_num << " ... " << flush;
+  sprintf(file_name_s2,"Rest_Mesh_%.09d_p%.04d.dat",in_file_num,0);
+  cout << "Writing Restart file number " << in_file_num << " ...." << endl;
 #endif
 
 
@@ -1026,6 +1029,7 @@ void write_restart(int in_file_num, struct solution* FlowSol, mesh &Mesh)
   restart_file.open(file_name);
 
   restart_file << FlowSol->time << endl;
+
   //header
   for (int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {

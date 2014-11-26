@@ -119,7 +119,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
   
   if (n_eles!=0)
   {
-    
+
     order=run_input.order;
     p_res=run_input.p_res;
     viscous =run_input.viscous;
@@ -137,10 +137,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     inters_cub_order = run_input.inters_cub_order;
     volume_cub_order = run_input.volume_cub_order;
     n_bdy_eles=0;
-    
+
     // Initialize the element specific static members
     (*this).setup_ele_type_specific();
-    
+
     if(run_input.adv_type==0)
     {
       n_adv_levels=1;
@@ -161,14 +161,14 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     {
       cout << "ERROR: Type of time integration scheme not recongized ... " << endl;
     }
-    
+
     // Allocate storage for solution
     disu_upts.setup(n_adv_levels);
     for(int i=0;i<n_adv_levels;i++)
     {
       disu_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
     }
-    
+
     // Allocate storage for timestep
     // If using global minimum, only one timestep
     if (run_input.dt_type == 1)
@@ -613,18 +613,26 @@ void eles::set_ics(double& time)
       }
     }
   }
-  
+
   // If required, calculate element reference lengths
-  if (run_input.dt_type != 0)
-  {
+  if (run_input.dt_type > 0) {
     // Allocate array
-    h_ref.setup(n_eles);
-    h_ref.initialize_to_zero();
+    h_ref.setup(n_upts_per_ele,n_eles);
     
     // Call element specific function to obtain length
-    for (int i=0; i<n_eles; i++)
-      h_ref(i) = (*this).calc_h_ref_specific(i);
+    double h_ref_dumb;
+    for (int i=0;i<n_eles;i++) {
+      h_ref_dumb = (*this).calc_h_ref_specific(i);
+      for (int j=0;j<n_upts_per_ele;j++) {
+        // TODO: Make more memory efficient!!!
+        h_ref(j,i) = h_ref_dumb;
+      }
+    }
   }
+  else {
+    h_ref.setup(1);
+  }
+  h_ref.cp_cpu_gpu();
 }
 
 
@@ -734,16 +742,24 @@ void eles::read_restart_data(ifstream& restart_file)
 //  }
   
   // If required, calculate element reference lengths
-  if (run_input.dt_type != 0)
-  {
+  if (run_input.dt_type > 0) {
     // Allocate array
-    h_ref.setup(n_eles);
-    h_ref.initialize_to_zero();
-    
+    h_ref.setup(n_upts_per_ele,n_eles);
+
     // Call element specific function to obtain length
-    for (int i=0; i<n_eles; i++)
-      h_ref(i) = (*this).calc_h_ref_specific(i);
+    double h_ref_dumb;
+    for (int i=0;i<n_eles;i++) {
+      h_ref_dumb = (*this).calc_h_ref_specific(i);
+      for (int j=0;j<n_upts_per_ele;j++) {
+        // TODO: Make more memory efficient!!!
+        h_ref(j,i) = h_ref_dumb;
+      }
+    }
   }
+  else {
+    h_ref.setup(1);
+  }
+  h_ref.cp_cpu_gpu();
 }
 
 
@@ -958,6 +974,16 @@ void eles::cp_div_tconf_upts_gpu_cpu(void)
   }
 }
 
+// copy local time stepping reference length at solution points to cpu
+void eles::cp_h_ref_gpu_cpu(void)
+{
+#ifdef _GPU
+
+  h_ref.cp_gpu_cpu();
+
+#endif
+}
+
 // copy source term at solution points to cpu
 void eles::cp_src_upts_gpu_cpu(void)
 {
@@ -1095,7 +1121,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 #endif
       
 #ifdef _GPU
-      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),run_input.dt,run_input.const_src);
+      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),h_ref.get_ptr_gpu(),run_input.dt,run_input.const_src,run_input.CFL,run_input.gamma,run_input.mu_inf,run_input.order,viscous,run_input.dt_type);
 #endif
       
     }
@@ -1193,7 +1219,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
       
 #ifdef _GPU
       
-      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),rk4a,rk4b,run_input.dt,run_input.const_src);
+      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),h_ref.get_ptr_gpu(),rk4a,rk4b,run_input.dt,run_input.const_src,run_input.CFL,run_input.gamma,run_input.mu_inf,run_input.order,viscous,run_input.dt_type,in_step);
       
 #endif
       
@@ -1244,13 +1270,13 @@ double eles::calc_dt_local(int in_ele)
 
     if (viscous)
     {
-      dt_visc = (run_input.CFL * 0.25 * h_ref(in_ele) * h_ref(in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
-      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
+      dt_visc = (run_input.CFL * 0.25 * h_ref(0,in_ele) * h_ref(0,in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
+      dt_inv = run_input.CFL*h_ref(0,in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
     }
     else
     {
       dt_visc = 1e16;
-      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv * 1.0/(2.0*run_input.order + 1.0);
+      dt_inv = run_input.CFL*h_ref(0,in_ele)/lam_inv * 1.0/(2.0*run_input.order + 1.0);
     }
       out_dt_local = min(dt_visc,dt_inv);
   }
@@ -3377,7 +3403,126 @@ void eles::shock_capture_concentration(int in_disu_upts_from)
     #ifdef _GPU
       shock_capture_concentration_gpu_kernel_wrapper(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), vandermonde2D.get_ptr_gpu(), concentration_array.get_ptr_gpu(), sensor.get_ptr_gpu(), sigma.get_ptr_gpu());
     #endif
+
+    #ifdef _CPU
+        shock_capture_concentration_cpu(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_cpu(), inv_vandermonde.get_ptr_cpu(), inv_vandermonde2D.get_ptr_cpu(), vandermonde2D.get_ptr_cpu(), concentration_array.get_ptr_cpu(), sensor.get_ptr_cpu(), sigma.get_ptr_cpu());
+    #endif
   }
+}
+
+void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma)
+{
+    int stride = in_n_upts_per_ele*in_n_eles;
+    double sensor = 0;
+
+    double nodal_rho[8];  // Array allocated so that it can handle upto p=7
+    double modal_rho[8];
+    double uE[8];
+    double temp;
+    double p = 3;	// exponent in concentration method
+    double J = 0.15;
+    int shock_found = 0;
+
+    if(in_n_eles!=0){
+        // X-slices
+        for(int m=0; m<in_n_eles; m++)
+        {
+            for(int i=0; i<in_order+1; i++)
+            {
+                for(int j=0; j<in_order+1; j++){
+                    nodal_rho[j] = in_disu_upts_ptr[m*in_n_upts_per_ele + i*(in_order+1) + j];
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    modal_rho[j] = 0;
+                    for(int k=0; k<in_order+1; k++){
+                        modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)]*nodal_rho[k];
+                    }
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    uE[j] = 0;
+                    for(int k=0; k<in_order+1; k++)
+                        uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+
+                    uE[j] = abs((3.1415/(in_order+1))*uE[j]);
+                    temp = pow(uE[j],p)*pow(in_order+1,p/2);
+
+                    if(temp >= J)
+                        shock_found++;
+
+                    if(temp > sensor)
+                        sensor = temp;
+                }
+
+            }
+
+            // Y-slices
+            for(int i=0; i<in_order+1; i++)
+            {
+                for(int j=0; j<in_order+1; j++){
+                    nodal_rho[j] = in_disu_upts_ptr[m*in_n_upts_per_ele + j*(in_order+1) + i];
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    modal_rho[j] = 0;
+                    for(int k=0; k<in_order+1; k++)
+                        modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)]*nodal_rho[k];
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    uE[j] = 0;
+                    for(int k=0; k<in_order+1; k++)
+                        uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+
+                    uE[j] = (3.1415/(in_order+1))*uE[j];
+                    temp = pow(abs(uE[j]),p)*pow(in_order+1,p/2);
+
+                    if(temp >= J)
+                        shock_found++;
+
+                    if(temp > sensor)
+                        sensor = temp;
+                }
+            }
+
+            out_sensor[m] = sensor;
+
+            /* -------------------------------------------------------------------------------------- */
+            /* Exponential modal filter */
+
+            if(sensor > s0 + kappa && in_artif_type == 1) {
+                double nodal_sol[36];
+                double modal_sol[36];
+
+                for(int k=0; k<in_n_fields; k++) {
+
+                    for(int i=0; i<in_n_upts_per_ele; i++){
+                        nodal_sol[i] = in_disu_upts_ptr[m*in_n_upts_per_ele + k*stride + i];
+                    }
+
+                    // Nodal to modal only upto 1st order
+                    for(int i=0; i<in_n_upts_per_ele; i++){
+                        modal_sol[i] = 0;
+                        for(int j=0; j<in_n_upts_per_ele; j++)
+                            modal_sol[i] += in_inv_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*nodal_sol[j];
+
+                        modal_sol[i] = modal_sol[i]*sigma[i];
+                        //printf("The exp filter values are %f \n",modal_sol[i]);
+                    }
+
+                    // Change back to nodal
+                    for(int i=0; i<in_n_upts_per_ele; i++){
+                        nodal_sol[i] = 0;
+                        for(int j=0; j<in_n_upts_per_ele; j++)
+                            nodal_sol[i] += in_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*modal_sol[j];
+
+                        in_disu_upts_ptr[m*in_n_upts_per_ele + k*stride + i] = nodal_sol[i];
+                    }
+                }
+            }
+        }
+    }
 }
 
 // get the type of element

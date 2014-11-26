@@ -27,9 +27,9 @@
 
 #define PI 3.141592653589793
 
-void RK45_update_kernel_wrapper(int n_upts_per_ele,int n_dims,int n_fields,int n_eles,double* disu0_upts_ptr,double* disu1_upts_ptr,double* div_tconf_upts_ptr, double* detjac_upts_ptr, double* src_upts_ptr, double rk4a, double rk4b, double dt, double const_src);
+void RK45_update_kernel_wrapper(int n_upts_per_ele,int n_dims,int n_fields,int n_eles,double* disu0_upts_ptr,double* disu1_upts_ptr,double* div_tconf_upts_ptr, double* detjac_upts_ptr, double* src_upts_ptr, double* h_ref, double rk4a, double rk4b, double dt, double const_src, double CFL, double gamma, double mu_inf, int order, int viscous, int dt_type, int step);
 
-void RK11_update_kernel_wrapper(int n_upts_per_ele,int n_dims,int n_fields,int n_eles,double* disu0_upts_ptr,double* div_tconf_upts_ptr, double* detjac_upts_ptr, double* src_upts_ptr, double dt, double const_src);
+void RK11_update_kernel_wrapper(int n_upts_per_ele,int n_dims,int n_fields,int n_eles,double* disu0_upts_ptr,double* div_tconf_upts_ptr, double* detjac_upts_ptr, double* src_upts_ptr, double* h_ref, double dt, double const_src, double CFL, double gamma, double mu_inf, int order, int viscous, int dt_type);
 
 /*! wrapper for gpu kernel to calculate transformed discontinuous inviscid flux at solution points */
 void evaluate_invFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* disu_upts_ptr, double* out_tdisinvf_upts_ptr, double* detjac_upts_ptr, double* detjac_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double* grid_vel_upts_ptr, double gamma, int motion, int equation, double wave_speed_x, double wave_speed_y, double wave_speed_z, int turb_model);

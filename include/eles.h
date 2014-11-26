@@ -84,6 +84,9 @@ public:
   /*! copy divergence at solution points to cpu */
   void cp_div_tconf_upts_gpu_cpu(void);
 
+  /*! copy local time stepping reference length at solution points to cpu */
+  void cp_h_ref_gpu_cpu(void);
+
   /*! copy source term at solution points to cpu */
   void cp_src_upts_gpu_cpu(void);
 
@@ -653,6 +656,7 @@ public:
   /* --- Shock capturing functions --- */
 
   void shock_capture_concentration(int in_disu_upts_from);
+  void shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma);
 
 protected:
 

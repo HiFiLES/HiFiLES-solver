@@ -69,7 +69,7 @@ monitor_cp_freq
 monitor_integrals_freq                  // Compute global integrals. 0=no diagnostics
 100
 n_integral_quantities
-1 kineticenergy
+2 kineticenergy vorticity
 res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
 1
 error_norm_type                   // 0:infinity norm, 1:L1 norm, 2:L2 norm
