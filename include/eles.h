@@ -636,6 +636,9 @@ public:
   double *get_disu_GCL_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
   /* --------------------------------------------------- */
 
+  /*! Find cells to be used for R-Adaptation for shock capturing */
+  int get_r_adapt_cells(array<int> &shock_cells);
+
   /*! Set the time step for the current iteration */
   void set_dt(int in_step, int adv_type);
 

@@ -134,6 +134,8 @@ void mesh::setup(struct solution *in_FlowSol,array<int> &in_c2v,array<int> &in_c
   // Blending-Function method variables
   if (run_input.motion==LINEAR_ELASTICITY || run_input.motion==BLENDING)
   {
+    blend_dist = run_input.blend_dist;
+
     displacement.setup(n_verts,n_dims);
     displacement.initialize_to_zero();
 
@@ -150,8 +152,9 @@ void mesh::setup(struct solution *in_FlowSol,array<int> &in_c2v,array<int> &in_c
     pitch_axis = run_input.pitch_axis;
   }
 
-  if (run_input.motion==BLENDING) {
-    blend_dist = run_input.blend_dist;
+  if (run_input.r_adaption_flag) {
+    force.setup(n_verts,n_dims);
+    force.initialize_to_zero();
   }
 
   if (run_input.adv_type==0) {
@@ -178,10 +181,10 @@ void mesh::setup(struct solution *in_FlowSol,array<int> &in_c2v,array<int> &in_c
 
     RK_c.setup(5);
     RK_c(0) = 0.0;
-    RK_c(1) = 1432997174477/9575080441755;
-    RK_c(2) = 2526269341429/6820363962896;
-    RK_c(3) = 2006345519317/3224310063776;
-    RK_c(4) = 2802321613138/2924317926251;
+    RK_c(1) = 0.149659021999229; //1432997174477/9575080441755;
+    RK_c(2) = 0.370400957364205; //2526269341429/6820363962896;
+    RK_c(3) = 0.622255763134443; //2006345519317/3224310063776;
+    RK_c(4) = 0.958282130674690; //2802321613138/2924317926251;
   }
 }
 
@@ -224,6 +227,43 @@ void mesh::setup_part_2(array<int>& _c2f, array<int>& _c2e, array<int>& _f2c, ar
     ic = ic2loc_c(icg);
     ic2icg(ctype(icg))(ic) = icg;
   }
+
+  /* --- Get an array of v2v for linear-elasticity method ---
+     NOTE: this includes ALL vertices in ALL surrounding cells - not
+     just immediately adjacent nodes --- */
+
+//  array<set<int> > v2c(nPoint), v2v_(nPoint);
+//  array<int> v2n_c(nPoint), v2n_v(nPoint), v2v;
+
+//  // Get 'umbrella' of cells surrounding each point
+//  int n_cells = c2v.get_dim(0);
+//  for (int ic=0; ic<n_cells; ic++) {
+//    for (int iv=0; iv<c2n_v(ic); iv++) {
+//      v2c(c2v(ic,iv)).insert(ic);
+//    }
+//  }
+
+//  // Get unique listing of vertices within each vertices' 'umbrella'
+//  for (int iv=0; iv<nPoint; iv++) {
+//    v2n_c(iv) = v2c(iv).size();
+//    for (set<int>::iterator icit=v2c(iv).begin(); icit!=v2c(iv).end(); ++icit) {
+//      for (int iv2=0; iv2<c2n_v(*icit); iv2++) {
+//        v2v_(iv).insert(c2v(*icit,iv2));
+//      }
+//    }
+//    v2n_v(iv) = v2v_(iv).size();
+//  }
+
+//  // Copy to an 'array' for easier use
+//  Max_nNeigh = v2n_v.get_max();
+//  v2v.setup(nPoint,Max_nNeigh);
+//  for (int iv=0; iv<nPoint; iv++) {
+//    int iv_2 = 0;
+//    for (set<int>::iterator ivit=v2v_(iv).begin(); ivit!=v2v_(iv).end(); ++ivit) {
+//      v2v(iv,iv_2) = *ivit;
+//      iv_2++;
+//    }
+//  }
 }
 
 void mesh::initialize_restart(void) {
@@ -284,6 +324,9 @@ void mesh::move(int _iter, int in_rk_step, int n_rk_steps)
   run_input.rk_time = rk_time;
 
   if (run_input.motion == LINEAR_ELASTICITY) {
+    if (run_input.r_adaption_flag && run_input.ArtifOn)
+      calc_r_adapt_force();
+    calc_boundary_displacements();
     deform();
   }else if (run_input.motion == RIGID_MOTION) {
     rigid_move();
@@ -357,8 +400,9 @@ void mesh::deform(void) {
 
 
     /*--- Set the RHS force vector (for adaptive mesh redistribution) using
-          Abhishek's concentration sensor ---*/
-    set_FEA_force_vector();
+      Abhishek's concentration sensor [note: force pre-calculated before calling 'deform'] ---*/
+    if (run_input.r_adaption_flag)
+      set_FEA_force_vector();
 
     /*--- Set the boundary displacements (as prescribed by the design variable
         perturbations controlling the surface shape) as a Dirichlet BC. ---*/
@@ -423,11 +467,15 @@ void mesh::deform(void) {
 void mesh::set_min_length(void)
 {
   unsigned int n_edges = e2v.get_dim(0);
-  double length2;
+  double length2, delta;
   double min_length2 = DBL_MAX;
 
   for (int i=0; i<n_edges; i++) {
-    length2 = pow((xv(0)(e2v(i,0),0)-xv(0)(e2v(i,1),0)),2) + pow((xv(0)(e2v(i,0),1)-xv(0)(e2v(i,1),1)),2);
+    length2 = 0;
+    for (int j=0; j<n_dims; j++) {
+      delta = xv(0)(e2v(i,0),j)-xv(0)(e2v(i,1),j);
+      length2 += delta*delta;
+    }
     min_length2 = fmin(min_length2,length2);
   }
 
@@ -488,35 +536,138 @@ void mesh::set_grid_velocity(double dt)
     }
   }
 
-//  // Apply velocity to the eles classes at the shape points
-//  int local_ic;
-//  array<double> vel(n_dims);
-//  for (int ic=0; ic<n_eles; ic++) {
-//    for (int j=0; j<c2n_v(ic); j++) {
-//      for (int idim=0; idim<n_dims; idim++) {
-//        vel(idim) = vel_new(iv2ivg(c2v(ic,j)),idim);
-//      }
-//      local_ic = ic2loc_c(ic);
-//      FlowSol->mesh_eles(ctype(ic))->set_grid_vel_spt(local_ic,j,vel);
-//    }
-//  }
+  /// Why was this commented out ... ?
+  // Apply velocity to the eles classes at the shape points
+  int local_ic;
+  array<double> vel(n_dims);
+  for (int ic=0; ic<n_eles; ic++) {
+    for (int j=0; j<c2n_v(ic); j++) {
+      for (int idim=0; idim<n_dims; idim++) {
+        vel(idim) = vel_new(iv2ivg(c2v(ic,j)),idim);
+      }
+      local_ic = ic2loc_c(ic);
+      FlowSol->mesh_eles(ctype(ic))->set_grid_vel_spt(local_ic,j,vel);
+    }
+  }
 
-//  // Interpolate grid vel @ spts to fpts & upts
-//  for (int i=0; i<FlowSol->n_ele_types; i++) {
-//    FlowSol->mesh_eles(i)->set_grid_vel_fpts(rk_step);
-//    FlowSol->mesh_eles(i)->set_grid_vel_upts(rk_step);
-//  }
+  // Interpolate grid vel @ spts to fpts & upts
+  for (int i=0; i<FlowSol->n_ele_types; i++) {
+    FlowSol->mesh_eles(i)->set_grid_vel_fpts(rk_step);
+    FlowSol->mesh_eles(i)->set_grid_vel_upts(rk_step);
+  }
 }
 
-void mesh::set_FEA_force_vector(void)
+int mesh::calc_r_adapt_force(void)
 {
-  /* Applying point forces to points, so just add the forces to RHS at each point
-     [No need for any special integration / quadrature / use of shape funcs] */
+  int n_r_adapt = 0;
+  array<int> temp_cells, r_adapt_cells(0);
 
   // 1) Use 'sensor' array to get desired elements to adapt 2
-  // 2) Calculate distances to the above points
-  // 3) Calculate forces based on those distances & some blending function
-  // 4) Put into RHS for each individual node
+  for (int i=0; i<FlowSol->n_ele_types; i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      n_r_adapt += FlowSol->mesh_eles(i)->get_r_adapt_cells(temp_cells);
+      r_adapt_cells.append1D(temp_cells);
+    }
+  }
+
+  // 1.2) Get the centroids of the above cells
+  array<double> r_adapt_pts(n_r_adapt,n_dims);
+  r_adapt_pts.initialize_to_zero();
+
+  for (int ir=0; ir<n_r_adapt; ir++) {    
+    int ic = r_adapt_cells(ir);
+    for (int iv=0; iv<c2n_v(ic); iv++) {
+      for (int k=0; k<n_dims; k++) {
+        r_adapt_pts(ir,k) += xv(0)(c2v(ic,iv),k)/c2n_v(ic);
+      }
+    }
+  }
+
+  // 2) Calculate distances (magnitude & vector) to the above points
+  array<double> magDist(n_verts), dvec(n_verts, n_dims);
+  double dist2, minDist2;
+  int minPt;
+
+  if (n_r_adapt>0) {
+
+    magDist.initialize_to_zero();
+    dvec.initialize_to_zero();
+    force.initialize_to_zero();
+
+    for (int iv=0; iv<n_verts; iv++) {
+      for (int ipt=0; ipt<n_r_adapt; ipt++) {
+        dist2 = 0;
+        minDist2 = INFINITY;
+        for (int k=0; k<n_dims; k++) {
+          dist2 += (xv(0)(iv,k)-r_adapt_pts(ipt,k))*(xv(0)(iv,k)-r_adapt_pts(ipt,k));
+        }
+        if (dist2 < minDist2) {
+          minDist2 = dist2;
+          minPt = ipt;
+        }
+      }
+      magDist(iv) = sqrt(minDist2);
+      for (int k=0; k<n_dims; k++) {
+        dvec(iv,k) = r_adapt_pts(minPt,k) - xv(0)(iv,k);
+      }
+    }
+
+    // 3) Calculate forces based on those distances & some blending function
+    double forceMag = run_input.adaption_force;
+    double Ftot;
+    for (int iv=0; iv<n_verts; iv++) {
+      if (magDist(iv) < blend_dist) {
+        Ftot = forceMag/magDist(iv)*(sqrt(magDist(iv)/blend_dist) - magDist(iv)/blend_dist);
+        Ftot *= get_h_min_vertex(iv)/min_length;
+        for (int k=0; k<n_dims; k++) {
+          force(iv,k) = dvec(iv,k)*Ftot;
+        }
+      }
+    }
+  }
+
+  return n_r_adapt;
+}
+
+double mesh::get_h_min_vertex(int &in_vert)
+{
+  double delta, h_tmp2, h_min2 = INFINITY;
+  int iv_1, iv_2;
+
+  /* --- Find minimum edge length --- */
+  for (int ie=0; ie<v2n_e(in_vert); ie++) {
+    iv_1 = e2v(ie,0);
+    iv_2 = e2v(ie,1);
+
+    h_tmp2 = 0;
+    for (int dim=0; dim<n_dims; dim++) {
+      delta = xv(0)(iv_2,dim) - xv(0)(iv_1,dim);
+      h_tmp2 += delta*delta;
+    }
+
+    if (h_tmp2 < h_min2) h_min2 = h_tmp2;
+  }
+
+  return sqrt(h_min2);
+}
+
+/** Set the RHS of the linear-elasticity system equal to the previously calculated force */
+void mesh::set_FEA_force_vector(void)
+{
+  int iv, k;
+  unsigned long total_index;
+
+  /*--- Applying point forces to points, so just add the forces to RHS at each point
+     [No need for any special integration / quadrature / use of shape funcs] ---*/
+
+  for (iv=0; iv<n_verts; iv++)
+  {
+    for (k=0; k<n_dims; k++) {
+      total_index = iv*n_dims + k;
+      LinSysRes[total_index] = force(iv,k);
+      //cout << "Force(" << iv << "," << k << "): " << force(iv,k) << endl;
+    }
+  }
 }
 
 void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, array<int>& nodes, int ic, double scale)
@@ -1527,12 +1678,15 @@ void mesh::update_grid_coords(void)
    after grid deformation (LinSysSol contains the x, y, z displacements). ---*/
 
   for (iPoint = 0; iPoint < n_verts; iPoint++) {
+    //cout << "delta xy: ";
     for (iDim = 0; iDim < n_dims; iDim++) {
       total_index = iPoint*n_dims + iDim;
       new_coord = xv(0)(iPoint,iDim) + LinSysSol[total_index];
+      //cout << LinSysSol[total_index] << ", ";
       //if (fabs(new_coord) < eps*eps) new_coord = 0.0;
       xv(0)(iPoint,iDim) = new_coord;
     }
+    //cout << endl;
   }
 }
 
@@ -1605,9 +1759,36 @@ double mesh::check_grid(void) {
   else return MinVolume;
 }
 
+void mesh::calc_boundary_displacements(void)
+{
+  int bnd, ib, ivb, ivb_g;
+  for (bnd = 0; bnd < n_bnds; bnd++)
+  {
+    // Match up the mesh-file boundary to the input-file boundary
+    for (ib=0; ib<n_moving_bnds; ib++) {
+      if (bc_list(bnd)==bc_num[run_input.boundary_flags(ib)]) {
+
+        // Apply displacement (new pos - old pos) to each point on boundary
+        for (ivb=0; ivb<nBndPts(bnd); ivb++)
+        {
+          // Calculate next displacement
+          ivb_g = iv2ivg(boundPts(bnd,ivb)); // iv != ivg if MPI
+          for (unsigned short k=0; k<n_dims; k++) {
+            displacement(ivb_g,k) = motion_params(ib,3*k  )*sin(2*pi*motion_params(ib,3*k+2)*rk_time);
+            displacement(ivb_g,k)+= motion_params(ib,3*k+1)*(1-cos(2*pi*motion_params(ib,3*k+2)*rk_time));
+            displacement(ivb_g,k)+= xv_0(ivb_g,k) - xv(0)(ivb_g,k);
+            //cout << "disp(" << ivb_g << "," << k << "): " << displacement(ivb_g,k) << endl;
+          }
+        }
+      }
+    }
+  }
+}
+
 void mesh::set_boundary_displacements(void)
 {
   unsigned short iDim, nDim = FlowSol->n_dims, iBound, axis = 0;
+  unsigned short ib, bnd, ivb, ivb_g;
   unsigned long iPoint, total_index, iVertex;
   //double MeanCoord[3];
   double VarIncrement = 1.0;
@@ -1664,41 +1845,28 @@ void mesh::set_boundary_displacements(void)
         }
     }*/
 
-  unsigned short ib, bnd, ivb, ivb_g;
-  array<double> disp(n_dims);
-  for (bnd = 0; bnd < n_bnds; bnd++)
-  {
+  for (bnd = 0; bnd < n_bnds; bnd++) {
+
     // Match up the mesh-file boundary to the input-file boundary
     for (ib=0; ib<n_moving_bnds; ib++) {
-      //cout << "bclist(bnd) = " << bc_list(bnd) << "; bc_num[ib] = " << bc_num[run_input.boundary_flags(ib)] << endl;
       if (bc_list(bnd)==bc_num[run_input.boundary_flags(ib)]) {
-        //break;
-        //}
-        //}
 
-        // Apply displacement (new pos - old pos) to each point on boundary
-        for (ivb=0; ivb<nBndPts(bnd); ivb++)
-        {
-          // Calculate next displacement
+        /*--- Set the known displacements, note that some points of the moving surfaces
+        could be on on the symmetry plane, we should specify DeleteValsRowi again (just in case) ---*/
+
+        for (ivb=0; ivb<nBndPts(bnd); ivb++) {
           ivb_g = iv2ivg(boundPts(bnd,ivb)); // iv != ivg if MPI
-          for (unsigned short k=0; k<n_dims; k++) {
-            disp(k) = motion_params(ib,k  )*sin(2*pi*motion_params(ib,4+k)*rk_time);
-            //disp(k)+= motion_params(ib,k+1)*cos(2*pi*motion_params(ib,6+k)*rk_time);
-            disp(k)+= xv_0(ivb_g,k) - xv(0)(ivb_g,k);
-          }
-          //cout << "ivb_g = " << ivb_g << ", x=" << xv_0(ivb_g,0) << ", y=" << xv_0(ivb_g,1) << endl;
-
-          /*--- Set the known displacements, note that some points of the moving surfaces
-          could be on on the symmetry plane, we should specify DeleteValsRowi again (just in case) ---*/
           for (iDim=0; iDim<n_dims; iDim++) {
             total_index = ivb_g*nDim + iDim;
-            LinSysRes[total_index] = disp(iDim) * VarIncrement;
-            LinSysSol[total_index] = disp(iDim) * VarIncrement;
+            LinSysRes[total_index] = displacement(ivb_g,iDim) * VarIncrement;
+            LinSysSol[total_index] = displacement(ivb_g,iDim) * VarIncrement;
             StiffnessMatrix.DeleteValsRowi(total_index);
           }
         }
+
       }
     }
+
   }
 }
 
@@ -1803,8 +1971,8 @@ void mesh::blend_move(void)
             // (1) Displacement  due to rigid motion of boundary
             //     [disp = new position of boundary point - old position = xv_0 + {params*sin,cos} - xv]
             for (int k=0; k<n_dims; k++) {
-              disp(k) = motion_params(ib,k  )*sin(2*pi*motion_params(ib,4+k)*rk_time);
-              //disp(k)+= motion_params(ib,4+k)*(1-cos(2*pi*motion_params(ib,8+k)*rk_time));
+              disp(k) = motion_params(ib,3*k  )*sin(2*pi*motion_params(ib,3*k+2)*rk_time);
+              disp(k)+= motion_params(ib,3*k+1)*(1-cos(2*pi*motion_params(ib,3*k+2)*rk_time));
               disp(k)+= xv_0(ivb_g,k) - xv(0)(ivb_g,k);
             }
 

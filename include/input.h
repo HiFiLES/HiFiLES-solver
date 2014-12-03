@@ -112,17 +112,20 @@ public:
   int ic_form;
 
   /* --- Mesh deformation options --- */
-  int n_moving_bnds, motion;
+  int motion, n_moving_bnds, moving_bounds_flag;
   int GCL;
   int n_deform_iters;
   int mesh_output_freq;
   int mesh_output_format;
+  int r_adaption_flag;              /// Turn R-Adaptation on/off
   array<string> boundary_flags;
   array<array<double> > bound_vel_simple;
   array<double> rigid_motion_params;
   array<int> motion_type;
   array<double> pitch_axis;
   double blend_dist;
+  double r_adapt_limit; /// Limit on max ratio of mesh cells to adapt to
+  double adaption_force;
   /* -------------------------------- */
 
   /* --- Shock Capturing options --- */

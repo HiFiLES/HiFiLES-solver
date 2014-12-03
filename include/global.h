@@ -27,6 +27,8 @@
 
 #include "input.h"
 
+#include <limits.h>
+
 /*! input 'run_input' has global scope */
 extern input run_input;
 

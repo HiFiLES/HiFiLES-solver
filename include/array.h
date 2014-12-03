@@ -146,6 +146,9 @@ public:
   /*! Initialize array to given value */
   void initialize_to_value(const T val);
 
+  /*! Append the contents of an array to this array */
+  void append1D(const array<T>& in_array);
+
 protected:
 
   int dim_0;
@@ -606,5 +609,38 @@ void array<T>::initialize_to_value(const T val)
   for(int i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
   {
     cpu_data[i]=val;
+  }
+}
+
+template <typename T>
+void array<T>::append1D(const array<T>& in_array)
+{
+  if (dim_1!=1 || dim_2!=1 || dim_3!=1) {
+    FatalError("append1D is only for 1-dimensional arrays.");
+  }
+
+  // Store current array into temp array
+  T *temp = new T[dim_0*dim_1*dim_2*dim_3];
+  for (int i=0; i<dim_0*dim_1*dim_2*dim_3; i++) {
+    temp[i] = cpu_data[i];
+  }
+
+  delete[] cpu_data;
+
+  // Get size of new combined array & allocate space
+  int dim_0_old = dim_0;
+  dim_0 = dim_0 + in_array.dim_0;
+  cpu_data = new T[dim_0];
+
+  // Copy original data to new array
+  for (int i=0; i<dim_0_old; i++) {
+    cpu_data[i] = temp[i];
+  }
+
+  // Copy 2nd array's data to new array
+  int i2;
+  for (int i=0; i<in_array.dim_0; i++) {
+    i2 = i + dim_0_old;
+    cpu_data[i2] = in_array.cpu_data[i];
   }
 }

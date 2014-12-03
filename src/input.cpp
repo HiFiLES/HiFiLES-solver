@@ -101,18 +101,21 @@ input::input()
   sparse_pri = 0;
 
   // Set default values for optional parameters
-  turb_model = 0;
-  motion = 0;
-  GCL = 0;
-  n_deform_iters = 1;
-  restart_mesh_out = 0;
-  mesh_output_freq = INFINITY;
-  mesh_output_format = 1;
+  turb_model = 0;                 // Not solving RANS
+  motion = 0;                     // No motion
+  moving_bounds_flag = 0;         // HACK to avoid infinite loop bug
+  GCL = 0;                        // Don't solve GCL
+  n_deform_iters = 1;             // No sub-iterations for deformation
+  restart_mesh_out = 0;           // No mesh output with restart files
+  mesh_output_freq = INT_MAX;     // No mesh output
+  mesh_output_format = 1;         // Gmsh
+  r_adaption_flag = 0;            // No R-Adaptation
+  r_adapt_limit = 0.05;           // Limit of 5% of total n_eles to adapt to
 
   // Set shock capturing parameters to 0 in case they are not used
   ArtifOn = 0;
   artif_only = 0;
-  artif_type = 0;
+  artif_type = 1;
   epsilon0 = 0;
   s0 = 0;
   kappa = 0;
@@ -448,18 +451,38 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> GCL;
     }
+    else if (!param_name.compare("r_adaption_flag"))
+    {
+      in_run_input_file >> r_adaption_flag;
+    }
+    else if (!param_name.compare("r_adapt_limit"))
+    {
+      in_run_input_file >> r_adapt_limit;
+    }
+    else if (!param_name.compare("adaption_force"))
+    {
+      in_run_input_file >> adaption_force;
+    }
     else if (!param_name.compare("moving_boundaries"))
     {
-      in_run_input_file >> n_moving_bnds;
-      motion_type.setup(n_moving_bnds);
-      bound_vel_simple.setup(n_moving_bnds);
-      boundary_flags.setup(n_moving_bnds);
-      for (int i=0; i<n_moving_bnds; i++) {
+      if (moving_bounds_flag) {
+        // HACK to fix infinite-loop bug
         in_run_input_file.getline(buf,BUFSIZ);
-        in_run_input_file >> boundary_flags(i) >> motion_type(i);
-        bound_vel_simple(i).setup(9);
-        for (int j=0; j<9; j++) {
-          in_run_input_file >> bound_vel_simple(i)(j);
+      }else{
+        moving_bounds_flag = true;
+        in_run_input_file >> n_moving_bnds;
+        motion_type.setup(n_moving_bnds);
+        bound_vel_simple.setup(n_moving_bnds);
+        boundary_flags.setup(n_moving_bnds);
+        for (int i=0; i<n_moving_bnds; i++) {
+          in_run_input_file.getline(buf,BUFSIZ);
+          in_run_input_file >> boundary_flags(i) >> motion_type(i);
+          bound_vel_simple(i).setup(12);
+          for (int j=0; j<12; j++) {
+            in_run_input_file >> bound_vel_simple(i)(j);
+            cout << bound_vel_simple(i)(j) << " ";
+          }
+          cout << endl;
         }
       }
     }
@@ -826,6 +849,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
   if (monitor_cp_freq == 0) monitor_cp_freq = 100000000;
   if (monitor_integrals_freq == 0) monitor_integrals_freq = 100000000;
   if (mesh_output_freq==-1) mesh_output_freq = plot_freq;
+  if (mesh_output_freq==0) mesh_output_freq = INT_MAX;
 
   if (!mesh_file.compare(mesh_file.size()-3,3,"neu"))
     mesh_format=0;

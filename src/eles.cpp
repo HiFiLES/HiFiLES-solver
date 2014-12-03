@@ -26,6 +26,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <map>
 
 #if defined _ACCELERATE_BLAS
 #include <Accelerate/Accelerate.h>
@@ -1270,7 +1271,9 @@ double eles::calc_dt_local(int in_ele)
 
     if (viscous)
     {
-      dt_visc = (run_input.CFL * 0.25 * h_ref(0,in_ele) * h_ref(0,in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
+      double N2 = run_input.order*run_input.order;
+      dt_visc = run_input.CFL*h_ref(0,in_ele)/(N2*(lam_inv + N2*run_input.mu_gas/h_ref(0,in_ele)));
+      //dt_visc = (run_input.CFL * 0.25 * h_ref(0,in_ele) * h_ref(0,in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
       dt_inv = run_input.CFL*h_ref(0,in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
     }
     else
@@ -3413,7 +3416,7 @@ void eles::shock_capture_concentration(int in_disu_upts_from)
 void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma)
 {
     int stride = in_n_upts_per_ele*in_n_eles;
-    double sensor = 0;
+    double tmp_sensor = 0;
 
     double nodal_rho[8];  // Array allocated so that it can handle upto p=7
     double modal_rho[8];
@@ -3427,6 +3430,7 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
         // X-slices
         for(int m=0; m<in_n_eles; m++)
         {
+          tmp_sensor = 0;
             for(int i=0; i<in_order+1; i++)
             {
                 for(int j=0; j<in_order+1; j++){
@@ -3451,8 +3455,8 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
                     if(temp >= J)
                         shock_found++;
 
-                    if(temp > sensor)
-                        sensor = temp;
+                    if(temp > tmp_sensor)
+                        tmp_sensor = temp;
                 }
 
             }
@@ -3481,17 +3485,17 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
                     if(temp >= J)
                         shock_found++;
 
-                    if(temp > sensor)
-                        sensor = temp;
+                    if(temp > tmp_sensor)
+                        tmp_sensor = temp;
                 }
             }
 
-            out_sensor[m] = sensor;
+            out_sensor[m] = tmp_sensor;
 
             /* -------------------------------------------------------------------------------------- */
             /* Exponential modal filter */
 
-            if(sensor > s0 + kappa && in_artif_type == 1) {
+            if(tmp_sensor > s0 + kappa && in_artif_type == 1) {
                 double nodal_sol[36];
                 double modal_sol[36];
 
@@ -3523,6 +3527,55 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
             }
         }
     }
+}
+
+int eles::get_r_adapt_cells(array<int> &shock_cells)
+{
+  map<int,double> shocks;
+  int n_shock = 0;
+
+  /* --- First, populate a map with all values above sensor threshold
+     (Keep in mind, the shock capturing has already been done, so no cells will
+     actually have sensor>s0 afterwards; therefore, reduce the threshold) --- */
+
+  for (int ic=0; ic<n_eles; ic++)
+    if (sensor(ic) > run_input.s0/10)
+      shocks[ic] = sensor(ic);
+
+  /* --- If limiting the maximum number of cells we can be adapting to, find
+     the relevant N cells. Otherwise, return all cells above threshold.
+     Global element ID must be returned for mesh class to use. --- */
+
+  if (run_input.r_adapt_limit != 0) {
+    // Find the largest n_shock sensor values, using prescribed max ratio
+    n_shock = min((int)ceil(n_eles*run_input.r_adapt_limit),(int)shocks.size());
+    shock_cells.setup(n_shock);
+
+    for (int ic=0; ic<n_shock; ic++) {
+      int max_cell;
+      double max_sensor = 0;
+      for (map<int,double>::iterator it=shocks.begin(); it!=shocks.end(); ++it) {
+        if (it->second > max_sensor) {
+          max_cell = it->first;
+          max_sensor = it->second;
+        }
+      }
+      shock_cells(ic) = ele2global_ele(max_cell);
+      shocks.erase(max_cell);
+    }
+  }else{
+    n_shock = shocks.size();
+    shock_cells.setup(n_shock);
+
+    // Fill up the output array with all cells above threshold
+    int ic = 0;
+    for (map<int,double>::iterator it=shocks.begin(); it!=shocks.end(); ++it) {
+      shock_cells(ic) = ele2global_ele(it->first);
+      ic++;
+    }
+  }
+
+  return n_shock;
 }
 
 // get the type of element
@@ -7467,14 +7520,18 @@ void eles::rigid_move(double rk_time)
   xc = pitch_axis(0);  yc = pitch_axis(1);
 
   /* --- Calculate current pitch angle & rotation rate --- */
-  theta = rigid_motion_params(3)*sin(2*pi*rigid_motion_params(7)*rk_time);
-  thetadot = 2*pi*rigid_motion_params(3)*rigid_motion_params(7)*cos(2*pi*rigid_motion_params(7)*rk_time);
+  theta    = rigid_motion_params(9)*sin(2*pi*rigid_motion_params(11)*rk_time);
+  theta   += rigid_motion_params(10)*(1-cos(2*pi*rigid_motion_params(11)*rk_time));
+  thetadot = 2*pi*rigid_motion_params(9)*rigid_motion_params(11)*cos(2*pi*rigid_motion_params(11)*rk_time);
+  thetadot+= 2*pi*rigid_motion_params(10)*rigid_motion_params(11)*sin(2*pi*rigid_motion_params(11)*rk_time);
   sinTheta = sin(theta);  cosTheta = cos(theta);
 
   /* --- Calculate current translation rate --- */
   for (int k=0; k<n_dims; k++) {
-    v_translate(k) = 2*pi*rigid_motion_params(k)*rigid_motion_params(4+k)*cos(2*pi*rigid_motion_params(4+k)*rk_time);
-    translate(k)   =                             rigid_motion_params( k )*sin(2*pi*rigid_motion_params(4+k)*rk_time);
+    v_translate(k) = 2*pi*rigid_motion_params(3*k  )*rigid_motion_params(3*k+2)*cos(2*pi*rigid_motion_params(3*k+2)*rk_time);
+    v_translate(k)+= 2*pi*rigid_motion_params(3*k+1)*rigid_motion_params(3*k+2)*sin(2*pi*rigid_motion_params(3*k+2)*rk_time);
+    translate(k)   = rigid_motion_params(3*k  )*sin(2*pi*rigid_motion_params(3*k+2)*rk_time);
+    translate(k)  += rigid_motion_params(3*k+1)*(1-cos(2*pi*rigid_motion_params(3*k+2)*rk_time));
   }
 
   if (n_eles!=0) {

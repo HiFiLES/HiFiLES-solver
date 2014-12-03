@@ -175,6 +175,7 @@ public:
 
   array< array<double> > grid_vel;
 
+  double get_h_min_vertex(int &in_vert);
 private:
   bool start;
   array<double> xv_nm1, xv_nm2, xv_nm3;//, xv_new, vel_old, vel_new;
@@ -208,11 +209,22 @@ private:
   double blend_dist;
   // ------                         ------
 
+  // ----    R-ADAPTATION VARIABLES   ----
+  array<double> force;
+  int n_force;
+  // ------                         ------
+
   // Coefficients for LS-RK45 time-stepping
   array<double> RK_a, RK_b, RK_c;
 
+  /** Calculate & store given/known displacements of vertices on moving boundaries */
+  void calc_boundary_displacements(void);
+
   /** Set given/known displacements of vertices on moving boundaries in linear system */
   void set_boundary_displacements(void);
+
+  /** Find cells to adapt to & calculate forces to apply to all points */
+  int calc_r_adapt_force(void);
 
   /** RHS (forcing for adaptive mesh redistribution) */
   void set_FEA_force_vector(void);
