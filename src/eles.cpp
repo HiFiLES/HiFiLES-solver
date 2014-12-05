@@ -3424,7 +3424,7 @@ void eles::shock_capture_concentration(int in_disu_upts_from)
 void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma)
 {
     int stride = in_n_upts_per_ele*in_n_eles;
-    double sensor = 0;
+    double tmp_sensor = 0;
 
     double nodal_rho[8];  // Array allocated so that it can handle upto p=7
     double modal_rho[8];
@@ -3438,6 +3438,7 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
         // X-slices
         for(int m=0; m<in_n_eles; m++)
         {
+          tmp_sensor = 0;
             for(int i=0; i<in_order+1; i++)
             {
                 for(int j=0; j<in_order+1; j++){
@@ -3462,8 +3463,8 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
                     if(temp >= J)
                         shock_found++;
 
-                    if(temp > sensor)
-                        sensor = temp;
+                    if(temp > tmp_sensor)
+                        tmp_sensor = temp;
                 }
 
             }
@@ -3492,17 +3493,17 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
                     if(temp >= J)
                         shock_found++;
 
-                    if(temp > sensor)
-                        sensor = temp;
+                    if(temp > tmp_sensor)
+                        tmp_sensor = temp;
                 }
             }
 
-            out_sensor[m] = sensor;
+            out_sensor[m] = tmp_sensor;
 
             /* -------------------------------------------------------------------------------------- */
             /* Exponential modal filter */
 
-            if(sensor > s0 + kappa && in_artif_type == 1) {
+            if(tmp_sensor > s0 + kappa && in_artif_type == 1) {
                 double nodal_sol[36];
                 double modal_sol[36];
 
@@ -4602,7 +4603,7 @@ void eles::set_transforms(void)
     
     for(i=0;i<n_eles;i++)
     {
-      if ((i%(n_eles/10))==0 && rank==0)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
       
       for(j=0;j<n_upts_per_ele;j++)
@@ -4771,7 +4772,7 @@ void eles::set_transforms(void)
     
     for(i=0;i<n_eles;i++)
     {
-      if ((i%(n_eles/10))==0 && rank==0)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
       
       for(j=0;j<n_fpts_per_ele;j++)
@@ -5013,7 +5014,7 @@ void eles::set_transforms_dynamic(void)
     }
 
     for(i=0;i<n_eles;i++) {
-      if ((i%(n_eles/10))==0 && rank==0 && first_time)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0 && first_time)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
       for(j=0;j<n_upts_per_ele;j++)
@@ -5100,7 +5101,7 @@ void eles::set_transforms_dynamic(void)
       cout << endl << " at flux points"  << endl;
 
     for(i=0;i<n_eles;i++) {
-      if ((i%(n_eles/10))==0 && rank==0 && first_time)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0 && first_time)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
       for(j=0;j<n_fpts_per_ele;j++)
