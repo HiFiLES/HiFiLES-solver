@@ -260,6 +260,7 @@ public:
   
   /*! set opp_1 */
   void set_opp_1(int in_sparse);
+  void set_opp_1_LM(int in_sparse); // LIANG-MIYAJI
 
   /*! set opp_2 */
   void set_opp_2(int in_sparse);
@@ -1017,6 +1018,7 @@ protected:
 	matrix mapping: (in_upt, in_dim || in_field, in_ele)
 	*/
 	array<double> tdisf_upts;
+  array<double> tdisf_fpts;
 	
 	/*!
 	description: subgrid-scale flux at the solution points \n
@@ -1052,6 +1054,10 @@ protected:
 	matrix mapping:
 	*/
 	array< array<double> > div_tconf_upts;
+
+  /*! Gradient of discontinuous physical flux in parent-domain coordinates, for
+      use in the (geometry-conservative) Liang-Miyaji form of the ALE equations */
+  array< array<double> > grad_disf_upts;
 	
 	/*! delta of the transformed discontinuous solution at the flux points   */
 	array<double> delta_disu_fpts;
@@ -1148,6 +1154,7 @@ protected:
 #endif
 
   /*! operator to go from transformed discontinuous inviscid flux at the solution points to divergence of transformed discontinuous inviscid flux at the solution points */
+  array<double> opp_1_LM; // LIANG-MIYAJI
   array< array<double> > opp_1;
   array< array<double> > opp_1_data;
   array< array<int> > opp_1_cols;

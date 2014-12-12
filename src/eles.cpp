@@ -22,7 +22,8 @@
  * You should have received a copy of the GNU General Public License
  * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+//#define _CPU
+//#define _STANDARD_BLAS
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -343,44 +344,55 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     for(int i=0;i<n_adv_levels;i++)
     {
       div_tconf_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
+      div_tconf_upts(i).initialize_to_zero();
     }
-    
-    // Initialize to zero
-    for (int m=0;m<n_adv_levels;m++)
-      div_tconf_upts(m).initialize_to_zero();
     
     disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
     tdisf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
     norm_tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
     norm_tconf_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-    
-    if (motion && run_input.GCL)
-    {
-      tdisf_GCL_upts.setup(n_upts_per_ele,n_eles,n_dims);
-      tdisf_GCL_fpts.setup(n_upts_per_ele,n_eles,n_dims);
-      norm_tdisf_GCL_fpts.setup(n_fpts_per_ele,n_eles);
-      norm_tconf_GCL_fpts.setup(n_fpts_per_ele,n_eles);
-      tdisf_GCL_upts.initialize_to_zero();
-      tdisf_GCL_fpts.initialize_to_zero();
-      norm_tdisf_GCL_fpts.initialize_to_zero();
-      norm_tconf_GCL_fpts.initialize_to_zero();
 
-      Jbar_upts.setup(n_adv_levels);
-      Jbar_fpts.setup(n_adv_levels);
-      div_tconf_GCL_upts.setup(n_adv_levels);
-      //div_tconf_GCL_fpts.setup(n_adv_levels);
-      for(int i=0;i<n_adv_levels;i++)
+
+    // --- LIANG-MIYAJI ---
+    if (motion) { // && run_input.GCL) {
+      tdisf_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
+      tdisf_fpts.initialize_to_zero();
+      grad_disf_upts.setup(n_dims);
+      for(int i=0;i<n_dims;i++)
       {
-        Jbar_upts(i).setup(n_upts_per_ele,n_eles);
-        Jbar_fpts(i).setup(n_fpts_per_ele,n_eles);
-        div_tconf_GCL_upts(i).setup(n_upts_per_ele,n_eles);
-        //div_tconf_GCL_fpts(i).setup(n_fpts_per_ele,n_eles);
-        div_tconf_GCL_upts(i).initialize_to_zero();
-        //div_tconf_GCL_fpts(i).initialize_to_zero();
-        Jbar_upts(i).initialize_to_zero();
-        Jbar_fpts(i).initialize_to_zero();
+        grad_disf_upts(i).setup(n_upts_per_ele,n_eles,n_fields,n_dims);
+        grad_disf_upts(i).initialize_to_zero();
       }
     }
+    // --- END LIANG-MIYAJI ---
+    
+//    if (motion && run_input.GCL)
+//    {
+//      tdisf_GCL_upts.setup(n_upts_per_ele,n_eles,n_dims);
+//      tdisf_GCL_fpts.setup(n_upts_per_ele,n_eles,n_dims);
+//      norm_tdisf_GCL_fpts.setup(n_fpts_per_ele,n_eles);
+//      norm_tconf_GCL_fpts.setup(n_fpts_per_ele,n_eles);
+//      tdisf_GCL_upts.initialize_to_zero();
+//      tdisf_GCL_fpts.initialize_to_zero();
+//      norm_tdisf_GCL_fpts.initialize_to_zero();
+//      norm_tconf_GCL_fpts.initialize_to_zero();
+
+//      Jbar_upts.setup(n_adv_levels);
+//      Jbar_fpts.setup(n_adv_levels);
+//      div_tconf_GCL_upts.setup(n_adv_levels);
+//      //div_tconf_GCL_fpts.setup(n_adv_levels);
+//      for(int i=0;i<n_adv_levels;i++)
+//      {
+//        Jbar_upts(i).setup(n_upts_per_ele,n_eles);
+//        Jbar_fpts(i).setup(n_fpts_per_ele,n_eles);
+//        div_tconf_GCL_upts(i).setup(n_upts_per_ele,n_eles);
+//        //div_tconf_GCL_fpts(i).setup(n_fpts_per_ele,n_eles);
+//        div_tconf_GCL_upts(i).initialize_to_zero();
+//        //div_tconf_GCL_fpts(i).initialize_to_zero();
+//        Jbar_upts(i).initialize_to_zero();
+//        Jbar_fpts(i).initialize_to_zero();
+//      }
+//    }
 
     if (motion==LINEAR_ELASTICITY || motion==BLENDING || motion==RIGID_MOTION)
     {
@@ -392,12 +404,12 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       }
     }
 
-    if(viscous)
-    {
+    //if(viscous)
+    //{
       delta_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields);
-      grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
+      grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims); // LIANG-MIYAJI
       grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
-    }
+    //}
 
     if(run_input.ArtifOn)
     {
@@ -1389,13 +1401,14 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 
         if (motion) {
           // Transform solution from static frame to dynamic frame
-          for (k=0; k<n_fields; k++) {
-            temp_u(k) /= J_dyn_upts(j,i);
-          }
+//          for (k=0; k<n_fields; k++) {
+//            temp_u(k) /= J_dyn_upts(j,i);  LIANG-MIYAJI
+//          }
           // Get mesh velocity in dynamic frame
-          for (k=0; k<n_dims; k++) {
-            temp_v(k) = grid_vel_upts(j,i,k);
-          }
+//          for (k=0; k<n_dims; k++) {
+//            temp_v(k) = grid_vel_upts(j,i,k);  LIANG-MIYAJI
+//          }
+          temp_v.initialize_to_zero();//  LIANG-MIYAJI
           // Temporary flux vector for dynamic->static transformation
           temp_f_ref.setup(n_fields,n_dims);
         }else{
@@ -1415,34 +1428,59 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           FatalError("Invalid number of dimensions!");
         }
 
-        // Transform from dynamic-physical space to static-physical space
+        // SETTING UP LIANG-MIYAJI FORM OF GCL / TRANSFORMATION
         if (motion) {
-          for(k=0; k<n_fields; k++) {
-            for(l=0; l<n_dims; l++) {
-              temp_f_ref(k,l)=0.;
-              for(m=0; m<n_dims; m++) {
-                temp_f_ref(k,l) += JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
+
+          // Do nothing
+          for(k=0;k<n_fields;k++) {
+            for(l=0;l<n_dims;l++) {
+              tdisf_upts(j,i,k,l) = temp_f(k,l);
+            }
+          }
+
+        }else{
+
+          // Transform from static physical space to computational space
+          for(k=0;k<n_fields;k++) {
+            for(l=0;l<n_dims;l++) {
+              tdisf_upts(j,i,k,l)=0.;
+              for(m=0;m<n_dims;m++) {
+                tdisf_upts(j,i,k,l) += JGinv_upts(l,m,j,i)*temp_f(k,m);
               }
             }
           }
 
-          // Copy Static-Physical Domain flux back to temp_f
-          for (k=0; k<n_fields; k++) {
-            for (l=0; l<n_dims; l++) {
-              temp_f(k,l) = temp_f_ref(k,l);
-            }
-          }
         }
+        // --- END LIANG-MIYAJI ---
+
+//        // Transform from dynamic-physical space to static-physical space
+//        if (motion) {
+//          for(k=0; k<n_fields; k++) {
+//            for(l=0; l<n_dims; l++) {
+//              temp_f_ref(k,l)=0.;
+//              for(m=0; m<n_dims; m++) {
+//                temp_f_ref(k,l) += JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
+//              }
+//            }
+//          }
+
+//          // Copy Static-Physical Domain flux back to temp_f
+//          for (k=0; k<n_fields; k++) {
+//            for (l=0; l<n_dims; l++) {
+//              temp_f(k,l) = temp_f_ref(k,l);
+//            }
+//          }
+//        }
         
-        // Transform from static physical space to computational space
-        for(k=0;k<n_fields;k++) {
-          for(l=0;l<n_dims;l++) {
-            tdisf_upts(j,i,k,l)=0.;
-            for(m=0;m<n_dims;m++) {
-              tdisf_upts(j,i,k,l) += JGinv_upts(l,m,j,i)*temp_f(k,m);
-            }
-          }
-        }
+//        // Transform from static physical space to computational space
+//        for(k=0;k<n_fields;k++) {
+//          for(l=0;l<n_dims;l++) {
+//            tdisf_upts(j,i,k,l)=0.;
+//            for(m=0;m<n_dims;m++) {
+//              tdisf_upts(j,i,k,l) += JGinv_upts(l,m,j,i)*temp_f(k,m);
+//            }
+//          }
+//        }
       }
     }
     
@@ -1467,11 +1505,39 @@ void eles::extrapolate_totalFlux()
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
       
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
-      for (int i=1;i<n_dims;i++)
+//      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+//      for (int i=1;i<n_dims;i++)
+//      {
+//        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+//      }
+
+      // --- LIANG-MIYAJI ---
+      for (int i=0;i<n_dims;i++)
       {
-        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,0.0,opp_1_LM.get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,tdisf_fpts.get_ptr_cpu(0,0,0,i),n_fpts_per_ele);
       }
+
+//      array<double> temp_f(n_fields, n_dims);
+      for (int ic=0; ic<n_eles; ic++) {
+        for (int fpt=0; fpt<n_fpts_per_ele; fpt++) {
+          for (int field=0; field<n_fields; field++) {
+            // Convert to ref. space
+//            temp_f.initialize_to_zero();
+//            for(idim=0; idim<n_dims; idim++) {
+//              for(jdim=0; jdim<n_dims; jdim++) {
+//                temp_f(field,idim) += JGinv_dyn_upts(idim,jdim,fpt,ic)*tdisf_fpts(fpt,ic,field,jdim);
+//              }
+//            }
+
+            // Calculate & store normal discontinuous flux at flux points
+            norm_tdisf_fpts(fpt,ic,field) = 0;
+            for (int dim=0; dim<n_dims; dim++) {
+              norm_tdisf_fpts(fpt,ic,field) += tdisf_fpts(fpt,ic,field,dim)*norm_dyn_fpts(fpt,ic,dim)*ndA_dyn_fpts(fpt,ic);
+            }
+          }
+        }
+      }
+      // --- END LIANG-MIYAJI ---
       
 #elif defined _NO_BLAS
       dgemm(n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,0.0,opp_1(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),norm_tdisf_fpts.get_ptr_cpu());
@@ -1521,31 +1587,6 @@ void eles::extrapolate_totalFlux()
 #endif
     
   }
-  
-  /*
-   #ifdef _GPU
-   tdisinvf_upts.cp_gpu_cpu();
-   #endif
-   
-   cout << "Before" << endl;
-   for (int i=0;i<n_fpts_per_ele;i++)
-   for (int j=0;j<n_eles;j++)
-   for (int k=0;k<n_fields;k++)
-   for (int m=0;m<n_dims;m++)
-   cout << setprecision(10)  << i << " " << j<< " " << k << " " << tdisinvf_upts(i,j,k,m) << endl;
-   */
-  
-  /*
-   cout << "After,ele_type =" << ele_type << endl;
-   #ifdef _GPU
-   norm_tdisinvf_fpts.cp_gpu_cpu();
-   #endif
-   
-   for (int i=0;i<n_fpts_per_ele;i++)
-   for (int j=0;j<n_eles;j++)
-   for (int k=0;k<n_fields;k++)
-   cout << setprecision(10)  << i << " " << j<< " " << k << " " << norm_tdisinvf_fpts(i,j,k) << endl;
-   */
 }
 
 
@@ -1616,15 +1657,81 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
 #endif
     
   }
-  
-  /*
-   for (int j=0;j<n_eles;j++)
-   for (int i=0;i<n_upts_per_ele;i++)
-   //for (int k=0;k<n_fields;k++)
-   cout << scientific << setw(16) << setprecision(12) << div_tconf_upts(0)(i,j,0) << endl;
-   */
 }
 
+void eles::calculate_divergence_GCL(int in_div_tconf_upts_to)
+{
+  if (n_eles!=0)
+  {
+#ifdef _CPU
+
+    if(opp_2_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      /*--- Get full gradient of flux: dFj/dxi ---*/
+
+      for (int i=0; i<n_dims; i++) {
+        for (int j=0; j<n_dims; j++) {
+          cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,j),n_upts_per_ele,0.0,grad_disf_upts(i).get_ptr_cpu(0,0,0,j),n_upts_per_ele);
+        }
+      }
+
+      /*--- Liang-Miyaji form of transformation [just a simple chain rule from physical->computational, but including time derivatives] ---
+       *  Fr = s11*fr + s12*gr + s13*ur, Gs = s21*fs + s22*gs + s23*us
+       *  S = transpose of the cofactor matrix of the space-time Jacobian of the physical-static transform ---*/
+
+      int I = in_div_tconf_upts_to;
+      double A, B;
+      div_tconf_upts(I).initialize_to_zero();;
+
+      for (int ic=0; ic<n_eles; ic++) {
+        for (int upt=0; upt<n_upts_per_ele; upt++) {
+          for (int field=0; field<n_fields; field++) {
+
+            /*--- Gradients of physical flux vectors * spatial chain rule terms: dFj/dXi * dXi/dxj ---*/
+            for (int idim=0; idim<n_dims; idim++) {
+              for (int jdim=0; jdim<n_dims; jdim++) {
+                div_tconf_upts(I)(upt,ic,field) += JGinv_dyn_upts(idim,jdim,upt,ic)*grad_disf_upts(idim)(upt,ic,field,jdim);
+              }
+            }
+
+//            // Xi Derivatives
+//            div_tconf_upts(I)(upt,ic,field) = JGinv_dyn_upts(0,0,upt,ic) * grad_disf_upts(0)(upt,ic,field,0)
+//                                            + JGinv_dyn_upts(0,1,upt,ic) * grad_disf_upts(0)(upt,ic,field,1);
+
+//            // Eta Derivatives
+//            div_tconf_upts(I)(upt,ic,field)+= JGinv_dyn_upts(1,0,upt,ic) * grad_disf_upts(1)(upt,ic,field,0)
+//                                            + JGinv_dyn_upts(1,1,upt,ic) * grad_disf_upts(1)(upt,ic,field,1);
+
+            /*--- Contributions from solution gradient * time-dependant Jacobain cofactor terms ---*/
+            A = -JGinv_dyn_upts(0,1,upt,ic)*grid_vel_upts(upt,ic,1) - JGinv_dyn_upts(0,0,upt,ic)*grid_vel_upts(upt,ic,0);
+            B = -JGinv_dyn_upts(1,0,upt,ic)*grid_vel_upts(upt,ic,0) - JGinv_dyn_upts(1,1,upt,ic)*grid_vel_upts(upt,ic,1);
+            div_tconf_upts(I)(upt,ic,field) += A*grad_disu_upts(upt,ic,field,0);
+            div_tconf_upts(I)(upt,ic,field) += B*grad_disu_upts(upt,ic,field,1);
+
+          }
+        }
+      }
+
+#elif defined _NO_BLAS
+
+      for (int i=0; i<n_dims; i++) {
+        for (int j=0; j<n_dims; j++) {
+          dgemm(n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,0.0,opp_2(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,j),grad_disf_upts(i).get_ptr_cpu());
+        }
+      }
+
+#endif
+    }
+
+#endif
+
+#ifdef _GPU
+  FatalError("calculate_divergence_GCL not yet setup on GPU's (complete me, please!)")     ;
+#endif
+  }
+}
 
 // calculate divergence of the transformed continuous flux at the solution points
 
@@ -1636,6 +1743,7 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
     
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
     // Subtract the discontinous flux from the continuous flux to get the difference (for the correction function)
+    // (after this, norm_tconf_fpts stores the difference)
     cblas_daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
     
 #elif defined _NO_BLAS
@@ -1728,7 +1836,7 @@ void eles::calculate_gradient(int in_disu_upts_from)
     Astride = Arows;
     Bstride = Brows;
     Cstride = Arows;
-    
+
 #ifdef _CPU
     
     if(opp_4_sparse==0) // dense
@@ -1854,56 +1962,57 @@ void eles::correct_gradient(void)
     {
       for (int j=0;j<n_upts_per_ele;j++)
       {
-        // Transform to static-physical domain
-        detjac = detjac_upts(j,i);
-        inv_detjac = 1.0/detjac;
-        
-        rx = JGinv_upts(0,0,j,i)*inv_detjac;
-        ry = JGinv_upts(0,1,j,i)*inv_detjac;
-        sx = JGinv_upts(1,0,j,i)*inv_detjac;
-        sy = JGinv_upts(1,1,j,i)*inv_detjac;
-        
-        //physical gradient
-        if(n_dims==2)
-        {
-          for(int k=0;k<n_fields;k++)
-          {
-            ur = grad_disu_upts(j,i,k,0);
-            us = grad_disu_upts(j,i,k,1);
-            
-            grad_disu_upts(j,i,k,0) = ur*rx + us*sx;
-            grad_disu_upts(j,i,k,1) = ur*ry + us*sy;
-          }
-        }
-        if (n_dims==3)
-        {
-          rz = JGinv_upts(0,2,j,i)*inv_detjac;
-          sz = JGinv_upts(1,2,j,i)*inv_detjac;
-          
-          tx = JGinv_upts(2,0,j,i)*inv_detjac;
-          ty = JGinv_upts(2,1,j,i)*inv_detjac;
-          tz = JGinv_upts(2,2,j,i)*inv_detjac;
-          
-          for (int k=0;k<n_fields;k++)
-          {
-            ur = grad_disu_upts(j,i,k,0);
-            us = grad_disu_upts(j,i,k,1);
-            ut = grad_disu_upts(j,i,k,2);
-            
-            grad_disu_upts(j,i,k,0) = ur*rx + us*sx + ut*tx;
-            grad_disu_upts(j,i,k,1) = ur*ry + us*sy + ut*ty;
-            grad_disu_upts(j,i,k,2) = ur*rz + us*sz + ut*tz;
-          }
-        }
+        if (motion==STATIC_MESH) {
+          // Transform to static-physical domain
+          detjac = detjac_upts(j,i);
+          inv_detjac = 1.0/detjac;
 
-        if (motion) {
+          rx = JGinv_upts(0,0,j,i)*inv_detjac;
+          ry = JGinv_upts(0,1,j,i)*inv_detjac;
+          sx = JGinv_upts(1,0,j,i)*inv_detjac;
+          sy = JGinv_upts(1,1,j,i)*inv_detjac;
+
+          //physical gradient
+          if(n_dims==2)
+          {
+            for(int k=0;k<n_fields;k++)
+            {
+              ur = grad_disu_upts(j,i,k,0);
+              us = grad_disu_upts(j,i,k,1);
+
+              grad_disu_upts(j,i,k,0) = ur*rx + us*sx;
+              grad_disu_upts(j,i,k,1) = ur*ry + us*sy;
+            }
+          }
+          if (n_dims==3)
+          {
+            rz = JGinv_upts(0,2,j,i)*inv_detjac;
+            sz = JGinv_upts(1,2,j,i)*inv_detjac;
+
+            tx = JGinv_upts(2,0,j,i)*inv_detjac;
+            ty = JGinv_upts(2,1,j,i)*inv_detjac;
+            tz = JGinv_upts(2,2,j,i)*inv_detjac;
+
+            for (int k=0;k<n_fields;k++)
+            {
+              ur = grad_disu_upts(j,i,k,0);
+              us = grad_disu_upts(j,i,k,1);
+              ut = grad_disu_upts(j,i,k,2);
+
+              grad_disu_upts(j,i,k,0) = ur*rx + us*sx + ut*tx;
+              grad_disu_upts(j,i,k,1) = ur*ry + us*sy + ut*ty;
+              grad_disu_upts(j,i,k,2) = ur*rz + us*sz + ut*tz;
+            }
+          }
+        }
+        else if (motion!=STATIC_MESH) {
           // Transform to dynamic-physical domain
           detjac = J_dyn_upts(j,i);
           inv_detjac = 1.0/detjac;
 
           Xx = JGinv_dyn_upts(0,0,j,i)*inv_detjac;
           Xy = JGinv_dyn_upts(0,1,j,i)*inv_detjac;
-          Yx = JGinv_dyn_upts(1,1,j,i)*inv_detjac;
+          Yx = JGinv_dyn_upts(1,0,j,i)*inv_detjac;
           Yy = JGinv_dyn_upts(1,1,j,i)*inv_detjac;
 
           //physical gradient
@@ -1920,12 +2029,12 @@ void eles::correct_gradient(void)
           }
           if (n_dims==3)
           {
-            Xz = JGinv_dyn_upts(j,i,0,2)*inv_detjac;
-            Yz = JGinv_dyn_upts(j,i,1,2)*inv_detjac;
+            Xz = JGinv_dyn_upts(0,2,j,i)*inv_detjac;
+            Yz = JGinv_dyn_upts(1,2,j,i)*inv_detjac;
 
-            Zx = JGinv_dyn_upts(j,i,2,0)*inv_detjac;
-            Zy = JGinv_dyn_upts(j,i,2,1)*inv_detjac;
-            Zz = JGinv_dyn_upts(j,i,2,2)*inv_detjac;
+            Zx = JGinv_dyn_upts(2,0,j,i)*inv_detjac;
+            Zy = JGinv_dyn_upts(2,1,j,i)*inv_detjac;
+            Zz = JGinv_dyn_upts(2,2,j,i)*inv_detjac;
 
             for (int k=0;k<n_fields;k++)
             {
@@ -2378,11 +2487,11 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
         }
 
         // Transform to dynamic-physical domain
-        if (motion) {
-          for (k=0; k<n_fields; k++) {
-            temp_u(k) /= J_dyn_upts(j,i);
-          }
-        }
+//        if (motion) {
+//          for (k=0; k<n_fields; k++) {
+//            temp_u(k) /= J_dyn_upts(j,i); LIANG-MIYAJI
+//          }
+//        }
 
         if(n_dims==2)
         {
@@ -2443,30 +2552,35 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
 
         // Transfer back to static-phsycial domain
         if (motion) {
-          temp_f_ref.initialize_to_zero();
+//          temp_f_ref.initialize_to_zero();
+//          for(k=0;k<n_fields;k++) {
+//            for(l=0;l<n_dims;l++) {
+//              for(m=0;m<n_dims;m++) {
+//                temp_f_ref(k,l)+=JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
+//              }
+//            }
+//          }
+//          // Copy back to original flux array
+//          for(l=0; l<n_dims; l++) {
+//            for (k=0; k<n_fields; k++) {
+//              temp_f(k,l) = temp_f_ref(k,l);
+//            }
+//          }
+
+          // SETTING UP FOR LIANG-MIYAJI FORM OF GCL / TRANSFORMATION
+          for (k=0; k<n_fields; k++) {
+            for (l=0; l<n_dims; l++) {
+              tdisf_upts(j,i,k,l) = temp_f(k,l);
+            }
+          }
+        }else{
+          // --- remove the 'else' statement line to return to normal (before L-M version) ---
+          // Transform viscous flux
           for(k=0;k<n_fields;k++) {
             for(l=0;l<n_dims;l++) {
               for(m=0;m<n_dims;m++) {
-                temp_f_ref(k,l)+=JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
+                tdisf_upts(j,i,k,l)+=JGinv_upts(l,m,j,i)*temp_f(k,m);
               }
-            }
-          }
-          // Copy back to original flux array
-          for(l=0; l<n_dims; l++) {
-            for (k=0; k<n_fields; k++) {
-              temp_f(k,l) = temp_f_ref(k,l);
-            }
-          }
-        }
-        
-        // Transform viscous flux
-        for(k=0;k<n_fields;k++)
-        {
-          for(l=0;l<n_dims;l++)
-          {
-            for(m=0;m<n_dims;m++)
-            {
-              tdisf_upts(j,i,k,l)+=JGinv_upts(l,m,j,i)*temp_f(k,m);
             }
           }
         }
@@ -3539,7 +3653,7 @@ int eles::get_r_adapt_cells(array<int> &shock_cells)
      actually have sensor>s0 afterwards; therefore, reduce the threshold) --- */
 
   for (int ic=0; ic<n_eles; ic++)
-    if (sensor(ic) > run_input.s0/10)
+    if (sensor(ic) > run_input.s0/20)
       shocks[ic] = sensor(ic);
 
   /* --- If limiting the maximum number of cells we can be adapting to, find
@@ -3838,6 +3952,27 @@ void eles::set_opp_1(int in_sparse)
   else
   {
     cout << "ERROR: Invalid sparse matrix form ... " << endl;
+  }
+}
+
+void eles::set_opp_1_LM(int in_sparse)
+{
+  int j,k,l;
+  array<double> loc(n_dims);
+
+  opp_1_LM.setup(n_fpts_per_ele,n_upts_per_ele);
+
+  for(j=0;j<n_upts_per_ele;j++)
+  {
+    for(k=0;k<n_fpts_per_ele;k++)
+    {
+      for(l=0;l<n_dims;l++)
+      {
+        loc(l)=tloc_fpts(l,k);
+      }
+
+      opp_1_LM(k,j)=eval_nodal_basis(j,loc);
+    }
   }
 }
 
@@ -4261,7 +4396,7 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
       for(j=0;j<n_upts_per_ele;j++)
       {
         if (motion) {
-          disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i)/J_dyn_upts(j,in_ele);
+          disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);// /J_dyn_upts(j,in_ele); LIANG_MIYAJI
         }else{
           disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
         }
@@ -4899,7 +5034,6 @@ void eles::set_transforms_dynamic(void)
 
     array<double> pos(n_dims);
     array<double> d_pos(n_dims,n_dims);
-    array<double> dd_pos(n_dims,n_comp);
     array<double> norm_dot_JGinv(n_dims);  // un-normalized normal vector in moving-physical domain
 
     double xr, xs, xt;
@@ -4933,11 +5067,12 @@ void eles::set_transforms_dynamic(void)
 
           // store determinant of jacobian at solution point
           J_dyn_upts(j,i)= xr*ys - xs*yr;
+          detjac_upts(j,i) = J_dyn_upts(j,i); // LIANG-MIYAJI
 
-          if (first_time && run_input.GCL) {
-          //if (in_rkstep==0) {
-            Jbar_upts(0)(j,i) = J_dyn_upts(j,i);
-          }
+//          if (first_time && run_input.GCL) {
+//          //if (in_rkstep==0) {
+//            Jbar_upts(0)(j,i) = J_dyn_upts(j,i);
+//          }
 
           if (J_dyn_upts(j,i) < 0)
           {
@@ -4966,6 +5101,7 @@ void eles::set_transforms_dynamic(void)
 
           // store determinant of jacobian at solution point
           J_dyn_upts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
+          detjac_upts(j,i) = J_dyn_upts(j,i); // LIANG-MIYAJI
 
           // store determinant of jacobian multiplied by inverse of jacobian at the solution point
           JGinv_dyn_upts(0,0,j,i) = (ys*zt - yt*zs);
@@ -5021,11 +5157,12 @@ void eles::set_transforms_dynamic(void)
 
           // store determinant of dynamic transformation Jacobian at flux point
           J_dyn_fpts(j,i)= xr*ys - xs*yr;
+          detjac_fpts(j,i) = J_dyn_fpts(j,i);  // LIANG-MIYAJI
 
-          if (first_time && run_input.GCL) {
-          //if (in_rkstep==0) {
-            Jbar_fpts(0)(j,i) = J_dyn_fpts(j,i);
-          }
+//          if (first_time && run_input.GCL) {
+//          //if (in_rkstep==0) {
+//            Jbar_fpts(0)(j,i) = J_dyn_fpts(j,i);
+//          }
 
           if (J_dyn_fpts(j,i) < 0)
           {
@@ -5040,8 +5177,8 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_fpts(1,1,j,i)=  xr;
 
           // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
-          norm_dot_JGinv(0)= ( norm_fpts(j,i,0)*ys -norm_fpts(j,i,1)*yr);
-          norm_dot_JGinv(1)= (-norm_fpts(j,i,0)*xs +norm_fpts(j,i,1)*xr);
+          norm_dot_JGinv(0)= ( tnorm_fpts(0,j)*ys -tnorm_fpts(1,j)*yr); // LIANG-MIYAJI [changed norm_fpts(j,i,k) to tnorm_fpts(k,j)]
+          norm_dot_JGinv(1)= (-tnorm_fpts(0,j)*xs +tnorm_fpts(1,j)*xr); // LIANG-MIYAJI [changed norm_fpts to tnorm_fpts]
 
           // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
           ndA_dyn_fpts(j,i)=sqrt(norm_dot_JGinv(0)*norm_dot_JGinv(0)+
@@ -5068,6 +5205,7 @@ void eles::set_transforms_dynamic(void)
           // store determinant of jacobian at flux point
 
           J_dyn_fpts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
+          detjac_fpts(j,i) = J_dyn_fpts(j,i);  // LIANG-MIYAJI
 
           // store determinant of jacobian multiplied by inverse of jacobian at the flux point
 
@@ -5996,20 +6134,26 @@ void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
       for(j=0; j<n_dims; j++) {
         for(k=0; k<n_spts_per_ele(in_ele); k++) {
           dxdr(i,j) += shape_dyn(i,k,in_ele)*d_nodal_s_basis_fpts(j,k,in_fpt,in_ele);
-          //dxdr(i,j) += shape_dyn(i,k,in_ele)*d_nodal_s_basis_fpts(in_fpt,in_ele,j,k);
         }
       }
     }
 
-    // Calculate dx/dX using transformation matrix
-    out_d_pos.initialize_to_zero();
-    for(i=0; i<n_dims; i++) {
-      for(j=0; j<n_dims; j++) {
-        for(k=0; k<n_dims; k++) {
-          out_d_pos(i,j) += dxdr(i,k)*JGinv_fpts(k,j,in_fpt,in_ele)/detjac_fpts(in_fpt,in_ele);
-        }
+    // SETTING UP LIANG-MIYAJI FORM OF GCL; NO INTERMEDIATE STATIC-PHYSICAL TRANSFORM
+    for (i=0; i<n_dims; i++) {
+      for (j=0; j<n_dims; j++) {
+        out_d_pos(i,j) = dxdr(i,j);
       }
     }
+
+//    // Calculate dx/dX using transformation matrix
+//    out_d_pos.initialize_to_zero();
+//    for(i=0; i<n_dims; i++) {
+//      for(j=0; j<n_dims; j++) {
+//        for(k=0; k<n_dims; k++) {
+//          out_d_pos(i,j) += dxdr(i,k)*JGinv_fpts(k,j,in_fpt,in_ele)/detjac_fpts(in_fpt,in_ele);
+//        }
+//      }
+//    }
   }
 }
 
@@ -6041,20 +6185,26 @@ void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
       for(j=0; j<n_dims; j++) {
         for(k=0; k<n_spts_per_ele(in_ele); k++) {
           dxdr(i,j) += shape_dyn(i,k,in_ele)*d_nodal_s_basis_upts(j,k,in_upt,in_ele);
-          //dxdr(i,j) += shape_dyn(i,k,in_ele)*d_nodal_s_basis_upts(in_upt,in_ele,j,k);
         }
       }
     }
 
-    // Calculate dx/dX using transformation matrix
-    out_d_pos.initialize_to_zero();
-    for(i=0; i<n_dims; i++) {
-      for(j=0; j<n_dims; j++) {
-        for(k=0; k<n_dims; k++) {
-          out_d_pos(i,j) += dxdr(i,k)*JGinv_upts(k,j,in_upt,in_ele)/detjac_upts(in_upt,in_ele);
-        }
+    // SETTING UP LIANG-MIYAJI FORM OF GCL; NO INTERMEDIATE STATIC-PHYSICAL TRANSFORM
+    for (i=0; i<n_dims; i++) {
+      for (j=0; j<n_dims; j++) {
+        out_d_pos(i,j) = dxdr(i,j);
       }
     }
+
+//    // Calculate dx/dX using transformation matrix
+//    out_d_pos.initialize_to_zero();
+//    for(i=0; i<n_dims; i++) {
+//      for(j=0; j<n_dims; j++) {
+//        for(k=0; k<n_dims; k++) {
+//          out_d_pos(i,j) += dxdr(i,k)*JGinv_upts(k,j,in_upt,in_ele)/detjac_upts(in_upt,in_ele);
+//        }
+//      }
+//    }
   }
 }
 
@@ -6914,7 +7064,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
             for (int m=0;m<n_fields;m++) {
               double value = 0.;
               for (int k=0;k<n_upts_per_ele;k++)
-                value += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,m)/J_dyn_upts(k,ele);
+                value += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,m);// /J_dyn_upts(k,ele); LIANG-MIYAJI
               u_l(m) = value;
             }
           }

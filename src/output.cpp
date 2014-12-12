@@ -1017,11 +1017,11 @@ void write_restart(int in_file_num, struct solution* FlowSol, mesh &Mesh)
 #ifdef _MPI
   sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
   sprintf(file_name_s2,"Rest_Mesh_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
-  if (FlowSol->rank==0) cout << "Writing Restart file number " << in_file_num << " ...." << endl;
+  if (FlowSol->rank==0) cout << "Writing Restart file number " << in_file_num << " ... " << flush;
 #else
   sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,0);
   sprintf(file_name_s2,"Rest_Mesh_%.09d_p%.04d.dat",in_file_num,0);
-  cout << "Writing Restart file number " << in_file_num << " ...." << endl;
+  cout << "Writing Restart file number " << in_file_num << " ... " << flush;
 #endif
 
 

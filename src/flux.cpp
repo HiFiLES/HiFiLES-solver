@@ -43,8 +43,8 @@ void calc_invf_2d(array<double>& in_u, array<double>& in_vg, array<double>& out_
 
       vx=in_u(1)/in_u(0);
       vy=in_u(2)/in_u(0);
-      vgx=in_vg(0);
-      vgy=in_vg(1);
+      vgx=0*in_vg(0);   // 0* FOR LIANG-MIYAJI FORM
+      vgy=0*in_vg(1);   // 0* FOR LIANG-MIYAJI FORM
       p=(run_input.gamma-1.0)*(in_u(3)-(0.5*in_u(0)*((vx*vx)+(vy*vy))));
 
       out_f(0,0)=in_u(0)*(vx-vgx);

@@ -319,13 +319,16 @@ void mesh::move(int _iter, int in_rk_step, int n_rk_steps)
   if (n_rk_steps>1)
     rk_time = time+run_input.dt*RK_c(rk_step);
   else
-    rk_time = time + run_input.dt;
+    rk_time = time;// + run_input.dt; Think I was wrong to add dt here for forward Euler
 
   run_input.rk_time = rk_time;
 
   if (run_input.motion == LINEAR_ELASTICITY) {
+    set_min_length(); // Needed for r-adapt-force calculation
+    if (_iter==30001){
     if (run_input.r_adaption_flag && run_input.ArtifOn)
-      calc_r_adapt_force();
+      get_r_adapt_points();
+    }
     calc_boundary_displacements();
     deform();
   }else if (run_input.motion == RIGID_MOTION) {
@@ -348,10 +351,14 @@ void mesh::deform(void) {
   bool check;
 
   min_vol = check_grid();
-  set_min_length();
 
   if (rk_step==0) {
     push_back_xv();
+  }else{
+    /* --- Need to push mesh back to start of full time step before
+       deforming to new position (otherwise, deforming from previous RK
+       stage's position, which may not work well on the whole) --- */
+    xv(0) = xv(1);
   }
 
   // Setup stiffness matrices for each individual element,
@@ -401,8 +408,10 @@ void mesh::deform(void) {
 
     /*--- Set the RHS force vector (for adaptive mesh redistribution) using
       Abhishek's concentration sensor [note: force pre-calculated before calling 'deform'] ---*/
-    if (run_input.r_adaption_flag)
+    if (run_input.r_adaption_flag) {
+      calc_r_adapt_force();
       set_FEA_force_vector();
+    }
 
     /*--- Set the boundary displacements (as prescribed by the design variable
         perturbations controlling the surface shape) as a Dirichlet BC. ---*/
@@ -485,14 +494,14 @@ void mesh::set_min_length(void)
 void mesh::set_grid_velocity(double dt)
 {
 
-  if (run_input.motion == 3) {
+  if (run_input.motion == PERTURB_TEST) {
     /// Analytic solution for perturb test-case
     for (int i=0; i<n_verts; i++) {
       vel_new(i,0) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10); // from Kui
       vel_new(i,1) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10);
     }
   }
-  else if (run_input.motion == 2) {
+  else if (run_input.motion == RIGID_MOTION) {
 //    double r, theta0, theta, thetadot;
 //    for (int i=0; i<n_verts; i++) {
 //      /* --- Pitching Motion Contribution --- */
@@ -557,10 +566,11 @@ void mesh::set_grid_velocity(double dt)
   }
 }
 
-int mesh::calc_r_adapt_force(void)
+void mesh::get_r_adapt_points(void)
 {
-  int n_r_adapt = 0;
-  array<int> temp_cells, r_adapt_cells(0);
+  n_r_adapt = 0;
+  array<int> temp_cells;
+  r_adapt_cells.setup(0);
 
   // 1) Use 'sensor' array to get desired elements to adapt 2
   for (int i=0; i<FlowSol->n_ele_types; i++) {
@@ -571,7 +581,7 @@ int mesh::calc_r_adapt_force(void)
   }
 
   // 1.2) Get the centroids of the above cells
-  array<double> r_adapt_pts(n_r_adapt,n_dims);
+  r_adapt_pts.setup(n_r_adapt,n_dims);
   r_adapt_pts.initialize_to_zero();
 
   for (int ir=0; ir<n_r_adapt; ir++) {    
@@ -582,7 +592,10 @@ int mesh::calc_r_adapt_force(void)
       }
     }
   }
+}
 
+void mesh::calc_r_adapt_force(void)
+{
   // 2) Calculate distances (magnitude & vector) to the above points
   array<double> magDist(n_verts), dvec(n_verts, n_dims);
   double dist2, minDist2;
@@ -606,9 +619,11 @@ int mesh::calc_r_adapt_force(void)
           minPt = ipt;
         }
       }
+
       magDist(iv) = sqrt(minDist2);
+
       for (int k=0; k<n_dims; k++) {
-        dvec(iv,k) = r_adapt_pts(minPt,k) - xv(0)(iv,k);
+        dvec(iv,k) = (r_adapt_pts(minPt,k) - xv(0)(iv,k))/magDist(iv);
       }
     }
 
@@ -617,7 +632,9 @@ int mesh::calc_r_adapt_force(void)
     double Ftot;
     for (int iv=0; iv<n_verts; iv++) {
       if (magDist(iv) < blend_dist) {
-        Ftot = forceMag/magDist(iv)*(sqrt(magDist(iv)/blend_dist) - magDist(iv)/blend_dist);
+        // pow factor can be tuned to adjust force profile (vs. magDist)
+        //Ftot = forceMag*(pow(magDist(iv)/blend_dist,1/2) - magDist(iv)/blend_dist); // /magDist(iv)
+        Ftot = forceMag*pow(1-magDist(iv)/blend_dist,2)*(2*magDist(iv)/blend_dist+1);
         Ftot *= get_h_min_vertex(iv)/min_length;
         for (int k=0; k<n_dims; k++) {
           force(iv,k) = dvec(iv,k)*Ftot;
@@ -625,8 +642,6 @@ int mesh::calc_r_adapt_force(void)
       }
     }
   }
-
-  return n_r_adapt;
 }
 
 double mesh::get_h_min_vertex(int &in_vert)
@@ -654,8 +669,15 @@ double mesh::get_h_min_vertex(int &in_vert)
 /** Set the RHS of the linear-elasticity system equal to the previously calculated force */
 void mesh::set_FEA_force_vector(void)
 {
-  int iv, k;
+  int ic, iv, ir, k;
   unsigned long total_index;
+  double VarIncrement = 1.0;
+
+  /*--- If requested (no by default) impose the desired deflections in
+    increments and solve the grid deformation equations iteratively with
+    successive small deformations. ---*/
+
+  VarIncrement = 1.0/((double)run_input.n_deform_iters);
 
   /*--- Applying point forces to points, so just add the forces to RHS at each point
      [No need for any special integration / quadrature / use of shape funcs] ---*/
@@ -665,7 +687,23 @@ void mesh::set_FEA_force_vector(void)
     for (k=0; k<n_dims; k++) {
       total_index = iv*n_dims + k;
       LinSysRes[total_index] = force(iv,k);
-      //cout << "Force(" << iv << "," << k << "): " << force(iv,k) << endl;
+    }
+  }
+
+  /*--- Assign a displacement to all points in "shock cells" ---*/
+  for (ir=0; ir<n_r_adapt; ir++) {
+
+    ic = r_adapt_cells(ir);
+
+    for (iv=0; iv<c2n_v(ic); iv++) {
+      for (k=0; k<n_dims; k++) {
+        total_index = c2v(ic,iv)*n_dims + k;
+        // need to actually calculate this still (like, disp = cell_dia/10 in direction of centroid)
+        // [for now, dipslacement just = 0]
+        LinSysRes[total_index] = displacement(c2v(ic,iv),k) * VarIncrement;
+        LinSysSol[total_index] = displacement(c2v(ic,iv),k) * VarIncrement;
+        StiffnessMatrix.DeleteValsRowi(total_index);
+      }
     }
   }
 }
@@ -1672,21 +1710,15 @@ void mesh::update_grid_coords(void)
 {
   unsigned short iDim;
   unsigned long iPoint, total_index;
-  double new_coord;
 
   /*--- Update the grid coordinates using the solution of the linear system
    after grid deformation (LinSysSol contains the x, y, z displacements). ---*/
 
   for (iPoint = 0; iPoint < n_verts; iPoint++) {
-    //cout << "delta xy: ";
     for (iDim = 0; iDim < n_dims; iDim++) {
       total_index = iPoint*n_dims + iDim;
-      new_coord = xv(0)(iPoint,iDim) + LinSysSol[total_index];
-      //cout << LinSysSol[total_index] << ", ";
-      //if (fabs(new_coord) < eps*eps) new_coord = 0.0;
-      xv(0)(iPoint,iDim) = new_coord;
+      xv(0)(iPoint,iDim) += LinSysSol[total_index];
     }
-    //cout << endl;
   }
 }
 
@@ -1700,9 +1732,40 @@ double mesh::check_grid(void) {
   /*--- Load up each triangle and tetrahedron to check for negative volumes. ---*/
 
   for (iElem = 0; iElem < n_eles; iElem++) {
-    /*--- Triangles ---*/
-    if (n_dims == 2) {
 
+    //Area = get_elem_area(iElem);
+
+    if (ctype(iElem)==QUAD) {
+
+      // http://en.wikipedia.org/wiki/Bretschneider%27s_formula
+      double A[2], B[2], C[2], D[2];
+      double a, b, c, d, s, alpha, gamma;
+
+      for (iDim = 0; iDim < n_dims; iDim++) {
+        A[iDim] = xv(0)(c2v(iElem,1),iDim)-xv(0)(c2v(iElem,0),iDim);
+        B[iDim] = xv(0)(c2v(iElem,1),iDim)-xv(0)(c2v(iElem,3),iDim);
+        C[iDim] = xv(0)(c2v(iElem,2),iDim)-xv(0)(c2v(iElem,3),iDim);
+        D[iDim] = xv(0)(c2v(iElem,2),iDim)-xv(0)(c2v(iElem,0),iDim);
+      }
+
+      a = sqrt(A[0]*A[0]+A[1]*A[1]);
+      b = sqrt(B[0]*B[0]+B[1]*B[1]);
+      c = sqrt(C[0]*C[0]+C[1]*C[1]);
+      d = sqrt(D[0]*D[0]+D[1]*D[1]);
+      s = (a+b+c+d)/2;
+
+      alpha = acos((A[0]*D[0]+A[1]*D[1])/(a*d));
+      gamma = acos((B[0]*C[0]+B[1]*C[1])/(b*c));
+
+      Area = sqrt((s-a)*(s-b)*(s-c)*(s-d)-1/2*a*b*c*d*(1+cos(alpha+gamma)));
+
+      //MaxArea = max(MaxArea,Area);
+      MinArea = min(MinArea, Area);
+
+    }
+    else if (ctype(iElem)==TRI) {
+
+      /*--- Triangles ---*/
       double a[2], b[2];
       for (iDim = 0; iDim < n_dims; iDim++) {
         a[iDim] = xv(0)(c2v(iElem,0),iDim)-xv(0)(c2v(iElem,1),iDim);
@@ -1715,10 +1778,11 @@ double mesh::check_grid(void) {
       MinArea = min(MinArea, Area);
 
       NegVol = (MinArea < 0);
-    }
 
-    /*--- Tetrahedra ---*/
-    if (n_dims == 3) {
+    }
+    else if (ctype(iElem)==TET) {
+
+      /*--- Tetrahedra ---*/
       double r1[3], r2[3], r3[3], CrossProduct[3];
 
       for (iDim = 0; iDim < n_dims; iDim++) {
@@ -1736,8 +1800,14 @@ double mesh::check_grid(void) {
       //MaxVolume = max(MaxVolume, Volume);
       MinVolume = min(MinVolume, Volume);
 
-      NegVol = (MinVolume < 0);
+    }else{
+
+      FatalError("Element type not yet supported in linear-elasticity method.");
+
     }
+
+    if (n_dims==2) NegVol = (MinArea < 0);
+    if (n_dims==3) NegVol = (MinVolume < 0);
 
     if (NegVol) ElemCounter++;
   }

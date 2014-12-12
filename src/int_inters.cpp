@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+//#define _CPU
 #include <iostream>
 #include <cmath>
 
@@ -232,14 +232,15 @@ void int_inters::calculate_common_invFlux(void)
 
       if (motion) {
         // Transform solution to dynamic space
-        for (int k=0; k<n_fields; k++) {
-          temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
-          temp_u_r(k) /= (*J_dyn_fpts_r(j,i));
-        }
-        // Get mesh velocity
-        for (int k=0; k<n_dims; k++) {
-          temp_v(k)=(*grid_vel_fpts(j,i,k));
-        }
+//        for (int k=0; k<n_fields; k++) {
+//          temp_u_l(k) /= (*J_dyn_fpts_l(j,i));  LIANG-MIYAJI
+//          temp_u_r(k) /= (*J_dyn_fpts_r(j,i));  LIANG-MIYAJI
+//        }
+//        // Get mesh velocity
+//        for (int k=0; k<n_dims; k++) {
+//          temp_v(k)=0*(*grid_vel_fpts(j,i,k));  LIANG-MIYAJI
+//        }
+        temp_v.initialize_to_zero();
       }else{
         temp_v.initialize_to_zero();
       }
@@ -283,8 +284,8 @@ void int_inters::calculate_common_invFlux(void)
       if (motion)
       {
         for(int k=0; k<n_fields; k++) {
-          (*norm_tconf_fpts_l(j,i,k)) = fn(k)*(*ndA_dyn_fpts_l(j,i))*(*tdA_fpts_l(j,i));
-          (*norm_tconf_fpts_r(j,i,k)) =-fn(k)*(*ndA_dyn_fpts_r(j,i))*(*tdA_fpts_r(j,i));
+          (*norm_tconf_fpts_l(j,i,k)) = fn(k)*(*ndA_dyn_fpts_l(j,i));//*(*tdA_fpts_l(j,i));  LIANG-MIYAJI
+          (*norm_tconf_fpts_r(j,i,k)) =-fn(k)*(*ndA_dyn_fpts_r(j,i));//*(*tdA_fpts_r(j,i));  LIANG-MIYAJI
         }
       }
       else
@@ -307,8 +308,8 @@ void int_inters::calculate_common_invFlux(void)
         if (motion) // include transformation back to static space
         {
           for(int k=0;k<n_fields;k++) {
-            *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k))*(*J_dyn_fpts_l(j,i));
-            *delta_disu_fpts_r(j,i,k) = (u_c(k) - temp_u_r(k))*(*J_dyn_fpts_r(j,i));
+            *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k));//*(*J_dyn_fpts_l(j,i));  LIANG-MIYAJI
+            *delta_disu_fpts_r(j,i,k) = (u_c(k) - temp_u_r(k));//*(*J_dyn_fpts_r(j,i));  LIANG-MIYAJI
           }
         }
         else
@@ -352,8 +353,8 @@ void int_inters::calculate_common_viscFlux(void)
           // Transform to dynamic-physical domain
           for(int k=0;k<n_fields;k++)
           {
-            temp_u_l(k)=(*disu_fpts_l(j,i,k))/(*J_dyn_fpts_l(j,i));
-            temp_u_r(k)=(*disu_fpts_r(j,i,k))/(*J_dyn_fpts_r(j,i));
+            temp_u_l(k)=(*disu_fpts_l(j,i,k));// /(*J_dyn_fpts_l(j,i)); LIANG-MIYAJI
+            temp_u_r(k)=(*disu_fpts_r(j,i,k));// /(*J_dyn_fpts_r(j,i));
           }
         }
         else
@@ -426,8 +427,8 @@ void int_inters::calculate_common_viscFlux(void)
           // Transform back to reference space
           if (motion) {
             for(int k=0;k<n_fields;k++) {
-              (*norm_tconf_fpts_l(j,i,k))+=  fn(k)*(*tdA_fpts_l(j,i))*(*ndA_dyn_fpts_l(j,i));
-              (*norm_tconf_fpts_r(j,i,k))+= -fn(k)*(*tdA_fpts_r(j,i))*(*ndA_dyn_fpts_r(j,i));
+              (*norm_tconf_fpts_l(j,i,k))+=  fn(k)*(*ndA_dyn_fpts_l(j,i));//*(*tdA_fpts_l(j,i)); LIANG-MIYAJI
+              (*norm_tconf_fpts_r(j,i,k))+= -fn(k)*(*ndA_dyn_fpts_r(j,i));//*(*tdA_fpts_r(j,i)); LIANG-MIYAJI
             }
           }
           else

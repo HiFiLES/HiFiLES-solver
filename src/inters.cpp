@@ -313,6 +313,11 @@ void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> 
   double vx_l,vy_l,vx_r,vy_r,vz_l,vz_r,vn_l,vn_r,p_l,p_r,vn_g,vn_av_mag,c_av,eig;
   array<double> fn_l(n_fields),fn_r(n_fields);
 
+  // --- LIANG-MIYAJI ---
+//  calc_alef_2d(u_l,v_g,f_l);
+//  calc_alef_2d(u_r,v_g,f_r);
+  // --- LIANG-MIYAJI ---
+
   // calculate normal flux from discontinuous solution at flux points
   for(int k=0;k<n_fields;k++) {
 

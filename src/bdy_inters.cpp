@@ -270,9 +270,9 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 
         if (motion) {
           // Transform solution to dynamic space
-          for (int k=0; k<n_fields; k++) {
-            temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
-          }
+//          for (int k=0; k<n_fields; k++) {
+//            temp_u_l(k) /= (*J_dyn_fpts_l(j,i));  LIANG-MIYAJI
+//          }
           // Get dynamic grid velocity
           for(int k=0; k<n_dims; k++) {
             temp_v(k)=(*grid_vel_fpts(j,i,k));
@@ -327,7 +327,7 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
           /*! Transform back to reference space */
           if (motion) {
             for(int k=0;k<n_fields;k++) {
-              (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*ndA_dyn_fpts_l(j,i))*(*tdA_fpts_l(j,i));
+              (*norm_tconf_fpts_l(j,i,k))=fn(k)*(*ndA_dyn_fpts_l(j,i));//*(*tdA_fpts_l(j,i));  LIANG-MIYAJI
             }
           }
           else
@@ -356,7 +356,7 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
               if (motion) {
                 // Transform back to static-physical domain
                 for(int k=0;k<n_fields;k++){
-                  *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k))*(*J_dyn_fpts_l(j,i));
+                  *delta_disu_fpts_l(j,i,k) = (u_c(k) - temp_u_l(k));//*(*J_dyn_fpts_l(j,i));  LIANG-MIYAJI
                 }
               }
               else
@@ -909,7 +909,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
       if (motion) {
         /*! obtain discontinuous solution at flux points (transform to dynamic physical domain) */
         for(int k=0;k<n_fields;k++)
-          temp_u_l(k)=(*disu_fpts_l(j,i,k))/(*J_dyn_fpts_l(j,i));
+          temp_u_l(k)=(*disu_fpts_l(j,i,k));// /(*J_dyn_fpts_l(j,i)); LIANG-MIYAJI
 
         /*! Get grid velocity, normal components and flux points location */
         for (int m=0;m<n_dims;m++) {
@@ -1015,7 +1015,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
           /*! Transform back to reference space. */
           if (motion) {
             for(int k=0;k<n_fields;k++)
-              (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*tdA_fpts_l(j,i))*(*ndA_dyn_fpts_l(j,i));
+              (*norm_tconf_fpts_l(j,i,k))+=fn(k)*(*ndA_dyn_fpts_l(j,i));//*(*tdA_fpts_l(j,i)); LIANG-MIYAJI
           }
           else
           {

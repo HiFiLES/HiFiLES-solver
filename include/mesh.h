@@ -176,6 +176,7 @@ public:
   array< array<double> > grid_vel;
 
   double get_h_min_vertex(int &in_vert);
+  void get_r_adapt_points(void);
 private:
   bool start;
   array<double> xv_nm1, xv_nm2, xv_nm3;//, xv_new, vel_old, vel_new;
@@ -210,8 +211,9 @@ private:
   // ------                         ------
 
   // ----    R-ADAPTATION VARIABLES   ----
-  array<double> force;
-  int n_force;
+  array<double> force, r_adapt_pts;
+  array<int> r_adapt_cells;
+  int n_r_adapt;
   // ------                         ------
 
   // Coefficients for LS-RK45 time-stepping
@@ -224,7 +226,7 @@ private:
   void set_boundary_displacements(void);
 
   /** Find cells to adapt to & calculate forces to apply to all points */
-  int calc_r_adapt_force(void);
+  void calc_r_adapt_force(void);
 
   /** RHS (forcing for adaptive mesh redistribution) */
   void set_FEA_force_vector(void);

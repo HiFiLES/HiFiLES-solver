@@ -480,9 +480,7 @@ void input::setup(ifstream& in_run_input_file, int rank)
           bound_vel_simple(i).setup(12);
           for (int j=0; j<12; j++) {
             in_run_input_file >> bound_vel_simple(i)(j);
-            cout << bound_vel_simple(i)(j) << " ";
           }
-          cout << endl;
         }
       }
     }
@@ -502,8 +500,8 @@ void input::setup(ifstream& in_run_input_file, int rank)
     }
     else if (!param_name.compare("rigid_motion_params"))
     {
-      rigid_motion_params.setup(8);
-      for (int i=0; i<8; i++)
+      rigid_motion_params.setup(12);
+      for (int i=0; i<12; i++)
         in_run_input_file >> rigid_motion_params(i);
     }
     else if (!param_name.compare("mesh_output_freq"))

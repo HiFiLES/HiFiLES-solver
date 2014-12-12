@@ -125,9 +125,9 @@ void eles_quads::setup_ele_type_specific()
   set_opp_2(run_input.sparse_quad);
   set_opp_3(run_input.sparse_quad);
 
-  if(viscous)
-    {
-      set_opp_4(run_input.sparse_quad);
+//  if(viscous)
+//    {
+      set_opp_4(run_input.sparse_quad); // LIANG-MIYAJI
       set_opp_5(run_input.sparse_quad);
       set_opp_6(run_input.sparse_quad);
 
@@ -135,7 +135,7 @@ void eles_quads::setup_ele_type_specific()
 
       // Compute quad filter matrix
       if(filter) compute_filter_upts();
-    }
+//    }
 
   temp_u.setup(n_fields);
   temp_f.setup(n_fields,n_dims);
@@ -1165,7 +1165,7 @@ void eles_quads::fill_opp_3(array<double>& opp_3)
 
 double eles_quads::eval_div_vcjh_basis(int in_index, array<double>& loc)
 {
-  int i,j;
+  int iface,fpt;
   double eta;
   double div_vcjh_basis;
   int scheme = run_input.vcjh_scheme_quad;
@@ -1175,45 +1175,45 @@ double eles_quads::eval_div_vcjh_basis(int in_index, array<double>& loc)
   else if (scheme < 5)
     eta = compute_eta(run_input.vcjh_scheme_quad,order);
   
-  i=in_index/n_fpts_per_inter(0);
-  j=in_index-(n_fpts_per_inter(0)*i);
+  iface=in_index/n_fpts_per_inter(0);            // Element-local index of edge to which fpt belongs
+  fpt=in_index-(n_fpts_per_inter(0)*iface);    // Edge-local flux-point ID
 
   if (scheme < 5) {
 
-    if(i==0)
-      div_vcjh_basis = -eval_lagrange(loc(0),j,loc_1d_upts) * eval_d_vcjh_1d(loc(1),0,order,eta);
-    else if(i==1)
-      div_vcjh_basis = eval_lagrange(loc(1),j,loc_1d_upts) * eval_d_vcjh_1d(loc(0),1,order,eta);
-    else if(i==2)
-      div_vcjh_basis = eval_lagrange(loc(0),order-j,loc_1d_upts) * eval_d_vcjh_1d(loc(1),1,order,eta);
-    else if(i==3)
-      div_vcjh_basis = -eval_lagrange(loc(1),order-j,loc_1d_upts) * eval_d_vcjh_1d(loc(0),0,order,eta);
+    if(iface==0) // "bottom"
+      div_vcjh_basis = -eval_lagrange(loc(0),fpt,loc_1d_upts) * eval_d_vcjh_1d(loc(1),0,order,eta);
+    else if(iface==1) // "right"
+      div_vcjh_basis = eval_lagrange(loc(1),fpt,loc_1d_upts) * eval_d_vcjh_1d(loc(0),1,order,eta);
+    else if(iface==2) // "top"
+      div_vcjh_basis = eval_lagrange(loc(0),order-fpt,loc_1d_upts) * eval_d_vcjh_1d(loc(1),1,order,eta);
+    else if(iface==3) // "left"
+      div_vcjh_basis = -eval_lagrange(loc(1),order-fpt,loc_1d_upts) * eval_d_vcjh_1d(loc(0),0,order,eta);
 
   }
   // OFR scheme
   else if (scheme == 5) {
 
-    if(i==0)
-      div_vcjh_basis = -eval_lagrange(loc(0),j,loc_1d_upts) * eval_d_ofr_1d(loc(1),0,order);
-    else if(i==1)
-      div_vcjh_basis = eval_lagrange(loc(1),j,loc_1d_upts) * eval_d_ofr_1d(loc(0),1,order);
-    else if(i==2)
-      div_vcjh_basis = eval_lagrange(loc(0),order-j,loc_1d_upts) * eval_d_ofr_1d(loc(1),1,order);
-    else if(i==3)
-      div_vcjh_basis = -eval_lagrange(loc(1),order-j,loc_1d_upts) * eval_d_ofr_1d(loc(0),0,order);
+    if(iface==0)
+      div_vcjh_basis = -eval_lagrange(loc(0),fpt,loc_1d_upts) * eval_d_ofr_1d(loc(1),0,order);
+    else if(iface==1)
+      div_vcjh_basis = eval_lagrange(loc(1),fpt,loc_1d_upts) * eval_d_ofr_1d(loc(0),1,order);
+    else if(iface==2)
+      div_vcjh_basis = eval_lagrange(loc(0),order-fpt,loc_1d_upts) * eval_d_ofr_1d(loc(1),1,order);
+    else if(iface==3)
+      div_vcjh_basis = -eval_lagrange(loc(1),order-fpt,loc_1d_upts) * eval_d_ofr_1d(loc(0),0,order);
 
   }
   // OESFR scheme
   else if (scheme == 6) {
 
-    if(i==0)
-      div_vcjh_basis = -eval_lagrange(loc(0),j,loc_1d_upts) * eval_d_oesfr_1d(loc(1),0,order);
-    else if(i==1)
-      div_vcjh_basis = eval_lagrange(loc(1),j,loc_1d_upts) * eval_d_oesfr_1d(loc(0),1,order);
-    else if(i==2)
-      div_vcjh_basis = eval_lagrange(loc(0),order-j,loc_1d_upts) * eval_d_oesfr_1d(loc(1),1,order);
-    else if(i==3)
-      div_vcjh_basis = -eval_lagrange(loc(1),order-j,loc_1d_upts) * eval_d_oesfr_1d(loc(0),0,order);
+    if(iface==0)
+      div_vcjh_basis = -eval_lagrange(loc(0),fpt,loc_1d_upts) * eval_d_oesfr_1d(loc(1),0,order);
+    else if(iface==1)
+      div_vcjh_basis = eval_lagrange(loc(1),fpt,loc_1d_upts) * eval_d_oesfr_1d(loc(0),1,order);
+    else if(iface==2)
+      div_vcjh_basis = eval_lagrange(loc(0),order-fpt,loc_1d_upts) * eval_d_oesfr_1d(loc(1),1,order);
+    else if(iface==3)
+      div_vcjh_basis = -eval_lagrange(loc(1),order-fpt,loc_1d_upts) * eval_d_oesfr_1d(loc(0),0,order);
 
   }
 

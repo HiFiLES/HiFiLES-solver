@@ -103,11 +103,11 @@ void CalcResidual(struct solution* FlowSol) {
       FlowSol->mesh_mpi_inters(i).send_solution();
 #endif
 
-  if (FlowSol->viscous) {
+  //if (FlowSol->viscous) {
       /*! Compute the uncorrected gradient of the solution at the solution points. */
       for(i=0; i<FlowSol->n_ele_types; i++)
         FlowSol->mesh_eles(i)->calculate_gradient(in_disu_upts_from);
-    }
+  //}
 
   /*! Compute the inviscid flux at the solution points and store in total flux storage. */
   for(i=0; i<FlowSol->n_ele_types; i++)
@@ -175,8 +175,13 @@ void CalcResidual(struct solution* FlowSol) {
     FlowSol->mesh_eles(i)->extrapolate_totalFlux();
 
   /*! For viscous or inviscid, compute the divergence of flux at solution points. */
-  for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calculate_divergence(in_div_tconf_upts_to);
+  for(i=0; i<FlowSol->n_ele_types; i++) {
+    if (run_input.motion!=STATIC_MESH) { //&& run_input.GCL){
+      FlowSol->mesh_eles(i)->calculate_divergence_GCL(in_div_tconf_upts_to);
+    }else{
+      FlowSol->mesh_eles(i)->calculate_divergence(in_div_tconf_upts_to);
+    }
+  }
 
   if (FlowSol->viscous) {
       /*! Compute normal interface viscous flux and add to normal inviscid flux. */
