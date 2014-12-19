@@ -562,8 +562,7 @@ void eles::set_ics(double& time)
           p = 0.0;
           ics(1) = sin(pos(0)/2.)*cos(pos(1)/2.);
           ics(2) = -1.0*cos(pos(0)/2.)*sin(pos(1)/2.);
-          ics(3) = 0.0;
-          ics(4)=p/(gamma-1.0)+0.5*rho*(ics(1)*ics(1)+ics(2)*ics(2));
+          ics(3)=p/(gamma-1.0)+0.5*rho*(ics(1)*ics(1)+ics(2)*ics(2));
         }
         else if(n_dims==3)
         {
@@ -593,7 +592,7 @@ void eles::set_ics(double& time)
         L_x = 2.*pi;
         L_y = pi;
         L_z = 2.;
-        ics(3) += alpha*exp(pow(-((pos(0)-L_x/2.)/L_x),2))*exp(pow(-(pos(1)/L_y),2))*cos(4.*pi*pos(2)/L_z);
+        ics(3) += alpha*exp(-pow((pos(0)-L_x/2.)/L_x,2))*exp(-pow(pos(1)/L_y,2))*cos(4.*pi*pos(2)/L_z);
       }
       
       // set solution at solution point
