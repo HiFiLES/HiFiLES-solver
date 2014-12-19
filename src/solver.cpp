@@ -81,7 +81,7 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 
   if(run_input.ArtifOn) {
 
-    #ifdef _GPU
+    // #ifdef _GPU
 
       if(run_input.artif_type == 1){
           /*! This routine does shock detection. For concentration method filter is also applied in this routine itself */
@@ -89,7 +89,7 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
             FlowSol->mesh_eles(i)->shock_capture_concentration(in_disu_upts_from);
       }
 
-    #endif
+    // #endif
   }
 
   /*! Compute the solution at the flux points. */

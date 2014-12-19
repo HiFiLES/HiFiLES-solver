@@ -53,8 +53,6 @@ public:
   void set_dt(double in_dt);
 
   void setup(ifstream& in_run_input_file, int rank);
-  
-  void reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, int dev_ind, int dim_ind);
 
   // #### members ####
 
@@ -109,6 +107,7 @@ public:
   int restart_flag;
   int restart_iter;
   int n_restart_files;
+  int restart_mesh_out; // Print out separate restart file with X,Y,Z of all sol'n points?
 
   int ic_form;
 
