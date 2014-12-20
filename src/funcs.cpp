@@ -454,7 +454,7 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 
   #else // inefficient matrix multiplication
 
-  mtemp = mult_arrays(ivandermonde,modal);
+  mtemp = mult_arrays(vandermonde,modal);
   filter_upts = mult_arrays(mtemp,inv_vandermonde);
 
   #endif
