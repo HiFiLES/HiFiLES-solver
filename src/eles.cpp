@@ -190,10 +190,11 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     for (int m=0;m<n_adv_levels;m++)
       disu_upts(m).initialize_to_zero();
     
-    // Allocate storage for time-averaged diagnostic fields
+    // Set no. of diagnostic fields
     n_diagnostic_fields = run_input.n_diagnostic_fields;
-    
-    for(int i=0;i<n_diagnostic_fields;++i) {
+
+    // Allocate storage for time-averaged velocity components    
+    for(int i=0;i<run_input.n_diagnostic_fields;++i) {
       if(run_input.diagnostic_fields(i) == "u_average") {
         u_average.setup(n_upts_per_ele,n_eles);
         u_average.initialize_to_zero();
@@ -4342,8 +4343,7 @@ void eles::calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts)
 }
 
 // calculate diagnostic fields at the plot points
-// calculate diagnostic fields at the plot points
-void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double>& in_epsilon_ppts, array<double>& out_diag_field_ppts)
+void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double>& in_epsilon_ppts, array<double>& out_diag_field_ppts, double& time)
 {
   int i,j,k,m;
   double diagfield_upt;
@@ -4461,10 +4461,67 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
           }
         }
       }
-      else if (run_input.diagnostic_fields(k)=="average_u" || run_input.diagnostic_fields(k)=="average_v" || run_input.diagnostic_fields(k)=="average_w")
+      else if (run_input.diagnostic_fields(k)=="u_average" || run_input.diagnostic_fields(k)=="v_average" || run_input.diagnostic_fields(k)=="w_average")
       {
-        double av=0.0;
-        diagfield_upt = av;
+        double current_value, average_value;
+        double a, b, dt;
+
+        if(run_input.diagnostic_fields(k)=="u_average") {
+          current_value = in_disu_ppts(j,1)*irho;
+          average_value = u_average(j,in_ele);
+        }
+        else if(run_input.diagnostic_fields(k)=="v_average") {
+          current_value = in_disu_ppts(j,2)*irho;
+          average_value = v_average(j,in_ele);
+        }
+        else if(run_input.diagnostic_fields(k)=="w_average") {
+          current_value = in_disu_ppts(j,3)*irho;
+          average_value = w_average(j,in_ele);
+        }
+
+        spinup_time = run_input.spinup_time;
+        cout << "time, spinup time " << setprecision(5) << time << ", " << spinup_time << endl;
+        cout << "current value, average value " << setprecision(5) << current_value << ", " << average_value << endl;
+
+        // set average value to current value if before spinup time
+        if(time <= spinup_time) {
+          diagfield_upt = current_value;
+        }
+        // calculate running average
+        else {
+          // get timestep
+          if (run_input.dt_type == 0)
+            dt = run_input.dt;
+          else if (run_input.dt_type == 1)
+            dt = dt_local(0);
+          else if (run_input.dt_type == 2)
+            FatalError("Not sure what value of timestep to use in body force term when using local timestepping.");
+
+          // running average value
+          // safeguarding against division by a very small number
+          if(time-spinup_time < 1.0e-12) {
+            a = 0.0;
+            b = 1.0;
+          }
+          else {
+            a = (time-spinup_time-dt)/(time-spinup_time);
+            b = dt/(time-spinup_time);
+          }
+          cout << "a, b " << setprecision(5) << a << ", " << b << endl;
+          diagfield_upt = a*average_value + b*current_value;
+
+          // Set new average value for next timestep
+          if(run_input.diagnostic_fields(k)=="u_average") {
+            u_average(j,in_ele) = diagfield_upt;
+          }
+          else if(run_input.diagnostic_fields(k)=="v_average") {
+            v_average(j,in_ele) = diagfield_upt;
+          }
+          else if(run_input.diagnostic_fields(k)=="w_average") {
+            w_average(j,in_ele) = diagfield_upt;
+          }
+        }
+        cout << "current value, average value " << setprecision(5) << current_value << ", " << average_value << endl;
       }
 
       // Artificial Viscosity diagnostics

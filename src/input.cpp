@@ -108,6 +108,7 @@ input::input()
   restart_mesh_out = 0;
   mesh_output_freq = INFINITY;
   mesh_output_format = 1;
+  spinup_time = 0.0;
 
   // Set shock capturing parameters to 0 in case they are not used
   ArtifOn = 0;
@@ -254,6 +255,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
       diagnostic_fields.setup(n_diagnostic_fields);
       for (int i=0;i<n_diagnostic_fields;i++)
         in_run_input_file >> diagnostic_fields(i);
+    }
+    else if (!param_name.compare("spinup_time"))
+    {
+      in_run_input_file >> spinup_time;
     }
     else if (!param_name.compare("inters_cub_order"))
     {

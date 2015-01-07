@@ -238,7 +238,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
                 {
-                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp);
+                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j, disu_ppts_temp, grad_disu_ppts_temp, sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp, FlowSol->time);
                 }
 
               for(k=0;k<n_ppts_per_ele;k++)
@@ -788,7 +788,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 }
 
                 /*! Calculate the diagnostic fields at the plot points */
-                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j,disu_ppts_temp,grad_disu_ppts_temp,sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp);
+                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j, disu_ppts_temp, grad_disu_ppts_temp, sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp, FlowSol->time);
               }
 
               /*! write out solution to file */

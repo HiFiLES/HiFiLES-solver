@@ -309,7 +309,7 @@ public:
   void calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts);
 
   /*! calculate diagnostic fields at the plot points */
-  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double> &in_epsilon_ppts, array<double>& out_diag_field_ppts);
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double> &in_epsilon_ppts, array<double>& out_diag_field_ppts, double& time);
 
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
@@ -942,11 +942,16 @@ protected:
   array< array<double> > disu_upts;
 
 	/*!
-	time-averaged diagnostic fields at solution points
+	running time-averaged diagnostic fields at solution points
 	*/
 	array<double> u_average;
 	array<double> v_average;
 	array<double> w_average;
+
+	/*!
+	time (in secs) until start of time average period for above diagnostic fields
+	*/
+  double spinup_time;
 
 	/*!
 	filtered solution at solution points for similarity and SVV LES models

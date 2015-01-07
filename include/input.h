@@ -97,6 +97,7 @@ public:
 	int wall_model;
 	double wall_layer_t;
 
+  double spinup_time;
   int monitor_res_freq;
   int monitor_integrals_freq;
   int monitor_cp_freq;
