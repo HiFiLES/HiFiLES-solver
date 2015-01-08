@@ -97,9 +97,11 @@ p_res                             // Plotting resolution, number of nodes per di
 4
 write_type                        // 0: Paraview, 1: Tecplot
 0
-n_diagnostic_fields               // Choose extra fields to be written to file: u v w energy pressure mach vorticity q_criterion u_average v_average w_average. Set to 0 for no diagnostic fields
+n_diagnostic_fields               // Choose extra fields to be written to file: u v w energy pressure mach vorticity q_criterion. Set to 0 for no diagnostic fields
 0
-spinup_time                       // initial period (in seconds) until time averaging is started, if any of the time average diagnostic fields are selected
+n_average_fields                  // extra diagnostic fields written to file: rho_average u_average v_average w_average energy_average. Set to 0 for no time averaged fields
+2 u_average v_average
+spinup_time                       // initial period (in seconds) until time averaging is started, if n_average_fields > 0
 0
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
 5

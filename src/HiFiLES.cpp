@@ -130,7 +130,6 @@ int main(int argc, char *argv[]) {
     }
     for (i=0; i<run_input.n_integral_quantities; i++)
       FlowSol.integral_quantities(i)=0.0;
-
   }
   
   /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
@@ -215,6 +214,10 @@ int main(int argc, char *argv[]) {
       
       CalcIntegralQuantities(FlowSol.ini_iter+i_steps, &FlowSol);
       
+      /*! Compute time-averaged quantities. */
+      
+      CalcTimeAverageQuantities(&FlowSol);
+
       /*! Compute the norm of the residual. */
       
       CalcNormResidual(&FlowSol);

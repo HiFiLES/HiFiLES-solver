@@ -75,6 +75,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   array<double> pos_ppts_temp;
   array<double> disu_ppts_temp;
   array<double> grad_disu_ppts_temp;
+  array<double> disu_average_ppts_temp;
   array<double> diag_ppts_temp;
 
   /*! Sensor data for artificial viscosity at plot points */
@@ -86,6 +87,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   int n_dims = FlowSol->n_dims;
   int n_fields;
   int n_diag_fields;
+  int n_average_fields;
   int num_pts, num_elements;
 
   char  file_name_s[50] ;
@@ -97,6 +99,9 @@ void write_tec(int in_file_num, struct solution* FlowSol)
 
   // number of additional diagnostic fields
   n_diag_fields = run_input.n_diagnostic_fields;
+
+  // number of additional time-averaged diagnostic fields
+  n_average_fields = run_input.n_average_fields;
 
 #ifdef _MPI
   MPI_Barrier(MPI_COMM_WORLD);
@@ -149,6 +154,16 @@ void write_tec(int in_file_num, struct solution* FlowSol)
     fields += ", \"mu_tilde\"";
   }
 
+  // append the names of the time-average diagnostic fields
+  if(n_average_fields>0)
+    {
+      fields += ", ";
+
+      for(m=0;m<n_average_fields;m++)
+        fields += "\"" + run_input.average_fields(m) + "\", ";
+
+    }
+
   // append the names of the diagnostic fields
   if(n_diag_fields>0)
     {
@@ -178,6 +193,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
           disu_ppts_temp.setup(n_ppts_per_ele,n_fields);
           grad_disu_ppts_temp.setup(n_ppts_per_ele,n_fields,n_dims);
           diag_ppts_temp.setup(n_ppts_per_ele,n_diag_fields);
+          disu_average_ppts_temp.setup(n_ppts_per_ele,n_average_fields);
 
           /*! Temporary field for sensor array at plot points */
           sensor_ppts_temp.setup(n_ppts_per_ele);
@@ -235,6 +251,12 @@ void write_tec(int in_file_num, struct solution* FlowSol)
                   FlowSol->mesh_eles(i)->calc_epsilon_ppts(j,epsilon_ppts_temp);
               }
 
+              /*! Calculate the time averaged fields at the plot points */
+              if(n_average_fields > 0)
+                {
+                  FlowSol->mesh_eles(i)->calc_time_average_ppts(j,disu_average_ppts_temp);
+                }
+
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
                 {
@@ -255,6 +277,17 @@ void write_tec(int in_file_num, struct solution* FlowSol)
                         }
                       else {
                           write_tec << disu_ppts_temp(k,l) << " ";
+                        }
+                    }
+
+                  /*! Write out optional time-averaged diagnostic fields */
+                  for(l=0;l<n_average_fields;l++)
+                    {
+                      if ( isnan(disu_average_ppts_temp(k,l))) {
+                          FatalError("Nan in tecplot file, exiting");
+                        }
+                      else {
+                          write_tec << disu_average_ppts_temp(k,l) << " ";
                         }
                     }
 
@@ -555,6 +588,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   int n_fields;
   /*! No. of optional diagnostic fields */
   int n_diag_fields;
+  /*! No. of optional time-averaged diagnostic fields */
+  int n_average_fields;
   /*! No. of dimensions */
   int n_dims;
   /*! No. of elements */
@@ -576,6 +611,8 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   array<double> grad_disu_ppts_temp;
   /*! Diagnostic field data at plot points */
   array<double> diag_ppts_temp;
+  /*! Time-averaged diagnostic field data at plot points */
+  array<double> disu_average_ppts_temp;
   /*! Grid velocity at plot points */
   array<double> grid_vel_ppts_temp;
   /*! Sensor data for artificial viscosity at plot points */
@@ -608,6 +645,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
   /*! no. of optional diagnostic fields */
   n_diag_fields = run_input.n_diagnostic_fields;
+
+  /*! no. of optional time-averaged diagnostic fields */
+  n_average_fields = run_input.n_average_fields;
 
 #ifdef _MPI
 
@@ -665,6 +705,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
       if (run_input.turb_model==1) {
         write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Mu_Tilde\" />" << endl;
       }
+
+      // Optional time-averaged diagnostic fields
+      for(m=0;m<n_average_fields;m++)
+        {
+          write_pvtu << "			<PDataArray type=\"Float32\" Name=\"" << run_input.average_fields(m) << "\" />" << endl;
+        }
 
       // Optional diagnostic fields
       for(m=0;m<n_diag_fields;m++)
@@ -742,6 +788,11 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           /*! Temporary solution array at plot points */
           disu_ppts_temp.setup(n_points,n_fields);
 
+          /*! Temporary array of time averaged fields at the plot points */
+          if(n_average_fields > 0) {
+            disu_average_ppts_temp.setup(n_points,n_average_fields);
+          }
+
           if(n_diag_fields > 0) {
             /*! Temporary solution array at plot points */
             grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
@@ -772,6 +823,12 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
               /*! Calculate the prognostic (solution) fields at the plot points */
               FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
+
+
+              /*! Calculate time averaged diagnostic fields at the plot points */
+              if(n_average_fields > 0) {
+                FlowSol->mesh_eles(i)->calc_time_average_ppts(j,disu_average_ppts_temp);
+              }
 
               if(n_diag_fields > 0) {
                 /*! Calculate the gradient of the prognostic fields at the plot points */
@@ -884,6 +941,20 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
                 write_vtu << endl;
                 write_vtu << "				</DataArray>" << endl;
               }
+
+              /*! Write out optional time-averaged diagnostic fields */
+              for(m=0;m<n_average_fields;m++)
+                {
+                  write_vtu << "				<DataArray type= \"Float32\" Name=\"" << run_input.average_fields(m) << "\" format=\"ascii\">" << endl;
+                  for(k=0;k<n_points;k++)
+                    {
+                      write_vtu << disu_average_ppts_temp(k,m) << " ";
+                    }
+
+                  /*! End the line and finish writing DataArray object */
+                  write_vtu << endl;
+                  write_vtu << "				</DataArray>" << endl;
+                }
 
               /*! Write out optional diagnostic fields */
               for(m=0;m<n_diag_fields;m++)
@@ -1007,12 +1078,12 @@ void write_restart(int in_file_num, struct solution* FlowSol)
   file_name = &file_name_s[0];
   restart_file.open(file_name);
 
-  restart_file << &time << endl;
+  restart_file << FlowSol->time << endl;
 
   if (run_input.restart_mesh_out) {
     file_name = &file_name_s2[0];
     restart_mesh.open(file_name);
-    restart_mesh << &time << endl;
+    restart_mesh << FlowSol->time << endl;
   }
 
   //header
@@ -1196,6 +1267,19 @@ void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol) {
     }
 #endif
   
+}
+
+// Calculate time averaged diagnostic quantities
+void CalcTimeAverageQuantities(struct solution* FlowSol) {
+
+  // Loop over element types
+  for(int i=0;i<FlowSol->n_ele_types;i++)
+    {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
+        {
+          FlowSol->mesh_eles(i)->CalcTimeAverageQuantities(FlowSol->time);
+        }
+    }
 }
 
 void compute_error(int in_file_num, struct solution* FlowSol)
@@ -1382,6 +1466,7 @@ void CalcNormResidual(struct solution* FlowSol) {
       FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
       FlowSol->mesh_eles(i)->cp_src_upts_gpu_cpu();
       n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
+
       for(j=0; j<n_fields; j++)
         sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
     }
@@ -1458,7 +1543,7 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
       // Add integral diagnostics
       for(i=0; i<n_diags; i++)
         write_hist[0] << ",\"Diagnostics[" << i << "]\"";
-  
+
       // Add physical and computational time
       write_hist[0] << ",\"Time<sub>Physical</sub>\",\"Time<sub>Comp</sub>(m)\"" << endl;
       

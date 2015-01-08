@@ -62,10 +62,13 @@ void CalcForces(int in_file_num, struct solution* FlowSol);
 /*! compute integral diagnostic quantities */
 void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol);
 
+/*! Calculate time averaged diagnostic quantities */
+void CalcTimeAverageQuantities(struct solution* FlowSol);
+
 /*! compute error */
 void compute_error(int in_file_num, struct solution* FlowSol);
 
-/*! monitor convergence of residual */
+/*! calculate residual */
 void CalcNormResidual(struct solution* FlowSol);
 
 /*! monitor convergence of residual */

@@ -193,20 +193,13 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     // Set no. of diagnostic fields
     n_diagnostic_fields = run_input.n_diagnostic_fields;
 
+    // Set no. of diagnostic fields
+    n_average_fields = run_input.n_average_fields;
+
     // Allocate storage for time-averaged velocity components    
-    for(int i=0;i<run_input.n_diagnostic_fields;++i) {
-      if(run_input.diagnostic_fields(i) == "u_average") {
-        u_average.setup(n_upts_per_ele,n_eles);
-        u_average.initialize_to_zero();
-      }
-      else if(run_input.diagnostic_fields(i) == "v_average") {
-        v_average.setup(n_upts_per_ele,n_eles);
-        v_average.initialize_to_zero();
-      }
-      else if(run_input.diagnostic_fields(i) == "w_average") {
-        w_average.setup(n_upts_per_ele,n_eles);
-        w_average.initialize_to_zero();
-      }
+    if(n_average_fields > 0) {
+      disu_average_upts.setup(n_upts_per_ele,n_eles,n_average_fields);
+      disu_average_upts.initialize_to_zero();
     }
     
     // Allocate extra arrays for LES models
@@ -4292,6 +4285,53 @@ void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
   }
 }
 
+// calculate the time averaged field values at plot points
+void eles::calc_time_average_ppts(int in_ele, array<double>& out_disu_average_ppts)
+{
+  if (n_eles!=0)
+  {
+    
+    int i,j,k;
+    
+    array<double> disu_average_upts_plot(n_upts_per_ele,n_average_fields);
+    
+    for(i=0;i<n_average_fields;i++)
+    {
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        disu_average_upts_plot(j,i)=disu_average_upts(j,in_ele,i);
+      }
+    }
+    
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+    
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_average_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,disu_average_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_average_ppts.get_ptr_cpu(),n_ppts_per_ele);
+    
+#elif defined _NO_BLAS
+    dgemm(n_ppts_per_ele,n_average_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),disu_average_upts_plot.get_ptr_cpu(),out_disu_average_ppts.get_ptr_cpu());
+    
+#else
+    
+    //HACK (inefficient, but useful if cblas is unavailible)
+    
+    for(i=0;i<n_ppts_per_ele;i++)
+    {
+      for(k=0;k<n_average_fields;k++)
+      {
+        out_disu_average_ppts(i,k) = 0.;
+        
+        for(j=0;j<n_upts_per_ele;j++)
+        {
+          out_disu_average_ppts(i,k) += opp_p(i,j)*disu_average_upts_plot(j,k);
+        }
+      }
+    }
+    
+#endif
+    
+  }
+}
+
 // calculate the sensor values at plot points
 void eles::calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts)
 {
@@ -4461,69 +4501,6 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
           }
         }
       }
-      else if (run_input.diagnostic_fields(k)=="u_average" || run_input.diagnostic_fields(k)=="v_average" || run_input.diagnostic_fields(k)=="w_average")
-      {
-        double current_value, average_value;
-        double a, b, dt;
-
-        if(run_input.diagnostic_fields(k)=="u_average") {
-          current_value = in_disu_ppts(j,1)*irho;
-          average_value = u_average(j,in_ele);
-        }
-        else if(run_input.diagnostic_fields(k)=="v_average") {
-          current_value = in_disu_ppts(j,2)*irho;
-          average_value = v_average(j,in_ele);
-        }
-        else if(run_input.diagnostic_fields(k)=="w_average") {
-          current_value = in_disu_ppts(j,3)*irho;
-          average_value = w_average(j,in_ele);
-        }
-
-        spinup_time = run_input.spinup_time;
-        cout << "time, spinup time " << setprecision(5) << time << ", " << spinup_time << endl;
-        cout << "current value, average value " << setprecision(5) << current_value << ", " << average_value << endl;
-
-        // set average value to current value if before spinup time
-        if(time <= spinup_time) {
-          diagfield_upt = current_value;
-        }
-        // calculate running average
-        else {
-          // get timestep
-          if (run_input.dt_type == 0)
-            dt = run_input.dt;
-          else if (run_input.dt_type == 1)
-            dt = dt_local(0);
-          else if (run_input.dt_type == 2)
-            FatalError("Not sure what value of timestep to use in body force term when using local timestepping.");
-
-          // running average value
-          // safeguarding against division by a very small number
-          if(time-spinup_time < 1.0e-12) {
-            a = 0.0;
-            b = 1.0;
-          }
-          else {
-            a = (time-spinup_time-dt)/(time-spinup_time);
-            b = dt/(time-spinup_time);
-          }
-          cout << "a, b " << setprecision(5) << a << ", " << b << endl;
-          diagfield_upt = a*average_value + b*current_value;
-
-          // Set new average value for next timestep
-          if(run_input.diagnostic_fields(k)=="u_average") {
-            u_average(j,in_ele) = diagfield_upt;
-          }
-          else if(run_input.diagnostic_fields(k)=="v_average") {
-            v_average(j,in_ele) = diagfield_upt;
-          }
-          else if(run_input.diagnostic_fields(k)=="w_average") {
-            w_average(j,in_ele) = diagfield_upt;
-          }
-        }
-        cout << "current value, average value " << setprecision(5) << current_value << ", " << average_value << endl;
-      }
-
       // Artificial Viscosity diagnostics
       else if (run_input.diagnostic_fields(k)=="sensor")
       {
@@ -6892,6 +6869,94 @@ void eles::CalcIntegralQuantities(int n_integral_quantities, array <double>& int
         }
         // Add contribution to global integral
         integral_quantities(m) += diagnostic*weight_volume_cubpts(j)*detjac;
+      }
+    }
+  }
+}
+
+// Compute time-averaged quantities
+void eles::CalcTimeAverageQuantities(double& time)
+{
+  double current_value, average_value;
+  double a, b, dt;
+  double spinup_time = run_input.spinup_time;
+  double rho;
+  int i, j, k;
+
+  for(j=0;j<n_upts_per_ele;j++) {
+    for(k=0;k<n_eles;k++) {
+      for(i=0;i<n_average_fields;++i) {
+
+        rho = disu_upts(0)(j,k,0);
+
+        if(run_input.average_fields(i)=="rho_average") {
+          current_value = rho;
+          average_value = disu_average_upts(j,k,0);
+        }
+        else if(run_input.average_fields(i)=="u_average") {
+          current_value = disu_upts(0)(j,k,1)/rho;
+          average_value = disu_average_upts(j,k,1);
+        }
+        else if(run_input.average_fields(i)=="v_average") {
+          current_value = disu_upts(0)(j,k,2)/rho;
+          average_value = disu_average_upts(j,k,2);
+        }
+        else if(run_input.average_fields(i)=="w_average") {
+          current_value = disu_upts(0)(j,k,3)/rho;
+          average_value = disu_average_upts(j,k,3);
+        }
+        else if(run_input.average_fields(i)=="e_average") {
+          if(n_dims==2) {
+            current_value = disu_upts(0)(j,k,3)/rho;
+            average_value = disu_average_upts(j,k,3);
+          }
+          else {
+            current_value = disu_upts(0)(j,k,4)/rho;
+            average_value = disu_average_upts(j,k,4);
+          }
+        }
+
+        // get timestep
+        if (run_input.dt_type == 0)
+          dt = run_input.dt;
+        else if (run_input.dt_type == 1)
+          dt = dt_local(0);
+        else if (run_input.dt_type == 2)
+          FatalError("Not sure what value of timestep to use in time average calculation when using local timestepping.");
+
+        // set average value to current value if before spinup time
+        // and prevent division by a very small number if time = spinup time
+        if(time-spinup_time < 1.0e-12) {
+          a = 0.0;
+          b = 1.0;
+        }
+        // calculate running average
+        else {
+          a = (time-spinup_time-dt)/(time-spinup_time);
+          b = dt/(time-spinup_time);
+        }
+
+        // Set new average value for next timestep
+        if(run_input.average_fields(i)=="rho_average") {
+          disu_average_upts(j,k,0) = a*average_value + b*current_value;
+        }
+        else if(run_input.average_fields(i)=="u_average") {
+          disu_average_upts(j,k,1) = a*average_value + b*current_value;
+        }
+        else if(run_input.average_fields(i)=="v_average") {
+          disu_average_upts(j,k,2) = a*average_value + b*current_value;
+        }
+        else if(run_input.average_fields(i)=="w_average") {
+          disu_average_upts(j,k,3) = a*average_value + b*current_value;
+        }
+        else if(run_input.average_fields(i)=="e_average") {
+          if(n_dims==2) {
+            disu_average_upts(j,k,3) = a*average_value + b*current_value;
+          }
+          else {
+            disu_average_upts(j,k,4) = a*average_value + b*current_value;
+          }
+        }
       }
     }
   }

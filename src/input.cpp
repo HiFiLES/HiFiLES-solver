@@ -256,6 +256,13 @@ void input::setup(ifstream& in_run_input_file, int rank)
       for (int i=0;i<n_diagnostic_fields;i++)
         in_run_input_file >> diagnostic_fields(i);
     }
+    else if (!param_name.compare("n_average_fields"))
+    {
+      in_run_input_file >> n_average_fields;
+      average_fields.setup(n_average_fields);
+      for (int i=0;i<n_average_fields;i++)
+        in_run_input_file >> average_fields(i);
+    }
     else if (!param_name.compare("spinup_time"))
     {
       in_run_input_file >> spinup_time;

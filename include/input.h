@@ -63,6 +63,8 @@ public:
 
   int n_diagnostic_fields;
   array<string> diagnostic_fields;
+  int n_average_fields;
+  array<string> average_fields;
   int n_integral_quantities;
   array<string> integral_quantities;
 

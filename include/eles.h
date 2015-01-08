@@ -308,6 +308,9 @@ public:
   /*! calculate AV-co-efficients at the plot points */
   void calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts);
 
+  /*! calculate time-averaged diagnostic fields at the plot points */
+  void calc_time_average_ppts(int in_ele, array<double>& out_disu_average_ppts);
+
   /*! calculate diagnostic fields at the plot points */
   void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double> &in_epsilon_ppts, array<double>& out_diag_field_ppts, double& time);
 
@@ -409,6 +412,9 @@ public:
 
   /*! Compute volume integral of diagnostic quantities */
   void CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities);
+
+  /*! Compute time-average diagnostic quantities */
+  void CalcTimeAverageQuantities(double& time);
 
   void compute_wall_forces(array<double>& inv_force, array<double>& vis_force, double& temp_cl, double& temp_cd, ofstream& coeff_file, bool write_forces);
 
@@ -652,6 +658,9 @@ protected:
 
   /*!  number of diagnostic fields */
   int n_diagnostic_fields;
+
+  /*!  number of time averaged diagnostic fields */
+  int n_average_fields;
 
   /*! order of solution polynomials */
   int order;
@@ -944,9 +953,7 @@ protected:
 	/*!
 	running time-averaged diagnostic fields at solution points
 	*/
-	array<double> u_average;
-	array<double> v_average;
-	array<double> w_average;
+	array<double> disu_average_upts;
 
 	/*!
 	time (in secs) until start of time average period for above diagnostic fields
