@@ -45,7 +45,7 @@ void evaluate_boundaryConditions_invFlux_gpu_kernel_wrapper(int n_fpts_per_inter
 void transform_grad_disu_upts_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* grad_disu_upts_ptr, double* detjac_upts_ptr, double* detjac_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, int equation, int motion);
 
 /*! wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points */
-void evaluate_viscFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, int ele_type, int order, double filter_ratio, int LES, int motion, int sgs_model, int wall_model, double wall_thickness, double* wall_dist_ptr, double* twall_ptr, double* Leonard_mom_ptr, double* Leonard_energy_ptr, double* turb_visc_ptr, double* dynamic_coeff_ptr, double* disu_upts_ptr, double* disuf_upts_ptr, double* out_tdisvisf_upts_ptr, double* out_sgsf_upts_ptr, double* grad_disu_upts_ptr, double* grad_disuf_upts_ptr, double* detjac_upts_ptr, double* detjac_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double gamma, double prandtl, double rt_inf, double mu_inf, double c_sth, double fix_vis, int equation, double diff_coeff, int turb_model, double c_v1, double omega, double prandtl_t);
+void evaluate_viscFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, int ele_type, int order, double filter_ratio, int LES, int motion, int sgs_model, int wall_model, double wall_thickness, double* wall_dist_ptr, double* twall_ptr, double* Leonard_mom_ptr, double* Leonard_energy_ptr, double* turb_visc_ptr, double* dynamic_coeff_ptr, double* strainproduct_ptr, double* disu_upts_ptr, double* disuf_upts_ptr, double* out_tdisvisf_upts_ptr, double* out_sgsf_upts_ptr, double* grad_disu_upts_ptr, double* grad_disuf_upts_ptr, double* detjac_upts_ptr, double* detjac_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double gamma, double prandtl, double rt_inf, double mu_inf, double c_sth, double fix_vis, int equation, double diff_coeff, int turb_model, double c_v1, double omega, double prandtl_t);
 
 /*! wrapper for gpu kernel to calculate corrected gradient of solution at flux points */
 /*
@@ -80,8 +80,14 @@ void calculate_common_viscFlux_mpi_gpu_kernel_wrapper(int n_fpts_per_inter, int 
 
 void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_ptr, int* opp_ell_indices_ptr, int nnz_per_row, double* b_ptr, double *c_ptr, int cell_type, int order, int add_flag);
 
+/*! wrapper for gpu kernel to calculate strain product term for dynamic LES model */
+void calculate_strainproduct_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* disu_upts_ptr, double* grad_disu_upts_ptr, double* strainproduct_ptr);
+
+/*! wrapper for gpu kernel to calculate velicty product terms for similarity model */
+void calc_similarity_terms_gpu_kernel_wrapper(int n_fields, int n_upts_per_ele, int n_eles, int n_dims, double* disu_upts_ptr, double* uu_ptr, double* ue_ptr);
+
 /*! wrapper for gpu kernel to calculate Leonard tensors for similarity model */
-void calc_similarity_model_kernel_wrapper(int flag, int n_fields, int n_upts_per_ele, int n_eles, int n_dims, double* disu_upts_ptr, double* disuf_upts_ptr, double* uu_ptr, double* ue_ptr, double* Leonard_mom_ptr, double* Leonard_energy_ptr);
+void calc_Leonard_tensors_gpu_kernel_wrapper(int n_fields, int n_upts_per_ele, int n_eles, int n_dims, double* disuf_upts_ptr, double* Leonard_mom_ptr, double* Leonard_energy_ptr);
 
 /*! wrapper for gpu kernel to update coordinate transformations for moving grids */
 void rigid_motion_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* shape, double* shape_dyn, double* motion_params, double rk_time);

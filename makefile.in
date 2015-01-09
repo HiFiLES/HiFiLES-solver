@@ -21,11 +21,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
 
-NODE=     CPU
+NODE=     GPU
 CODE=     DEBUG
 BLAS=     ATLAS_BLAS
 COMP=     GCC
-PARALLEL= NO
+PARALLEL= MPI
 TECIO=    YES
 MACHINE=  YOSEMITESAM
 

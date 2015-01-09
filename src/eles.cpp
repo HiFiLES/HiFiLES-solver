@@ -254,20 +254,24 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
         dynamic_coeff.setup(n_upts_per_ele,n_eles);
         zero_array(dynamic_coeff);
 
-        // strainproduct field
+        // strainproduct fields
         if(n_dims==2) {
           strainproduct.setup(n_upts_per_ele,n_eles,3);
+          fstrainproduct.setup(n_upts_per_ele,n_eles,3);
         }
         else if(n_dims==3) {
           strainproduct.setup(n_upts_per_ele,n_eles,6);
+          fstrainproduct.setup(n_upts_per_ele,n_eles,6);
         }
 
         zero_array(strainproduct);
+        zero_array(fstrainproduct);
       }
       else {
         grad_disuf_upts.setup(1);
         dynamic_coeff.setup(1);
         strainproduct.setup(1);
+        fstrainproduct.setup(1);
       }
 
     }
@@ -279,6 +283,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       grad_disuf_upts.setup(1);
       dynamic_coeff.setup(1);
       strainproduct.setup(1);
+      fstrainproduct.setup(1);
       turb_visc.setup(1);
       Lu.setup(1);
       uu.setup(1);
@@ -847,6 +852,7 @@ void eles::mv_all_cpu_gpu(void)
     sgsf_fpts.mv_cpu_gpu();
     grad_disuf_upts.mv_cpu_gpu();
     strainproduct.mv_cpu_gpu();
+    fstrainproduct.mv_cpu_gpu();
     dynamic_coeff.mv_cpu_gpu();
     turb_visc.mv_cpu_gpu();
     uu.mv_cpu_gpu();
@@ -1900,17 +1906,18 @@ void eles::calculate_filtered_gradient(void)
   }
 }
 
-void eles::calculate_strainproduct(int in_disu_upts_from, int n_comp, array <double>& SSmod)
+void eles::calculate_strainproduct(int in_disu_upts_from, int n_comp)
 {
-
-  double rho,inte,ke,diag,Smod;
+  double rho,diag,Smod;
   array<double> u(n_dims);
   array<double> S(n_comp);
-  array<double> drho(n_dims), dene(n_dims), dke(n_dims), de(n_dims);
+  array<double> drho(n_dims);
   array<double> dmom(n_dims,n_dims), du(n_dims,n_dims);
   int i,j,k,l,m;
 
   if (n_eles!=0) {
+
+#ifdef _CPU
 
     for(i=0;i<n_eles;i++) {      
       for(j=0;j<n_upts_per_ele;j++) {
@@ -1927,33 +1934,25 @@ void eles::calculate_strainproduct(int in_disu_upts_from, int n_comp, array <dou
         rho = temp_u(0);
         for (k=0;k<n_dims;k++) {
           u(k) = temp_u(k)/rho;
-          ke += 0.5*pow(u(k),2);
         }
-        inte = temp_u(n_fields-1)/rho - ke;
 
         // Solution gradient
         for (k=0;k<n_dims;k++) {
-          drho(k) = temp_grad_u(0,k); // density gradient
-          dene(k) = temp_grad_u(n_fields-1,k); // energy gradient
-        
-          for (l=1;l<n_fields-1;l++) {
-            dmom(k,l-1) = temp_grad_u(l,k); // momentum gradients
+          drho(k) = temp_grad_u(0,k); // density gradient        
+          for (l=0;l<n_dims;l++) {
+            dmom(k,l) = temp_grad_u(k-1,l); // momentum gradients
           }
         }
       
-        // Velocity and energy gradients
+        // Velocity gradient
         for (k=0;k<n_dims;k++) {
-          dke(k) = ke*drho(k);
-        
           for (l=0;l<n_dims;l++) {
             du(k,l) = (dmom(k,l)-u(l)*drho(l))/rho;
-            dke(k) += rho*u(l)*du(k,l);
           }
-        
-          de(k) = (dene(k)-dke(k)-drho(k)*inte)/rho;
         }
       
         // Strain rate tensor (upper triangle only)
+        diag = 0.0;
         for(k=0;k<n_dims;++k) {
           S(k) = 2.0*du(k,k);
           diag += S(k)/3.0;
@@ -1971,17 +1970,33 @@ void eles::calculate_strainproduct(int in_disu_upts_from, int n_comp, array <dou
         for (k=0;k<n_dims;k++) S(k) -= diag;
       
         // Strain modulus
-        for (k=0;k<n_comp;k++)
+        Smod = 0.0;
+        for (k=0;k<n_dims;k++)
           Smod += 2.0*S(k)*S(k);
-      
+
+        if(n_dims==2) {
+          Smod += 4.0*S(2)*S(2);
+        }
+        else {
+          Smod += 4.0*(S(3)*S(3)+S(4)*S(4)+S(5)*S(5));
+        }
+
         Smod = sqrt(Smod);
 
         // Populate array
         for (k=0;k<n_comp;k++) {
-          SSmod(j,i,k) = Smod*S(k);
+          strainproduct(j,i,k) = Smod*S(k);
         }
       }
     }
+
+#endif
+
+#ifdef _GPU
+
+    calculate_strainproduct_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, disu_upts(in_disu_upts_from).get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), strainproduct.get_ptr_gpu());
+
+#endif
   }
 }
 
@@ -2288,8 +2303,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
     if(n_dims==2)      n_comp = 3;
     else if(n_dims==3) n_comp = 6;
 
-    /*! Filter solution */
-    
+    /*! BLAS array dims */
     Arows =  n_upts_per_ele;
     Acols = n_upts_per_ele;
     Brows = Acols;
@@ -2361,7 +2375,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
             uu(i,j,2) = utemp(1)*utemp(2)/rsq;
             
             /*! velocity-energy product */
-            utemp(3) -= 0.5*(utemp(1)*utemp(1)+utemp(2)*utemp(2))/utemp(0); // internal energy*rho
+            utemp(3) -= 0.5*(utemp(1)*utemp(1)+utemp(2)*utemp(2))/utemp(0); // subtract kinetic energy
             
             ue(i,j,0) = utemp(1)*utemp(3)/rsq;
             ue(i,j,1) = utemp(2)*utemp(3)/rsq;
@@ -2425,7 +2439,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
       }
       
 #endif
-      
+
       /*! Subtract product of unfiltered quantities from Leonard tensors */
       for(i=0;i<n_upts_per_ele;i++) {
         for(j=0;j<n_eles;j++) {
@@ -2473,7 +2487,9 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
           
           /*! subtract diagonal from Lu */
           for (k=0;k<n_dims;++k) Lu(i,j,k) -= diag;
-          
+
+          // subtract diagonal from Le?
+
         }
       }
     }
@@ -2499,8 +2515,8 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
     if(sgs_model==2 || sgs_model==4 || sgs_model==5) {
       
       /*! compute product terms uu, ue (pass flag=0 to wrapper function) */
-      calc_similarity_model_kernel_wrapper(0, n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu());
-      
+      calc_similarity_terms_gpu_kernel_wrapper(n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu());
+
       Bcols = n_comp*n_eles;
       
       /*! Filter product terms uu and ue */
@@ -2511,8 +2527,8 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
       cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,ue.get_ptr_gpu(),Bstride,0.0,Le.get_ptr_gpu(),Cstride);
       
       /*! compute Leonard tensors Lu, Le (pass flag=1 to wrapper function) */
-      calc_similarity_model_kernel_wrapper(1, n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu());
-      
+      calc_Leonard_tensors_gpu_kernel_wrapper(n_fields, n_upts_per_ele, n_eles, n_dims, disuf_upts.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu());
+
     }
     
     /*! If SVV model, copy filtered solution back to original solution */
@@ -2529,29 +2545,27 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
     }
     
 #endif
-    
+
     /*! Finally, if dynamic model, compute filtered gradient */
     if(sgs_model==5) {
-      // the following routine handles CPU/GPU logic
-      calculate_filtered_gradient();
-      // everything else is done at the element level by calc_sgsf_upts
-      // TODO: calculate strain and strain modulus, then filter (strain*strain modulus) here
 
-      array <double> SSmod(n_upts_per_ele,n_eles,n_comp);
-      calculate_strainproduct(in_disu_upts_from, n_comp, SSmod);
+      // the following routines handle CPU/GPU logic
+      calculate_filtered_gradient();
+      calculate_strainproduct(in_disu_upts_from, n_comp);
 
       // filter strainproduct
+
 #ifdef _CPU
     
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
       Bcols = n_comp*n_eles;
 
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,SSmod.get_ptr_cpu(),Bstride,0.0,strainproduct.get_ptr_cpu(),Cstride);
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,strainproduct.get_ptr_cpu(),Bstride,0.0,fstrainproduct.get_ptr_cpu(),Cstride);
     
 #elif defined _NO_BLAS
 
-      dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),SSmod.get_ptr_cpu(),strainproduct.get_ptr_cpu());
+      dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),strainproduct.get_ptr_cpu(),fstrainproduct.get_ptr_cpu());
     
 #else
     
@@ -2559,9 +2573,9 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
       for(i=0;i<n_upts_per_ele;i++) {
         for(j=0;j<n_eles;j++) {
           for(k=0;k<n_comp;k++) {
-            strainproduct(i,j,k) = 0.0;
+            fstrainproduct(i,j,k) = 0.0;
             for(l=0;l<n_upts_per_ele;l++) {
-              strainproduct(i,j,k) += filter_upts(i,l)*SSmod(l,j,k);
+              fstrainproduct(i,j,k) += filter_upts(i,l)*strainproduct(l,j,k);
             }
           }
         }
@@ -2570,6 +2584,15 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
 #endif
 
 #endif
+
+#ifdef _GPU
+
+      Bcols = n_comp*n_eles;
+
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,filter_upts.get_ptr_gpu(),Astride,strainproduct.get_ptr_gpu(),Bstride,0.0,fstrainproduct.get_ptr_gpu(),Cstride);
+    
+#endif
+
     }
   }
 }
@@ -2585,6 +2608,8 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
     int i,j,k,l,m;
     double detjac;
     double eps = 1.0e-12;
+    array <double> temp_uf(n_fields);
+    array <double> temp_grad_uf(n_fields,n_dims);
 
     for(i=0;i<n_eles;i++) {
       
@@ -2602,7 +2627,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           Csav += dynamic_coeff(j,i);
         }
         for(j=0;j<n_upts_per_ele;j++) {
-          dynamic_coeff(j,i) = Csav/n_upts_per_ele;
+          //dynamic_coeff(j,i) = Csav/n_upts_per_ele;
         }
       }
 
@@ -2615,11 +2640,13 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
         for(k=0;k<n_fields;k++)
         {
           temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
+          temp_uf(k)=disuf_upts(j,i,k);
           
           // gradient in dynamic-physical domain
           for (m=0;m<n_dims;m++)
           {
             temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
+            temp_grad_uf(k,m) = grad_disuf_upts(j,i,k,m);
           }
         }
 
@@ -2646,7 +2673,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
         // If LES or wall model, calculate SGS viscous flux
         if(LES != 0 || wall_model != 0) {
 
-          calc_sgsf_upts(temp_u,temp_grad_u,detjac,i,j,temp_sgsf);
+          calc_sgsf_upts(temp_u,temp_uf,temp_grad_u,temp_grad_uf,detjac,i,j,temp_sgsf);
           
           // Add SGS or wall flux to viscous flux
           for(k=0;k<n_fields;k++)
@@ -2722,7 +2749,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
     
 #ifdef _GPU
     
-    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, motion, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), turb_visc.get_ptr_gpu(), dynamic_coeff.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), grad_disuf_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff, run_input.turb_model, run_input.c_v1, run_input.omega, run_input.prandtl_t);
+    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, motion, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), turb_visc.get_ptr_gpu(), dynamic_coeff.get_ptr_gpu(), strainproduct.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), grad_disuf_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff, run_input.turb_model, run_input.c_v1, run_input.omega, run_input.prandtl_t);
     
 #endif
     
@@ -2734,15 +2761,17 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
 {
   int i,j,k,l,n_comp;
   double diag=0.0, Sfmod=0.0, num=0.0, denom=0.0;
-  double Cs, delta, deltaf, rhof, vol;
+  double Cs, delta, deltaf, rho, rhof, vol;
   double eps=1.e-12;
 
-  array<double> u(n_dims);
-  array<double> drho(n_dims);
+  array<double> u(n_dims), uf(n_dims);
+  array<double> drho(n_dims), drhof(n_dims);
   array<double> dmom(n_dims,n_dims), du(n_dims,n_dims);
+  array<double> dmomf(n_dims,n_dims), duf(n_dims,n_dims);
 
   // filtered solution quantities for dynamic model
   array<double> temp_uf(n_fields);
+  array<double> temp_grad_u(n_fields,n_dims);
   array<double> temp_grad_uf(n_fields,n_dims);
 
   // third dimension of Lu, uu arrays
@@ -2767,9 +2796,11 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
 
   // temporary storage for filtered solution and gradient
   for(k=0;k<n_fields;k++) {
+    temp_u(k)=disu_upts(0)(upt,ele,k);
     temp_uf(k)=disuf_upts(upt,ele,k);
     
     for (l=0;l<n_dims;l++) {
+      temp_grad_u(k,l) = grad_disu_upts(upt,ele,k,l);
       temp_grad_uf(k,l) = grad_disuf_upts(upt,ele,k,l);
     }
   }
@@ -2779,46 +2810,82 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
     SSmod(k) = strainproduct(upt,ele,k);
 
   // primitive variables
+  rho = temp_u(0);
   rhof = temp_uf(0);
-  for (i=0;i<n_dims;i++)
-    u(i) = temp_uf(i)/rhof;
+  for (i=0;i<n_dims;i++) {
+    u(i) = temp_u(i)/rho;
+    uf(i) = temp_uf(i)/rhof;
+  }
 
   for (i=0;i<n_dims;i++) {
-    drho(i) = temp_grad_uf(0,i); // filtered density gradient
+    drho(i) = temp_grad_u(0,i); // filtered density gradient
+    drhof(i) = temp_grad_uf(0,i); // filtered density gradient
     
-    for (j=1;j<n_fields-1;j++) {
-      dmom(i,j-1) = temp_grad_uf(j,i); // filtered momentum gradients
+    for (j=0;j<n_dims;j++) {
+      dmom(i,j) = temp_grad_u(i+1,j);
+      dmomf(i,j) = temp_grad_uf(i+1,j); // filtered momentum gradients
     }
   }
   
   // Filtered velocity and energy gradients
-  for (i=0;i<n_dims;i++)    
-    for (j=0;j<n_dims;j++)
-      du(i,j) = (dmom(i,j)-u(j)*drho(j))/rhof;
+  for (i=0;i<n_dims;i++) {
+    for (j=0;j<n_dims;j++) {
+      du(i,j) = (dmom(i,j)-u(i)*drho(j))/rho;
+      duf(i,j) = (dmomf(i,j)-u(i)*drhof(j))/rhof;
+    }
+  }
   
-  // Filtered strain rate tensor
+  // strain rate tensor
+  diag = 0.0;
   for(i=0;i<n_dims;++i) {
-    Sf(i) = 2.0*du(i,i);
+    S(i) = 2.0*du(i,i);
+    diag += S(i)/3.0;
+  }
+
+  // Subtract diag
+  for (i=0;i<n_dims;i++)
+    S(i) -= diag;
+  
+  if(n_dims==2) {
+    S(2) = du(0,1)+du(1,0);
+  }
+  else {
+    S(3) = du(0,1)+du(1,0);
+    S(4) = du(0,2)+du(2,0);
+    S(5) = du(1,2)+du(2,1);
+  }
+
+  // Filtered strain rate tensor
+  diag = 0.0;
+  for(i=0;i<n_dims;++i) {
+    Sf(i) = 2.0*duf(i,i);
     diag += Sf(i)/3.0;
   }
 
-  if(n_dims==2) {
-    Sf(2) = du(0,1)+du(1,0);
-  }
-  else {
-    Sf(3) = du(0,1)+du(1,0);
-    Sf(4) = du(0,2)+du(2,0);
-    Sf(5) = du(1,2)+du(2,1);
-  }
-  
   // Subtract diag
   for (i=0;i<n_dims;i++)
     Sf(i) -= diag;
   
-  // Strain modulus
-  for (i=0;i<n_comp;i++)
-    Sfmod += 2.0*Sf(i)*Sf(i);
+  if(n_dims==2) {
+    Sf(2) = duf(0,1)+duf(1,0);
+  }
+  else {
+    Sf(3) = duf(0,1)+duf(1,0);
+    Sf(4) = duf(0,2)+duf(2,0);
+    Sf(5) = duf(1,2)+duf(2,1);
+  }
   
+  // Strain modulus
+  for (i=0;i<n_dims;i++)
+    Sfmod += Sf(i)*Sf(i);
+  
+  if(n_dims==2) {
+    Sfmod += 2.0*Sf(2)*Sf(2);
+  }
+  else {
+    Sfmod += 2.0*(Sf(3)*Sf(3)+Sf(4)*Sf(4)+Sf(5)*Sf(5));
+  }
+
   Sfmod = sqrt(Sfmod);
 
   // filter width  
@@ -2837,12 +2904,14 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
   //for (i=0;i<n_comp;i++) M(i) = (deltaf*deltaf - delta*delta)*Sfmod*Sf(i);
 
   // correct version:
-  for (i=0;i<n_comp;i++)
+  for (i=0;i<n_comp;i++) {
     M(i) = deltaf*deltaf*Sfmod*Sf(i) - delta*delta*SSmod(i);
+  }
 
   // compute Smagorinsky coefficient
 
   num = 0.0; denom = 0.0;
+
   for (i=0;i<n_dims;i++) {
     denom += M(i)*M(i);
     num += Lu(upt,ele,i)*M(i);
@@ -2861,10 +2930,7 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
   Cs = 0.5*num/(denom+eps);
   
   // limit value to prevent instability
-  //Cs=min(max(Cs,0.0),0.04);
   Cs=max(Cs,0.0);
-
-  //cout << "Cs: " << setprecision(12) << Cs << endl;
 
   // set coeff field for output to Paraview
   dynamic_coeff(upt,ele) = Cs;
@@ -2872,20 +2938,24 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
 }
 
 // Calculate SGS flux at solution points
-void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf)
+void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_uf, array<double>& temp_grad_u, array<double>& temp_grad_uf, double& detjac, int ele, int upt, array<double>& temp_sgsf)
 {
   int i,j,k,l,n_comp;
   int eddy, sim, wall;
   double Cs;
   double diag=0.0, Smod=0.0, ke=0.0, num=0.0, denom=0.0;
   double Pr=0.5; // turbulent Prandtl number
-  double delta, deltaf, mu, mu_t, vol;
-  double rho, inte, rt_ratio;
+  double delta, mu, mu_t, vol;
+  double rho, rhof, inte, rt_ratio;
   double eps=1.e-12;
   
   array<double> u(n_dims);
   array<double> drho(n_dims), dene(n_dims), dke(n_dims), de(n_dims);
   array<double> dmom(n_dims,n_dims), du(n_dims,n_dims);
+
+  array<double> uf(n_dims);
+  array<double> drhof(n_dims), denef(n_dims), dkef(n_dims), def(n_dims);
+  array<double> dmomf(n_dims,n_dims), duf(n_dims,n_dims);
 
   // quantities for wall model
   array<double> norm(n_dims);
@@ -2905,9 +2975,11 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   
   // primitive variables
   rho = temp_u(0);
+  rhof = temp_uf(0);
   for (i=0;i<n_dims;i++) {
-    u(i) = temp_u(i)/rho;
-    ke += 0.5*pow(u(i),2);
+    u(i) = temp_u(i+1)/rho;
+    uf(i) = temp_uf(i+1)/rhof;
+    ke += 0.5*u(i)*u(i);
   }
   inte = temp_u(n_fields-1)/rho - ke;
   
@@ -3067,10 +3139,13 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       // Solution gradient
       for (i=0;i<n_dims;i++) {
         drho(i) = temp_grad_u(0,i); // density gradient
+        drhof(i) = temp_grad_uf(0,i); // density gradient
         dene(i) = temp_grad_u(n_fields-1,i); // energy gradient
+        denef(i) = temp_grad_uf(n_fields-1,i); // energy gradient
         
-        for (j=1;j<n_fields-1;j++) {
-          dmom(i,j-1) = temp_grad_u(j,i); // momentum gradients
+        for (j=0;j<n_dims;j++) {
+          dmom(i,j) = temp_grad_u(i+1,j); // momentum gradients
+          dmomf(i,j) = temp_grad_uf(i+1,j); // momentum gradients
         }
       }
       
@@ -3079,7 +3154,8 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         dke(i) = ke*drho(i);
         
         for (j=0;j<n_dims;j++) {
-          du(i,j) = (dmom(i,j)-u(j)*drho(j))/rho;
+          du(i,j) = (dmom(i,j)-u(i)*drho(j))/rho;
+          duf(i,j) = (dmomf(i,j)-uf(i)*drhof(j))/rhof;
           dke(i) += rho*u(j)*du(i,j);
         }
         
@@ -3104,9 +3180,16 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       for (i=0;i<n_dims;i++) S(i) -= diag;
       
       // Strain modulus
-      for (i=0;i<n_comp;i++)
-        Smod += 2.0*S(i)*S(i);
+      for (i=0;i<n_dims;i++)
+        Smod += S(i)*S(i);
       
+      if(n_dims==2) {
+        Smod += 2.0*S(2)*S(2);
+      }
+      else {
+        Smod += 2.0*(S(3)*S(3)+S(4)*S(4)+S(5)*S(5));
+      }
+
       Smod = sqrt(Smod);
       
       // Eddy viscosity
@@ -3116,7 +3199,6 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         
         Cs=0.1;
         mu_t = rho*Cs*Cs*delta*delta*Smod;
-        //if(abs(mu_t) > eps) cout << "mu_t: " << mu_t << endl;
       }
       
       //  Wall-Adapting Local Eddy-viscosity (WALE) SGS Model
@@ -3203,15 +3285,12 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       //
       else if(sgs_model==5) {
         
-        // test filter width
-        deltaf = 2.0*delta;
-        
         // get value of dynamic coefficient
         Cs = dynamic_coeff(upt,ele);
         
         // finally, compute dynamic eddy viscosity
         mu_t = rho*Cs*delta*delta*Smod;
-        
+
       } // end of if(sgs_model)
 
       // Add eddy-viscosity term to SGS fluxes
@@ -3241,12 +3320,12 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
       }
 
       // set turbulent viscosity field for output to Paraview
-      //if (abs(mu_t) > 0.0) cout << "mu_t " << mu_t << endl;
       turb_visc(upt,ele) = mu_t;
     }
     
     // Add similarity term to SGS fluxes if WSM or Similarity model
     if(sim==1) {
+
       for (j=0;j<n_dims;j++) {
         temp_sgsf(0,j) += 0.0; // Density flux
         temp_sgsf(n_fields-1,j) += run_input.gamma*rho*Le(upt,ele,j); // Energy flux
@@ -4810,6 +4889,7 @@ void eles::calc_dynamic_coeff_ppts(int in_ele, array<double>& out_coeff_ppts)
     cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,1,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,coeff_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_coeff_ppts.get_ptr_cpu(),n_ppts_per_ele);
     
 #elif defined _NO_BLAS
+
     dgemm(n_ppts_per_ele,1,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),coeff_upts_plot.get_ptr_cpu(),out_coeff_ppts.get_ptr_cpu());
 
 #else
@@ -4822,7 +4902,7 @@ void eles::calc_dynamic_coeff_ppts(int in_ele, array<double>& out_coeff_ppts)
         
       for(j=0;j<n_upts_per_ele;j++)
       {
-        out_coeff_ppts(i) += opp_p(i,j)*coeff_upts_plot(j,k);
+        out_coeff_ppts(i) += opp_p(i,j)*coeff_upts_plot(j);
       }
     }
     
@@ -4890,6 +4970,7 @@ void eles::calc_turb_visc_ppts(int in_ele, array<double>& out_turb_visc_ppts)
     
     for(j=0;j<n_upts_per_ele;j++)
     {
+      //cout << "turb_visc: " << turb_visc(j,in_ele) << endl;
       turb_visc_upts_plot(j)=turb_visc(j,in_ele);
     }
     
@@ -4898,6 +4979,7 @@ void eles::calc_turb_visc_ppts(int in_ele, array<double>& out_turb_visc_ppts)
     cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,1,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,turb_visc_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_turb_visc_ppts.get_ptr_cpu(),n_ppts_per_ele);
     
 #elif defined _NO_BLAS
+
     dgemm(n_ppts_per_ele,1,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),turb_visc_upts_plot.get_ptr_cpu(),out_turb_visc_ppts.get_ptr_cpu());
     
 #else
@@ -4910,7 +4992,7 @@ void eles::calc_turb_visc_ppts(int in_ele, array<double>& out_turb_visc_ppts)
       
       for(j=0;j<n_upts_per_ele;j++)
       {
-        out_turb_visc_ppts(i) += opp_p(i,j)*turb_visc_upts_plot(j,k);
+        out_turb_visc_ppts(i) += opp_p(i,j)*turb_visc_upts_plot(j);
       }
     }
     
