@@ -21,35 +21,22 @@
 # You should have received a copy of the GNU General Public License
 # along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
 
-# CPU or GPU
 NODE=     CPU
-
-# DEBUG or RELEASE
 CODE=     DEBUG
-
-# *_BLAS: NO, STANDARD, ATLAS, or MKL
-BLAS=     NO_BLAS
-
-# C++ compiler to use
+BLAS=     ATLAS_BLAS
 COMP=     GCC
-
-# MPI or NO
 PARALLEL= NO
+TECIO=    YES
+MACHINE=  YOSEMITESAM
 
-TECIO=    NO
+BLAS_DIR= /usr/local/atlas
 
-# Location of libcblas.a
-BLAS_DIR= /usr/local/cblas
+PARMETIS_DIR = /usr/local
 
-# Location of parmetis.h, metis.h
-PARMETIS_DIR = /usr/local/parmetis-4.0.3
+PARMETIS_BUILD_DIR = $(PARMETIS_DIR)/lib
 
-# Location of libparmetis.a, libmetis.a
-PARMETIS_BUILD_DIR = /usr/local/parmetis-4.0.3/build/Darwin-x86_64
-
-TECIO_DIR = /usr/local/tecio-2013
+TECIO_DIR = lib/tecio-2008
 
 CUDA_DIR = /usr/local/cuda-5.0
 
-# Location of mpi.h
 MPI_DIR = /usr/mpi/gcc/mvapich-1.2.0

@@ -113,14 +113,7 @@ int main(int argc, char *argv[]) {
   error_state = 0;
   FlowSol.ene_hist = 1000.;
   FlowSol.grad_ene_hist = 1000.;
-  
-  /*! Initialize body forcing term for periodic channel. */
-
-  if (run_input.equation == 0 && run_input.forcing == 1) {
-    FlowSol.body_force.setup(5);
-    for (i=0; i<5; i++) FlowSol.body_force(i)=0.0;
-  }
-  
+    
   /*! Initialize forces, integral quantities, and residuals. */
 
   if (FlowSol.rank == 0) {
@@ -137,7 +130,6 @@ int main(int argc, char *argv[]) {
     }
     for (i=0; i<run_input.n_integral_quantities; i++)
       FlowSol.integral_quantities(i)=0.0;
-
   }
   
   /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
@@ -176,29 +168,11 @@ int main(int argc, char *argv[]) {
         /* Update the mesh */
         Mesh.move(FlowSol.ini_iter+i_steps,i,&FlowSol);
 
-        /* Residual for Geometric Conservation Law (GCL) */
-        /*
-        if (run_input.GCL) {
-          CalcGCLResidual(&FlowSol);
-
-          // Time integration for Geometric Conservation Law (GCL) using a RK scheme
-          for(j=0; j<FlowSol.n_ele_types; j++) {
-
-            // Time Advance
-            FlowSol.mesh_eles(j)->AdvanceGCL(i, FlowSol.adv_type);
-
-            // Extrapolate Jacobians to flux points
-            FlowSol.mesh_eles(j)->extrapolate_GCL_solution(0);
-
-            // Reset transforms using updated Jacobians
-            FlowSol.mesh_eles(j)->correct_dynamic_transforms();
-          }
-        }*/
       }
 
       /*! Spatial integration. */
 
-      CalcResidual(&FlowSol);
+      CalcResidual(FlowSol.ini_iter+i_steps, i, &FlowSol);
       
       /*! Time integration usign a RK scheme */
       
@@ -240,6 +214,10 @@ int main(int argc, char *argv[]) {
       
       CalcIntegralQuantities(FlowSol.ini_iter+i_steps, &FlowSol);
       
+      /*! Compute time-averaged quantities. */
+      
+      CalcTimeAverageQuantities(&FlowSol);
+
       /*! Compute the norm of the residual. */
       
       CalcNormResidual(&FlowSol);

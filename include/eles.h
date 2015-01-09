@@ -61,6 +61,9 @@ public:
   /*! write data to restart file */
   void write_restart_data(ofstream& restart_file);
 
+  /*! write extra restart file containing x,y,z of solution points instead of solution data */
+  void write_restart_mesh(ofstream& restart_file);
+
 	/*! move all to from cpu to gpu */
 	void mv_all_cpu_gpu(void);
 
@@ -87,8 +90,17 @@ public:
   /*! copy LES diagnostics at solution points to cpu */
   void cp_LES_diagnostics_gpu_cpu(void);
 
+  /*! copy local time stepping reference length at solution points to cpu */
+  void cp_h_ref_gpu_cpu(void);
+
   /*! copy source term at solution points to cpu */
   void cp_src_upts_gpu_cpu(void);
+
+  /*! copy elemental sensor values to cpu */
+  void cp_sensor_gpu_cpu(void);
+
+  /*! copy AV co-eff values at solution points to cpu */
+  void cp_epsilon_upts_gpu_cpu(void);
 
   /*! remove transformed discontinuous solution at solution points from cpu */
   void rm_disu_upts_cpu(void);
@@ -305,8 +317,17 @@ public:
   /*! calculate turbulent at the plot points */
   void calc_turb_visc_ppts(int in_ele, array<double>& out_turb_visc_ppts);
 
+  /*! calculate sensor at the plot points */
+  void calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts);
+
+  /*! calculate AV-co-efficients at the plot points */
+  void calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts);
+
+  /*! calculate time-averaged diagnostic fields at the plot points */
+  void calc_time_average_ppts(int in_ele, array<double>& out_disu_average_ppts);
+
   /*! calculate diagnostic fields at the plot points */
-  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_coeff_ppts, array<double>& in_turb_visc_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts);
+  void calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_coeff_ppts, array<double>& in_turb_visc_ppts, array<double>& in_sensor_ppts, array<double>& in_epsilon_ppts, array<double>& out_diag_field_ppts, double& time);
 
   /*! calculate position of a solution point */
   void calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos);
@@ -405,13 +426,13 @@ public:
   double compute_res_upts(int in_norm_type, int in_field);
 
   /*! calculate body forcing at solution points */
-  void calc_body_force_upts(array <double>& vis_force, array <double>& body_force);
-
-  /*! add body forcing at solution points */
-  void evaluate_bodyForce(array <double>& body_force);
+  void evaluate_body_force(int in_file_num);
 
   /*! Compute volume integral of diagnostic quantities */
   void CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities);
+
+  /*! Compute time-average diagnostic quantities */
+  void CalcTimeAverageQuantities(double& time);
 
   void compute_wall_forces(array<double>& inv_force, array<double>& vis_force, double& temp_cl, double& temp_cd, ofstream& coeff_file, bool write_forces);
 
@@ -610,6 +631,12 @@ public:
   void rigid_grid_velocity(double rk_time);
   void perturb_grid_velocity(double rk_time);
 #endif
+
+  /* --- Shock capturing functions --- */
+
+  void shock_capture_concentration(int in_disu_upts_from);
+  void shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma);
+
 protected:
 
   // #### members ####
@@ -649,6 +676,9 @@ protected:
 
   /*!  number of diagnostic fields */
   int n_diagnostic_fields;
+
+  /*!  number of time averaged diagnostic fields */
+  int n_average_fields;
 
   /*! order of solution polynomials */
   int order;
@@ -948,11 +978,14 @@ protected:
   array< array<double> > disu_upts;
 
 	/*!
-	time-averaged diagnostic fields at solution points
+	running time-averaged diagnostic fields at solution points
 	*/
-	array<double> u_average;
-	array<double> v_average;
-	array<double> w_average;
+	array<double> disu_average_upts;
+
+	/*!
+	time (in secs) until start of time average period for above diagnostic fields
+	*/
+  double spinup_time;
 
 	/*!
 	filtered solution at solution points for similarity and SVV LES models
@@ -1218,6 +1251,9 @@ protected:
   int rank;
   int nproc;
 
+  /*! mass flux through inlet */
+  double mass_flux;
+
   /*! reference element length */
   array<double> h_ref;
   
@@ -1225,5 +1261,24 @@ protected:
   array<double> dt_local;
   double dt_local_new;
   array<double> dt_local_mpi;
+
+  /*! Artificial Viscosity variables */
+  array<double> vandermonde;
+  array<double> inv_vandermonde;
+  array<double> vandermonde2D;
+  array<double> inv_vandermonde2D;
+  array<double> area_coord_upts;
+  array<double> area_coord_fpts;
+  array<double> epsilon;
+  array<double> epsilon_upts;
+  array<double> epsilon_fpts;
+  array<double> concentration_array;
+  array<double> sensor;
+  array<double> sigma;
+
+  array<double> min_dt_local;
+
+  /*! Global cell number of element as in the code */
+  array<int> ele2global_ele_code;
 
 };

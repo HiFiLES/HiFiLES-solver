@@ -117,7 +117,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
   
   if (n_eles!=0)
   {
-    
+
     order=run_input.order;
     p_res=run_input.p_res;
     viscous =run_input.viscous;
@@ -135,10 +135,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     inters_cub_order = run_input.inters_cub_order;
     volume_cub_order = run_input.volume_cub_order;
     n_bdy_eles=0;
-    
+
     // Initialize the element specific static members
     (*this).setup_ele_type_specific();
-    
+
     if(run_input.adv_type==0)
     {
       n_adv_levels=1;
@@ -159,14 +159,14 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     {
       cout << "ERROR: Type of time integration scheme not recongized ... " << endl;
     }
-    
+
     // Allocate storage for solution
     disu_upts.setup(n_adv_levels);
     for(int i=0;i<n_adv_levels;i++)
     {
       disu_upts(i).setup(n_upts_per_ele,n_eles,n_fields);
     }
-    
+
     // Allocate storage for timestep
     // If using global minimum, only one timestep
     if (run_input.dt_type == 1)
@@ -190,22 +190,16 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     for (int m=0;m<n_adv_levels;m++)
       disu_upts(m).initialize_to_zero();
     
-    // Allocate storage for time-averaged diagnostic fields
+    // Set no. of diagnostic fields
     n_diagnostic_fields = run_input.n_diagnostic_fields;
-    
-    for(int i=0;i<n_diagnostic_fields;++i) {
-      if(run_input.diagnostic_fields(i) == "u_average") {
-        u_average.setup(n_upts_per_ele,n_eles);
-        u_average.initialize_to_zero();
-      }
-      else if(run_input.diagnostic_fields(i) == "v_average") {
-        v_average.setup(n_upts_per_ele,n_eles);
-        v_average.initialize_to_zero();
-      }
-      else if(run_input.diagnostic_fields(i) == "w_average") {
-        w_average.setup(n_upts_per_ele,n_eles);
-        w_average.initialize_to_zero();
-      }
+
+    // Set no. of diagnostic fields
+    n_average_fields = run_input.n_average_fields;
+
+    // Allocate storage for time-averaged velocity components    
+    if(n_average_fields > 0) {
+      disu_average_upts.setup(n_upts_per_ele,n_eles,n_average_fields);
+      disu_average_upts.initialize_to_zero();
     }
     
     // Allocate extra arrays for LES models
@@ -418,6 +412,22 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       grad_disu_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
       grad_disu_fpts.setup(n_fpts_per_ele,n_eles,n_fields,n_dims);
     }
+
+    if(run_input.ArtifOn)
+    {
+      if(run_input.artif_type == 1)
+        sensor.setup(n_eles);
+
+      if(run_input.artif_type == 0)
+      {
+          epsilon.setup(n_eles);
+          epsilon_upts.setup(n_upts_per_ele,n_eles);
+          epsilon_fpts.setup(n_fpts_per_ele,n_eles);
+          sensor.setup(n_eles);
+          //dt_local.setup(n_eles);
+          min_dt_local.setup(1);
+      }
+    }
     
     // Set connectivity array. Needed for Paraview output.
     if (ele_type==3) // prism
@@ -580,8 +590,7 @@ void eles::set_ics(double& time)
           p = 0.0;
           ics(1) = sin(pos(0)/2.)*cos(pos(1)/2.);
           ics(2) = -1.0*cos(pos(0)/2.)*sin(pos(1)/2.);
-          ics(3) = 0.0;
-          ics(4)=p/(gamma-1.0)+0.5*rho*(ics(1)*ics(1)+ics(2)*ics(2));
+          ics(3)=p/(gamma-1.0)+0.5*rho*(ics(1)*ics(1)+ics(2)*ics(2));
         }
         else if(n_dims==3)
         {
@@ -611,7 +620,7 @@ void eles::set_ics(double& time)
         L_x = 2.*pi;
         L_y = pi;
         L_z = 2.;
-        ics(3) += alpha*exp(pow(-((pos(0)-L_x/2.)/L_x),2))*exp(pow(-(pos(1)/L_y),2))*cos(4.*pi*pos(2)/L_z);
+        ics(3) += alpha*exp(-pow((pos(0)-L_x/2.)/L_x,2))*exp(-pow(pos(1)/L_y,2))*cos(4.*pi*pos(2)/L_z);
       }
       
       // set solution at solution point
@@ -621,18 +630,26 @@ void eles::set_ics(double& time)
       }
     }
   }
-  
+
   // If required, calculate element reference lengths
-  if (run_input.dt_type != 0)
-  {
+  if (run_input.dt_type > 0) {
     // Allocate array
-    h_ref.setup(n_eles);
-    h_ref.initialize_to_zero();
+    h_ref.setup(n_upts_per_ele,n_eles);
     
     // Call element specific function to obtain length
-    for (int i=0; i<n_eles; i++)
-      h_ref(i) = (*this).calc_h_ref_specific(i);
+    double h_ref_dumb;
+    for (int i=0;i<n_eles;i++) {
+      h_ref_dumb = (*this).calc_h_ref_specific(i);
+      for (int j=0;j<n_upts_per_ele;j++) {
+        // TODO: Make more memory efficient!!!
+        h_ref(j,i) = h_ref_dumb;
+      }
+    }
   }
+  else {
+    h_ref.setup(1);
+  }
+  h_ref.cp_cpu_gpu();
 }
 
 
@@ -713,16 +730,24 @@ void eles::read_restart_data(ifstream& restart_file)
   }
   
   // If required, calculate element reference lengths
-  if (run_input.dt_type != 0)
-  {
+  if (run_input.dt_type > 0) {
     // Allocate array
-    h_ref.setup(n_eles);
-    h_ref.initialize_to_zero();
-    
+    h_ref.setup(n_upts_per_ele,n_eles);
+
     // Call element specific function to obtain length
-    for (int i=0; i<n_eles; i++)
-      h_ref(i) = (*this).calc_h_ref_specific(i);
+    double h_ref_dumb;
+    for (int i=0;i<n_eles;i++) {
+      h_ref_dumb = (*this).calc_h_ref_specific(i);
+      for (int j=0;j<n_upts_per_ele;j++) {
+        // TODO: Make more memory efficient!!!
+        h_ref(j,i) = h_ref_dumb;
+      }
+    }
   }
+  else {
+    h_ref.setup(1);
+  }
+  h_ref.cp_cpu_gpu();
 }
 
 
@@ -745,6 +770,35 @@ void eles::write_restart_data(ofstream& restart_file)
       for (int k=0;k<n_fields;k++)
       {
         restart_file << disu_upts(0)(j,i,k) << " ";
+      }
+      restart_file << endl;
+    }
+  }
+  restart_file << endl;
+}
+
+void eles::write_restart_mesh(ofstream& restart_file)
+{
+  restart_file << "n_eles" << endl;
+  restart_file << n_eles << endl;
+  restart_file << "ele2global_ele array" << endl;
+  for (int i=0;i<n_eles;i++)
+    restart_file << ele2global_ele(i) << " ";
+  restart_file << endl;
+
+  restart_file << "data" << endl;
+
+  for (int i=0;i<n_eles;i++)
+  {
+    restart_file << ele2global_ele(i) << endl;
+    for (int j=0;j<n_upts_per_ele;j++)
+    {
+      for (int k=0;k<n_dims;k++)
+      {
+        if (motion!=STATIC_MESH)
+          restart_file << dyn_pos_upts(j,i,k) << " ";
+        else
+          restart_file << pos_upts(j,i,k) << " ";
       }
       restart_file << endl;
     }
@@ -808,6 +862,33 @@ void eles::mv_all_cpu_gpu(void)
 
     if (motion) {
       run_input.bound_vel_simple(0).mv_cpu_gpu();
+    }
+
+    if(run_input.ArtifOn){
+        // Needed for shock capturing routines
+        sensor.cp_cpu_gpu();
+        inv_vandermonde.mv_cpu_gpu();
+        inv_vandermonde2D.mv_cpu_gpu();
+        vandermonde2D.mv_cpu_gpu();
+
+        if(run_input.artif_type == 1)
+        {
+          concentration_array.mv_cpu_gpu();
+          sigma.mv_cpu_gpu();
+        }
+
+        if(run_input.artif_type == 0)
+        {
+          epsilon.mv_cpu_gpu();
+          epsilon_upts.cp_cpu_gpu();
+          epsilon_fpts.cp_cpu_gpu();
+          ele2global_ele_code.mv_cpu_gpu();
+          area_coord_upts.mv_cpu_gpu();
+          area_coord_fpts.mv_cpu_gpu();
+          n_spts_per_ele.mv_cpu_gpu();
+          dt_local.cp_cpu_gpu();
+          min_dt_local.cp_cpu_gpu();
+        }
     }
   }
 #endif
@@ -908,6 +989,16 @@ void eles::cp_LES_diagnostics_gpu_cpu(void)
 #endif
 }
 
+// copy local time stepping reference length at solution points to cpu
+void eles::cp_h_ref_gpu_cpu(void)
+{
+#ifdef _GPU
+
+  h_ref.cp_gpu_cpu();
+
+#endif
+}
+
 // copy source term at solution points to cpu
 void eles::cp_src_upts_gpu_cpu(void)
 {
@@ -919,6 +1010,28 @@ void eles::cp_src_upts_gpu_cpu(void)
 
 #endif
   }
+}
+
+// copy sensor in each element to cpu
+void eles::cp_sensor_gpu_cpu(void)
+{
+#ifdef _GPU
+  if (n_eles!=0)
+    {
+      sensor.cp_gpu_cpu();
+    }
+#endif
+}
+
+// copy sensor in each element to cpu
+void eles::cp_epsilon_upts_gpu_cpu(void)
+{
+#ifdef _GPU
+  if (n_eles!=0)
+    {
+      epsilon_upts.cp_gpu_cpu();
+    }
+#endif
 }
 
 // remove transformed discontinuous solution at solution points from cpu
@@ -1024,7 +1137,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 #endif
       
 #ifdef _GPU
-      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),run_input.dt,run_input.const_src);
+      RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),h_ref.get_ptr_gpu(),run_input.dt,run_input.const_src,run_input.CFL,run_input.gamma,run_input.mu_inf,run_input.order,viscous,run_input.dt_type);
 #endif
       
     }
@@ -1122,7 +1235,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
       
 #ifdef _GPU
       
-      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),rk4a,rk4b,run_input.dt,run_input.const_src);
+      RK45_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),disu_upts(1).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),h_ref.get_ptr_gpu(),rk4a,rk4b,run_input.dt,run_input.const_src,run_input.CFL,run_input.gamma,run_input.mu_inf,run_input.order,viscous,run_input.dt_type,in_step);
       
 #endif
       
@@ -1173,13 +1286,13 @@ double eles::calc_dt_local(int in_ele)
 
     if (viscous)
     {
-      dt_visc = (run_input.CFL * 0.25 * h_ref(in_ele) * h_ref(in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
-      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
+      dt_visc = (run_input.CFL * 0.25 * h_ref(0,in_ele) * h_ref(0,in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
+      dt_inv = run_input.CFL*h_ref(0,in_ele)/lam_inv*1.0/(2.0*run_input.order + 1.0);
     }
     else
     {
       dt_visc = 1e16;
-      dt_inv = run_input.CFL*h_ref(in_ele)/lam_inv * 1.0/(2.0*run_input.order + 1.0);
+      dt_inv = run_input.CFL*h_ref(0,in_ele)/lam_inv * 1.0/(2.0*run_input.order + 1.0);
     }
       out_dt_local = min(dt_visc,dt_inv);
   }
@@ -3299,12 +3412,11 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
             }
           }
         }
-      }
-      
-      for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
+        for (n=0;n<n_dims;++n) wall_distance(j,i,n) = vecmin(n);
 
-      if (run_input.turb_model > 0) {
-        wall_distance_mag(j,i) = distmin;
+        if (run_input.turb_model > 0) {
+          wall_distance_mag(j,i) = distmin;
+        }
       }
     }
   }
@@ -3750,6 +3862,137 @@ void eles::evaluate_sgsFlux(void)
     }
 #endif
   }
+}
+
+// sense shock and filter (for concentration method) - only on GPUs
+
+void eles::shock_capture_concentration(int in_disu_upts_from)
+{
+  if (n_eles!=0){
+    #ifdef _GPU
+      shock_capture_concentration_gpu_kernel_wrapper(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), vandermonde2D.get_ptr_gpu(), concentration_array.get_ptr_gpu(), sensor.get_ptr_gpu(), sigma.get_ptr_gpu());
+    #endif
+
+    #ifdef _CPU
+        shock_capture_concentration_cpu(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_cpu(), inv_vandermonde.get_ptr_cpu(), inv_vandermonde2D.get_ptr_cpu(), vandermonde2D.get_ptr_cpu(), concentration_array.get_ptr_cpu(), sensor.get_ptr_cpu(), sigma.get_ptr_cpu());
+    #endif
+  }
+}
+
+void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma)
+{
+    int stride = in_n_upts_per_ele*in_n_eles;
+    double tmp_sensor = 0;
+
+    double nodal_rho[8];  // Array allocated so that it can handle upto p=7
+    double modal_rho[8];
+    double uE[8];
+    double temp;
+    double p = 3;	// exponent in concentration method
+    double J = 0.15;
+    int shock_found = 0;
+
+    if(in_n_eles!=0){
+        // X-slices
+        for(int m=0; m<in_n_eles; m++)
+        {
+          tmp_sensor = 0;
+            for(int i=0; i<in_order+1; i++)
+            {
+                for(int j=0; j<in_order+1; j++){
+                    nodal_rho[j] = in_disu_upts_ptr[m*in_n_upts_per_ele + i*(in_order+1) + j];
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    modal_rho[j] = 0;
+                    for(int k=0; k<in_order+1; k++){
+                        modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)]*nodal_rho[k];
+                    }
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    uE[j] = 0;
+                    for(int k=0; k<in_order+1; k++)
+                        uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+
+                    uE[j] = abs((3.1415/(in_order+1))*uE[j]);
+                    temp = pow(uE[j],p)*pow(in_order+1,p/2);
+
+                    if(temp >= J)
+                        shock_found++;
+
+                    if(temp > tmp_sensor)
+                        tmp_sensor = temp;
+                }
+
+            }
+
+            // Y-slices
+            for(int i=0; i<in_order+1; i++)
+            {
+                for(int j=0; j<in_order+1; j++){
+                    nodal_rho[j] = in_disu_upts_ptr[m*in_n_upts_per_ele + j*(in_order+1) + i];
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    modal_rho[j] = 0;
+                    for(int k=0; k<in_order+1; k++)
+                        modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)]*nodal_rho[k];
+                }
+
+                for(int j=0; j<in_order+1; j++){
+                    uE[j] = 0;
+                    for(int k=0; k<in_order+1; k++)
+                        uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+
+                    uE[j] = (3.1415/(in_order+1))*uE[j];
+                    temp = pow(abs(uE[j]),p)*pow(in_order+1,p/2);
+
+                    if(temp >= J)
+                        shock_found++;
+
+                    if(temp > tmp_sensor)
+                        tmp_sensor = temp;
+                }
+            }
+
+            out_sensor[m] = tmp_sensor;
+
+            /* -------------------------------------------------------------------------------------- */
+            /* Exponential modal filter */
+
+            if(tmp_sensor > s0 + kappa && in_artif_type == 1) {
+                double nodal_sol[36];
+                double modal_sol[36];
+
+                for(int k=0; k<in_n_fields; k++) {
+
+                    for(int i=0; i<in_n_upts_per_ele; i++){
+                        nodal_sol[i] = in_disu_upts_ptr[m*in_n_upts_per_ele + k*stride + i];
+                    }
+
+                    // Nodal to modal only upto 1st order
+                    for(int i=0; i<in_n_upts_per_ele; i++){
+                        modal_sol[i] = 0;
+                        for(int j=0; j<in_n_upts_per_ele; j++)
+                            modal_sol[i] += in_inv_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*nodal_sol[j];
+
+                        modal_sol[i] = modal_sol[i]*sigma[i];
+                        //printf("The exp filter values are %f \n",modal_sol[i]);
+                    }
+
+                    // Change back to nodal
+                    for(int i=0; i<in_n_upts_per_ele; i++){
+                        nodal_sol[i] = 0;
+                        for(int j=0; j<in_n_upts_per_ele; j++)
+                            nodal_sol[i] += in_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*modal_sol[j];
+
+                        in_disu_upts_ptr[m*in_n_upts_per_ele + k*stride + i] = nodal_sol[i];
+                    }
+                }
+            }
+        }
+    }
 }
 
 // get the type of element
@@ -4554,7 +4797,7 @@ void eles::calc_dynamic_coeff_ppts(int in_ele, array<double>& out_coeff_ppts)
   {
     
     int i,j,k;
-    
+
     array<double> coeff_upts_plot(n_upts_per_ele);
     
     for(j=0;j<n_upts_per_ele;j++)
@@ -4568,7 +4811,7 @@ void eles::calc_dynamic_coeff_ppts(int in_ele, array<double>& out_coeff_ppts)
     
 #elif defined _NO_BLAS
     dgemm(n_ppts_per_ele,1,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),coeff_upts_plot.get_ptr_cpu(),out_coeff_ppts.get_ptr_cpu());
-    
+
 #else
     
     //HACK (inefficient, but useful if cblas is unavailible)
@@ -4580,6 +4823,53 @@ void eles::calc_dynamic_coeff_ppts(int in_ele, array<double>& out_coeff_ppts)
       for(j=0;j<n_upts_per_ele;j++)
       {
         out_coeff_ppts(i) += opp_p(i,j)*coeff_upts_plot(j,k);
+      }
+    }
+    
+#endif
+    
+  }
+}
+
+// calculate the time averaged field values at plot points
+void eles::calc_time_average_ppts(int in_ele, array<double>& out_disu_average_ppts)
+{
+  if (n_eles!=0)
+  {
+    
+    int i,j,k;
+    
+    array<double> disu_average_upts_plot(n_upts_per_ele,n_average_fields);
+    
+    for(i=0;i<n_average_fields;i++)
+    {
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        disu_average_upts_plot(j,i)=disu_average_upts(j,in_ele,i);
+      }
+    }
+    
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+    
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_average_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,disu_average_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_average_ppts.get_ptr_cpu(),n_ppts_per_ele);
+    
+#elif defined _NO_BLAS
+    dgemm(n_ppts_per_ele,n_average_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),disu_average_upts_plot.get_ptr_cpu(),out_disu_average_ppts.get_ptr_cpu());
+    
+#else
+    
+    //HACK (inefficient, but useful if cblas is unavailible)
+    
+    for(i=0;i<n_ppts_per_ele;i++)
+    {
+      for(k=0;k<n_average_fields;k++)
+      {
+        out_disu_average_ppts(i,k) = 0.;
+        
+        for(j=0;j<n_upts_per_ele;j++)
+        {
+          out_disu_average_ppts(i,k) += opp_p(i,j)*disu_average_upts_plot(j,k);
+        }
       }
     }
     
@@ -4625,12 +4915,61 @@ void eles::calc_turb_visc_ppts(int in_ele, array<double>& out_turb_visc_ppts)
     }
     
 #endif
+  }
+}
     
+// calculate the sensor values at plot points
+void eles::calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts)
+{
+    if (n_eles!=0)
+    {
+      for(int i=0;i<n_ppts_per_ele;i++)
+        out_sensor_ppts(i) = sensor(in_ele);
+    }
+}
+
+// calculate solution at the plot points
+void eles::calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts)
+{
+  if (n_eles!=0)
+  {
+
+      int i,j,k;
+
+      array<double> epsilon_upts_plot(n_upts_per_ele);
+
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        epsilon_upts_plot(j)=epsilon_upts(j,in_ele);
+      }
+
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,1,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,epsilon_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_epsilon_ppts.get_ptr_cpu(),n_ppts_per_ele);
+
+#else
+
+      //HACK (inefficient, but useful if cblas is unavailible)
+
+      for(i=0;i<n_ppts_per_ele;i++)
+      {
+        out_epsilon_ppts(i) = 0.;
+
+        for(j=0;j<n_upts_per_ele;j++)
+        {
+          out_epsilon_ppts(i) += opp_p(i,j)*epsilon_upts_plot(j);
+        }
+
+      }
+
+#endif
+
   }
 }
 
 // calculate diagnostic fields at the plot points
-void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_coeff_ppts, array<double>& in_turb_visc_ppts, array<double>& in_grad_disu_ppts, array<double>& out_diag_field_ppts)
+void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_coeff_ppts, array<double>& in_turb_visc_ppts, array<double>& in_sensor_ppts, array<double>& in_epsilon_ppts, array<double>& out_diag_field_ppts, double& time)
 {
   int i,j,k,m;
   double diagfield_upt;
@@ -4749,11 +5088,7 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
           }
         }
       }
-      else if (run_input.diagnostic_fields(k)=="average_u" || run_input.diagnostic_fields(k)=="average_v" || run_input.diagnostic_fields(k)=="average_w")
-      {
-        double av=0.0;
-        diagfield_upt = av;
-      }
+      // LES diagnostics
       else if(run_input.diagnostic_fields(k)=="dynamic_coeff")
       {
         diagfield_upt = in_coeff_ppts(j);
@@ -4774,6 +5109,15 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
         mu_t = in_turb_visc_ppts(j);
 
         diagfield_upt = mu_t/(mu+eps);
+      }
+      // Artificial Viscosity diagnostics
+      else if (run_input.diagnostic_fields(k)=="sensor")
+      {
+        diagfield_upt = in_sensor_ppts(j);
+      }
+      else if (run_input.diagnostic_fields(k)=="epsilon")
+      {
+        diagfield_upt = in_epsilon_ppts(j);
       }
       else
         FatalError("plot_quantity not recognized");
@@ -4863,7 +5207,7 @@ void eles::set_transforms(void)
     
     for(i=0;i<n_eles;i++)
     {
-      if ((i%(n_eles/10))==0 && rank==0)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
       
       for(j=0;j<n_upts_per_ele;j++)
@@ -5032,7 +5376,7 @@ void eles::set_transforms(void)
     
     for(i=0;i<n_eles;i++)
     {
-      if ((i%(n_eles/10))==0 && rank==0)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
       
       for(j=0;j<n_fpts_per_ele;j++)
@@ -5274,7 +5618,7 @@ void eles::set_transforms_dynamic(void)
     }
 
     for(i=0;i<n_eles;i++) {
-      if ((i%(n_eles/10))==0 && rank==0 && first_time)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0 && first_time)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
       for(j=0;j<n_upts_per_ele;j++)
@@ -5361,7 +5705,7 @@ void eles::set_transforms_dynamic(void)
       cout << endl << " at flux points"  << endl;
 
     for(i=0;i<n_eles;i++) {
-      if ((i%(n_eles/10))==0 && rank==0 && first_time)
+      if ((i%(max(n_eles,10)/10))==0 && rank==0 && first_time)
         cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
 
       for(j=0;j<n_fpts_per_ele;j++)
@@ -6798,74 +7142,70 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
   return error;
 }
 
-// Calculate body forcing term for periodic channel flow. HARDCODED FOR THE CHANNEL!
+// Calculate body forcing term for periodic channel flow. HARDCODED FOR THE CHANNEL AND PERIODIC HILL!
 
-void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_force)
+void eles::evaluate_body_force(int in_file_num)
 {
-#ifdef _CPU
+//#ifdef _CPU
   
   if (n_eles!=0) {
-    int i,j,k,l,m;
-    double lenx, areayz, vol, detjac, sum;
-    array <double> cubwgts(n_cubpts_per_ele);
-    double mdot, ubulk, wallf, dpdx;
-    double alpha=0.1; // relaxation parameter
-    double mdot0 = 1.0; // initial mass flow rate
-    array <double> disu_cubpt(2);
-    array <double> solint(2);
+    int i,j,k,l,m,ele;
+    double area, vol, detjac, ubulk, wgt;
+    double mdot0, mdot_old, alpha, dt;
     array <int> inflowinters(n_bdy_eles,n_inters_per_ele);
-    array <double> norm(n_dims), flow(n_dims);
-    double wgt;
-    
-    solint(0)=0.0; solint(1)=0.0;
-    
-    // Calculate mass flux as area integral
+    array <double> body_force(n_fields);
+    array <double> disu_cubpt(4);
+    array <double> integral(4);
+    array <double> norm(n_dims), flow(n_dims), loc(n_dims), pos(n_dims);
+    ofstream write_mdot;
+    bool open_mdot;
+
+    for (i=0;i<4;i++)
+    {
+      integral(i)=0.0;
+    }
+
+    // zero the interface flags
     for (i=0;i<n_bdy_eles;i++)
+    {
       for (l=0;l<n_inters_per_ele;l++)
+      {
         inflowinters(i,l)=0;
-    sum=0;
+      }
+    }
+
     // Mass flux on inflow boundary
     // Integrate density and x-velocity over inflow area
     for (i=0;i<n_bdy_eles;i++)
     {
-      int ele = bdy_ele2ele(i);
+      ele = bdy_ele2ele(i);
       for (l=0;l<n_inters_per_ele;l++)
       {
         if(inflowinters(i,l)!=1) // only unflagged inters
         {
-          // Inlet has either Sub_In_Simp (1), Sub_In_Char (3), Sup_In (5) or Cyclic (9) BC
-          if(bctype(ele,l) == 1 || bctype(ele,l) == 3 || bctype(ele,l) == 5 || bctype(ele,l) == 9)
+          // HACK: Inlet is always a Cyclic (9) BC
+          if(bctype(ele,l) == 9)
           {
-            // HACK NUMBER UMPTEEN: inflow plane normal direction is -x
-            if(bctype(ele,l) == 9)
+            // Get the normal
+            for (m=0;m<n_dims;m++)
             {
-              // Get the normal
-              for (m=0;m<n_dims;m++)
-                norm(m) = norm_inters_cubpts(l)(0,i,m);
-              
-              if(norm(0)==-1)
-              {
-                inflowinters(i,l)=1; // Flag this interface
-              }
-              else
-              {
-                inflowinters(i,l)=0;
-              }
+              norm(m) = norm_inters_cubpts(l)(0,i,m);
             }
-            else
+
+            // HACK: inflow plane normal direction is -x
+            if(norm(0)==-1)
             {
               inflowinters(i,l)=1; // Flag this interface
             }
           }
         }
-        sum+=inflowinters(i,l);
       }
     }
     
     // Now loop over flagged inters
     for (i=0;i<n_bdy_eles;i++)
     {
-      int ele = bdy_ele2ele(i);
+      ele = bdy_ele2ele(i);
       for (l=0;l<n_inters_per_ele;l++)
       {
         if(inflowinters(i,l)==1)
@@ -6874,74 +7214,133 @@ void eles::calc_body_force_upts(array <double>& vis_force, array <double>& body_
           {
             wgt = weight_inters_cubpts(l)(j);
             detjac = inter_detjac_inters_cubpts(l)(j,i);
-            
+
+            for (m=0;m<4;m++)
+            {
+              disu_cubpt(m) = 0.;
+            }
+
             // Get the solution at cubature point
-            disu_cubpt(0) = 0.; disu_cubpt(1) = 0.;
             for (k=0;k<n_upts_per_ele;k++)
             {
-              disu_cubpt(0) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,0); // density
-              disu_cubpt(1) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,1); // x-momentum
+              for (m=0;m<4;m++)
+              {
+                disu_cubpt(m) += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,m);
+              }
             }
-            solint(0) += wgt*disu_cubpt(0)*detjac;
-            solint(1) += wgt*disu_cubpt(1)*detjac;
+            for (m=0;m<4;m++)
+            {
+              integral(m) += wgt*disu_cubpt(m)*detjac;
+            }
           }
         }
       }
     }
-    
-    if(solint(0)==0.0 or solint(1)==0.0)
+
+#ifdef _MPI
+
+    array<double> integral_global(4);
+    for (m=0;m<4;m++)
     {
-      cout<<"Body force error diagnostics:"<<endl;
-      cout<<disu_cubpt(0)<<", "<<disu_cubpt(1)<<", "<<wgt<<", "<<detjac<<", "<<solint(0)<<", "<<solint(1)<<", "<<sum<<", "<<n_bdy_eles<<endl;
+      integral_global(m) = 0.;
+      MPI_Allreduce(&integral(m), &integral_global(m), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      integral(m) = integral_global(m);
     }
-    
-    lenx = 2*pi;
-    areayz = 2*pi;
-    vol = areayz*lenx;
-    mdot = solint(1)/areayz;
-    if(solint(0)==0)
+
+#endif
+
+    // case-specific parameters
+    // periodic channel:
+    //area = 2*pi;
+    //vol = 4*pi**2;
+
+    // periodic hill (HIOCFD3 Case 3.4):
+    area = 9.162;
+    vol = 114.34;
+    mdot0 = 9.162; // initial mass flux
+
+    // get old mass flux
+    if(run_input.restart_flag==0 and in_file_num == 0)
+      mdot_old = mdot0;
+    else if(run_input.restart_flag==1 and in_file_num == run_input.restart_iter)
+      mdot_old = mdot0;
+    else
+      mdot_old = mass_flux;
+
+    // get timestep
+    if (run_input.dt_type == 0)
+      dt = run_input.dt;
+    else if (run_input.dt_type == 1)
+      dt = dt_local(0);
+    else if (run_input.dt_type == 2)
+      FatalError("Not sure what value of timestep to use in body force term when using local timestepping.");
+
+    // bulk velocity
+    if(integral(0)==0)
       ubulk = 0.0;
     else
-      ubulk = solint(1)/solint(0);
-    
-    body_force(1) = vis_force(0)/vol; // x-momentum forcing
-    body_force(n_fields-1) = body_force(1)*ubulk; // energy forcing
-    
-    /*#ifdef _MPI
-     array<double> bodyforce_global(n_fields);
-     for (m=0;m<n_fields;m++)
-     {
-     bodyforce_global(m) = 0.;
-     MPI_Reduce(&bodyforce(m),&bodyforce_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-     bodyforce(m) = bodyforce_global(m);
-     }
-     #endif*/
-    
-    cout<<"Channel body force: " << setprecision(10)<<body_force(1)<<", "<<body_force(n_fields-1)<<endl;
-    if(isnan(body_force(1)) or isnan(body_force(n_fields-1)))
-    {
-      cout<<"ERROR: NaN body force, exiting"<<endl;
-      cout<<"timestep, vol: "<< run_input.dt<<", "<<vol<<endl;
-      cout<<"Channel mass flux: " << setprecision(10)<<mdot<<endl;
-      cout<<"Channel bulk velocity: " << setprecision(10)<<ubulk<<endl;
-      cout<<"Channel viscous force: " << setprecision(10)<<vis_force(0)<<endl;
-      exit(1);
-    }
-  }
-#endif
-}
+      ubulk = integral(1)/integral(0);
 
-void eles::evaluate_bodyForce(array <double>& body_force)
-{
-  if (n_eles!=0) {
-    int i,j,k,l,m;
-    // Add to viscous flux at solution points
+    // compute new mass flux
+    mass_flux = ubulk*integral(0);
+
+    //alpha = 1; // relaxation parameter
+
+    // set body force for streamwise momentum and energy
+    body_force(0) = 0.;
+    //body_force(1) = alpha/area/dt*(mdot0 - mass_flux); // modified SD3D version
+    body_force(1) = 1.0/area/dt*(mdot0 - 2.0*mass_flux + mdot_old); // HIOCFD C3.4 version
+    body_force(2) = 0.;
+    body_force(3) = 0.;
+    body_force(4) = body_force(1)*ubulk; // energy forcing
+
+    if (rank == 0) cout << "iter, mdot0, mdot_old, mass_flux, body_force(1): " << in_file_num << ", " << setprecision(8) << mdot0 << ", " << mdot_old << ", " << mass_flux << ", " << body_force(1) << endl;
+
+    // write out mass flux to file
+    if (rank == 0) {
+      if (run_input.restart_flag==0 and in_file_num == 1) {
+        // write file header
+        write_mdot.open("massflux.dat", ios::out);
+        write_mdot << "Iteration, massflux, Ubulk, bodyforce(x)" << endl;
+        write_mdot.close();
+      }
+      else {
+        // append subsequent dqata
+        write_mdot.open("massflux.dat", ios::app);
+        write_mdot.precision(15);
+        write_mdot << in_file_num;
+        write_mdot << ", " << mass_flux;
+        write_mdot << ", " << ubulk;
+        write_mdot << ", " << body_force(1) << endl;
+        write_mdot.close();
+      }
+    }
+    // error checking
+    if(isnan(body_force(1))) {
+      FatalError("ERROR: NaN body force, exiting");
+    }
+
+//#endif
+
+//TODO: GPU version of above?
+//#ifdef _GPU
+
+//#endif
+
+#ifdef _CPU
+
+    // Add to source term at solution points
     for (i=0;i<n_eles;i++)
       for (j=0;j<n_upts_per_ele;j++)
         for(k=0;k<n_fields;k++)
-          for(l=0;l<n_dims;l++)
-            for(m=0;m<n_dims;m++)
-              tdisf_upts(j,i,k,l)+=JGinv_upts(l,m,j,i)*body_force(k);
+          src_upts(j,i,k) += body_force(k);
+
+#endif
+
+#ifdef _GPU
+    body_force.cp_cpu_gpu();
+    evaluate_body_force_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,src_upts.get_ptr_gpu(),body_force.get_ptr_gpu());
+#endif
   }
 }
 
@@ -7077,11 +7476,98 @@ void eles::CalcIntegralQuantities(int n_integral_quantities, array <double>& int
         }
         else
         {
-          cout<<"Error: integral diagnostic quantity not recognized"<<endl;
-          exit(1);
+          FatalError("integral diagnostic quantity not recognized");
         }
         // Add contribution to global integral
         integral_quantities(m) += diagnostic*weight_volume_cubpts(j)*detjac;
+      }
+    }
+  }
+}
+
+// Compute time-averaged quantities
+void eles::CalcTimeAverageQuantities(double& time)
+{
+  double current_value, average_value;
+  double a, b, dt;
+  double spinup_time = run_input.spinup_time;
+  double rho;
+  int i, j, k;
+
+  for(j=0;j<n_upts_per_ele;j++) {
+    for(k=0;k<n_eles;k++) {
+      for(i=0;i<n_average_fields;++i) {
+
+        rho = disu_upts(0)(j,k,0);
+
+        if(run_input.average_fields(i)=="rho_average") {
+          current_value = rho;
+          average_value = disu_average_upts(j,k,0);
+        }
+        else if(run_input.average_fields(i)=="u_average") {
+          current_value = disu_upts(0)(j,k,1)/rho;
+          average_value = disu_average_upts(j,k,1);
+        }
+        else if(run_input.average_fields(i)=="v_average") {
+          current_value = disu_upts(0)(j,k,2)/rho;
+          average_value = disu_average_upts(j,k,2);
+        }
+        else if(run_input.average_fields(i)=="w_average") {
+          current_value = disu_upts(0)(j,k,3)/rho;
+          average_value = disu_average_upts(j,k,3);
+        }
+        else if(run_input.average_fields(i)=="e_average") {
+          if(n_dims==2) {
+            current_value = disu_upts(0)(j,k,3)/rho;
+            average_value = disu_average_upts(j,k,3);
+          }
+          else {
+            current_value = disu_upts(0)(j,k,4)/rho;
+            average_value = disu_average_upts(j,k,4);
+          }
+        }
+
+        // get timestep
+        if (run_input.dt_type == 0)
+          dt = run_input.dt;
+        else if (run_input.dt_type == 1)
+          dt = dt_local(0);
+        else if (run_input.dt_type == 2)
+          FatalError("Not sure what value of timestep to use in time average calculation when using local timestepping.");
+
+        // set average value to current value if before spinup time
+        // and prevent division by a very small number if time = spinup time
+        if(time-spinup_time < 1.0e-12) {
+          a = 0.0;
+          b = 1.0;
+        }
+        // calculate running average
+        else {
+          a = (time-spinup_time-dt)/(time-spinup_time);
+          b = dt/(time-spinup_time);
+        }
+
+        // Set new average value for next timestep
+        if(run_input.average_fields(i)=="rho_average") {
+          disu_average_upts(j,k,0) = a*average_value + b*current_value;
+        }
+        else if(run_input.average_fields(i)=="u_average") {
+          disu_average_upts(j,k,1) = a*average_value + b*current_value;
+        }
+        else if(run_input.average_fields(i)=="v_average") {
+          disu_average_upts(j,k,2) = a*average_value + b*current_value;
+        }
+        else if(run_input.average_fields(i)=="w_average") {
+          disu_average_upts(j,k,3) = a*average_value + b*current_value;
+        }
+        else if(run_input.average_fields(i)=="e_average") {
+          if(n_dims==2) {
+            disu_average_upts(j,k,3) = a*average_value + b*current_value;
+          }
+          else {
+            disu_average_upts(j,k,4) = a*average_value + b*current_value;
+          }
+        }
       }
     }
   }
@@ -7341,6 +7827,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
                             }
 
                           // viscous component of the lift and drag coefficients
+                          // TODO: make this work for any orientation of axes
                           
                           cl += -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
                           cd += Fvis(0)*cos(aoa)*cos(aos) + Fvis(1)*sin(aoa) + Fvis(2)*sin(aoa)*cos(aos);

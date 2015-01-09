@@ -62,7 +62,7 @@ using namespace std;
 #define MULTI_ZONE
 //#define SINGLE_ZONE
 
-void CalcResidual(struct solution* FlowSol) {
+void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 
   int in_disu_upts_from = 0;        /*!< Define... */
   int in_div_tconf_upts_to = 0;     /*!< Define... */
@@ -75,6 +75,22 @@ void CalcResidual(struct solution* FlowSol) {
             FlowSol->mesh_eles(i)->calc_sgs_terms(in_disu_upts_from);
         }
     }
+
+  /*! Shock capturing part - only concentration method on GPU and on quads for now */
+  /*! TO be added: Persson's method for triangles with artificial viscosity structure */
+
+  if(run_input.ArtifOn) {
+
+    // #ifdef _GPU
+
+      if(run_input.artif_type == 1){
+          /*! This routine does shock detection. For concentration method filter is also applied in this routine itself */
+          for(i=0;i<FlowSol->n_ele_types;i++)
+            FlowSol->mesh_eles(i)->shock_capture_concentration(in_disu_upts_from);
+      }
+
+    // #endif
+  }
 
   /*! Compute the solution at the flux points. */
   for(i=0; i<FlowSol->n_ele_types; i++)
@@ -97,11 +113,21 @@ void CalcResidual(struct solution* FlowSol) {
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->evaluate_invFlux(in_disu_upts_from);
 
-  /*! Calculate body forcing, if switched on, and add to flux. */
-  if(run_input.equation==0 && run_input.forcing==1) {
-      for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->evaluate_bodyForce(FlowSol->body_force);
+
+  // If running periodic channel or periodic hill cases,
+  // calculate body forcing and add to source term
+  if(run_input.forcing==1 and in_rk_stage==0 and run_input.equation==0 and FlowSol->n_dims==3) {
+
+#ifdef _GPU
+  // copy disu_upts for body force calculation
+  for(i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+#endif
+
+    for(i=0;i<FlowSol->n_ele_types;i++) {
+      FlowSol->mesh_eles(i)->evaluate_body_force(in_file_num);
     }
+  }
 
   /*! Compute the inviscid numerical fluxes.
    Compute the common solution and solution corrections (viscous only). */

@@ -53,8 +53,6 @@ public:
   void set_dt(double in_dt);
 
   void setup(ifstream& in_run_input_file, int rank);
-  
-  void reset(int c_ind, int p_ind, int grid_ind, int vis_ind, int tau_ind, int dev_ind, int dim_ind);
 
   // #### members ####
 
@@ -65,6 +63,8 @@ public:
 
   int n_diagnostic_fields;
   array<string> diagnostic_fields;
+  int n_average_fields;
+  array<string> average_fields;
   int n_integral_quantities;
   array<string> integral_quantities;
 
@@ -99,6 +99,7 @@ public:
 	int wall_model;
 	double wall_layer_t;
 
+  double spinup_time;
   int monitor_res_freq;
   int monitor_integrals_freq;
   int monitor_cp_freq;
@@ -109,6 +110,7 @@ public:
   int restart_flag;
   int restart_iter;
   int n_restart_files;
+  int restart_mesh_out; // Print out separate restart file with X,Y,Z of all sol'n points?
 
   int ic_form;
 
@@ -121,6 +123,13 @@ public:
   array<string> boundary_flags;
   array<array<double> > bound_vel_simple;
   array<int> motion_type;
+  /* -------------------------------- */
+
+  /* --- Shock Capturing options --- */
+  int artif_only, artif_type, ArtifOn;
+  double epsilon0, s0, kappa;
+  int shock_vortex_restart;
+  double p_bound_out;
   /* -------------------------------- */
 
   // boundary_conditions
