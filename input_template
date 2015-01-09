@@ -99,7 +99,7 @@ write_type                        // 0: Paraview, 1: Tecplot
 0
 n_diagnostic_fields               // Choose extra fields to be written to file: u v w energy pressure mach vorticity q_criterion. Set to 0 for no diagnostic fields
 0
-n_average_fields                  // extra diagnostic fields written to file: rho_average u_average v_average w_average energy_average. Set to 0 for no time averaged fields
+n_average_fields                  // extra diagnostic fields written to file: rho_average u_average v_average w_average e_average. Set to 0 for no time averaged fields
 2 u_average v_average
 spinup_time                       // initial period (in seconds) until time averaging is started, if n_average_fields > 0
 0
