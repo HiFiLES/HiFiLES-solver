@@ -2613,7 +2613,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
 
     for(i=0;i<n_eles;i++) {
       
-      // calculate dynamic coeff if using dynamic model
+      // calculate dynamic coefficient if using dynamic model
       if(LES != 0 && sgs_model==5) {
 
         for(j=0;j<n_upts_per_ele;j++) {
@@ -2621,13 +2621,13 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           calc_dynamic_coeff(i,j,detjac);
         }
 
-        // average value over element
+        // average value of dynamic coefficient over element
         double Csav=0.0;
         for(j=0;j<n_upts_per_ele;j++) {
           Csav += dynamic_coeff(j,i);
         }
         for(j=0;j<n_upts_per_ele;j++) {
-          //dynamic_coeff(j,i) = Csav/n_upts_per_ele;
+          dynamic_coeff(j,i) = Csav/n_upts_per_ele;
         }
       }
 
@@ -2683,9 +2683,9 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
         }
         
         // If LES, add SGS flux to global array (needed for interface flux calc)
-        if(LES > 0) {
+        if(LES != 0) {
 
-          // Transfer back to static-phsycial domain
+          // Transfer back to static-physical domain
           if (motion) {
             temp_sgsf_ref.initialize_to_zero();
             for(k=0;k<n_fields;k++) {
@@ -2714,7 +2714,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           }
         }
 
-        // Transfer back to static-phsycial domain
+        // Transfer back to static-physical domain
         if (motion) {
           temp_f_ref.initialize_to_zero();
           for(k=0;k<n_fields;k++) {
@@ -2748,15 +2748,42 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
 #endif
     
 #ifdef _GPU
-    
-    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, motion, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), turb_visc.get_ptr_gpu(), dynamic_coeff.get_ptr_gpu(), strainproduct.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), grad_disuf_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff, run_input.turb_model, run_input.c_v1, run_input.omega, run_input.prandtl_t);
+
+    // If LES or wall model, calculate SGS viscous flux
+    if(LES != 0 || wall_model != 0) {
+      evaluate_SGSFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, run_input.filter_ratio, LES, motion, sgs_model, wall_model, run_input.wall_layer_t, wall_distance.get_ptr_gpu(), twall.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu(), turb_visc.get_ptr_gpu(), dynamic_coeff.get_ptr_gpu(), strainproduct.get_ptr_gpu(), disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), grad_disuf_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff, run_input.turb_model, run_input.c_v1, run_input.omega, run_input.prandtl_t);
+    }
+
+    // if using dynamic LES model, calculate element-averaged coefficient
+    // and then calculate eddy viscosity and SGS flux using averaged coefficient
+    if(LES != 0 && sgs_model == 5) {
+      average_scalar_field_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_eles, ele_type, order, dynamic_coeff.get_ptr_gpu());
+
+      update_dynamic_SGSFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, dynamic_coeff.get_ptr_gpu(), sgsf_upts.get_ptr_gpu());
+    }
+
+    // compute viscous flux
+    // if using an LES or wall model, add the SGS flux to the viscous flux
+    evaluate_viscFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, ele_type, order, LES, motion, wall_model, disu_upts(in_disu_upts_from).get_ptr_gpu(), tdisf_upts.get_ptr_gpu(), sgsf_upts.get_ptr_gpu(), grad_disu_upts.get_ptr_gpu(), detjac_upts.get_ptr_gpu(), J_dyn_upts.get_ptr_gpu(), JGinv_upts.get_ptr_gpu(), JGinv_dyn_upts.get_ptr_gpu(), run_input.gamma, run_input.prandtl, run_input.rt_inf, run_input.mu_inf, run_input.c_sth, run_input.fix_vis, run_input.equation, run_input.diff_coeff, run_input.turb_model, run_input.c_v1, run_input.omega, run_input.prandtl_t);
     
 #endif
     
   }
 }
 
-// Calculate dynamic coefficient for dynamic model
+// Calculate dynamic coefficient for dynamic model.
+//
+// Dynamic LES model (Lilly, 1991):
+//
+//            (Lij*Mij)
+//  Cs= --------------------
+//      2(Mij*Mij)*(Mij*Mij)
+//
+// TODO: Will eventually implement compressible dynamic LES model:
+// P. Moin, K. Squires, W. Cabot, and S. Lee:
+// "A dynamic subgridscale model for compressible turbulence and scalar transport",
+// Phys. Fluids A 3, 2746 (1991); doi: 10.1063/1.858164
+//
 void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
 {
   int i,j,k,l,n_comp;
@@ -2780,19 +2807,6 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
   
   // Allocate strain rate and arrays for dynamic model
   array<double> S(n_comp), Sf(n_comp), M(n_comp), SSmod(n_comp);
-
-  // Dynamic LES model (Lilly, 1991):
-  //
-  //            (Lij*Mij)
-  //  Cs= --------------------
-  //      2(Mij*Mij)*(Mij*Mij)
-  //
-  // Will eventually implement compressible dynamic LES model:
-  //
-  // P. Moin, K. Squires, W. Cabot, and S. Lee:
-  // "A dynamic subgridscale model for compressible turbulence and scalar transport",
-  // Phys. Fluids A 3, 2746 (1991); doi: 10.1063/1.858164
-  //
 
   // temporary storage for filtered solution and gradient
   for(k=0;k<n_fields;k++) {
@@ -2927,10 +2941,14 @@ void eles::calc_dynamic_coeff(int ele, int upt, double detjac)
   }
   
   // prevent division by zero
-  Cs = 0.5*num/(denom+eps);
-  
+  //Cs = 0.5*num/(denom+eps);
+  if(abs(denom)<eps) Cs = 0.0;
+  else Cs = 0.5*num/denom;
+
   // limit value to prevent instability
   Cs=max(Cs,0.0);
+
+  Cs=min(Cs,0.04);
 
   // set coeff field for output to Paraview
   dynamic_coeff(upt,ele) = Cs;

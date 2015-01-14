@@ -44,8 +44,11 @@ void evaluate_boundaryConditions_invFlux_gpu_kernel_wrapper(int n_fpts_per_inter
 
 void transform_grad_disu_upts_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* grad_disu_upts_ptr, double* detjac_upts_ptr, double* detjac_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, int equation, int motion);
 
+/*! wrapper for gpu kernel to calculate subgrid-scale flux at solution points */
+void evaluate_SGSFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, int ele_type, int order, double filter_ratio, int LES, int motion, int sgs_model, int wall_model, double wall_thickness, double* wall_dist_ptr, double* twall_ptr, double* Leonard_mom_ptr, double* Leonard_energy_ptr, double* turb_visc_ptr, double* dynamic_coeff_ptr, double* strainproduct_ptr, double* disu_upts_ptr, double* disuf_upts_ptr, double* out_tdisvisf_upts_ptr, double* out_sgsf_upts_ptr, double* grad_disu_upts_ptr, double* grad_disuf_upts_ptr, double* detjac_upts_ptr, double* detjac_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double gamma, double prandtl, double rt_inf, double mu_inf, double c_sth, double fix_vis, int equation, double diff_coeff, int turb_model, double c_v1, double omega, double prandtl_t);
+
 /*! wrapper for gpu kernel to calculate transformed discontinuous viscous flux at solution points */
-void evaluate_viscFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, int ele_type, int order, double filter_ratio, int LES, int motion, int sgs_model, int wall_model, double wall_thickness, double* wall_dist_ptr, double* twall_ptr, double* Leonard_mom_ptr, double* Leonard_energy_ptr, double* turb_visc_ptr, double* dynamic_coeff_ptr, double* strainproduct_ptr, double* disu_upts_ptr, double* disuf_upts_ptr, double* out_tdisvisf_upts_ptr, double* out_sgsf_upts_ptr, double* grad_disu_upts_ptr, double* grad_disuf_upts_ptr, double* detjac_upts_ptr, double* detjac_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double gamma, double prandtl, double rt_inf, double mu_inf, double c_sth, double fix_vis, int equation, double diff_coeff, int turb_model, double c_v1, double omega, double prandtl_t);
+void evaluate_viscFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, int ele_type, int order, int LES, int motion, int wall_model, double* disu_upts_ptr, double* out_tdisf_upts_ptr, double* sgsf_upts_ptr, double* grad_disu_upts_ptr, double* detjac_upts_ptr, double* detjac_dyn_upts_ptr, double* JGinv_upts_ptr, double* JGinv_dyn_upts_ptr, double gamma, double prandtl, double rt_inf, double mu_inf, double c_sth, double fix_vis, int equation, double diff_coeff, int turb_model, double c_v1, double omega, double prandtl_t);
 
 /*! wrapper for gpu kernel to calculate corrected gradient of solution at flux points */
 /*
@@ -62,6 +65,12 @@ void evaluate_boundaryConditions_viscFlux_gpu_kernel_wrapper(int n_fpts_per_inte
 void calc_src_upts_SA_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* in_disu_upts_ptr, double* grad_disu_upts_ptr, double* wall_distance_mag_ptr, double* src_upts_ptr, double in_gamma, double in_prandtl, double in_rt_inf, double in_mu_inf, double in_c_sth, int in_fix_vis, double in_c_v1, double in_c_v2, double in_c_v3, double in_c_b1, double in_c_b2, double in_c_w2, double in_c_w3, double in_omega, double in_Kappa);
 
 void evaluate_body_force_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* src_upts_ptr, double* body_force_ptr);
+
+/*! wrapper for gpu kernel to update the dynamic model SGS flux after averaging coefficient field */
+void update_dynamic_SGSFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* dynamic_coeff_ptr, double* out_sgsf_upts_ptr);
+
+/*! wrapper for gpu kernel to calculate averaged field over element at solution points */
+void average_scalar_field_gpu_kernel_wrapper(int n_upts_per_ele, int n_fields, int n_eles, int ele_type, int order, double* scalar_field_ptr);
 
 #ifdef _MPI
 
