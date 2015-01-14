@@ -1440,8 +1440,8 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
         num_face_vert = 9;
         mesh_file >> vlist_bound(0) >> vlist_bound(2) >> vlist_bound(8) >> vlist_bound(6);
         mesh_file >> vlist_bound(1) >> vlist_bound(5) >> vlist_bound(7) >> vlist_bound(3) >> vlist_bound(4);
-        cout << "vlist_bound: " << endl;
-        vlist_bound.print();
+        //cout << "vlist_bound: " << endl;
+        //vlist_bound.print();
       }
       else 
       {
@@ -1483,14 +1483,14 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
               int ic=in_icvert(ind);
               for (int k=0;k<FlowSol->num_f_per_c(in_ctype(ic));k++)
                 {
-                  cout << "vlist_local: " << endl;
-                  vlist_local.print();
+                  //cout << "vlist_local: " << endl;
+                  //vlist_local.print();
 
                   // Get local vertices of local face k of cell ic
                   get_vlist_loc_face(in_ctype(ic),in_c2n_v(ic),k,vlist_cell,num_v_per_f);
 
-                  cout << "num_face_vert: " << num_face_vert << endl;
-                  cout << "num_v_per_f: " << num_v_per_f << endl;
+                  //cout << "num_face_vert: " << num_face_vert << endl;
+                  //cout << "num_v_per_f: " << num_v_per_f << endl;
 
                   if (num_v_per_f!= num_face_vert)
                     continue;
@@ -1500,8 +1500,8 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
                     vlist_cell(j) = in_c2v(ic,vlist_cell(j));
                   }
 
-                  cout << "vlist_cell: " << endl;
-                  vlist_cell.print();
+                  //cout << "vlist_cell: " << endl;
+                  //vlist_cell.print();
 
                   compare_faces_boundary(vlist_local,vlist_cell,num_v_per_f,found);
 
@@ -1952,7 +1952,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
     mesh_file >> id >> elmtype >> ntags;
     mesh_file >> bcid;
 
-    cout << "id, elmtype, ntags, bcid =" << id << ", " << elmtype << ", " << ntags << ", " << bcid << endl;
+    //cout << "id, elmtype, ntags, bcid =" << id << ", " << elmtype << ", " << ntags << ", " << bcid << endl;
 
     for (int tag=0; tag<ntags-1; tag++)
       mesh_file >> dummy;
