@@ -264,6 +264,12 @@ void write_tec(int in_file_num, struct solution* FlowSol)
               /*! Calculate the diagnostic fields at the plot points */
               if(n_diag_fields > 0)
                 {
+                  /*! Get dynamic LES coeff at plot points */
+                  FlowSol->mesh_eles(i)->calc_dynamic_coeff_ppts(j,dynamic_coeff_ppts_temp);
+
+                  /*! Get turbulent viscosity at plot points */
+                  FlowSol->mesh_eles(i)->calc_turb_visc_ppts(j,turb_visc_ppts_temp);
+
                   FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j, disu_ppts_temp, grad_disu_ppts_temp, dynamic_coeff_ppts_temp, turb_visc_ppts_temp, sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp, FlowSol->time);
                 }
 
