@@ -2759,7 +2759,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
     if(LES != 0 && sgs_model == 5) {
       average_scalar_field_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_eles, ele_type, order, dynamic_coeff.get_ptr_gpu());
 
-      update_dynamic_SGSFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, dynamic_coeff.get_ptr_gpu(), sgsf_upts.get_ptr_gpu());
+      update_dynamic_SGSFlux_gpu_kernel_wrapper(n_upts_per_ele, n_dims, n_fields, n_eles, dynamic_coeff.get_ptr_gpu(), turb_visc.get_ptr_gpu(), sgsf_upts.get_ptr_gpu());
     }
 
     // compute viscous flux
@@ -4988,7 +4988,6 @@ void eles::calc_turb_visc_ppts(int in_ele, array<double>& out_turb_visc_ppts)
     
     for(j=0;j<n_upts_per_ele;j++)
     {
-      //cout << "turb_visc: " << turb_visc(j,in_ele) << endl;
       turb_visc_upts_plot(j)=turb_visc(j,in_ele);
     }
     

@@ -1549,7 +1549,7 @@ __device__ void wall_model_kernel(int wall_model, double rho, double* urot, doub
 }
 
 template<int n_dims, int n_comp>
-__device__ void SGS_flux_kernel(double* q, double* qf, double* grad_vel, double* grad_velf, double* grad_ene, double* grad_enef, double* gsq, double* sd, double* strain, double* strainf, double* ssmod, double* Lm, double* Le, double* mu_les, double* Cs, double* sgsf, int sgs_model, double delta, double gamma)
+__device__ void SGS_flux_kernel(double* q, double* qf, double* grad_vel, double* grad_ene, double* gsq, double* sd, double* strain, double* strainf, double* ssmod, double* Lm, double* Le, double* mu_les, double* Cs, double* sgsf, int sgs_model, double delta, double gamma)
 {
   int i,j,k;
   int eddy, sim;
@@ -3362,7 +3362,6 @@ __global__ void evaluate_SGSFlux_gpu_kernel(int n_upts_per_ele, int n_eles, int 
   double jac, delta, Cs, diag;
   // dynamic LES variables
   double qf[n_fields];             // filtered solution
-  double grad_enef[n_dims];
   double grad_velf[n_dims*n_dims];
   double grad_qf[n_fields*n_dims]; // gradient of filtered solution
   double strainf[n_comp];
@@ -3413,11 +3412,30 @@ __global__ void evaluate_SGSFlux_gpu_kernel(int n_upts_per_ele, int n_eles, int 
     // Flux prep
     vis_NS_flux<n_dims>(q, grad_q, grad_vel, grad_ene, stensor, f, &inte, &mu, &mu_t, prandtl, gamma, rt_inf, mu_inf, c_sth, fix_vis, -1, turb_model, c_v1, omega, prandtl_t);
 
+    // Strain tensor
+    diag = 0.0;
+#pragma unroll
+    for (i=0;i<n_dims;i++) {
+      strain[i] = 2.0*grad_vel[i*n_dims + i];
+      diag += strain[i]/3.0;
+    }
+    for (i=0;i<n_dims;i++) {
+      strain[i] -= diag;
+    }
+    if(n_dims==2) {
+      strain[2] = grad_vel[0*n_dims + 1] + grad_vel[1*n_dims + 0];
+    }
+    else {
+      strain[3] = grad_vel[0*n_dims + 1] + grad_vel[1*n_dims + 0];
+      strain[4] = grad_vel[0*n_dims + 2] + grad_vel[2*n_dims + 0];
+      strain[5] = grad_vel[1*n_dims + 2] + grad_vel[2*n_dims + 1];
+    }
+
     // Get gradient of filtered solution if using dynamic LES model
     if(sgs_model==5) {
 
       // filtered solution and gradient
-      #pragma unroll
+#pragma unroll
       for (i=0;i<n_fields;i++) {
         index = thread_id + i*stride;
         qf[i] = disuf_upts_ptr[index];
@@ -3434,25 +3452,6 @@ __global__ void evaluate_SGSFlux_gpu_kernel(int n_upts_per_ele, int n_eles, int 
 #pragma unroll
           for (i=0;i<n_dims;i++)
             grad_velf[j*n_dims + i] = (grad_qf[(j+1)*n_dims + i] - grad_qf[0*n_dims + i]*qf[j+1]/qf[0])/qf[0];
-      }
-
-      // Strain tensor
-      diag = 0.0;
-#pragma unroll
-      for (i=0;i<n_dims;i++) {
-        strain[i] = 2.0*grad_vel[i*n_dims + i];
-        diag += strain[i]/3.0;
-      }
-      for (i=0;i<n_dims;i++) {
-        strain[i] -= diag;
-      }
-      if(n_dims==2) {
-        strain[2] = grad_vel[0*n_dims + 1] + grad_vel[1*n_dims + 0];
-      }
-      else {
-        strain[3] = grad_vel[0*n_dims + 1] + grad_vel[1*n_dims + 0];
-        strain[4] = grad_vel[0*n_dims + 2] + grad_vel[2*n_dims + 0];
-        strain[5] = grad_vel[1*n_dims + 2] + grad_vel[2*n_dims + 1];
       }
 
       // Filtered strain tensor
@@ -3627,7 +3626,7 @@ __global__ void evaluate_SGSFlux_gpu_kernel(int n_upts_per_ele, int n_eles, int 
         //Cs_old = dynamic_coeff_ptr[thread_id];
       //}
 
-      SGS_flux_kernel<n_dims,n_comp>(q, qf, grad_vel, grad_velf, grad_ene, grad_enef, gsq, sd, strain, strainf, ssmod, lm, le, &mu_les, &Cs, sgsf, sgs_model, delta, gamma);
+      SGS_flux_kernel<n_dims,n_comp>(q, qf, grad_vel, grad_ene, gsq, sd, strain, strainf, ssmod, lm, le, &mu_les, &Cs, sgsf, sgs_model, delta, gamma);
 
       // if eddy visc model, set eddy viscosity field for output
       if(sgs_model==0 || sgs_model==1 || sgs_model==2 || sgs_model==5) {
@@ -3664,7 +3663,7 @@ __global__ void evaluate_SGSFlux_gpu_kernel(int n_upts_per_ele, int n_eles, int 
 
 // gpu kernel to update the dynamic model SGS Flux after averaging coefficient field
 template<int n_dims, int n_fields>
-__global__ void update_dynamic_SGSFlux_gpu_kernel(int n_upts_per_ele, int n_eles, double* dynamic_coeff_ptr, double* out_sgsf_upts_ptr)
+__global__ void update_dynamic_SGSFlux_gpu_kernel(int n_upts_per_ele, int n_eles, double* dynamic_coeff_ptr, double* turb_visc_ptr, double* out_sgsf_upts_ptr)
 {
   const int thread_id = blockIdx.x*blockDim.x+threadIdx.x;
   double Cs;
@@ -3677,6 +3676,9 @@ __global__ void update_dynamic_SGSFlux_gpu_kernel(int n_upts_per_ele, int n_eles
 
     // element-averaged Cs
     Cs = dynamic_coeff_ptr[thread_id];
+
+    // update eddy viscosity
+    turb_visc_ptr[thread_id] *= Cs;
 
     // old SGS flux field
 #pragma unroll
@@ -5642,7 +5644,7 @@ void evaluate_SGSFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_f
 }
 
 // wrapper for gpu kernel to update dynamic model SGS flux after averaging coefficient field
-void update_dynamic_SGSFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* dynamic_coeff_ptr, double* out_sgsf_upts_ptr)
+void update_dynamic_SGSFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* dynamic_coeff_ptr, double* turb_visc_ptr, double* out_sgsf_upts_ptr)
 {
   // HACK: fix 256 threads per block
   int n_blocks=((n_eles*n_upts_per_ele-1)/256)+1;
@@ -5653,11 +5655,11 @@ void update_dynamic_SGSFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, i
     {
       if (n_fields==4)
       {
-        update_dynamic_SGSFlux_gpu_kernel<2,4> <<<n_blocks,256>>>(n_upts_per_ele, n_eles, dynamic_coeff_ptr, out_sgsf_upts_ptr);
+        update_dynamic_SGSFlux_gpu_kernel<2,4> <<<n_blocks,256>>>(n_upts_per_ele, n_eles, dynamic_coeff_ptr, turb_visc_ptr, out_sgsf_upts_ptr);
       }
       else if (n_fields==5)
       {
-        update_dynamic_SGSFlux_gpu_kernel<2,5> <<<n_blocks,256>>>(n_upts_per_ele, n_eles, dynamic_coeff_ptr, out_sgsf_upts_ptr);
+        update_dynamic_SGSFlux_gpu_kernel<2,5> <<<n_blocks,256>>>(n_upts_per_ele, n_eles, dynamic_coeff_ptr, turb_visc_ptr, out_sgsf_upts_ptr);
       }
       else
         FatalError("ERROR: Invalid number of fields for this dimension ... ")
@@ -5666,11 +5668,11 @@ void update_dynamic_SGSFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, i
     {
       if (n_fields==5)
       {
-        update_dynamic_SGSFlux_gpu_kernel<3,5> <<<n_blocks,256>>>(n_upts_per_ele, n_eles, dynamic_coeff_ptr, out_sgsf_upts_ptr);
+        update_dynamic_SGSFlux_gpu_kernel<3,5> <<<n_blocks,256>>>(n_upts_per_ele, n_eles, dynamic_coeff_ptr, turb_visc_ptr, out_sgsf_upts_ptr);
       }
       else if (n_fields==6)
       {
-        update_dynamic_SGSFlux_gpu_kernel<3,6> <<<n_blocks,256>>>(n_upts_per_ele, n_eles, dynamic_coeff_ptr, out_sgsf_upts_ptr);
+        update_dynamic_SGSFlux_gpu_kernel<3,6> <<<n_blocks,256>>>(n_upts_per_ele, n_eles, dynamic_coeff_ptr, turb_visc_ptr, out_sgsf_upts_ptr);
       }
       else
         FatalError("ERROR: Invalid number of fields for this dimension ... ")

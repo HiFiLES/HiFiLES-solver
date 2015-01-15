@@ -67,7 +67,7 @@ void calc_src_upts_SA_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_f
 void evaluate_body_force_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* src_upts_ptr, double* body_force_ptr);
 
 /*! wrapper for gpu kernel to update the dynamic model SGS flux after averaging coefficient field */
-void update_dynamic_SGSFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* dynamic_coeff_ptr, double* out_sgsf_upts_ptr);
+void update_dynamic_SGSFlux_gpu_kernel_wrapper(int n_upts_per_ele, int n_dims, int n_fields, int n_eles, double* dynamic_coeff_ptr, double* turb_visc_ptr, double* out_sgsf_upts_ptr);
 
 /*! wrapper for gpu kernel to calculate averaged field over element at solution points */
 void average_scalar_field_gpu_kernel_wrapper(int n_upts_per_ele, int n_fields, int n_eles, int ele_type, int order, double* scalar_field_ptr);
