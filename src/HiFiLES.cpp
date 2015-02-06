@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   int i_steps = 0;                    /*!< Iteration index */
   int RKSteps;                        /*!< Number of RK steps */
   ifstream run_input_file;            /*!< Config input file */
-  clock_t init_time, final_time;                /*!< To control the time */
+  clock_t init_time, preproc_time, final_time;                /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
   ofstream write_hist;                /*!< Output files (forces, statistics, and history) */
   mesh Mesh;                          /*!< Store mesh details & perform mesh motion */
@@ -71,6 +71,12 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 #endif
   
+  /*! Initialize Google Performance Tools CPU profiler */
+#ifdef _CPUPROFILE
+  cout << "profiling code..." << endl;
+  //ProfilerStart();
+#endif
+
   if (rank == 0) {
     cout << " __    __   __   _______  __          __       _______     _______." << endl;
     cout << "|  |  |  | |  | |   ____||  |        |  |     |   ____|   /       |" << endl;
@@ -147,6 +153,8 @@ int main(int argc, char *argv[]) {
   
   if (FlowSol.rank == 0) cout << endl;
   
+  preproc_time = clock()-init_time;
+
   /////////////////////////////////////////////////
   /// Flow solver
   /////////////////////////////////////////////////
@@ -257,6 +265,8 @@ int main(int argc, char *argv[]) {
   /*! Compute execution time. */
   
   final_time = clock()-init_time;
+  printf("Preprocessing time= %f s\n", (double) preproc_time/((double) CLOCKS_PER_SEC));
+  printf("Solver loop time= %f s\n", (double) (final_time-preproc_time)/((double) CLOCKS_PER_SEC));
   printf("Execution time= %f s\n", (double) final_time/((double) CLOCKS_PER_SEC));
   
   /*! Finalize MPI. */
