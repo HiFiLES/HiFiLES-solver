@@ -329,6 +329,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> plot_freq;
     }
+    else if (!param_name.compare("write_ft_freq"))
+    {
+      in_run_input_file >> write_ft_freq;
+    }
     else if (!param_name.compare("restart_dump_freq"))
     {
       in_run_input_file >> restart_dump_freq;
@@ -828,7 +832,8 @@ void input::setup(ifstream& in_run_input_file, int rank)
   if (monitor_res_freq == 0) monitor_res_freq = 100000000;
   if (monitor_cp_freq == 0) monitor_cp_freq = 100000000;
   if (monitor_integrals_freq == 0) monitor_integrals_freq = 100000000;
-  
+  if (write_ft_freq == 0) write_ft_freq = 1000000;
+
   if (!mesh_file.compare(mesh_file.size()-3,3,"neu"))
     mesh_format=0;
   else if (!mesh_file.compare(mesh_file.size()-3,3,"msh"))

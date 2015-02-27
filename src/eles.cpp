@@ -3510,6 +3510,12 @@ int eles::get_n_ppts_per_ele(void)
   return n_ppts_per_ele;
 }
 
+// get number of ppts_per_ele
+int eles::get_n_ftpts_per_ele(void)
+{
+  return n_ftpts_per_ele;
+}
+
 // get number of peles_per_ele
 int eles::get_n_peles_per_ele(void)
 {
@@ -4071,6 +4077,30 @@ void eles::set_opp_p(void)
   
 }
 
+// set opp_ft (solution at solution points to solution at FT points)
+
+void eles::set_opp_ft(void)
+{
+  int i,j,k;
+  
+  array<double> loc(n_dims);
+  
+  opp_ft.setup(n_ftpts_per_ele,n_upts_per_ele);
+  
+  for(i=0;i<n_upts_per_ele;i++)
+  {
+    for(j=0;j<n_ftpts_per_ele;j++)
+    {
+      for(k=0;k<n_dims;k++)
+      {
+        loc(k)=loc_ftpts(k,j);
+      }
+      
+      opp_ft(j,i)=eval_nodal_basis(i,loc);
+    }
+  }
+}
+
 void eles::set_opp_inters_cubpts(void)
 {
   
@@ -4175,6 +4205,33 @@ void eles::calc_pos_ppts(int in_ele, array<double>& out_pos_ppts)
   }
 }
 
+// calculate position of the FT points
+
+void eles::calc_pos_ftpts(int in_ele, array<double>& out_pos_ftpts)
+{
+  int i,j;
+  
+  //cout << "ftpts: in_ele, n_spts: " << in_ele << ", " << n_spts_per_ele(in_ele) << endl;
+
+  array<double> loc(n_dims);
+  array<double> pos(n_dims);
+  
+  for(i=0;i<n_ftpts_per_ele;i++)
+  {
+    for(j=0;j<n_dims;j++)
+    {
+      loc(j)=loc_ftpts(j,i);
+    }
+    
+    calc_pos(loc,in_ele,pos);
+    
+    for(j=0;j<n_dims;j++)  // TODO: can this be made more efficient/simpler?
+    {
+      out_pos_ftpts(i,j)=pos(j);
+    }
+  }
+}
+
 // calculate solution at the plot points
 void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 {
@@ -4223,6 +4280,36 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
       }
     }
     
+#endif
+    
+  }
+}
+
+// calculate solution at the FT points
+void eles::calc_disu_ftpts(int in_ele, array<double>& out_disu_ftpts)
+{
+  if (n_eles!=0)
+  {
+    
+    int i,j,k;
+    
+    array<double> disu_upts_plot(n_upts_per_ele,n_fields);
+    
+    for(i=0;i<n_fields;i++)
+    {
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
+      }
+    }
+    
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+    
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_ft.get_ptr_cpu(),n_ftpts_per_ele,disu_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_ftpts.get_ptr_cpu(),n_ftpts_per_ele);
+    
+#elif defined _NO_BLAS
+    dgemm(n_ftpts_per_ele,n_fields,n_upts_per_ele,1.0,0.0,opp_ft.get_ptr_cpu(),disu_upts_plot.get_ptr_cpu(),out_disu_ftpts.get_ptr_cpu());
+        
 #endif
     
   }

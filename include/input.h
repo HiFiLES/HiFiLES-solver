@@ -89,6 +89,7 @@ public:
   double CFL;
   int n_steps;
   int plot_freq;
+  int write_ft_freq;
   int restart_dump_freq;
   int adv_type;
 

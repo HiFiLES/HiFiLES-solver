@@ -276,7 +276,7 @@ double eval_d_ofr_1d(double in_r, int in_mode, int in_order)
 		loc_zeros_gR(1) = -0.302192635873585;
 	}
 	else if(in_order == 3) {
-                loc_zeros_gL(1) = -0.839877075575685;
+    loc_zeros_gL(1) = -0.839877075575685;
 		loc_zeros_gL(2) = -0.202221671675099;
 		loc_zeros_gL(3) = 0.518569179742482;
 
@@ -308,7 +308,7 @@ double eval_d_ofr_1d(double in_r, int in_mode, int in_order)
 		loc_zeros_gR(2) = -0.354120543898467;
 		loc_zeros_gR(1) = -0.760380824360528;
 	}
-	else if(in_order == 6) { // P=6 not verified
+	else if(in_order == 6) {
 		loc_zeros_gL(1) = -0.932638621602718;
 		loc_zeros_gL(2) = -0.627949285295015; 
 		loc_zeros_gL(3) = -0.196972255400472;
@@ -323,8 +323,25 @@ double eval_d_ofr_1d(double in_r, int in_mode, int in_order)
 		loc_zeros_gR(2) = -0.481615260763104;
 		loc_zeros_gR(1) = -0.629467212278235;
 	}
+	else if(in_order == 7) {
+		loc_zeros_gL(1) = -0.935143272157084;
+		loc_zeros_gL(2) = -0.720007101988795; 
+		loc_zeros_gL(3) = -0.493278625162969;
+		loc_zeros_gL(4) = -0.096741972837362;
+		loc_zeros_gL(5) = 0.356690092029699;
+		loc_zeros_gL(6) = 0.487723398835094;
+		loc_zeros_gL(7) = 0.812919590062702;
+
+		loc_zeros_gR(7) = 0.935143272157084;
+		loc_zeros_gR(6) = 0.720007101988795; 
+		loc_zeros_gR(5) = 0.493278625162969;
+		loc_zeros_gR(4) = 0.096741972837362;
+		loc_zeros_gR(3) = -0.356690092029699;
+		loc_zeros_gR(2) = -0.487723398835094;
+		loc_zeros_gR(1) = -0.812919590062702;
+	}
 	else
-		FatalError("OFR schemes have been obtained as yet for P = 1 to 6");
+		FatalError("OFR schemes have been obtained as yet for P = 1 to 7");
 
 	if(in_mode==0) // left correction function
 		dtemp_0 = eval_d_lagrange(in_r, 0, loc_zeros_gL);
@@ -353,8 +370,10 @@ double eval_d_oesfr_1d(double in_r, int in_mode, int in_order)
 		cVal = 1.02e-8;
 	else if (in_order == 6)
 		cVal = 9.76e-11;
+	else if (in_order == 7)
+		cVal = 4.66e-13;
 	else
-		FatalError("ESFR schemes have been obtained as yet for P = 1 to 6");
+		FatalError("ESFR schemes have been obtained as yet for P = 1 to 7");
 
 	aP = (1.0/pow(2.0,in_order)) *factorial(2*in_order)/(factorial(in_order)*factorial(in_order));
 	eta = cVal * (0.5*(2*in_order+1)) * (aP*factorial(in_order))*(aP*factorial(in_order));

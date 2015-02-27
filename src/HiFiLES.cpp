@@ -193,8 +193,7 @@ int main(int argc, char *argv[]) {
     /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
 #ifdef _GPU
 
-    if(i_steps == 1 || i_steps%FlowSol.plot_freq == 0 ||
-       i_steps%run_input.monitor_res_freq == 0 || i_steps%FlowSol.restart_dump_freq==0) {
+    if(i_steps == 1 || i_steps%FlowSol.plot_freq == 0 || i_steps%run_input.write_ft_freq == 0 || i_steps%run_input.monitor_res_freq == 0 || i_steps%FlowSol.restart_dump_freq==0) {
 
       CopyGPUCPU(&FlowSol);
 
@@ -235,6 +234,10 @@ int main(int argc, char *argv[]) {
       if(FlowSol.write_type == 0) write_vtu(FlowSol.ini_iter+i_steps, &FlowSol);
       else if(FlowSol.write_type == 1) write_tec(FlowSol.ini_iter+i_steps, &FlowSol);
       else FatalError("ERROR: Trying to write unrecognized file format ... ");
+    }
+
+    if(i_steps%run_input.write_ft_freq == 0) {
+      write_ftpoints(FlowSol.ini_iter+i_steps, &FlowSol);
     }
     
     /*! Dump restart file. */
