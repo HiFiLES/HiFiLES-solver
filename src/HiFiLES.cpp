@@ -36,6 +36,10 @@
 #include "../include/output.h"
 #include "../include/solution.h"
 
+#ifdef _CPUPROFILE
+#include "profiler.h"
+#endif
+
 #ifdef _MPI
 #include "mpi.h"
 #endif
@@ -71,10 +75,16 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 #endif
   
-  /*! Initialize Google Performance Tools CPU profiler */
+  /*! Start Google Performance Tools CPU profiler */
 #ifdef _CPUPROFILE
-  cout << "profiling code..." << endl;
-  //ProfilerStart();
+  
+  char pprof_file_s[50], *pprof_file;
+  
+  sprintf(pprof_file_s,"pprof.log",0);
+  pprof_file = &pprof_file_s[0];
+
+  cout << "starting code profiling..." << endl;
+  ProfilerStart(pprof_file);
 #endif
 
   if (rank == 0) {
@@ -161,37 +171,97 @@ int main(int argc, char *argv[]) {
   
   /*! Main solver loop (outer loop). */
   
+  if (FlowSol.adv_type == 0) RKSteps = 1;
+  else if (FlowSol.adv_type == 3) RKSteps = 5;
+  
   while(i_steps < FlowSol.n_steps) {
     
-    if (FlowSol.adv_type == 0) RKSteps = 1;
-    if (FlowSol.adv_type == 3) RKSteps = 5;
+    /*! explicit timestepping */
+    if(FlowSol.adv_type >= 0) {
+
+      for(i=0; i < RKSteps; i++) {
+
+        /* If using moving mesh, need to advance the Geometric Conservation Law
+         * (GCL) first to get updated Jacobians. Necessary to preserve freestream
+         * on arbitrarily deforming mesh. See Kui Ou's Ph.D. thesis for details. */
+        if (run_input.motion > 0) {
+
+          /* Update the mesh */
+          Mesh.move(FlowSol.ini_iter+i_steps,i,&FlowSol);
+
+        }
+
+        /*! Spatial integration. */
+
+        CalcResidual(FlowSol.ini_iter+i_steps, i, &FlowSol);
+      
+        /*! Time integration usign a RK scheme */
     
-    for(i=0; i < RKSteps; i++) {
-
-      /* If using moving mesh, need to advance the Geometric Conservation Law
-       * (GCL) first to get updated Jacobians. Necessary to preserve freestream
-       * on arbitrarily deforming mesh. See Kui Ou's Ph.D. thesis for details. */
-      if (run_input.motion > 0) {
-
-        /* Update the mesh */
-        Mesh.move(FlowSol.ini_iter+i_steps,i,&FlowSol);
-
-      }
-
-      /*! Spatial integration. */
-
-      CalcResidual(FlowSol.ini_iter+i_steps, i, &FlowSol);
-      
-      /*! Time integration usign a RK scheme */
-      
-      for(j=0; j<FlowSol.n_ele_types; j++) {
+        for(j=0; j<FlowSol.n_ele_types; j++) {
         
-        FlowSol.mesh_eles(j)->AdvanceSolution(i, FlowSol.adv_type);
+          FlowSol.mesh_eles(j)->AdvanceSolution(i, FlowSol.adv_type);
         
+        }
       }
-      
     }
 
+    /*! backward Euler LU-SGS implicit solve */
+    else if(FlowSol.adv_type == -1) {
+
+      /*! store old solution to enable calculation of dQ/dt */
+      CopySolution(&FlowSol);
+      
+      /*! Get R(Q). */
+      CalcResidual(FlowSol.ini_iter+i_steps, 0, &FlowSol);
+
+      /*! Update LHS matrix only every update_lhs_freq timesteps (matrix freezing) */
+      if(i_steps%run_input.update_lhs_freq == 0) {
+        
+        cout << "updating LHS matrix" << endl;
+
+        // linearized Jacobian: dR/dQ = (R(Q+eps)-R(Q))/eps
+        // we have R(Q), now get R(Q+eps)
+        CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
+          
+        /*! calculate LHS matrix */
+        CalcLHS(FlowSol.ini_iter+i_steps, &FlowSol);
+      
+        /*! LU decomposition of LHS matrix */
+        LUDecomp(&FlowSol);
+      }
+
+      /*! Symmetric Gauss-Seidel sweeps */
+      for(i=0; i < run_input.n_sgs_sweeps; i++) {
+        
+        /*! forward/backward sweep: 
+         loop over eles
+         compute RHS (residual - (Q^i - Q^*)/dt) using latest solution
+         LU solve
+         calculate new conservative vars */
+      
+        cout << "timestep, LU_sweep number: " << i_steps << ", " << i << endl;
+
+        // Update R(Q)
+        if (i > 0) {
+          CalcResidual(FlowSol.ini_iter+i_steps, 0, &FlowSol);
+        }
+        
+        // forward sweep + update solution
+        LUSweep(1, &FlowSol);
+        
+        // Update R(Q)
+        CalcResidual(FlowSol.ini_iter+i_steps, 0, &FlowSol);
+        
+        // backward sweep + update solution
+        LUSweep(-1, &FlowSol);
+      }
+      
+      /*! Finally, advance the solution */
+      for(j=0; j<FlowSol.n_ele_types; j++) {
+        FlowSol.mesh_eles(j)->AdvanceSolution(i, FlowSol.adv_type);
+      }
+    }
+    
     /*! Update total time, and increase the iteration index. */
     
     FlowSol.time += run_input.dt;
@@ -269,6 +339,13 @@ int main(int argc, char *argv[]) {
   printf("Solver loop time= %f s\n", (double) (final_time-preproc_time)/((double) CLOCKS_PER_SEC));
   printf("Execution time= %f s\n", (double) final_time/((double) CLOCKS_PER_SEC));
   
+  /*! Stop Google Performance Tools CPU profiler */
+#ifdef _CPUPROFILE
+  
+  cout << "stopping code profiling..." << endl;
+  ProfilerStop();
+#endif
+
   /*! Finalize MPI. */
   
 #ifdef _MPI

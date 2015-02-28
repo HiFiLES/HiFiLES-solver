@@ -153,6 +153,15 @@ public:
   /*! calculate source term for SA turbulence model at solution points */
   void calc_src_upts_SA(int in_disu_upts_from);
   
+  /*! LHS matrix for LU-SGS implicit method */
+  void calculate_lhs_matrix(double eps);
+
+  /*! LU decomposition of LHS matrix for implicit method */
+  void LU_decomp(void);
+
+  /*! forward sweep of LU-SGS implicit method */
+  void LU_sweep(int direction);
+
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolution(int in_step, int adv_type);
 
@@ -293,6 +302,8 @@ public:
   virtual void set_connectivity_plot()=0;
 
   void set_disu_upts_to_zero_other_levels(void);
+
+  void set_disu_upts_to_solution_other_levels(void);
 
   array<int> get_connectivity_plot();
 
@@ -955,6 +966,23 @@ protected:
 	*/
 	array<double> disu_average_upts;
 
+  /*!
+   storage array for current solution at solution points
+   */
+  array<double> disu_upts_store;
+
+  /*! LHS matrix */
+  array< array<double> > lhs_matrix;
+
+  /*! LHS indexing array */
+  array<double> lhs_index;
+  
+  /*! dimension of LHS matrix blocks */
+  int block_dim;
+  
+  /*! solution increment for calculating linearized Jacobian */
+  array<double> eps_imp;
+
 	/*!
 	time (in secs) until start of time average period for above diagnostic fields
 	*/
@@ -1017,6 +1045,11 @@ protected:
 	*/
 	array< array<double> > div_tconf_upts;
 	
+  /*!
+   storage array for current residual at flux points
+   */
+  array<double> residual_store;
+
 	/*! delta of the transformed discontinuous solution at the flux points   */
 	array<double> delta_disu_fpts;
 

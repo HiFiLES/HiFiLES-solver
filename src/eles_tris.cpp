@@ -95,7 +95,7 @@ void eles_tris::setup_ele_type_specific()
   n_ppts_per_ele=(p_res+1)*p_res/2;
   n_peles_per_ele=(p_res-1)*(p_res-1);
   n_verts_per_ele = 3;
-
+  
   set_loc_ppts();
   set_opp_p();
 
@@ -196,6 +196,7 @@ void eles_tris::set_loc_upts(void)
         {
           loc_upts(0,i) = loc_inter_pts(i,0);
           loc_upts(1,i) = loc_inter_pts(i,1);
+          //cout << "loc_upts: " << setprecision(4) << loc_upts(0,i) << " " << loc_upts(1,i) << endl;
         }
     }
 
@@ -208,6 +209,7 @@ void eles_tris::set_loc_upts(void)
         {
           loc_upts(0,i) = loc_alpha_pts(i,0);
           loc_upts(1,i) = loc_alpha_pts(i,1);
+          //cout << "loc_upts: " << setprecision(4) << loc_upts(0,i) << " " << loc_upts(1,i) << endl;
         }
     }
   else
@@ -264,6 +266,7 @@ void eles_tris::set_tloc_fpts(void)
               tloc_fpts(0,fpt)=-1.0;
               tloc_fpts(1,fpt)=loc_1d_fpts(order-j);
             }
+          //cout << "tloc_fpts: " << setprecision(4) << tloc_fpts(0,fpt) << " " << tloc_fpts(1,fpt) << endl;
         }
     }
   //tloc_fpts.print();

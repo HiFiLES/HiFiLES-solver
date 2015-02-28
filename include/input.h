@@ -91,6 +91,8 @@ public:
   int plot_freq;
   int restart_dump_freq;
   int adv_type;
+  int update_lhs_freq;
+  int n_sgs_sweeps;
 
   int LES;
   int filter_type;

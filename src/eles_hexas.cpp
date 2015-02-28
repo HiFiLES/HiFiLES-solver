@@ -256,9 +256,11 @@ void eles_hexas::set_loc_upts(void)
               loc_upts(0,upt)=loc_1d_upts(k);
               loc_upts(1,upt)=loc_1d_upts(j);
               loc_upts(2,upt)=loc_1d_upts(i);
+              //cout << "loc_upts: " << setprecision(4) << loc_1d_upts(k) << " " << loc_1d_upts(j) << " " << loc_1d_upts(i) << endl;
             }
         }
     }
+  //cout << endl;
 }
 
 // set location of flux points in standard element
@@ -318,9 +320,11 @@ void eles_hexas::set_tloc_fpts(void)
                   tloc_fpts(1,fpt)=loc_1d_upts(j);
                   tloc_fpts(2,fpt)=1.0;
                 }
+              //cout << "tloc_fpts: " << setprecision(4) << tloc_fpts(0,fpt) << " " << tloc_fpts(1,fpt) << " " << tloc_fpts(2,fpt) << endl;
             }
         }
     }
+  cout << endl;
 }
 
 void eles_hexas::set_inters_cubpts(void)

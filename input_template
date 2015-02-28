@@ -49,12 +49,19 @@ CFL                               // CFL number
 1.0
 n_steps                           // number of timesteps
 10
-adv_type                          // 0: Forward Euler, 3: RK45
+adv_type                          // 0: Forward Euler, 3: RK45, -1: backward Euler
 3
 tau                               // tau parameter for LDG viscous flux
 1.0
 pen_fact                          // penalty factor for LDG viscous flux
 0.5
+-----------------------
+Implicit solver options
+-----------------------
+update_lhs_freq                   // how often (in timesteps) to recalculate LHS matrix (matrix freezing). Liang et al. say 40-100.
+1
+n_sgs_sweeps                      // no. of symmetric Gauss Seidel forward/backward sweeps
+1
 -----------------------
 LES options
 -----------------------

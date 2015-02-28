@@ -2550,6 +2550,150 @@ void gaussj(int n, array<double>& A, array<double>& b)
     }
 }
 
+/* Given a matrix A[1..n][1..n], this routine replaces it by the LU
+  decomposition of a rowwise permutation of itself. A and n are input.
+  A is output, arranged as in equation (2.3.14) above; indx[1..n] is an
+  output vector that records the row permutation effected by the partial
+  pivoting; d is output as +-1 depending on whether the number of row
+  interchanges was even or odd, respectively.
+  This routine is used in combination with lubksb to solve linear
+  equations or invert a matrix.
+  From Numerical Recipes (http://www.nr.com/)*/
+
+void LUdecomp(int n, array<int>& indx, array<double>& A)
+{
+  int i,j,k,imax;
+  double big,dum,sum,temp,TINY;
+  array<double> vv(n);
+
+  TINY = 1.0e-20; // or 1.0e-10?
+  //*d = 1.0; // no row interchanges yet
+
+  // loop over rows
+  for (i=0; i<n; i++) {
+    
+    big = 0.0;
+    
+    for (j=0; j<n; j++) {
+      if ((temp = abs(A(i,j))) > big) big=temp;
+    }
+    
+    if (big==0.0) FatalError("singular matrix in routine LUdecomp");
+    
+    // save the scaling
+    vv(i) = 1.0/big;
+  }
+  
+  // loop over columns
+  for (j=0; j<n; j++) {
+    for (i=0; i<j; i++) {
+      sum = A(i,j);
+      
+      for (k=0; k<i; k++) {
+        sum -= A(i,k)*A(k,j);
+      }
+
+      A(i,j) = sum;
+    }
+    
+    // initialize search for largest pivot element
+    big = 0.0;
+    
+    for (i=j; i<n; i++) {
+      sum = A(i,j);
+      
+      for (k=0; k<j; k++) {
+        sum -= A(i,k)*A(k,j);
+      }
+      
+      A(i,j) = sum;
+      
+      if ((dum = vv(i)*abs(sum)) >= big) {
+        big = dum;
+        imax = i;
+      }
+    }
+
+    // interchange rows if true:
+    if (j != imax) {
+      for (k=0; k<n; k++) {
+        dum = A(imax,k);
+        A(imax,k) = A(j,k);
+        A(j,k) = dum;
+      }
+      
+      // change scale factor
+      vv(imax) = vv(j);
+      
+      // change parity of d
+      //*d = -(*d);
+    }
+    
+    indx(j) = imax;
+    
+    // if the pivot element is zero the matrix is singular.
+    // substitute zero for TINY
+    if (A(j,j)==0.0) A(j,j) = TINY;
+    
+    // divide the pivot element
+    if (j != n-1) {
+      dum = 1.0/A(j,j);
+      
+      for (i=j+1; i<n; i++) {
+        A(i,j) *= dum;
+      }
+    }
+  }
+}
+
+/* Solves the set of n linear equations A * x = b. Here A[1..n][1..n]
+  is input, not as the matrix A but rather as its LU decomposition,
+  determined by the routine LUdecomp. indx[1..n] is input as the permutation
+  vector returned by LUdecomp. b[1..n] is input as the right-hand side
+  vector b, and returns with the solution vector x. A, n, and indx are
+  not modified by this routine and can be left in place for successive
+  calls with different right-hand sides b. This routine takes into account
+  the possibility that b will begin with many zero elements, so it is
+  efficient for use in matrix inversion.
+  From Numerical Recipes (http://www.nr.com/) */
+
+void LUbacksub(int n, array<int>& indx, array<double>& A, array<double>& b)
+{
+  int i,j,ii,ip;
+  double sum;
+
+  ii=0;
+  
+  // forward substitution
+  for (i=0; i<n; i++) {
+    ip = indx(i);
+    sum = b(ip);
+    b(ip) = b(i);
+    
+    if (ii != 0) {
+      for (j=ii-1; j<i; j++) {
+        sum -= A(i,j)*b(j);
+      }
+    }
+    else if (sum != 0.0) {
+      ii = i+1;
+    }
+    b(i) = sum;
+  }
+  
+  // back substitution
+  for (i=n-1; i>=0; i--) {
+    sum = b(i);
+    
+    for (j=i+1; j<n; j++) {
+      sum -= A(j,i)*b(j);
+    }
+    
+    // store a component of the solution vector x
+    b(i) = sum/A(i,i);
+  }
+}
+
 double flt_res(int N, array<double>& wf, array<double>& B, double k_0, double k_c, int ctype)
 {
   int i;

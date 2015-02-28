@@ -216,6 +216,12 @@ void eval_dn_nodal_s_basis(array<double> &dd_nodal_s_basis,
 /*! Linear equation solution by Gauss-Jordan elimination from Numerical Recipes (http://www.nr.com/) */
 void gaussj(int n, array<double>& A, array<double>& b);
 
+/*! LU decomposition from Numerical Recipes (http://www.nr.com/) */
+void LUdecomp(int n, array<int>& indx, array<double>& A);
+
+/*! Linear equation solution by LU forward/back-substitution from Numerical Recipes (http://www.nr.com/) */
+void LUbacksub(int n, array<int>& indx, array<double>& A, array<double>& b);
+
 /*! Filter resolution function used with Gaussian filter*/
 double flt_res(int N, array<double>& wf, array<double>& B, double k_0, double k_c, int ctype);
 

@@ -110,7 +110,13 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     RK_c(3) = 2006345519317/3224310063776;
     RK_c(4) = 2802321613138/2924317926251;
   }
-
+  else if (run_input.adv_type==-1) {
+    // implicit Euler - don't need these but allocate anyway
+    RK_a.setup(1);
+    RK_b.setup(1);
+    RK_c.setup(1);
+  }
+  
   first_time = true;
   n_eles=in_n_eles;
   max_n_spts_per_ele = in_max_n_spts_per_ele;
@@ -155,9 +161,34 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     {
       n_adv_levels=2;
     }
+    else if(run_input.adv_type==-1)
+    {
+      n_adv_levels=2;
+
+      // increment for linearized Jacobian calculation
+      // set to something scaled by initial conditions?
+      for (int i=0; i<n_fields; i++) {
+        eps_imp(i)=1.0e-8;
+      }
+
+      // size of element blocks in Jacobian for implicit timestepping
+      block_dim = n_fields*n_upts_per_ele;
+      
+      // setup LHS matrix
+      lhs_matrix.setup(n_eles);
+      
+      for(int i=0; i<n_eles; i++) {
+        lhs_matrix(i).setup(block_dim,block_dim);
+        lhs_matrix(i).initialize_to_zero();
+      }
+      
+      // setup LHS indexing array
+      lhs_index.setup(block_dim,n_eles);
+      lhs_index.initialize_to_zero();
+    }
     else
     {
-      cout << "ERROR: Type of time integration scheme not recongized ... " << endl;
+      cout << "ERROR: Type of time integration scheme not recognized ... " << endl;
     }
 
     // Allocate storage for solution
@@ -330,6 +361,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     n_fields_mul_n_eles=n_fields*n_eles;
     n_dims_mul_n_upts_per_ele=n_dims*n_upts_per_ele;
     
+    // Residual (divergence of continuous flux)
     div_tconf_upts.setup(n_adv_levels);
     for(int i=0;i<n_adv_levels;i++)
     {
@@ -423,6 +455,44 @@ void eles::set_disu_upts_to_zero_other_levels(void)
       }
 #endif
     }
+  }
+}
+
+void eles::set_disu_upts_to_solution_other_levels(void)
+{
+  
+  if (n_eles!=0)
+  {
+    int i,j,k,m;
+
+    for(i=0;i<n_eles;i++)
+    {
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        for(k=0;k<n_fields;k++)
+        {
+          temp_u(k) = disu_upts(0)(j,i,k);
+        }
+        
+        // Initialize other levels to values of first level
+        for (m=1;m<n_adv_levels;m++)
+        {
+          for(k=0;k<n_fields;k++)
+          {
+            disu_upts(m)(j,i,k) = temp_u(k);
+          }
+        }
+      }
+    }
+#ifdef _GPU
+    if (n_eles!=0)
+    {
+      for (m=1;m<n_adv_levels;m++)
+      {
+        disu_upts(m).cp_cpu_gpu();
+      }
+    }
+#endif
   }
 }
 
@@ -1185,6 +1255,27 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
       
     }
     
+    /*! Time integration using a backwards Euler integration. */
+    
+    else if (adv_type == -1) {
+      
+#ifdef _CPU
+
+      for (int ic=0;ic<n_eles;ic++)
+      {
+        for (int i=0;i<n_fields;i++)
+        {
+          for (int inp=0;inp<n_upts_per_ele;inp++)
+          {
+            disu_upts(0)(inp,ic,i) = disu_upts(1)(inp,ic,i);
+          }
+        }
+      }
+      
+#endif
+      
+    }
+    
     /*! Time integration not implemented. */
     
     else {
@@ -1334,16 +1425,27 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 #ifdef _CPU
     
     int i,j,k,l,m;
-    
+    double detjac;
+
     for(i=0;i<n_eles;i++)
     {
       for(j=0;j<n_upts_per_ele;j++)
       {
+        detjac = detjac_upts(j,i);
+
         for(k=0;k<n_fields;k++)
         {
           temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
         }
 
+        if (run_input.adv_type == -1 and in_disu_upts_from==1) {
+          // increment solution
+          for(k=0;k<n_fields;k++)
+          {
+            temp_u(k) += eps_imp(k)/detjac;
+          }
+        }
+        
         if (motion) {
           // Transform solution from static frame to dynamic frame
           for (k=0; k<n_fields; k++) {
@@ -2335,6 +2437,14 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           for (m=0;m<n_dims;m++)
           {
             temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
+          }
+        }
+
+        if (run_input.adv_type == -1 and in_disu_upts_from==1) {
+          // increment solution
+          for(k=0;k<n_fields;k++)
+          {
+            temp_u(k) += eps_imp(k)/detjac;
           }
         }
 
@@ -3490,6 +3600,173 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
     }
 }
 
+// LHS matrix for LU-SGS implicit method
+void eles::calculate_lhs_matrix(double eps)
+{
+  if (n_eles!=0) {
+#ifdef _CPU
+    
+    int i,j,k,l,m;
+    int indx,indy;
+    double dt, detjac;
+    
+    // get timestep
+    if (run_input.dt_type == 0)
+      dt = run_input.dt;
+    else if (run_input.dt_type == 1)
+      dt = dt_local(0);
+    else if (run_input.dt_type == 2)
+      FatalError("Can't use local timestepping with implicit method.");
+
+    for(i=0; i<n_eles; i++) {
+
+      // identity matrix
+      for(j=0; j<block_dim; j++) {
+        lhs_matrix(i)(j,j) = 1.0/dt;
+      }
+    }
+
+    for(i=0; i<n_eles; i++) {
+      indx = 0;
+      for(j=0; j<n_upts_per_ele; j++) {
+        for(k=0; k<n_fields; k++) {
+          indx = j*n_fields+k;
+
+          // determinant of transformation Jacobian
+          detjac = detjac_upts(j,i);
+
+          indy = 0;
+          for(l=0; l<n_upts_per_ele; l++) {
+            for(m=0; m<n_fields; m++) {
+              indy = l*n_fields+m;
+
+              // linearized Jacobian
+              //cout << "res(Q), res(Q+eps): " << setprecision(12) << div_tconf_upts(0)(j,i,k) << ", " << div_tconf_upts(1)(j,i,k) << endl;
+              lhs_matrix(i)(indx,indy) -= (div_tconf_upts(1)(j,i,k) - div_tconf_upts(0)(j,i,k))/(eps/detjac);
+            }
+          }
+        }
+      }
+    }
+    cout << "lhs_matrix: " << setprecision(3) << endl;
+    lhs_matrix(0).print();
+
+#endif
+  }
+}
+
+// LU decomposition of LHS matrix for implicit method
+void eles::LU_decomp(void)
+{
+  if (n_eles!=0) {
+    
+#ifdef _CPU
+    
+    int i,j,k;
+    array<double> block_lhs(block_dim,block_dim);
+    array<int> block_indx(block_dim);
+    //double *d;
+    
+    // LU decomposition
+    for(i=0; i<n_eles; i++) {
+      for(j=0; j<block_dim; j++) {
+        for(k=0; k<block_dim; k++) {
+          block_lhs(j,k) = lhs_matrix(i)(j,k);
+        }
+      }
+      
+      LUdecomp(block_dim,block_indx,block_lhs);
+      
+      for(j=0; j<block_dim; j++) {
+        lhs_index(j,i) = block_indx(j);
+        
+        for(k=0; k<block_dim; k++) {
+          lhs_matrix(i)(j,k) = block_lhs(j,k);
+        }
+      }
+    }
+    
+#endif
+    
+  }
+}
+
+// forward and backwards sweeps of LU-SGS implicit method
+void eles::LU_sweep(int direction)
+{
+  if (n_eles!=0) {
+    
+#ifdef _CPU
+
+    /*! Algorithm:
+    1. get RHS = R(Q^n) (steady) or R(Q^n) - (Q^*-Q^n)/dt (unsteady)
+    2. call solver
+    3. update Q
+    Assume that element numbering is contiguous in space for now.
+    */
+    
+    cout << "LU_sweep, direction: " << direction << endl;
+    int i,j,k;
+    int corr, ele, indx, indy;
+    double dqdt;
+    array<double> block_lhs(block_dim,block_dim), block_rhs(block_dim);
+    array<int> block_indx(block_dim);
+    
+    // loop over eles - check numbering is contiguous in physical space
+    for(i=0; i<n_eles; i++) {
+    
+      // Forward sweep: direction = 1
+      // Backward sweep: direction = -1
+      if (direction == 1) ele = i;
+      else if (direction == -1) ele = n_eles-i-1;
+
+      indx = 0;
+      for(j=0; j<n_upts_per_ele; j++) {
+        for(k=0; k<n_fields; k++) {
+          indx = j*n_fields+k;
+          
+          // RHS = R(Q^n) (steady) or R(Q^n) - (Q^*-Q^n)/dt (unsteady)
+          dqdt = (disu_upts(1)(j,ele,k) - disu_upts(0)(j,ele,k))/run_input.dt;
+          //cout << "dQ/dt: " << setprecision(6) << dqdt << endl;
+          block_rhs(indx) = div_tconf_upts(0)(j,ele,k) - dqdt;
+          //block_rhs(indx) = div_tconf_upts(0)(j,ele,k);
+
+          // User supplied timestep
+          if (run_input.dt_type == 0) {
+            //block_rhs(indx) = run_input.dt*(div_tconf_upts(0)(j,ele,k)/detjac_upts(j,ele) + run_input.const_src + src_upts(j,ele,k));
+          }
+          else {
+            FatalError("ERROR: dt_type not recognized!");
+          }
+        }
+      }
+
+      for(j=0; j<block_dim; j++) {
+        block_indx(j) = lhs_index(j,ele);
+        
+        for(k=0; k<block_dim; k++) {
+          block_lhs(j,k) = lhs_matrix(ele)(j,k);
+        }
+      }
+
+      // call solver. Returns block_rhs = solution update delta Q
+      LUbacksub(block_dim,block_indx,block_lhs,block_rhs);
+      
+      // update most recent solution Q^*
+      indx = 0;
+      for(j=0; j<n_upts_per_ele; j++) {
+        for(k=0; k<n_fields; k++) {
+          indx = j*n_fields+k;
+          disu_upts(1)(j,ele,k) += block_rhs(indx);
+        }
+      }
+    }
+    
+#endif
+    
+  }
+}
+
 // get the type of element
 
 int eles::get_ele_type(void)
@@ -3622,6 +3899,7 @@ void eles::set_opp_0(int in_sparse)
   
   for(i=0;i<n_upts_per_ele;i++)
   {
+    //cout << "opp_0: ";
     for(j=0;j<n_fpts_per_ele;j++)
     {
       for(k=0;k<n_dims;k++)
@@ -3630,7 +3908,9 @@ void eles::set_opp_0(int in_sparse)
       }
       
       opp_0(j,i)=eval_nodal_basis(i,loc);
+      //cout << setprecision(4) << opp_0(j,i) << " ";
     }
+    //cout << endl;
   }
   
 #ifdef _GPU

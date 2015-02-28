@@ -250,6 +250,7 @@ void eles_quads::set_loc_upts(void)
 
           loc_upts(0,upt)=loc_1d_upts(j);
           loc_upts(1,upt)=loc_1d_upts(i);
+          //cout << "loc_upts: " << setprecision(4) << loc_1d_upts(j) << " " << loc_1d_upts(i) << endl;
         }
     }
 }
@@ -292,6 +293,7 @@ void eles_quads::set_tloc_fpts(void)
               tloc_fpts(0,fpt)=-1.0;
               tloc_fpts(1,fpt)=loc_1d_upts(order-j);
             }
+          //cout << "tloc_fpts: " << setprecision(4) << tloc_fpts(0,fpt) << " " << tloc_fpts(1,fpt) << endl;
         }
     }
 }

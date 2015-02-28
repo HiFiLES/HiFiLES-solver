@@ -47,7 +47,19 @@
  * \brief Calculate the residual.
  * \param[in] FlowSol - Structure with the entire solution and mesh information.
  */
-void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol);
+void CalcResidual(int in_file_num, int flag, struct solution* FlowSol);
+
+/*! Copy solution for implicit solves */
+void CopySolution(struct solution* FlowSol);
+
+/*! Calculate the left-hand matrix for implicit solves */
+void CalcLHS(int in_file_num, struct solution* FlowSol);
+
+/*! LU Decomposition of the left-hand matrix for implicit solves */
+void LUDecomp(struct solution* FlowSol);
+
+/*! LU forward/backward sweeps */
+void LUSweep(int direction, struct solution* FlowSol);
 
 void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol);
 

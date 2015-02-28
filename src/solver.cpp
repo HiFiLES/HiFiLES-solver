@@ -67,7 +67,16 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   int in_disu_upts_from = 0;        /*!< Define... */
   int in_div_tconf_upts_to = 0;     /*!< Define... */
   int i;                            /*!< Loop iterator */
-
+  
+  // if implicit and flag = 1, select 2nd solution and residual arrays
+  if (run_input.adv_type == -1 and in_rk_stage == 1) {
+    in_disu_upts_from = 0;
+    in_div_tconf_upts_to = 1;
+  }
+  
+  //cout << "in_disu_upts_from: " << in_disu_upts_from << endl;
+  //cout << "in_div_tconf_upts_to: " << in_div_tconf_upts_to << endl;
+  
   /*! If at first RK step and using certain LES models, compute some model-related quantities. */
   if(run_input.LES==1 && in_disu_upts_from==0) {
       if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
@@ -116,12 +125,12 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 
   // If running periodic channel or periodic hill cases,
   // calculate body forcing and add to source term
-  if(run_input.forcing==1 and in_rk_stage==0 and run_input.equation==0 and FlowSol->n_dims==3) {
+  if(run_input.forcing==1 and run_input.adv_type >= 0 and in_rk_stage==0 and run_input.equation==0 and FlowSol->n_dims==3) {
 
 #ifdef _GPU
-  // copy disu_upts for body force calculation
-  for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+    // copy disu_upts for body force calculation
+    for(i=0; i<FlowSol->n_ele_types; i++)
+      FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
 #endif
 
     for(i=0;i<FlowSol->n_ele_types;i++) {
@@ -222,6 +231,38 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
     for (i=0; i<FlowSol->n_ele_types; i++)
       FlowSol->mesh_eles(i)->calc_src_upts_SA(in_disu_upts_from);
   }
+}
+
+/*! Calculate the left-hand matrix for implicit solves */
+void CalcLHS(int in_file_num, struct solution* FlowSol) {
+
+  for(int i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calculate_lhs_matrix(eps);
+
+}
+
+/*! Copy solution for calculating dQ/dt in implicit RHS */
+void CopySolution(struct solution* FlowSol) {
+  
+  for(int i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->set_disu_upts_to_solution_other_levels();
+
+}
+
+/*! LU Decomposition of the left-hand matrix for implicit solves */
+void LUDecomp(struct solution* FlowSol) {
+  
+  for(int i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->LU_decomp();
+
+}
+
+/*! LU forward/backward sweeps */
+void LUSweep(int direction, struct solution* FlowSol) {
+  
+  for(int i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->LU_sweep(direction);
+  
 }
 
 #ifdef _MPI
@@ -369,11 +410,18 @@ void InitSolution(struct solution* FlowSol)
       read_restart(run_input.restart_iter,run_input.n_restart_files,FlowSol);
     }
 
-  for (int i=0;i<FlowSol->n_ele_types;i++) {
+  // explicit timestepping only
+  if (run_input.adv_type >= 0) {
+    for (int i=0;i<FlowSol->n_ele_types;i++) {
       if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          FlowSol->mesh_eles(i)->set_disu_upts_to_zero_other_levels();
-        }
+        FlowSol->mesh_eles(i)->set_disu_upts_to_zero_other_levels();
+      }
     }
+  }
+  // if implicit, need to fill first 2 levels of solution array
+  else if (run_input.adv_type < 0) {
+    CopySolution(FlowSol);
+  }
 
   // copy solution to gpu
 #ifdef _GPU
