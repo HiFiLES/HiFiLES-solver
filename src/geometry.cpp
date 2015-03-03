@@ -69,6 +69,9 @@ void SetInput(struct solution* FlowSol) {
   FlowSol->restart_dump_freq  = run_input.restart_dump_freq;
   FlowSol->write_type         = run_input.write_type;
   FlowSol->ini_iter           = 0;
+  FlowSol->n_sgs_sweeps       = run_input.n_sgs_sweeps;
+  FlowSol->update_lhs_freq    = run_input.update_lhs_freq;
+  FlowSol->steady             = run_input.steady;
 
   /*! Number of edges/faces for different type of cells. */
   FlowSol->num_f_per_c.setup(5);

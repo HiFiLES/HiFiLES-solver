@@ -70,13 +70,10 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   
   // if implicit and flag = 1, select 2nd solution and residual arrays
   if (run_input.adv_type == -1 and in_rk_stage == 1) {
-    in_disu_upts_from = 0;
+    in_disu_upts_from = 1;
     in_div_tconf_upts_to = 1;
   }
-  
-  //cout << "in_disu_upts_from: " << in_disu_upts_from << endl;
-  //cout << "in_div_tconf_upts_to: " << in_div_tconf_upts_to << endl;
-  
+    
   /*! If at first RK step and using certain LES models, compute some model-related quantities. */
   if(run_input.LES==1 && in_disu_upts_from==0) {
       if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
@@ -237,7 +234,7 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 void CalcLHS(int in_file_num, struct solution* FlowSol) {
 
   for(int i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calculate_lhs_matrix(eps);
+    FlowSol->mesh_eles(i)->calculate_lhs_matrix();
 
 }
 
@@ -246,6 +243,15 @@ void CopySolution(struct solution* FlowSol) {
   
   for(int i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->set_disu_upts_to_solution_other_levels();
+
+}
+
+/*! Get timestep */
+// TODO: fix local timestepping for mixed-element meshes
+void SetTimestep(struct solution* FlowSol) {
+  
+  for(int i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->set_timestep();
 
 }
 

@@ -242,6 +242,15 @@ void int_inters::calculate_common_invFlux(void)
         temp_u_r(k)=(*disu_fpts_r(j,i,k));
       }
 
+      //if (run_input.adv_type == -1) {
+        // increment solution - but which one?
+        //for(int k=0;k<n_fields;k++)
+        //{
+          //temp_u_l(k) += eps_imp(k);
+          //temp_u_r(k) += eps_imp(k);
+        //}
+      //}
+      
       if (motion) {
         // Transform solution to dynamic space
         for (int k=0; k<n_fields; k++) {

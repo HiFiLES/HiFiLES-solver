@@ -93,6 +93,7 @@ public:
   int adv_type;
   int update_lhs_freq;
   int n_sgs_sweeps;
+  int steady;
 
   int LES;
   int filter_type;

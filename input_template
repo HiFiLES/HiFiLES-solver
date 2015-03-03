@@ -62,6 +62,8 @@ update_lhs_freq                   // how often (in timesteps) to recalculate LHS
 1
 n_sgs_sweeps                      // no. of symmetric Gauss Seidel forward/backward sweeps
 1
+steady                            // 1: steady-state solution, 0: unsteady solution
+1
 -----------------------
 LES options
 -----------------------

@@ -154,7 +154,7 @@ public:
   void calc_src_upts_SA(int in_disu_upts_from);
   
   /*! LHS matrix for LU-SGS implicit method */
-  void calculate_lhs_matrix(double eps);
+  void calculate_lhs_matrix(void);
 
   /*! LU decomposition of LHS matrix for implicit method */
   void LU_decomp(void);
@@ -164,6 +164,9 @@ public:
 
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolution(int in_step, int adv_type);
+
+  /*! Set current timestep */
+  void set_timestep(void);
 
   /*! Calculate element local timestep */
   double calc_dt_local(int in_ele);
@@ -609,9 +612,6 @@ public:
 
   double *get_disu_GCL_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
   /* --------------------------------------------------- */
-
-  /*! Set the time step for the current iteration */
-  void set_dt(int in_step, int adv_type);
 
 #ifdef _GPU
   void cp_transforms_gpu_cpu(void);

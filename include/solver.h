@@ -52,6 +52,9 @@ void CalcResidual(int in_file_num, int flag, struct solution* FlowSol);
 /*! Copy solution for implicit solves */
 void CopySolution(struct solution* FlowSol);
 
+/*! Get timestep */
+void SetTimestep(struct solution* FlowSol);
+
 /*! Calculate the left-hand matrix for implicit solves */
 void CalcLHS(int in_file_num, struct solution* FlowSol);
 

@@ -176,6 +176,12 @@ int main(int argc, char *argv[]) {
   
   while(i_steps < FlowSol.n_steps) {
     
+    /*! Set current timestep if not using user-defined value */
+    
+    if (run_input.dt_type > 0) {
+      SetTimestep(&FlowSol);
+    }
+    
     /*! explicit timestepping */
     if(FlowSol.adv_type >= 0) {
 
@@ -196,6 +202,7 @@ int main(int argc, char *argv[]) {
         CalcResidual(FlowSol.ini_iter+i_steps, i, &FlowSol);
       
         /*! Time integration usign a RK scheme */
+        // TODO: change to a function wrapper in solver.cpp
     
         for(j=0; j<FlowSol.n_ele_types; j++) {
         
@@ -213,12 +220,10 @@ int main(int argc, char *argv[]) {
       
       /*! Get R(Q). */
       CalcResidual(FlowSol.ini_iter+i_steps, 0, &FlowSol);
-
+      
       /*! Update LHS matrix only every update_lhs_freq timesteps (matrix freezing) */
-      if(i_steps%run_input.update_lhs_freq == 0) {
+      if(i_steps%FlowSol.update_lhs_freq == 0) {
         
-        cout << "updating LHS matrix" << endl;
-
         // linearized Jacobian: dR/dQ = (R(Q+eps)-R(Q))/eps
         // we have R(Q), now get R(Q+eps)
         CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
@@ -231,7 +236,7 @@ int main(int argc, char *argv[]) {
       }
 
       /*! Symmetric Gauss-Seidel sweeps */
-      for(i=0; i < run_input.n_sgs_sweeps; i++) {
+      for(i=0; i < FlowSol.n_sgs_sweeps; i++) {
         
         /*! forward/backward sweep: 
          loop over eles
@@ -239,7 +244,7 @@ int main(int argc, char *argv[]) {
          LU solve
          calculate new conservative vars */
       
-        cout << "timestep, LU_sweep number: " << i_steps << ", " << i << endl;
+        //cout << "timestep, LU_sweep number: " << i_steps << ", " << i << endl;
 
         // Update R(Q)
         if (i > 0) {

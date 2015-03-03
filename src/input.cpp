@@ -349,6 +349,10 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> n_sgs_sweeps;
     }
+    else if (!param_name.compare("steady"))
+    {
+      in_run_input_file >> steady;
+    }
     else if (!param_name.compare("const_src"))
     {
       in_run_input_file >> const_src;
