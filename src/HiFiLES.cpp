@@ -245,13 +245,13 @@ int main(int argc, char *argv[]) {
       CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
         
       // forward sweep + advance solution
-      LUSweep(1, &FlowSol);
+      SGSSweep(1, &FlowSol);
         
       // Update R(Q^i)
       CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
         
       // backward sweep + advance solution
-      LUSweep(-1, &FlowSol);
+      SGSSweep(-1, &FlowSol);
     }
     
     /*! Update total time, and increase the iteration index. */

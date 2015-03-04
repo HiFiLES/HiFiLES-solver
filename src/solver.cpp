@@ -495,10 +495,10 @@ void LUDecomp(struct solution* FlowSol) {
   
 }
 
-/*! LU forward/backward sweeps */
-void LUSweep(int direction, struct solution* FlowSol) {
+/*! Symmetric Gauss-Seidel forward/backward sweeps */
+void SGSSweep(int direction, struct solution* FlowSol) {
   
   for(int i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->LU_sweep(direction);
+    FlowSol->mesh_eles(i)->SGS_sweep(direction);
   
 }

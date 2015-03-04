@@ -159,14 +159,17 @@ public:
   /*! LU decomposition of LHS matrix for implicit method */
   void LU_decomp(void);
 
-  /*! forward sweep of LU-SGS implicit method */
-  void LU_sweep(int direction);
+  /*! Symmetric Gauss-Seidel iteration */
+  void SGS_sweep(int direction);
 
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolution(int in_step, int adv_type);
 
-  /*! Set current timestep */
+  /*! Set current timestep in every element */
   void set_timestep(void);
+
+  /*! Get current timestep in an element */
+  double get_timestep_ele(int in_ele);
 
   /*! Calculate element local timestep */
   double calc_dt_local(int in_ele);
@@ -979,6 +982,12 @@ protected:
   /*! LHS indexing array */
   array<double> lhs_index;
   
+  /*! element block of LHS matrix */
+  array<double> block_lhs;
+
+  /*! element block of LHS indexing array */
+  array<int> block_indx;
+
   /*! dimension of LHS matrix blocks */
   int block_dim;
   

@@ -118,5 +118,5 @@ void CalcLHS(int in_file_num, struct solution* FlowSol);
 void LUDecomp(struct solution* FlowSol);
 
 /*! LU forward/backward sweeps */
-void LUSweep(int direction, struct solution* FlowSol);
+void SGSSweep(int direction, struct solution* FlowSol);
 

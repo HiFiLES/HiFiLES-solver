@@ -186,6 +186,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       // setup LHS indexing array
       lhs_index.setup(block_dim,n_eles);
       lhs_index.initialize_to_zero();
+      
+      // setup element block arrays
+      block_lhs.setup(block_dim,block_dim);
+      block_indx.setup(block_dim);
     }
     else
     {
@@ -1082,6 +1086,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
   
   if (n_eles!=0)
   {
+    double dt;
     
     /*! Time integration using a forwards Euler integration. */
     
@@ -1089,7 +1094,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
       
       /*!
        Performs B = B + (alpha*A) where: \n
-       alpha = -run_input.dt \n
+       alpha = -dt \n
        A = div_tconf_upts(0)\n
        B = disu_upts(0)
        */
@@ -1100,23 +1105,14 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
       {
         for (int ic=0;ic<n_eles;ic++)
         {
+          dt = get_timestep_ele(ic);
+
           for (int inp=0;inp<n_upts_per_ele;inp++)
           {
-            // User supplied timestep
-            if (run_input.dt_type == 0)
-              disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
+            disu_upts(0)(inp,ic,i) -= dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
             
-            // Global minimum timestep
-            else if (run_input.dt_type == 1)
-              disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
-            
-            // Element local timestep
-            else if (run_input.dt_type == 2)
-              disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
-            else
-              FatalError("ERROR: dt_type not recognized!")
               
-              }
+          }
         }
       }
       
@@ -1159,6 +1155,8 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
       double res, rhs;
       for (int ic=0;ic<n_eles;ic++)
       {
+        dt = get_timestep_ele(ic);
+
         for (int i=0;i<n_fields;i++)
         {
           for (int inp=0;inp<n_upts_per_ele;inp++)
@@ -1166,12 +1164,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
             rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src + src_upts(inp,ic,i);
             res = disu_upts(1)(inp,ic,i);
             
-            if (run_input.dt_type == 0)
-              res = rk4a*res + run_input.dt*rhs;
-            else if (run_input.dt_type == 1)
-              res = rk4a*res + dt_local(0)*rhs;
-            else if (run_input.dt_type == 2)
-              res = rk4a*res + dt_local(ic)*rhs;
+            res = rk4a*res + dt*rhs;
             
             disu_upts(1)(inp,ic,i) = res;
             disu_upts(0)(inp,ic,i) += rk4b*res;
@@ -1265,7 +1258,25 @@ void eles::set_timestep(void)
     }
   }
 }
-    
+
+double eles::get_timestep_ele(int in_ele)
+{
+  double dt=0.0;
+  // User supplied timestep
+  if (run_input.dt_type == 0)
+    dt = run_input.dt;
+  // Global minimum timestep
+  else if (run_input.dt_type == 1)
+    dt = dt_local(0);
+  // Element local timestep
+  else if (run_input.dt_type == 2)
+    dt = dt_local(in_ele);
+  else
+    FatalError("ERROR: dt_type not recognized!")
+
+  return dt;
+}
+
 double eles::calc_dt_local(int in_ele)
 {
   double lam_inv, lam_inv_new;
@@ -3603,16 +3614,8 @@ void eles::calculate_lhs_matrix(void)
     
     for(i=0; i<n_eles; i++) {
 
-      // User supplied timestep
-      if (run_input.dt_type == 0)
-        dt = run_input.dt;
-      // Global minimum timestep
-      else if (run_input.dt_type == 1)
-        dt = dt_local(0);
-      // Element local timestep
-      else if (run_input.dt_type == 2)
-        dt = dt_local(i);
-
+      dt = get_timestep_ele(i);
+      
       // identity matrix
       for(j=0; j<block_dim; j++) {
         lhs_matrix(i)(j,j) = 1.0/dt;
@@ -3661,8 +3664,6 @@ void eles::LU_decomp(void)
 #ifdef _CPU
     
     int i,j,k;
-    array<double> block_lhs(block_dim,block_dim);
-    array<int> block_indx(block_dim);
     //double *d;
     
     // LU decomposition
@@ -3690,7 +3691,7 @@ void eles::LU_decomp(void)
 }
 
 // forward and backwards sweeps of LU-SGS implicit method
-void eles::LU_sweep(int direction)
+void eles::SGS_sweep(int direction)
 {
   if (n_eles!=0) {
     
@@ -3703,7 +3704,6 @@ void eles::LU_sweep(int direction)
     Assume that element numbering is contiguous in space for now.
     */
     
-    //cout << "LU_sweep, direction: " << direction << endl;
     int i,j,k;
     int corr, ele, indx, indy;
     double dt, dqdt;
@@ -3714,15 +3714,7 @@ void eles::LU_sweep(int direction)
     // loop over eles - check numbering is contiguous in physical space
     for(i=0; i<n_eles; i++) {
     
-      // User supplied timestep
-      if (run_input.dt_type == 0)
-        dt = run_input.dt;
-      // Global minimum timestep
-      else if (run_input.dt_type == 1)
-        dt = dt_local(0);
-      // Element local timestep
-      else if (run_input.dt_type == 2)
-        dt = dt_local(i);
+      dt = get_timestep_ele(i);
 
       // Forward sweep: direction = 1
       // Backward sweep: direction = -1
@@ -5676,7 +5668,7 @@ void eles::set_transforms_inters_cubpts(void)
                       yr = d_pos(1,0);
                       ys = d_pos(1,1);
 
-                      // store determinant of jacobian at cubature point. TODO: what is this for?
+                      // store determinant of jacobian at cubature point. TODO: use it or lose it!
                       vol_detjac_inters_cubpts(l)(j,i)= xr*ys - xs*yr;
 
                       // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the cubature point
@@ -6954,12 +6946,11 @@ void eles::evaluate_body_force(int in_file_num)
       mdot_old = mass_flux;
 
     // get timestep
-    if (run_input.dt_type == 0)
-      dt = run_input.dt;
-    else if (run_input.dt_type == 1)
-      dt = dt_local(0);
-    else if (run_input.dt_type == 2)
+    if (run_input.dt_type == 2)
       FatalError("Not sure what value of timestep to use in body force term when using local timestepping.");
+
+    // minor hack
+    dt = get_timestep_ele(0);
 
     // bulk velocity
     if(integral(0)==0)
@@ -7182,6 +7173,9 @@ void eles::CalcTimeAverageQuantities(double& time)
 
   for(j=0;j<n_upts_per_ele;j++) {
     for(k=0;k<n_eles;k++) {
+      // get timestep
+      dt = get_timestep_ele(k);
+      
       for(i=0;i<n_average_fields;++i) {
 
         rho = disu_upts(0)(j,k,0);
@@ -7213,14 +7207,7 @@ void eles::CalcTimeAverageQuantities(double& time)
           }
         }
 
-        // get timestep
-        if (run_input.dt_type == 0)
-          dt = run_input.dt;
-        else if (run_input.dt_type == 1)
-          dt = dt_local(0);
-        else if (run_input.dt_type == 2)
-          FatalError("Not sure what value of timestep to use in time average calculation when using local timestepping.");
-
+        // TODO: does this work with local timestepping?
         // set average value to current value if before spinup time
         // and prevent division by a very small number if time = spinup time
         if(time-spinup_time < 1.0e-12) {
