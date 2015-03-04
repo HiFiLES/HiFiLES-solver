@@ -6631,10 +6631,6 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
   for (i=0; i<n_eles; i++) {
     cell_sum=0;
     for (j=0; j<n_upts_per_ele; j++) {
-      // copy residual if implicit timestepping
-      if(run_input.adv_type==-1) {
-        div_tconf_upts(0)(j,i,in_field) = div_tconf_upts(1)(j,i,in_field);
-      }
       if (in_norm_type == 1) {
         cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
       }
