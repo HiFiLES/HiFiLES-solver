@@ -215,56 +215,43 @@ int main(int argc, char *argv[]) {
     /*! backward Euler LU-SGS implicit solve */
     else if(FlowSol.adv_type == -1) {
 
-      /*! store old solution to enable calculation of dQ/dt */
-      CopySolution(&FlowSol);
-      
-      /*! Get R(Q). */
-      CalcResidual(FlowSol.ini_iter+i_steps, 0, &FlowSol);
+      /*! store old solution */
+      StoreOldSolution(&FlowSol);
       
       /*! Update LHS matrix only every update_lhs_freq timesteps (matrix freezing) */
       if(i_steps%FlowSol.update_lhs_freq == 0) {
         
-        // linearized Jacobian: dR/dQ = (R(Q+eps)-R(Q))/eps
-        // we have R(Q), now get R(Q+eps)
-        CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
+        /*! Get R(Q^n) */
+        CalcResidual(FlowSol.ini_iter+i_steps, 0, &FlowSol);
+        
+        /*! get R(Q^n+eps) */
+        CalcResidual(FlowSol.ini_iter+i_steps, 2, &FlowSol);
           
         /*! calculate LHS matrix */
+        // linearized Jacobian: dR/dQ = (R(Q+eps)-R(Q))/eps
         CalcLHS(FlowSol.ini_iter+i_steps, &FlowSol);
       
         /*! LU decomposition of LHS matrix */
         LUDecomp(&FlowSol);
       }
 
-      /*! Symmetric Gauss-Seidel sweeps */
-      for(i=0; i < FlowSol.n_sgs_sweeps; i++) {
-        
-        /*! forward/backward sweep: 
-         loop over eles
-         compute RHS (residual - (Q^i - Q^*)/dt) using latest solution
-         LU solve
-         calculate new conservative vars */
+      /*! Symmetric Gauss-Seidel sweeps:
+          loop over eles
+          compute RHS: R(Q^i) - (Q^i - Q^n)/dt
+          LU solve
+          update solution Q^(i+1) */
       
-        //cout << "timestep, LU_sweep number: " << i_steps << ", " << i << endl;
-
-        // Update R(Q)
-        if (i > 0) {
-          CalcResidual(FlowSol.ini_iter+i_steps, 0, &FlowSol);
-        }
+      // Get R(Q^i)
+      CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
         
-        // forward sweep + update solution
-        LUSweep(1, &FlowSol);
+      // forward sweep + advance solution
+      LUSweep(1, &FlowSol);
         
-        // Update R(Q)
-        CalcResidual(FlowSol.ini_iter+i_steps, 0, &FlowSol);
+      // Update R(Q^i)
+      CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
         
-        // backward sweep + update solution
-        LUSweep(-1, &FlowSol);
-      }
-      
-      /*! Finally, advance the solution */
-      for(j=0; j<FlowSol.n_ele_types; j++) {
-        FlowSol.mesh_eles(j)->AdvanceSolution(i, FlowSol.adv_type);
-      }
+      // backward sweep + advance solution
+      LUSweep(-1, &FlowSol);
     }
     
     /*! Update total time, and increase the iteration index. */

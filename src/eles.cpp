@@ -163,13 +163,13 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     }
     else if(run_input.adv_type==-1)
     {
-      n_adv_levels=2;
+      n_adv_levels=3;
 
       // increment for linearized Jacobian calculation
       // set to something scaled by initial conditions?
       eps_imp.setup(n_fields);
       for (int i=0; i<n_fields; i++) {
-        eps_imp(i)=1.0e-6;
+        eps_imp(i)=1.0e-9;
       }
 
       // size of element blocks in Jacobian for implicit timestepping
@@ -459,40 +459,45 @@ void eles::set_disu_upts_to_zero_other_levels(void)
   }
 }
 
+// Initialize other levels to values of first level
+
 void eles::set_disu_upts_to_solution_other_levels(void)
 {
   
   if (n_eles!=0)
   {
-    int i,j,k,m;
+    int m;
+    
+    for (m=1;m<n_adv_levels;m++) {
+      disu_upts(m) = disu_upts(0);
+    }
 
-    for(i=0;i<n_eles;i++)
-    {
-      for(j=0;j<n_upts_per_ele;j++)
-      {
-        for(k=0;k<n_fields;k++)
-        {
-          temp_u(k) = disu_upts(0)(j,i,k);
-        }
-        
-        // Initialize other levels to values of first level
-        for (m=1;m<n_adv_levels;m++)
-        {
-          for(k=0;k<n_fields;k++)
-          {
-            disu_upts(m)(j,i,k) = temp_u(k);
-          }
-        }
-      }
-    }
 #ifdef _GPU
-    if (n_eles!=0)
-    {
-      for (m=1;m<n_adv_levels;m++)
-      {
-        disu_upts(m).cp_cpu_gpu();
-      }
+
+    for (m=1;m<n_adv_levels;m++) {
+      disu_upts(m).cp_cpu_gpu();
     }
+
+#endif
+  }
+}
+
+void eles::store_old_solution(void) {
+  
+  if (n_eles!=0)
+  {
+    int m;
+    
+    for (m=0;m<n_adv_levels-1;m++) {
+      disu_upts(m) = disu_upts(2);
+    }
+
+#ifdef _GPU
+    
+    for (m=0;m<n_adv_levels-1;m++) {
+      disu_upts(m).cp_cpu_gpu();
+    }
+    
 #endif
   }
 }
@@ -1188,7 +1193,9 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
     
     else if (adv_type == -1) {
       
-#ifdef _CPU
+      // do nothing - update is done in LU_Sweep
+      
+/*#ifdef _CPU
 
       for (int ic=0;ic<n_eles;ic++)
       {
@@ -1201,7 +1208,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
         }
       }
       
-#endif
+#endif*/
       
     }
     
@@ -1218,41 +1225,43 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 void eles::set_timestep(void)
 {
 
-  int i;
-  
-  // If using global minimum timestep based on CFL, determine global minimum
-  if (run_input.dt_type == 1) {
+  if (n_eles!=0) {
+    int i;
     
-    // Find minimum timestep
-    dt_local(0) = 1e12; // Set to large value
-    
-    for(i=0; i<n_eles; i++) {
-      dt_local_new = calc_dt_local(i);
+    // If using global minimum timestep based on CFL, determine global minimum
+    if (run_input.dt_type == 1) {
       
-      if (dt_local_new < dt_local(0))
-        dt_local(0) = dt_local_new;
+      // Find minimum timestep
+      dt_local(0) = 1e12; // Set to large value
+      
+      for(i=0; i<n_eles; i++) {
+        dt_local_new = calc_dt_local(i);
+        
+        if (dt_local_new < dt_local(0))
+          dt_local(0) = dt_local_new;
+      }
+      
+      // If running in parallel, gather minimum timestep values from
+      // each partition and find global minumum across partitions
+#ifdef _MPI
+      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
+                    1, MPI_DOUBLE, MPI_COMM_WORLD);
+      MPI_Barrier(MPI_COMM_WORLD);
+      
+      dt_local(0) = dt_local_mpi.get_min();
+#endif
+      
+      if (rank == 0) cout << "dt_local: " << setprecision(8) << dt_local(0) << endl;
     }
     
-    // If running in parallel, gather minimum timestep values from
-    // each partition and find global minumum across partitions
-#ifdef _MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Allgather(&dt_local(0),1,MPI_DOUBLE,dt_local_mpi.get_ptr_cpu(),
-                  1, MPI_DOUBLE, MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-    
-    dt_local(0) = dt_local_mpi.get_min();
-#endif
-
-    if (rank == 0) cout << "dt_local: " << setprecision(8) << dt_local(0) << endl;
-  }
-  
-  // If using local timestepping, just compute and store all local
-  // timesteps
-  else if (run_input.dt_type == 2)
-  {
-    for(i=0; i<n_eles; i++) {
-      dt_local(i) = calc_dt_local(i);
+    // If using local timestepping, just compute and store all local
+    // timesteps
+    else if (run_input.dt_type == 2)
+    {
+      for(i=0; i<n_eles; i++) {
+        dt_local(i) = calc_dt_local(i);
+      }
     }
   }
 }
@@ -1409,7 +1418,7 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
         }
 
-        if (run_input.adv_type == -1 and in_disu_upts_from == 1) {
+        if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
           // increment solution
           for(k=0;k<n_fields;k++)
           {
@@ -1653,12 +1662,12 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
     
   }
   
-  /*
-   for (int j=0;j<n_eles;j++)
-   for (int i=0;i<n_upts_per_ele;i++)
-   //for (int k=0;k<n_fields;k++)
-   cout << scientific << setw(16) << setprecision(12) << div_tconf_upts(0)(i,j,0) << endl;
-   */
+  
+   /*for (int j=0;j<n_eles;j++)
+     for (int i=0;i<n_upts_per_ele;i++)
+       for (int k=0;k<n_fields;k++)
+         cout << scientific << setw(16) << setprecision(12) << div_tconf_upts(0)(i,j,k) << ", " << div_tconf_upts(1)(i,j,k) << endl;*/
+  
 }
 
 
@@ -1704,7 +1713,12 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
       cout << "ERROR: Unknown storage for opp_3 ... " << endl;
     }
     
-    //cout << endl;
+    for (int i=0;i<n_upts_per_ele;i++)
+      for (int j=0;j<n_eles;j++)
+        for (int k=0;k<n_fields;k++)
+          if (isnan(div_tconf_upts(in_div_tconf_upts_to)(j,i,k)))
+            FatalError("NaN in residual, exiting.");
+
     //cout << "level, min/max of residual: " << in_div_tconf_upts_to << ", " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to).get_min() << ", " << div_tconf_upts(in_div_tconf_upts_to).get_max() << endl;
     //cout << endl;
     
@@ -2417,7 +2431,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           }
         }
 
-        if (run_input.adv_type == -1 and in_disu_upts_from == 1) {
+        if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
           // increment solution
           for(k=0;k<n_fields;k++)
           {
@@ -3615,8 +3629,8 @@ void eles::calculate_lhs_matrix(void)
           detjac = detjac_upts(j,i);
 
           // Jacobian entry
-          jac = (div_tconf_upts(1)(j,i,k) - div_tconf_upts(0)(j,i,k))/eps_imp(k);
-          //cout << "field, eps, jac: " << k << ", " << eps_imp(k) << ", " << setprecision(12) << jac << endl;
+          jac = (div_tconf_upts(2)(j,i,k) - div_tconf_upts(0)(j,i,k))/eps_imp(k);
+          //cout << "field, eps, res(0), res(1), jac: " << k << ", " << setprecision(12) << eps_imp(k) << ", " << div_tconf_upts(0)(j,i,k) << ", " << div_tconf_upts(1)(j,i,k) << ", " << jac << endl;
           
           indy = 0;
           for(l=0; l<n_upts_per_ele; l++) {
@@ -3629,8 +3643,10 @@ void eles::calculate_lhs_matrix(void)
           }
         }
       }
+      //cout << "rank, lhs_matrix for ele "<< rank << ", " << i << setprecision(3) << endl;
+      //lhs_matrix(i).print();
     }
-    //cout << "lhs_matrix: " << setprecision(3) << endl;
+    //cout << "rank, lhs_matrix(0) " << rank << setprecision(3) << endl;
     //lhs_matrix(0).print();
 
 #endif
@@ -3690,13 +3706,24 @@ void eles::LU_sweep(int direction)
     //cout << "LU_sweep, direction: " << direction << endl;
     int i,j,k;
     int corr, ele, indx, indy;
-    double dt,dqdt;
+    double dt, dqdt;
+    array<double> delta_qstar(n_upts_per_ele,n_eles,n_fields);
     array<double> block_lhs(block_dim,block_dim), block_rhs(block_dim);
     array<int> block_indx(block_dim);
     
     // loop over eles - check numbering is contiguous in physical space
     for(i=0; i<n_eles; i++) {
     
+      // User supplied timestep
+      if (run_input.dt_type == 0)
+        dt = run_input.dt;
+      // Global minimum timestep
+      else if (run_input.dt_type == 1)
+        dt = dt_local(0);
+      // Element local timestep
+      else if (run_input.dt_type == 2)
+        dt = dt_local(i);
+
       // Forward sweep: direction = 1
       // Backward sweep: direction = -1
       if (direction == 1) ele = i;
@@ -3707,13 +3734,17 @@ void eles::LU_sweep(int direction)
         for(k=0; k<n_fields; k++) {
           indx = j*n_fields+k;
           
-          // RHS = R(Q^n) (steady) or R(Q^n) - (Q^*-Q^n)/dt (unsteady)
-          block_rhs(indx) = -div_tconf_upts(0)(j,ele,k);
+          // RHS = R(Q^*) (steady) or R(Q^*) - (Q^*-Q^n)/dt (unsteady)
+          // TODO: calculate residual for current element only
+          block_rhs(indx) = -div_tconf_upts(1)(j,ele,k)/detjac_upts(j,ele);
 
+          // set delta Q^*
+          delta_qstar(j,ele,k) = disu_upts(1)(j,ele,k) - disu_upts(0)(j,ele,k);
+          
           // unsteady case
           if (run_input.steady == 0) {
             
-            dqdt = (disu_upts(1)(j,ele,k) - disu_upts(0)(j,ele,k))/dt;
+            dqdt = delta_qstar(j,ele,k)/dt;
 
             //cout << "dQ/dt: " << setprecision(6) << dqdt << endl;
             block_rhs(indx) -= dqdt;
@@ -3729,15 +3760,21 @@ void eles::LU_sweep(int direction)
         }
       }
 
-      // call solver. Returns block_rhs = solution update delta Q
+      // call solver. Returns block_rhs = solution update delta^2 Q^(k+1)
       LUbacksub(block_dim,block_indx,block_lhs,block_rhs);
       
-      // update most recent solution Q^*
+      // update solution Q^(k+1)
       indx = 0;
       for(j=0; j<n_upts_per_ele; j++) {
         for(k=0; k<n_fields; k++) {
           indx = j*n_fields+k;
-          disu_upts(1)(j,ele,k) = disu_upts(0)(j,ele,k) + block_rhs(indx)/detjac_upts(j,ele);
+          //disu_upts(1)(j,ele,k) = disu_upts(0)(j,ele,k) + block_rhs(indx);
+          
+          // Double-linearized method: See Sun, Wang and Liu (2009)
+          disu_upts(2)(j,ele,k) = block_rhs(indx) + delta_qstar(j,ele,k) + disu_upts(1)(j,ele,k);
+       
+          // Set most recent solution for next inner iteration
+          disu_upts(1)(j,ele,k) = disu_upts(2)(j,ele,k);
         }
       }
     }
@@ -6594,6 +6631,10 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
   for (i=0; i<n_eles; i++) {
     cell_sum=0;
     for (j=0; j<n_upts_per_ele; j++) {
+      // copy residual if implicit timestepping
+      if(run_input.adv_type==-1) {
+        div_tconf_upts(0)(j,i,in_field) = div_tconf_upts(1)(j,i,in_field);
+      }
       if (in_norm_type == 1) {
         cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
       }

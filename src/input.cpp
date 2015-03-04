@@ -345,10 +345,6 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> update_lhs_freq;
     }
-    else if (!param_name.compare("n_sgs_sweeps"))
-    {
-      in_run_input_file >> n_sgs_sweeps;
-    }
     else if (!param_name.compare("steady"))
     {
       in_run_input_file >> steady;

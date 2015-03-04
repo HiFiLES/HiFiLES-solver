@@ -69,7 +69,6 @@ struct solution {
   int plot_freq;
   int restart_dump_freq;
   int ini_iter;
-  int n_sgs_sweeps;
   int update_lhs_freq;
   int steady;
   

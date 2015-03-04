@@ -69,9 +69,9 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   int i;                            /*!< Loop iterator */
   
   // if implicit and flag = 1, select 2nd solution and residual arrays
-  if (run_input.adv_type == -1 and in_rk_stage == 1) {
-    in_disu_upts_from = 1;
-    in_div_tconf_upts_to = 1;
+  if (run_input.adv_type == -1) {
+    in_disu_upts_from = in_rk_stage;
+    in_div_tconf_upts_to = in_rk_stage;
   }
     
   /*! If at first RK step and using certain LES models, compute some model-related quantities. */
@@ -230,47 +230,6 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   }
 }
 
-/*! Calculate the left-hand matrix for implicit solves */
-void CalcLHS(int in_file_num, struct solution* FlowSol) {
-
-  for(int i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calculate_lhs_matrix();
-
-}
-
-/*! Copy solution for calculating dQ/dt in implicit RHS */
-void CopySolution(struct solution* FlowSol) {
-  
-  for(int i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->set_disu_upts_to_solution_other_levels();
-
-}
-
-/*! Get timestep */
-// TODO: fix local timestepping for mixed-element meshes
-void SetTimestep(struct solution* FlowSol) {
-  
-  for(int i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->set_timestep();
-
-}
-
-/*! LU Decomposition of the left-hand matrix for implicit solves */
-void LUDecomp(struct solution* FlowSol) {
-  
-  for(int i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->LU_decomp();
-
-}
-
-/*! LU forward/backward sweeps */
-void LUSweep(int direction, struct solution* FlowSol) {
-  
-  for(int i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->LU_sweep(direction);
-  
-}
-
 #ifdef _MPI
 void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol)
 {
@@ -424,9 +383,13 @@ void InitSolution(struct solution* FlowSol)
       }
     }
   }
-  // if implicit, need to fill first 2 levels of solution array
+  // if implicit, need to set 'old' solution to ICs
   else if (run_input.adv_type < 0) {
-    CopySolution(FlowSol);
+    for (int i=0;i<FlowSol->n_ele_types;i++) {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+        FlowSol->mesh_eles(i)->set_disu_upts_to_solution_other_levels();
+      }
+    }
   }
 
   // copy solution to gpu
@@ -497,3 +460,45 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
   cout << "Rank=" << FlowSol->rank << " Done reading restart files" << endl;
 }
 
+/*! Calculate the left-hand matrix for implicit solves */
+void CalcLHS(int in_file_num, struct solution* FlowSol) {
+  
+  for(int i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->calculate_lhs_matrix();
+  
+}
+
+/*! Store old solution for implicit timestepping */
+void StoreOldSolution(struct solution* FlowSol) {
+  
+  for (int i=0;i<FlowSol->n_ele_types;i++) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      FlowSol->mesh_eles(i)->store_old_solution();
+    }
+  }
+}
+
+/*! Get timestep */
+// TODO: fix local timestepping for mixed-element meshes
+void SetTimestep(struct solution* FlowSol) {
+  
+  for(int i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->set_timestep();
+  
+}
+
+/*! LU Decomposition of the left-hand matrix for implicit solves */
+void LUDecomp(struct solution* FlowSol) {
+  
+  for(int i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->LU_decomp();
+  
+}
+
+/*! LU forward/backward sweeps */
+void LUSweep(int direction, struct solution* FlowSol) {
+  
+  for(int i=0; i<FlowSol->n_ele_types; i++)
+    FlowSol->mesh_eles(i)->LU_sweep(direction);
+  
+}

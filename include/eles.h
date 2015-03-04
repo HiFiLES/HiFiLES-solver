@@ -308,6 +308,8 @@ public:
 
   void set_disu_upts_to_solution_other_levels(void);
 
+  void store_old_solution(void);
+  
   array<int> get_connectivity_plot();
 
   /*! calculate solution at the plot points */

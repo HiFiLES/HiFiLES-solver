@@ -49,21 +49,6 @@
  */
 void CalcResidual(int in_file_num, int flag, struct solution* FlowSol);
 
-/*! Copy solution for implicit solves */
-void CopySolution(struct solution* FlowSol);
-
-/*! Get timestep */
-void SetTimestep(struct solution* FlowSol);
-
-/*! Calculate the left-hand matrix for implicit solves */
-void CalcLHS(int in_file_num, struct solution* FlowSol);
-
-/*! LU Decomposition of the left-hand matrix for implicit solves */
-void LUDecomp(struct solution* FlowSol);
-
-/*! LU forward/backward sweeps */
-void LUSweep(int direction, struct solution* FlowSol);
-
 void set_rank_nproc(int in_rank, int in_nproc, struct solution* FlowSol);
 
 /*! get pointer to transformed discontinuous solution at a flux point */
@@ -120,8 +105,18 @@ void InitSolution(struct solution* FlowSol);
 /*! reading a restart file */
 void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol);
 
+/*! Copy solution for implicit solves */
+void StoreOldSolution(struct solution* FlowSol);
 
+/*! Get timestep */
+void SetTimestep(struct solution* FlowSol);
 
+/*! Calculate the left-hand matrix for implicit solves */
+void CalcLHS(int in_file_num, struct solution* FlowSol);
 
+/*! LU Decomposition of the left-hand matrix for implicit solves */
+void LUDecomp(struct solution* FlowSol);
 
+/*! LU forward/backward sweeps */
+void LUSweep(int direction, struct solution* FlowSol);
 
