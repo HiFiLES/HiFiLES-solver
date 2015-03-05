@@ -1174,7 +1174,7 @@ repeat above
                       FlowSol->mesh_eles(i)->calc_disu_ftpts(ele,disu_ftpts_temp);
                       if(FlowSol->rank==0 && ftpt==0) {
                       //if(FlowSol->rank==0) {
-                        cout << "y,z,x,ele,ftpt,coords: " << y << ", " << z << ", " << x << ", " << ele << ", " << ftpt << ", " << pos_ftpts_temp(ftpt,0) << ", " << pos_ftpts_temp(ftpt,1) << ", " << pos_ftpts_temp(ftpt,2) << endl;
+                        //cout << "y,z,x,ele,ftpt,coords: " << y << ", " << z << ", " << x << ", " << ele << ", " << ftpt << ", " << pos_ftpts_temp(ftpt,0) << ", " << pos_ftpts_temp(ftpt,1) << ", " << pos_ftpts_temp(ftpt,2) << endl;
                         //cout << "disu_ftpts: " << disu_ftpts_temp(ftpt,1) << ", " << disu_ftpts_temp(ftpt,2) << ", " << disu_ftpts_temp(ftpt,3) << endl;
                       }
 

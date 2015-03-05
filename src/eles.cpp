@@ -4294,7 +4294,7 @@ void eles::calc_disu_ftpts(int in_ele, array<double>& out_disu_ftpts)
     int i,j,k;
     
     array<double> disu_upts_plot(n_upts_per_ele,n_fields);
-    
+
     for(i=0;i<n_fields;i++)
     {
       for(j=0;j<n_upts_per_ele;j++)
@@ -4306,10 +4306,24 @@ void eles::calc_disu_ftpts(int in_ele, array<double>& out_disu_ftpts)
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
     
     cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_ft.get_ptr_cpu(),n_ftpts_per_ele,disu_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_ftpts.get_ptr_cpu(),n_ftpts_per_ele);
+            
+#else
     
-#elif defined _NO_BLAS
-    dgemm(n_ftpts_per_ele,n_fields,n_upts_per_ele,1.0,0.0,opp_ft.get_ptr_cpu(),disu_upts_plot.get_ptr_cpu(),out_disu_ftpts.get_ptr_cpu());
+    //HACK (inefficient, but useful if cblas is unavailible)
+    
+    for(i=0;i<n_ftpts_per_ele;i++)
+    {
+      for(k=0;k<n_fields;k++)
+      {
+        out_disu_ftpts(i,k) = 0.;
         
+        for(j=0;j<n_upts_per_ele;j++)
+        {
+          out_disu_ftpts(i,k) += opp_ft(i,j)*disu_upts_plot(j,k);
+        }
+      }
+    }
+    
 #endif
     
   }
