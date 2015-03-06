@@ -1004,6 +1004,7 @@ void eles::cp_div_tconf_upts_gpu_cpu(void)
 #ifdef _GPU
     
     div_tconf_upts(0).cp_gpu_cpu();
+    // TODO: copy other levels too
     
 #endif
   }
@@ -1182,9 +1183,9 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
     
     else if (adv_type == -1) {
       
-      // do nothing - update is done in LU_Sweep
+      // do nothing - update is done in SGS_Sweep
       
-/*#ifdef _CPU
+#ifdef _CPU
 
       for (int ic=0;ic<n_eles;ic++)
       {
@@ -1192,12 +1193,12 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
         {
           for (int inp=0;inp<n_upts_per_ele;inp++)
           {
-            disu_upts(0)(inp,ic,i) = disu_upts(1)(inp,ic,i);
+            disu_upts(0)(inp,ic,i) = disu_upts(2)(inp,ic,i);
           }
         }
       }
       
-#endif*/
+#endif
       
     }
     
@@ -3740,22 +3741,21 @@ void eles::SGS_sweep(int direction)
     
     int i,j,k;
     int corr, ele, indx, indy;
-    double dt, dqdt;
-    array<double> delta_qstar(n_upts_per_ele,n_eles,n_fields);
+    double dt;
+    array<double> delta_qstar(n_upts_per_ele,n_fields);
     array<double> block_lhs(block_dim,block_dim), block_rhs(block_dim);
     array<int> block_indx(block_dim);
     
     // loop over eles - check numbering is contiguous in physical space
     for(i=0; i<n_eles; i++) {
     
-      dt = get_timestep_ele(i);
-
       // Forward sweep: direction = 1
       // Backward sweep: direction = -1
       if (direction == 1) ele = i;
       else if (direction == -1) ele = n_eles-i-1;
 
-      indx = 0;
+      dt = get_timestep_ele(ele);
+
       for(j=0; j<n_upts_per_ele; j++) {
         for(k=0; k<n_fields; k++) {
           indx = j*n_fields+k;
@@ -3763,17 +3763,15 @@ void eles::SGS_sweep(int direction)
           // RHS = R(Q^*) (steady) or R(Q^*) - (Q^*-Q^n)/dt (unsteady)
           // TODO: calculate residual for current element only
           block_rhs(indx) = -div_tconf_upts(1)(j,ele,k)/detjac_upts(j,ele);
+          //cout << "R(Q^*): " << setprecision(6) << block_rhs(indx) << endl;
 
           // set delta Q^*
-          delta_qstar(j,ele,k) = disu_upts(1)(j,ele,k) - disu_upts(0)(j,ele,k);
+          delta_qstar(j,k) = disu_upts(1)(j,ele,k) - disu_upts(0)(j,ele,k);
+          //cout << "Q^*-Q^n: " << setprecision(6) << delta_qstar(j,k) << endl;
           
           // unsteady case
           if (run_input.steady == 0) {
-            
-            dqdt = delta_qstar(j,ele,k)/dt;
-
-            //cout << "dQ/dt: " << setprecision(6) << dqdt << endl;
-            block_rhs(indx) -= dqdt;
+            block_rhs(indx) -= delta_qstar(j,k)/dt;
           }
         }
       }
@@ -3790,15 +3788,21 @@ void eles::SGS_sweep(int direction)
       LUbacksub(block_dim,block_indx,block_lhs,block_rhs);
       
       // update solution Q^(k+1)
-      indx = 0;
       for(j=0; j<n_upts_per_ele; j++) {
         for(k=0; k<n_fields; k++) {
           indx = j*n_fields+k;
-          //disu_upts(1)(j,ele,k) = disu_upts(0)(j,ele,k) + block_rhs(indx);
+          //cout << "update: " << setprecision(8) << block_rhs(indx) << endl;
+          //cout << "Q^*: " << setprecision(8) << disu_upts(1)(j,ele,k) << endl;
+
+          disu_upts(2)(j,ele,k) = disu_upts(1)(j,ele,k) + block_rhs(indx);
           
           // Double-linearized method: See Sun, Wang and Liu (2009)
-          disu_upts(2)(j,ele,k) = block_rhs(indx) + delta_qstar(j,ele,k) + disu_upts(1)(j,ele,k);
-       
+          //disu_upts(2)(j,ele,k) = disu_upts(1)(j,ele,k) + block_rhs(indx) + delta_qstar(j,k);
+        }
+      }
+
+      for(j=0; j<n_upts_per_ele; j++) {
+        for(k=0; k<n_fields; k++) {
           // Set most recent solution for next inner iteration
           disu_upts(1)(j,ele,k) = disu_upts(2)(j,ele,k);
         }
@@ -6646,7 +6650,7 @@ void eles::calc_dd_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_dd_pos
 }
 
 /*! Calculate residual sum for monitoring purposes */
-double eles::compute_res_upts(int in_norm_type, int in_field) {
+double eles::compute_res_upts(int in_norm_type, int in_div_tconf_upts_to, int in_field) {
   
   int i, j;
   double sum = 0.;
@@ -6658,10 +6662,10 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
     cell_sum=0;
     for (j=0; j<n_upts_per_ele; j++) {
       if (in_norm_type == 1) {
-        cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
+        cell_sum += abs(div_tconf_upts(in_div_tconf_upts_to)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
       }
       else if (in_norm_type == 2) {
-        cell_sum += (div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)-run_input.const_src-src_upts(j,i,in_field))*(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
+        cell_sum += (div_tconf_upts(in_div_tconf_upts_to)(j, i, in_field)/detjac_upts(j,i)-run_input.const_src-src_upts(j,i,in_field))*(div_tconf_upts(in_div_tconf_upts_to)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
       }
     }
     sum += cell_sum;
@@ -7056,7 +7060,7 @@ void eles::evaluate_body_force(int in_file_num)
 }
 
 // Compute integral quantities
-void eles::CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities)
+void eles::CalcIntegralQuantities(int n_integral_quantities, int in_disu_upts_level, array <double>& integral_quantities)
 {
   array<double> disu_cubpt(n_fields);
   array<double> grad_disu_cubpt(n_fields,n_dims);

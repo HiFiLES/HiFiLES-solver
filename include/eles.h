@@ -424,13 +424,13 @@ public:
   /*! Calculate element volume */
   virtual double calc_ele_vol(double& detjac)=0;
 
-  double compute_res_upts(int in_norm_type, int in_field);
+  double compute_res_upts(int in_norm_type, int in_div_tconf_upts_level, int in_field);
 
   /*! calculate body forcing at solution points */
   void evaluate_body_force(int in_file_num);
 
   /*! Compute volume integral of diagnostic quantities */
-  void CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities);
+  void CalcIntegralQuantities(int n_integral_quantities, int in_disu_upts_level, array <double>& integral_quantities);
 
   /*! Compute time-average diagnostic quantities */
   void CalcTimeAverageQuantities(double& time);

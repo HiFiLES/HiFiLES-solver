@@ -60,7 +60,7 @@ void write_restart(int in_file_num, struct solution* FlowSol);
 void CalcForces(int in_file_num, struct solution* FlowSol);
 
 /*! compute integral diagnostic quantities */
-void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol);
+void CalcIntegralQuantities(int in_disu_upts_level, struct solution* FlowSol);
 
 /*! Calculate time averaged diagnostic quantities */
 void CalcTimeAverageQuantities(struct solution* FlowSol);
@@ -69,10 +69,10 @@ void CalcTimeAverageQuantities(struct solution* FlowSol);
 void compute_error(int in_file_num, struct solution* FlowSol);
 
 /*! calculate residual */
-void CalcNormResidual(struct solution* FlowSol);
+void CalcNormResidual(int in_div_tconf_level, struct solution* FlowSol);
 
 /*! monitor convergence of residual */
-void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol);
+void HistoryOutput(int in_file_num, int in_sgs_iter, clock_t init, ofstream *write_hist, struct solution* FlowSol);
 
 /*! check if the solution is bounded !*/
 void check_stability(struct solution* FlowSol);

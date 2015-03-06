@@ -215,8 +215,8 @@ int main(int argc, char *argv[]) {
     /*! backward Euler LU-SGS implicit solve */
     else if(FlowSol.adv_type == -1) {
 
-      /*! store old solution */
-      StoreOldSolution(&FlowSol);
+      /*! store old solution: disu_upts(2) -> disu_upts(0),(1) */
+      //StoreOldSolution(&FlowSol);
       
       /*! Update LHS matrix only every update_lhs_freq timesteps (matrix freezing) */
       if(i_steps%FlowSol.update_lhs_freq == 0) {
@@ -240,18 +240,35 @@ int main(int argc, char *argv[]) {
           compute RHS: R(Q^i) - (Q^i - Q^n)/dt
           LU solve
           update solution Q^(i+1) */
-      
+
+      // no. of SGS sweeps
+      for(i=0;i<1000;i++) {
       // Get R(Q^i)
       CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
         
-      // forward sweep + advance solution
+      // forward sweep + update disu_upts(2). Store disu_upts(2) -> disu_upts(1) for next sgs iter
       SGSSweep(1, &FlowSol);
         
       // Update R(Q^i)
       CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
         
-      // backward sweep + advance solution
+      // backward sweep + update disu_upts(2). Store disu_upts(2) -> disu_upts(1) for next sgs iter
       SGSSweep(-1, &FlowSol);
+
+      /*! Compute the norm of the residual. */
+      CalcNormResidual(1, &FlowSol);
+      
+      /*! Output the history file. */
+      HistoryOutput(FlowSol.ini_iter+i_steps, i, init_time, &write_hist, &FlowSol);
+
+      if(FlowSol.rank==0) cout << endl;
+      }
+      if(FlowSol.rank==0) cout << endl;
+
+      /*! Advance solution: disu_upts(2) -> disu_upts(0) */
+      for(j=0; j<FlowSol.n_ele_types; j++) {
+        FlowSol.mesh_eles(j)->AdvanceSolution(i, FlowSol.adv_type);
+      }
     }
     
     /*! Update total time, and increase the iteration index. */
@@ -282,7 +299,7 @@ int main(int argc, char *argv[]) {
       
       /*! Compute integral quantities. */
       
-      CalcIntegralQuantities(FlowSol.ini_iter+i_steps, &FlowSol);
+      CalcIntegralQuantities(0, &FlowSol);
       
       /*! Compute time-averaged quantities. */
       
@@ -290,11 +307,11 @@ int main(int argc, char *argv[]) {
 
       /*! Compute the norm of the residual. */
       
-      CalcNormResidual(&FlowSol);
+      if(FlowSol.adv_type >= 0) CalcNormResidual(0, &FlowSol);
       
       /*! Output the history file. */
       
-      HistoryOutput(FlowSol.ini_iter+i_steps, init_time, &write_hist, &FlowSol);
+      if(FlowSol.adv_type >= 0) HistoryOutput(FlowSol.ini_iter+i_steps, 0, init_time, &write_hist, &FlowSol);
       
       if (FlowSol.rank == 0) cout << endl;
     }

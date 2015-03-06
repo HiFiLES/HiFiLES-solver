@@ -1238,7 +1238,7 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
 }
 
 // Calculate integral diagnostic quantities
-void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol) {
+void CalcIntegralQuantities(int in_disu_upts_level, struct solution* FlowSol) {
 
   int nintq = run_input.n_integral_quantities;
 
@@ -1252,7 +1252,7 @@ void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol) {
             {
               FlowSol->integral_quantities(j) = 0.0;
             }
-          FlowSol->mesh_eles(i)->CalcIntegralQuantities(nintq, FlowSol->integral_quantities);
+          FlowSol->mesh_eles(i)->CalcIntegralQuantities(nintq, in_disu_upts_level, FlowSol->integral_quantities);
         }
     }
 
@@ -1449,7 +1449,7 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 
 }
 
-void CalcNormResidual(struct solution* FlowSol) {
+void CalcNormResidual(int in_div_tconf_upts_level, struct solution* FlowSol) {
   
   int i, j, n_upts = 0, n_fields;
   double sum[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, norm[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -1468,7 +1468,7 @@ void CalcNormResidual(struct solution* FlowSol) {
       n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
 
       for(j=0; j<n_fields; j++)
-        sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
+        sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, in_div_tconf_upts_level, j);
     }
   }
   
@@ -1495,7 +1495,7 @@ void CalcNormResidual(struct solution* FlowSol) {
   }
 }
 
-void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
+void HistoryOutput(int in_file_num, int in_sgs_iter, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
   
   int i, n_fields;
   clock_t final;
@@ -1513,8 +1513,8 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
   
   // set write flag
   if (run_input.restart_flag==0) {
-    open_hist = (in_file_num == 1);
-    write_heads = (((in_file_num % (run_input.monitor_res_freq*20)) == 0) || (in_file_num == 1));
+    open_hist = (in_file_num == 0 and in_sgs_iter == 0);
+    write_heads = (((in_file_num % (run_input.monitor_res_freq*20)) == 0 and in_sgs_iter == 0) || (in_file_num == 0 and in_sgs_iter == 0));
   }
   else {
     open_hist = (in_file_num == run_input.restart_iter+1);
@@ -1525,12 +1525,11 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     
     // Open history file
     if (open_hist) {
-
       write_hist->open("history.plt", ios::out);
       write_hist->precision(15);
       write_hist[0] << "TITLE = \"HiFiLES simulation\"" << endl;
       
-      write_hist[0] << "VARIABLES = \"Iteration\"";
+      write_hist[0] << "VARIABLES = \"Iteration\",\"SGS_Iteration\"";
       
       // Add residual and variables
       if (FlowSol->n_dims==2) write_hist[0] << ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"CL</sub>(Total)\",\"CD</sub>(Total)\"";
@@ -1549,12 +1548,12 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     // Write the header
     if (write_heads) {
       if (FlowSol->n_dims==2) {
-        if (n_fields == 4) cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
-        else cout << "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total" << endl;
+        if (n_fields == 4) cout << "\n  Iter  SGS_Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]       Fx_Total       Fy_Total" << endl;
+        else cout << "\n  Iter  SGS_Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total" << endl;
       }
       else {
-        if (n_fields == 5) cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
-        else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total       Fz_Total" << endl;
+        if (n_fields == 5) cout <<  "\n  Iter  SGS_Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]       Fx_Total       Fy_Total       Fz_Total" << endl;
+        else cout <<  "\n  Iter  SGS_Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total       Fz_Total" << endl;
       }
     }
     
@@ -1563,6 +1562,8 @@ void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct s
     cout.setf(ios::fixed, ios::floatfield);
     cout.width(6); cout << in_file_num;
     write_hist[0] << in_file_num;
+    cout.width(10); cout << in_sgs_iter;
+    write_hist[0] << ", " << in_sgs_iter;
     for(i=0; i<n_fields; i++) {
       cout.width(15); cout << FlowSol->norm_residual(i);
       write_hist[0] << ", " << log10(FlowSol->norm_residual(i));

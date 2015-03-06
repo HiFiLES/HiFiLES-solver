@@ -471,10 +471,9 @@ void CalcLHS(int in_file_num, struct solution* FlowSol) {
 /*! Store old solution for implicit timestepping */
 void StoreOldSolution(struct solution* FlowSol) {
   
-  for (int i=0;i<FlowSol->n_ele_types;i++) {
-    //if (FlowSol->mesh_eles(i)->get_n_eles()!=0) cout << "storing solution in rank, ele type " << FlowSol->rank << ", " << i << endl;
+  for (int i=0;i<FlowSol->n_ele_types;i++)
     FlowSol->mesh_eles(i)->store_old_solution();
-  }
+  
 }
 
 /*! Get timestep */
