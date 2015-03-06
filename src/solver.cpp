@@ -68,11 +68,12 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   int in_div_tconf_upts_to = 0;     /*!< Define... */
   int i;                            /*!< Loop iterator */
   
-  // if implicit and flag = 1, select 2nd solution and residual arrays
+  // if implicit, select appropriate solution and residual arrays
   if (run_input.adv_type == -1) {
     in_disu_upts_from = in_rk_stage;
     in_div_tconf_upts_to = in_rk_stage;
   }
+  //cout << "stages: " << in_disu_upts_from << ", " << in_div_tconf_upts_to << endl;
     
   /*! If at first RK step and using certain LES models, compute some model-related quantities. */
   if(run_input.LES==1 && in_disu_upts_from==0) {
@@ -122,7 +123,7 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 
   // If running periodic channel or periodic hill cases,
   // calculate body forcing and add to source term
-  if(run_input.forcing==1 and run_input.adv_type >= 0 and in_rk_stage==0 and run_input.equation==0 and FlowSol->n_dims==3) {
+  if(run_input.forcing==1 and in_rk_stage==0 and run_input.equation==0 and FlowSol->n_dims==3) {
 
 #ifdef _GPU
     // copy disu_upts for body force calculation
@@ -360,8 +361,10 @@ void InitSolution(struct solution* FlowSol)
   // set initial conditions
   if (FlowSol->rank==0) cout << "Setting initial conditions... " << endl;
 
+  int i;
+
   if (run_input.restart_flag==0) {
-      for(int i=0;i<FlowSol->n_ele_types;i++) {
+      for(i=0;i<FlowSol->n_ele_types;i++) {
           if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
 
             FlowSol->mesh_eles(i)->set_ics(FlowSol->time);
@@ -377,29 +380,26 @@ void InitSolution(struct solution* FlowSol)
 
   // explicit timestepping only
   if (run_input.adv_type >= 0) {
-    for (int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-        FlowSol->mesh_eles(i)->set_disu_upts_to_zero_other_levels();
-      }
+    for (i=0;i<FlowSol->n_ele_types;i++) {
+      //if (FlowSol->mesh_eles(i)->get_n_eles()!=0) cout << "storing solution in rank, ele type " << FlowSol->rank << ", " << i << endl;
+      FlowSol->mesh_eles(i)->set_disu_upts_to_zero_other_levels();
     }
   }
+
   // if implicit, need to set 'old' solution to ICs
   else if (run_input.adv_type < 0) {
-    for (int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-        FlowSol->mesh_eles(i)->set_disu_upts_to_solution_other_levels();
-      }
+    for (i=0;i<FlowSol->n_ele_types;i++) {
+      //if (FlowSol->mesh_eles(i)->get_n_eles()!=0) cout << "setting solution in rank, ele type " << FlowSol->rank << ", " << i << endl;
+      FlowSol->mesh_eles(i)->set_disu_upts_to_solution_other_levels();
     }
   }
 
   // copy solution to gpu
 #ifdef _GPU
-  for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          FlowSol->mesh_eles(i)->cp_disu_upts_cpu_gpu();
 
-        }
-    }
+  for(i=0;i<FlowSol->n_ele_types;i++)
+    FlowSol->mesh_eles(i)->cp_disu_upts_cpu_gpu();
+
 #endif
 
 }
@@ -472,9 +472,8 @@ void CalcLHS(int in_file_num, struct solution* FlowSol) {
 void StoreOldSolution(struct solution* FlowSol) {
   
   for (int i=0;i<FlowSol->n_ele_types;i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->store_old_solution();
-    }
+    //if (FlowSol->mesh_eles(i)->get_n_eles()!=0) cout << "storing solution in rank, ele type " << FlowSol->rank << ", " << i << endl;
+    FlowSol->mesh_eles(i)->store_old_solution();
   }
 }
 

@@ -472,15 +472,13 @@ void eles::set_disu_upts_to_solution_other_levels(void)
   {
     int m;
     
-    for (m=1;m<n_adv_levels;m++) {
+    for (m=1;m<n_adv_levels;m++)
       disu_upts(m) = disu_upts(0);
-    }
 
 #ifdef _GPU
 
-    for (m=1;m<n_adv_levels;m++) {
+    for (m=1;m<n_adv_levels;m++)
       disu_upts(m).cp_cpu_gpu();
-    }
 
 #endif
   }
@@ -492,15 +490,13 @@ void eles::store_old_solution(void) {
   {
     int m;
     
-    for (m=0;m<n_adv_levels-1;m++) {
+    for (m=0;m<n_adv_levels-1;m++)
       disu_upts(m) = disu_upts(2);
-    }
 
 #ifdef _GPU
     
-    for (m=0;m<n_adv_levels-1;m++) {
+    for (m=0;m<n_adv_levels-1;m++)
       disu_upts(m).cp_cpu_gpu();
-    }
     
 #endif
   }
@@ -1337,6 +1333,11 @@ void eles::extrapolate_solution(int in_disu_upts_from)
 {
   if (n_eles!=0) {
     
+    //for (int i=0;i<n_upts_per_ele;i++)
+      //for (int j=0;j<n_eles;j++)
+        //for (int k=0;k<n_fields;k++)
+          //if(isnan(disu_upts(in_disu_upts_from)(j,i,k))) FatalError("NaN at extrapolate_solution");
+
     /*!
      Performs C = (alpha*A*B) + (beta*C) where: \n
      alpha = 1.0 \n
@@ -1427,6 +1428,8 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
         for(k=0;k<n_fields;k++)
         {
           temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
+          //if(isnan(temp_u(k))) FatalError("NaN at evaluate_invFlux");
+
         }
 
         if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
@@ -1518,7 +1521,7 @@ void eles::extrapolate_totalFlux()
   if (n_eles!=0)
   {
 #ifdef _CPU
-    
+
     if(opp_1_sparse==0) // dense
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
@@ -1554,6 +1557,16 @@ void eles::extrapolate_totalFlux()
       cout << "ERROR: Unknown storage for opp_1 ... " << endl;
     }
     
+    //for (int i=0;i<n_upts_per_ele;i++)
+      //for (int j=0;j<n_eles;j++)
+        //for (int k=0;k<n_fields;k++)
+          //cout << "tdisf_upts: " << setprecision(8) << tdisf_upts(j,i,k) << endl;
+
+    //for (int i=0;i<n_fpts_per_ele;i++)
+      //for (int j=0;j<n_eles;j++)
+        //for (int k=0;k<n_fields;k++)
+          //cout << "norm_tdisf_fpts: " << setprecision(8) << norm_tdisf_fpts(j,i,k) << endl;
+
 #endif
     
 #ifdef _GPU
@@ -1649,6 +1662,11 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
       cout << "ERROR: Unknown storage for opp_2 ... " << endl;
     }
     
+    //for (int i=0;i<n_upts_per_ele;i++)
+      //for (int j=0;j<n_eles;j++)
+        //for (int k=0;k<n_fields;k++)
+          //cout << "in_div_tconf_upts_to, tdisf_upts, div_tconf_upts: " << in_div_tconf_upts_to << ", " << setprecision(8) << tdisf_upts(j,i,k) << ", " << div_tconf_upts(in_div_tconf_upts_to)(j,i,k) << endl;
+
 #endif
     
     
@@ -1671,14 +1689,7 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
     }
 #endif
     
-  }
-  
-  
-   /*for (int j=0;j<n_eles;j++)
-     for (int i=0;i<n_upts_per_ele;i++)
-       for (int k=0;k<n_fields;k++)
-         cout << scientific << setw(16) << setprecision(12) << div_tconf_upts(0)(i,j,k) << ", " << div_tconf_upts(1)(i,j,k) << endl;*/
-  
+  }  
 }
 
 
@@ -1700,6 +1711,11 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
     
 #endif
     
+    //for (int i=0;i<n_fpts_per_ele;i++)
+      //for (int j=0;j<n_eles;j++)
+        //for (int k=0;k<n_fields;k++)
+          //cout << "norm_tdisf_fpts, norm_tconf_fpts: " << setprecision(8) << norm_tdisf_fpts(j,i,k) << ", " << norm_tconf_fpts(j,i,k) << endl;
+
     if(opp_3_sparse==0) // dense
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
@@ -1723,16 +1739,29 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
     {
       cout << "ERROR: Unknown storage for opp_3 ... " << endl;
     }
-    
-    for (int i=0;i<n_upts_per_ele;i++)
-      for (int j=0;j<n_eles;j++)
-        for (int k=0;k<n_fields;k++)
-          if (isnan(div_tconf_upts(in_div_tconf_upts_to)(j,i,k)))
-            FatalError("NaN in residual, exiting.");
 
-    //cout << "level, min/max of residual: " << in_div_tconf_upts_to << ", " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to).get_min() << ", " << div_tconf_upts(in_div_tconf_upts_to).get_max() << endl;
+    //cout << "rank, level, min/max of residual: " << rank << ", " << in_div_tconf_upts_to << ", " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to).get_min() << ", " << div_tconf_upts(in_div_tconf_upts_to).get_max() << endl;
     //cout << endl;
-    
+
+    //for (int i=0;i<n_fpts_per_ele;i++)
+      //for (int j=0;j<n_eles;j++)
+        //for (int k=0;k<n_fields;k++)
+          //cout << "norm_tconf_fpts after BLAS: " << setprecision(8) << norm_tconf_fpts(j,i,k) << endl;
+
+    for (int i=0;i<n_upts_per_ele;i++) {
+      for (int j=0;j<n_eles;j++) {
+        for (int k=0;k<n_fields;k++) {
+          //cout << "2. disu(0), disu(1), disu(2): " << setprecision(8) << disu_upts(0)(j,i,k) << ", " << disu_upts(1)(j,i,k) << ", " << disu_upts(2)(j,i,k) << endl;
+          //cout << "res: " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to)(j,i,k) << endl;
+
+          if (isnan(div_tconf_upts(in_div_tconf_upts_to)(j,i,k))) {
+            cout << "res: " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to)(j,i,k) << endl;
+            FatalError("NaN in residual, exiting.");
+          }
+        }
+      }
+    }
+
 #endif
     
 #ifdef _GPU
@@ -1877,6 +1906,11 @@ void eles::correct_gradient(void)
     Bstride = Brows;
     Cstride = Arows;
     
+    //for(int i=0;i<n_eles;i++)
+      //for(int j=0;j<n_upts_per_ele;j++)
+        //for(int k=0;k<n_fields;k++)
+          //if(isnan(disu_upts(0)(j,i,k))) FatalError("NaN at correct_gradient");
+
 #ifdef _CPU
     
     if(opp_5_sparse==0) // dense
@@ -4804,7 +4838,7 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
         FatalError("plot_quantity not recognized");
       
       if (isnan(diagfield_upt))
-        FatalError("NaN");
+        FatalError("NaN at calc_diagnostic_fields_ppts");
       
       // set array with solution point value
       out_diag_field_ppts(j,k) = diagfield_upt;
@@ -5875,7 +5909,7 @@ double* eles::get_tdA_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, i
   {
     fpt+=n_fpts_per_inter(i);
   }
-  
+
 #ifdef _GPU
   return tdA_fpts.get_ptr_gpu(fpt,in_ele);
 #else
