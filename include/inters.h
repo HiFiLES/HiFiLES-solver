@@ -150,4 +150,6 @@ public:
   array<double> temp_v;
   array<double> temp_fn_ref_l;
   array<double> temp_fn_ref_r;
+  
+  array<double> eps_imp;
 };
