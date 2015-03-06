@@ -31,7 +31,7 @@
 extern input run_input;
 
 /*! double 'pi' has global scope */
-extern double pi;
+extern const double pi;
 
 /** enumeration for cell type */
 enum CTYPE {

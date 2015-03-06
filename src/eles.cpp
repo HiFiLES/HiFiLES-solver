@@ -1629,6 +1629,12 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
       cout << "ERROR: Unknown storage for opp_3 ... " << endl;
     }
     
+    for (int i=0;i<n_upts_per_ele;i++)
+      for (int j=0;j<n_eles;j++)
+        for (int k=0;k<n_fields;k++)
+          if (isnan(div_tconf_upts(in_div_tconf_upts_to)(j,i,k)))
+            FatalError("NaN in residual, exiting.");
+
 #endif
     
 #ifdef _GPU
