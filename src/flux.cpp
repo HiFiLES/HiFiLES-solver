@@ -41,8 +41,6 @@ void calc_invf_2d(array<double>& in_u, array<double>& out_f)
       double vy;
       double p;
 
-      // perturb solution here?
-      
       vx=in_u(1)/in_u(0);
       vy=in_u(2)/in_u(0);
       p=(run_input.gamma-1.0)*(in_u(3)-(0.5*in_u(0)*((vx*vx)+(vy*vy))));

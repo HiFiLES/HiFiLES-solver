@@ -454,7 +454,7 @@ void mpi_inters::receive_sgsf_fpts()
 }
 
 // calculate normal transformed continuous inviscid flux at the flux points at mpi faces
-void mpi_inters::calculate_common_invFlux(void)
+void mpi_inters::calculate_common_invFlux(int in_disu_upts_from)
 {
 
 #ifdef _CPU
@@ -472,6 +472,15 @@ void mpi_inters::calculate_common_invFlux(void)
             temp_u_r(k)=(*disu_fpts_r(j,i,k));
           }
 
+          // increment solution for computing LHS matrix - but which side?
+          if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+            for(int k=0;k<n_fields;k++)
+            {
+              temp_u_l(k) += eps_imp(k)/2.0;
+              temp_u_r(k) -= eps_imp(k)/2.0;
+            }
+          }
+          
           if (motion) {
             // Transform solution to dynamic space
             for (int k=0; k<n_fields; k++) {
@@ -579,7 +588,7 @@ void mpi_inters::calculate_common_invFlux(void)
 
 }
 
-void mpi_inters::calculate_common_viscFlux(void)
+void mpi_inters::calculate_common_viscFlux(int in_disu_upts_from)
 {
 
 #ifdef _CPU
@@ -597,6 +606,15 @@ void mpi_inters::calculate_common_viscFlux(void)
               temp_u_l(k)=(*disu_fpts_l(j,i,k));
               temp_u_r(k)=(*disu_fpts_r(j,i,k));
             }
+
+          // increment solution for computing LHS matrix - but which side?
+          if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+            for(int k=0;k<n_fields;k++)
+            {
+              temp_u_l(k) += eps_imp(k)/2.0;
+              temp_u_r(k) -= eps_imp(k)/2.0;
+            }
+          }
 
           if (motion) {
             // Transform solution to dynamic space

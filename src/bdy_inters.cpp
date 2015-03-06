@@ -242,7 +242,7 @@ void bdy_inters::mv_all_cpu_gpu(void)
 
 /*! Calculate normal transformed continuous inviscid flux at the flux points on the boundaries.*/
 
-void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
+void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound, int in_disu_upts_from) {
 
 #ifdef _CPU
   array<double> norm(n_dims), fn(n_fields);
@@ -270,6 +270,14 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
         for(int k=0;k<n_fields;k++)
           temp_u_l(k)=(*disu_fpts_l(j,i,k));
 
+        // increment solution for computing LHS matrix - but which side?
+        if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+          for(int k=0;k<n_fields;k++)
+          {
+            temp_u_l(k) += eps_imp(k);
+          }
+        }
+      
         if (motion) {
           // Transform solution to dynamic space
           for (int k=0; k<n_fields; k++) {
@@ -900,7 +908,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
 
 /*! Calculate normal transformed continuous viscous flux at the flux points on the boundaries. */
 
-void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
+void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound, int in_disu_upts_from) {
 
 #ifdef _CPU
   int bdy_spec, flux_spec;
@@ -942,6 +950,14 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
           temp_loc(m) = *pos_fpts(j,i,m);
         }
         temp_v.initialize_to_zero();
+      }
+
+      // increment solution for computing LHS matrix - but which side?
+      if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+        for(int k=0;k<n_fields;k++)
+        {
+          temp_u_l(k) += eps_imp(k);
+        }
       }
 
       set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),temp_v.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);

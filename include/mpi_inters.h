@@ -74,8 +74,8 @@ public:
 
   void set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_local_inter_l, int rot_tag, struct solution* FlowSol);
 
-  void calculate_common_invFlux(void);
-  void calculate_common_viscFlux(void);
+  void calculate_common_invFlux(int in_disu_upts_from);
+  void calculate_common_viscFlux(int in_disu_upts_from);
 
   /*! move all from cpu to gpu */
   void mv_all_cpu_gpu(void);

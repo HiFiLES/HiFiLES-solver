@@ -58,10 +58,10 @@ public:
   void mv_all_cpu_gpu(void);
 
   /*! calculate normal transformed continuous inviscid flux at the flux points */
-  void calculate_common_invFlux(void);
+  void calculate_common_invFlux(int in_disu_upts_from);
 
   /*! calculate normal transformed continuous viscous flux at the flux points */
-  void calculate_common_viscFlux(void);
+  void calculate_common_viscFlux(int in_disu_upts_from);
 
   /*! calculate delta in transformed discontinuous solution at flux points */
   void calc_delta_disu_fpts(void);

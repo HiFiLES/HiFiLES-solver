@@ -89,6 +89,7 @@ void int_inters::setup(int in_n_inters,int in_inter_type)
         {
           grad_disu_fpts_r.setup(n_fpts_per_inter,n_inters,n_fields,n_dims);
         }
+  
 }
 
 // set interior interface
@@ -111,7 +112,7 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
               norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
               norm_tconf_fpts_r(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
 
-              for (int k=0;k<n_dims;k++)
+              for (k=0;k<n_dims;k++)
                 {
                   if(viscous)
                     {
@@ -222,7 +223,7 @@ void int_inters::mv_all_cpu_gpu(void)
 }
 
 // calculate normal transformed continuous inviscid flux at the flux points
-void int_inters::calculate_common_invFlux(void)
+void int_inters::calculate_common_invFlux(int in_disu_upts_from)
 {
 
 #ifdef _CPU
@@ -242,14 +243,15 @@ void int_inters::calculate_common_invFlux(void)
         temp_u_r(k)=(*disu_fpts_r(j,i,k));
       }
 
-      //if (run_input.adv_type == -1) {
-        // increment solution - but which one?
-        //for(int k=0;k<n_fields;k++)
-        //{
-          //temp_u_l(k) += eps_imp(k);
-          //temp_u_r(k) += eps_imp(k);
-        //}
-      //}
+      // increment solution for computing LHS matrix - but which side?
+      // TODO: figure out if this is necessary when solution is already perturbed in eles::evaluate_invFlux
+      if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+        for(int k=0;k<n_fields;k++)
+        {
+          temp_u_l(k) += eps_imp(k)/2.0;
+          temp_u_r(k) -= eps_imp(k)/2.0;
+        }
+      }
       
       if (motion) {
         // Transform solution to dynamic space
@@ -365,7 +367,7 @@ void int_inters::calculate_common_invFlux(void)
 
 // calculate normal transformed continuous viscous flux at the flux points
 
-void int_inters::calculate_common_viscFlux(void)
+void int_inters::calculate_common_viscFlux(int in_disu_upts_from)
 {
 
 #ifdef _CPU
@@ -391,6 +393,15 @@ void int_inters::calculate_common_viscFlux(void)
           {
             temp_u_l(k)=(*disu_fpts_l(j,i,k));
             temp_u_r(k)=(*disu_fpts_r(j,i,k));
+          }
+        }
+
+        // increment solution for computing LHS matrix - but which side?
+        if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+          for(int k=0;k<n_fields;k++)
+          {
+            temp_u_l(k) += eps_imp(k)/2.0;
+            temp_u_r(k) -= eps_imp(k)/2.0;
           }
         }
 

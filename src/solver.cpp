@@ -138,10 +138,10 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   /*! Compute the inviscid numerical fluxes.
    Compute the common solution and solution corrections (viscous only). */
   for(i=0; i<FlowSol->n_int_inter_types; i++)
-    FlowSol->mesh_int_inters(i).calculate_common_invFlux();
+    FlowSol->mesh_int_inters(i).calculate_common_invFlux(in_disu_upts_from);
 
   for(i=0; i<FlowSol->n_bdy_inter_types; i++)
-    FlowSol->mesh_bdy_inters(i).evaluate_boundaryConditions_invFlux(FlowSol->time);
+    FlowSol->mesh_bdy_inters(i).evaluate_boundaryConditions_invFlux(FlowSol->time, in_disu_upts_from);
 
 #ifdef _MPI
   /*! Send the previously computed values across the MPI interfaces. */
@@ -150,7 +150,7 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
         FlowSol->mesh_mpi_inters(i).receive_solution();
 
       for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-        FlowSol->mesh_mpi_inters(i).calculate_common_invFlux();
+        FlowSol->mesh_mpi_inters(i).calculate_common_invFlux(in_disu_upts_from);
     }
 #endif
 
@@ -197,10 +197,10 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   if (FlowSol->viscous) {
       /*! Compute normal interface viscous flux and add to normal inviscid flux. */
       for(i=0; i<FlowSol->n_int_inter_types; i++)
-        FlowSol->mesh_int_inters(i).calculate_common_viscFlux();
+        FlowSol->mesh_int_inters(i).calculate_common_viscFlux(in_disu_upts_from);
 
       for(i=0; i<FlowSol->n_bdy_inter_types; i++)
-        FlowSol->mesh_bdy_inters(i).evaluate_boundaryConditions_viscFlux(FlowSol->time);
+        FlowSol->mesh_bdy_inters(i).evaluate_boundaryConditions_viscFlux(FlowSol->time, in_disu_upts_from);
 
 #if _MPI
       /*! Evaluate the MPI interfaces. */
@@ -214,7 +214,7 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
           }
 
           for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-            FlowSol->mesh_mpi_inters(i).calculate_common_viscFlux();
+            FlowSol->mesh_mpi_inters(i).calculate_common_viscFlux(in_disu_upts_from);
         }
 #endif
     }

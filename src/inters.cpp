@@ -181,6 +181,14 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
       v_r.setup(n_dims);
       um.setup(n_dims);
       du.setup(n_fields);
+  
+      // For implicit timestepping LHS matrix computation
+      if(run_input.adv_type == -1) {
+        eps_imp.setup(n_fields);
+        for(int i=0;i<n_fields;i++)
+          eps_imp(i) = 1.0e-9;
+      }
+
 }
 
 // get look up table for flux point connectivity based on rotation tag
