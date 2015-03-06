@@ -199,6 +199,7 @@ void mpi_inters::set_mpi(int in_inter, int in_ele_type_l, int in_ele_l, int in_l
 #endif
 
               norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
+              //cout << "norm_tconf_fpts_l: " << setprecision(8) << norm_tconf_fpts_l(j,in_inter,i) << endl;
 
               for(k=0; k<n_dims; k++)
                 {
@@ -470,6 +471,7 @@ void mpi_inters::calculate_common_invFlux(int in_disu_upts_from)
           for(int k=0;k<n_fields;k++) {
             temp_u_l(k)=(*disu_fpts_l(j,i,k));
             temp_u_r(k)=(*disu_fpts_r(j,i,k));
+            //cout << "temp_u_l, temp_u_r: " << setprecision(8) << temp_u_l(k) << ", " << temp_u_r(k) << endl;
           }
 
           // increment solution for computing LHS matrix - but which side?
@@ -551,6 +553,7 @@ void mpi_inters::calculate_common_invFlux(int in_disu_upts_from)
             // Transform back to reference space from static physical space
             for(int k=0;k<n_fields;k++) {
               (*norm_tconf_fpts_l(j,i,k))= fn(k)*(*tdA_fpts_l(j,i));
+              //cout << "norm_tconf_fpts_l: " << setprecision(8) << (*norm_tconf_fpts_l(j,i,k)) << endl;
             }
           }
 

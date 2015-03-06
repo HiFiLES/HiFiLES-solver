@@ -170,6 +170,7 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
 
           tdA_fpts_l(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_l,in_ele_l,in_local_inter_l,i,FlowSol);
           tdA_fpts_r(i,in_inter)=get_tdA_fpts_ptr(in_ele_type_r,in_ele_r,in_local_inter_r,i_rhs,FlowSol);
+          //cout << "tDA_fpts_l, tDA_fpts_r: " << setprecision(8) << (*tdA_fpts_l(i,in_inter)) << ", " << (*tdA_fpts_r(i,in_inter)) << endl;
 
           for(j=0;j<n_dims;j++)
             {
@@ -241,6 +242,7 @@ void int_inters::calculate_common_invFlux(int in_disu_upts_from)
       for(int k=0;k<n_fields;k++) {
         temp_u_l(k)=(*disu_fpts_l(j,i,k));
         temp_u_r(k)=(*disu_fpts_r(j,i,k));
+        //cout << "temp_u_l, temp_u_r: " << setprecision(8) << temp_u_l(k) << ", " << temp_u_r(k) << endl;
       }
 
       // increment solution for computing LHS matrix - but which side?
@@ -324,6 +326,8 @@ void int_inters::calculate_common_invFlux(int in_disu_upts_from)
         for(int k=0;k<n_fields;k++) {
           (*norm_tconf_fpts_l(j,i,k))= fn(k)*(*tdA_fpts_l(j,i));
           (*norm_tconf_fpts_r(j,i,k))=-fn(k)*(*tdA_fpts_r(j,i));
+          //cout << "tdA_fpts_l, tdA_fpts_r: " << setprecision(8) << (*tdA_fpts_l(j,i)) << ", " << (*tdA_fpts_r(j,i)) << endl;
+          //cout << "norm_tconf_fpts_l, norm_tconf_fpts_r: " << setprecision(8) << (*norm_tconf_fpts_l(j,i,k)) << ", " << (*norm_tconf_fpts_r(j,i,k)) << endl;
         }
       }
 
