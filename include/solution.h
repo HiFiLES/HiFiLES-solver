@@ -71,6 +71,10 @@ struct solution {
   int ini_iter;
   int update_lhs_freq;
   int steady;
+  int n_sgs_iters;
+  array<double> n_colors;
+  array<double> color;
+  bool color_flag;
   
   int write_type;
 

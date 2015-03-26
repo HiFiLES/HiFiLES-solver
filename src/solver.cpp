@@ -72,6 +72,16 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   if (run_input.adv_type == -1) {
     in_disu_upts_from = in_rk_stage;
     in_div_tconf_upts_to = in_rk_stage;
+
+    if (in_disu_upts_from == 2) {
+      // perturb solution at ith solution point in every ele
+      for(i=0; i<FlowSol->n_ele_types; i++) {
+        if(FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+          //cout << "perturbing solution at color " << FlowSol->color(i) << endl;
+          FlowSol->mesh_eles(i)->perturb_solution(FlowSol->color(i));
+        }
+      }
+    }
   }
   //cout << "stages: " << in_disu_upts_from << ", " << in_div_tconf_upts_to << endl;
     
@@ -223,6 +233,21 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   /*! Compute the divergence of the transformed continuous flux. */
   for(i=0; i<FlowSol->n_ele_types; i++)
     FlowSol->mesh_eles(i)->calculate_corrected_divergence(in_div_tconf_upts_to);
+
+  // add residual perturbed at ith solution point in every ele
+  if (run_input.adv_type == -1 and in_div_tconf_upts_to == 2) {
+    for(i=0; i<FlowSol->n_ele_types; i++) {
+      if(FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+        FlowSol->mesh_eles(i)->add_perturbed_residual_to_lhs(FlowSol->n_colors(i), FlowSol->color(i));
+        
+        // update flag
+        FlowSol->color(i) += 1;
+        if(FlowSol->color(i) < FlowSol->n_colors(i)) FlowSol->color_flag = true;
+        else FlowSol->color_flag = false;
+        //cout << "ele_type, color, n_colors, flag: " << i << ", " << FlowSol->color(i) << ", "  << FlowSol->n_colors(i) << ", " << FlowSol->color_flag << endl;
+      }
+    }
+  }
 
   /*! Compute source term */
   if (run_input.turb_model==1) {
@@ -386,14 +411,6 @@ void InitSolution(struct solution* FlowSol)
     }
   }
 
-  // if implicit, need to set 'old' solution to ICs
-  else if (run_input.adv_type < 0) {
-    for (i=0;i<FlowSol->n_ele_types;i++) {
-      //if (FlowSol->mesh_eles(i)->get_n_eles()!=0) cout << "setting solution in rank, ele type " << FlowSol->rank << ", " << i << endl;
-      FlowSol->mesh_eles(i)->set_disu_upts_to_solution_other_levels();
-    }
-  }
-
   // copy solution to gpu
 #ifdef _GPU
 
@@ -460,19 +477,11 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
   cout << "Rank=" << FlowSol->rank << " Done reading restart files" << endl;
 }
 
-/*! Calculate the left-hand matrix for implicit solves */
-void CalcLHS(int in_file_num, struct solution* FlowSol) {
-  
-  for(int i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->calculate_lhs_matrix();
-  
-}
-
 /*! Store old solution for implicit timestepping */
-void StoreOldSolution(struct solution* FlowSol) {
+void CopySolution(int level_from, int level_to, struct solution* FlowSol) {
   
   for (int i=0;i<FlowSol->n_ele_types;i++)
-    FlowSol->mesh_eles(i)->store_old_solution();
+    FlowSol->mesh_eles(i)->copy_solution(level_from, level_to);
   
 }
 

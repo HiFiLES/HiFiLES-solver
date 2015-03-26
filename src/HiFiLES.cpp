@@ -53,9 +53,10 @@ using namespace std;
 int main(int argc, char *argv[]) {
   
   int rank = 0, error_state = 0;
-  int i, j;                           /*!< Loop iterators */
+  int i, j, k;                           /*!< Loop iterators */
   int i_steps = 0;                    /*!< Iteration index */
   int RKSteps;                        /*!< Number of RK steps */
+  double dt_0;                        /*!< first timestep */
   ifstream run_input_file;            /*!< Config input file */
   clock_t init_time, preproc_time, final_time;                /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
@@ -118,6 +119,12 @@ int main(int argc, char *argv[]) {
   
   InitSolution(&FlowSol);
   
+  // if implicit, need to set other solution levels to ICs
+  if(FlowSol.adv_type == -1) {
+    CopySolution(0, 1, &FlowSol);
+    CopySolution(0, 2, &FlowSol);
+  }
+  
   init_time = clock();
   
   /////////////////////////////////////////////////
@@ -148,6 +155,8 @@ int main(int argc, char *argv[]) {
       FlowSol.integral_quantities(i)=0.0;
   }
   
+  FlowSol.color.setup(FlowSol.n_ele_types);
+  
   /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
 #ifdef _GPU
 
@@ -174,6 +183,9 @@ int main(int argc, char *argv[]) {
   if (FlowSol.adv_type == 0) RKSteps = 1;
   else if (FlowSol.adv_type == 3) RKSteps = 5;
   
+  // HACK: store initial timestep size
+  dt_0 = run_input.dt;
+
   while(i_steps < FlowSol.n_steps) {
     
     /*! Set current timestep if not using user-defined value */
@@ -182,6 +194,13 @@ int main(int argc, char *argv[]) {
       SetTimestep(&FlowSol);
     }
     
+    // HACK: ramp up timestep at start
+    //if(FlowSol.time<100*dt_0) {
+      //if(FlowSol.time==0) run_input.dt = dt_0/100.;
+      //else                run_input.dt = dt_0*i_steps/100.;
+    //}
+    //cout << "step, time, dt: " << i_steps << ", " << setprecision(8) << FlowSol.time << ", " << run_input.dt << endl;
+
     /*! explicit timestepping */
     if(FlowSol.adv_type >= 0) {
 
@@ -199,7 +218,7 @@ int main(int argc, char *argv[]) {
 
         /*! Spatial integration. */
 
-        CalcResidual(FlowSol.ini_iter+i_steps, i, &FlowSol);
+        CalcResidual(FlowSol.ini_iter+i_steps, 0, &FlowSol);
       
         /*! Time integration usign a RK scheme */
         // TODO: change to a function wrapper in solver.cpp
@@ -214,9 +233,6 @@ int main(int argc, char *argv[]) {
 
     /*! backward Euler LU-SGS implicit solve */
     else if(FlowSol.adv_type == -1) {
-
-      /*! store old solution: disu_upts(2) -> disu_upts(0),(1) */
-      //StoreOldSolution(&FlowSol);
       
       /*! Update LHS matrix only every update_lhs_freq timesteps (matrix freezing) */
       if(i_steps%FlowSol.update_lhs_freq == 0) {
@@ -224,17 +240,31 @@ int main(int argc, char *argv[]) {
         /*! Get R(Q^n) */
         CalcResidual(FlowSol.ini_iter+i_steps, 0, &FlowSol);
         
-        /*! get R(Q^n+eps) */
-        CalcResidual(FlowSol.ini_iter+i_steps, 2, &FlowSol);
-          
-        /*! calculate LHS matrix */
         // linearized Jacobian: dR/dQ = (R(Q+eps)-R(Q))/eps
-        CalcLHS(FlowSol.ini_iter+i_steps, &FlowSol);
-      
+        // keep calling CalcResidual until all colors in all active element types have been done.
+
+        FlowSol.color_flag=true;
+        FlowSol.color.initialize_to_zero();
+        
+        while (FlowSol.color_flag == true) {
+          CalcResidual(FlowSol.ini_iter+i_steps, 2, &FlowSol);
+        }
+        
+        /*! fill the LHS matrix */
+        for(j=0; j<FlowSol.n_ele_types; j++) {
+          FlowSol.mesh_eles(j)->CalcLHSMatrix(FlowSol.time, FlowSol.n_colors(j));
+        }
+        
         /*! LU decomposition of LHS matrix */
         LUDecomp(&FlowSol);
       }
 
+      // initialize Q^i to Q^n for SGS sweep
+      CopySolution(0, 1, &FlowSol);
+
+      // store old solution for calculating perturbation
+      CopySolution(0, 2, &FlowSol);
+      
       /*! Symmetric Gauss-Seidel sweeps:
           loop over eles
           compute RHS: R(Q^i) - (Q^i - Q^n)/dt
@@ -242,33 +272,34 @@ int main(int argc, char *argv[]) {
           update solution Q^(i+1) */
 
       // no. of SGS sweeps
-      for(i=0;i<1000;i++) {
-      // Get R(Q^i)
-      CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
+      for(i=0;i<FlowSol.n_sgs_iters;i++) {
         
-      // forward sweep + update disu_upts(2). Store disu_upts(2) -> disu_upts(1) for next sgs iter
-      SGSSweep(1, &FlowSol);
+        // Get R(Q^i)
+        CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
         
-      // Update R(Q^i)
-      CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
+        // forward sweep, update disu_upts(1)
+        //cout << "iter, sweeping forwards: " << i << endl;
+        SGSSweep(1, &FlowSol);
         
-      // backward sweep + update disu_upts(2). Store disu_upts(2) -> disu_upts(1) for next sgs iter
-      SGSSweep(-1, &FlowSol);
-
-      /*! Compute the norm of the residual. */
-      CalcNormResidual(1, &FlowSol);
-      
-      /*! Output the history file. */
-      HistoryOutput(FlowSol.ini_iter+i_steps, i, init_time, &write_hist, &FlowSol);
-
-      if(FlowSol.rank==0) cout << endl;
+        // Update R(Q^i)
+        CalcResidual(FlowSol.ini_iter+i_steps, 1, &FlowSol);
+        
+        // backward sweep, update disu_upts(1)
+        //cout << "iter, sweeping backwards: " << i << endl;
+        SGSSweep(-1, &FlowSol);
+        
+        /*! Compute the norm of the residual. */
+        CalcNormResidual(1, &FlowSol);
+        
+        /*! Output the history file. */
+        HistoryOutput(FlowSol.ini_iter+i_steps, i, init_time, &write_hist, &FlowSol);
+        
+        if(FlowSol.rank==0) cout << endl;
       }
-      if(FlowSol.rank==0) cout << endl;
 
-      /*! Advance solution: disu_upts(2) -> disu_upts(0) */
-      for(j=0; j<FlowSol.n_ele_types; j++) {
-        FlowSol.mesh_eles(j)->AdvanceSolution(i, FlowSol.adv_type);
-      }
+      /*! Advance solution: disu_upts(1) -> disu_upts(0) */
+      CopySolution(1, 0, &FlowSol);
+
     }
     
     /*! Update total time, and increase the iteration index. */
@@ -311,7 +342,7 @@ int main(int argc, char *argv[]) {
       
       /*! Output the history file. */
       
-      if(FlowSol.adv_type >= 0) HistoryOutput(FlowSol.ini_iter+i_steps, 0, init_time, &write_hist, &FlowSol);
+      if(FlowSol.adv_type >= 0) HistoryOutput(FlowSol.ini_iter+i_steps-1, 0, init_time, &write_hist, &FlowSol);
       
       if (FlowSol.rank == 0) cout << endl;
     }

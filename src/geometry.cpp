@@ -71,6 +71,7 @@ void SetInput(struct solution* FlowSol) {
   FlowSol->ini_iter           = 0;
   FlowSol->update_lhs_freq    = run_input.update_lhs_freq;
   FlowSol->steady             = run_input.steady;
+  FlowSol->n_sgs_iters        = run_input.n_sgs_iters;
 
   /*! Number of edges/faces for different type of cells. */
   FlowSol->num_f_per_c.setup(5);
@@ -292,6 +293,18 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   FlowSol->mesh_eles_hexas.setup(num_hexas,max_n_spts_per_hexa);
   if (FlowSol->rank==0) cout << "done initializing elements" << endl;
 
+  // Initialize coloring arrays for calculating perturbed residuals
+  if(FlowSol->adv_type == -1) {
+    FlowSol->n_colors.setup(FlowSol->n_ele_types);
+    FlowSol->n_colors.initialize_to_zero();
+    if(FlowSol->rank==0) cout << "colors:" << endl;
+    for (int i=0;i<FlowSol->n_ele_types;i++)
+    {
+      if(FlowSol->mesh_eles(i)->get_n_eles() != 0) FlowSol->n_colors(i) = FlowSol->mesh_eles(i)->get_n_upts_per_ele();
+      cout << FlowSol->n_colors(i) << endl;
+    }
+  }
+  
   // Set shape for each cell
   array<int> local_c(FlowSol->num_eles);
 

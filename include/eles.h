@@ -153,8 +153,15 @@ public:
   /*! calculate source term for SA turbulence model at solution points */
   void calc_src_upts_SA(int in_disu_upts_from);
   
-  /*! LHS matrix for LU-SGS implicit method */
-  void calculate_lhs_matrix(void);
+  void CalcLHSMatrix(double time, int n_colors);
+
+  void zero_residual(int in_level);
+
+  /*! Perturb the conservative variables */
+  void perturb_solution(int color);
+
+  /*! Add contribution to perturbed residual */
+  void add_perturbed_residual_to_lhs(int n_colors, int color);
 
   /*! LU decomposition of LHS matrix for implicit method */
   void LU_decomp(void);
@@ -309,9 +316,7 @@ public:
 
   void set_disu_upts_to_zero_other_levels(void);
 
-  void set_disu_upts_to_solution_other_levels(void);
-
-  void store_old_solution(void);
+  void copy_solution(int level_from, int level_to);
   
   array<int> get_connectivity_plot();
 
@@ -842,6 +847,9 @@ protected:
 	/*! temporary solution storage at a single solution point */
 	array<double> temp_u;
 
+  /*! temporary solution storage at a single solution point */
+  array<double> temp_u_ref;
+
   /*! temporary grid velocity storage at a single solution point */
   array<double> temp_v;
 
@@ -992,7 +1000,9 @@ protected:
   int block_dim;
   
   /*! solution increment for calculating linearized Jacobian */
-  array<double> eps_imp;
+  double eps_imp;
+  
+  array<double> perturb_upts;
 
 	/*!
 	time (in secs) until start of time average period for above diagnostic fields

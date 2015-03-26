@@ -165,13 +165,6 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     {
       n_adv_levels=3;
 
-      // increment for linearized Jacobian calculation
-      // set to something scaled by initial conditions?
-      eps_imp.setup(n_fields);
-      for (int i=0; i<n_fields; i++) {
-        eps_imp(i)=1.0e-9;
-      }
-
       // size of element blocks in Jacobian for implicit timestepping
       block_dim = n_fields*n_upts_per_ele;
       
@@ -325,7 +318,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     temp_v.initialize_to_zero();
     temp_v_ref.setup(n_dims);
     temp_v_ref.initialize_to_zero();
-
+    
     int n_comp;
     if(n_dims == 2)
         n_comp = 3;
@@ -463,40 +456,15 @@ void eles::set_disu_upts_to_zero_other_levels(void)
   }
 }
 
-// Initialize other levels to values of first level
-
-void eles::set_disu_upts_to_solution_other_levels(void)
-{
+void eles::copy_solution(int level_from, int level_to) {
   
   if (n_eles!=0)
   {
-    int m;
-    
-    for (m=1;m<n_adv_levels;m++)
-      disu_upts(m) = disu_upts(0);
-
-#ifdef _GPU
-
-    for (m=1;m<n_adv_levels;m++)
-      disu_upts(m).cp_cpu_gpu();
-
-#endif
-  }
-}
-
-void eles::store_old_solution(void) {
-  
-  if (n_eles!=0)
-  {
-    int m;
-    
-    for (m=0;m<n_adv_levels-1;m++)
-      disu_upts(m) = disu_upts(2);
+    disu_upts(level_to) = disu_upts(level_from);
 
 #ifdef _GPU
     
-    for (m=0;m<n_adv_levels-1;m++)
-      disu_upts(m).cp_cpu_gpu();
+    disu_upts(level_to).cp_cpu_gpu();
     
 #endif
   }
@@ -692,6 +660,60 @@ void eles::set_ics(double& time)
     h_ref.setup(1);
   }
   h_ref.cp_cpu_gpu();
+  
+  
+  // set reference values for use in implicit timestepping
+  if(run_input.adv_type==-1) {
+    
+    temp_u_ref.setup(n_fields);
+    
+    // increment for linearized Jacobian calculation
+    // set to square root of machine zero
+    // this value for 64-bit double-precision machine
+    eps_imp = 1.0e-5;
+    perturb_upts.setup(n_upts_per_ele,n_eles,n_fields);
+    
+    /*rho=run_input.rho_c_ic;
+    vx=run_input.u_c_ic;
+    vy=run_input.v_c_ic;
+    vz=run_input.w_c_ic;
+    p=run_input.p_c_ic;*/
+
+    /*rho=run_input.rho_free_stream;
+    vx=run_input.u_free_stream;
+    vy=run_input.v_free_stream;
+    vz=run_input.w_free_stream;
+    p=run_input.p_free_stream;*/
+    
+    rho=0;
+    vx=0;
+    vy=0;
+    vz=0;
+    p=0;
+
+    temp_u_ref(0)=rho;
+    temp_u_ref(1)=rho*vx;
+    temp_u_ref(2)=rho*vy;
+    if(n_dims==2)
+    {
+      temp_u_ref(3)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)));
+    }
+    else if(n_dims==3)
+    {
+      temp_u_ref(3)=rho*vz;
+      temp_u_ref(4)=(p/(gamma-1.0))+(0.5*rho*((vx*vx)+(vy*vy)+(vz*vz)));
+    }
+
+    if(rank==0) {
+      cout << "temp_u_ref: " << endl;
+      temp_u_ref.print();
+    }
+  }
+  else {
+    temp_u_ref.setup(1);
+  }
+  temp_u_ref.cp_cpu_gpu();
+  
 }
 
 
@@ -1187,6 +1209,27 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
       
 #ifdef _CPU
 
+      /*for (int ic=0;ic<n_eles;ic++)
+      {
+        for (int i=0;i<n_fields;i++)
+        {
+          for (int inp=0;inp<n_upts_per_ele;inp++)
+          {
+            disu_upts(0)(inp,ic,i) = disu_upts(2)(inp,ic,i);
+          }
+        }
+      }*/
+      
+#endif
+      
+    }
+    
+    /*! Time integration using BDF2 integration. */
+    
+    else if (adv_type == -2) {
+      
+/*#ifdef _CPU
+      
       for (int ic=0;ic<n_eles;ic++)
       {
         for (int i=0;i<n_fields;i++)
@@ -1198,10 +1241,10 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
         }
       }
       
-#endif
+#endif*/
       
     }
-    
+
     /*! Time integration not implemented. */
     
     else {
@@ -1215,6 +1258,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
 void eles::set_timestep(void)
 {
 
+  // TODO: fix for mixed-element meshes
   if (n_eles!=0) {
     int i;
     
@@ -1334,11 +1378,6 @@ void eles::extrapolate_solution(int in_disu_upts_from)
 {
   if (n_eles!=0) {
     
-    //for (int i=0;i<n_upts_per_ele;i++)
-      //for (int j=0;j<n_eles;j++)
-        //for (int k=0;k<n_fields;k++)
-          //if(isnan(disu_upts(in_disu_upts_from)(j,i,k))) FatalError("NaN at extrapolate_solution");
-
     /*!
      Performs C = (alpha*A*B) + (beta*C) where: \n
      alpha = 1.0 \n
@@ -1429,15 +1468,15 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
         for(k=0;k<n_fields;k++)
         {
           temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
-          //if(isnan(temp_u(k))) FatalError("NaN at evaluate_invFlux");
-
         }
 
         if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+
           // increment solution
           for(k=0;k<n_fields;k++)
           {
-            temp_u(k) += eps_imp(k);
+            //cout << "perturbation: " << setprecision(8) << abs(temp_u(k) - temp_u_ref(k))*eps_imp << endl;
+            //temp_u(k) += abs(temp_u(k) - temp_u_ref(k))*eps_imp;
           }
         }
         
@@ -1663,10 +1702,12 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
       cout << "ERROR: Unknown storage for opp_2 ... " << endl;
     }
     
-    //for (int i=0;i<n_upts_per_ele;i++)
-      //for (int j=0;j<n_eles;j++)
-        //for (int k=0;k<n_fields;k++)
-          //cout << "in_div_tconf_upts_to, tdisf_upts, div_tconf_upts: " << in_div_tconf_upts_to << ", " << setprecision(8) << tdisf_upts(j,i,k) << ", " << div_tconf_upts(in_div_tconf_upts_to)(j,i,k) << endl;
+    //if(in_div_tconf_upts_to==2)
+      //for (int i=0;i<n_upts_per_ele;i++)
+        //for (int j=0;j<n_eles;j++)
+          //for (int k=0;k<n_fields;k++)
+            //cout << "div_tconf_upts(0), div_tconf_upts(2): " << setprecision(8) << div_tconf_upts(0)(j,i,k) << ", " << div_tconf_upts(2)(j,i,k) << endl;
+
 
 #endif
     
@@ -1700,6 +1741,7 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
 {
   if (n_eles!=0)
   {
+    
 #ifdef _CPU
     
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
@@ -1741,22 +1783,33 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
       cout << "ERROR: Unknown storage for opp_3 ... " << endl;
     }
 
-    //cout << "rank, level, min/max of residual: " << rank << ", " << in_div_tconf_upts_to << ", " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to).get_min() << ", " << div_tconf_upts(in_div_tconf_upts_to).get_max() << endl;
-    //cout << endl;
+    //double sum = 0.0;
+    //for (int i=0;i<n_upts_per_ele;i++)
+      //for (int j=0;j<n_eles;j++)
+        //for (int k=0;k<n_fields;k++)
+          //sum += div_tconf_upts(in_div_tconf_upts_to)(i,j,k);
+
+    
+    //if(in_div_tconf_upts_to==2) cout << "rank, level, min/max/sum of residual: " << rank << ", " << in_div_tconf_upts_to << ", " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to).get_min() << ", " << div_tconf_upts(in_div_tconf_upts_to).get_max() << ", " << sum << endl;
 
     //for (int i=0;i<n_fpts_per_ele;i++)
       //for (int j=0;j<n_eles;j++)
         //for (int k=0;k<n_fields;k++)
           //cout << "norm_tconf_fpts after BLAS: " << setprecision(8) << norm_tconf_fpts(j,i,k) << endl;
 
+    array<double> pos(n_dims);
     for (int i=0;i<n_upts_per_ele;i++) {
       for (int j=0;j<n_eles;j++) {
         for (int k=0;k<n_fields;k++) {
-          //cout << "2. disu(0), disu(1), disu(2): " << setprecision(8) << disu_upts(0)(j,i,k) << ", " << disu_upts(1)(j,i,k) << ", " << disu_upts(2)(j,i,k) << endl;
-          //cout << "res: " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to)(j,i,k) << endl;
+          if (isnan(div_tconf_upts(in_div_tconf_upts_to)(i,j,k))) {
+            calc_pos_upt(i, j, pos);
 
-          if (isnan(div_tconf_upts(in_div_tconf_upts_to)(j,i,k))) {
-            cout << "res: " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to)(j,i,k) << endl;
+            cout << "in_div_tconf_upts_to, ele, coords: " << in_div_tconf_upts_to << ", " << j << ", " << pos(0) << ", " << pos(1) << endl;
+            cout << "disu(0), disu(1), disu(2): " << setprecision(8) << disu_upts(0)(i,j,k) << ", " << disu_upts(1)(i,j,k) << ", " << disu_upts(2)(i,j,k) << endl;
+            cout << "div_tconf_upts(0), div_tconf_upts(1), div_tconf_upts(2): " << setprecision(8) << div_tconf_upts(0)(i,j,k) << ", " << div_tconf_upts(1)(i,j,k) << ", " << div_tconf_upts(2)(i,j,k) << endl;
+            cout << "lhs: " << setprecision(8) << endl;
+            lhs_matrix(j).print();
+            
             FatalError("NaN in residual, exiting.");
           }
         }
@@ -2481,7 +2534,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           // increment solution
           for(k=0;k<n_fields;k++)
           {
-            temp_u(k) += eps_imp(k);
+            //temp_u(k) += abs(temp_u(k) - temp_u_ref(k))*eps_imp;
           }
         }
 
@@ -3637,55 +3690,190 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
     }
 }
 
-// LHS matrix for LU-SGS implicit method
-void eles::calculate_lhs_matrix(void)
+// Perturb conservative variables
+void eles::perturb_solution(int color)
+{
+  if (n_eles!=0) {
+#ifdef _CPU
+
+    int i,j,k;
+    double perturb, sgn;
+    
+    for(i=0; i<n_eles; i++) {
+      for(j=0; j<n_fields; j++) {
+        
+        temp_u(j) = disu_upts(0)(color,i,j);
+
+        // 1. Kelley (2003)
+        //if(temp_u(j)==0) sgn = 1.0;
+        //else sgn = temp_u(j)/abs(temp_u(j));
+        //perturb = max(abs(temp_u(j)), 1.0)*sgn*eps_imp;
+        
+        // 2. use old solution (disu_upts(2)) as reference values
+        //temp_u_ref(j) = disu_upts(2)(color,i,j);
+        perturb = temp_u(j) - temp_u_ref(j);
+        if(perturb==0) sgn = 1.0;
+        else sgn = perturb/abs(perturb);
+        //perturb_upts(color,i,j) = max(abs(perturb), 1.0)*sgn*eps_imp;
+        perturb = max(abs(perturb), 1.0)*sgn*eps_imp;
+
+        // 3. 2-norm approach - integrate over n_upts_per_ele
+        //perturb = 0.0;
+        //for(k=0; k<n_upts_per_ele; k++) {
+          //perturb += pow(disu_upts(0)(k,i,j), 2);
+        //}
+        //perturb = max(sqrt(perturb)*eps_imp, eps_imp);
+        
+        // 4. simple approach
+        //perturb_upts(color,i,j) = eps_imp;
+        
+        //if(i==0) cout << "field, u^n, u^(n-1), sign, perturb: " << j << ", " << setprecision(8) << temp_u(j) << ", "  << temp_u_ref(j) << ", "  << sgn << ", " << perturb_upts(color,i,j) << endl;
+
+        //cout << "perturb: " << setprecision(8) << perturb << endl;
+        //disu_upts(2)(color,i,j) += perturb_upts(color,i,j);
+        disu_upts(2)(color,i,j) += perturb;
+        
+      }
+    }
+
+#endif
+  }
+}
+
+// for each color (i.e. solution point), add contribution to perturbed residual
+void eles::add_perturbed_residual_to_lhs(int n_colors, int color)
 {
   if (n_eles!=0) {
 #ifdef _CPU
     
-    int i,j,k,l,m;
-    int indx,indy;
-    double dt, detjac, jac;
+    double sum = 0.0;
+    for (int j=0;j<n_eles;j++) {
+      for (int i=0;i<n_upts_per_ele;i++) {
+        for (int k=0;k<n_fields;k++) {
+          // divide residual by n_colors
+          div_tconf_upts(1)(i,j,k) += div_tconf_upts(2)(i,j,k)/n_colors;
+          sum += div_tconf_upts(1)(i,j,k);
+        }
+      }
+    }
+    //cout << "color, min/max/sum of perturbed residual: " << color << ", " << setprecision(8) << div_tconf_upts(1).get_min() << ", " << div_tconf_upts(1).get_max() << ", " << sum << endl;
+
+#endif
+  }
+}
+
+// initialize residual array to zero
+void eles::zero_residual(int in_level)
+{
+  if (n_eles!=0) {
+#ifdef _CPU
+
+    div_tconf_upts(in_level).initialize_to_zero();
+    
+#endif
+  }
+}
+
+// initialize LHS matrix to zero
+void eles::CalcLHSMatrix(double time, int n_colors)
+{
+  if (n_eles!=0) {
+#ifdef _CPU
+
+    // TODO: experiment with different preconditioners (multiply identity matrix by precond.)
+    
+    int i,j,k,l,m,o,indx,indy;
+    double dt, detjac, sum, perturb, sgn, jac;
+    array<double> pos(n_dims);
+    
+    // HACK: un-perturb solution if using option 2 below
+    /*for(i=0; i<n_eles; i++) {
+      for(j=0; j<n_upts_per_ele; j++) {
+        for(k=0; k<n_fields; k++) {
+          disu_upts(2)(j,i,k) -= perturb_upts(j,i,k);
+        }
+      }
+    }*/
     
     for(i=0; i<n_eles; i++) {
 
+      // get timestep for current element
       dt = get_timestep_ele(i);
-      
-      // identity matrix
-      for(j=0; j<block_dim; j++) {
-        lhs_matrix(i)(j,j) = 1.0/dt;
-      }
-    }
 
-    for(i=0; i<n_eles; i++) {
-      indx = 0;
+      lhs_matrix(i).initialize_to_zero();
+      
+      // get cell volume?
+      //vol = (*this).calc_ele_vol(detjac);
+      //h = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
+      // or element lengthscale used in local timestepping:
+      //h = h_ref(j,i);
+
       for(j=0; j<n_upts_per_ele; j++) {
+
+        detjac = detjac_upts(j,i);
+
         for(k=0; k<n_fields; k++) {
           indx = j*n_fields+k;
-
-          // determinant of transformation Jacobian
-          detjac = detjac_upts(j,i);
-
-          // Jacobian entry
-          jac = (div_tconf_upts(2)(j,i,k) - div_tconf_upts(0)(j,i,k))/eps_imp(k);
-          //cout << "field, eps, res(0), res(1), jac: " << k << ", " << setprecision(12) << eps_imp(k) << ", " << div_tconf_upts(0)(j,i,k) << ", " << div_tconf_upts(1)(j,i,k) << ", " << jac << endl;
+          lhs_matrix(i)(indx,indx) = detjac/dt;
           
-          indy = 0;
-          for(l=0; l<n_upts_per_ele; l++) {
-            for(m=0; m<n_fields; m++) {
-              indy = l*n_fields+m;
+          // linearized Jacobian: dR/dQ = (R(Q+eps)-R(Q))/eps
+          jac = -(div_tconf_upts(1)(j,i,k) - div_tconf_upts(0)(j,i,k));
 
-              // linearized Jacobian
-              lhs_matrix(i)(indx,indy) -= jac;
+          //norm(m) = pow(jac, 2);
+          //calc_pos_upt(j,i,pos);
+          //cout << "ele, indx, res(0), res(1), res(2), jac: " << i << ", " << indx << ", " << setprecision(8) << div_tconf_upts(0)(j,i,k) << ", " << div_tconf_upts(1)(j,i,k) << ", " << div_tconf_upts(2)(j,i,k) << ", " << jac << endl;
+          
+          // loop over columns of Jacobian block
+          for(l=0; l<n_upts_per_ele; l++) {
+            
+            for(m=0; m<n_fields; m++) {
+              
+              // column index
+              indy = l*n_fields+m;
+              
+              temp_u(m) = disu_upts(0)(l,i,m);
+              
+              // 1. Kelley (2003)
+              //if(temp_u(m)==0) sgn = 1.0;
+              //else sgn = temp_u(m)/abs(temp_u(m));
+              //perturb = max(abs(temp_u(m)), 1.0)*sgn*eps_imp;
+              
+              // 2. use old solution (disu_upts(2)) as reference values
+              //temp_u_ref(m) = disu_upts(2)(l,i,m);
+              perturb = temp_u(m) - temp_u_ref(m);
+              if(perturb==0) sgn = 1.0;
+              else sgn = perturb/abs(perturb);
+              perturb = max(abs(perturb), 1.0)*sgn*eps_imp;
+              
+              // 3. 2-norm approach - integrate over n_upts_per_ele
+              //perturb = 0.0;
+              //for(o=0; o<n_upts_per_ele; o++) {
+                //perturb += pow(disu_upts(0)(o,i,m), 2);
+              //}
+              //perturb = max(sqrt(perturb)*eps_imp, eps_imp);
+
+              // 4. simple approach
+              //perturb = eps_imp;
+              
+              //if(i==55) cout << "indy, u^n, u^(n-1), sign, eps, jac/eps: " << indy << ", " << setprecision(8) << temp_u(m) << ", "  << temp_u_ref(m) << ", "  << sgn << ", " << perturb << ", " << jac/perturb << endl;
+              
+              // fill <color>th row (/column?) in Jacobian
+              lhs_matrix(i)(indx,indy) -= jac/perturb;
+              
+              //sum += lhs_matrix(i)(indx,indy);
             }
           }
         }
+        //for(k=0; k<n_fields; k++) {
+          //norm(k) = sqrt(norm(k));
+          //if(i==0) cout << "field, norm: " << k << ", " << setprecision(12) << norm(k) << endl;
+        //}
       }
-      //cout << "rank, lhs_matrix for ele "<< rank << ", " << i << setprecision(3) << endl;
+      //cout << "ele, lhs_matrix " << i << setprecision(8) << endl;
       //lhs_matrix(i).print();
     }
-    //cout << "rank, lhs_matrix(0) " << rank << setprecision(3) << endl;
-    //lhs_matrix(0).print();
+    cout << "lhs_matrix(55) " << setprecision(8) << endl;
+    lhs_matrix(55).print();
 
 #endif
   }
@@ -3699,6 +3887,7 @@ void eles::LU_decomp(void)
 #ifdef _CPU
     
     int i,j,k;
+    array<double> vv(block_dim);
     //double *d;
     
     // LU decomposition
@@ -3709,7 +3898,7 @@ void eles::LU_decomp(void)
         }
       }
       
-      LUdecomp(block_dim,block_indx,block_lhs);
+      LUdecomp(block_dim,block_indx,vv,block_lhs);
       
       for(j=0; j<block_dim; j++) {
         lhs_index(j,i) = block_indx(j);
@@ -3738,10 +3927,11 @@ void eles::SGS_sweep(int direction)
     3. update Q
     Assume that element numbering is contiguous in space for now.
     */
+    // TODO: use Jacob's linear solver class
     
     int i,j,k;
     int corr, ele, indx, indy;
-    double dt;
+    double dt, detjac;
     array<double> delta_qstar(n_upts_per_ele,n_fields);
     array<double> block_lhs(block_dim,block_dim), block_rhs(block_dim);
     array<int> block_indx(block_dim);
@@ -3757,21 +3947,29 @@ void eles::SGS_sweep(int direction)
       dt = get_timestep_ele(ele);
 
       for(j=0; j<n_upts_per_ele; j++) {
+        
+        detjac = detjac_upts(j,ele);
+        
         for(k=0; k<n_fields; k++) {
           indx = j*n_fields+k;
           
+          // TEST: simple explicit scheme
+          //disu_upts(1)(j,ele,k) -= div_tconf_upts(1)(j,ele,k)*dt/detjac;
+          
           // RHS = R(Q^*) (steady) or R(Q^*) - (Q^*-Q^n)/dt (unsteady)
           // TODO: calculate residual for current element only
-          block_rhs(indx) = -div_tconf_upts(1)(j,ele,k)/detjac_upts(j,ele);
-          //cout << "R(Q^*): " << setprecision(6) << block_rhs(indx) << endl;
+          // TODO: calculate neighbour Jacobian term on RHS?
+          // need to find neighbours first - see inters class
+          block_rhs(indx) = -div_tconf_upts(1)(j,ele,k);
+          //cout << "R(Q^*): " << setprecision(8) << block_rhs(indx) << endl;
 
           // set delta Q^*
           delta_qstar(j,k) = disu_upts(1)(j,ele,k) - disu_upts(0)(j,ele,k);
-          //cout << "Q^*-Q^n: " << setprecision(6) << delta_qstar(j,k) << endl;
+          //cout << "Q^*-Q^n: " << setprecision(8) << delta_qstar(j,k) << endl;
           
           // unsteady case
           if (run_input.steady == 0) {
-            block_rhs(indx) -= delta_qstar(j,k)/dt;
+            block_rhs(indx) -= delta_qstar(j,k)*detjac/dt;
           }
         }
       }
@@ -3791,20 +3989,9 @@ void eles::SGS_sweep(int direction)
       for(j=0; j<n_upts_per_ele; j++) {
         for(k=0; k<n_fields; k++) {
           indx = j*n_fields+k;
-          //cout << "update: " << setprecision(8) << block_rhs(indx) << endl;
+          //cout << "update: " << setprecision(12) << block_rhs(indx) << endl;
           //cout << "Q^*: " << setprecision(8) << disu_upts(1)(j,ele,k) << endl;
-
-          disu_upts(2)(j,ele,k) = disu_upts(1)(j,ele,k) + block_rhs(indx);
-          
-          // Double-linearized method: See Sun, Wang and Liu (2009)
-          //disu_upts(2)(j,ele,k) = disu_upts(1)(j,ele,k) + block_rhs(indx) + delta_qstar(j,k);
-        }
-      }
-
-      for(j=0; j<n_upts_per_ele; j++) {
-        for(k=0; k<n_fields; k++) {
-          // Set most recent solution for next inner iteration
-          disu_upts(1)(j,ele,k) = disu_upts(2)(j,ele,k);
+          disu_upts(1)(j,ele,k) += block_rhs(indx);
         }
       }
     }

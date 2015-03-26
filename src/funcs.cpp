@@ -2560,11 +2560,10 @@ void gaussj(int n, array<double>& A, array<double>& b)
   equations or invert a matrix.
   From Numerical Recipes (http://www.nr.com/)*/
 
-void LUdecomp(int n, array<int>& indx, array<double>& A)
+void LUdecomp(int n, array<int>& indx, array<double>& vv, array<double>& A)
 {
   int i,j,k,imax;
   double big,dum,sum,temp,TINY;
-  array<double> vv(n);
 
   TINY = 1.0e-20; // or 1.0e-10?
   //*d = 1.0; // no row interchanges yet

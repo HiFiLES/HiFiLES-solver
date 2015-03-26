@@ -217,7 +217,7 @@ void eval_dn_nodal_s_basis(array<double> &dd_nodal_s_basis,
 void gaussj(int n, array<double>& A, array<double>& b);
 
 /*! LU decomposition from Numerical Recipes (http://www.nr.com/) */
-void LUdecomp(int n, array<int>& indx, array<double>& A);
+void LUdecomp(int n, array<int>& indx, array<double>& vv, array<double>& A);
 
 /*! Linear equation solution by LU forward/back-substitution from Numerical Recipes (http://www.nr.com/) */
 void LUbacksub(int n, array<int>& indx, array<double>& A, array<double>& b);

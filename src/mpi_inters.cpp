@@ -475,13 +475,13 @@ void mpi_inters::calculate_common_invFlux(int in_disu_upts_from)
           }
 
           // increment solution for computing LHS matrix - but which side?
-          if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+          /*if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
             for(int k=0;k<n_fields;k++)
             {
-              temp_u_l(k) += eps_imp(k)/2.0;
-              temp_u_r(k) -= eps_imp(k)/2.0;
+              temp_u_l(k) += abs(temp_u_l(k) - temp_u_ref(k))*eps_imp/2.0;
+              temp_u_r(k) -= abs(temp_u_r(k) - temp_u_ref(k))*eps_imp/2.0;
             }
-          }
+          }*/
           
           if (motion) {
             // Transform solution to dynamic space
@@ -611,13 +611,13 @@ void mpi_inters::calculate_common_viscFlux(int in_disu_upts_from)
             }
 
           // increment solution for computing LHS matrix - but which side?
-          if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+          /*if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
             for(int k=0;k<n_fields;k++)
             {
-              temp_u_l(k) += eps_imp(k)/2.0;
-              temp_u_r(k) -= eps_imp(k)/2.0;
+              temp_u_l(k) += abs(temp_u_l(k) - temp_u_ref(k))*eps_imp/2.0;
+              temp_u_r(k) -= abs(temp_u_r(k) - temp_u_ref(k))*eps_imp/2.0;
             }
-          }
+          }*/
 
           if (motion) {
             // Transform solution to dynamic space

@@ -271,12 +271,12 @@ void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound, int in_d
           temp_u_l(k)=(*disu_fpts_l(j,i,k));
 
         // increment solution for computing LHS matrix - but which side?
-        if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+        /*if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
           for(int k=0;k<n_fields;k++)
           {
-            temp_u_l(k) += eps_imp(k);
+            temp_u_l(k) += abs(temp_u_l(k) - temp_u_ref(k))*eps_imp/2.0;
           }
-        }
+        }*/
       
         if (motion) {
           // Transform solution to dynamic space
@@ -411,7 +411,7 @@ void bdy_inters::set_inv_boundary_conditions(int bdy_type, double* u_l, double* 
   double* v_wall = &bdy_params[5];
   double T_wall = bdy_params[8];
 
-  // Navier-Stokes Boundary Conditions
+  // Euler/Navier-Stokes Boundary Conditions
   if(equation==0)
     {
       // Store primitive variables for clarity
@@ -953,12 +953,12 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound, int in_
       }
 
       // increment solution for computing LHS matrix - but which side?
-      if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
+      /*if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
         for(int k=0;k<n_fields;k++)
         {
-          temp_u_l(k) += eps_imp(k);
+          temp_u_l(k) += abs(temp_u_l(k) - temp_u_ref(k))*eps_imp/2.0;
         }
-      }
+      }*/
 
       set_inv_boundary_conditions(bdy_spec,temp_u_l.get_ptr_cpu(),temp_u_r.get_ptr_cpu(),temp_v.get_ptr_cpu(),norm.get_ptr_cpu(),temp_loc.get_ptr_cpu(),bdy_params.get_ptr_cpu(),n_dims,n_fields,run_input.gamma,run_input.R_ref,time_bound,run_input.equation);
 

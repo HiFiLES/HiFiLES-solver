@@ -60,6 +60,8 @@ Implicit solver options
 -----------------------
 update_lhs_freq                   // how often (in timesteps) to recalculate LHS matrix (matrix freezing). Liang et al. say 40-100.
 1
+n_sgs_iters                       // number of sub-iterations (Gauss-Seidel sweeps)
+1000
 steady                            // 1: steady-state solution, 0: unsteady solution
 1
 -----------------------
