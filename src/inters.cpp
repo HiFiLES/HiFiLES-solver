@@ -182,12 +182,50 @@ void inters::setup_inters(int in_n_inters, int in_inters_type)
       um.setup(n_dims);
       du.setup(n_fields);
   
-      // For implicit timestepping LHS matrix computation
-      if(run_input.adv_type == -1) {
-        eps_imp.setup(n_fields);
-        for(int i=0;i<n_fields;i++)
-          eps_imp(i) = 1.0e-9;
+  // set reference values for use in implicit timestepping
+  /*if(run_input.adv_type==-1) {
+    
+    double v_sq;
+
+    temp_u_ref.setup(n_fields);
+
+    // set to square root of machine zero
+    eps_imp = 1.0e-5;
+
+    if(viscous) {
+      temp_u_ref(0) = run_input.rho_free_stream;
+      temp_u_ref(1) = run_input.u_free_stream;
+      temp_u_ref(2) = run_input.v_free_stream;
+      // compute energy
+      if(n_dims==2) {
+        v_sq = temp_u_ref(1)*temp_u_ref(1) + temp_u_ref(2)*temp_u_ref(2);
+        temp_u_ref(3) = run_input.p_free_stream/(run_input.gamma-1.0) + 0.5*temp_u_ref(0)*v_sq;
       }
+      else {
+        temp_u_ref(3) = run_input.w_free_stream;
+        v_sq = temp_u_ref(1)*temp_u_ref(1) + temp_u_ref(2)*temp_u_ref(2) + temp_u_ref(3)*temp_u_ref(3);
+        temp_u_ref(4) = run_input.p_free_stream/(run_input.gamma-1.0) + 0.5*temp_u_ref(0)*v_sq;
+      }
+    }
+    else {
+      temp_u_ref(0) = run_input.rho_bound;
+      temp_u_ref(1) = run_input.v_bound(0);
+      temp_u_ref(2) = run_input.v_bound(1);
+      // compute energy
+      if(n_dims==2) {
+        v_sq = temp_u_ref(1)*temp_u_ref(1) + temp_u_ref(2)*temp_u_ref(2);
+        temp_u_ref(3) = run_input.p_free_stream/(run_input.gamma-1.0) + 0.5*temp_u_ref(0)*v_sq;
+      }
+      else {
+        temp_u_ref(3) = run_input.v_bound(2);
+        v_sq = temp_u_ref(1)*temp_u_ref(1) + temp_u_ref(2)*temp_u_ref(2) + temp_u_ref(3)*temp_u_ref(3);
+        temp_u_ref(4) = run_input.p_bound/(run_input.gamma-1.0) + 0.5*temp_u_ref(0)*v_sq;
+      }
+    }
+  }
+  else {
+    temp_u_ref.setup(1);
+  }*/
 
 }
 
