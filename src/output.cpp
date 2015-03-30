@@ -1513,8 +1513,14 @@ void HistoryOutput(int in_file_num, int in_sgs_iter, clock_t init, ofstream *wri
   
   // set write flag
   if (run_input.restart_flag==0) {
-    open_hist = (in_file_num == 0 and in_sgs_iter == 0);
-    write_heads = (((in_file_num % (run_input.monitor_res_freq*20)) == 0 and in_sgs_iter == 0) || (in_file_num == 0 and in_sgs_iter == 0));
+    if(FlowSol->adv_type==-1) {
+      open_hist = (in_file_num == 0 and in_sgs_iter == 0);
+      write_heads = (((in_file_num % (run_input.monitor_res_freq*20)) == 0 and in_sgs_iter == 0) || (in_file_num == 0 and in_sgs_iter == 0));
+    }
+    else {
+      open_hist = (in_file_num == 1);
+      write_heads = (((in_file_num % (run_input.monitor_res_freq*20)) == 0) || (in_file_num == 1));
+    }
   }
   else {
     open_hist = (in_file_num == run_input.restart_iter+1);

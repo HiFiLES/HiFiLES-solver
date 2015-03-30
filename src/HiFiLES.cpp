@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
       
       /*! Output the history file. */
       
-      if(FlowSol.adv_type >= 0) HistoryOutput(FlowSol.ini_iter+i_steps-1, 0, init_time, &write_hist, &FlowSol);
+      if(FlowSol.adv_type >= 0) HistoryOutput(FlowSol.ini_iter+i_steps, 0, init_time, &write_hist, &FlowSol);
       
       if (FlowSol.rank == 0) cout << endl;
     }
