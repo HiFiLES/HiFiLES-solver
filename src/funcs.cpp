@@ -414,7 +414,7 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 	double alpha, eta;
 	array <double> modal(N,N), mtemp(N,N);
 
-	zero_array(modal);
+  zero_array(modal);
 	zero_array(filter_upts);
 
   // Exponential filter (SVV method) (similar to Meister et al 2009)
@@ -440,18 +440,17 @@ void compute_modal_filter_1d(array <double>& filter_upts, array<double>& vanderm
 	//cout<<"modal coeffs:"<<endl;
 	//modal.print();
 
-	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
+  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
-    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
+#elif defined _NO_BLAS
 
-    #else // inefficient matrix multiplication
+  dgemm(N,N,N,N,N,N,1.0,0.0,vandermonde.get_ptr_cpu(),modal.get_ptr_cpu(),mtemp.get_ptr_cpu());
+  dgemm(N,N,N,N,N,N,1.0,0.0,mtemp.get_ptr_cpu(),inv_vandermonde.get_ptr_cpu(),filter_upts.get_ptr_cpu());
 
-	mtemp = mult_arrays(inv_vandermonde,modal);
-	filter_upts = mult_arrays(mtemp,vandermonde);
-
-	#endif
+#endif
 }
 
 // Compute a modal filter matrix for a triangular element, given Vandermonde matrix and inverse
@@ -491,18 +490,17 @@ void compute_modal_filter_tri(array <double>& filter_upts, array<double>& vander
 	//cout<<"modal coeffs:"<<endl;
 	//modal.print();
 
-	#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
-
 	cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
-	#else // inefficient matrix multiplication
+#elif defined _NO_BLAS
+  
+  dgemm(N,N,N,N,N,N,1.0,0.0,vandermonde.get_ptr_cpu(),modal.get_ptr_cpu(),mtemp.get_ptr_cpu());
+  dgemm(N,N,N,N,N,N,1.0,0.0,mtemp.get_ptr_cpu(),inv_vandermonde.get_ptr_cpu(),filter_upts.get_ptr_cpu());
 
-	mtemp = mult_arrays(inv_vandermonde,modal);
-	filter_upts = mult_arrays(mtemp,vandermonde);
-
-	#endif
+#endif
 }
 
 // Compute a modal filter matrix for a tetrahedral element, given Vandermonde matrix and inverse
@@ -544,18 +542,17 @@ void compute_modal_filter_tet(array <double>& filter_upts, array<double>& vander
   //cout<<"modal coeffs:"<<endl;
   //modal.print();
 
-  #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
   cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
-
   cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
 
-  #else // inefficient matrix multiplication
+#elif defined _NO_BLAS
+  
+  dgemm(N,N,N,N,N,N,1.0,0.0,vandermonde.get_ptr_cpu(),modal.get_ptr_cpu(),mtemp.get_ptr_cpu());
+  dgemm(N,N,N,N,N,N,1.0,0.0,mtemp.get_ptr_cpu(),inv_vandermonde.get_ptr_cpu(),filter_upts.get_ptr_cpu());
 
-  mtemp = mult_arrays(inv_vandermonde,modal);
-  filter_upts = mult_arrays(mtemp,vandermonde);
-
-  #endif
+#endif
 }
 
 void compute_filt_matrix_tri(array<double>& Filt, array<double>& vandermonde_tri, array<double>& inv_vandermonde_tri, int n_upts_tri, int order, double c_tri, int vcjh_scheme_tri, array<double>& loc_upts_tri)
@@ -2802,18 +2799,11 @@ array <double> mult_arrays(array <double>& M1, array <double>& M2)
 
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-          cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,dim_1_0,dim_2_1,dim_1_1,1.0,M1.get_ptr_cpu(),dim_1_0,M2.get_ptr_cpu(),dim_2_0,0.0,product.get_ptr_cpu(),dim_1_0);
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,dim_1_0,dim_2_1,dim_1_1,1.0,M1.get_ptr_cpu(),dim_1_0,M2.get_ptr_cpu(),dim_2_0,0.0,product.get_ptr_cpu(),dim_1_0);
 
-#else
+#elif defined _NO_BLAS
 
-          for (int i=0;i<dim_1_0;++i) {
-              for (int j=0;j<dim_2_1;++j) {
-                  product(i,j) = 0.0;
-                  for (int k=0;k<dim_1_1;++k) {
-                      product(i,j) += M1(i,k)*M2(k,j);
-                    }
-                }
-            }
+        dgemm(dim_1_0,dim_2_1,dim_1_1,dim_1_0,dim_2_0,dim_1_0,1.0,0.0,M1.get_ptr_cpu(),M2.get_ptr_cpu(),product.get_ptr_cpu());
 
 #endif
 

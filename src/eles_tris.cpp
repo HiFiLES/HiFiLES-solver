@@ -682,7 +682,6 @@ void eles_tris::compute_filter_upts(void)
     }
   else if(run_input.filter_type==1) // Discrete Gaussian filter
     {
-      //#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
       if (rank==0) cout<<"Building discrete Gaussian filter"<<endl;
       int ctype;
