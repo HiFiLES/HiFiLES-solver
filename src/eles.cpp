@@ -709,11 +709,6 @@ void eles::set_ics(double& time)
       temp_u_ref.print();
     }
   }
-  else {
-    temp_u_ref.setup(1);
-  }
-  temp_u_ref.cp_cpu_gpu();
-  
 }
 
 
@@ -1413,14 +1408,14 @@ void eles::extrapolate_solution(int in_disu_upts_from)
       cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,disu_fpts.get_ptr_cpu(),Cstride);
       
 #elif defined _NO_BLAS
-      dgemm(Arows,Bcols,Acols,1.0,0.0,opp_0.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),disu_fpts.get_ptr_cpu());
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_0.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),disu_fpts.get_ptr_cpu());
       
 #endif
     }
     else if(opp_0_sparse==1) // mkl blas four-array csr format
     {
 #if defined _MKL_BLAS
-      mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_0_data.get_ptr_cpu(),opp_0_cols.get_ptr_cpu(),opp_0_b.get_ptr_cpu(),opp_0_e.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),&n_upts_per_ele,&zero,disu_fpts.get_ptr_cpu(),&n_fpts_per_ele);
+      mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_0_data.get_ptr_cpu(),opp_0_cols.get_ptr_cpu(),opp_0_b.get_ptr_cpu(),opp_0_e.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),&Bstride,&zero,disu_fpts.get_ptr_cpu(),&Cstride);
       
 #endif
     }
@@ -1560,23 +1555,32 @@ void eles::extrapolate_totalFlux()
 {
   if (n_eles!=0)
   {
+    Arows = n_fpts_per_ele;
+    Acols = n_upts_per_ele;
+    Brows = Acols;
+    Bcols = n_fields*n_eles;
+    
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+    
 #ifdef _CPU
 
     if(opp_1_sparse==0) // dense
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
       
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_1(0).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,0,0,0),Bstride,0.0,norm_tdisf_fpts.get_ptr_cpu(),Cstride);
       for (int i=1;i<n_dims;i++)
       {
-        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_1(i).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,0,0,i),Bstride,1.0,norm_tdisf_fpts.get_ptr_cpu(),Cstride);
       }
       
 #elif defined _NO_BLAS
-      dgemm(n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,0.0,opp_1(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),norm_tdisf_fpts.get_ptr_cpu());
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_1(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),norm_tdisf_fpts.get_ptr_cpu());
       for (int i=1;i<n_dims;i++)
       {
-        dgemm(n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,1.0,opp_1(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),norm_tdisf_fpts.get_ptr_cpu());
+        dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,1.0,opp_1(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),norm_tdisf_fpts.get_ptr_cpu());
       }
 #endif
     }
@@ -1584,10 +1588,10 @@ void eles::extrapolate_totalFlux()
     {
 #if defined _MKL_BLAS
       
-      mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_1_data(0).get_ptr_cpu(),opp_1_cols(0).get_ptr_cpu(),opp_1_b(0).get_ptr_cpu(),opp_1_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,norm_tdisf_fpts.get_ptr_cpu,&n_fpts_per_ele);
+      mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_1_data(0).get_ptr_cpu(),opp_1_cols(0).get_ptr_cpu(),opp_1_b(0).get_ptr_cpu(),opp_1_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),&Bstride,&zero,norm_tdisf_fpts.get_ptr_cpu,&Cstride);
       
       for (int i=1;i<n_dims;i++) {
-        mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_1_data(i).get_ptr_cpu(),opp_1_cols(i).get_ptr_cpu(),opp_1_b(i).get_ptr_cpu(),opp_1_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),&n_upts_per_ele,&one,norm_tdisf_fpts.get_ptr_cpu(),&n_fpts_per_ele);
+        mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_1_data(i).get_ptr_cpu(),opp_1_cols(i).get_ptr_cpu(),opp_1_b(i).get_ptr_cpu(),opp_1_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),&Bstride,&one,norm_tdisf_fpts.get_ptr_cpu(),&Cstride);
       }
       
 #endif
@@ -1613,10 +1617,10 @@ void eles::extrapolate_totalFlux()
     
     if (opp_1_sparse==0)
     {
-      cublasDgemm('N','N',n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_1(0).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,0,0,0),Bstride,0.0,norm_tdisf_fpts.get_ptr_gpu(),Cstride);
       for (int i=1;i<n_dims;i++)
       {
-        cublasDgemm('N','N',n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_gpu(),n_fpts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_gpu(),n_fpts_per_ele);
+        cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_1(i).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,0,0,i),Bstride,1.0,norm_tdisf_fpts.get_ptr_gpu(),Cstride);
       }
     }
     else if (opp_1_sparse==1)
@@ -1664,23 +1668,32 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
 {
   if (n_eles!=0)
   {
+    Arows = n_upts_per_ele;
+    Acols = n_upts_per_ele;
+    Brows = Acols;
+    Bcols = n_fields*n_eles;
+    
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+    
 #ifdef _CPU
     
     if(opp_2_sparse==0) // dense
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
       
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_2(0).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,0,0,0),Bstride,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),Cstride);
       for (int i=1;i<n_dims;i++)
       {
-        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_2(i).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,0,0,i),Bstride,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),Cstride);
       }
       
 #elif defined _NO_BLAS
-      dgemm(n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,0.0,opp_2(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_2(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
       for (int i=1;i<n_dims;i++)
       {
-        dgemm(n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,1.0,opp_2(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+        dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,1.0,opp_2(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
       }
       
 #endif
@@ -1689,10 +1702,10 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
     {
 #if defined _MKL_BLAS
       
-      mkl_dcsrmm(&transa,&n_upts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_2_data(0).get_ptr_cpu(),opp_2_cols(0).get_ptr_cpu(),opp_2_b(0).get_ptr_cpu(),opp_2_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),&n_upts_per_ele,&zero,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
+      mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_2_data(0).get_ptr_cpu(),opp_2_cols(0).get_ptr_cpu(),opp_2_b(0).get_ptr_cpu(),opp_2_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,0),&Bstride,&zero,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&Cstride);
       for (int i=1;i<n_dims;i++)
       {
-        mkl_dcsrmm(&transa,&n_upts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_2_data(i).get_ptr_cpu(),opp_2_cols(i).get_ptr_cpu(),opp_2_b(i).get_ptr_cpu(),opp_2_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),&n_upts_per_ele,&one,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
+        mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_2_data(i).get_ptr_cpu(),opp_2_cols(i).get_ptr_cpu(),opp_2_b(i).get_ptr_cpu(),opp_2_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,0,0,i),&Bstride,&one,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&Cstride);
       }
       
 #endif
@@ -1716,9 +1729,9 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
     
     if (opp_2_sparse==0)
     {
-      cublasDgemm('N','N',n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_gpu(),n_upts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,0),n_upts_per_ele,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_2(0).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,0,0,0),Bstride,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),Cstride);
       for (int i=1;i<n_dims;i++) {
-        cublasDgemm('N','N',n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_gpu(),n_upts_per_ele,tdisf_upts.get_ptr_gpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
+        cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_2(i).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,0,0,i),Bstride,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),Cstride);
       }
     }
     else if (opp_2_sparse==1)
@@ -1742,15 +1755,24 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
   if (n_eles!=0)
   {
     
+    Arows = n_upts_per_ele;
+    Acols = n_fpts_per_ele;
+    Brows = Acols;
+    Bcols = n_fields*n_eles;
+    
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+    
 #ifdef _CPU
     
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
     
-    cblas_daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
+    cblas_daxpy(Brows*Bcols,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
     
 #elif defined _NO_BLAS
     
-    daxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu());
+    daxpy(Brows*Bcols,-1.0,norm_tdisf_fpts.get_ptr_cpu(),1,norm_tconf_fpts.get_ptr_cpu(),1);
     
 #endif
     
@@ -1763,10 +1785,10 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
       
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_cpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_cpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_3.get_ptr_cpu(),Astride,norm_tconf_fpts.get_ptr_cpu(),Bstride,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),Cstride);
       
 #elif defined _NO_BLAS
-      dgemm(n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,1.0,opp_3.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,1.0,opp_3.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu());
       
 #endif
     }
@@ -1774,7 +1796,7 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
     {
 #if defined _MKL_BLAS
       
-      mkl_dcsrmm(&transa,&n_upts_per_ele,&n_fields_mul_n_eles,&n_fpts_per_ele,&one,matdescra,opp_3_data.get_ptr_cpu(),opp_3_cols.get_ptr_cpu(),opp_3_b.get_ptr_cpu(),opp_3_e.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),&n_fpts_per_ele,&one,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&n_upts_per_ele);
+      mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_3_data.get_ptr_cpu(),opp_3_cols.get_ptr_cpu(),opp_3_b.get_ptr_cpu(),opp_3_e.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(),&Bstride,&one,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),&Cstride);
       
 #endif
     }
@@ -1783,48 +1805,50 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
       cout << "ERROR: Unknown storage for opp_3 ... " << endl;
     }
 
-    //double sum = 0.0;
-    //for (int i=0;i<n_upts_per_ele;i++)
-      //for (int j=0;j<n_eles;j++)
-        //for (int k=0;k<n_fields;k++)
-          //sum += div_tconf_upts(in_div_tconf_upts_to)(i,j,k);
+    /*double sum = 0.0;
+    for (int i=0;i<n_upts_per_ele;i++)
+      for (int j=0;j<n_eles;j++)
+        for (int k=0;k<n_fields;k++)
+          sum += div_tconf_upts(in_div_tconf_upts_to)(i,j,k);
 
     
-    //if(in_div_tconf_upts_to==2) cout << "rank, level, min/max/sum of residual: " << rank << ", " << in_div_tconf_upts_to << ", " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to).get_min() << ", " << div_tconf_upts(in_div_tconf_upts_to).get_max() << ", " << sum << endl;
+    cout << "level, min/max/sum of residual: " << in_div_tconf_upts_to << ", " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to).get_min() << ", " << div_tconf_upts(in_div_tconf_upts_to).get_max() << ", " << sum << endl;
 
     //for (int i=0;i<n_fpts_per_ele;i++)
       //for (int j=0;j<n_eles;j++)
         //for (int k=0;k<n_fields;k++)
           //cout << "norm_tconf_fpts after BLAS: " << setprecision(8) << norm_tconf_fpts(j,i,k) << endl;
 
-    array<double> pos(n_dims);
-    for (int i=0;i<n_upts_per_ele;i++) {
-      for (int j=0;j<n_eles;j++) {
-        for (int k=0;k<n_fields;k++) {
-          if (isnan(div_tconf_upts(in_div_tconf_upts_to)(i,j,k))) {
-            calc_pos_upt(i, j, pos);
-
-            cout << "in_div_tconf_upts_to, ele, coords: " << in_div_tconf_upts_to << ", " << j << ", " << pos(0) << ", " << pos(1) << endl;
-            cout << "disu(0), disu(1), disu(2): " << setprecision(8) << disu_upts(0)(i,j,k) << ", " << disu_upts(1)(i,j,k) << ", " << disu_upts(2)(i,j,k) << endl;
-            cout << "div_tconf_upts(0), div_tconf_upts(1), div_tconf_upts(2): " << setprecision(8) << div_tconf_upts(0)(i,j,k) << ", " << div_tconf_upts(1)(i,j,k) << ", " << div_tconf_upts(2)(i,j,k) << endl;
-            cout << "lhs: " << setprecision(8) << endl;
-            lhs_matrix(j).print();
-            
-            FatalError("NaN in residual, exiting.");
+    if(run_input.adv_type==-1) {
+      array<double> pos(n_dims);
+      for (int i=0;i<n_upts_per_ele;i++) {
+        for (int j=0;j<n_eles;j++) {
+          for (int k=0;k<n_fields;k++) {
+            if (isnan(div_tconf_upts(in_div_tconf_upts_to)(i,j,k))) {
+              calc_pos_upt(i, j, pos);
+              
+              cout << "in_div_tconf_upts_to, ele, coords: " << in_div_tconf_upts_to << ", " << j << ", " << pos(0) << ", " << pos(1) << endl;
+              cout << "disu(0), disu(1), disu(2): " << setprecision(8) << disu_upts(0)(i,j,k) << ", " << disu_upts(1)(i,j,k) << ", " << disu_upts(2)(i,j,k) << endl;
+              cout << "div_tconf_upts(0), div_tconf_upts(1), div_tconf_upts(2): " << setprecision(8) << div_tconf_upts(0)(i,j,k) << ", " << div_tconf_upts(1)(i,j,k) << ", " << div_tconf_upts(2)(i,j,k) << endl;
+              cout << "lhs: " << setprecision(8) << endl;
+              lhs_matrix(j).print();
+              
+              FatalError("NaN in residual, exiting.");
+            }
           }
         }
       }
-    }
+    }*/
 
 #endif
     
 #ifdef _GPU
     
-    cublasDaxpy(n_eles*n_fields*n_fpts_per_ele,-1.0,norm_tdisf_fpts.get_ptr_gpu(),1,norm_tconf_fpts.get_ptr_gpu(),1);
+    cublasDaxpy(Brows*Bcols,-1.0,norm_tdisf_fpts.get_ptr_gpu(),1,norm_tconf_fpts.get_ptr_gpu(),1);
     
     if (opp_3_sparse==0)
     {
-      cublasDgemm('N','N',n_upts_per_ele,n_fields*n_eles,n_fpts_per_ele,1.0,opp_3.get_ptr_gpu(),n_upts_per_ele,norm_tconf_fpts.get_ptr_gpu(),n_fpts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),n_upts_per_ele);
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_3.get_ptr_gpu(),Astride,norm_tconf_fpts.get_ptr_gpu(),Bstride,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(),Cstride);
     }
     else if (opp_3_sparse==1)
     {
@@ -1888,7 +1912,7 @@ void eles::calculate_gradient(int in_disu_upts_from)
       
 #elif defined _NO_BLAS
       for (int i=0;i<n_dims;i++) {
-        dgemm(Arows,Bcols,Acols,1.0,0.0,opp_4(i).get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i));
+        dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_4(i).get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i));
       }
       
 #endif
@@ -1978,7 +2002,7 @@ void eles::correct_gradient(void)
       
 #elif defined _NO_BLAS
       for (int i=0;i<n_dims;i++) {
-        dgemm(Arows,Bcols,Acols,1.0,1.0,opp_5(i).get_ptr_cpu(),delta_disu_fpts.get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i));
+        dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,1.0,opp_5(i).get_ptr_cpu(),delta_disu_fpts.get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i));
       }
       
 #endif
@@ -2181,7 +2205,7 @@ void eles::extrapolate_corrected_gradient(void)
       
 #elif defined _NO_BLAS
       for (int i=0;i<n_dims;i++) {
-        dgemm(Arows,Bcols,Acols,1.0,0.0,opp_6.get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i),grad_disu_fpts.get_ptr_cpu(0,0,0,i));
+        dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_6.get_ptr_cpu(),grad_disu_upts.get_ptr_cpu(0,0,0,i),grad_disu_fpts.get_ptr_cpu(0,0,0,i));
       }
 #endif
     }
@@ -2266,7 +2290,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
     cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,filter_upts.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,disuf_upts.get_ptr_cpu(),Cstride);
     
 #elif defined _NO_BLAS
-    dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),disuf_upts.get_ptr_cpu());
+    dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,filter_upts.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),disuf_upts.get_ptr_cpu());
     
 #else
     
@@ -2362,11 +2386,11 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
       
       Bcols = dim3*n_eles;
       
-      dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),uu.get_ptr_cpu(),Lu.get_ptr_cpu());
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,filter_upts.get_ptr_cpu(),uu.get_ptr_cpu(),Lu.get_ptr_cpu());
       
       Bcols = n_dims*n_eles;
       
-      dgemm(Arows,Bcols,Acols,1.0,0.0,filter_upts.get_ptr_cpu(),ue.get_ptr_cpu(),Le.get_ptr_cpu());
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,filter_upts.get_ptr_cpu(),ue.get_ptr_cpu(),Le.get_ptr_cpu());
       
 #else
       
@@ -3518,7 +3542,7 @@ void eles::evaluate_sgsFlux(void)
       
 #elif defined _NO_BLAS
       for (int i=0;i<n_dims;i++) {
-        dgemm(Arows,Bcols,Acols,1.0,0.0,opp_0.get_ptr_cpu(),sgsf_upts.get_ptr_cpu(0,0,0,i),sgsf_fpts.get_ptr_cpu(0,0,0,i));
+        dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_0.get_ptr_cpu(),sgsf_upts.get_ptr_cpu(0,0,0,i),sgsf_fpts.get_ptr_cpu(0,0,0,i));
       }
       
 #endif
@@ -3528,7 +3552,7 @@ void eles::evaluate_sgsFlux(void)
 #if defined _MKL_BLAS
       
       for (int i=0;i<n_dims;i++) {
-        mkl_dcsrmm(&transa, &n_fpts_per_ele, &n_fields_mul_n_eles, &n_upts_per_ele, &one, matdescra, opp_0_data.get_ptr_cpu(), opp_0_cols.get_ptr_cpu(), opp_0_b.get_ptr_cpu(), opp_0_e.get_ptr_cpu(), sgsf_upts.get_ptr_cpu(0,0,0,i), &n_upts_per_ele, &zero, sgsf_fpts.get_ptr_cpu(0,0,0,i), &n_fpts_per_ele);
+        mkl_dcsrmm(&transa, &Arows, &Bcols, &Acols, &one, matdescra, opp_0_data.get_ptr_cpu(), opp_0_cols.get_ptr_cpu(), opp_0_b.get_ptr_cpu(), opp_0_e.get_ptr_cpu(), sgsf_upts.get_ptr_cpu(0,0,0,i), &Bstride, &zero, sgsf_fpts.get_ptr_cpu(0,0,0,i), &Cstride);
       }
       
 #endif
@@ -3690,7 +3714,7 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
     }
 }
 
-// Perturb conservative variables
+// Perturb solution
 void eles::perturb_solution(int color)
 {
   if (n_eles!=0) {
@@ -3762,6 +3786,430 @@ void eles::add_perturbed_residual_to_lhs(int n_colors, int color)
   }
 }
 
+// calculate the discontinuous solution at the flux points in one element
+
+void eles::extrapolate_solution_ele(int in_disu_upts_from, int ele)
+{
+  Arows =  n_fpts_per_ele;
+  Acols = n_upts_per_ele;
+  Brows = Acols;
+  Bcols = n_fields;
+  
+  Astride = Arows;
+  Bstride = Brows*n_eles;
+  Cstride = Arows*n_eles;
+  
+#ifdef _CPU
+
+  if(opp_0_sparse==0) // dense
+  {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(0,ele,0),Bstride,0.0,disu_fpts.get_ptr_cpu(0,ele,0),Cstride);
+    
+#elif defined _NO_BLAS
+    
+    dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_0.get_ptr_cpu(),disu_upts(0).get_ptr_cpu(0,ele,0),disu_fpts.get_ptr_cpu(0,ele,0));
+    
+#endif
+  }
+  else if(opp_0_sparse==1) // mkl blas four-array csr format
+  {
+#if defined _MKL_BLAS
+    mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_0_data.get_ptr_cpu(),opp_0_cols.get_ptr_cpu(),opp_0_b.get_ptr_cpu(),opp_0_e.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(0,ele,0),&Bstride,&zero,disu_fpts.get_ptr_cpu(0,ele,0),&Cstride);
+    
+#endif
+  }
+  else { cout << "ERROR: Unknown storage for opp_0 ... " << endl; }
+  
+#endif
+  
+#ifdef _GPU
+
+  if(opp_0_sparse==0)
+  {
+    cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_0.get_ptr_gpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_gpu(0,ele,0),Bstride,0.0,disu_fpts.get_ptr_gpu(0,ele,0),Cstride);
+  }
+  else if (opp_0_sparse==1)
+  {
+    // TODO: add a bespoke_SPMV kernel for a single element calculation
+    //bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_0_ell_data.get_ptr_gpu(),opp_0_ell_indices.get_ptr_gpu(),opp_0_nnz_per_row,disu_upts(in_disu_upts_from).get_ptr_gpu(0,ele,0),disu_fpts.get_ptr_gpu(0,ele,0),ele_type,order,0);
+    FatalError("Haven't implemented bespoke SPMV kernel for single-element calculation yet");
+  }
+  else
+  {
+    cout << "ERROR: Unknown storage for opp_0 ... " << endl;
+  }
+
+#endif
+}
+
+// calculate the transformed discontinuous inviscid flux at the solution points in one element
+
+void eles::evaluate_invFlux_ele(int in_disu_upts_from, int ele)
+{
+  
+#ifdef _CPU
+    
+  int i,j,k,l,m;
+  double detjac;
+  
+  for(j=0;j<n_upts_per_ele;j++)
+  {
+    detjac = detjac_upts(j,ele);
+    
+    for(k=0;k<n_fields;k++)
+    {
+      temp_u(k)=disu_upts(in_disu_upts_from)(j,ele,k);
+    }
+    
+    if (motion) {
+      // Transform solution from static frame to dynamic frame
+      for (k=0; k<n_fields; k++) {
+        temp_u(k) /= J_dyn_upts(j,ele);
+      }
+      // Get mesh velocity in dynamic frame
+      for (k=0; k<n_dims; k++) {
+        temp_v(k) = grid_vel_upts(j,ele,k);
+      }
+      // Temporary flux vector for dynamic->static transformation
+      temp_f_ref.setup(n_fields,n_dims);
+    }else{
+      temp_v.initialize_to_zero();
+    }
+    
+    if(n_dims==2)
+    {
+      calc_invf_2d(temp_u,temp_f);
+      if (motion)
+        calc_alef_2d(temp_u, temp_v, temp_f);
+    }
+    else if(n_dims==3)
+    {
+      calc_invf_3d(temp_u,temp_f);
+      if (motion)
+        calc_alef_3d(temp_u, temp_v, temp_f);
+    }
+    else
+    {
+      FatalError("Invalid number of dimensions!");
+    }
+    
+    // Transform from dynamic-physical space to static-physical space
+    if (motion) {
+      for(k=0; k<n_fields; k++) {
+        for(l=0; l<n_dims; l++) {
+          temp_f_ref(k,l)=0.;
+          for(m=0; m<n_dims; m++) {
+            temp_f_ref(k,l) += JGinv_dyn_upts(l,m,j,ele)*temp_f(k,m);
+          }
+        }
+      }
+      
+      // Copy Static-Physical Domain flux back to temp_f
+      for (k=0; k<n_fields; k++) {
+        for (l=0; l<n_dims; l++) {
+          temp_f(k,l) = temp_f_ref(k,l);
+        }
+      }
+    }
+    
+    // Transform from static physical space to computational space
+    for(k=0;k<n_fields;k++) {
+      for(l=0;l<n_dims;l++) {
+        tdisf_upts(j,ele,k,l)=0.;
+        for(m=0;m<n_dims;m++) {
+          tdisf_upts(j,ele,k,l) += JGinv_upts(l,m,j,ele)*temp_f(k,m);
+        }
+      }
+    }
+  }
+  
+#endif
+  
+#ifdef _GPU
+    //evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.turb_model);
+#endif
+
+}
+
+// calculate the normal transformed discontinuous flux at the flux points in one element
+
+void eles::extrapolate_totalFlux_ele(int in_disu_upts_from, int ele)
+{
+  if (n_eles!=0)
+  {
+    Arows = n_fpts_per_ele;
+    Acols = n_upts_per_ele;
+    Brows = Acols;
+    Bcols = n_fields;
+    
+    Astride = Arows;
+    Bstride = Brows*n_eles;
+    Cstride = Arows*n_eles;
+    
+#ifdef _CPU
+    
+    if(opp_1_sparse==0) // dense
+    {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+      
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_1(0).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,ele,0,0),Bstride,0.0,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),Cstride);
+      for (int i=1;i<n_dims;i++)
+      {
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_1(i).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,ele,0,i),Bstride,1.0,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),Cstride);
+      }
+      
+#elif defined _NO_BLAS
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_1(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,0),norm_tdisf_fpts.get_ptr_cpu(0,ele,0));
+      for (int i=1;i<n_dims;i++)
+      {
+        dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,1.0,opp_1(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,i),norm_tdisf_fpts.get_ptr_cpu(0,ele,0));
+      }
+#endif
+    }
+    else if(opp_1_sparse==1) // mkl blas four-array csr format
+    {
+#if defined _MKL_BLAS
+      
+      mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_1_data(0).get_ptr_cpu(),opp_1_cols(0).get_ptr_cpu(),opp_1_b(0).get_ptr_cpu(),opp_1_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,0),&Bstride,&zero,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),&Cstride);
+      
+      for (int i=1;i<n_dims;i++) {
+        mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_1_data(i).get_ptr_cpu(),opp_1_cols(i).get_ptr_cpu(),opp_1_b(i).get_ptr_cpu(),opp_1_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,i),&Bstride,&one,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),&Cstride);
+      }
+      
+#endif
+    }
+    else
+    {
+      cout << "ERROR: Unknown storage for opp_1 ... " << endl;
+    }
+    
+#endif
+    
+#ifdef _GPU
+    
+    if (opp_1_sparse==0)
+    {
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_1(0).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,ele,0,0),Bstride,0.0,norm_tdisf_fpts.get_ptr_gpu(0,ele,0),Cstride);
+      for (int i=1;i<n_dims;i++)
+      {
+        cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_1(i).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,ele,0,i),Bstride,1.0,norm_tdisf_fpts.get_ptr_gpu(0,ele,0),Cstride);
+      }
+    }
+    else if (opp_1_sparse==1)
+    {
+      
+    }
+
+#endif
+    
+  }
+}
+
+// calculate the divergence of the transformed discontinuous flux at the solution points in one element
+
+void eles::calculate_divergence_ele(int in_div_tconf_upts_to, int ele)
+{
+
+  Arows = n_upts_per_ele;
+  Acols = n_upts_per_ele;
+  Brows = Acols;
+  Bcols = n_fields;
+  
+  Astride = Arows;
+  Bstride = Brows*n_eles;
+  Cstride = Arows*n_eles;
+  
+#ifdef _CPU
+  
+  if(opp_2_sparse==0) // dense
+  {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+    
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_2(0).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,ele,0,0),Bstride,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(0,ele,0),Cstride);
+    for (int i=1;i<n_dims;i++)
+    {
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_2(i).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,ele,0,i),Bstride,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(0,ele,0),Cstride);
+    }
+    
+#elif defined _NO_BLAS
+    
+    dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_2(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(0,ele,0));
+    for (int i=1;i<n_dims;i++)
+    {
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,1.0,opp_2(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,i),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(0,ele,0));
+    }
+    
+#endif
+  }
+  else if(opp_2_sparse==1) // mkl blas four-array csr format
+  {
+#if defined _MKL_BLAS
+    
+    mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_2_data(0).get_ptr_cpu(),opp_2_cols(0).get_ptr_cpu(),opp_2_b(0).get_ptr_cpu(),opp_2_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,0),&Bstride,&zero,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(0,ele,0),&Cstride);
+    for (int i=1;i<n_dims;i++)
+    {
+      mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_2_data(i).get_ptr_cpu(),opp_2_cols(i).get_ptr_cpu(),opp_2_b(i).get_ptr_cpu(),opp_2_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,i),&Bstride,&one,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(0,ele,0),&Cstride);
+    }
+    
+#endif
+  }
+  else
+  {
+    cout << "ERROR: Unknown storage for opp_2 ... " << endl;
+  }
+  
+#endif
+  
+  
+#ifdef _GPU
+  
+  if (opp_2_sparse==0)
+  {
+    cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_2(0).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,ele,0,0),Bstride,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(0,ele,0),Cstride);
+    for (int i=1;i<n_dims;i++) {
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_2(i).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,ele,0,i),Bstride,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(0,ele,0),Cstride);
+    }
+  }
+  else if (opp_2_sparse==1)
+  {
+    
+  }
+#endif
+  
+}
+
+
+// calculate divergence of the transformed continuous flux at the solution points in one element
+
+void eles::calculate_corrected_divergence_ele(int in_div_tconf_upts_to, int ele)
+{
+  
+  Arows = n_upts_per_ele;
+  Acols = n_fpts_per_ele;
+  Brows = Acols;
+  Bcols = n_fields;
+  
+  Astride = Arows;
+  Bstride = Brows*n_eles;
+  Cstride = Arows*n_eles;
+  
+  array<double> identity(n_fpts_per_ele,n_fpts_per_ele);
+  
+  identity.initialize_to_zero();
+  
+  for(int i=0; i<n_fpts_per_ele; i++)
+    identity(i,i) = 1.0;
+  
+#ifdef _CPU
+  
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+  
+  // do daxpy with dgemm
+  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields,n_fpts_per_ele,-1.0,identity.get_ptr_cpu(),n_fpts_per_ele,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),n_fpts_per_ele*n_eles,1.0,norm_tconf_fpts.get_ptr_cpu(0,ele,0),n_fpts_per_ele*n_eles);
+
+#elif defined _NO_BLAS
+  
+  dgemm(n_fpts_per_ele,n_fields,n_fpts_per_ele,n_fpts_per_ele,n_fpts_per_ele*n_eles,n_fpts_per_ele*n_eles,-1.0,1.0,identity.get_ptr_cpu(),norm_tdisf_fpts.get_ptr_cpu(0,ele,0),norm_tconf_fpts.get_ptr_cpu(0,ele,0));
+
+#endif
+  
+  if(opp_3_sparse==0) // dense
+  {
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+    
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_3.get_ptr_cpu(),Astride,norm_tconf_fpts.get_ptr_cpu(0,ele,0),Bstride,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(0,ele,0),Cstride);
+    
+#elif defined _NO_BLAS
+    dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,1.0,opp_3.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(0,ele,0),div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(0,ele,0));
+    
+#endif
+  }
+  else if(opp_3_sparse==1) // mkl blas four-array csr format
+  {
+#if defined _MKL_BLAS
+    
+    mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_3_data.get_ptr_cpu(),opp_3_cols.get_ptr_cpu(),opp_3_b.get_ptr_cpu(),opp_3_e.get_ptr_cpu(),norm_tconf_fpts.get_ptr_cpu(0,ele,0),&Bstride,&one,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(0,ele,0),&Cstride);
+    
+#endif
+  }
+  else
+  {
+    cout << "ERROR: Unknown storage for opp_3 ... " << endl;
+  }
+  
+#endif
+  
+#ifdef _GPU
+  
+  identity.cp_cpu_gpu();
+  
+  // do daxpy with dgemm
+  cublasDgemm('N','N',n_fpts_per_ele,n_fields,n_fpts_per_ele,-1.0,identity.get_ptr_gpu(),n_fpts_per_ele,norm_tdisf_fpts.get_ptr_gpu(0,ele,0),n_fpts_per_ele*n_eles,1.0,norm_tconf_fpts.get_ptr_gpu(0,ele,0),n_fpts_per_ele*n_eles);
+
+  if (opp_3_sparse==0)
+  {
+    cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_3.get_ptr_gpu(),Astride,norm_tconf_fpts.get_ptr_gpu(0,ele,0),Bstride,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_gpu(0,ele,0),Cstride);
+  }
+  else if (opp_3_sparse==1)
+  {
+    // TODO: sparse matrix version
+  }
+  else
+  {
+    cout << "ERROR: Unknown storage for opp_3 ... " << endl;
+  }
+#endif
+  
+}
+
+// Perturb solution
+void eles::perturb_solution_ele(int color, int ele)
+{
+
+#ifdef _CPU
+  
+  int j,k;
+  double perturb, sgn;
+  
+  for(j=0; j<n_fields; j++) {
+    
+    temp_u(j) = disu_upts(0)(color,ele,j);
+    
+    // 1. Kelley (2003)
+    //if(temp_u(j)==0) sgn = 1.0;
+    //else sgn = temp_u(j)/abs(temp_u(j));
+    //perturb = max(abs(temp_u(j)), 1.0)*sgn*eps_imp;
+    
+    // 2. use old solution (disu_upts(2)) as reference values
+    //temp_u_ref(j) = disu_upts(2)(color,ele,j);
+    perturb = temp_u(j) - temp_u_ref(j);
+    if(perturb==0) sgn = 1.0;
+    else sgn = perturb/abs(perturb);
+    //perturb_upts(color,ele,j) = max(abs(perturb), 1.0)*sgn*eps_imp;
+    perturb = max(abs(perturb), 1.0)*sgn*eps_imp;
+    
+    // 3. 2-norm approach - integrate over n_upts_per_ele
+    //perturb = 0.0;
+    //for(k=0; k<n_upts_per_ele; k++) {
+    //perturb += pow(disu_upts(0)(k,ele,j), 2);
+    //}
+    //perturb = max(sqrt(perturb)*eps_imp, eps_imp);
+    
+    // 4. simple approach
+    //perturb_upts(color,ele,j) = eps_imp;
+    
+    //if(i==0) cout << "field, u^n, u^(n-1), sign, perturb: " << j << ", " << setprecision(8) << temp_u(j) << ", "  << temp_u_ref(j) << ", "  << sgn << ", " << perturb_upts(color,ele,j) << endl;
+    
+    //cout << "perturb: " << setprecision(8) << perturb << endl;
+    //disu_upts(2)(color,ele,j) += perturb_upts(color,ele,j);
+    disu_upts(2)(color,ele,j) += perturb;
+  }
+  
+#endif
+}
+
 // initialize residual array to zero
 void eles::zero_residual(int in_level)
 {
@@ -3774,12 +4222,57 @@ void eles::zero_residual(int in_level)
   }
 }
 
+// Calculate residual for a single element
+void eles::calc_residual_ele(int ele, int in_disu_upts_from, array<double> &residual_ele)
+{
+  cout << "calculating residual in ele " << ele << endl;
+  
+  int in_div_tconf_upts_to = in_disu_upts_from;
+
+  // Perturb solution
+  //perturb_solution_ele(color, ele);
+  
+  // Compute the solution at the flux points
+  extrapolate_solution_ele(in_disu_upts_from, ele);
+
+  // if parallel, send solution
+  
+  
+  // Evaluate inviscid flux
+  evaluate_invFlux_ele(in_disu_upts_from, ele);
+  
+  // calculate inviscid flux on interior interfaces
+  
+  
+  // calculate inviscid flux on boundary interfaces
+  
+  
+  // if parallel, receive solution
+  
+  
+  // if parallel, calculate inviscid interface flux on partition interfaces
+  
+  
+  // extrapolate total flux
+  extrapolate_totalFlux_ele(in_disu_upts_from, ele);
+  
+  // calculate flux divergence
+  calculate_divergence_ele(in_div_tconf_upts_to, ele);
+  
+  // correct flux divergence
+  calculate_corrected_divergence_ele(in_div_tconf_upts_to, ele);
+  
+  // add perturbed residual to LHS matrix
+  //add_perturbed_residual_to_lhs_ele(n_colors, color, ele);
+  
+}
+
 // initialize LHS matrix to zero
 void eles::CalcLHSMatrix(double time, int n_colors)
 {
   if (n_eles!=0) {
 #ifdef _CPU
-
+    
     // TODO: experiment with different preconditioners (multiply identity matrix by precond.)
     
     int i,j,k,l,m,o,indx,indy;
@@ -3788,18 +4281,18 @@ void eles::CalcLHSMatrix(double time, int n_colors)
     
     // HACK: un-perturb solution if using option 2 below
     /*for(i=0; i<n_eles; i++) {
-      for(j=0; j<n_upts_per_ele; j++) {
-        for(k=0; k<n_fields; k++) {
-          disu_upts(2)(j,i,k) -= perturb_upts(j,i,k);
-        }
-      }
-    }*/
+     for(j=0; j<n_upts_per_ele; j++) {
+     for(k=0; k<n_fields; k++) {
+     disu_upts(2)(j,i,k) -= perturb_upts(j,i,k);
+     }
+     }
+     }*/
     
     for(i=0; i<n_eles; i++) {
-
+      
       // get timestep for current element
       dt = get_timestep_ele(i);
-
+      
       lhs_matrix(i).initialize_to_zero();
       
       // get cell volume?
@@ -3807,18 +4300,18 @@ void eles::CalcLHSMatrix(double time, int n_colors)
       //h = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
       // or element lengthscale used in local timestepping:
       //h = h_ref(j,i);
-
+      
       for(j=0; j<n_upts_per_ele; j++) {
-
+        
         detjac = detjac_upts(j,i);
-
+        
         for(k=0; k<n_fields; k++) {
           indx = j*n_fields+k;
           lhs_matrix(i)(indx,indx) = detjac/dt;
           
           // linearized Jacobian: dR/dQ = (R(Q+eps)-R(Q))/eps
           jac = -(div_tconf_upts(1)(j,i,k) - div_tconf_upts(0)(j,i,k));
-
+          
           //norm(m) = pow(jac, 2);
           //calc_pos_upt(j,i,pos);
           //cout << "ele, indx, res(0), res(1), res(2), jac: " << i << ", " << indx << ", " << setprecision(8) << div_tconf_upts(0)(j,i,k) << ", " << div_tconf_upts(1)(j,i,k) << ", " << div_tconf_upts(2)(j,i,k) << ", " << jac << endl;
@@ -3848,10 +4341,10 @@ void eles::CalcLHSMatrix(double time, int n_colors)
               // 3. 2-norm approach - integrate over n_upts_per_ele
               //perturb = 0.0;
               //for(o=0; o<n_upts_per_ele; o++) {
-                //perturb += pow(disu_upts(0)(o,i,m), 2);
+              //perturb += pow(disu_upts(0)(o,i,m), 2);
               //}
               //perturb = max(sqrt(perturb)*eps_imp, eps_imp);
-
+              
               // 4. simple approach
               //perturb = eps_imp;
               
@@ -3865,8 +4358,8 @@ void eles::CalcLHSMatrix(double time, int n_colors)
           }
         }
         //for(k=0; k<n_fields; k++) {
-          //norm(k) = sqrt(norm(k));
-          //if(i==0) cout << "field, norm: " << k << ", " << setprecision(12) << norm(k) << endl;
+        //norm(k) = sqrt(norm(k));
+        //if(i==0) cout << "field, norm: " << k << ", " << setprecision(12) << norm(k) << endl;
         //}
       }
       //cout << "ele, lhs_matrix " << i << setprecision(8) << endl;
@@ -3874,7 +4367,7 @@ void eles::CalcLHSMatrix(double time, int n_colors)
     }
     cout << "lhs_matrix(55) " << setprecision(8) << endl;
     lhs_matrix(55).print();
-
+    
 #endif
   }
 }
@@ -3920,32 +4413,38 @@ void eles::SGS_sweep(int direction)
   if (n_eles!=0) {
     
 #ifdef _CPU
-
+    
     /*! Algorithm:
-    1. get RHS = R(Q^n) (steady) or R(Q^n) - (Q^*-Q^n)/dt (unsteady)
-    2. call solver
-    3. update Q
-    Assume that element numbering is contiguous in space for now.
-    */
+     1. get RHS = R(Q^n) (steady) or R(Q^n) - (Q^*-Q^n)/dt (unsteady)
+     2. call solver
+     3. update Q
+     Assume that element numbering is contiguous in space for now.
+     */
     // TODO: use Jacob's linear solver class
     
     int i,j,k;
     int corr, ele, indx, indy;
+    int in_disu_upts_from = 0;
     double dt, detjac;
     array<double> delta_qstar(n_upts_per_ele,n_fields);
     array<double> block_lhs(block_dim,block_dim), block_rhs(block_dim);
     array<int> block_indx(block_dim);
+    array<double> residual_ele(n_upts_per_ele,n_fields);
     
     // loop over eles - check numbering is contiguous in physical space
     for(i=0; i<n_eles; i++) {
-    
+      
       // Forward sweep: direction = 1
       // Backward sweep: direction = -1
       if (direction == 1) ele = i;
       else if (direction == -1) ele = n_eles-i-1;
-
+      
       dt = get_timestep_ele(ele);
-
+      
+      // TODO: calculate residual for current element only
+      calc_residual_ele(ele, in_disu_upts_from, residual_ele);
+      
+      
       for(j=0; j<n_upts_per_ele; j++) {
         
         detjac = detjac_upts(j,ele);
@@ -3957,23 +4456,18 @@ void eles::SGS_sweep(int direction)
           //disu_upts(1)(j,ele,k) -= div_tconf_upts(1)(j,ele,k)*dt/detjac;
           
           // RHS = R(Q^*) (steady) or R(Q^*) - (Q^*-Q^n)/dt (unsteady)
-          // TODO: calculate residual for current element only
-          // TODO: calculate neighbour Jacobian term on RHS?
-          // need to find neighbours first - see inters class
           block_rhs(indx) = -div_tconf_upts(1)(j,ele,k);
           //cout << "R(Q^*): " << setprecision(8) << block_rhs(indx) << endl;
-
-          // set delta Q^*
-          delta_qstar(j,k) = disu_upts(1)(j,ele,k) - disu_upts(0)(j,ele,k);
-          //cout << "Q^*-Q^n: " << setprecision(8) << delta_qstar(j,k) << endl;
           
           // unsteady case
           if (run_input.steady == 0) {
+            delta_qstar(j,k) = disu_upts(1)(j,ele,k) - disu_upts(0)(j,ele,k);
+            //cout << "Q^*-Q^n: " << setprecision(8) << delta_qstar(j,k) << endl;
             block_rhs(indx) -= delta_qstar(j,k)*detjac/dt;
           }
         }
       }
-
+      
       for(j=0; j<block_dim; j++) {
         block_indx(j) = lhs_index(j,ele);
         
@@ -3981,7 +4475,7 @@ void eles::SGS_sweep(int direction)
           block_lhs(j,k) = lhs_matrix(ele)(j,k);
         }
       }
-
+      
       // call solver. Returns block_rhs = solution update delta^2 Q^(k+1)
       LUbacksub(block_dim,block_indx,block_lhs,block_rhs);
       
@@ -4699,6 +5193,15 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
     
     array<double> disu_upts_plot(n_upts_per_ele,n_fields);
     
+    Arows = n_ppts_per_ele;
+    Acols = n_upts_per_ele;
+    Brows = Acols;
+    Bcols = n_fields;
+    
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+    
     for(i=0;i<n_fields;i++)
     {
       for(j=0;j<n_upts_per_ele;j++)
@@ -4715,27 +5218,11 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
     
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
     
-    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,disu_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_ppts.get_ptr_cpu(),n_ppts_per_ele);
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_p.get_ptr_cpu(),Astride,disu_upts_plot.get_ptr_cpu(),Bstride,0.0,out_disu_ppts.get_ptr_cpu(),Cstride);
     
 #elif defined _NO_BLAS
-    dgemm(n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),disu_upts_plot.get_ptr_cpu(),out_disu_ppts.get_ptr_cpu());
-    
-#else
-    
-    //HACK (inefficient, but useful if cblas is unavailible)
-    
-    for(i=0;i<n_ppts_per_ele;i++)
-    {
-      for(k=0;k<n_fields;k++)
-      {
-        out_disu_ppts(i,k) = 0.;
-        
-        for(j=0;j<n_upts_per_ele;j++)
-        {
-          out_disu_ppts(i,k) += opp_p(i,j)*disu_upts_plot(j,k);
-        }
-      }
-    }
+
+    dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_p.get_ptr_cpu(),disu_upts_plot.get_ptr_cpu(),out_disu_ppts.get_ptr_cpu());
     
 #endif
     
@@ -4752,6 +5239,15 @@ void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
     
     array<double> grad_disu_upts_temp(n_upts_per_ele,n_fields,n_dims);
     
+    Arows = n_ppts_per_ele;
+    Acols = n_upts_per_ele;
+    Brows = Acols;
+    Bcols = n_fields;
+    
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+
     for(i=0;i<n_fields;i++)
     {
       for(j=0;j<n_upts_per_ele;j++)
@@ -4766,32 +5262,13 @@ void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
     
     for (i=0;i<n_dims;i++) {
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,grad_disu_upts_temp.get_ptr_cpu(0,0,i),n_upts_per_ele,0.0,out_grad_disu_ppts.get_ptr_cpu(0,0,i),n_ppts_per_ele);
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_p.get_ptr_cpu(),Astride,grad_disu_upts_temp.get_ptr_cpu(0,0,i),Bstride,0.0,out_grad_disu_ppts.get_ptr_cpu(0,0,i),Cstride);
     }
     
 #elif defined _NO_BLAS
     
     for (i=0;i<n_dims;i++) {
-      dgemm(n_ppts_per_ele,n_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),grad_disu_upts_temp.get_ptr_cpu(0,0,i),out_grad_disu_ppts.get_ptr_cpu(0,0,i));
-    }
-    
-#else
-    
-    //HACK (inefficient, but useful if cblas is unavailible)
-    
-    for(i=0;i<n_ppts_per_ele;i++)
-    {
-      for(k=0;k<n_fields;k++)
-      {
-        for(l=0;l<n_dims;l++)
-        {
-          out_grad_disu_ppts(i,k,l) = 0.;
-          for(j=0;j<n_upts_per_ele;j++)
-          {
-            out_grad_disu_ppts(i,k,l) += opp_p(i,j)*grad_disu_upts_temp(j,k,l);
-          }
-        }
-      }
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_p.get_ptr_cpu(),grad_disu_upts_temp.get_ptr_cpu(0,0,i),out_grad_disu_ppts.get_ptr_cpu(0,0,i));
     }
     
 #endif
@@ -4809,6 +5286,15 @@ void eles::calc_time_average_ppts(int in_ele, array<double>& out_disu_average_pp
     
     array<double> disu_average_upts_plot(n_upts_per_ele,n_average_fields);
     
+    Arows = n_ppts_per_ele;
+    Acols = n_upts_per_ele;
+    Brows = Acols;
+    Bcols = n_average_fields;
+    
+    Astride = Arows;
+    Bstride = Brows;
+    Cstride = Arows;
+
     for(i=0;i<n_average_fields;i++)
     {
       for(j=0;j<n_upts_per_ele;j++)
@@ -4819,27 +5305,11 @@ void eles::calc_time_average_ppts(int in_ele, array<double>& out_disu_average_pp
     
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
     
-    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,n_average_fields,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,disu_average_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_disu_average_ppts.get_ptr_cpu(),n_ppts_per_ele);
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_p.get_ptr_cpu(),Astride,disu_average_upts_plot.get_ptr_cpu(),Bstride,0.0,out_disu_average_ppts.get_ptr_cpu(),Cstride);
     
 #elif defined _NO_BLAS
-    dgemm(n_ppts_per_ele,n_average_fields,n_upts_per_ele,1.0,0.0,opp_p.get_ptr_cpu(),disu_average_upts_plot.get_ptr_cpu(),out_disu_average_ppts.get_ptr_cpu());
     
-#else
-    
-    //HACK (inefficient, but useful if cblas is unavailible)
-    
-    for(i=0;i<n_ppts_per_ele;i++)
-    {
-      for(k=0;k<n_average_fields;k++)
-      {
-        out_disu_average_ppts(i,k) = 0.;
-        
-        for(j=0;j<n_upts_per_ele;j++)
-        {
-          out_disu_average_ppts(i,k) += opp_p(i,j)*disu_average_upts_plot(j,k);
-        }
-      }
-    }
+    dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_p.get_ptr_cpu(),disu_average_upts_plot.get_ptr_cpu(),out_disu_average_ppts.get_ptr_cpu());
     
 #endif
     
@@ -4866,6 +5336,15 @@ void eles::calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts)
 
       array<double> epsilon_upts_plot(n_upts_per_ele);
 
+      Arows = n_ppts_per_ele;
+      Acols = n_upts_per_ele;
+      Brows = Acols;
+      Bcols = 1;
+    
+      Astride = Arows;
+      Bstride = Brows;
+      Cstride = Arows;
+
       for(j=0;j<n_upts_per_ele;j++)
       {
         epsilon_upts_plot(j)=epsilon_upts(j,in_ele);
@@ -4874,22 +5353,11 @@ void eles::calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts)
 
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
 
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_ppts_per_ele,1,n_upts_per_ele,1.0,opp_p.get_ptr_cpu(),n_ppts_per_ele,epsilon_upts_plot.get_ptr_cpu(),n_upts_per_ele,0.0,out_epsilon_ppts.get_ptr_cpu(),n_ppts_per_ele);
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_p.get_ptr_cpu(),Astride,epsilon_upts_plot.get_ptr_cpu(),Bstride,0.0,out_epsilon_ppts.get_ptr_cpu(),Cstride);
 
-#else
-
-      //HACK (inefficient, but useful if cblas is unavailible)
-
-      for(i=0;i<n_ppts_per_ele;i++)
-      {
-        out_epsilon_ppts(i) = 0.;
-
-        for(j=0;j<n_upts_per_ele;j++)
-        {
-          out_epsilon_ppts(i) += opp_p(i,j)*epsilon_upts_plot(j);
-        }
-
-      }
+#elif defined _NO_BLAS
+    
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_p.get_ptr_cpu(),epsilon_upts_plot.get_ptr_cpu(),out_epsilon_ppts.get_ptr_cpu());
 
 #endif
 

@@ -153,16 +153,40 @@ public:
   /*! calculate source term for SA turbulence model at solution points */
   void calc_src_upts_SA(int in_disu_upts_from);
   
-  void CalcLHSMatrix(double time, int n_colors);
-
-  void zero_residual(int in_level);
-
   /*! Perturb the conservative variables */
   void perturb_solution(int color);
-
+  
   /*! Add contribution to perturbed residual */
   void add_perturbed_residual_to_lhs(int n_colors, int color);
+  
+  void zero_residual(int in_level);
+  
+  /*! calculate residual in current element */
+  void calc_residual_ele(int ele, int in_disu_upts_from, array<double>& residual_ele);
+  
+  /*! calculate the discontinuous solution at the flux points in one element */
+  void extrapolate_solution_ele(int in_disu_upts_from, int ele);
+  
+  /*! calculate transformed discontinuous inviscid flux at solution points in one element */
+  void evaluate_invFlux_ele(int in_disu_upts_from, int ele);
 
+  /*! calculate normal transformed discontinuous flux at flux points in one element */
+  void extrapolate_totalFlux_ele(int in_disu_upts_from, int ele);
+
+  /*! calculate divergence of transformed discontinuous flux at solution points in one element */
+  void calculate_divergence_ele(int in_div_tconf_upts_to, int ele);
+  
+  /*! calculate divergence of transformed continuous flux at solution points in one element */
+  void calculate_corrected_divergence_ele(int in_div_tconf_upts_to, int ele);
+  
+  /*! Perturb the conservative variables in one element */
+  void perturb_solution_ele(int color, int ele);
+  
+  /*! Add contribution to perturbed residual in one element */
+  void add_perturbed_residual_to_lhs_ele(int n_colors, int color, int ele);
+  
+  void CalcLHSMatrix(double time, int n_colors);
+  
   /*! LU decomposition of LHS matrix for implicit method */
   void LU_decomp(void);
 
