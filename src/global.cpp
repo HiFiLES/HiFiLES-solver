@@ -34,7 +34,7 @@ double pi=3.141592654;
 const char* HIFILES_DIR = getenv("HIFILES_HOME");
 
 /*! Routine to multiply matrices similar to BLAS's dgemm */
-int dgemm(int Arows, int Bcols, int Acols, double alpha, double beta, double* a, double* b, double* c)
+int dgemm(int Arows, int Bcols, int Acols, int Astride, int Bstride, int Cstride, double alpha, double beta, double* a, double* b, double* c)
 {
   /* Routine similar to blas dgemm but does not allow for transposes.
 
@@ -47,10 +47,10 @@ int dgemm(int Arows, int Bcols, int Acols, double alpha, double beta, double* a,
      Acols - No. of columns of A or No. of rows of B
   */
 
-  #define A(I,J) a[(I) + (J)*Arows]
-  #define B(I,J) b[(I) + (J)*Acols]
-  #define C(I,J) c[(I) + (J)*Arows]
-
+  #define A(I,J) a[(I) + (J)*Astride]
+  #define B(I,J) b[(I) + (J)*Bstride]
+  #define C(I,J) c[(I) + (J)*Cstride]
+  
   int i,j,l;
   double temp;
 
@@ -101,7 +101,7 @@ int dgemm(int Arows, int Bcols, int Acols, double alpha, double beta, double* a,
 }
 
 /*! Routing to compute alpha*x + y for vectors x and y - similar to BLAS's daxpy */
-int daxpy(int n, double alpha, double *x, double *y)
+int daxpy(int n, double alpha, double *x, int incx, double *y, int incy)
 {
   // Error
   if(n == 0)
@@ -109,7 +109,7 @@ int daxpy(int n, double alpha, double *x, double *y)
 
   // Very straightforward implementation - can be improved
   for(int i=0; i<n; i++)
-    y[i] += alpha*x[i];
+    y[i*incy] += alpha*x[i*incx];
 
   return 0;
 }
