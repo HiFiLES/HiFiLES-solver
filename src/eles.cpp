@@ -3382,7 +3382,7 @@ void eles::shock_capture_concentration(int in_disu_upts_from)
 
 void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma)
 {
-    int stride = in_n_upts_per_ele*in_n_eles;
+    int stride = in_n_upts_per_ele * in_n_eles;
     double tmp_sensor = 0;
 
     double nodal_rho[8];  // Array allocated so that it can handle upto p=7
@@ -3393,31 +3393,31 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
     double J = 0.15;
     int shock_found = 0;
 
-    if(in_n_eles!=0){
+    if(in_n_eles != 0){
         // X-slices
-        for(int m=0; m<in_n_eles; m++)
+        for(int m = 0; m < in_n_eles; m++)
         {
           tmp_sensor = 0;
-            for(int i=0; i<in_order+1; i++)
+            for(int i=0; i < in_order + 1; i++)
             {
-                for(int j=0; j<in_order+1; j++){
-                    nodal_rho[j] = in_disu_upts_ptr[m*in_n_upts_per_ele + i*(in_order+1) + j];
+                for(int j=0; j < in_order + 1; j++){
+                    nodal_rho[j] = in_disu_upts_ptr[ m * in_n_upts_per_ele + i * (in_order+1) + j];
                 }
 
-                for(int j=0; j<in_order+1; j++){
+                for(int j=0; j < in_order+1; j++){
                     modal_rho[j] = 0;
                     for(int k=0; k<in_order+1; k++){
-                        modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)]*nodal_rho[k];
+                        modal_rho[j] += in_inv_vandermonde_ptr[j + k * (in_order+1)] * nodal_rho[k];
                     }
                 }
 
-                for(int j=0; j<in_order+1; j++){
+                for(int j=0; j < in_order+1; j++){
                     uE[j] = 0;
-                    for(int k=0; k<in_order+1; k++)
-                        uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+                    for(int k=0; k < in_order+1; k++)
+                        uE[j] += modal_rho[k]*concentration_array_ptr[j * (in_order+1) + k];
 
-                    uE[j] = abs((3.1415/(in_order+1))*uE[j]);
-                    temp = pow(uE[j],p)*pow(in_order+1,p/2);
+                    uE[j] = abs( (3.1415 / (in_order+1) ) * uE[j]);
+                    temp = pow(uE[j],p) * pow(in_order+1, p/2);
 
                     if(temp >= J)
                         shock_found++;
@@ -3429,25 +3429,25 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
             }
 
             // Y-slices
-            for(int i=0; i<in_order+1; i++)
+            for(int i=0; i < in_order+1; i++)
             {
                 for(int j=0; j<in_order+1; j++){
-                    nodal_rho[j] = in_disu_upts_ptr[m*in_n_upts_per_ele + j*(in_order+1) + i];
+                    nodal_rho[j] = in_disu_upts_ptr[m * in_n_upts_per_ele + j * (in_order+1) + i];
                 }
 
                 for(int j=0; j<in_order+1; j++){
                     modal_rho[j] = 0;
                     for(int k=0; k<in_order+1; k++)
-                        modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)]*nodal_rho[k];
+                        modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)] * nodal_rho[k];
                 }
 
                 for(int j=0; j<in_order+1; j++){
                     uE[j] = 0;
                     for(int k=0; k<in_order+1; k++)
-                        uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+                        uE[j] += modal_rho[k] * concentration_array_ptr[j * (in_order+1) + k];
 
-                    uE[j] = (3.1415/(in_order+1))*uE[j];
-                    temp = pow(abs(uE[j]),p)*pow(in_order+1,p/2);
+                    uE[j] = ( 3.1415 / (in_order+1) ) * uE[j];
+                    temp = pow(abs(uE[j]), p) * pow(in_order+1, p/2);
 
                     if(temp >= J)
                         shock_found++;
@@ -3469,16 +3469,16 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
                 for(int k=0; k<in_n_fields; k++) {
 
                     for(int i=0; i<in_n_upts_per_ele; i++){
-                        nodal_sol[i] = in_disu_upts_ptr[m*in_n_upts_per_ele + k*stride + i];
+                        nodal_sol[i] = in_disu_upts_ptr[m * in_n_upts_per_ele + k * stride + i];
                     }
 
                     // Nodal to modal only upto 1st order
                     for(int i=0; i<in_n_upts_per_ele; i++){
                         modal_sol[i] = 0;
                         for(int j=0; j<in_n_upts_per_ele; j++)
-                            modal_sol[i] += in_inv_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*nodal_sol[j];
+                            modal_sol[i] += in_inv_vandermonde2D_ptr[i + j * in_n_upts_per_ele] * nodal_sol[j];
 
-                        modal_sol[i] = modal_sol[i]*sigma[i];
+                        modal_sol[i] = modal_sol[i] * sigma[i];
                         //printf("The exp filter values are %f \n",modal_sol[i]);
                     }
 
@@ -3872,6 +3872,7 @@ void eles::set_opp_4(int in_sparse)
   array<double> loc(n_dims);
   
   opp_4.setup(n_dims);
+
   for (int i=0;i<n_dims;i++)
     opp_4(i).setup(n_upts_per_ele, n_upts_per_ele);
   
@@ -3954,7 +3955,7 @@ void eles::set_opp_5(int in_sparse)
          */
         
         //opp_5(i)(k,j) = eval_div_vcjh_basis(j,loc)*tnorm_fpts(i,j);
-        opp_5(i)(k,j) = opp_3(k,j)*tnorm_fpts(i,j);
+        opp_5(i)(k,j) = opp_3(k,j) * tnorm_fpts(i,j);
       }
     }
   }
@@ -4052,7 +4053,7 @@ void eles::set_opp_6(int in_sparse)
   }
 }
 
-// set opp_p (solution at solution points to solution at plot points)
+// set opp_p (solution at solution points to solution at plot points extrapolation matrix)
 
 void eles::set_opp_p(void)
 {
@@ -4071,7 +4072,7 @@ void eles::set_opp_p(void)
         loc(k)=loc_ppts(k,j);
       }
       
-      opp_p(j,i)=eval_nodal_basis(i,loc);
+      opp_p(j,i) = eval_nodal_basis(i,loc);
     }
   }
   

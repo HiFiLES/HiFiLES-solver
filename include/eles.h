@@ -357,6 +357,9 @@ public:
 
   virtual void setup_ele_type_specific()=0;
 
+  /*! Compute stabilization filter */
+  virtual void compute_stabilization_filter() = 0;
+
   /*! prototype for element reference length calculation */
   virtual double calc_h_ref_specific(int in_eles) = 0;
 
@@ -846,6 +849,10 @@ protected:
 
 	/*! Matrix of filter weights at solution points */
 	array<double> filter_upts;
+
+	/*! Matrices for Local Fourier Spectral (stabilization) filter */
+	array<double> stabilization_filter_interior; // filter matrix acting on the solution points upts
+	array<double> stabilization_filter_boundary; // filter matrix acting on the common interface points
 
 	/*! extra arrays for similarity model: Leonard tensors, velocity/energy products */
 	array<double> Lu, Le, uu, ue;

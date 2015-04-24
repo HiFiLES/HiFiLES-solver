@@ -107,6 +107,9 @@ public:
   /*! Element reference length calculation */
   double calc_h_ref_specific(int in_ele);
 
+  /*! Compute stabilization filter */
+  void compute_stabilization_filter(){}
+
 protected:
 
   // members

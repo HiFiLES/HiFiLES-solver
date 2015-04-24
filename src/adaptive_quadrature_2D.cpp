@@ -1,4 +1,4 @@
-#include "adaptive_quadrature_2D.h"
+#include "../include/adaptive_quadrature_2D.h"
 
 static double XVALUE; // global variable used when evaluating integral along y
 

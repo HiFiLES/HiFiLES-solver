@@ -58,6 +58,8 @@ ___bin_HiFiLES_SOURCES = ../src/global.cpp \
                   ../src/matrix_structure.cpp \
                   ../src/vector_structure.cpp \
                   ../src/linear_solvers_structure.cpp \
+                  ../src/adaptive_quadrature_2D.cpp \
+                  ../src/quanc8.cpp \
                   ../src/HiFiLES.cpp
 
 if BUILD_GPU

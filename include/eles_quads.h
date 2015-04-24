@@ -138,6 +138,9 @@ public:
   /*! Evaluate 2D Legendre Basis */
   double eval_legendre_basis_2D_hierarchical(int, array<double>, int in_order);
 
+  /*! Compute stabilization filter */
+  void compute_stabilization_filter(){}
+
 protected:
 
   // methods

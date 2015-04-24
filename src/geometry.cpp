@@ -182,7 +182,6 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   // Compute connectivity
   if (FlowSol->rank==0) cout << "Setting up mesh connectivity" << endl;
 
-  //CompConnectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, rot_tag, unmatched_inters, n_unmatched_inters, icvsta, icvert, FlowSol->num_inters, FlowSol->num_edges, FlowSol);
   CompConnectivity(c2v, c2n_v, ctype, c2f, c2e, f2c, f2loc_f, f2v, f2nv, Mesh.e2v, Mesh.v2n_e, Mesh.v2e, rot_tag,
                    unmatched_inters, n_unmatched_inters, icvsta, icvert, FlowSol->num_inters, FlowSol->num_edges, FlowSol);
 
@@ -2424,7 +2423,7 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
                       struct solution* FlowSol)
 {
 
-  // inputs:   in_c2v (clls to vertex) , in_ctype (type of cell)
+  // inputs:   in_c2v (cells to vertex) , in_ctype (type of cell)
   // outputs:  f2c (face to cell), c2f (cell to face), f2loc_f (face to local face index of right and left cells), rot_tag,  n_faces (number of faces in the mesh)
 
   int sta_ind,end_ind;
@@ -2434,7 +2433,7 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
   int found,rtag;
 
   n_cells = in_c2v.get_dim(0);
-  n_verts = in_c2v.get_max()+1;
+  n_verts = in_c2v.get_max() + 1; // total number of vertices in mesh
 
   //cout << "n_verts=" << n_verts << endl;
 
@@ -2456,7 +2455,7 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
   //num_v_per_c(3) = 6; // pris
   //num_v_per_c(4) = 8; // hexas
 
-  v2n_c.setup(n_verts);
+  v2n_c.setup(n_verts); // vertex to number of cells connected to it
   icvsta2.setup(n_verts);
   // Assumes there won't be more than X cells around 1 vertex
   int max_cells_per_vert = 100; //50
@@ -2485,37 +2484,38 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
   vlist_glob.initialize_to_zero();
   vlist_glob2.initialize_to_zero();
 
-  // Determine how many cells share each node
-  for (int ic=0;ic<n_cells;ic++) {
-    for(int k=0;k<in_c2n_v(ic);k++) {
+  // Determine how many cells share each vertex
+  for (int ic = 0; ic < n_cells; ic++) {
+    for(int k = 0; k < in_c2n_v(ic); k++) {
       v2n_c(in_c2v(ic,k))++;
     }
   }
 
-  int k=0;
-  int max_nc = 0;
-  for(int iv=0;iv<n_verts;iv++)
+
+  int k = 0; // keeps track of the sum of the number of cells seen up to vertex with index iv
+  int max_nc = 0; // maximum number of cells per vertex encountered
+  for(int iv = 0; iv < n_verts; iv++)
   {
-    if (v2n_c(iv)>max_nc)
+    if (v2n_c(iv) > max_nc)
       max_nc = v2n_c(iv);
 
     out_icvsta(iv) = k;
     icvsta2(iv) = k;
-    k = k+v2n_c(iv);
+    k += v2n_c(iv);
   }
 
   //cout << "Maximum number of cells who share same vertex = " << max << endl;
-  if (max_nc>max_cells_per_vert)
+  if (max_nc > max_cells_per_vert)
     FatalError("ERROR: some vertices are shared by more than max_cells_per_vert");
 
-  out_icvsta(n_verts) = out_icvsta(n_verts-1)+v2n_c(n_verts-1);
+  out_icvsta(n_verts) = out_icvsta(n_verts-1) + v2n_c(n_verts-1);
 
   int iv,ic2,k2;
-  for(int ic=0;ic<n_cells;ic++)
+  for(int ic = 0; ic < n_cells; ic++)
   {
-    for(int k=0;k<in_c2n_v(ic);k++)
+    for(int k = 0; k < in_c2n_v(ic); k++) // loop through the local vertices of cell ic
     {
-      iv = in_c2v(ic,k);
+      iv = in_c2v(ic,k); // get global vertex index local vertex k in cell ic
       out_icvert(icvsta2(iv)) = ic;
       icvsta2(iv)++;
     }
@@ -2622,42 +2622,42 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
   iface = 0;
   out_n_unmatched_faces= 0;
 
-  // Loop over all the cells
-  for(int ic=0;ic<n_cells;ic++)
+  // loop over all the cells
+  for(int ic=0;ic < n_cells;ic++)
     {
-      //Loop over all faces of that cell
-      for(int k=0;k< FlowSol->num_f_per_c(in_ctype(ic));k++)
+      //loop over all faces of that cell
+      for(int k = 0; k < FlowSol->num_f_per_c(in_ctype(ic)); k++)
         {
           found = 0;
           iface_old = iface;
           if(out_c2f(ic,k) != -1) continue; // we have counted that face already
 
-          // Get local vertices of local face k of cell ic
-          get_vlist_loc_face(in_ctype(ic),in_c2n_v(ic),k,vlist_loc,num_v_per_f);
+          // get local vertices of local face k of cell ic
+          get_vlist_loc_face(in_ctype(ic), in_c2n_v(ic), k, vlist_loc, num_v_per_f);
 
           // get global vertices corresponding to local vertices
-          for(int i=0;i<num_v_per_f;i++)
+          for(int i = 0; i < num_v_per_f; i++)
           {
-            vlist_glob(i) = in_c2v(ic,vlist_loc(i));
+            vlist_glob(i) = in_c2v(ic, vlist_loc(i));
           }
 
           // loop over the cells touching vertex vlist_glob(0)
           sta_ind = out_icvsta(vlist_glob(0));
-          end_ind = out_icvsta(vlist_glob(0)+1)-1;
+          end_ind = out_icvsta(vlist_glob(0) + 1) - 1;
 
-          for(int ind=sta_ind;ind<=end_ind;ind++)
+          for(int ind = sta_ind; ind <= end_ind; ind++)
           {
               ic2 = out_icvert(ind);
 
-              if(ic2==ic) continue; // ic2 is the same as ic1 so skip it
+              if(ic2 == ic) continue; // ic2 is the same as ic1 so skip it
 
-              // Loop over faces of cell ic2 (which touches vertex vlist_glob(0))
-              for(k2=0;k2<FlowSol->num_f_per_c(in_ctype(ic2));k2++)
+              // loop over faces of cell ic2 (which touches vertex vlist_glob(0))
+              for(k2 = 0; k2 < FlowSol->num_f_per_c(in_ctype(ic2)); k2++)
               {
-                  // Get local vertices of local face k2 of cell ic2
-                  get_vlist_loc_face(in_ctype(ic2),in_c2n_v(ic2),k2,vlist_loc2,num_v_per_f2);
+                  // get local vertices of local face k2 of cell ic2
+                  get_vlist_loc_face(in_ctype(ic2), in_c2n_v(ic2), k2, vlist_loc2, num_v_per_f2);
 
-                  if (num_v_per_f2==num_v_per_f)
+                  if (num_v_per_f2 == num_v_per_f)
                   {
                       // get global vertices corresponding to local vertices
                       for (int i2=0;i2<num_v_per_f2;i2++)
@@ -2669,26 +2669,26 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
                       // (see compare_faces for explanation of rtag)
                       compare_faces(vlist_glob,vlist_glob2,num_v_per_f,found,rtag);
 
-                      if (found==1) break;
+                      if (found == 1) break;
                   }
               }
 
-              if (found==1) break;
+              if (found == 1) break;
           }
 
-          if(found==1)
+          if(found == 1)
           {
-            out_c2f(ic,k) = iface;
+            out_c2f(ic,k) = iface; // states that local vertex k in cell ic is on face iface
             out_c2f(ic2,k2) = iface;
 
-            out_f2c(iface,0) = ic;
-            out_f2c(iface,1) = ic2;
+            out_f2c(iface,0) = ic; // states that face iface has cell ic on side 0
+            out_f2c(iface,1) = ic2; // states that face iface has cell ic2 on side 1
 
-            out_f2loc_f(iface,0) = k;
+            out_f2loc_f(iface,0) = k; //states that face iface has vertex k at end 0
             out_f2loc_f(iface,1) = k2;
 
-            for(int i=0;i<num_v_per_f;i++)
-              out_f2v(iface,i) = vlist_glob(i);
+            for(int i = 0; i < num_v_per_f; i++)
+              out_f2v(iface, i) = vlist_glob(i); // states that vertex i on face iface has global vertex number vlist_glob(i)
 
             out_f2nv(iface) = num_v_per_f;
             out_rot_tag(iface) = rtag;
@@ -2698,7 +2698,7 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
           {
               // If loops over ic2 and k2 were unsuccesful, it means that face is not shared by two cells
               // Then continue here and set f2c( ,1) = -1
-              if (out_f2c(iface_old+1,0)==-1)
+              if (out_f2c(iface_old + 1,0)==-1)
               {
                   out_f2c(iface,0) = ic;
                   out_f2c(iface,1) = -1;
@@ -2715,9 +2715,9 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
                   out_f2nv(iface) = num_v_per_f;
 
                   out_n_unmatched_faces++;
-                  out_unmatched_faces(out_n_unmatched_faces-1) = iface;
+                  out_unmatched_faces(out_n_unmatched_faces - 1) = iface;
 
-                  iface=iface_old+1;
+                  iface = iface_old + 1;
               }
           }
 
@@ -3306,14 +3306,16 @@ void get_vlist_loc_face(int& in_ctype, int& in_n_spts, int& in_face, array<int>&
 
 }
 
+
+/* Looking at a face from *inside* the cell, the nodes *must* be numbered in *CW* order
+ * (this is in agreement with Gambit; Gmsh does not care about local face numberings)
+ *
+ * The variable 'rtag' matches up the local node numbers of two overlapping faces from
+ * different cells (specifically, it is which node from face 2 matches node 0 from face 1)
+ */
 void compare_faces(array<int>& vlist1, array<int>& vlist2, int& num_v_per_f, int& found, int& rtag)
 {
-  /* Looking at a face from *inside* the cell, the nodes *must* be numbered in *CW* order
-   * (this is in agreement with Gambit; Gmsh does not care about local face numberings)
-   *
-   * The variable 'rtag' matches up the local node numbers of two overlapping faces from
-   * different cells (specifically, it is which node from face 2 matches node 0 from face 1)
-   */
+
   if(num_v_per_f==2) // edge
     {
       if ( (vlist1(0)==vlist2(0) && vlist1(1)==vlist2(1)) ||

@@ -70,8 +70,8 @@ void eles_hexas::setup_ele_type_specific()
   cout << "Initializing hexas" << endl;
 #endif
 
-  ele_type=4;
-  n_dims=3;
+  ele_type = 4;
+  n_dims = 3;
 
   if (run_input.equation==0)
     n_fields=5;
@@ -83,10 +83,9 @@ void eles_hexas::setup_ele_type_specific()
   if (run_input.turb_model==1)
     n_fields++;
 
-  n_inters_per_ele=6;
-
-  n_upts_per_ele=(order+1)*(order+1)*(order+1);
-  upts_type=run_input.upts_type_hexa;
+  n_inters_per_ele = 6;
+  n_upts_per_ele = (order+1) * (order+1) * (order+1);
+  upts_type = run_input.upts_type_hexa;
   set_loc_1d_upts();
   set_loc_upts();
   set_vandermonde();
@@ -95,8 +94,8 @@ void eles_hexas::setup_ele_type_specific()
   set_volume_cubpts();
   set_opp_volume_cubpts();
 
-  n_ppts_per_ele=p_res*p_res*p_res;
-  n_peles_per_ele=(p_res-1)*(p_res-1)*(p_res-1);
+  n_ppts_per_ele = p_res * p_res * p_res;
+  n_peles_per_ele = (p_res-1) * (p_res-1) * (p_res-1);
   n_verts_per_ele = 8;
 
   set_loc_ppts();
@@ -104,14 +103,14 @@ void eles_hexas::setup_ele_type_specific()
 
   n_fpts_per_inter.setup(6);
 
-  n_fpts_per_inter(0)=(order+1)*(order+1);
-  n_fpts_per_inter(1)=(order+1)*(order+1);
-  n_fpts_per_inter(2)=(order+1)*(order+1);
-  n_fpts_per_inter(3)=(order+1)*(order+1);
-  n_fpts_per_inter(4)=(order+1)*(order+1);
-  n_fpts_per_inter(5)=(order+1)*(order+1);
+  n_fpts_per_inter(0) = (order+1) * (order+1);
+  n_fpts_per_inter(1) = (order+1) * (order+1);
+  n_fpts_per_inter(2) = (order+1) * (order+1);
+  n_fpts_per_inter(3) = (order+1) * (order+1);
+  n_fpts_per_inter(4) = (order+1) * (order+1);
+  n_fpts_per_inter(5) = (order+1) * (order+1);
 
-  n_fpts_per_ele=n_inters_per_ele*(order+1)*(order+1);
+  n_fpts_per_ele = n_inters_per_ele * (order+1) * (order+1);
 
   set_tloc_fpts();
 
@@ -167,14 +166,14 @@ void eles_hexas::set_connectivity_plot()
   for(k=0;k<p_res-1;++k){
       for(l=0;l<p_res-1;++l){
           for(m=0;m<p_res-1;++m){
-              vertex_0=m+(p_res*l)+(p_res*p_res*k);
-              vertex_1=vertex_0+1;
-              vertex_2=vertex_0+p_res+1;
-              vertex_3=vertex_0+p_res;
-              vertex_4=vertex_0+p_res*p_res;
-              vertex_5=vertex_4+1;
-              vertex_6=vertex_4+p_res+1;
-              vertex_7=vertex_4+p_res;
+              vertex_0 = m + (p_res*l) + (p_res*p_res*k);
+              vertex_1 = vertex_0 + 1;
+              vertex_2 = vertex_0 + p_res + 1;
+              vertex_3 = vertex_0 + p_res;
+              vertex_4 = vertex_0 + p_res*p_res;
+              vertex_5 = vertex_4 + 1;
+              vertex_6 = vertex_4 + p_res + 1;
+              vertex_7 = vertex_4 + p_res;
 
               connectivity_plot(0,count) = vertex_0;
               connectivity_plot(1,count) = vertex_1;
@@ -195,25 +194,25 @@ void eles_hexas::set_connectivity_plot()
 
 void eles_hexas::set_loc_1d_upts(void)
 {
-  if(upts_type==0)
+  if(upts_type == 0)
     {
-      int get_order=order;
+      int get_order = order; // included file uses get_order to select the location of the solution points
 
       array<double> loc_1d_gauss_pts(order+1);
 
 #include "../data/loc_1d_gauss_pts.dat"
 
-      loc_1d_upts=loc_1d_gauss_pts;
+      loc_1d_upts = loc_1d_gauss_pts;
     }
-  else if(upts_type==1)
+  else if(upts_type == 1)
     {
-      int get_order=order;
+      int get_order = order;
 
       array<double> loc_1d_gauss_lobatto_pts(order+1);
 
 #include "../data/loc_1d_gauss_lobatto_pts.dat"
 
-      loc_1d_upts=loc_1d_gauss_lobatto_pts;
+      loc_1d_upts = loc_1d_gauss_lobatto_pts;
     }
   else
     {
