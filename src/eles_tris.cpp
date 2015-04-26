@@ -848,7 +848,7 @@ void eles_tris::compute_stabilization_filter() {
 
   array<double> modal_filter(n,n);
 
-  fill_stabilization_interior_filter(modal_filter, order, loc_upts, this);
+  fill_stabilization_interior_filter_tris(modal_filter, order, loc_upts, this);
 
   cout << "loc_upts = " << endl;
   loc_upts.print();
@@ -866,7 +866,7 @@ void eles_tris::compute_stabilization_filter() {
   stab_filter_interior = mult_arrays(modal_filter, inv_vandermonde);
   stab_filter_interior.print();
 
-  // normalize filter so it is conservative nodally
+  // normalize filter so it is conservative
   for (int i = 0; i < n; i++) {
       double sum = 0;
       for (int j = 0; j < n; j++)

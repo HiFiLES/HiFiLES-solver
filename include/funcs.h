@@ -135,7 +135,7 @@ void eval_poly_ic(array<double>& pos, double rho, array<double>& ics, int n_dims
 
 int factorial(int in_n);
 
-void fill_stabilization_interior_filter(array<double>& filter_matrix, int order, array<double> &loc_upts, eles_tris *element);
+void fill_stabilization_interior_filter_tris(array<double>& filter_matrix, int order, array<double> &loc_upts, eles_tris *element);
 
 /*! Functions used in evaluation of shape functions and its 1st and 2nd derivatives
 BEGIN:*/

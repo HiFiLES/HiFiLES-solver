@@ -438,7 +438,8 @@ void array<T>::print(void)
 
                   if((*this)(i,j,k)*(*this)(i,j,k)<1e-12)
                     {
-                      cout << " 0 ";
+                      cout << left << setw(13) << setprecision(6)
+                           << "0";
                     }
                   else
                     {

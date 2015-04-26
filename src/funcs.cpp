@@ -2871,7 +2871,7 @@ array <double> inv_array(array <double>& in_array)
 }
 
 // integrand used to find Local Fourier Spectral filters in 2D
-double filter_integrand_2D(double r, double s) {
+double filter_integrand_tris(double r, double s) {
     array<double> rvect(2);
     rvect(0) = r;
     rvect(1) = s;
@@ -2891,7 +2891,7 @@ double filter_integrand_2D(double r, double s) {
 }
 
 // populate the Local Fourier Spectral filter matrix in 2D for triangles
-void fill_stabilization_interior_filter(array<double>& filter_matrix, int order,
+void fill_stabilization_interior_filter_tris(array<double>& filter_matrix, int order,
                                         array<double>& loc_upts, eles_tris *element) {
   // store the local globa variables
   LOCAL_ORDER = order;
@@ -2921,7 +2921,7 @@ void fill_stabilization_interior_filter(array<double>& filter_matrix, int order,
 
           cout << "considering basis: " << LOCAL_BASIS_INDEX << endl;
 
-          quad2(filter_integrand_2D, -1, 1,
+          quad2(filter_integrand_tris, -1, 1,
                 ylower,yupper, abserr, relerr,
                 result, errest, nofun,flag);
 
