@@ -442,7 +442,8 @@ void array<T>::print(void)
                     }
                   else
                     {
-                      cout << " " << (*this)(i,j,k) << " ";
+                      cout << left << setw(13) << setprecision(6)
+                           << (*this)(i,j,k);
                     }
                 }
 
