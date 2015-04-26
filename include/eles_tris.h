@@ -112,7 +112,10 @@ public:
   double calc_h_ref_specific(int in_ele);
 
   /*! Compute stabilization filter */
-  void compute_stabilization_filter(){}
+  void compute_stabilization_filter();
+
+  /*! Definition of distance in the reference element */
+  double reference_element_norm(array<double> &rvect, array<double> &r0vect);
 
 protected:
 

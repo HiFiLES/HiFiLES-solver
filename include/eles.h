@@ -393,6 +393,9 @@ public:
   /*! evaluate second derivative of nodal shape basis */
   virtual void eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)=0;
 
+  /*! norm in the reference element for which ||x|| = 1 would draw a circle in a symmetric element */
+  virtual double reference_element_norm(array<double>& rvect, array<double>& r0vect) = 0;
+
   /*! Calculate SGS flux */
   void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf);
 
@@ -851,8 +854,8 @@ protected:
 	array<double> filter_upts;
 
 	/*! Matrices for Local Fourier Spectral (stabilization) filter */
-	array<double> stabilization_filter_interior; // filter matrix acting on the solution points upts
-	array<double> stabilization_filter_boundary; // filter matrix acting on the common interface points
+	array<double> stab_filter_interior; // filter matrix acting on the solution points upts
+	array<double> stab_filter_boundary; // filter matrix acting on the common interface points
 
 	/*! extra arrays for similarity model: Leonard tensors, velocity/energy products */
 	array<double> Lu, Le, uu, ue;

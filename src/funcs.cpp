@@ -25,7 +25,8 @@
 
 #include <iomanip>
 #include <iostream>
-#include <cmath>
+//#include <cmath>
+#include <math.h>
 
 #if defined _ACCELERATE_BLAS
 #include <Accelerate/Accelerate.h>
@@ -47,8 +48,22 @@ extern "C"
 #include "../include/array.h"
 #include "../include/cubature_1d.h"
 #include "../include/global.h"
+#include "../include/eles.h"
+#include "../include/eles_tris.h"
+#include "../include/adaptive_quadrature_2D.h"
+
 
 using namespace std;
+
+// #### local global variables ####
+static array<double> LOCAL_X0;
+static int LOCAL_BASIS_INDEX;
+static int LOCAL_ORDER;
+static eles *LOCAL_ELE_OF_INTEREST;
+
+
+static double (*SPECIFIC_ELEMENT_NORM_2D)(double, double, double, double);
+static double (*SPECIFIC_ELEMENT_BASIS_2D) (double, double, int, int);
 
 // #### global functions ####
 
@@ -2469,7 +2484,7 @@ void eval_dn_nodal_s_basis(array<double> &dd_nodal_s_basis,
 
     }
 }
-
+/*! END */
 //----------------------------------------------------------------------------
 // Linear equation solution by Gauss-Jordan elimination.
 // a(1:n,1:n) is the coefficients input matrix.
@@ -2855,5 +2870,71 @@ array <double> inv_array(array <double>& in_array)
     }
 }
 
-/*! END */
+// integrand used to find Local Fourier Spectral filters in 2D
+double filter_integrand_2D(double r, double s) {
+    array<double> rvect(2);
+    rvect(0) = r;
+    rvect(1) = s;
+
+  // define properties of the kernel function
+  double h = 10; // measure of the wavenumbers left unfiltered
+
+  double distance = LOCAL_ELE_OF_INTEREST->reference_element_norm(rvect,LOCAL_X0);
+
+  if (distance < 1e-10) distance = 1.;
+
+  double kernel_eval = h * j1(h * distance)/distance; // this function is tophat in spectral domain
+//eval_dubiner_basis_2d(r,s,i,in_order)
+  double basis_eval = eval_dubiner_basis_2d(r,s,LOCAL_BASIS_INDEX,LOCAL_ORDER);
+
+  return kernel_eval*basis_eval;
+}
+
+// populate the Local Fourier Spectral filter matrix in 2D for triangles
+void fill_stabilization_interior_filter(array<double>& filter_matrix, int order,
+                                        array<double>& loc_upts, eles_tris *element) {
+  // store the local globa variables
+  LOCAL_ORDER = order;
+  LOCAL_ELE_OF_INTEREST = element;
+  LOCAL_X0.setup(2);
+  int n = filter_matrix.get_dim(0); // assume it's a square matrix already
+
+  double abserr = 0, relerr = 1e-10;
+  double (*ylower)(double) = [] (double /* x*/) { return -1.; };
+
+  double (*yupper)(double) = [] (double x) { return -x; };
+
+  double result, errest, flag;
+  int nofun;
+  for (int i = 0; i < n; i++) {
+
+      LOCAL_X0(0) = loc_upts(0,i);
+      LOCAL_X0(1) = loc_upts(1,i);
+
+      cout << "considering points: " << endl;
+      LOCAL_X0.print();
+      cout << endl;
+
+      for (int j = 0; j < n; j++) {
+
+          LOCAL_BASIS_INDEX = j; // update basis number
+
+          cout << "considering basis: " << LOCAL_BASIS_INDEX << endl;
+
+          quad2(filter_integrand_2D, -1, 1,
+                ylower,yupper, abserr, relerr,
+                result, errest, nofun,flag);
+
+          filter_matrix(i,j) = result;
+
+          cout << "integral = " << result << endl;
+        }
+    }
+
+}
+
+
+
+
+
 

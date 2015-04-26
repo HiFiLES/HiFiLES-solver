@@ -403,6 +403,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     
     set_connectivity_plot();
   }
+
+  compute_stabilization_filter();
   
 }
 

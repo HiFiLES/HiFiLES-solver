@@ -839,3 +839,41 @@ double eles_tris::calc_h_ref_specific(int in_ele)
     return out_h_ref;
   }
 
+/*! Creates the filtering matrices for triangles:
+ * `stab_filter_interior` acts on the interior nodes and applies a spectral filter
+ * `stab_filter_boundary` filters interior nodes using information from common boundary values
+ */
+void eles_tris::compute_stabilization_filter() {
+  int n = n_upts_per_ele;
+
+  array<double> modal_filter(n,n);
+
+  fill_stabilization_interior_filter(modal_filter, order, loc_upts, this);
+
+  cout << "loc_upts = " << endl;
+  loc_upts.print();
+  cout << endl;
+  cout << "filtering matrix: " << endl;
+  cout << " number of points = " << n << endl;
+  modal_filter.print();
+  cout << "end of filtering matrix" << endl;
+  cout << "Vandermonde matrix: " << endl;
+  vandermonde.print();
+  cout << "Inv(V)" << endl;
+  inv_vandermonde.print();
+  cout << "nodal filtering matrix: " << endl;
+
+  stab_filter_interior = mult_arrays(modal_filter, inv_vandermonde);
+  stab_filter_interior.print();
+
+
+}
+
+/*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a circle in a symmetric, reference element
+ */
+double eles_tris::reference_element_norm( array<double>& rvect, array<double>& r0vect) {
+  return sqrt((rvect(0) - r0vect(0))*(rvect(0) - r0vect(0)) +
+              (rvect(1) - r0vect(1))*(rvect(1) - r0vect(1)) +
+              (rvect(0) - r0vect(0))*(rvect(1) - r0vect(1)) );
+}
+

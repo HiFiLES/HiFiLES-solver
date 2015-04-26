@@ -141,6 +141,9 @@ public:
   /*! Compute stabilization filter */
   void compute_stabilization_filter(){}
 
+  /*! Norm in reference element for which ||x|| = 1 draws a circle in symmetric element*/
+  double reference_element_norm(array<double>& rvect, array<double>& r0vect){}
+
 protected:
 
   // methods
