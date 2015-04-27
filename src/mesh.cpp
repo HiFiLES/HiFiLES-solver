@@ -30,7 +30,7 @@
 using namespace std;
 
 template <typename T>
-void displayMatrix(array<T> matrix) {
+void displayMatrix(Array<T> matrix) {
   int i,j;
   for (i=0; i<matrix.get_dim(0); i++) {
     for (j=0; j<matrix.get_dim(1); j++) {
@@ -96,7 +96,7 @@ mesh::~mesh(void)
   // not currently needed
 }
 
-void mesh::setup(struct solution *in_FlowSol,array<double> &in_xv,array<int> &in_c2v,array<int> &in_c2n_v,array<int> &in_iv2ivg,array<int> &in_ctype)
+void mesh::setup(struct solution *in_FlowSol,Array<double> &in_xv,Array<int> &in_c2v,Array<int> &in_c2n_v,Array<int> &in_iv2ivg,Array<int> &in_ctype)
 {
   FlowSol = in_FlowSol;
   n_dims = FlowSol->n_dims;
@@ -179,10 +179,10 @@ void mesh::move(int _iter, int in_rk_step, solution *FlowSol) {
 }
 
 void mesh::deform(struct solution* FlowSol) {
-  array<double> stiff_mat_ele;
+  Array<double> stiff_mat_ele;
   int failedIts = 0;
 
-  array<int> nodes; // NEW ADDITION 3/26/2014
+  Array<int> nodes; // NEW ADDITION 3/26/2014
 
   /// cout << endl << ">>>>>>>>> Beginning Mesh Deformation >>>>>>>>>" << endl;
   int pt_0,pt_1,pt_2,pt_3;
@@ -368,7 +368,7 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
 
   // Apply velocity to the eles classes at the shape points
   int local_ic;
-  array<double> vel(n_dims);
+  Array<double> vel(n_dims);
   for (int ic=0; ic<n_eles; ic++) {
     for (int j=0; j<c2n_v(ic); j++) {
       for (int idim=0; idim<n_dims; idim++) {
@@ -387,12 +387,12 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
 }
 
 /*! set individual-element stiffness matrix for a triangle */
-bool mesh::set_2D_StiffMat_ele_tri(array<double> &stiffMat_ele, int ele_id)
+bool mesh::set_2D_StiffMat_ele_tri(Array<double> &stiffMat_ele, int ele_id)
 {
   int iPoint;
   int n_spts = c2n_v(ele_id);
 
-  array<double> pos_spts;
+  Array<double> pos_spts;
   pos_spts.setup(n_spts,n_dims);
 
   for (int i=0; i<n_spts; i++) {
@@ -485,13 +485,13 @@ bool mesh::set_2D_StiffMat_ele_tri(array<double> &stiffMat_ele, int ele_id)
 }
 
 /*! set individual-element stiffness matrix for a quadrilateral */
-bool mesh::set_2D_StiffMat_ele_quad(array<double> &stiffMat_ele,int ele_id) {
+bool mesh::set_2D_StiffMat_ele_quad(Array<double> &stiffMat_ele,int ele_id) {
   FatalError("ERROR: Sorry, mesh motion on quads not yet implemented.  :( ");
 }
 
 
 // ---- **NEW** Added 3/26/14 ---- //
-void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale)
+void mesh::set_stiffmat_ele_2d(Array<double> &stiffMat_ele, int ic, double scale)
 {
   double B_Matrix[3][8], D_Matrix[3][3], Aux_Matrix[8][3];
   double Xi = 0.0, Eta = 0.0, Det, E, Lambda, Mu;
@@ -503,8 +503,8 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale
 
   // First, get the ID's & coordinates of the nodes for this element
   int nNodes = c2n_v(ic);
-  array<int> nodes(nNodes);
-  array<double> coords(nNodes,2);
+  Array<int> nodes(nNodes);
+  Array<double> coords(nNodes,2);
 
   for (int i=0; i<nNodes; i++) {
     nodes(i) = iv2ivg(c2v(ic,i));
@@ -603,7 +603,7 @@ void mesh::set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale
 
 
 // ---- **NEW** Added 3/26/14 ---- //
-void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale)
+void mesh::set_stiffmat_ele_3d(Array<double> &stiffMat_ele, int ic, double scale)
 {
   double B_Matrix[6][24], D_Matrix[6][6], Aux_Matrix[24][6];
   double Xi = 0.0, Eta = 0.0, Mu = 0.0, Det, E, Lambda, Nu, Avg_Wall_Dist;
@@ -615,7 +615,7 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale
 
   // First, get the ID's & coordinates of the nodes for this element
   int nNodes = c2n_v(ic);
-  array<int> nodes(nNodes);
+  Array<int> nodes(nNodes);
 
   for (int i=0; i<nNodes; i++) {
     nodes(i) = iv2ivg(c2v(ic,i));
@@ -754,7 +754,7 @@ void mesh::set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale
 }
 
 // ---- **NEW** 3/26/14
-void mesh::add_FEA_stiffMat(array<double> &stiffMat_ele, array<int> &PointCorners) {
+void mesh::add_FEA_stiffMat(Array<double> &stiffMat_ele, Array<int> &PointCorners) {
   unsigned short iVar, jVar, iDim, jDim;
   unsigned short nVar = (unsigned short)n_dims;
   unsigned short nNodes = (unsigned short)PointCorners.get_dim(0);
@@ -1227,7 +1227,7 @@ double mesh::ShapeFunc_Wedge(double Xi, double Eta, double Mu, double CoordCorne
  * Transform element-defined stiffness matrix into node-base stiffness matrix for inclusion
  * into global stiffness matrix 'StiffMatrix'
  */
-void mesh::add_StiffMat_EleTri(array<double> StiffMatrix_Elem, int id_pt_0,
+void mesh::add_StiffMat_EleTri(Array<double> StiffMatrix_Elem, int id_pt_0,
                                int id_pt_1, int id_pt_2) {
   unsigned short nVar = n_dims;
 
@@ -1236,7 +1236,7 @@ void mesh::add_StiffMat_EleTri(array<double> StiffMatrix_Elem, int id_pt_0,
   id_pt_1 = iv2ivg(id_pt_1);
   id_pt_2 = iv2ivg(id_pt_1);
 
-  array<double> StiffMatrix_Node;
+  Array<double> StiffMatrix_Node;
   StiffMatrix_Node.setup(nVar,nVar);
   StiffMatrix_Node.initialize_to_zero();
 
@@ -1279,7 +1279,7 @@ void mesh::add_StiffMat_EleTri(array<double> StiffMatrix_Elem, int id_pt_0,
   StiffnessMatrix.AddBlock(id_pt_2, id_pt_2, StiffMatrix_Node);
 }
 
-void mesh::add_StiffMat_EleQuad(array<double> StiffMatrix_Elem, int id_pt_0,
+void mesh::add_StiffMat_EleQuad(Array<double> StiffMatrix_Elem, int id_pt_0,
                                 int id_pt_1, int id_pt_2, int id_pt_3)
 {
   FatalError("ERROR: Mesh motion not setup on quads yet  :( ");
@@ -1297,7 +1297,7 @@ void mesh::update(solution* FlowSol)
   //if (FlowSol->rank==0) cout << "Deform: updating element shape points" << endl;
 
   int ele_type, local_id;
-  array<double> pos(n_dims);
+  Array<double> pos(n_dims);
 
   for (int ic=0; ic<n_eles; ic++) {
     ele_type = ctype(ic);
@@ -1455,7 +1455,7 @@ void mesh::write_mesh_gmsh(double sim_time)
   //cout << "SIZE(e2v): " << e2v.get_dim(0) << "," << e2v.get_dim(1) << endl;
   //cout << "N_FACES: " << n_faces << endl;
   /* write non-interior 'elements' (boundary faces) */
-  /** ONLY FOR 2D CURRENTLY -- To fix, add array<array<int>> boundFaces to mesh class
+  /** ONLY FOR 2D CURRENTLY -- To fix, add Array<Array<int>> boundFaces to mesh class
       * (same as boundPts, but for faces) - since since faces, not edges, needed for 3D */
   // also, only for linear edges currently [Gmsh: 1==linear edge, 8==quadtratic edge]
   /*int faceid = n_cells_global + 1;
@@ -1637,7 +1637,7 @@ void mesh::set_boundary_displacements(solution *FlowSol)
         }
     }*/
 
-  array<double> VarCoord(n_dims);
+  Array<double> VarCoord(n_dims);
   /*VarCoord(0) = run_input.bound_vel_simple(0)(0)*run_input.dt;
   VarCoord(1) = run_input.bound_vel_simple(0)(1)*run_input.dt;*/
   VarCoord(0) = 0;

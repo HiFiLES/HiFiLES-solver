@@ -46,7 +46,7 @@ extern "C"
 #include "../include/global.h"
 #include "../include/eles.h"
 #include "../include/eles_tets.h"
-#include "../include/array.h"
+#include "../include/Array.h"
 #include "../include/funcs.h"
 #include "../include/error.h"
 #include "../include/cubature_tri.h"
@@ -237,7 +237,7 @@ void eles_tets::set_loc_upts(void)
 
   if (upts_type==0) // internal points (good quadrature points)
     {
-      array<double> loc_inter_pts(n_upts_per_ele,3);
+      Array<double> loc_inter_pts(n_upts_per_ele,3);
 #include "../data/loc_tet_inter_pts.dat"
 
       for (int i=0;i<n_upts_per_ele;i++)
@@ -250,7 +250,7 @@ void eles_tets::set_loc_upts(void)
     }
   else if (upts_type==1) // alpha optimized
     {
-      array<double> loc_alpha_pts(n_upts_per_ele,3);
+      Array<double> loc_alpha_pts(n_upts_per_ele,3);
 #include "../data/loc_tet_alpha_pts.dat"
 
       for (int i=0;i<n_upts_per_ele;i++)
@@ -277,17 +277,17 @@ void eles_tets::set_tloc_fpts(void)
   int get_order=order;
   tloc_fpts.setup(n_dims,n_fpts_per_ele);
 
-  array<double> loc_tri_fpts(n_fpts_per_inter(0),2);
+  Array<double> loc_tri_fpts(n_fpts_per_inter(0),2);
 
   if (fpts_type==0) // internal points
     {
-      array<double> loc_inter_pts(n_fpts_per_inter(0),2);
+      Array<double> loc_inter_pts(n_fpts_per_inter(0),2);
 #include "../data/loc_tri_inter_pts.dat"
       loc_tri_fpts = loc_inter_pts;
     }
   else if(fpts_type==1) // alpha optimized
     {
-      array<double> loc_alpha_pts(n_fpts_per_inter(0),2);
+      Array<double> loc_alpha_pts(n_fpts_per_inter(0),2);
 #include "../data/loc_tri_alpha_pts.dat"
       loc_tri_fpts = loc_alpha_pts;
     }
@@ -450,7 +450,7 @@ void eles_tets::set_volume_cubpts(void)
 
 
 // Compute the surface jacobian determinant on a face
-double eles_tets::compute_inter_detjac_inters_cubpts(int in_inter,array<double> d_pos)
+double eles_tets::compute_inter_detjac_inters_cubpts(int in_inter,Array<double> d_pos)
 {
 
   double output = 0.;
@@ -628,9 +628,9 @@ void eles_tets::compute_filter_upts(void)
   double dlt, k_c, sum, vol, norm;
   N = n_upts_per_ele;
 
-  array<double> X(n_dims,N);
-  array<double> beta(N,N);
-  array<double> B(N);
+  Array<double> X(n_dims,N);
+  Array<double> beta(N,N);
+  Array<double> B(N);
 
   filter_upts.setup(N,N);
 
@@ -729,7 +729,7 @@ void eles_tets::set_vandermonde(void)
       vandermonde(i,j) = eval_dubiner_basis_3d(loc_upts(0,i),loc_upts(1,i),loc_upts(2,i),j,order);
 
   // Store its inverse
-  inv_vandermonde = inv_array(vandermonde);
+  inv_vandermonde = inv_Array(vandermonde);
 }
 
 // initialize the vandermonde matrix
@@ -743,7 +743,7 @@ void eles_tets::set_vandermonde_restart()
       vandermonde(i,j) = eval_dubiner_basis_3d(loc_upts_rest(0,i),loc_upts_rest(1,i),loc_upts_rest(2,i),j,order_rest);
 
   // Store its inverse
-  inv_vandermonde_rest = inv_array(vandermonde);
+  inv_vandermonde_rest = inv_Array(vandermonde);
 }
 
 int eles_tets::read_restart_info(ifstream& restart_file)
@@ -802,9 +802,9 @@ void eles_tets::write_restart_info(ofstream& restart_file)
 
 // evaluate nodal basis
 
-double eles_tets::eval_nodal_basis(int in_index, array<double> in_loc)
+double eles_tets::eval_nodal_basis(int in_index, Array<double> in_loc)
 {
-  array<double> dubiner_basis_at_loc(n_upts_per_ele);
+  Array<double> dubiner_basis_at_loc(n_upts_per_ele);
   double out_nodal_basis_at_loc;
 
   // First evaluate the normalized Dubiner basis at position in_loc
@@ -821,9 +821,9 @@ double eles_tets::eval_nodal_basis(int in_index, array<double> in_loc)
 
 // evaluate nodal basis
 
-double eles_tets::eval_nodal_basis_restart(int in_index, array<double> in_loc)
+double eles_tets::eval_nodal_basis_restart(int in_index, Array<double> in_loc)
 {
-  array<double> dubiner_basis_at_loc(n_upts_per_ele_rest);
+  Array<double> dubiner_basis_at_loc(n_upts_per_ele_rest);
   double out_nodal_basis_at_loc;
 
   // First evaluate the normalized Dubiner basis at position in_loc
@@ -840,9 +840,9 @@ double eles_tets::eval_nodal_basis_restart(int in_index, array<double> in_loc)
 
 // evaluate derivative of nodal basis
 
-double eles_tets::eval_d_nodal_basis(int in_index, int in_cpnt, array<double> in_loc)
+double eles_tets::eval_d_nodal_basis(int in_index, int in_cpnt, Array<double> in_loc)
 {
-  array<double> d_dubiner_basis_at_loc(n_upts_per_ele);
+  Array<double> d_dubiner_basis_at_loc(n_upts_per_ele);
   double out_d_nodal_basis_at_loc;
 
   // First evaluate the derivative normalized Dubiner basis at position in_loc
@@ -859,7 +859,7 @@ double eles_tets::eval_d_nodal_basis(int in_index, int in_cpnt, array<double> in
 
 // evaluate nodal shape basis
 
-double eles_tets::eval_nodal_s_basis(int in_index, array<double> in_loc, int in_n_spts)
+double eles_tets::eval_nodal_s_basis(int in_index, Array<double> in_loc, int in_n_spts)
 {
   double nodal_s_basis;
 
@@ -906,7 +906,7 @@ double eles_tets::eval_nodal_s_basis(int in_index, array<double> in_loc, int in_
 
 // evaluate derivative of nodal shape basis
 
-void eles_tets::eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<double> in_loc, int in_n_spts)
+void eles_tets::eval_d_nodal_s_basis(Array<double> &d_nodal_s_basis, Array<double> in_loc, int in_n_spts)
 {
 
   if (in_n_spts==4) {
@@ -971,7 +971,7 @@ void eles_tets::eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<doubl
 
 // evaluate second derivative of nodal shape basis
 
-void eles_tets::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)
+void eles_tets::eval_dd_nodal_s_basis(Array<double> &dd_nodal_s_basis, Array<double> in_loc, int in_n_spts)
 {
 
   if (in_n_spts==4)
@@ -1055,12 +1055,12 @@ void eles_tets::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<dou
 
 }
 
-void eles_tets::fill_opp_3(array<double>& opp_3)
+void eles_tets::fill_opp_3(Array<double>& opp_3)
 {
 
-  array <double> Filt(n_upts_per_ele,n_upts_per_ele);
-  array <double> opp_3_dg(n_upts_per_ele, n_fpts_per_ele);
-  array <double> m_temp(n_upts_per_ele, n_fpts_per_ele);
+  Array <double> Filt(n_upts_per_ele,n_upts_per_ele);
+  Array <double> opp_3_dg(n_upts_per_ele, n_fpts_per_ele);
+  Array <double> m_temp(n_upts_per_ele, n_fpts_per_ele);
 
   compute_filt_matrix_tet(Filt,run_input.vcjh_scheme_tet, run_input.c_tet);
 
@@ -1070,19 +1070,19 @@ void eles_tets::fill_opp_3(array<double>& opp_3)
   //opp_3_dg.print();
   //cout << endl;
 
-  m_temp = mult_arrays(Filt,opp_3_dg);
+  m_temp = mult_Arrays(Filt,opp_3_dg);
 
   //cout << "opp_3_vcjh" << endl;
   //m_temp.print();
   //cout << endl;
-  opp_3 = array<double>(m_temp);
+  opp_3 = Array<double>(m_temp);
 }
 
 
-void eles_tets::get_opp_3_dg_tet(array<double>& opp_3_dg)
+void eles_tets::get_opp_3_dg_tet(Array<double>& opp_3_dg)
 {
   int i,j,k;
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
 
   for(i=0;i<n_fpts_per_ele;i++)
     {
@@ -1101,7 +1101,7 @@ void eles_tets::get_opp_3_dg_tet(array<double>& opp_3_dg)
 
 // evaluate divergence of dg basis
 
-double eles_tets::eval_div_dg_tet(int in_index, array<double>& loc)
+double eles_tets::eval_div_dg_tet(int in_index, Array<double>& loc)
 {
   int face, face_fpt;
   double r,s,t;
@@ -1109,10 +1109,10 @@ double eles_tets::eval_div_dg_tet(int in_index, array<double>& loc)
   double integral, edge_length, gdotn_at_cubpt;
   double div_vcjh_basis;
 
-  array<double> mtemp_0(n_fpts_per_inter(0),n_fpts_per_inter(0));
-  array<double> gdotn(n_fpts_per_inter(0),1);
-  array<double> coeff_gdotn(n_fpts_per_inter(0),1);
-  array<double> coeff_divg(n_upts_per_ele,1);
+  Array<double> mtemp_0(n_fpts_per_inter(0),n_fpts_per_inter(0));
+  Array<double> gdotn(n_fpts_per_inter(0),1);
+  Array<double> coeff_gdotn(n_fpts_per_inter(0),1);
+  Array<double> coeff_divg(n_upts_per_ele,1);
 
   face = in_index/n_fpts_per_inter(0);
   face_fpt = in_index-(n_fpts_per_inter(0)*face);
@@ -1155,8 +1155,8 @@ double eles_tets::eval_div_dg_tet(int in_index, array<double>& loc)
         mtemp_0(i,j) = eval_dubiner_basis_2d(r_face,s_face,j,order);
     }
 
-  mtemp_0 = inv_array(mtemp_0);
-  coeff_gdotn = mult_arrays(mtemp_0,gdotn);
+  mtemp_0 = inv_Array(mtemp_0);
+  coeff_gdotn = mult_Arrays(mtemp_0,gdotn);
 
   if (isnan(coeff_gdotn(0,0)))
     exit(1);
@@ -1216,7 +1216,7 @@ double eles_tets::eval_div_dg_tet(int in_index, array<double>& loc)
 }
 
 
-void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet, double c_tet)
+void eles_tets::compute_filt_matrix_tet(Array<double>& Filt, int vcjh_scheme_tet, double c_tet)
 {
 
   // -----------------
@@ -1229,22 +1229,22 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
 
   Ncoeff = (order+1)*(order+2)/2;
 
-  array <double> c_coeff(Ncoeff);
-  array <double> mtemp_0, mtemp_1;
-  array <double> K(n_upts_per_ele,n_upts_per_ele);
-  array <double> Identity(n_upts_per_ele,n_upts_per_ele);
-  array <double> Filt_dubiner(n_upts_per_ele,n_upts_per_ele);
-  array <double> Dr(n_upts_per_ele,n_upts_per_ele);
-  array <double> Ds(n_upts_per_ele,n_upts_per_ele);
-  array <double> Dt(n_upts_per_ele,n_upts_per_ele);
-  array <double> tempr(n_upts_per_ele,n_upts_per_ele);
-  array <double> temps(n_upts_per_ele,n_upts_per_ele);
-  array <double> tempt(n_upts_per_ele,n_upts_per_ele);
-  array <double> D_high_order_trans(n_upts_per_ele,n_upts_per_ele);
-  array <double> vandermonde_trans(n_upts_per_ele,n_upts_per_ele);
+  Array <double> c_coeff(Ncoeff);
+  Array <double> mtemp_0, mtemp_1;
+  Array <double> K(n_upts_per_ele,n_upts_per_ele);
+  Array <double> Identity(n_upts_per_ele,n_upts_per_ele);
+  Array <double> Filt_dubiner(n_upts_per_ele,n_upts_per_ele);
+  Array <double> Dr(n_upts_per_ele,n_upts_per_ele);
+  Array <double> Ds(n_upts_per_ele,n_upts_per_ele);
+  Array <double> Dt(n_upts_per_ele,n_upts_per_ele);
+  Array <double> tempr(n_upts_per_ele,n_upts_per_ele);
+  Array <double> temps(n_upts_per_ele,n_upts_per_ele);
+  Array <double> tempt(n_upts_per_ele,n_upts_per_ele);
+  Array <double> D_high_order_trans(n_upts_per_ele,n_upts_per_ele);
+  Array <double> vandermonde_trans(n_upts_per_ele,n_upts_per_ele);
 
-  array<array <double> > D_high_order;
-  array<array <double> > D_T_D;
+  Array<Array <double> > D_high_order;
+  Array<Array <double> > D_T_D;
 
   // 1D prep
   ap = 1./pow(2.0,order)*factorial(2*order)/ (factorial(order)*factorial(order));
@@ -1317,9 +1317,9 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
     }
 
   //Convert to nodal derivatives
-  Dr = mult_arrays(tempr,inv_vandermonde);
-  Ds = mult_arrays(temps,inv_vandermonde);
-  Dt = mult_arrays(tempt,inv_vandermonde);
+  Dr = mult_Arrays(tempr,inv_vandermonde);
+  Ds = mult_Arrays(temps,inv_vandermonde);
+  Dt = mult_Arrays(tempt,inv_vandermonde);
 
   //cout << "Dr nodal" << endl;
   //Dr.print();
@@ -1343,12 +1343,12 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
   //cout << endl;
 
   //Create identity matrix
-  zero_array(Identity);
+  zero_Array(Identity);
 
   for (int i=0;i<n_upts_per_ele;i++)
     Identity(i,i) = 1.;
 
-  // Set array with trinomial coefficients multiplied by value of c
+  // Set Array with trinomial coefficients multiplied by value of c
   indx = 0;
   for(int v=1; v<=(order+1); v++) {
       for(int w=1; w<=v; w++) {
@@ -1359,7 +1359,7 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
     }
 
   // Initialize K to zero
-  zero_array(K);
+  zero_Array(K);
 
   // Compute D_transpose*D
   D_high_order.setup(Ncoeff);
@@ -1370,17 +1370,17 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
     {
       for(int w=1; w<=v; w++)
         {
-          D_high_order(indx) = array<double>(Identity);
+          D_high_order(indx) = Array<double>(Identity);
 
           for (int i=1; i<=(order-v+1); i++)
-            D_high_order(indx) = mult_arrays(D_high_order(indx),Dr);
+            D_high_order(indx) = mult_Arrays(D_high_order(indx),Dr);
           for (int i=1; i<=(v-w); i++)
-            D_high_order(indx) = mult_arrays(D_high_order(indx),Ds);
+            D_high_order(indx) = mult_Arrays(D_high_order(indx),Ds);
           for (int i=1; i<=(w-1); i++)
-            D_high_order(indx) = mult_arrays(D_high_order(indx),Dt);
+            D_high_order(indx) = mult_Arrays(D_high_order(indx),Dt);
 
-          D_high_order_trans = transpose_array(D_high_order(indx));
-          D_T_D(indx) = mult_arrays(D_high_order_trans,D_high_order(indx));
+          D_high_order_trans = transpose_Array(D_high_order(indx));
+          D_T_D(indx) = mult_Arrays(D_high_order_trans,D_high_order(indx));
 
           //cout << "indx=" << indx << endl;
           //(D_high_order(indx)*vandermonde).print();
@@ -1402,20 +1402,20 @@ void eles_tets::compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet
     }
 
   //mass matrix
-  vandermonde_trans = transpose_array(vandermonde);
-  mtemp_0 = mult_arrays(vandermonde,vandermonde_trans);
+  vandermonde_trans = transpose_Array(vandermonde);
+  mtemp_0 = mult_Arrays(vandermonde,vandermonde_trans);
 
   //filter
-  mtemp_1 = array<double>(mtemp_0);
-  mtemp_1 = mult_arrays(mtemp_1,K);
+  mtemp_1 = Array<double>(mtemp_0);
+  mtemp_1 = mult_Arrays(mtemp_1,K);
 
   for (int i=0;i<n_upts_per_ele;i++)
     for (int j=0;j<n_upts_per_ele;j++)
       mtemp_1(i,j) += Identity(i,j);
 
-  Filt = inv_array(mtemp_1);
-  Filt_dubiner = mult_arrays(inv_vandermonde,Filt);
-  Filt_dubiner = mult_arrays(Filt_dubiner,vandermonde);
+  Filt = inv_Array(mtemp_1);
+  Filt_dubiner = mult_Arrays(inv_vandermonde,Filt);
+  Filt_dubiner = mult_Arrays(Filt_dubiner,vandermonde);
 
   //cout << "Filt" << endl;
   //Filt.print();

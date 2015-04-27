@@ -24,7 +24,7 @@
  */
 
 #include "../include/global.h"
-#include "../include/array.h"
+#include "../include/Array.h"
 #include <math.h>
 
 using namespace std;

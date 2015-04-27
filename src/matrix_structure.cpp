@@ -67,7 +67,7 @@ CSysMatrix::~CSysMatrix(void) {
     LineletPoint      = NULL;
 }
 
-void CSysMatrix::Initialize(int n_verts, int n_verts_global, int n_var, int n_eqns, array<array<int> > &v2e, array<int> &v2n_e, array<int> &e2v) {
+void CSysMatrix::Initialize(int n_verts, int n_verts_global, int n_var, int n_eqns, Array<Array<int> > &v2e, Array<int> &v2n_e, Array<int> &e2v) {
 	unsigned long iPoint, *row_ptr, *col_ind, *vneighs, index, nnz;
     unsigned short iNeigh, nNeigh, Max_nNeigh, iEdge;
 
@@ -204,7 +204,7 @@ void CSysMatrix::AddBlock(unsigned long block_i, unsigned long block_j, double *
 	}
 }
 
-void CSysMatrix::AddBlock(unsigned long block_i, unsigned long block_j, array<double> val_block) {
+void CSysMatrix::AddBlock(unsigned long block_i, unsigned long block_j, Array<double> val_block) {
 	unsigned long iVar, jVar, index, step = 0;
 	
 	for (index = row_ptr[block_i]; index < row_ptr[block_i+1]; index++) {

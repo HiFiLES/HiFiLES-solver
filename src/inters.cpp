@@ -27,7 +27,7 @@
 #include <cmath>
 
 #include "../include/global.h"
-#include "../include/array.h"
+#include "../include/Array.h"
 #include "../include/inters.h"
 #include "../include/geometry.h"
 #include "../include/solver.h"
@@ -296,7 +296,7 @@ void inters::get_lut(int in_rot_tag)
 }
 
 // Rusanov inviscid numerical flux
-void inters::right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma)
+void inters::right_flux(Array<double> &f_r, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields, double gamma)
 {
   // calculate normal flux from discontinuous solution at flux points
   for(int k=0;k<n_fields;k++) {
@@ -308,10 +308,10 @@ void inters::right_flux(array<double> &f_r, array<double> &norm, array<double> &
 }
 
 // Rusanov inviscid numerical flux
-void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma)
+void inters::rusanov_flux(Array<double> &u_l, Array<double> &u_r, Array<double> &v_g, Array<double> &f_l, Array<double> &f_r, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields, double gamma)
 {
   double vx_l,vy_l,vx_r,vy_r,vz_l,vz_r,vn_l,vn_r,p_l,p_r,vn_g,vn_av_mag,c_av,eig;
-  array<double> fn_l(n_fields),fn_r(n_fields);
+  Array<double> fn_l(n_fields),fn_r(n_fields);
 
   // calculate normal flux from discontinuous solution at flux points
   for(int k=0;k<n_fields;k++) {
@@ -365,9 +365,9 @@ void inters::rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> 
 }
 
 // Central-difference inviscid numerical flux at the boundaries
-void inters::convective_flux_boundary( array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields)
+void inters::convective_flux_boundary( Array<double> &f_l, Array<double> &f_r, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields)
 {
-  array<double> fn_l(n_fields),fn_r(n_fields);
+  Array<double> fn_l(n_fields),fn_r(n_fields);
 
   // calculate normal flux from total discontinuous flux at flux points
   for(int k=0;k<n_fields;k++) {
@@ -387,7 +387,7 @@ void inters::convective_flux_boundary( array<double> &f_l, array<double> &f_r, a
 }
 
 // Roe inviscid numerical flux
-void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma)
+void inters::roe_flux(Array<double> &u_l, Array<double> &u_r, Array<double> &v_g, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields, double gamma)
 {
   double p_l,p_r;
   double h_l, h_r;
@@ -395,7 +395,7 @@ void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g
   double lambda0,lambdaP,lambdaM;
   double rhoun_l, rhoun_r,eps;
   double a1,a2,a3,a4,a5,a6,aL1,bL1;
-  //array<double> um(n_dims);
+  //Array<double> um(n_dims);
 
   // velocities
   for (int i=0;i<n_dims;i++)  {
@@ -521,7 +521,7 @@ void inters::roe_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g
 
 
 // Rusanov inviscid numerical flux
-void inters::lax_friedrich(array<double> &u_l, array<double> &u_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double lambda, array<double>& wave_speed)
+void inters::lax_friedrich(Array<double> &u_l, Array<double> &u_r, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields, double lambda, Array<double>& wave_speed)
 {
 
   double u_av;
@@ -547,9 +547,9 @@ void inters::lax_friedrich(array<double> &u_l, array<double> &u_r, array<double>
 
 
 // LDG viscous numerical flux
-void inters::ldg_flux(int flux_spec, array<double> &u_l, array<double> &u_r, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double tau, double pen_fact)
+void inters::ldg_flux(int flux_spec, Array<double> &u_l, Array<double> &u_r, Array<double> &f_l, Array<double> &f_r, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields, double tau, double pen_fact)
 {
-  array<double> f_c(n_fields,n_dims);
+  Array<double> f_c(n_fields,n_dims);
   double norm_x, norm_y, norm_z;
 
   if(n_dims==2) // needs to be reviewed and understood
@@ -642,7 +642,7 @@ void inters::ldg_flux(int flux_spec, array<double> &u_l, array<double> &u_r, arr
 
 
 // LDG common solution
-void inters::ldg_solution(int flux_spec, array<double> &u_l, array<double> &u_r, array<double> &u_c, double pen_fact, array<double>& norm)
+void inters::ldg_solution(int flux_spec, Array<double> &u_l, Array<double> &u_r, Array<double> &u_c, double pen_fact, Array<double>& norm)
 {
 
   if(flux_spec == 0) // Interior and mpi

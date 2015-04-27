@@ -31,7 +31,7 @@
 #include <cstdlib>
 
 #include "../include/input.h"
-#include "../include/array.h"
+#include "../include/Array.h"
 #include "../include/funcs.h"
 #include "../include/global.h"
 

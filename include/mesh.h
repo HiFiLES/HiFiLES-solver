@@ -24,7 +24,7 @@
 #include "global.h"
 #include "input.h"
 #include "error.h"
-#include "array.h"
+#include "Array.h"
 #include "eles.h"
 #include "solution.h"
 #include "funcs.h"
@@ -78,7 +78,7 @@ public:
   void update(solution *FlowSol);
 
   /** setup information for boundary motion */
-  //void setup_boundaries(array<int> bctype);
+  //void setup_boundaries(Array<int> bctype);
 
   /** write out mesh to file */
   void write_mesh(int mesh_type, double sim_time);
@@ -96,28 +96,28 @@ public:
   int n_eles, n_verts, n_dims, n_verts_global, n_cells_global;
   int iter;
 
-  /** arrays which define the basic mesh geometry */
-  array<double> xv_0;//, xv;
-  array< array<double> > xv;
-  array<int> c2v,c2n_v,ctype,bctype_c,ic2icg,iv2ivg,ic2loc_c,
+  /** Arrays which define the basic mesh geometry */
+  Array<double> xv_0;//, xv;
+  Array< Array<double> > xv;
+  Array<int> c2v,c2n_v,ctype,bctype_c,ic2icg,iv2ivg,ic2loc_c,
   f2c,f2loc_f,c2f,c2e,f2v,f2n_v,e2v,v2n_e;
-  array<array<int> > v2e;
+  Array<Array<int> > v2e;
 
   /** #### Boundary information #### */
 
   int n_bnds, n_faces;
-  array<int> nBndPts;
-  array<int> v2bc;
+  Array<int> nBndPts;
+  Array<int> v2bc;
 
   /** vertex id = boundpts(bc_id)(ivert) */
-  array<array<int> > boundPts;
+  Array<Array<int> > boundPts;
 
   /** Store motion flag for each boundary
      (currently 0=fixed, 1=moving, -1=volume) */
-  array<int> bound_flags;
+  Array<int> bound_flags;
 
   /** HiFiLES 'bcflag' for each boundary */
-  array<int> bc_list;
+  Array<int> bc_list;
 
   /** replacing get_bc_name() from geometry.cpp */
   map<string,int> bc_name;
@@ -127,15 +127,15 @@ public:
 
   // nBndPts.setup(n_bnds); boundPts.setup(nBnds,nPtsPerBnd);
 
-  array<double> vel_old,vel_new, xv_new;
+  Array<double> vel_old,vel_new, xv_new;
 
-  array< array<double> > grid_vel;
+  Array< Array<double> > grid_vel;
 
-  void setup(solution *in_FlowSol, array<double> &in_xv, array<int> &in_c2v, array<int> &in_c2n_v, array<int> &in_iv2ivg, array<int> &in_ctype);
+  void setup(solution *in_FlowSol, Array<double> &in_xv, Array<int> &in_c2v, Array<int> &in_c2n_v, Array<int> &in_iv2ivg, Array<int> &in_ctype);
 
 private:
   bool start;
-  array<double> xv_nm1, xv_nm2, xv_nm3;//, xv_new, vel_old, vel_new;
+  Array<double> xv_nm1, xv_nm2, xv_nm3;//, xv_new, vel_old, vel_new;
 
   /** Global stiffness matrix for linear elasticity solution */
   CSysMatrix StiffnessMatrix;
@@ -146,7 +146,7 @@ private:
   struct solution *FlowSol;
 
   /** global stiffness psuedo-matrix for linear-elasticity mesh motion */
-  array<array<double> > stiff_mat;
+  Array<Array<double> > stiff_mat;
 
   unsigned long LinSolIters;
   int failedIts;
@@ -155,29 +155,29 @@ private:
   int rk_step;
 
   // Coefficients for LS-RK45 time-stepping
-  array<double> RK_a, RK_b, RK_c;
+  Array<double> RK_a, RK_b, RK_c;
 
   /** create individual-element stiffness matrix - triangles */
-  bool set_2D_StiffMat_ele_tri(array<double> &stiffMat_ele,int ele_id);
+  bool set_2D_StiffMat_ele_tri(Array<double> &stiffMat_ele,int ele_id);
 
   /** create individual-element stiffness matrix - quadrilaterals */
-  bool set_2D_StiffMat_ele_quad(array<double> &stiffMat_ele,int ele_id);
+  bool set_2D_StiffMat_ele_quad(Array<double> &stiffMat_ele,int ele_id);
 
   /** create individual-element stiffness matrix - tetrahedrons */
-  //bool set_2D_StiffMat_ele_tet(array<double> &stiffMat_ele,int ele_id, solution *FlowSol);
+  //bool set_2D_StiffMat_ele_tet(Array<double> &stiffMat_ele,int ele_id, solution *FlowSol);
 
   /** create individual-element stiffness matrix - hexahedrons */
-  //bool set_2D_StiffMat_ele_hex(array<double> &stiffMat_ele,int ele_id, solution *FlowSol);
+  //bool set_2D_StiffMat_ele_hex(Array<double> &stiffMat_ele,int ele_id, solution *FlowSol);
 
   /**
      * transfrom single-element stiffness matrix to nodal contributions in order to
      * add to global stiffness matrix
      */
-  void add_StiffMat_EleTri(array<double> StiffMatrix_Elem, int id_pt_0,
+  void add_StiffMat_EleTri(Array<double> StiffMatrix_Elem, int id_pt_0,
                            int id_pt_1, int id_pt_2);
 
 
-  void add_StiffMat_EleQuad(array<double> StiffMatrix_Elem, int id_pt_0,
+  void add_StiffMat_EleQuad(Array<double> StiffMatrix_Elem, int id_pt_0,
                             int id_pt_1, int id_pt_2, int id_pt_3);
 
   /** Set given/known displacements of vertices on moving boundaries in linear system */
@@ -204,7 +204,7 @@ private:
    * \param[in] StiffMatrix_Elem - Element stiffness matrix to be filled.
    * \param[in] PointCornders - Element vertex ID's
    */
-  void add_FEA_stiffMat(array<double> &stiffMat_ele, array<int> &PointCorners);
+  void add_FEA_stiffMat(Array<double> &stiffMat_ele, Array<int> &PointCorners);
 
   /*!
    * \brief Build the stiffness matrix for a 3-D hexahedron element. The result will be placed in StiffMatrix_Elem.
@@ -212,7 +212,7 @@ private:
    * \param[in] StiffMatrix_Elem - Element stiffness matrix to be filled.
    * \param[in] CoordCorners[8][3] - Index value for Node 1 of the current hexahedron.
    */
-  void set_stiffmat_ele_3d(array<double> &stiffMat_ele, int ic, double scale);
+  void set_stiffmat_ele_3d(Array<double> &stiffMat_ele, int ic, double scale);
 
   /*!
    * \brief Build the stiffness matrix for a 3-D hexahedron element. The result will be placed in StiffMatrix_Elem.
@@ -220,7 +220,7 @@ private:
    * \param[in] StiffMatrix_Elem - Element stiffness matrix to be filled.
    * \param[in] CoordCorners[8][3] - Index value for Node 1 of the current hexahedron.
    */
-  void set_stiffmat_ele_2d(array<double> &stiffMat_ele, int ic, double scale);
+  void set_stiffmat_ele_2d(Array<double> &stiffMat_ele, int ic, double scale);
 
   /*!
    * \brief Shape functions and derivative of the shape functions

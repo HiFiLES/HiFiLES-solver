@@ -30,7 +30,7 @@
 #include <algorithm>
 
 #include "linear_solvers_structure.hpp"
-#include "array.h"
+#include "Array.h"
 #include "solution.h"
 
 using namespace std;
@@ -52,10 +52,10 @@ private:
 	unsigned long *row_ptr;    /*!< \brief Pointers to the first element in each row. */
 	unsigned long *col_ind;    /*!< \brief Column index for each of the elements in val(). */
 	unsigned long nnz;         /*!< \brief Number of possible nonzero entries in the matrix. */
-	double *block;             /*!< \brief Internal array to store a subblock of the matrix. */
-	double *prod_block_vector; /*!< \brief Internal array to store the product of a subblock with a vector. */
-	double *prod_row_vector;   /*!< \brief Internal array to store the product of a matrix-by-blocks "row" with a vector. */
-	double *aux_vector;		   /*!< \brief Auxilar array to store intermediate results. */
+	double *block;             /*!< \brief Internal Array to store a subblock of the matrix. */
+	double *prod_block_vector; /*!< \brief Internal Array to store the product of a subblock with a vector. */
+	double *prod_row_vector;   /*!< \brief Internal Array to store the product of a matrix-by-blocks "row" with a vector. */
+	double *aux_vector;		   /*!< \brief Auxilar Array to store intermediate results. */
 	double *invM;              /*!< \brief Inverse of (Jacobi) preconditioner. */
 	bool *LineletBool;						 /*!< \brief Identify if a point belong to a linelet. */
 	vector<unsigned long> *LineletPoint;	 /*!< \brief Linelet structure. */
@@ -81,7 +81,7 @@ public:
      * \param[in] geometry - Geometrical definition of the problem.
 	 * \param[in] config - Definition of the particular problem.
 	 */
-    void Initialize(int n_verts, int n_verts_global, int n_var, int n_eqns, array<array<int> > &v2e, array<int> &v2n_e, array<int> &e2v);
+    void Initialize(int n_verts, int n_verts_global, int n_var, int n_eqns, Array<Array<int> > &v2e, Array<int> &v2n_e, Array<int> &e2v);
   
     /*!
 	 * \brief Assings values to the sparse-matrix structure.
@@ -138,7 +138,7 @@ public:
 	 * \param[in] **val_block - Block to add to A(i,j).
 	 */
 	void AddBlock(unsigned long block_i, unsigned long block_j, double **val_block);
-	void AddBlock(unsigned long block_i, unsigned long block_j, array<double> val_block);
+	void AddBlock(unsigned long block_i, unsigned long block_j, Array<double> val_block);
   
 	/*!
 	 * \brief Subtracts the specified block to the sparse matrix.

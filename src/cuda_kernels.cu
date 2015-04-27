@@ -1916,7 +1916,7 @@ __global__ void perturb_shape_kernel(int n_dims, int n_eles, int max_n_spts_per_
 /**
  * GPU Kernel to calculate derivative of dynamic physical position wrt static/reference physical position at fpt
  * Uses pre-computed nodal shape basis derivatives for efficiency
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
  */
 template<int n_dims>
 __device__ void calc_d_pos_dyn_kernel(int n_pts_per_ele, int n_eles, int max_n_spts_per_ele, int* n_spts_per_ele, double* detjac_pts, double* JGinv_pts, double* d_nodal_s_basis_pts, double* shape_dyn, double *&out_d_pos)
@@ -2331,7 +2331,7 @@ __device__ __host__ void roe_flux(double* u_l, double* v_g, double *u_r, double 
   double rhoun_l, rhoun_r,eps;
   double a1,a2,a3,a4,a5,a6,aL1,bL1;
   double v_l[n_dims],v_r[n_dims],um[n_dims],du[n_fields];
-  //array<double> um(n_dims);
+  //Array<double> um(n_dims);
 
   // velocities
 #pragma unroll
@@ -3192,7 +3192,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int n_upts_per_ele, int n_eles, 
   double inte, mu, mu_t;
 
   // LES model variables
-  double sgsf[n_fields*n_dims]; // SGS flux array
+  double sgsf[n_fields*n_dims]; // SGS flux Array
   double straintensor[n_comp];     // strain for SGS models
   double sdtensor[n_comp];         // for WALE SGS model
   double lmtensor[n_comp];         // local Leonard tensor for momentum
@@ -3203,7 +3203,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int n_upts_per_ele, int n_eles, 
   double norm[n_dims];             // wall normal
   double tau[n_dims*n_dims];    // shear stress
   double mrot[n_dims*n_dims];   // rotation matrix
-  double temp[n_dims*n_dims];   // array for matrix mult
+  double temp[n_dims*n_dims];   // Array for matrix mult
   double urot[n_dims];             // rotated velocity components
   double tw[n_dims];               // wall shear stress components
   double qw;                          // wall heat flux
@@ -3364,7 +3364,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int n_upts_per_ele, int n_eles, 
 
       // correct the sign of wall shear stress and wall heat flux? - see SD3D
 
-      // Set arrays for next timestep
+      // Set Arrays for next timestep
       #pragma unroll
       for (j=0;j<n_dims;j++)
         twall_ptr[thread_id + (j+1)*stride] = tw[j]; // momentum
@@ -3372,7 +3372,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int n_upts_per_ele, int n_eles, 
       twall_ptr[thread_id] = 0.0; //density
       twall_ptr[thread_id + (n_fields-1)*stride] = qw; //energy
 
-      // populate ndims*ndims rotated stress array
+      // populate ndims*ndims rotated stress Array
       if(n_dims==2) {
         tau[0] = 0.0;
         tau[1] = tw[0];
@@ -3391,7 +3391,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int n_upts_per_ele, int n_eles, 
         tau[8] = 0.0;
       }
 
-      // rotate stress array back to Cartesian coordinates
+      // rotate stress Array back to Cartesian coordinates
       #pragma unroll
       for(i=0;i<n_dims;i++) {
         #pragma unroll
@@ -3466,7 +3466,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int n_upts_per_ele, int n_eles, 
 
         SGS_flux_kernel<n_dims>(q, grad_q, grad_vel, grad_ene, sdtensor, straintensor, lmtensor, letensor, f, sgs_model, delta, gamma, i);
 
-        // set local SGS flux array
+        // set local SGS flux Array
         #pragma unroll
         for(j=0;j<n_dims;j++)
           sgsf[i*n_dims + j] = f[j];
@@ -3475,7 +3475,7 @@ __global__ void evaluate_viscFlux_NS_gpu_kernel(int n_upts_per_ele, int n_eles, 
     }
     }
 
-    // add wall or SGS flux to output array
+    // add wall or SGS flux to output Array
     if(LES || wall) {
       #pragma unroll
       for (i=0;i<n_fields;i++) {
@@ -4147,7 +4147,7 @@ __global__ void calc_src_upts_gpu_kernel(int n_upts_per_ele,int n_eles,double* d
   }
 }
 
-__global__ void shock_capture_concentration_gpu_kernel(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma)
+__global__ void shock_capture_concentration_gpu_kernel(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_Array_ptr, double* out_sensor, double* sigma)
 {
     const int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -4181,7 +4181,7 @@ __global__ void shock_capture_concentration_gpu_kernel(int in_n_eles, int in_n_u
             for(int j=0; j<in_order+1; j++){
                 uE[j] = 0;
                 for(int k=0; k<in_order+1; k++)
-                    uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+                    uE[j] += modal_rho[k]*concentration_Array_ptr[j*(in_order+1) + k];
 
                 uE[j] = abs((3.1415/(in_order+1))*uE[j]);
                 temp = 0.0;//pow(uE[j],p)*pow(in_order+1,p/2);
@@ -4211,7 +4211,7 @@ __global__ void shock_capture_concentration_gpu_kernel(int in_n_eles, int in_n_u
             for(int j=0; j<in_order+1; j++){
                 uE[j] = 0;
                 for(int k=0; k<in_order+1; k++)
-                    uE[j] += modal_rho[k]*concentration_array_ptr[j*(in_order+1) + k];
+                    uE[j] += modal_rho[k]*concentration_Array_ptr[j*(in_order+1) + k];
 
                 uE[j] = (3.1415/(in_order+1))*uE[j];
                 temp = 0.0;//pow(abs(uE[j]),p)*pow(in_order+1,p/2);
@@ -5647,7 +5647,7 @@ void set_transforms_dynamic_fpts_kernel_wrapper(int n_fpts_per_ele, int n_eles, 
 }
 
 // Wrapper for gpu kernel for shock capturing using artificial viscosity
-void shock_capture_concentration_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma)
+void shock_capture_concentration_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_Array_ptr, double* out_sensor, double* sigma)
 {
     cudaError_t err;
 
@@ -5656,7 +5656,7 @@ void shock_capture_concentration_gpu_kernel_wrapper(int in_n_eles, int in_n_upts
 
   check_cuda_error("Before", __FILE__, __LINE__);
 
-    shock_capture_concentration_gpu_kernel<<<n_blocks,256>>>(in_n_eles, in_n_upts_per_ele, in_n_fields, in_order, in_ele_type, in_artif_type, s0, kappa, in_disu_upts_ptr, in_inv_vandermonde_ptr, in_inv_vandermonde2D_ptr, in_vandermonde2D_ptr, concentration_array_ptr, out_sensor, sigma);
+    shock_capture_concentration_gpu_kernel<<<n_blocks,256>>>(in_n_eles, in_n_upts_per_ele, in_n_fields, in_order, in_ele_type, in_artif_type, s0, kappa, in_disu_upts_ptr, in_inv_vandermonde_ptr, in_inv_vandermonde2D_ptr, in_vandermonde2D_ptr, concentration_Array_ptr, out_sensor, sigma);
 
     // This thread synchronize may not be necessary
     err=cudaThreadSynchronize();

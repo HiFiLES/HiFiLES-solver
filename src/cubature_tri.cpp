@@ -121,7 +121,7 @@ cubature_tri::cubature_tri(int in_order) // set by order
     datfile.open(f, ifstream::in);
     if (!datfile) FatalError("Unable to open cubature file");
     
-    // read data from file to arrays
+    // read data from file to Arrays
     while(datfile.getline(buf,BUFSIZ))
     {
       sscanf(buf,"%s",section_TXT);

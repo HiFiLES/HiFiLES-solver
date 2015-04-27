@@ -27,7 +27,7 @@
 
 #include <iostream>
 #include <fstream>
-#include "array.h"
+#include "Array.h"
 
 class input
 {	
@@ -62,11 +62,11 @@ public:
   int equation;
 
   int n_diagnostic_fields;
-  array<string> diagnostic_fields;
+  Array<string> diagnostic_fields;
   int n_average_fields;
-  array<string> average_fields;
+  Array<string> average_fields;
   int n_integral_quantities;
-  array<string> integral_quantities;
+  Array<string> integral_quantities;
 
   double prandtl;
 
@@ -81,7 +81,7 @@ public:
   int volume_cub_order;
 
   int test_case;
-  array<double> wave_speed;
+  Array<double> wave_speed;
   double lambda;
 
   double dt;
@@ -120,9 +120,9 @@ public:
   int n_deform_iters;
   int mesh_output_freq;
   int mesh_output_format;
-  array<string> boundary_flags;
-  array<array<double> > bound_vel_simple;
-  array<int> motion_type;
+  Array<string> boundary_flags;
+  Array<Array<double> > bound_vel_simple;
+  Array<int> motion_type;
   /* -------------------------------- */
 
   /* --- Shock Capturing options --- */
@@ -134,7 +134,7 @@ public:
 
   // boundary_conditions
   double rho_bound;
-  array<double> v_bound;
+  Array<double> v_bound;
   double p_bound;
   double p_total_bound;
   double T_total_bound;
@@ -221,7 +221,7 @@ public:
   double ny_wall;
   double nz_wall;
 
-  array<double> v_wall;
+  Array<double> v_wall;
   double uvw_wall;
   double T_wall;
   
@@ -258,9 +258,9 @@ public:
   int bis_ind, file_lines;
   int device_num;
   int forcing;
-  array<double> x_coeffs;
-  array<double> y_coeffs;
-  array<double> z_coeffs;
+  Array<double> x_coeffs;
+  Array<double> y_coeffs;
+  Array<double> z_coeffs;
   int perturb_ic;
 
   double time, rk_time;

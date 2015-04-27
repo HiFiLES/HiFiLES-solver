@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "array.h"
+#include "Array.h"
 #include <string>
 #include "input.h"
 #include "eles.h"
@@ -94,7 +94,7 @@ double* get_delta_disu_fpts_ptr(int in_ele_type, int in_ele, int in_field, int n
 double* get_grad_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol);
 
 /*! get pointer to the closest normal point of the discontinuous solution at a flux point */
-double* get_normal_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_fpt, struct solution* FlowSol, array<double> temp_loc, double temp_pos[3]);
+double* get_normal_disu_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_fpt, struct solution* FlowSol, Array<double> temp_loc, double temp_pos[3]);
 
 /*! get pointer to the grid velocity at a flux point */
 double* get_grid_vel_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_fpt, int in_dim, struct solution* FlowSol);

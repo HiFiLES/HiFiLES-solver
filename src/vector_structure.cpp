@@ -100,7 +100,7 @@ CSysVector::CSysVector(const CSysVector & u) {
   
 }
 
-CSysVector::CSysVector(const unsigned long & size, const double* u_array) {
+CSysVector::CSysVector(const unsigned long & size, const double* u_Array) {
   
   nElm = size; nElmDomain = size;
   nBlk = nElm; nBlkDomain = nElmDomain;
@@ -115,7 +115,7 @@ CSysVector::CSysVector(const unsigned long & size, const double* u_array) {
 
   vec_val = new double[nElm];
   for (unsigned long i = 0; i < nElm; i++)
-    vec_val[i] = u_array[i];
+    vec_val[i] = u_Array[i];
   
 #ifdef MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
@@ -126,7 +126,7 @@ CSysVector::CSysVector(const unsigned long & size, const double* u_array) {
 }
 
 CSysVector::CSysVector(const unsigned long & numBlk, const unsigned long & numBlkDomain, const unsigned short & numVar,
-                       const double* u_array) {
+                       const double* u_Array) {
 
   nElm = numBlk*numVar; nElmDomain = numBlkDomain*numVar;
   nBlk = numBlk; nBlkDomain = numBlkDomain;
@@ -141,7 +141,7 @@ CSysVector::CSysVector(const unsigned long & numBlk, const unsigned long & numBl
 
   vec_val = new double[nElm];
   for (unsigned long i = 0; i < nElm; i++)
-    vec_val[i] = u_array[i];
+    vec_val[i] = u_Array[i];
   
 #ifdef MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
@@ -346,10 +346,10 @@ double CSysVector::norm() const {
   return sqrt(val);
 }
 
-void CSysVector::CopyToArray(double* u_array) {
+void CSysVector::CopyToArray(double* u_Array) {
   
   for (unsigned long i = 0; i < nElm; i++)
-    u_array[i] = vec_val[i];
+    u_Array[i] = vec_val[i];
 }
 
 void CSysVector::AddBlock(unsigned long val_ipoint, double *val_residual) {

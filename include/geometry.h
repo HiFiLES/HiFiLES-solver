@@ -27,7 +27,7 @@
 
 #include <string>
 
-#include "array.h"
+#include "Array.h"
 #include "input.h"
 #include "eles.h"
 #include "eles_tris.h"
@@ -71,19 +71,19 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh);
  * \param[out] out_n_verts - Number of vertices assigned to processor.
  * \param[in] FlowSol - Structure with the entire solution and mesh information.
  */
-void ReadMesh(string& in_file_name, array<double>& out_xv, array<int>& out_c2v, array<int>& out_c2n_v, array<int>& out_ctype, array<int>& out_ic2icg,
-              array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, int& out_n_verts_global, struct solution* FlowSol);
+void ReadMesh(string& in_file_name, Array<double>& out_xv, Array<int>& out_c2v, Array<int>& out_c2n_v, Array<int>& out_ctype, Array<int>& out_ic2icg,
+              Array<int>& out_iv2ivg, int& out_n_cells, int& out_n_verts, int& out_n_verts_global, struct solution* FlowSol);
 
 /*! method to read boundaries from mesh */
-void ReadBound(string& in_file_name, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c2f, array<int>& in_f2v, array<int>& in_f2nv,
-               array<int>& in_ctype, array<int>& out_bctype, array<array<int> >& out_boundpts, array<int> &out_bc_list, array<int> &out_bound_flag,
-               array<int>& in_ic2icg, array<int>& in_icvsta, array<int> &in_icvert, array<int> &in_iv2ivg, int &in_n_cells, int &in_n_verts, solution *FlowSol);
+void ReadBound(string& in_file_name, Array<int>& in_c2v, Array<int>& in_c2n_v, Array<int>& in_c2f, Array<int>& in_f2v, Array<int>& in_f2nv,
+               Array<int>& in_ctype, Array<int>& out_bctype, Array<Array<int> >& out_boundpts, Array<int> &out_bc_list, Array<int> &out_bound_flag,
+               Array<int>& in_ic2icg, Array<int>& in_icvsta, Array<int> &in_icvert, Array<int> &in_iv2ivg, int &in_n_cells, int &in_n_verts, solution *FlowSol);
 
 /*! method to read position vertices in a gambit mesh */
-void read_vertices_gambit(string& in_file_name, int in_n_verts, int &out_n_verts_global, array<int> &in_iv2ivg, array<double> &out_xv, solution *FlowSol);
+void read_vertices_gambit(string& in_file_name, int in_n_verts, int &out_n_verts_global, Array<int> &in_iv2ivg, Array<double> &out_xv, solution *FlowSol);
 
 /*! method to read position vertices in a gmsh mesh */
-void read_vertices_gmsh(string& in_file_name, int in_n_verts, int& out_n_verts_global, array<int> &in_iv2ivg, array<double> &out_xv, struct solution* FlowSol);
+void read_vertices_gmsh(string& in_file_name, int in_n_verts, int& out_n_verts_global, Array<int> &in_iv2ivg, Array<double> &out_xv, struct solution* FlowSol);
 
 /*!
  * \brief Method to setup iv2ivg & modify c2v
@@ -92,26 +92,26 @@ void read_vertices_gmsh(string& in_file_name, int in_n_verts, int& out_n_verts_g
  * \param[out] out_n_verts - Number of vertices which belong to the cells on processor
  * \param[in] in_n_cells - Number of cells on processor
  */
-void create_iv2ivg(array<int> &inout_iv2ivg, array<int> &inout_c2v, int &out_n_verts, int in_n_cells);
+void create_iv2ivg(Array<int> &inout_iv2ivg, Array<int> &inout_c2v, int &out_n_verts, int in_n_cells);
 
 /*! method to read cell connectivity in a gambit mesh */
-void read_connectivity_gambit(string& in_file_name, int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n_v, array<int> &out_ctype, array<int> &out_ic2icg, struct solution* FlowSol);
+void read_connectivity_gambit(string& in_file_name, int &out_n_cells, Array<int> &out_c2v, Array<int> &out_c2n_v, Array<int> &out_ctype, Array<int> &out_ic2icg, struct solution* FlowSol);
 
 /*! method to read cell connectivity in a gmsh mesh */
-void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n_v, array<int> &out_ctype, array<int> &out_ic2icg, struct solution* FlowSol);
+void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, Array<int> &out_c2v, Array<int> &out_c2n_v, Array<int> &out_ctype, Array<int> &out_ic2icg, struct solution* FlowSol);
 
 /*! method to read boundary faces in a gambit mesh */
-void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_ic2icg, array<int>& out_bctype, array<int> &out_bclist, array<array<int> > &out_bccells, array<array<int> > &out_bcfaces);
+void read_boundary_gambit(string& in_file_name, int &in_n_cells, Array<int>& in_ic2icg, Array<int>& out_bctype, Array<int> &out_bclist, Array<Array<int> > &out_bccells, Array<Array<int> > &out_bcfaces);
 
 /*! method to read boundary faces in a gmsh mesh */
-void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic2icg, array<int>& in_c2v, array<int>& in_c2n_v, array<int>& out_bctype, array<int> &out_bclist, array<int> &out_bound_flag, array<array<int> > &out_boundpts, array<int> &in_iv2ivg, int in_n_verts, array<int>& in_ctype, array<int> &in_icvsta, array<int> &in_icvert, solution *FlowSol);
+void read_boundary_gmsh(string& in_file_name, int &in_n_cells, Array<int>& in_ic2icg, Array<int>& in_c2v, Array<int>& in_c2n_v, Array<int>& out_bctype, Array<int> &out_bclist, Array<int> &out_bound_flag, Array<Array<int> > &out_boundpts, Array<int> &in_iv2ivg, int in_n_verts, Array<int>& in_ctype, Array<int> &in_icvsta, Array<int> &in_icvert, solution *FlowSol);
 
-/*! method to create bounpts array from Gambit reader output (vertex id = boundpts(bcid,i_pt) */
-void create_boundpts(array<array<int> >& out_boundpts, array<int> &in_bclist, array<int> &out_bound_flag, array<array<int> >& in_bccells, array<array<int> > &in_bcfaces, array<int>& in_c2f, array<int>& in_f2v, array<int> &in_f2nv);
+/*! method to create bounpts Array from Gambit reader output (vertex id = boundpts(bcid,i_pt) */
+void create_boundpts(Array<Array<int> >& out_boundpts, Array<int> &in_bclist, Array<int> &out_bound_flag, Array<Array<int> >& in_bccells, Array<Array<int> > &in_bcfaces, Array<int>& in_c2f, Array<int>& in_f2v, Array<int> &in_f2nv);
 
 /*!
  * \brief method to create list of faces from the mesh
- * \param[in] in_c2v - cell to vertex array
+ * \param[in] in_c2v - cell to vertex Array
  * \param[in] in_c2n_v - cell to # of vertices
  * \param[in] in_ctype - type of cell
  * \param[out] out_c2f - cell to face
@@ -129,39 +129,39 @@ void create_boundpts(array<array<int> >& out_boundpts, array<int> &in_bclist, ar
  * \param[out] out_n_edges - number of edges belonging to processor
  * \param[in] FlowSol - Structure with the entire solution and mesh information.
  */
-void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_ctype, array<int>& out_c2f, array<int>& out_c2e, array<int>& out_f2c, array<int>& out_f2loc_f, array<int>& out_f2v, array<int>& out_f2nv,  array<int>& out_e2v, array<int>& out_v2n_e, array<array<int> >& out_v2e,array<int>& out_rot_tag, array<int>& out_unmatched_faces, int& out_n_unmatched_faces, array<int>& out_icvsta, array<int>& out_icvert, int& out_n_faces, int& out_n_edges, struct solution* FlowSol);
+void CompConnectivity(Array<int>& in_c2v, Array<int>& in_c2n_v, Array<int>& in_ctype, Array<int>& out_c2f, Array<int>& out_c2e, Array<int>& out_f2c, Array<int>& out_f2loc_f, Array<int>& out_f2v, Array<int>& out_f2nv,  Array<int>& out_e2v, Array<int>& out_v2n_e, Array<Array<int> >& out_v2e,Array<int>& out_rot_tag, Array<int>& out_unmatched_faces, int& out_n_unmatched_faces, Array<int>& out_icvsta, Array<int>& out_icvert, int& out_n_faces, int& out_n_edges, struct solution* FlowSol);
 
 /*! Method that returns list of local vertices associated to a particular local face */
-void get_vlist_loc_face(int& in_ctype, int& in_nspt, int& in_face, array<int>& out_vlist_loc, int& num_v_per_f);
+void get_vlist_loc_face(int& in_ctype, int& in_nspt, int& in_face, Array<int>& out_vlist_loc, int& num_v_per_f);
 
 /*! Method that returns list of local vertices associated to a particular local edge*/
-void get_vlist_loc_edge(int& in_ctype, int& in_nspt, int& in_edge, array<int>& out_vlist_loc);
+void get_vlist_loc_edge(int& in_ctype, int& in_nspt, int& in_edge, Array<int>& out_vlist_loc);
 
 /*! Method that return the shape point number associated with a vertex */
 void get_vert_loc(int& in_ctype, int& in_nspts, int& in_vert, int& out_v);
 
 /*! Method that compares the vertices from two faces to check if they match */
-void compare_faces(array<int>& vlist1, array<int>& vlist2, int& num_v_per_f, int& found, int& rtag);
+void compare_faces(Array<int>& vlist1, Array<int>& vlist2, int& num_v_per_f, int& found, int& rtag);
 
-void compare_faces_boundary(array<int>& vlist1, array<int>& vlist2, int& num_v_per_f, int& found);
+void compare_faces_boundary(Array<int>& vlist1, Array<int>& vlist2, int& num_v_per_f, int& found);
 
 /*! Method that compares two cyclic faces and check if they should be matched */
-void compare_cyclic_faces(array<double> &xvert1, array<double> &xvert2, int& num_v_per_f, int& rtag, array<double> &delta_cyclic, double tol, struct solution* FlowSol);
+void compare_cyclic_faces(Array<double> &xvert1, Array<double> &xvert2, int& num_v_per_f, int& rtag, Array<double> &delta_cyclic, double tol, struct solution* FlowSol);
 
 /*! Method that checks if two cyclic faces are distance delta_cyclic apart */
-bool check_cyclic(array<double> &delta_cyclic, array<double> &loc_center_inter_0, array<double> &loc_center_inter_1, double tol, struct solution* FlowSol);
+bool check_cyclic(Array<double> &delta_cyclic, Array<double> &loc_center_inter_0, Array<double> &loc_center_inter_1, double tol, struct solution* FlowSol);
 
 int get_bc_number(string& bcname);
 
 #ifdef _MPI
 
 /* method to repartition a mesh using ParMetis */
-void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n_v, array<int> &out_ctype, array<int> &out_ic2icg, struct solution* FlowSol);
+void repartition_mesh(int &out_n_cells, Array<int> &out_c2v, Array<int> &out_c2n_v, Array<int> &out_ctype, Array<int> &out_ic2icg, struct solution* FlowSol);
 
-void match_mpifaces(array<int> &in_f2v, array<int> &in_f2nv, array<double>& in_xv, array<int>& inout_f_mpi2f, array<int>& out_mpifaces_part, array<double> &delta_cyclic, int n_mpi_faces, double tol, struct solution* FlowSol);
+void match_mpifaces(Array<int> &in_f2v, Array<int> &in_f2nv, Array<double>& in_xv, Array<int>& inout_f_mpi2f, Array<int>& out_mpifaces_part, Array<double> &delta_cyclic, int n_mpi_faces, double tol, struct solution* FlowSol);
 
-void find_rot_mpifaces(array<int> &in_f2v, array<int> &in_f2nv, array<double>& in_xv, array<int>& in_f_mpi2f, array<int> &out_rot_tag_mpi, array<int> &mpifaces_part, array<double> delta_cyclic, int n_mpi_faces, double tol, struct solution* FlowSol);
+void find_rot_mpifaces(Array<int> &in_f2v, Array<int> &in_f2nv, Array<double>& in_xv, Array<int>& in_f_mpi2f, Array<int> &out_rot_tag_mpi, Array<int> &mpifaces_part, Array<double> delta_cyclic, int n_mpi_faces, double tol, struct solution* FlowSol);
 
-void compare_mpi_faces(array<double> &xvert1, array<double> &xvert2, int& num_v_per_f, int& rtag, array<double> &delta_cyclic, double tol, struct solution* FlowSol);
+void compare_mpi_faces(Array<double> &xvert1, Array<double> &xvert2, int& num_v_per_f, int& rtag, Array<double> &delta_cyclic, double tol, struct solution* FlowSol);
 
 #endif

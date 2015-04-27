@@ -71,7 +71,7 @@ HEADERS += \
     $$INCLUDE_DIR/cubature_hexa.h \
     $$INCLUDE_DIR/cubature_1d.h \
     $$INCLUDE_DIR/bdy_inters.h \
-    $$INCLUDE_DIR/array.h \
+    $$INCLUDE_DIR/Array.h \
     include/vector_structure.hpp \
     include/linear_solvers_structure.hpp \
     include/matrix_structure.hpp \

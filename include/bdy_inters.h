@@ -27,7 +27,7 @@
 
 #include "inters.h"
 #include "bdy_inters.h"
-#include "array.h"
+#include "Array.h"
 #include "solution.h"
 
 struct solution; // forwards declaration
@@ -51,7 +51,7 @@ public:
   /*! setup inters */
   void setup(int in_n_inters, int in_inter_type);
 
-  /*! setup array that contains boundary parameters */
+  /*! setup Array that contains boundary parameters */
   void set_bdy_params();
 
   /*! Set bdy interface */
@@ -81,7 +81,7 @@ protected:
 
   int max_bdy_params;
 
-  array<int> boundary_type;
-  array<double> bdy_params;
+  Array<int> boundary_type;
+  Array<double> bdy_params;
 
 };

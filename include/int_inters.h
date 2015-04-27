@@ -27,7 +27,7 @@
 
 #include "inters.h"
 #include "int_inters.h"
-#include "array.h"
+#include "Array.h"
 #include "solution.h"
 
 struct solution; // forwards declaration
@@ -70,19 +70,19 @@ protected:
 
   // #### members ####
   //
-  array<double*> disu_fpts_r;
-  array<double*> delta_disu_fpts_r;
-  array<double*> norm_tconf_fpts_r;
-  //array<double*> norm_tconvisf_fpts_r;
-  array<double*> detjac_fpts_r;
-  array<double*> tdA_fpts_r;
-  array<double*> grad_disu_fpts_r;
+  Array<double*> disu_fpts_r;
+  Array<double*> delta_disu_fpts_r;
+  Array<double*> norm_tconf_fpts_r;
+  //Array<double*> norm_tconvisf_fpts_r;
+  Array<double*> detjac_fpts_r;
+  Array<double*> tdA_fpts_r;
+  Array<double*> grad_disu_fpts_r;
 
   // Dynamic grid variables:
-  array<double*> ndA_dyn_fpts_r;
-  array<double*> J_dyn_fpts_r;
-  array<double*> disu_GCL_fpts_r;
-  array<double*> norm_tconf_GCL_fpts_r;
+  Array<double*> ndA_dyn_fpts_r;
+  Array<double*> J_dyn_fpts_r;
+  Array<double*> disu_GCL_fpts_r;
+  Array<double*> norm_tconf_GCL_fpts_r;
 
   double temp_u_GCL_r;
   double temp_f_GCL_r;

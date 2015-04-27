@@ -46,7 +46,7 @@ extern "C"
 #include "../include/global.h"
 #include "../include/eles.h"
 #include "../include/eles_quads.h"
-#include "../include/array.h"
+#include "../include/Array.h"
 #include "../include/funcs.h"
 #include "../include/cubature_1d.h"
 #include "../include/cubature_quad.h"
@@ -93,8 +93,8 @@ void eles_quads::setup_ele_type_specific()
   set_loc_upts();
   set_vandermonde();
   set_vandermonde2D();
-  set_concentration_array();
-  set_filter_array();
+  set_concentration_Array();
+  set_filter_Array();
 
   n_ppts_per_ele=p_res*p_res;
   n_peles_per_ele=(p_res-1)*(p_res-1);
@@ -170,7 +170,7 @@ void eles_quads::set_connectivity_plot()
 // set shape
 
 /*
-void eles_quads::set_shape(array<int> &in_n_spts_per_ele)
+void eles_quads::set_shape(Array<int> &in_n_spts_per_ele)
 {
   //TODO: this is inefficient, copies by value
   n_spts_per_ele = in_n_spts_per_ele;
@@ -195,7 +195,7 @@ void eles_quads::set_loc_1d_upts(void)
     {
       int get_order=order;
 
-      array<double> loc_1d_gauss_pts(order+1);
+      Array<double> loc_1d_gauss_pts(order+1);
 
 #include "../data/loc_1d_gauss_pts.dat"
 
@@ -205,7 +205,7 @@ void eles_quads::set_loc_1d_upts(void)
     {
       int get_order=order;
 
-      array<double> loc_1d_gauss_lobatto_pts(order+1);
+      Array<double> loc_1d_gauss_lobatto_pts(order+1);
 
 #include "../data/loc_1d_gauss_lobatto_pts.dat"
 
@@ -219,7 +219,7 @@ void eles_quads::set_loc_1d_upts(void)
 
 // set location of 1d shape points in standard interval (required for tensor product element)
 
-void eles_quads::set_loc_1d_spts(array<double> &loc_1d_spts, int in_n_1d_spts)
+void eles_quads::set_loc_1d_spts(Array<double> &loc_1d_spts, int in_n_1d_spts)
 {
   int i;
 
@@ -384,7 +384,7 @@ void eles_quads::set_volume_cubpts(void)
 }
 
 // Compute the surface jacobian determinant on a face
-double eles_quads::compute_inter_detjac_inters_cubpts(int in_inter,array<double> d_pos)
+double eles_quads::compute_inter_detjac_inters_cubpts(int in_inter,Array<double> d_pos)
 {
   double output = 0.;
   double xr, xs;
@@ -485,8 +485,8 @@ void eles_quads::compute_filter_upts(void)
   double dlt, k_c, sum, norm;
   N = order+1; // order is of basis polynomials NOT truncation error!
 
-  array<double> X(N),B(N);
-  array<double> beta(N,N);
+  Array<double> X(N),B(N);
+  Array<double> beta(N,N);
 
   filter_upts_1D.setup(N,N);
 
@@ -510,8 +510,8 @@ void eles_quads::compute_filter_upts(void)
   if(run_input.filter_type==0 and N>=3)
     {
       if (rank==0) cout<<"Building high-order-commuting Vasilyev filter"<<endl;
-      array<double> C(N);
-      array<double> A(N,N);
+      Array<double> C(N);
+      Array<double> A(N,N);
 
       for (i=0;i<N;i++)
         {
@@ -568,10 +568,10 @@ void eles_quads::compute_filter_upts(void)
       int ctype,index;
       double k_R, k_L, coeff;
       double res_0, res_L, res_R;
-      array<double> alpha(N);
+      Array<double> alpha(N);
       cubature_1d cub_1d(inters_cub_order);
       int n_cubpts_1d = cub_1d.get_n_pts();
-      array<double> wf(n_cubpts_1d);
+      Array<double> wf(n_cubpts_1d);
 
       if(N != n_cubpts_1d)
         {
@@ -750,15 +750,15 @@ void eles_quads::set_vandermonde(void)
       vandermonde(i,j) = eval_legendre(loc_1d_upts(i),j);
 
   // Store its inverse
-  inv_vandermonde = inv_array(vandermonde);
+  inv_vandermonde = inv_Array(vandermonde);
 }
 
-// Set the 2D inverse Vandermonde array needed for shock capturing
+// Set the 2D inverse Vandermonde Array needed for shock capturing
 void eles_quads::set_vandermonde2D()
 {
   vandermonde2D.setup(n_upts_per_ele,n_upts_per_ele);
   //inv_vandermonde2D.setup(n_upts_per_ele*n_upts_per_ele);
-  array <double> loc(n_dims);
+  Array <double> loc(n_dims);
 
   // create the vandermonde matrix
   for (int i=0;i<n_upts_per_ele;i++){
@@ -772,11 +772,11 @@ void eles_quads::set_vandermonde2D()
   //vandermonde2D.print();
 
   // Store its inverse
-  inv_vandermonde2D = inv_array(vandermonde2D);
+  inv_vandermonde2D = inv_Array(vandermonde2D);
 }
 
-// Set the 2D inverse Vandermonde array needed for shock capturing
-void eles_quads::set_filter_array()
+// Set the 2D inverse Vandermonde Array needed for shock capturing
+void eles_quads::set_filter_Array()
 {
   sigma.setup(n_upts_per_ele);
 
@@ -787,20 +787,20 @@ void eles_quads::set_filter_array()
 }
 
 // Set the 1D concentration matrix based on 1D-loc_upts
-void eles_quads::set_concentration_array()
+void eles_quads::set_concentration_Array()
 {
   int concen_type = 1;
-  array<double> concentration_factor(order+1);
-  array<double> grad_vandermonde;
+  Array<double> concentration_factor(order+1);
+  Array<double> grad_vandermonde;
   grad_vandermonde.setup(order+1,order+1);
-  concentration_array.setup((order+1)*(order+1));
+  concentration_Array.setup((order+1)*(order+1));
 
     // create the vandermonde matrix
     for (int i=0;i<order+1;i++)
         for (int j=0;j<order+1;j++)
             grad_vandermonde(i,j) = eval_d_legendre(loc_1d_upts(i),j);
 
-    // create concentration factor array
+    // create concentration factor Array
     for(int j=0; j <order+1; j++){
         if(concen_type == 0){ // exponential
             if(j==0)
@@ -818,7 +818,7 @@ void eles_quads::set_concentration_array()
 
     for (int i=0;i<order+1;i++)
                 for (int j=0;j<order+1;j++)
-                        concentration_array(j + i*(order+1)) = concentration_factor(j)*sqrt(1 - loc_1d_upts(i)*loc_1d_upts(i))*grad_vandermonde(i,j);
+                        concentration_Array(j + i*(order+1)) = concentration_factor(j)*sqrt(1 - loc_1d_upts(i)*loc_1d_upts(i))*grad_vandermonde(i,j);
 }
 
 // Set area co-ordinates/shape functions for bilinear interpolation used in AV routines
@@ -852,7 +852,7 @@ void eles_quads::set_area_coord(void)
 
 // evaluate nodal basis
 
-double eles_quads::eval_nodal_basis(int in_index, array<double> in_loc)
+double eles_quads::eval_nodal_basis(int in_index, Array<double> in_loc)
 {
   int i,j;
 
@@ -869,7 +869,7 @@ double eles_quads::eval_nodal_basis(int in_index, array<double> in_loc)
 
 // evaluate nodal basis using restart points
 
-double eles_quads::eval_nodal_basis_restart(int in_index, array<double> in_loc)
+double eles_quads::eval_nodal_basis_restart(int in_index, Array<double> in_loc)
 {
   int i,j;
 
@@ -885,7 +885,7 @@ double eles_quads::eval_nodal_basis_restart(int in_index, array<double> in_loc)
 
 // evaluate derivative of nodal basis
 
-double eles_quads::eval_d_nodal_basis(int in_index, int in_cpnt, array<double> in_loc)
+double eles_quads::eval_d_nodal_basis(int in_index, int in_cpnt, Array<double> in_loc)
 {
   int i,j;
 
@@ -912,7 +912,7 @@ double eles_quads::eval_d_nodal_basis(int in_index, int in_cpnt, array<double> i
 
 // evaluate nodal shape basis
 
-double eles_quads::eval_nodal_s_basis(int in_index, array<double> in_loc, int in_n_spts)
+double eles_quads::eval_nodal_s_basis(int in_index, Array<double> in_loc, int in_n_spts)
 {
   int i,j;
   double nodal_s_basis;
@@ -920,7 +920,7 @@ double eles_quads::eval_nodal_s_basis(int in_index, array<double> in_loc, int in
   if (is_perfect_square(in_n_spts))
     {
       int n_1d_spts = round(sqrt(1.0*in_n_spts));
-      array<double> loc_1d_spts(n_1d_spts);
+      Array<double> loc_1d_spts(n_1d_spts);
       set_loc_1d_spts(loc_1d_spts,n_1d_spts);
 
       j=in_index/n_1d_spts;
@@ -957,14 +957,14 @@ double eles_quads::eval_nodal_s_basis(int in_index, array<double> in_loc, int in
 
 // evaluate derivative of nodal shape basis
 
-void eles_quads::eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<double> in_loc, int in_n_spts)
+void eles_quads::eval_d_nodal_s_basis(Array<double> &d_nodal_s_basis, Array<double> in_loc, int in_n_spts)
 {
   int i,j;
 
   if (is_perfect_square(in_n_spts))
     {
       int n_1d_spts = round(sqrt(1.0*in_n_spts));
-      array<double> loc_1d_spts(n_1d_spts);
+      Array<double> loc_1d_spts(n_1d_spts);
       set_loc_1d_spts(loc_1d_spts,n_1d_spts);
 
       for (int k=0;k<in_n_spts;k++)
@@ -1007,14 +1007,14 @@ void eles_quads::eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<doub
 
 // evaluate second derivative of nodal shape basis
 
-void eles_quads::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)
+void eles_quads::eval_dd_nodal_s_basis(Array<double> &dd_nodal_s_basis, Array<double> in_loc, int in_n_spts)
 {
   int i,j;
 
   if (is_perfect_square(in_n_spts))
     {
       int n_1d_spts = round(sqrt(1.0*in_n_spts));
-      array<double> loc_1d_spts(n_1d_spts);
+      Array<double> loc_1d_spts(n_1d_spts);
       set_loc_1d_spts(loc_1d_spts,n_1d_spts);
 
       for (int k=0;k<in_n_spts;k++)
@@ -1064,7 +1064,7 @@ void eles_quads::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<do
 }
 
 // Evaluate 2D legendre basis
-double eles_quads::eval_legendre_basis_2D_hierarchical(int in_mode, array<double> in_loc, int in_basis_order)
+double eles_quads::eval_legendre_basis_2D_hierarchical(int in_mode, Array<double> in_loc, int in_basis_order)
 {
         double leg_basis;
 
@@ -1140,11 +1140,11 @@ double eles_quads::exponential_filter(int in_mode, int in_basis_order)
 }
 
 
-void eles_quads::fill_opp_3(array<double>& opp_3)
+void eles_quads::fill_opp_3(Array<double>& opp_3)
 {
 
   int i,j,k;
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
 
   for(i=0;i<n_fpts_per_ele;i++)
     {
@@ -1162,7 +1162,7 @@ void eles_quads::fill_opp_3(array<double>& opp_3)
 
 // evaluate divergence of vcjh basis
 
-double eles_quads::eval_div_vcjh_basis(int in_index, array<double>& loc)
+double eles_quads::eval_div_vcjh_basis(int in_index, Array<double>& loc)
 {
   int i,j;
   double eta;

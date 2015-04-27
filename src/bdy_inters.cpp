@@ -27,7 +27,7 @@
 #include <cmath>
 
 #include "../include/global.h"
-#include "../include/array.h"
+#include "../include/Array.h"
 #include "../include/inters.h"
 #include "../include/bdy_inters.h"
 #include "../include/geometry.h"
@@ -216,7 +216,7 @@ void bdy_inters::mv_all_cpu_gpu(void)
 
   delta_disu_fpts_l.mv_cpu_gpu();
 
-  // Moving-mesh arrays
+  // Moving-mesh Arrays
   J_dyn_fpts_l.mv_cpu_gpu();
   ndA_dyn_fpts_l.mv_cpu_gpu();
   norm_dyn_fpts.mv_cpu_gpu();
@@ -245,11 +245,11 @@ void bdy_inters::mv_all_cpu_gpu(void)
 void bdy_inters::evaluate_boundaryConditions_invFlux(double time_bound) {
 
 #ifdef _CPU
-  array<double> norm(n_dims), fn(n_fields);
+  Array<double> norm(n_dims), fn(n_fields);
 
   //viscous
   int bdy_spec, flux_spec;
-  array<double> u_c(n_fields);
+  Array<double> u_c(n_fields);
 
 
   for(int i=0;i<n_inters;i++)
@@ -904,7 +904,7 @@ void bdy_inters::evaluate_boundaryConditions_viscFlux(double time_bound) {
 
 #ifdef _CPU
   int bdy_spec, flux_spec;
-  array<double> norm(n_dims), fn(n_fields);
+  Array<double> norm(n_dims), fn(n_fields);
 
   for(int i=0;i<n_inters;i++)
   {

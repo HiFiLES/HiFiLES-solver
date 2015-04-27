@@ -117,4 +117,4 @@ void set_transforms_dynamic_upts_kernel_wrapper(int n_upts_per_ele, int n_eles, 
 void push_back_shape_dyn_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_per_ele, int n_levels, int* n_spts_per_ele, double* shape_dyn);
 
 /*! Wrapper for shock capturing */
-void shock_capture_concentration_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma);
+void shock_capture_concentration_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_Array_ptr, double* out_sensor, double* sigma);

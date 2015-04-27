@@ -278,7 +278,7 @@ unsigned long CSysSolve::FGMRES(const CSysVector & b, CSysVector & x, CMatrixVec
 #endif
     }
 
-    /*---  Define various arrays
+    /*---  Define various Arrays
      Note: elements in w and z are initialized to x to avoid creating
      a temporary CSysVector object for the copy constructor ---*/
     vector<CSysVector> w(m+1, x);

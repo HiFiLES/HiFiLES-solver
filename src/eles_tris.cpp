@@ -46,7 +46,7 @@ extern "C"
 #include "../include/global.h"
 #include "../include/eles.h"
 #include "../include/eles_tris.h"
-#include "../include/array.h"
+#include "../include/Array.h"
 #include "../include/funcs.h"
 #include "../include/cubature_1d.h"
 #include "../include/cubature_tri.h"
@@ -189,7 +189,7 @@ void eles_tris::set_loc_upts(void)
 
   if(upts_type==0) // internal points (good quadrature points)
     {
-      array<double> loc_inter_pts(n_upts_per_ele,2);
+      Array<double> loc_inter_pts(n_upts_per_ele,2);
 #include "../data/loc_tri_inter_pts.dat"
 
       for (int i=0;i<n_upts_per_ele;i++)
@@ -201,7 +201,7 @@ void eles_tris::set_loc_upts(void)
 
   else if(upts_type==1) // alpha optimized
     {
-      array<double> loc_alpha_pts(n_upts_per_ele,2);
+      Array<double> loc_alpha_pts(n_upts_per_ele,2);
 #include "../data/loc_tri_alpha_pts.dat"
 
       for (int i=0;i<n_upts_per_ele;i++)
@@ -229,14 +229,14 @@ void eles_tris::set_tloc_fpts(void)
 
   if(fpts_type==0) // gauss
     {
-      array<double> loc_1d_gauss_pts(order+1);
+      Array<double> loc_1d_gauss_pts(order+1);
 #include "../data/loc_1d_gauss_pts.dat"
 
       loc_1d_fpts = loc_1d_gauss_pts;
     }
   else if(fpts_type==1) // gauss lobatto
     {
-      array<double> loc_1d_gauss_lobatto_pts(order+1);
+      Array<double> loc_1d_gauss_lobatto_pts(order+1);
 #include "../data/loc_1d_gauss_lobatto_pts.dat"
 
       loc_1d_fpts = loc_1d_gauss_lobatto_pts;
@@ -348,7 +348,7 @@ void eles_tris::set_inters_cubpts(void)
 }
 
 // Compute the surface jacobian determinant on a face
-double eles_tris::compute_inter_detjac_inters_cubpts(int in_inter,array<double> d_pos)
+double eles_tris::compute_inter_detjac_inters_cubpts(int in_inter,Array<double> d_pos)
 {
   double output = 0.;
   double xr, xs, yr, ys;
@@ -488,7 +488,7 @@ void eles_tris::set_vandermonde(void)
       vandermonde(i,j) = eval_dubiner_basis_2d(loc_upts(0,i),loc_upts(1,i),j,order);
 
   // Store its inverse
-  inv_vandermonde = inv_array(vandermonde);
+  inv_vandermonde = inv_Array(vandermonde);
 }
 
 // initialize the vandermonde matrix for the restart file
@@ -504,7 +504,7 @@ void eles_tris::set_vandermonde_restart()
       vandermonde_rest(i,j) = eval_dubiner_basis_2d(loc_upts_rest(0,i),loc_upts_rest(1,i),j,order_rest);
 
   // Store its inverse
-  inv_vandermonde_rest = inv_array(vandermonde_rest);
+  inv_vandermonde_rest = inv_Array(vandermonde_rest);
 }
 
 /*! read restart info */
@@ -564,9 +564,9 @@ void eles_tris::write_restart_info(ofstream& restart_file)
 }
 
 // evaluate nodal basis
-double eles_tris::eval_nodal_basis(int in_index, array<double> in_loc)
+double eles_tris::eval_nodal_basis(int in_index, Array<double> in_loc)
 {
-  array<double> dubiner_basis_at_loc(n_upts_per_ele);
+  Array<double> dubiner_basis_at_loc(n_upts_per_ele);
   double out_nodal_basis_at_loc;
 
   // First evaluate the normalized Dubiner basis at position in_loc
@@ -582,9 +582,9 @@ double eles_tris::eval_nodal_basis(int in_index, array<double> in_loc)
 }
 
 // evaluate nodal basis with restart points
-double eles_tris::eval_nodal_basis_restart(int in_index, array<double> in_loc)
+double eles_tris::eval_nodal_basis_restart(int in_index, Array<double> in_loc)
 {
-  array<double> dubiner_basis_at_loc(n_upts_per_ele_rest);
+  Array<double> dubiner_basis_at_loc(n_upts_per_ele_rest);
   double out_nodal_basis_at_loc;
 
   // First evaluate the normalized Dubiner basis at position in_loc
@@ -600,9 +600,9 @@ double eles_tris::eval_nodal_basis_restart(int in_index, array<double> in_loc)
 }
 
 // evaluate derivative of nodal basis
-double eles_tris::eval_d_nodal_basis(int in_index, int in_cpnt, array<double> in_loc)
+double eles_tris::eval_d_nodal_basis(int in_index, int in_cpnt, Array<double> in_loc)
 {
-  array<double> d_dubiner_basis_at_loc(n_upts_per_ele);
+  Array<double> d_dubiner_basis_at_loc(n_upts_per_ele);
   double out_d_nodal_basis_at_loc;
 
   // First evaluate the derivative normalized Dubiner basis at position in_loc
@@ -622,10 +622,10 @@ double eles_tris::eval_d_nodal_basis(int in_index, int in_cpnt, array<double> in
 }
 
 // evaluate nodal shape basis
-double eles_tris::eval_nodal_s_basis(int in_index, array<double> in_loc, int in_n_spts)
+double eles_tris::eval_nodal_s_basis(int in_index, Array<double> in_loc, int in_n_spts)
 {
 
-  array<double> nodal_s_basis(in_n_spts,1);
+  Array<double> nodal_s_basis(in_n_spts,1);
   //d_nodal_s_basis.initialize_to_zero();
   eval_dn_nodal_s_basis(nodal_s_basis, in_loc, in_n_spts, 0);
 
@@ -633,8 +633,8 @@ double eles_tris::eval_nodal_s_basis(int in_index, array<double> in_loc, int in_
 }
 
 // evaluate derivative of nodal shape basis
-//double eles_tris::eval_d_nodal_s_basis(int in_index, int in_cpnt, array<double> in_loc, int in_n_spts)
-void eles_tris::eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<double> in_loc, int in_n_spts)
+//double eles_tris::eval_d_nodal_s_basis(int in_index, int in_cpnt, Array<double> in_loc, int in_n_spts)
+void eles_tris::eval_d_nodal_s_basis(Array<double> &d_nodal_s_basis, Array<double> in_loc, int in_n_spts)
 {
 
   eval_dn_nodal_s_basis(d_nodal_s_basis,in_loc, in_n_spts, 1);
@@ -642,7 +642,7 @@ void eles_tris::eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<doubl
 }
 
 // evaluate second derivative of nodal shape basis
-void eles_tris::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)
+void eles_tris::eval_dd_nodal_s_basis(Array<double> &dd_nodal_s_basis, Array<double> in_loc, int in_n_spts)
 {
 
   eval_dn_nodal_s_basis(dd_nodal_s_basis,in_loc, in_n_spts, 2);
@@ -650,7 +650,7 @@ void eles_tris::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<dou
 }
 
 
-void eles_tris::fill_opp_3(array<double>& opp_3)
+void eles_tris::fill_opp_3(Array<double>& opp_3)
 {
   get_opp_3_tri(opp_3,loc_upts,loc_1d_fpts,vandermonde,inv_vandermonde,n_upts_per_ele, order, run_input.c_tri, run_input.vcjh_scheme_tri);
 }
@@ -685,11 +685,11 @@ void eles_tris::compute_filter_upts(void)
       int ctype;
       double k_R, k_L, coeff;
       double res_0, res_L, res_R;
-      array<double> alpha(N);
-      array<double> wf(N);
-      array<double> X(n_dims,N);
-      array<double> B(N);
-      array<double> beta(N,N);
+      Array<double> alpha(N);
+      Array<double> wf(N);
+      Array<double> X(n_dims,N);
+      Array<double> B(N);
+      Array<double> beta(N,N);
 
       if(N != n_cubpts_per_ele)
         {
@@ -846,7 +846,7 @@ double eles_tris::calc_h_ref_specific(int in_ele)
 void eles_tris::compute_stabilization_filter() {
   int n = n_upts_per_ele;
 
-  array<double> modal_filter(n,n);
+  Array<double> modal_filter(n,n);
 
   fill_stabilization_interior_filter_tris(modal_filter, order, loc_upts, this);
 
@@ -863,7 +863,7 @@ void eles_tris::compute_stabilization_filter() {
   inv_vandermonde.print();
   cout << "nodal filtering matrix: " << endl;
 
-  stab_filter_interior = mult_arrays(modal_filter, inv_vandermonde);
+  stab_filter_interior = mult_Arrays(modal_filter, inv_vandermonde);
   stab_filter_interior.print();
 
   // normalize filter so it is conservative
@@ -891,7 +891,7 @@ void eles_tris::compute_stabilization_filter() {
 
 /*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a circle in a symmetric, reference element
  */
-double eles_tris::reference_element_norm( array<double>& rvect, array<double>& r0vect) {
+double eles_tris::reference_element_norm( Array<double>& rvect, Array<double>& r0vect) {
   return sqrt((rvect(0) - r0vect(0))*(rvect(0) - r0vect(0)) +
               (rvect(1) - r0vect(1))*(rvect(1) - r0vect(1)) +
               (rvect(0) - r0vect(0))*(rvect(1) - r0vect(1)) );

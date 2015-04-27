@@ -25,10 +25,10 @@
 
 #pragma once
 
-#include "array.h"
+#include "Array.h"
 
 /*! calculate source term for Spalart-Allmaras turbulence model in 2D */
-void calc_source_SA_2d(array<double>& in_u, array<double>& in_grad_u, double& d, double& out_source);
+void calc_source_SA_2d(Array<double>& in_u, Array<double>& in_grad_u, double& d, double& out_source);
 
 /*! calculate source term for Spalart-Allmaras turbulence model in 3D */
-void calc_source_SA_3d(array<double>& in_u, array<double>& in_grad_u, double& d, double& out_source);
+void calc_source_SA_3d(Array<double>& in_u, Array<double>& in_grad_u, double& d, double& out_source);

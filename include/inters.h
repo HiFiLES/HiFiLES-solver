@@ -26,7 +26,7 @@
 #pragma once
 
 #include "inters.h"
-#include "array.h"
+#include "Array.h"
 
 #ifdef _MPI
 #include "mpi.h"
@@ -52,28 +52,28 @@ public:
   void setup_inters(int in_n_inters, int in_inter_type);
 
   /*! Set normal flux to be normal * f_r */
-  void right_flux(array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
+  void right_flux(Array<double> &f_r, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Rusanov flux */
-  void rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
+  void rusanov_flux(Array<double> &u_l, Array<double> &u_r, Array<double> &v_g, Array<double> &f_l, Array<double> &f_r, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Roe flux */
-  void roe_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
+  void roe_flux(Array<double> &u_l, Array<double> &u_r, Array<double> &v_g, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields, double gamma);
 
   /*! Compute common inviscid flux using Lax-Friedrich flux (works only for wave equation) */
-  void lax_friedrich(array<double> &u_l, array<double> &u_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double lambda, array<double>& wave_speed);
+  void lax_friedrich(Array<double> &u_l, Array<double> &u_r, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields, double lambda, Array<double>& wave_speed);
 
   /*! Compute common viscous flux using LDG formulation */
-  void ldg_flux(int flux_spec, array<double> &u_l, array<double> &u_r, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double tau, double pen_fact);
+  void ldg_flux(int flux_spec, Array<double> &u_l, Array<double> &u_r, Array<double> &f_l, Array<double> &f_r, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields, double tau, double pen_fact);
 
   /*! Compute common solution using LDG formulation */
-  void ldg_solution(int flux_spec, array<double> &u_l, array<double> &u_r, array<double> &u_c, double pen_fact, array<double>& norm);
+  void ldg_solution(int flux_spec, Array<double> &u_l, Array<double> &u_r, Array<double> &u_c, double pen_fact, Array<double>& norm);
 
 	/*! get look up table for flux point connectivity based on rotation tag */
 	void get_lut(int in_rot_tag);
 	
   /*! Compute common flux at boundaries using convective flux formulation */
-  void convective_flux_boundary(array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields);
+  void convective_flux_boundary(Array<double> &f_l, Array<double> &f_r, Array<double> &norm, Array<double> &fn, int n_dims, int n_fields);
 
 	protected:
 
@@ -91,63 +91,63 @@ public:
 	int n_dims;
   int motion;       //!< Mesh motion flag
 	
-	array<double*> disu_fpts_l;
-	array<double*> delta_disu_fpts_l;
-	array<double*> norm_tconf_fpts_l;
-	//array<double*> norm_tconvisf_fpts_l;
-	array<double*> detjac_fpts_l;
-	array<double*> tdA_fpts_l;
-	array<double*> norm_fpts;
-	array<double*> pos_fpts;
-  array<double*> pos_dyn_fpts;
+	Array<double*> disu_fpts_l;
+	Array<double*> delta_disu_fpts_l;
+	Array<double*> norm_tconf_fpts_l;
+	//Array<double*> norm_tconvisf_fpts_l;
+	Array<double*> detjac_fpts_l;
+	Array<double*> tdA_fpts_l;
+	Array<double*> norm_fpts;
+	Array<double*> pos_fpts;
+  Array<double*> pos_dyn_fpts;
 
-  array<double> pos_disu_fpts_l;
-  array<double*> grad_disu_fpts_l;
-  array<double*> normal_disu_fpts_l;
+  Array<double> pos_disu_fpts_l;
+  Array<double*> grad_disu_fpts_l;
+  Array<double*> normal_disu_fpts_l;
 
-  array<double> temp_u_l;
-  array<double> temp_u_r;
+  Array<double> temp_u_l;
+  Array<double> temp_u_r;
 
-  array<double> temp_grad_u_l;
-  array<double> temp_grad_u_r;
+  Array<double> temp_grad_u_l;
+  Array<double> temp_grad_u_r;
 
-  array<double> temp_normal_u_l;
+  Array<double> temp_normal_u_l;
 
-  array<double> temp_pos_u_l;
+  Array<double> temp_pos_u_l;
 
-  array<double> temp_f_l;
-  array<double> temp_f_r;
+  Array<double> temp_f_l;
+  Array<double> temp_f_r;
 
-  array<double> temp_fn_l;
-  array<double> temp_fn_r;
+  Array<double> temp_fn_l;
+  Array<double> temp_fn_r;
 
-  array<double> temp_f;
+  Array<double> temp_f;
 
-  array<double> temp_loc;
+  Array<double> temp_loc;
 
 	// LES and wall model quantities
-	array<double*> sgsf_fpts_l;
-	array<double*> sgsf_fpts_r;
-	array<double> temp_sgsf_l;
-	array<double> temp_sgsf_r;
+	Array<double*> sgsf_fpts_l;
+	Array<double*> sgsf_fpts_r;
+	Array<double> temp_sgsf_l;
+	Array<double> temp_sgsf_r;
 
-  array<int> lut;
+  Array<int> lut;
 
-  array<double> v_l, v_r, um, du;
+  Array<double> v_l, v_r, um, du;
 
   // Dynamic grid variables:
   // Note: grid velocity is continuous across interfaces
-  array<double*> ndA_dyn_fpts_l;
-  array<double*> norm_dyn_fpts;
-  array<double*> J_dyn_fpts_l;
-  array<double*> grid_vel_fpts;
-  array<double*> disu_GCL_fpts_l;
-  array<double*> norm_tconf_GCL_fpts_l;
+  Array<double*> ndA_dyn_fpts_l;
+  Array<double*> norm_dyn_fpts;
+  Array<double*> J_dyn_fpts_l;
+  Array<double*> grid_vel_fpts;
+  Array<double*> disu_GCL_fpts_l;
+  Array<double*> norm_tconf_GCL_fpts_l;
 
   double temp_u_GCL_l;
   double temp_f_GCL_l;
 
-  array<double> temp_v;
-  array<double> temp_fn_ref_l;
-  array<double> temp_fn_ref_r;
+  Array<double> temp_v;
+  Array<double> temp_fn_ref_l;
+  Array<double> temp_fn_ref_r;
 };

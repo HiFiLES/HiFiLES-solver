@@ -26,7 +26,7 @@
 #pragma once
 
 #include "eles.h"
-#include "array.h"
+#include "Array.h"
 
 class eles_tets: public eles
 {	
@@ -77,36 +77,36 @@ public:
   void write_restart_info(ofstream& restart_file);
 
   /*! Compute interface jacobian determinant on face */
-  double compute_inter_detjac_inters_cubpts(int in_inter, array<double> d_pos);
+  double compute_inter_detjac_inters_cubpts(int in_inter, Array<double> d_pos);
 
   /*! evaluate nodal basis */
-  double eval_nodal_basis(int in_index, array<double> in_loc);
+  double eval_nodal_basis(int in_index, Array<double> in_loc);
 
   /*! evaluate nodal basis */
-  double eval_nodal_basis_restart(int in_index, array<double> in_loc);
+  double eval_nodal_basis_restart(int in_index, Array<double> in_loc);
 
   /*! evaluate derivative of nodal basis */
-  double eval_d_nodal_basis(int in_index, int in_cpnt, array<double> in_loc);
+  double eval_d_nodal_basis(int in_index, int in_cpnt, Array<double> in_loc);
 
   /*! evaluate divergence of vcjh basis */
-  double eval_div_vcjh_basis(int in_index, array<double>& loc);
+  double eval_div_vcjh_basis(int in_index, Array<double>& loc);
 
-  void fill_opp_3(array<double>& opp_3);
+  void fill_opp_3(Array<double>& opp_3);
 
-  void get_opp_3_dg_tet(array<double>& opp_3_dg);
+  void get_opp_3_dg_tet(Array<double>& opp_3_dg);
 
-  double eval_div_dg_tet(int in_index, array<double>& loc);
+  double eval_div_dg_tet(int in_index, Array<double>& loc);
 
-  void compute_filt_matrix_tet(array<double>& Filt, int vcjh_scheme_tet, double c_tet);
+  void compute_filt_matrix_tet(Array<double>& Filt, int vcjh_scheme_tet, double c_tet);
 
   /*! evaluate nodal shape basis */
-  double eval_nodal_s_basis(int in_index, array<double> in_loc, int in_n_spts);
+  double eval_nodal_s_basis(int in_index, Array<double> in_loc, int in_n_spts);
 
   /*! evaluate derivative of nodal shape basis */
-  void eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<double> in_loc, int in_n_spts);
+  void eval_d_nodal_s_basis(Array<double> &d_nodal_s_basis, Array<double> in_loc, int in_n_spts);
 
   /*! evaluate second derivative of nodal shape basis */
-  void eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts);
+  void eval_dd_nodal_s_basis(Array<double> &dd_nodal_s_basis, Array<double> in_loc, int in_n_spts);
 
   /*! Compute the filter matrix for subgrid-scale models */
   void compute_filter_upts(void);
@@ -121,7 +121,7 @@ public:
   void compute_stabilization_filter(){}
 
   /*! Norm in reference element for which ||x|| = 1 draws a circle in symmetric element*/
-  double reference_element_norm(array<double>& rvect, array<double>& r0vect){}
+  double reference_element_norm(Array<double>& rvect, Array<double>& r0vect){}
 
 protected:
 
@@ -130,8 +130,8 @@ protected:
   void set_vandermonde_restart();
 
   // members
-  array<double> vandermonde;
-  array<double> inv_vandermonde;
-  array<double> inv_vandermonde_rest;
+  Array<double> vandermonde;
+  Array<double> inv_vandermonde;
+  Array<double> inv_vandermonde_rest;
 
 };

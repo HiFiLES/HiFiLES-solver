@@ -57,7 +57,7 @@ extern "C"
 #endif
 
 #include "../include/global.h"
-#include "../include/array.h"
+#include "../include/Array.h"
 #include "../include/flux.h"
 #include "../include/source.h"
 #include "../include/eles.h"
@@ -202,7 +202,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       disu_average_upts.initialize_to_zero();
     }
     
-    // Allocate extra arrays for LES models
+    // Allocate extra Arrays for LES models
     if(LES) {
       
       sgsf_upts.setup(n_upts_per_ele,n_eles,n_fields,n_dims);
@@ -212,7 +212,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       if(sgs_model==3 || sgs_model==2 || sgs_model==4) {
         disuf_upts.setup(n_upts_per_ele,n_eles,n_fields);
       }
-      // allocate dummy array for passing to GPU routine
+      // allocate dummy Array for passing to GPU routine
       else {
         disuf_upts.setup(1);
       }
@@ -235,7 +235,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
         ue.setup(n_upts_per_ele,n_eles,n_dims);
         
       }
-      // allocate dummy arrays
+      // allocate dummy Arrays
       else {
         Lu.setup(1);
         uu.setup(1);
@@ -243,7 +243,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
         ue.setup(1);
       }
     }
-    // Dummy arrays to pass to GPU kernel wrapper
+    // Dummy Arrays to pass to GPU kernel wrapper
     else {
       disuf_upts.setup(1);
       Lu.setup(1);
@@ -252,19 +252,19 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       ue.setup(1);
     }
 
-    // Allocate array for wall distance if using a RANS-based turbulence model or LES wall model
+    // Allocate Array for wall distance if using a RANS-based turbulence model or LES wall model
     if (run_input.turb_model > 0) {
       wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
       wall_distance_mag.setup(n_upts_per_ele,n_eles);
-      zero_array(wall_distance);
-      zero_array(wall_distance_mag);
+      zero_Array(wall_distance);
+      zero_Array(wall_distance_mag);
       twall.setup(1);
     }
     else if (wall_model > 0) {
       wall_distance.setup(n_upts_per_ele,n_eles,n_dims);
       twall.setup(n_upts_per_ele,n_eles,n_fields);
-      zero_array(wall_distance);
-      zero_array(twall);
+      zero_Array(wall_distance);
+      zero_Array(twall);
       wall_distance_mag.setup(1);
     }
     else {
@@ -273,7 +273,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       twall.setup(1);
     }
     
-    // Allocate SGS flux array if using LES or wall model
+    // Allocate SGS flux Array if using LES or wall model
     if(LES != 0 || wall_model != 0) {
       temp_sgsf.setup(n_fields,n_dims);
       if(motion)
@@ -282,9 +282,9 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 
     // Initialize source term
     src_upts.setup(n_upts_per_ele, n_eles, n_fields);
-    zero_array(src_upts);
+    zero_Array(src_upts);
 
-    // Allocate array for grid velocity
+    // Allocate Array for grid velocity
     temp_v.setup(n_dims);
     temp_v.initialize_to_zero();
     temp_v_ref.setup(n_dims);
@@ -395,7 +395,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
       }
     }
     
-    // Set connectivity array. Needed for Paraview output.
+    // Set connectivity Array. Needed for Paraview output.
     if (ele_type==3) // prism
       connectivity_plot.setup(8,n_peles_per_ele);
     else
@@ -428,7 +428,7 @@ void eles::set_disu_upts_to_zero_other_levels(void)
   }
 }
 
-array<int> eles::get_connectivity_plot()
+Array<int> eles::get_connectivity_plot()
 {
   return connectivity_plot;
 }
@@ -443,11 +443,11 @@ void eles::set_ics(double& time)
   double gamma=run_input.gamma;
   time = 0.;
   
-  array<double> loc(n_dims);
-  array<double> pos(n_dims);
-  array<double> ics(n_fields);
+  Array<double> loc(n_dims);
+  Array<double> pos(n_dims);
+  Array<double> ics(n_fields);
   
-  array<double> grad_rho(n_dims);
+  Array<double> grad_rho(n_dims);
   
   for(i=0;i<n_eles;i++)
   {
@@ -601,7 +601,7 @@ void eles::set_ics(double& time)
 
   // If required, calculate element reference lengths
   if (run_input.dt_type > 0) {
-    // Allocate array
+    // Allocate Array
     h_ref.setup(n_upts_per_ele,n_eles);
     
     // Call element specific function to obtain length
@@ -660,7 +660,7 @@ void eles::read_restart_data(ifstream& restart_file)
   getline(restart_file,str);
   
   int ele,index;
-  array<double> disu_upts_rest;
+  Array<double> disu_upts_rest;
   disu_upts_rest.setup(n_upts_per_ele_rest,n_fields);
   
   for (int i=0;i<num_eles_to_read;i++)
@@ -699,7 +699,7 @@ void eles::read_restart_data(ifstream& restart_file)
   
   // If required, calculate element reference lengths
   if (run_input.dt_type > 0) {
-    // Allocate array
+    // Allocate Array
     h_ref.setup(n_upts_per_ele,n_eles);
 
     // Call element specific function to obtain length
@@ -723,7 +723,7 @@ void eles::write_restart_data(ofstream& restart_file)
 {
   restart_file << "n_eles" << endl;
   restart_file << n_eles << endl;
-  restart_file << "ele2global_ele array" << endl;
+  restart_file << "ele2global_ele Array" << endl;
   for (int i=0;i<n_eles;i++)
     restart_file << ele2global_ele(i) << " ";
   restart_file << endl;
@@ -749,7 +749,7 @@ void eles::write_restart_mesh(ofstream& restart_file)
 {
   restart_file << "n_eles" << endl;
   restart_file << n_eles << endl;
-  restart_file << "ele2global_ele array" << endl;
+  restart_file << "ele2global_ele Array" << endl;
   for (int i=0;i<n_eles;i++)
     restart_file << ele2global_ele(i) << " ";
   restart_file << endl;
@@ -808,7 +808,7 @@ void eles::mv_all_cpu_gpu(void)
       //norm_tconvisf_fpts.mv_cpu_gpu();
     }
     
-    // LES and wall model arrays
+    // LES and wall model Arrays
     filter_upts.mv_cpu_gpu();
     disuf_upts.mv_cpu_gpu();
     sgsf_upts.mv_cpu_gpu();
@@ -819,7 +819,7 @@ void eles::mv_all_cpu_gpu(void)
     Le.mv_cpu_gpu();
     twall.mv_cpu_gpu();
 
-    // Grid Velocity-related arrays for moving meshes
+    // Grid Velocity-related Arrays for moving meshes
     vel_spts.cp_cpu_gpu();
     grid_vel_upts.mv_cpu_gpu();
     grid_vel_fpts.mv_cpu_gpu();
@@ -837,7 +837,7 @@ void eles::mv_all_cpu_gpu(void)
 
         if(run_input.artif_type == 1)
         {
-          concentration_array.mv_cpu_gpu();
+          concentration_Array.mv_cpu_gpu();
           sigma.mv_cpu_gpu();
         }
 
@@ -858,7 +858,7 @@ void eles::mv_all_cpu_gpu(void)
 #endif
 }
 
-// move wall distance array to gpu
+// move wall distance Array to gpu
 void eles::mv_wall_distance_cpu_gpu(void)
 {
 #ifdef _GPU
@@ -868,7 +868,7 @@ void eles::mv_wall_distance_cpu_gpu(void)
 #endif
 }
 
-// move wall distance magnitude array to gpu
+// move wall distance magnitude Array to gpu
 void eles::mv_wall_distance_mag_cpu_gpu(void)
 {
 #ifdef _GPU
@@ -1296,7 +1296,7 @@ void eles::extrapolate_solution(int in_disu_upts_from)
       
 #endif
     }
-    else if(opp_0_sparse==1) // mkl blas four-array csr format
+    else if(opp_0_sparse==1) // mkl blas four-Array csr format
     {
 #if defined _MKL_BLAS
       mkl_dcsrmm(&transa,&n_fpts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_0_data.get_ptr_cpu(),opp_0_cols.get_ptr_cpu(),opp_0_b.get_ptr_cpu(),opp_0_e.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),&n_upts_per_ele,&zero,disu_fpts.get_ptr_cpu(),&n_fpts_per_ele);
@@ -1444,7 +1444,7 @@ void eles::extrapolate_totalFlux()
       }
 #endif
     }
-    else if(opp_1_sparse==1) // mkl blas four-array csr format
+    else if(opp_1_sparse==1) // mkl blas four-Array csr format
     {
 #if defined _MKL_BLAS
       
@@ -1539,7 +1539,7 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
       
 #endif
     }
-    else if(opp_2_sparse==1) // mkl blas four-array csr format
+    else if(opp_2_sparse==1) // mkl blas four-Array csr format
     {
 #if defined _MKL_BLAS
       
@@ -1618,7 +1618,7 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
       
 #endif
     }
-    else if(opp_3_sparse==1) // mkl blas four-array csr format
+    else if(opp_3_sparse==1) // mkl blas four-Array csr format
     {
 #if defined _MKL_BLAS
       
@@ -1714,7 +1714,7 @@ void eles::calculate_gradient(int in_disu_upts_from)
       
 #endif
     }
-    else if(opp_4_sparse==1) // mkl blas four-array csr format
+    else if(opp_4_sparse==1) // mkl blas four-Array csr format
     {
 #if defined _MKL_BLAS
       
@@ -1799,7 +1799,7 @@ void eles::correct_gradient(void)
       
 #endif
     }
-    else if(opp_5_sparse==1) // mkl blas four-array csr format
+    else if(opp_5_sparse==1) // mkl blas four-Array csr format
     {
 #if defined _MKL_BLAS
       
@@ -2001,7 +2001,7 @@ void eles::extrapolate_corrected_gradient(void)
       }
 #endif
     }
-    else if(opp_6_sparse==1) // mkl blas four-array csr format
+    else if(opp_6_sparse==1) // mkl blas four-Array csr format
     {
 #if defined _MKL_BLAS
       
@@ -2062,7 +2062,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
     int i,j,k,l;
     int dim3;
     double diag, rsq;
-    array <double> utemp(n_fields);
+    Array <double> utemp(n_fields);
     
     /*! Filter solution */
     
@@ -2117,11 +2117,11 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
     /*! If Similarity model, compute product terms and Leonard tensors */
     else if(sgs_model==2 || sgs_model==4) {
       
-      /*! third dimension of Lu, uu arrays */
+      /*! third dimension of Lu, uu Arrays */
       if(n_dims==2)      dim3 = 3;
       else if(n_dims==3) dim3 = 6;
       
-      /*! Calculate velocity and energy product arrays uu, ue */
+      /*! Calculate velocity and energy product Arrays uu, ue */
       for(i=0;i<n_upts_per_ele;i++) {
         for(j=0;j<n_eles;j++) {
           for(k=0;k<n_fields;k++) {
@@ -2130,7 +2130,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
           
           rsq = utemp(0)*utemp(0);
           
-          /*! note that product arrays are symmetric */
+          /*! note that product Arrays are symmetric */
           if(n_dims==2) {
             /*! velocity-velocity product */
             uu(i,j,0) = utemp(1)*utemp(1)/rsq;
@@ -2278,7 +2278,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
       /*! compute product terms uu, ue (pass flag=0 to wrapper function) */
       calc_similarity_model_kernel_wrapper(0, n_fields, n_upts_per_ele, n_eles, n_dims, disu_upts(in_disu_upts_from).get_ptr_gpu(), disuf_upts.get_ptr_gpu(), uu.get_ptr_gpu(), ue.get_ptr_gpu(), Lu.get_ptr_gpu(), Le.get_ptr_gpu());
       
-      /*! third dimension of Lu, uu arrays */
+      /*! third dimension of Lu, uu Arrays */
       if(n_dims==2)
         dim3 = 3;
       else if(n_dims==3)
@@ -2378,7 +2378,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           
         }
         
-        // If LES, add SGS flux to global array (needed for interface flux calc)
+        // If LES, add SGS flux to global Array (needed for interface flux calc)
         if(LES > 0) {
 
           // Transfer back to static-phsycial domain
@@ -2391,7 +2391,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
                 }
               }
             }
-            // Copy back to original flux array
+            // Copy back to original flux Array
             for (k=0; k<n_fields; k++) {
               for(l=0; l<n_dims; l++) {
                 temp_sgsf(k,l) = temp_sgsf_ref(k,l);
@@ -2420,7 +2420,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
               }
             }
           }
-          // Copy back to original flux array
+          // Copy back to original flux Array
           for(l=0; l<n_dims; l++) {
             for (k=0; k<n_fields; k++) {
               temp_f(k,l) = temp_f_ref(k,l);
@@ -2453,7 +2453,7 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
 }
 
 // Calculate SGS flux at solution points
-void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf)
+void eles::calc_sgsf_upts(Array<double>& temp_u, Array<double>& temp_grad_u, double& detjac, int ele, int upt, Array<double>& temp_sgsf)
 {
   int i,j,k;
   int eddy, sim, wall;
@@ -2464,17 +2464,17 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   double Pr=0.5; // turbulent Prandtl number
   double delta, mu, mu_t, vol;
   double rho, inte, rt_ratio;
-  array<double> u(n_dims);
-  array<double> drho(n_dims), dene(n_dims), dke(n_dims), de(n_dims);
-  array<double> dmom(n_dims,n_dims), du(n_dims,n_dims), S(n_dims,n_dims);
+  Array<double> u(n_dims);
+  Array<double> drho(n_dims), dene(n_dims), dke(n_dims), de(n_dims);
+  Array<double> dmom(n_dims,n_dims), du(n_dims,n_dims), S(n_dims,n_dims);
   
   // quantities for wall model
-  array<double> norm(n_dims);
-  array<double> tau(n_dims,n_dims);
-  array<double> Mrot(n_dims,n_dims);
-  array<double> temp(n_dims,n_dims);
-  array<double> urot(n_dims);
-  array<double> tw(n_dims);
+  Array<double> norm(n_dims);
+  Array<double> tau(n_dims,n_dims);
+  Array<double> Mrot(n_dims,n_dims);
+  Array<double> temp(n_dims,n_dims);
+  Array<double> urot(n_dims);
+  Array<double> tw(n_dims);
   double y, qw, utau, yplus;
   
   // primitive variables
@@ -2490,8 +2490,8 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
   mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
   mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
   
-  // Initialize SGS flux array to zero
-  zero_array(temp_sgsf);
+  // Initialize SGS flux Array to zero
+  zero_Array(temp_sgsf);
   
   // Compute SGS flux using wall model if sufficiently close to solid boundary
   wall = 0;
@@ -2552,25 +2552,25 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
     
     // correct the sign of wall shear stress and wall heat flux? - see SD3D
     
-    // Set arrays for next timestep
+    // Set Arrays for next timestep
     for(i=0;i<n_dims;++i) twall(upt,ele,i+1) = tw(i); // momentum flux
     
     twall(upt,ele,0)          = 0.0; // density flux
     twall(upt,ele,n_fields-1) = qw;  // energy flux
     
-    // populate ndims*ndims rotated stress array
-    zero_array(tau);
+    // populate ndims*ndims rotated stress Array
+    zero_Array(tau);
     
     for(i=0;i<n_dims-1;i++) tau(i+1,0) = tau(0,i+1) = tw(i);
     
-    // rotate stress array back to Cartesian coordinates
-    zero_array(temp);
+    // rotate stress Array back to Cartesian coordinates
+    zero_Array(temp);
     for(i=0;i<n_dims;++i)
       for(j=0;j<n_dims;++j)
         for(k=0;k<n_dims;++k)
           temp(i,j) += tau(i,k)*Mrot(k,j);
     
-    zero_array(tau);
+    zero_Array(tau);
     for(i=0;i<n_dims;++i)
       for(j=0;j<n_dims;++j)
         for(k=0;k<n_dims;++k)
@@ -2706,7 +2706,7 @@ void eles::calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, dou
         double num=0.0;
         double denom=0.0;
         double eps=1.e-12;
-        array<double> Sq(n_dims,n_dims);
+        Array<double> Sq(n_dims,n_dims);
         diag = 0.0;
         
         // Square of gradient tensor
@@ -2825,7 +2825,7 @@ void eles::calc_src_upts_SA(int in_disu_upts_from)
 /*! If using a RANS or LES near-wall model, calculate distance
  of each solution point to nearest no-slip wall by a brute-force method */
 
-void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, array< array<double> > loc_noslip_bdy)
+void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, Array< Array<double> > loc_noslip_bdy)
 {
   if(n_eles!=0)
   {
@@ -2835,10 +2835,10 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
     int n_fpts_per_inter_quad = (order+1)*(order+1);
     double dist;
     double distmin;
-    array<double> pos(n_dims);
-    array<double> pos_bdy(n_dims);
-    array<double> vec(n_dims);
-    array<double> vecmin(n_dims);
+    Array<double> pos(n_dims);
+    Array<double> pos_bdy(n_dims);
+    Array<double> vec(n_dims);
+    Array<double> vecmin(n_dims);
     
     // hold our breath and go round the brute-force loop...
     for (i=0;i<n_eles;++i) {
@@ -2927,7 +2927,7 @@ void eles::calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, 
 
 #ifdef _MPI
 
-void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int> n_tri_inters_array, array<int> n_quad_inters_array, array< array<double> > loc_noslip_bdy_global, int nproc)
+void eles::calc_wall_distance_parallel(Array<int> n_seg_inters_Array, Array<int> n_tri_inters_Array, Array<int> n_quad_inters_Array, Array< Array<double> > loc_noslip_bdy_global, int nproc)
 {
   if(n_eles!=0)
   {
@@ -2937,10 +2937,10 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
     int n_fpts_per_inter_quad = (order+1)*(order+1);
     double dist;
     double distmin;
-    array<double> pos(n_dims);
-    array<double> pos_bdy(n_dims);
-    array<double> vec(n_dims);
-    array<double> vecmin(n_dims);
+    Array<double> pos(n_dims);
+    Array<double> pos_bdy(n_dims);
+    Array<double> vec(n_dims);
+    Array<double> vecmin(n_dims);
     
     // hold our breath and go round the brute-force loop...
     for (i=0;i<n_eles;++i) {
@@ -2956,7 +2956,7 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
         for (p=0;p<nproc;++p) {
           
           // line segment boundaries
-          for (k=0;k<n_seg_inters_array(p);++k) {
+          for (k=0;k<n_seg_inters_Array(p);++k) {
             
             for (m=0;m<n_fpts_per_inter_seg;++m) {
               
@@ -2978,7 +2978,7 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
           }
           
           // tri boundaries
-          for (k=0;k<n_tri_inters_array(p);++k) {
+          for (k=0;k<n_tri_inters_Array(p);++k) {
             
             for (m=0;m<n_fpts_per_inter_tri;++m) {
               
@@ -3000,7 +3000,7 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
           }
           
           // quad boundaries
-          for (k=0;k<n_quad_inters_array(p);++k) {
+          for (k=0;k<n_quad_inters_Array(p);++k) {
             
             for (m=0;m<n_fpts_per_inter_quad;++m) {
               
@@ -3034,9 +3034,9 @@ void eles::calc_wall_distance_parallel(array<int> n_seg_inters_array, array<int>
 
 #endif
 
-array<double> eles::calc_rotation_matrix(array<double>& norm)
+Array<double> eles::calc_rotation_matrix(Array<double>& norm)
 {
-  array <double> mrot(n_dims,n_dims);
+  Array <double> mrot(n_dims,n_dims);
   double nn;
   
   // Create rotation matrix
@@ -3086,7 +3086,7 @@ array<double> eles::calc_rotation_matrix(array<double>& norm)
   return mrot;
 }
 
-void eles::calc_wall_stress(double rho, array<double>& urot, double ene, double mu, double Pr, double gamma, double y, array<double>& tau_wall, double q_wall)
+void eles::calc_wall_stress(double rho, Array<double>& urot, double ene, double mu, double Pr, double gamma, double y, Array<double>& tau_wall, double q_wall)
 {
   double eps = 1.e-10;
   double Rey, Rey_c, u, uplus, utau, tw, qw;
@@ -3331,7 +3331,7 @@ void eles::evaluate_sgsFlux(void)
       
 #endif
     }
-    else if(opp_0_sparse==1) // mkl blas four-array csr format
+    else if(opp_0_sparse==1) // mkl blas four-Array csr format
     {
 #if defined _MKL_BLAS
       
@@ -3373,16 +3373,16 @@ void eles::shock_capture_concentration(int in_disu_upts_from)
 {
   if (n_eles!=0){
     #ifdef _GPU
-      shock_capture_concentration_gpu_kernel_wrapper(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), vandermonde2D.get_ptr_gpu(), concentration_array.get_ptr_gpu(), sensor.get_ptr_gpu(), sigma.get_ptr_gpu());
+      shock_capture_concentration_gpu_kernel_wrapper(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_gpu(), inv_vandermonde.get_ptr_gpu(), inv_vandermonde2D.get_ptr_gpu(), vandermonde2D.get_ptr_gpu(), concentration_Array.get_ptr_gpu(), sensor.get_ptr_gpu(), sigma.get_ptr_gpu());
     #endif
 
     #ifdef _CPU
-        shock_capture_concentration_cpu(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_cpu(), inv_vandermonde.get_ptr_cpu(), inv_vandermonde2D.get_ptr_cpu(), vandermonde2D.get_ptr_cpu(), concentration_array.get_ptr_cpu(), sensor.get_ptr_cpu(), sigma.get_ptr_cpu());
+        shock_capture_concentration_cpu(n_eles, n_upts_per_ele, n_fields, order, ele_type, run_input.artif_type, run_input.s0, run_input.kappa, disu_upts(in_disu_upts_from).get_ptr_cpu(), inv_vandermonde.get_ptr_cpu(), inv_vandermonde2D.get_ptr_cpu(), vandermonde2D.get_ptr_cpu(), concentration_Array.get_ptr_cpu(), sensor.get_ptr_cpu(), sigma.get_ptr_cpu());
     #endif
   }
 }
 
-void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_array_ptr, double* out_sensor, double* sigma)
+void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_Array_ptr, double* out_sensor, double* sigma)
 {
     int stride = in_n_upts_per_ele * in_n_eles;
     double tmp_sensor = 0;
@@ -3416,7 +3416,7 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
                 for(int j=0; j < in_order+1; j++){
                     uE[j] = 0;
                     for(int k=0; k < in_order+1; k++)
-                        uE[j] += modal_rho[k]*concentration_array_ptr[j * (in_order+1) + k];
+                        uE[j] += modal_rho[k]*concentration_Array_ptr[j * (in_order+1) + k];
 
                     uE[j] = abs( (3.1415 / (in_order+1) ) * uE[j]);
                     temp = pow(uE[j],p) * pow(in_order+1, p/2);
@@ -3446,7 +3446,7 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
                 for(int j=0; j<in_order+1; j++){
                     uE[j] = 0;
                     for(int k=0; k<in_order+1; k++)
-                        uE[j] += modal_rho[k] * concentration_array_ptr[j * (in_order+1) + k];
+                        uE[j] += modal_rho[k] * concentration_Array_ptr[j * (in_order+1) + k];
 
                     uE[j] = ( 3.1415 / (in_order+1) ) * uE[j];
                     temp = pow(abs(uE[j]), p) * pow(in_order+1, p/2);
@@ -3551,7 +3551,7 @@ int eles::get_n_upts_per_ele(void)
   return n_upts_per_ele;
 }
 
-// set the shape array
+// set the shape Array
 void eles::set_shape(int in_max_n_spts_per_ele)
 {
   shape.setup(n_dims,in_max_n_spts_per_ele,n_eles);
@@ -3562,7 +3562,7 @@ void eles::set_shape(int in_max_n_spts_per_ele)
 
 // set a shape node
 
-void eles::set_shape_node(int in_spt, int in_ele, array<double>& in_pos)
+void eles::set_shape_node(int in_spt, int in_ele, Array<double>& in_pos)
 {
   for(int i=0;i<n_dims;i++)
   {
@@ -3572,7 +3572,7 @@ void eles::set_shape_node(int in_spt, int in_ele, array<double>& in_pos)
   }
 }
 
-void eles::set_dynamic_shape_node(int in_spt, int in_ele, array<double> &in_pos)
+void eles::set_dynamic_shape_node(int in_spt, int in_ele, Array<double> &in_pos)
 {
   for(int i=0;i<n_dims;i++) {
     shape_dyn(i,in_spt,in_ele)=in_pos(i);
@@ -3624,7 +3624,7 @@ void eles::set_opp_0(int in_sparse)
 {
   int i,j,k;
   
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   
   opp_0.setup(n_fpts_per_ele,n_upts_per_ele);
   
@@ -3659,11 +3659,11 @@ void eles::set_opp_0(int in_sparse)
     opp_0_sparse=1;
     
 #ifdef _CPU
-    array_to_mklcsr(opp_0,opp_0_data,opp_0_cols,opp_0_b,opp_0_e);
+    Array_to_mklcsr(opp_0,opp_0_data,opp_0_cols,opp_0_b,opp_0_e);
 #endif
     
 #ifdef _GPU
-    array_to_ellpack(opp_0, opp_0_ell_data, opp_0_ell_indices, opp_0_nnz_per_row);
+    Array_to_ellpack(opp_0, opp_0_ell_data, opp_0_ell_indices, opp_0_nnz_per_row);
     opp_0_ell_data.cp_cpu_gpu();
     opp_0_ell_indices.cp_cpu_gpu();
 #endif
@@ -3683,7 +3683,7 @@ void eles::set_opp_0(int in_sparse)
 void eles::set_opp_1(int in_sparse)
 {
   int i,j,k,l;
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   
   opp_1.setup(n_dims);
   for (int i=0;i<n_dims;i++)
@@ -3725,7 +3725,7 @@ void eles::set_opp_1(int in_sparse)
     
 #ifdef _CPU
     for (int i=0;i<n_dims;i++) {
-      array_to_mklcsr(opp_1(i),opp_1_data(i),opp_1_cols(i),opp_1_b(i),opp_1_e(i));
+      Array_to_mklcsr(opp_1(i),opp_1_data(i),opp_1_cols(i),opp_1_b(i),opp_1_e(i));
     }
 #endif
     
@@ -3734,7 +3734,7 @@ void eles::set_opp_1(int in_sparse)
     opp_1_ell_indices.setup(n_dims);
     opp_1_nnz_per_row.setup(n_dims);
     for (int i=0;i<n_dims;i++) {
-      array_to_ellpack(opp_1(i), opp_1_ell_data(i), opp_1_ell_indices(i), opp_1_nnz_per_row(i));
+      Array_to_ellpack(opp_1(i), opp_1_ell_data(i), opp_1_ell_indices(i), opp_1_nnz_per_row(i));
       opp_1_ell_data(i).cp_cpu_gpu();
       opp_1_ell_indices(i).cp_cpu_gpu();
     }
@@ -3754,7 +3754,7 @@ void eles::set_opp_2(int in_sparse)
   
   int i,j,k,l;
   
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   
   opp_2.setup(n_dims);
   for (int i=0;i<n_dims;i++)
@@ -3803,7 +3803,7 @@ void eles::set_opp_2(int in_sparse)
     
 #ifdef _CPU
     for (int i=0;i<n_dims;i++) {
-      array_to_mklcsr(opp_2(i),opp_2_data(i),opp_2_cols(i),opp_2_b(i),opp_2_e(i));
+      Array_to_mklcsr(opp_2(i),opp_2_data(i),opp_2_cols(i),opp_2_b(i),opp_2_e(i));
     }
 #endif
     
@@ -3812,7 +3812,7 @@ void eles::set_opp_2(int in_sparse)
     opp_2_ell_indices.setup(n_dims);
     opp_2_nnz_per_row.setup(n_dims);
     for (int i=0;i<n_dims;i++) {
-      array_to_ellpack(opp_2(i), opp_2_ell_data(i), opp_2_ell_indices(i), opp_2_nnz_per_row(i));
+      Array_to_ellpack(opp_2(i), opp_2_ell_data(i), opp_2_ell_indices(i), opp_2_nnz_per_row(i));
       opp_2_ell_data(i).cp_cpu_gpu();
       opp_2_ell_indices(i).cp_cpu_gpu();
     }
@@ -3850,11 +3850,11 @@ void eles::set_opp_3(int in_sparse)
     opp_3_sparse=1;
     
 #ifdef _CPU
-    array_to_mklcsr(opp_3,opp_3_data,opp_3_cols,opp_3_b,opp_3_e);
+    Array_to_mklcsr(opp_3,opp_3_data,opp_3_cols,opp_3_b,opp_3_e);
 #endif
     
 #ifdef _GPU
-    array_to_ellpack(opp_3, opp_3_ell_data, opp_3_ell_indices, opp_3_nnz_per_row);
+    Array_to_ellpack(opp_3, opp_3_ell_data, opp_3_ell_indices, opp_3_nnz_per_row);
     opp_3_ell_data.cp_cpu_gpu();
     opp_3_ell_indices.cp_cpu_gpu();
 #endif
@@ -3871,7 +3871,7 @@ void eles::set_opp_4(int in_sparse)
 {
   int i,j,k,l;
   
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   
   opp_4.setup(n_dims);
 
@@ -3910,7 +3910,7 @@ void eles::set_opp_4(int in_sparse)
 #ifdef _CPU
     for (int i=0;i<n_dims;i++)
     {
-      array_to_mklcsr(opp_4(i),opp_4_data(i),opp_4_cols(i),opp_4_b(i),opp_4_e(i));
+      Array_to_mklcsr(opp_4(i),opp_4_data(i),opp_4_cols(i),opp_4_b(i),opp_4_e(i));
     }
 #endif
     
@@ -3919,7 +3919,7 @@ void eles::set_opp_4(int in_sparse)
     opp_4_ell_indices.setup(n_dims);
     opp_4_nnz_per_row.setup(n_dims);
     for (int i=0;i<n_dims;i++) {
-      array_to_ellpack(opp_4(i), opp_4_ell_data(i), opp_4_ell_indices(i), opp_4_nnz_per_row(i));
+      Array_to_ellpack(opp_4(i), opp_4_ell_data(i), opp_4_ell_indices(i), opp_4_nnz_per_row(i));
       opp_4_ell_data(i).cp_cpu_gpu();
       opp_4_ell_indices(i).cp_cpu_gpu();
     }
@@ -3937,7 +3937,7 @@ void eles::set_opp_5(int in_sparse)
 {
   int i,j,k,l;
   
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   
   opp_5.setup(n_dims);
   for (int i=0;i<n_dims;i++)
@@ -3980,7 +3980,7 @@ void eles::set_opp_5(int in_sparse)
     
 #ifdef _CPU
     for (int i=0;i<n_dims;i++) {
-      array_to_mklcsr(opp_5(i),opp_5_data(i),opp_5_cols(i),opp_5_b(i),opp_5_e(i));
+      Array_to_mklcsr(opp_5(i),opp_5_data(i),opp_5_cols(i),opp_5_b(i),opp_5_e(i));
     }
 #endif
     
@@ -3989,7 +3989,7 @@ void eles::set_opp_5(int in_sparse)
     opp_5_ell_indices.setup(n_dims);
     opp_5_nnz_per_row.setup(n_dims);
     for (int i=0;i<n_dims;i++) {
-      array_to_ellpack(opp_5(i), opp_5_ell_data(i), opp_5_ell_indices(i), opp_5_nnz_per_row(i));
+      Array_to_ellpack(opp_5(i), opp_5_ell_data(i), opp_5_ell_indices(i), opp_5_nnz_per_row(i));
       opp_5_ell_data(i).cp_cpu_gpu();
       opp_5_ell_indices(i).cp_cpu_gpu();
     }
@@ -4007,7 +4007,7 @@ void eles::set_opp_6(int in_sparse)
 {
   int i,j,k,l,m;
   
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   
   opp_6.setup(n_fpts_per_ele, n_upts_per_ele);
   
@@ -4039,11 +4039,11 @@ void eles::set_opp_6(int in_sparse)
     opp_6_sparse=1;
     
 #ifdef _CPU
-    array_to_mklcsr(opp_6,opp_6_data,opp_6_cols,opp_6_b,opp_6_e);
+    Array_to_mklcsr(opp_6,opp_6_data,opp_6_cols,opp_6_b,opp_6_e);
 #endif
     
 #ifdef _GPU
-    array_to_ellpack(opp_6, opp_6_ell_data, opp_6_ell_indices, opp_6_nnz_per_row);
+    Array_to_ellpack(opp_6, opp_6_ell_data, opp_6_ell_indices, opp_6_nnz_per_row);
     opp_6_ell_data.cp_cpu_gpu();
     opp_6_ell_indices.cp_cpu_gpu();
 #endif
@@ -4061,7 +4061,7 @@ void eles::set_opp_p(void)
 {
   int i,j,k;
   
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   
   opp_p.setup(n_ppts_per_ele,n_upts_per_ele);
   
@@ -4085,7 +4085,7 @@ void eles::set_opp_inters_cubpts(void)
   
   int i,j,k,l;
   
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   
   opp_inters_cubpts.setup(n_inters_per_ele);
   
@@ -4116,7 +4116,7 @@ void eles::set_opp_volume_cubpts(void)
 {
   
   int i,j,k,l;
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   opp_volume_cubpts.setup(n_cubpts_per_ele,n_upts_per_ele);
   
   for(i=0;i<n_upts_per_ele;i++)
@@ -4140,7 +4140,7 @@ void eles::set_opp_r(void)
 {
   int i,j,k;
   
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   
   opp_r.setup(n_upts_per_ele,n_upts_per_ele_rest);
   
@@ -4158,12 +4158,12 @@ void eles::set_opp_r(void)
 
 // calculate position of the plot points
 
-void eles::calc_pos_ppts(int in_ele, array<double>& out_pos_ppts)
+void eles::calc_pos_ppts(int in_ele, Array<double>& out_pos_ppts)
 {
   int i,j;
   
-  array<double> loc(n_dims);
-  array<double> pos(n_dims);
+  Array<double> loc(n_dims);
+  Array<double> pos(n_dims);
   
   for(i=0;i<n_ppts_per_ele;i++)
   {   
@@ -4185,14 +4185,14 @@ void eles::calc_pos_ppts(int in_ele, array<double>& out_pos_ppts)
 }
 
 // calculate solution at the plot points
-void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
+void eles::calc_disu_ppts(int in_ele, Array<double>& out_disu_ppts)
 {
   if (n_eles!=0)
   {
     
     int i,j,k;
     
-    array<double> disu_upts_plot(n_upts_per_ele,n_fields);
+    Array<double> disu_upts_plot(n_upts_per_ele,n_fields);
     
     for(i=0;i<n_fields;i++)
     {
@@ -4238,14 +4238,14 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
 }
 
 // calculate gradient of solution at the plot points
-void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
+void eles::calc_grad_disu_ppts(int in_ele, Array<double>& out_grad_disu_ppts)
 {
   if (n_eles!=0)
   {
     
     int i,j,k,l;
     
-    array<double> grad_disu_upts_temp(n_upts_per_ele,n_fields,n_dims);
+    Array<double> grad_disu_upts_temp(n_upts_per_ele,n_fields,n_dims);
     
     for(i=0;i<n_fields;i++)
     {
@@ -4295,14 +4295,14 @@ void eles::calc_grad_disu_ppts(int in_ele, array<double>& out_grad_disu_ppts)
 }
 
 // calculate the time averaged field values at plot points
-void eles::calc_time_average_ppts(int in_ele, array<double>& out_disu_average_ppts)
+void eles::calc_time_average_ppts(int in_ele, Array<double>& out_disu_average_ppts)
 {
   if (n_eles!=0)
   {
     
     int i,j,k;
     
-    array<double> disu_average_upts_plot(n_upts_per_ele,n_average_fields);
+    Array<double> disu_average_upts_plot(n_upts_per_ele,n_average_fields);
     
     for(i=0;i<n_average_fields;i++)
     {
@@ -4342,7 +4342,7 @@ void eles::calc_time_average_ppts(int in_ele, array<double>& out_disu_average_pp
 }
 
 // calculate the sensor values at plot points
-void eles::calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts)
+void eles::calc_sensor_ppts(int in_ele, Array<double>& out_sensor_ppts)
 {
     if (n_eles!=0)
     {
@@ -4352,14 +4352,14 @@ void eles::calc_sensor_ppts(int in_ele, array<double>& out_sensor_ppts)
 }
 
 // calculate solution at the plot points
-void eles::calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts)
+void eles::calc_epsilon_ppts(int in_ele, Array<double>& out_epsilon_ppts)
 {
   if (n_eles!=0)
   {
 
       int i,j,k;
 
-      array<double> epsilon_upts_plot(n_upts_per_ele);
+      Array<double> epsilon_upts_plot(n_upts_per_ele);
 
       for(j=0;j<n_upts_per_ele;j++)
       {
@@ -4392,7 +4392,7 @@ void eles::calc_epsilon_ppts(int in_ele, array<double>& out_epsilon_ppts)
 }
 
 // calculate diagnostic fields at the plot points
-void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, array<double>& in_grad_disu_ppts, array<double>& in_sensor_ppts, array<double>& in_epsilon_ppts, array<double>& out_diag_field_ppts, double& time)
+void eles::calc_diagnostic_fields_ppts(int in_ele, Array<double>& in_disu_ppts, Array<double>& in_grad_disu_ppts, Array<double>& in_sensor_ppts, Array<double>& in_epsilon_ppts, Array<double>& out_diag_field_ppts, double& time)
 {
   int i,j,k,m;
   double diagfield_upt;
@@ -4526,7 +4526,7 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
       if (isnan(diagfield_upt))
         FatalError("NaN");
       
-      // set array with solution point value
+      // set Array with solution point value
       out_diag_field_ppts(j,k) = diagfield_upt;
     }
   }
@@ -4534,11 +4534,11 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
 
 // calculate position of solution point
 
-void eles::calc_pos_upt(int in_upt, int in_ele, array<double>& out_pos)
+void eles::calc_pos_upt(int in_upt, int in_ele, Array<double>& out_pos)
 {
   int i;
   
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   
   for(i=0;i<n_dims;i++)
   {
@@ -4573,11 +4573,11 @@ void eles::set_transforms(void)
       n_comp = 6;
     }
     
-    array<double> loc(n_dims);
-    array<double> pos(n_dims);
-    array<double> d_pos(n_dims,n_dims);
-    array<double> dd_pos(n_dims,n_comp);
-    array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
+    Array<double> loc(n_dims);
+    Array<double> pos(n_dims);
+    Array<double> d_pos(n_dims,n_dims);
+    Array<double> dd_pos(n_dims,n_comp);
+    Array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
     
     double xr, xs, xt;
     double yr, ys, yt;
@@ -5002,10 +5002,10 @@ void eles::set_transforms_dynamic(void)
     else if(n_dims == 3)
       n_comp = 6;
 
-    array<double> pos(n_dims);
-    array<double> d_pos(n_dims,n_dims);
-    array<double> dd_pos(n_dims,n_comp);
-    array<double> norm_dot_JGinv(n_dims);  // un-normalized normal vector in moving-physical domain
+    Array<double> pos(n_dims);
+    Array<double> d_pos(n_dims,n_dims);
+    Array<double> dd_pos(n_dims,n_comp);
+    Array<double> norm_dot_JGinv(n_dims);  // un-normalized normal vector in moving-physical domain
 
     double xr, xs, xt;
     double yr, ys, yt;
@@ -5229,7 +5229,7 @@ void eles::set_transforms_dynamic(void)
     }
     if (rank==0 && first_time) cout << endl;
 
-    // To avoid re-setting up ALL transform arrays in the future (for dynamic grids)
+    // To avoid re-setting up ALL transform Arrays in the future (for dynamic grids)
     first_time = false;
   }
 #endif
@@ -5331,7 +5331,7 @@ void eles::set_transforms_inters_cubpts(void)
       double yr, ys, yt;
       double zr, zs, zt;
 
-      // Initialize bdy_ele2ele array
+      // Initialize bdy_ele2ele Array
       (*this).set_bdy_ele2ele();
 
       if(n_dims == 2)
@@ -5344,9 +5344,9 @@ void eles::set_transforms_inters_cubpts(void)
         }
       double mag_tnorm;
 
-      array<double> loc(n_dims);
-      array<double> d_pos(n_dims,n_dims);
-      array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
+      Array<double> loc(n_dims);
+      Array<double> d_pos(n_dims,n_dims);
+      Array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
 
       inter_detjac_inters_cubpts.setup(n_inters_per_ele);
       norm_inters_cubpts.setup(n_inters_per_ele);
@@ -5457,9 +5457,9 @@ void eles::set_transforms_vol_cubpts(void)
   if(n_eles!=0)
   {
     int i,j,m;
-    array<double> d_pos(n_dims,n_dims);
-    array<double> loc(n_dims);
-    array<double> pos(n_dims);
+    Array<double> d_pos(n_dims,n_dims);
+    Array<double> loc(n_dims);
+    Array<double> pos(n_dims);
     
     vol_detjac_vol_cubpts.setup(n_cubpts_per_ele);
     
@@ -5773,10 +5773,10 @@ double* eles::get_grad_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_in
 #endif
 }
 
-double* eles::get_normal_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele, array<double> temp_loc, double temp_pos[3])
+double* eles::get_normal_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele, Array<double> temp_loc, double temp_pos[3])
 {
   
-  array<double> pos(n_dims);
+  Array<double> pos(n_dims);
   double dist = 0.0, min_dist = 1E6;
   int min_index = 0;
   
@@ -5879,7 +5879,7 @@ double* eles::get_sgsf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
 
 // calculate position
 
-void eles::calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos)
+void eles::calc_pos(Array<double> in_loc, int in_ele, Array<double>& out_pos)
 {
   int i,j;
   
@@ -5896,7 +5896,7 @@ void eles::calc_pos(array<double> in_loc, int in_ele, array<double>& out_pos)
 }
 
 /** find the position of a point within the element (r,s,t -> xd,yd,zd) (using positions in dynamic grid) */
-void eles::calc_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_pos)
+void eles::calc_pos_dyn(Array<double> in_loc, int in_ele, Array<double>& out_pos)
 {
     int i,j;
 
@@ -5910,7 +5910,7 @@ void eles::calc_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_pos
 }
 
 /** find the physical position of a flux point within the element (using positions in dynamic grid) */
-void eles::calc_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_pos)
+void eles::calc_pos_dyn_fpt(int in_fpt, int in_ele, Array<double>& out_pos)
 {
     int i,j;
 
@@ -5923,7 +5923,7 @@ void eles::calc_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_pos)
 }
 
 /** find the physical position of a solution point within the element (using positions in dynamic grid) */
-void eles::calc_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_pos)
+void eles::calc_pos_dyn_upt(int in_upt, int in_ele, Array<double>& out_pos)
 {
     int i,j;
 
@@ -5936,7 +5936,7 @@ void eles::calc_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_pos)
 }
 
 /** find the physical position of a plot point within the element (using positions in dynamic grid) */
-void eles::calc_pos_dyn_ppt(int in_ppt, int in_ele, array<double>& out_pos)
+void eles::calc_pos_dyn_ppt(int in_ppt, int in_ele, Array<double>& out_pos)
 {
     int i,j;
 
@@ -5949,7 +5949,7 @@ void eles::calc_pos_dyn_ppt(int in_ppt, int in_ele, array<double>& out_pos)
 }
 
 /** find the physical position of a volume cubature point within the element (using positions in dynamic grid) */
-void eles::calc_pos_dyn_vol_cubpt(int in_ppt, int in_ele, array<double>& out_pos)
+void eles::calc_pos_dyn_vol_cubpt(int in_ppt, int in_ele, Array<double>& out_pos)
 {
     int i,j;
 
@@ -5962,7 +5962,7 @@ void eles::calc_pos_dyn_vol_cubpt(int in_ppt, int in_ele, array<double>& out_pos
 }
 
 /** find the physical position of a interface cubature point within the element (using positions in dynamic grid) */
-void eles::calc_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double>& out_pos)
+void eles::calc_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, Array<double>& out_pos)
 {
     int i,j;
 
@@ -5976,7 +5976,7 @@ void eles::calc_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, arra
 
 // calculate derivative of position - NEEDS TO BE OPTIMIZED
 /** Calculate derivative of position wrt computational space (dx/dr, dx/ds, etc.) */
-void eles::calc_d_pos(array<double> in_loc, int in_ele, array<double>& out_d_pos)
+void eles::calc_d_pos(Array<double> in_loc, int in_ele, Array<double>& out_d_pos)
 {
   int i,j,k;
 
@@ -5997,9 +5997,9 @@ void eles::calc_d_pos(array<double> in_loc, int in_ele, array<double>& out_d_pos
  * Uses pre-computed nodal shape basis derivatives for efficiency
  * \param[in] in_upt - ID of solution point within element to evaluate at
  * \param[in] in_ele - local element ID
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dxi_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dxi_j
  */
-void eles::calc_d_pos_upt(int in_upt, int in_ele, array<double>& out_d_pos)
+void eles::calc_d_pos_upt(int in_upt, int in_ele, Array<double>& out_d_pos)
 {
   int i,j,k;
 
@@ -6020,9 +6020,9 @@ void eles::calc_d_pos_upt(int in_upt, int in_ele, array<double>& out_d_pos)
  * Uses pre-computed nodal shape basis derivatives for efficiency
  * \param[in] in_fpt - ID of flux point within element to evaluate at
  * \param[in] in_ele - local element ID
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dxi_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dxi_j
  */
-void eles::calc_d_pos_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
+void eles::calc_d_pos_fpt(int in_fpt, int in_ele, Array<double>& out_d_pos)
 {
   int i,j,k;
 
@@ -6042,9 +6042,9 @@ void eles::calc_d_pos_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
  * Calculate derivative of dynamic position wrt reference (initial,static) position
  * \param[in] in_loc - position of point in computational space
  * \param[in] in_ele - local element ID
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
  */
-void eles::calc_d_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_d_pos)
+void eles::calc_d_pos_dyn(Array<double> in_loc, int in_ele, Array<double>& out_d_pos)
 {
   int i,j,k;
 
@@ -6066,9 +6066,9 @@ void eles::calc_d_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_d
  * Uses pre-computed nodal shape basis derivatives for efficiency
  * \param[in] in_fpt - ID of flux point within element to evaluate at
  * \param[in] in_ele - local element ID
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
  */
-void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
+void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, Array<double>& out_d_pos)
 {
   if (run_input.motion==4) {
     // Analytical formula for perturbed motion
@@ -6083,7 +6083,7 @@ void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
     int i,j,k;
 
     // Calculate dx/dr
-    array<double> dxdr(n_dims,n_dims);
+    Array<double> dxdr(n_dims,n_dims);
     dxdr.initialize_to_zero();
     for(i=0; i<n_dims; i++) {
       for(j=0; j<n_dims; j++) {
@@ -6111,9 +6111,9 @@ void eles::calc_d_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_d_pos)
  * Uses pre-computed nodal shape basis derivatives for efficiency
  * \param[in] in_upt - ID of solution point within element to evaluate at
  * \param[in] in_ele - local element ID
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
  */
-void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
+void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, Array<double>& out_d_pos)
 {
   if (run_input.motion==4) {
     // Analytical formula for perturbed motion test case
@@ -6128,7 +6128,7 @@ void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
     int i,j,k;
 
     // Calculate dx/dr
-    array<double> dxdr(n_dims,n_dims);
+    Array<double> dxdr(n_dims,n_dims);
     dxdr.initialize_to_zero();
     for(i=0; i<n_dims; i++) {
       for(j=0; j<n_dims; j++) {
@@ -6156,14 +6156,14 @@ void eles::calc_d_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_d_pos)
  * Uses pre-computed nodal shape basis derivatives for efficiency
  * \param[in] in_cubpt - ID of volume cubature point within element to evaluate at
  * \param[in] in_ele - local element ID
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
  */
-void eles::calc_d_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, array<double>& out_d_pos)
+void eles::calc_d_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, Array<double>& out_d_pos)
 {
   int i,j,k;
 
   // Calculate dx/dr
-  array<double> dxdr(n_dims,n_dims);
+  Array<double> dxdr(n_dims,n_dims);
   dxdr.initialize_to_zero();
   for(i=0; i<n_dims; i++) {
     for(j=0; j<n_dims; j++) {
@@ -6191,14 +6191,14 @@ void eles::calc_d_pos_dyn_vol_cubpt(int in_cubpt, int in_ele, array<double>& out
  * \param[in] in_cubpt - ID of interface cubature point within element to evaluate at
  * \param[in] in_face - Local ID of face within element
  * \param[in] in_ele - local element ID
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
  */
-void eles::calc_d_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double>& out_d_pos)
+void eles::calc_d_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, Array<double>& out_d_pos)
 {
   int i,j,k;
 
   // Calculate dx/dr
-  array<double> dxdr(n_dims,n_dims);
+  Array<double> dxdr(n_dims,n_dims);
   dxdr.initialize_to_zero();
   for(i=0; i<n_dims; i++) {
     for(j=0; j<n_dims; j++) {
@@ -6222,7 +6222,7 @@ void eles::calc_d_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, ar
 
 // calculate second derivative of position
 
-void eles::calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_pos)
+void eles::calc_dd_pos(Array<double> in_loc, int in_ele, Array<double>& out_dd_pos)
 {
   int i,j,k;
   int n_comp;
@@ -6253,9 +6253,9 @@ void eles::calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_p
  * Calculate 2nd derivative of dynamic position wrt computational domain at point
  * \param[in] in_loc - location of point within element to evaluate at
  * \param[in] in_ele - local element ID
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dr_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dr_j
  */
-void eles::calc_dd_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_dd_pos)
+void eles::calc_dd_pos_dyn(Array<double> in_loc, int in_ele, Array<double>& out_dd_pos)
 {
   int i,j,k;
   int n_comp;
@@ -6281,9 +6281,9 @@ void eles::calc_dd_pos_dyn(array<double> in_loc, int in_ele, array<double>& out_
  * Calculate 2nd derivative of dynamic position wrt computational domain at fpt
  * \param[in] in_fpt - ID of flux point within element to evaluate at
  * \param[in] in_ele - local element ID
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dr_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dr_j
  */
-void eles::calc_dd_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_dd_pos)
+void eles::calc_dd_pos_dyn_fpt(int in_fpt, int in_ele, Array<double>& out_dd_pos)
 {
   int i,j,k;
   int n_comp;
@@ -6308,9 +6308,9 @@ void eles::calc_dd_pos_dyn_fpt(int in_fpt, int in_ele, array<double>& out_dd_pos
  * Calculate 2nd derivative of dynamic position wrt computational domain at upt
  * \param[in] in_upt - ID of solution point within element to evaluate at
  * \param[in] in_ele - local element ID
- * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dr_j
+ * \param[out] out_d_pos - Array of size (n_dims,n_dims); (i,j) = dx_i / dr_j
  */
-void eles::calc_dd_pos_dyn_upt(int in_upt, int in_ele, array<double>& out_dd_pos)
+void eles::calc_dd_pos_dyn_upt(int in_upt, int in_ele, Array<double>& out_dd_pos)
 {
   int i,j,k;
   int n_comp;
@@ -6358,15 +6358,15 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
 }
 
 
-array<double> eles::compute_error(int in_norm_type, double& time)
+Array<double> eles::compute_error(int in_norm_type, double& time)
 {
-  array<double> disu_cubpt(n_fields);
-  array<double> grad_disu_cubpt(n_fields,n_dims);
+  Array<double> disu_cubpt(n_fields);
+  Array<double> grad_disu_cubpt(n_fields,n_dims);
   double detjac;
-  array<double> pos(n_dims);
+  Array<double> pos(n_dims);
   
-  array<double> error(2,n_fields);  //storage
-  array<double> error_sum(2,n_fields);  //output
+  Array<double> error(2,n_fields);  //storage
+  Array<double> error_sum(2,n_fields);  //output
   
   for (int i=0; i<n_fields; i++)
   {
@@ -6421,12 +6421,12 @@ array<double> eles::compute_error(int in_norm_type, double& time)
 }
 
 
-array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_sol, array<double>& loc, double& time, int in_norm_type)
+Array<double> eles::get_pointwise_error(Array<double>& sol, Array<double>& grad_sol, Array<double>& loc, double& time, int in_norm_type)
 {
-  array<double> error(2,n_fields);  //output
+  Array<double> error(2,n_fields);  //output
   
-  array<double> error_sol(n_fields);
-  array<double> error_grad_sol(n_fields,n_dims);
+  Array<double> error_sol(n_fields);
+  Array<double> error_grad_sol(n_fields,n_dims);
   
   for (int i=0; i<n_fields; i++) {
     error_sol(i) = 0.;
@@ -6453,7 +6453,7 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
   else if (run_input.test_case==2) // Sine Wave (single)
   {
     double rho;
-    array<double> grad_rho(n_dims);
+    Array<double> grad_rho(n_dims);
     
     if(viscous) {
       eval_sine_wave_single(loc,run_input.wave_speed,run_input.diff_coeff,time,rho,grad_rho,n_dims);
@@ -6472,7 +6472,7 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
   else if (run_input.test_case==3) // Sine Wave (group)
   {
     double rho;
-    array<double> grad_rho(n_dims);
+    Array<double> grad_rho(n_dims);
     
     if(viscous) {
       eval_sine_wave_group(loc,run_input.wave_speed,run_input.diff_coeff,time,rho,grad_rho,n_dims);
@@ -6497,7 +6497,7 @@ array<double> eles::get_pointwise_error(array<double>& sol, array<double>& grad_
   {
     int ind;
     double ene, u_wall;
-    array<double> grad_ene(n_dims);
+    Array<double> grad_ene(n_dims);
     
     u_wall = run_input.v_wall(0);
     
@@ -6550,11 +6550,11 @@ void eles::evaluate_body_force(int in_file_num)
     int i,j,k,l,m,ele;
     double area, vol, detjac, ubulk, wgt;
     double mdot0, mdot_old, alpha, dt;
-    array <int> inflowinters(n_bdy_eles,n_inters_per_ele);
-    array <double> body_force(n_fields);
-    array <double> disu_cubpt(4);
-    array <double> integral(4);
-    array <double> norm(n_dims), flow(n_dims), loc(n_dims), pos(n_dims);
+    Array <int> inflowinters(n_bdy_eles,n_inters_per_ele);
+    Array <double> body_force(n_fields);
+    Array <double> disu_cubpt(4);
+    Array <double> integral(4);
+    Array <double> norm(n_dims), flow(n_dims), loc(n_dims), pos(n_dims);
     ofstream write_mdot;
     bool open_mdot;
 
@@ -6637,7 +6637,7 @@ void eles::evaluate_body_force(int in_file_num)
 
 #ifdef _MPI
 
-    array<double> integral_global(4);
+    Array<double> integral_global(4);
     for (m=0;m<4;m++)
     {
       integral_global(m) = 0.;
@@ -6743,11 +6743,11 @@ void eles::evaluate_body_force(int in_file_num)
 }
 
 // Compute integral quantities
-void eles::CalcIntegralQuantities(int n_integral_quantities, array <double>& integral_quantities)
+void eles::CalcIntegralQuantities(int n_integral_quantities, Array <double>& integral_quantities)
 {
-  array<double> disu_cubpt(n_fields);
-  array<double> grad_disu_cubpt(n_fields,n_dims);
-  array<double> S(n_dims,n_dims);
+  Array<double> disu_cubpt(n_fields);
+  Array<double> grad_disu_cubpt(n_fields,n_dims);
+  Array<double> S(n_dims,n_dims);
   double wx, wy, wz;
   double dudx, dudy, dudz;
   double dvdx, dvdy, dvdz;
@@ -6971,21 +6971,21 @@ void eles::CalcTimeAverageQuantities(double& time)
   }
 }
 
-void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_force,  double& temp_cl, double& temp_cd, ofstream& coeff_file, bool write_forces)
+void eles::compute_wall_forces( Array<double>& inv_force, Array<double>& vis_force,  double& temp_cl, double& temp_cd, ofstream& coeff_file, bool write_forces)
 {
   
-  array<double> u_l(n_fields),norm(n_dims);
+  Array<double> u_l(n_fields),norm(n_dims);
   double p_l,v_sq,vn_l;
-  array<double> grad_u_l(n_fields,n_dims);
-  array<double> dv(n_dims,n_dims);
-  array<double> de(n_dims);
-  array<double> drho(n_dims);
-  array<double> taun(n_dims);
-  array<double> tautan(n_dims);
-  array<double> Finv(n_dims);
-  array<double> Fvis(n_dims);
-  array<double> loc(n_dims);
-  array<double> pos(n_dims);
+  Array<double> grad_u_l(n_fields,n_dims);
+  Array<double> dv(n_dims,n_dims);
+  Array<double> de(n_dims);
+  Array<double> drho(n_dims);
+  Array<double> taun(n_dims);
+  Array<double> tautan(n_dims);
+  Array<double> Finv(n_dims);
+  Array<double> Fvis(n_dims);
+  Array<double> loc(n_dims);
+  Array<double> pos(n_dims);
   double inte, mu, rt_ratio, gamma=run_input.gamma;
   double diag, tauw, taundotn, wgt, detjac;
   double factor, aoa, aos, cp, cf, cl, cd;
@@ -7251,7 +7251,7 @@ void eles::compute_wall_forces( array<double>& inv_force, array<double>& vis_for
 
 /*! Set the grid velocity at one shape point
  *  TODO: CUDA */
-void eles::set_grid_vel_spt(int in_ele, int in_spt, array<double> in_vel)
+void eles::set_grid_vel_spt(int in_ele, int in_spt, Array<double> in_vel)
 {
   for (int i=0; i<n_dims; i++)
     vel_spts(i,in_spt,in_ele) = in_vel(i);
@@ -7262,7 +7262,7 @@ void eles::set_grid_vel_spt(int in_ele, int in_spt, array<double> in_vel)
 void eles::store_nodal_s_basis_fpts(void)
 {
   int ic,fpt,j,k;
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   for (ic=0; ic<n_eles; ic++) {
     for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
       for(k=0;k<n_dims;k++) {
@@ -7281,7 +7281,7 @@ void eles::store_nodal_s_basis_fpts(void)
 void eles::store_nodal_s_basis_upts(void)
 {
   int ic,upt,j,k;
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   for (ic=0; ic<n_eles; ic++) {
     for (upt=0; upt<n_upts_per_ele; upt++) {
       for(k=0;k<n_dims;k++) {
@@ -7301,7 +7301,7 @@ void eles::store_nodal_s_basis_ppts(void)
 {
   int ic,ppt,j,k;
 
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   for(ic=0; ic<n_eles; ic++) {
     for(ppt=0; ppt<n_ppts_per_ele; ppt++) {
       for(k=0; k<n_dims; k++) {
@@ -7318,7 +7318,7 @@ void eles::store_nodal_s_basis_vol_cubpts(void)
 {
   int ic,cubpt,j,k;
 
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   for(ic=0; ic<n_eles; ic++) {
     for(cubpt=0; cubpt<n_cubpts_per_ele; cubpt++) {
       for(k=0; k<n_dims; k++) {
@@ -7335,7 +7335,7 @@ void eles::store_nodal_s_basis_inters_cubpts()
 {
   int ic,iface,cubpt,j,k;
 
-  array<double> loc(n_dims);
+  Array<double> loc(n_dims);
   for(ic=0; ic<n_eles; ic++) {
     for(iface=0; iface<n_inters_per_ele; iface++) {
       for(cubpt=0; cubpt<n_cubpts_per_inter(iface); cubpt++) {
@@ -7354,8 +7354,8 @@ void eles::store_nodal_s_basis_inters_cubpts()
 void eles::store_d_nodal_s_basis_fpts(void)
 {
   int ic,fpt,j,k;
-  array<double> loc(n_dims);
-  array<double> d_nodal_basis;
+  Array<double> loc(n_dims);
+  Array<double> d_nodal_basis;
 
   for (ic=0; ic<n_eles; ic++) {
     for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
@@ -7381,8 +7381,8 @@ void eles::store_d_nodal_s_basis_fpts(void)
 void eles::store_d_nodal_s_basis_upts(void)
 {
   int ic,upt,j,k;
-  array<double> loc(n_dims);
-  array<double> d_nodal_basis;
+  Array<double> loc(n_dims);
+  Array<double> d_nodal_basis;
 
   for (ic=0; ic<n_eles; ic++) {
     for (upt=0; upt<n_upts_per_ele; upt++) {
@@ -7407,8 +7407,8 @@ void eles::store_d_nodal_s_basis_upts(void)
 void eles::store_d_nodal_s_basis_vol_cubpts(void)
 {
   int ic,cubpt,j,k;
-  array<double> loc(n_dims);
-  array<double> d_nodal_basis;
+  Array<double> loc(n_dims);
+  Array<double> d_nodal_basis;
 
   for (ic=0; ic<n_eles; ic++) {
     for (cubpt=0; cubpt<n_cubpts_per_ele; cubpt++) {
@@ -7429,8 +7429,8 @@ void eles::store_d_nodal_s_basis_vol_cubpts(void)
 void eles::store_d_nodal_s_basis_inters_cubpts(void)
 {
   int ic,iface,cubpt,j,k;
-  array<double> loc(n_dims);
-  array<double> d_nodal_basis;
+  Array<double> loc(n_dims);
+  Array<double> d_nodal_basis;
 
   for (ic=0; ic<n_eles; ic++) {
     for (iface=0; iface<n_inters_per_ele; iface++) {
@@ -7453,8 +7453,8 @@ void eles::store_d_nodal_s_basis_inters_cubpts(void)
 void eles::store_dd_nodal_s_basis_fpts(void)
 {
   int ic,fpt,j,k;
-  array<double> loc(n_dims);
-  array<double> dd_nodal_basis;
+  Array<double> loc(n_dims);
+  Array<double> dd_nodal_basis;
 
   int n_comp;
   if(n_dims == 2)
@@ -7481,8 +7481,8 @@ void eles::store_dd_nodal_s_basis_fpts(void)
 void eles::store_dd_nodal_s_basis_upts(void)
 {
   int ic,upt,j,k;
-  array<double> loc(n_dims);
-  array<double> dd_nodal_basis;
+  Array<double> loc(n_dims);
+  Array<double> dd_nodal_basis;
 
   int n_comp;
   if(n_dims == 2)
@@ -7506,7 +7506,7 @@ void eles::store_dd_nodal_s_basis_upts(void)
   }
 }
 
-/*! Setup arrays for storing grid velocity */
+/*! Setup Arrays for storing grid velocity */
 void eles::initialize_grid_vel(int in_max_n_spts_per_ele)
 {
   if (motion)
@@ -7620,7 +7620,7 @@ void eles::set_grid_vel_ppts(void)
   }
 }
 
-array<double> eles::get_grid_vel_ppts(void)
+Array<double> eles::get_grid_vel_ppts(void)
 {
   return vel_ppts;
 }

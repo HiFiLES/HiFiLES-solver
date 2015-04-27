@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "array.h"
+#include "Array.h"
 #include <string>
 #include "input.h"
 #include "eles.h"
@@ -53,7 +53,7 @@ struct solution {
   double ene_hist;
   double grad_ene_hist;
   
-  array<int> num_f_per_c;
+  Array<int> num_f_per_c;
   
   int n_ele_types;
   int n_dims;
@@ -72,7 +72,7 @@ struct solution {
 
   int write_type;
 
-  array<eles*> mesh_eles;
+  Array<eles*> mesh_eles;
   eles_quads mesh_eles_quads;
   eles_tris mesh_eles_tris;
   eles_hexas mesh_eles_hexas;
@@ -82,22 +82,22 @@ struct solution {
   int n_int_inter_types;
   int n_bdy_inter_types;
 
-  array<int_inters> mesh_int_inters;
-  array<bdy_inters> mesh_bdy_inters;
+  Array<int_inters> mesh_int_inters;
+  Array<bdy_inters> mesh_bdy_inters;
   
   int rank;
   
   /*! No-slip wall flux point coordinates for wall models. */
 
-	array< array<double> > loc_noslip_bdy;
+	Array< Array<double> > loc_noslip_bdy;
 
   /*! Diagnostic output quantities. */
   
-  array<double> body_force;
-  array<double> inv_force;
-  array<double> vis_force;
-  array<double> norm_residual;
-  array<double> integral_quantities;
+  Array<double> body_force;
+  Array<double> inv_force;
+  Array<double> vis_force;
+  Array<double> norm_residual;
+  Array<double> integral_quantities;
   double coeff_lift;
   double coeff_drag;
 
@@ -110,14 +110,14 @@ struct solution {
   int nproc;
   
   int n_mpi_inter_types;
-  array<mpi_inters> mesh_mpi_inters;
-  array<int> error_states;
+  Array<mpi_inters> mesh_mpi_inters;
+  Array<int> error_states;
   
   int n_mpi_inters;
     
   /*! No-slip wall flux point coordinates for wall models. */
 
-	array< array<double> > loc_noslip_bdy_global;
+	Array< Array<double> > loc_noslip_bdy_global;
 
 #endif
   

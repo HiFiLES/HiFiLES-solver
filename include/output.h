@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "array.h"
+#include "Array.h"
 #include <string>
 #include "input.h"
 #include "eles.h"

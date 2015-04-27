@@ -26,14 +26,14 @@
 #include <cmath>
 
 #include "../include/global.h"
-#include "../include/array.h"
+#include "../include/Array.h"
 #include "../include/flux.h"
 
 using namespace std;
 
 // calculate inviscid flux in 2D
 
-void calc_invf_2d(array<double>& in_u, array<double>& out_f)
+void calc_invf_2d(Array<double>& in_u, Array<double>& out_f)
 {	
   if (run_input.equation==0) // Euler and NS equation
     {
@@ -74,7 +74,7 @@ void calc_invf_2d(array<double>& in_u, array<double>& out_f)
 
 // calculate inviscid flux in 3D
 
-void calc_invf_3d(array<double>& in_u, array<double>& out_f)
+void calc_invf_3d(Array<double>& in_u, Array<double>& out_f)
 {
 
   if (run_input.equation==0) // Euler and NS Equation
@@ -129,7 +129,7 @@ void calc_invf_3d(array<double>& in_u, array<double>& out_f)
 
 // calculate viscous flux in 2D
 
-void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& out_f)
+void calc_visf_2d(Array<double>& in_u, Array<double>& in_grad_u, Array<double>& out_f)
 {
   if (run_input.equation==0) // Navier-Stokes equations
     {
@@ -260,7 +260,7 @@ void calc_visf_2d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 
 // calculate viscous flux in 3D
 
-void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& out_f)
+void calc_visf_3d(Array<double>& in_u, Array<double>& in_grad_u, Array<double>& out_f)
 {
   if (run_input.equation==0) // Navier-Stokes equations
     {
@@ -432,7 +432,7 @@ void calc_visf_3d(array<double>& in_u, array<double>& in_grad_u, array<double>& 
 
 
 /*! Add additional ALE flux term due to mesh motion (2D) */
-void calc_alef_2d(array<double>& in_u, array<double>& in_v, array<double>& out_f)
+void calc_alef_2d(Array<double>& in_u, Array<double>& in_v, Array<double>& out_f)
 {
   if (run_input.equation==0) // Euler / N-S
   {
@@ -454,7 +454,7 @@ void calc_alef_2d(array<double>& in_u, array<double>& in_v, array<double>& out_f
 }
 
 /*! Add additional ALE flux term due to mesh motion (3D) */
-void calc_alef_3d(array<double>& in_u, array<double>& in_v, array<double>& out_f)
+void calc_alef_3d(Array<double>& in_u, Array<double>& in_v, Array<double>& out_f)
 {
   if (run_input.equation==0) // Euler / N-S
   {
