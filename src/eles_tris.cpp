@@ -880,6 +880,13 @@ void eles_tris::compute_stabilization_filter() {
   cout << "normalized nodal filtering matrix: " << endl;
   stab_filter_interior.print();
 
+  cout << " location of flux points" << endl;
+  tloc_fpts.print();
+  fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
+
+  cout << "stab_filter_boundary = " << endl;
+  stab_filter_boundary.print();
+
 }
 
 /*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a circle in a symmetric, reference element

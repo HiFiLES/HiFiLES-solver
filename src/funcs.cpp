@@ -2933,7 +2933,136 @@ void fill_stabilization_interior_filter_tris(array<double>& filter_matrix, int o
 
 }
 
+// evaluates the polynomial coeffs(n)*x^n + coeffs(n-1)*x^{n-1) + ... + coeffs(1)*x
+double filter_poly(array<double>& coeffs, double x) {
+  int n_coeffs = coeffs.get_dim(0); // number of coefficients
 
+  double result = 0;
+  for (int i = 1; i <= n_coeffs; i++)
+    result += coeffs(i-1)*pow(x, n_coeffs - i + 1);
+
+  return result;
+}
+
+// computes the entry of the boundary filter matrix
+double boundary_filter_radial_function(array<double>& loc_fpts,
+                                       array<double>& loc_upts,
+                                       array<double>& coeffs,
+                                       eles *element,
+                                       int row, int col) {
+
+
+  int n_dims = loc_fpts.get_dim(0); // number of dimensions
+  int nf = loc_fpts.get_dim(1); // number of flux points
+  array<double> temp_upt(n_dims), temp_fpt(n_dims); // place holders for locations of solution and flux points
+
+
+
+  // copy location of current solution and flux points of interest
+  for (int ll = 0; ll < n_dims; ll++) {
+      temp_upt(ll) = loc_upts(ll, row);
+      temp_fpt(ll) = loc_fpts(ll, col);
+    }
+
+  double curr_distance = filter_poly(coeffs,
+                                     element->reference_element_norm(temp_upt,temp_fpt));
+  if (curr_distance < 1e-10) {
+      return 1.;
+    }
+
+  double sum = 0;
+  for (int k = 0; k < nf; k++) {
+      if (k != col) {
+
+          // copy location of current solution and flux points of interest
+          for (int ll = 0; ll < n_dims; ll++) {
+              temp_upt(ll) = loc_upts(ll, row);
+              temp_fpt(ll) = loc_fpts(ll, k);
+            }
+
+          sum += 1./filter_poly(coeffs, element->reference_element_norm(temp_upt,temp_fpt));
+        }
+    }
+
+
+
+  //  cout << "i = " << row << "; j = " << col << endl;
+  //  cout << "sum = " << sum << "; poly(xij*) = " << filter_poly(coeffs,
+  //                                                                    element->reference_element_norm(temp_upt,temp_fpt)) << endl;
+  //  cout << "rad_func = " << element->reference_element_norm(temp_upt,temp_fpt) << endl;
+
+  return 1./(1. + sum * curr_distance);
+
+}
+
+// cost function to be minimized in order to find coefficients that allow boundary filter matrix
+// to satisfy the constraints of: conservation and plane preservation
+double filter_function(array<double>& loc_fpts, array<double>& loc_upts, array<double>& coeffs, eles *element, int row) {
+  int nf = loc_fpts.get_dim(1); // number of flux points
+  int n_dims = loc_fpts.get_dim(0); // number of dimensions
+  array<double> row_temp(nf);
+
+  for (int j = 0; j < nf; j++) {
+      row_temp(j) = boundary_filter_radial_function(loc_fpts, loc_upts, coeffs, element,
+                                                           row, j);
+    }
+
+  // assemble the sum of the squares of the error
+  double result = 0;
+  for (int dim = 0; dim < n_dims; dim++) {
+      double sum = 0;
+
+      for (int k = 0; k < nf; k++)
+        sum += row_temp(k)*loc_fpts(dim, k);
+
+      result += (sum - loc_upts(dim, row))*(sum - loc_upts(dim, row));
+    }
+
+  return result;
+}
+
+//void minimum_search(filter_function, loc_fpts, loc_upts, coeffs, this)
+
+
+// populate the filter matrix that communicates information from boundaries to interior of element
+void fill_stabilization_boundary_filter(array<double>& filter_matrix, array<double>& loc_fpts,
+                                        array<double>& loc_upts, eles *element) {
+  int n = loc_upts.get_dim(1); // number of solution points
+  int nf = loc_fpts.get_dim(1); // number of flux points
+  int n_dims = loc_upts.get_dim(0); // number of dimensions
+  cout << "at fill_stabilization_boundary_filter" << endl;
+  cout << n << " " << nf << endl;
+
+  filter_matrix.setup(n,nf);
+
+  array<double> coeffs(n_dims); // coefficients that need to be found for each row of the filter matrix
+
+
+  /*! Temporary change; assign values of coeffs to check implementation
+   */
+
+  coeffs(0) = 0.5;
+  coeffs(1) = 1.2;
+
+
+
+
+  for (int i = 0; i < n; i++) {
+
+      //minimum_search(filter_function, loc_fpts, loc_upts, coeffs, this, i);
+      /*! Temporary change; call filter_function to check implementation
+       */
+
+      cout << "i = " << i << " filter_function = " <<
+              filter_function(loc_fpts, loc_upts, coeffs, element, i) << endl;
+
+
+      for (int j = 0; j < nf; j++) {
+          filter_matrix(i,j) = boundary_filter_radial_function(loc_fpts,
+                                                               loc_upts, coeffs, element, i, j);
+        }
+    }
+}
 
 
 
