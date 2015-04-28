@@ -1,43 +1,14 @@
 #ifndef SIMPLEX_MIN_METHOD_H
 #define SIMPLEX_MIN_METHOD_H
 
-/*
- Copyright (C) 2010 Botao Jia
-
+/*!
  This file is an implementation of the downhill simplex optimization algorithm using C++.
- To use BT::Simplex correctly, the followings are needed, inclusively.
+*/
 
- 1. f: a function object or a function which takes a vector<class Type> and returns a Type, inclusively.
-       Signature, e.g. for double Type,
-            double f(vector<double> x);
+/*
+ *  Copyright (C) 2010 Botao Jia
 
- 2. init: an inital guess of the fitted parameter values which minmizes the value of f.
-          init must be a vector<D>, where D must be the exactly same type as the vector taken by f.
-          init must have the exactly same dimension as the vector taken by f.
-          init must order the parameters, such that the order follows the vector taken by f.
-          e.g. f takes vector<double> x, where x[0] represents parameter1; x[1] represents parameter2, etc.
-          And init must follow this order exactly, init[0] is the initial guess for parameter1,
-          init[1] is the initial guess for parameter2, etc.
-
-3 to 5 are all optional:
-
-3. tol: the termination criteria.
-        It measures the difference of the simplex centroid*(N+1) of consecutive iterations.
-
-4. x:  an initial simplex, which is calculated according to the initial trial parameter values.
-
-5. iterations: maximum iterations.
-
-The return value of BT::Simplex is a vector<Type>,
-which represents the optimized parameter values that minimize f.
-The order of the parameter is the same as in the vector<Type> init.
-
-
- You can redistribute it and/or modify it at will.
-
- This program is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- FOR A PARTICULAR PURPOSE.
+ * Obtained from: http://www.codeguru.com/cpp/article.php/c17505/Simplex-Optimization-Algorithm-and-Implemetation-in-C-Programming.htm
 */
 
 //simplex.h
@@ -46,14 +17,14 @@ The order of the parameter is the same as in the vector<Type> init.
 #include <algorithm>
 #include <functional>
 #include <iostream>
+#include "Array.h"
 
 template<class D, class OP>
 std::vector<D> simplex_min_method(OP f,                   //target function
                        std::vector<D> init,    //initial guess of the parameters
                        D tol=1E8*std::numeric_limits<D>::epsilon(), //termination criteria
-                       std::vector<std::vector<D> > x =  std::vector<std::vector<D> >(),
-                       //x: The Simplex
-                       int iterations=1E5){    //iteration step number
+                       std::vector<std::vector<D> > x =  std::vector<std::vector<D> >(),//x: The Simplex
+                       int max_iterations = 1E5){    //iteration step number
 
   int N=init.size();                         //space dimension
   const double a=1.0, b=1.0, g=0.5, h=0.5;   //coefficients
@@ -90,7 +61,7 @@ std::vector<D> simplex_min_method(OP f,                   //target function
     }//constructing the simplex finished
 
   //optimization begins
-  for(cnt=0; cnt<iterations; ++cnt){
+  for(cnt=0; cnt<max_iterations; ++cnt){
 
       for(int i=0;i<N+1;++i){
           vf[i]= f(x[i]);
@@ -178,8 +149,8 @@ std::vector<D> simplex_min_method(OP f,                   //target function
 
     }//optimization is finished
 
-  if(cnt==iterations){//max number of iteration achieves before tol is satisfied
-      std::cout<<"Iteration limit achieves, result may not be optimal"<<std::endl;
+  if(cnt == max_iterations){//max number of iterations reached before tol is satisfied
+      printf("Iteration limit reached, result may not be optimal at %s:%d\n",__FILE__,__LINE__);
     }
   return x[x1];
 }

@@ -26,6 +26,7 @@
 #include <iomanip>
 #include <iostream>
 #include <cmath>
+#include <vector>
 
 #if defined _ACCELERATE_BLAS
 #include <Accelerate/Accelerate.h>
@@ -2934,12 +2935,12 @@ void fill_stabilization_interior_filter_tris(Array<double>& filter_matrix, int o
 }
 
 // evaluates the polynomial coeffs(n)*x^n + coeffs(n-1)*x^{n-1) + ... + coeffs(1)*x
-double filter_poly(Array<double>& coeffs, double x) {
-  int n_coeffs = coeffs.get_dim(0); // number of coefficients
+double filter_poly(std::vector<double>& coeffs, double x) {
+  int n_coeffs = coeffs.size(); // number of coefficients
 
   double result = 0;
   for (int i = 1; i <= n_coeffs; i++)
-    result += coeffs(i-1)*pow(x, n_coeffs - i + 1);
+    result += coeffs[i-1]*pow(x, n_coeffs - i + 1);
 
   return result;
 }
@@ -2947,7 +2948,7 @@ double filter_poly(Array<double>& coeffs, double x) {
 // computes the entry of the boundary filter matrix
 double boundary_filter_radial_function(Array<double>& loc_fpts,
                                        Array<double>& loc_upts,
-                                       Array<double>& coeffs,
+                                       std::vector<double>& coeffs,
                                        eles *element,
                                        int row, int col) {
 
@@ -2997,7 +2998,7 @@ double boundary_filter_radial_function(Array<double>& loc_fpts,
 
 // cost function to be minimized in order to find coefficients that allow boundary filter matrix
 // to satisfy the constraints of: conservation and plane preservation
-double filter_function(Array<double>& loc_fpts, Array<double>& loc_upts, Array<double>& coeffs, eles *element, int row) {
+double filter_function(Array<double>& loc_fpts, Array<double>& loc_upts, std::vector<double>& coeffs, eles *element, int row) {
   int nf = loc_fpts.get_dim(1); // number of flux points
   int n_dims = loc_fpts.get_dim(0); // number of dimensions
   Array<double> row_temp(nf);
@@ -3021,7 +3022,29 @@ double filter_function(Array<double>& loc_fpts, Array<double>& loc_upts, Array<d
   return result;
 }
 
-//void minimum_search(filter_function, loc_fpts, loc_upts, coeffs, this)
+// wrapper for the simplex_min_method function
+// finds the values of coefficients that minimize the filter_function
+void minimum_search(Array<double>& loc_fpts, Array<double>& loc_upts,
+                    std::vector<double>& init, eles *element, int row) {
+  int n_coeffs = init.size();
+  std::vector<double> solution; // vector that will hold the solution
+
+  // create lambda function to be passed on to the optimizer
+  auto filter_function_simple =
+      [&loc_fpts, &loc_upts, element, row] (std::vector<double>& x) {
+      return filter_function(loc_fpts, loc_upts, x, element, row);
+    };
+
+  solution = simplex_min_method(filter_function_simple, init);
+
+  for (int i = 0; i < n_coeffs; i++) {
+      cout << "init[" << i <<"] = " << init[i] << endl;
+      cout << "solution[" << i <<"] = " << solution[i] << endl;
+    }
+
+  init = solution;
+
+}
 
 
 // populate the filter matrix that communicates information from boundaries to interior of element
@@ -3035,23 +3058,20 @@ void fill_stabilization_boundary_filter(Array<double>& filter_matrix, Array<doub
 
   filter_matrix.setup(n,nf);
 
-  Array<double> coeffs(n_dims); // coefficients that need to be found for each row of the filter matrix
+  std::vector<double> coeffs(n_dims); // coefficients that need to be found for each row of the filter matrix
 
 
   /*! Temporary change; assign values of coeffs to check implementation
    */
 
-  coeffs(0) = 0.5;
-  coeffs(1) = 1.2;
-
-
-
+  coeffs[0] = 1.;
+  coeffs[1] = 1.;
 
   for (int i = 0; i < n; i++) {
 
-      //minimum_search(filter_function, loc_fpts, loc_upts, coeffs, this, i);
-      /*! Temporary change; call filter_function to check implementation
-       */
+      minimum_search(loc_fpts, loc_upts, coeffs, element, i);
+//      /*! Temporary change; call filter_function to check implementation
+//       */
 
       cout << "i = " << i << " filter_function = " <<
               filter_function(loc_fpts, loc_upts, coeffs, element, i) << endl;

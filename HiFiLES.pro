@@ -75,7 +75,8 @@ HEADERS += \
     include/vector_structure.hpp \
     include/linear_solvers_structure.hpp \
     include/matrix_structure.hpp \
-    include/source.h
+    include/source.h \
+    include/simplex_min_method.h
 
 OTHER_FILES += \
     $$DATA_DIR/loc_tri_inter_pts.dat \
