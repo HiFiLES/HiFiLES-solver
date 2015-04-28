@@ -50,6 +50,7 @@ extern "C"
 #include "../include/eles.h"
 #include "../include/eles_tris.h"
 #include "../include/adaptive_quadrature_2D.h"
+#include "../include/simplex_min_method.h"
 
 
 using namespace std;
