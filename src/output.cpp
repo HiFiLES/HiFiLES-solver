@@ -272,7 +272,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
 
                   for(l=0;l<n_fields;l++)
                     {
-                      if ( isnan(disu_ppts_temp(k,l))) {
+                      if ( std::isnan(disu_ppts_temp(k,l))) {
                           FatalError("Nan in tecplot file, exiting");
                         }
                       else {
@@ -283,7 +283,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
                   /*! Write out optional time-averaged diagnostic fields */
                   for(l=0;l<n_average_fields;l++)
                     {
-                      if ( isnan(disu_average_ppts_temp(k,l))) {
+                      if ( std::isnan(disu_average_ppts_temp(k,l))) {
                           FatalError("Nan in tecplot file, exiting");
                         }
                       else {
@@ -294,7 +294,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
                   /*! Write out optional diagnostic fields */
                   for(l=0;l<n_diag_fields;l++)
                     {
-                      if ( isnan(diag_ppts_temp(k,l))) {
+                      if ( std::isnan(diag_ppts_temp(k,l))) {
                           FatalError("Nan in tecplot file, exiting");
                         }
                       else {
@@ -1492,7 +1492,7 @@ void CalcNormResidual(struct solution* FlowSol) {
       else if (run_input.res_norm_type==2) { FlowSol->norm_residual(i) = sqrt(sum[i]) / n_upts; } // L2 norm
       else FatalError("norm_type not recognized");
       
-      if (isnan(FlowSol->norm_residual(i))) {
+      if (std::isnan(FlowSol->norm_residual(i))) {
         FatalError("NaN residual encountered. Exiting");
       }
     }
@@ -1629,7 +1629,7 @@ void check_stability(struct solution* FlowSol)
                 {
                   for(int l=0;l<n_fields;l++)
                     {
-                      if ( isnan(disu_ppts_temp(k,l)) || (abs(disu_ppts_temp(k,l))> e_thresh) ) {
+                      if ( std::isnan(disu_ppts_temp(k,l)) || (abs(disu_ppts_temp(k,l))> e_thresh) ) {
                           r_flag = 1;
                         }
                     }

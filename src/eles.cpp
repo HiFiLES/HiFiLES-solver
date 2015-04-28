@@ -25,7 +25,7 @@
 
 #include <iostream>
 #include <iomanip>
-#include <cmath>
+#include <math.h>
 
 #if defined _ACCELERATE_BLAS
 #include <Accelerate/Accelerate.h>
@@ -1634,7 +1634,7 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
     for (int i=0;i<n_upts_per_ele;i++)
       for (int j=0;j<n_eles;j++)
         for (int k=0;k<n_fields;k++)
-          if (isnan(div_tconf_upts(in_div_tconf_upts_to)(j,i,k)))
+          if (std::isnan(div_tconf_upts(in_div_tconf_upts_to)(j,i,k)))
             FatalError("NaN in residual, exiting.");
 
 #endif
@@ -2104,7 +2104,7 @@ void eles::calc_sgs_terms(int in_disu_upts_from)
     for(i=0;i<n_upts_per_ele;i++)
       for(j=0;j<n_eles;j++)
         for(k=0;k<n_fields;k++)
-          if(isnan(disuf_upts(i,j,k)))
+          if(std::isnan(disuf_upts(i,j,k)))
             FatalError("nan in filtered solution");
     
     /*! If SVV model, copy filtered solution back to solution */
@@ -4523,7 +4523,7 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, Array<double>& in_disu_ppts, 
       else
         FatalError("plot_quantity not recognized");
       
-      if (isnan(diagfield_upt))
+      if (std::isnan(diagfield_upt))
         FatalError("NaN");
       
       // set Array with solution point value
@@ -6714,7 +6714,7 @@ void eles::evaluate_body_force(int in_file_num)
       }
     }
     // error checking
-    if(isnan(body_force(1))) {
+    if(std::isnan(body_force(1))) {
       FatalError("ERROR: NaN body force, exiting");
     }
 

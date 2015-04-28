@@ -25,8 +25,7 @@
 
 #include <iomanip>
 #include <iostream>
-//#include <cmath>
-#include <math.h>
+#include <cmath>
 
 #if defined _ACCELERATE_BLAS
 #include <Accelerate/Accelerate.h>

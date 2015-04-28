@@ -25,7 +25,7 @@
 
 #include "../include/global.h"
 #include "../include/Array.h"
-#include <math.h>
+#include <cmath>
 
 using namespace std;
 
