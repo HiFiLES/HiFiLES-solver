@@ -887,6 +887,13 @@ void eles_tris::compute_stabilization_filter() {
   cout << "stab_filter_boundary = " << endl;
   stab_filter_boundary.print();
 
+  for (int i = 0; i < n_dims; i++) {
+      cout << "opp_2(" << i << ") = " << endl;
+      opp_2(i).print();
+      cout << endl << endl << "opp_4(" << i << ") = " << endl;
+      opp_4(i).print();
+    }
+
 }
 
 /*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a circle in a symmetric, reference element

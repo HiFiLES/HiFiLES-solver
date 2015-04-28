@@ -1289,7 +1289,11 @@ void eles::extrapolate_solution(int in_disu_upts_from)
     if(opp_0_sparse==0) // dense
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_0.get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,disu_fpts.get_ptr_cpu(),Cstride);
+      cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+                  Arows, Bcols, Acols,
+                  1.0, opp_0.get_ptr_cpu(), Astride,
+                  disu_upts(in_disu_upts_from).get_ptr_cpu(), Bstride,
+                  0.0,disu_fpts.get_ptr_cpu(), Cstride);
       
 #elif defined _NO_BLAS
       dgemm(Arows,Bcols,Acols,1.0,0.0,opp_0.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),disu_fpts.get_ptr_cpu());
@@ -1709,7 +1713,7 @@ void eles::calculate_gradient(int in_disu_upts_from)
      kth nodal (solution) point location in the reference domain
      for the ith dimension
      
-     (vector of gradient values at solution points) = opp_4 *
+     (vector of gradient values at solution points)(dimension_x_{i}) = opp_4(dimension_x_{i}) *
      (vector of solution values at solution points in all elements of the same type)
      */
     
@@ -1729,7 +1733,11 @@ void eles::calculate_gradient(int in_disu_upts_from)
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
       for (int i=0;i<n_dims;i++) {
-        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_4(i).get_ptr_cpu(),Astride,disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,0.0,grad_disu_upts.get_ptr_cpu(0,0,0,i),Cstride);
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,
+                    Arows,Bcols,Acols,
+                    1.0,opp_4(i).get_ptr_cpu(),Astride,
+                    disu_upts(in_disu_upts_from).get_ptr_cpu(),Bstride,
+                    0.0,grad_disu_upts.get_ptr_cpu(0,0,0,i),Cstride);
       }
       
 #elif defined _NO_BLAS
@@ -3891,7 +3899,8 @@ void eles::set_opp_3(int in_sparse)
 }
 
 // set opp_4 (transformed solution at solution points to transformed gradient of transformed solution at solution points)
-
+// same as opp_2;  opp_2 == opp_4
+// TODO: eliminate opp_4 as it is the same as opp_2
 void eles::set_opp_4(int in_sparse)
 {
   int i,j,k,l;
