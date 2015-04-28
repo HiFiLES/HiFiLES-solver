@@ -1523,11 +1523,36 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
     if(opp_2_sparse==0) // dense
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-      
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(0).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+        /*!
+         Performs C = x*A*B + y*C where: \n
+         x = 1 \n
+         y = 0 or 1\n
+         A = opp_2 is n_upts_per_ele by n_upts_per_ele \n
+         B = tdisf_upts[related to dimension n_dim] is  \n
+         C = div_tconf_upts
+
+         opp_2(i) finds du/dx_{i} at solution points;
+         has dimensions n_upts_per_ele by n_upts_per_ele
+
+         Recall: opp_2(dim)(k,basis_index)=eval_d_nodal_basis(basis_index,dim,loc_of_solution_point_k);
+
+         so at the end of the function,
+    div_tconf_upts =
+    opp_2(x_dim)*tdisf_upts + opp_2(y_dim)*tdisf_upts + opp_2(z_dim)*tdisf_upts
+        */
+      cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+                  n_upts_per_ele, n_fields*n_eles, n_upts_per_ele, // A.rows(), B.cols(), A.rows()
+                  1.0, opp_2(0).get_ptr_cpu(), n_upts_per_ele, // x, A.raw_data(), A.data_stride()
+                  tdisf_upts.get_ptr_cpu(0,0,0,0), n_upts_per_ele, // B.raw_data(), B.data_stride()
+                  0.0, div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(), n_upts_per_ele); // y, C.raw_data(), C.data_stride()
+
       for (int i=1;i<n_dims;i++)
       {
-        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,
+                    n_upts_per_ele,n_fields*n_eles,n_upts_per_ele,
+                    1.0,opp_2(i).get_ptr_cpu(),n_upts_per_ele,
+                    tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,
+                    1.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),n_upts_per_ele);
       }
       
 #elif defined _NO_BLAS
