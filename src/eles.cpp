@@ -1004,6 +1004,9 @@ void eles::rm_detjac_upts_cpu(void)
 
 // advance solution
 // TODO: implement BLAS and CUBLAS routines for time-stepping
+// TODO: should remove if statements from within fast loops
+// TODO: for loops should loop along solution points first, then element, then field
+//         current RK45 loop goes through solution points first, then field, then element
 void eles::AdvanceSolution(int in_step, int adv_type) {
   
   if (n_eles!=0)
@@ -7742,3 +7745,34 @@ void eles::calc_grid_velocity(void)
   }
 }
 #endif
+
+/*! filter solution using Local Fourier Spectral filters
+ * Proceeds with the following steps:
+ * disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i) // to obtain common solution values of (field_i)
+ *
+ * disu_upts(field_i) = (1-alpha) * stab_filter_boundary * disu_fpts(field_i)
+ *                        + alpha * stab_filter_interior * disu_upts(field_i)
+ *
+ * WARNING: SHOULD BE USED ONLY WITH TRIANGULAR ELEMENTS FOR NOW; OTHERWISE
+ * THERE WILL BE OUT-OF-BOUNDS MEMORY ACCESSES
+*/
+void eles::filter_solution_LFS() {
+  double alpha = 0.8; // proportion of influence from interior filter
+
+  // Find common interface values
+  // disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i)
+
+  for (int field = 0; field < n_fields; field++)
+    {
+      for (int element = 0; element <n_eles; element++)
+        {
+          for (int sol_point = 0; sol_point < n_upts_per_ele; sol_point++)
+            {
+              disu_fpts(sol_point,element,field) += delta_disu_fpts(sol_point,element,field);
+            }
+        }
+    }
+
+
+}
+

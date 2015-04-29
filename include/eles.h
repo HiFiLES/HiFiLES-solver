@@ -352,6 +352,9 @@ public:
   
   /*! calculate second derivative of position */
   void calc_dd_pos(Array<double> in_loc, int in_ele, Array<double>& out_dd_pos);
+
+  /*! filter solution using Local Fourier Spectral filters*/
+  void filter_solution_LFS();
   
   // #### virtual methods ####
 
