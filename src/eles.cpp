@@ -1003,7 +1003,7 @@ void eles::rm_detjac_upts_cpu(void)
 }
 
 // advance solution
-
+// TODO: implement BLAS and CUBLAS routines for time-stepping
 void eles::AdvanceSolution(int in_step, int adv_type) {
   
   if (n_eles!=0)
