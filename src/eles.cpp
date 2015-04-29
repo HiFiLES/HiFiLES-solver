@@ -7748,29 +7748,115 @@ void eles::calc_grid_velocity(void)
 
 /*! filter solution using Local Fourier Spectral filters
  * Proceeds with the following steps:
- * disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i) // to obtain common solution values of (field_i)
  *
- * disu_upts(field_i) = (1-alpha) * stab_filter_boundary * disu_fpts(field_i)
- *                        + alpha * stab_filter_interior * disu_upts(field_i)
+ * Obtain common solution values of (field_i):
+ * disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i)
+ *
+ * Apply boundary filter first:
+ * disu_upts(field_i) = alpha * stab_filter_interior * disu_upts(field_i)
+ *
+ * Final filter application
+ * disu_upts(field_i) = (1-alpha) * stab_filter_boundary * disu_fpts(field_i) + disu_upts(field_i)
  *
  * WARNING: SHOULD BE USED ONLY WITH TRIANGULAR ELEMENTS FOR NOW; OTHERWISE
  * THERE WILL BE OUT-OF-BOUNDS MEMORY ACCESSES
 */
-void eles::filter_solution_LFS() {
-  double alpha = 0.8; // proportion of influence from interior filter
+void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is the stage in the time-stepping scheme
 
-  // Find common interface values
-  // disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i)
+  if (n_eles != 0) {
+      double alpha = 0.8; // proportion of influence from interior filter
 
-  for (int field = 0; field < n_fields; field++)
-    {
-      for (int element = 0; element <n_eles; element++)
+      // Find common interface values
+      // disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i)
+
+      for (int field = 0; field < n_fields; field++)
         {
-          for (int sol_point = 0; sol_point < n_upts_per_ele; sol_point++)
+          for (int element = 0; element <n_eles; element++)
             {
-              disu_fpts(sol_point,element,field) += delta_disu_fpts(sol_point,element,field);
+              for (int sol_point = 0; sol_point < n_upts_per_ele; sol_point++)
+                {
+                  disu_fpts(sol_point,element,field) += delta_disu_fpts(sol_point,element,field);
+                }
             }
         }
+
+      // Apply interior filter first
+      // disu_upts = alpha * stab_filter_interior * disu_upts
+
+      /*!
+       Performs C = (alpha*A*B) + (beta*C) where: \n
+       alpha = alpha \n
+       beta = 0.0 \n
+       A = stab_filter_interior \n
+       B = disu_upts(in_disu_upts_from) \n
+       C = disu_fpts
+
+       stab_filter_interior is the interior filtering matrix;
+       has dimensions n_upts_per_ele by n_upts_per_ele
+       */
+
+      Arows =  n_upts_per_ele;
+      Acols = n_upts_per_ele;
+
+      Brows = Acols;
+      Bcols = n_fields*n_eles;
+
+      Astride = Arows;
+      Bstride = Brows;
+      Cstride = Arows;
+
+  #ifdef _CPU
+
+//      if(stab_filter_interior_sparse == 0) // dense
+      {
+  #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+        cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+                    Arows, Bcols, Acols,
+                    alpha, stab_filter_interior.get_ptr_cpu(), Astride,
+                    disu_upts(in_disu_upts_from).get_ptr_cpu(), Bstride,
+                    0.0,disu_upts(in_disu_upts_from).get_ptr_cpu(), Cstride);
+
+  #elif defined _NO_BLAS
+        dgemm(Arows,Bcols,Acols,
+              alpha,0.0,stab_filter_interior.get_ptr_cpu(),
+              disu_upts(in_disu_upts_from).get_ptr_cpu(),
+              disu_upts(in_disu_upts_from).get_ptr_cpu());
+
+  #endif
+//      }
+//      else if(stab_filter_interior_sparse == 1) // mkl blas four-Array csr format
+//      {
+//  #if defined _MKL_BLAS
+//        mkl_dcsrmm(&transa,&n_upts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_0_data.get_ptr_cpu(),opp_0_cols.get_ptr_cpu(),opp_0_b.get_ptr_cpu(),opp_0_e.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),&n_upts_per_ele,&zero,disu_fpts.get_ptr_cpu(),&n_fpts_per_ele);
+
+//  #endif
+//      }
+//      else { cout << "ERROR: Unknown storage for opp_0 ... " << endl; }
+
+  #endif
+
+  #ifdef _GPU
+//      if(stab_filter_boundary == 0)
+//      {
+        cublasDgemm('N','N',Arows,Bcols,Acols,
+                    1.0,stab_filter_interior.get_ptr_gpu(),Astride,
+                    disu_upts(in_disu_upts_from).get_ptr_gpu(),Bstride,
+                    0.0,disu_upts.get_ptr_gpu(),Cstride);
+//      }
+//      else if (stab_filter_boundary == 1)
+//      {
+//        bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_0_ell_data.get_ptr_gpu(),opp_0_ell_indices.get_ptr_gpu(),opp_0_nnz_per_row,disu_upts(in_disu_upts_from).get_ptr_gpu(),disu_fpts.get_ptr_gpu(),ele_type,order,0);
+//      }
+//      else
+//      {
+//        cout << "ERROR: Unknown storage for opp_0 ... " << endl;
+//      }
+  #endif
+
+    }
+
+
+
     }
 
 

@@ -354,7 +354,7 @@ public:
   void calc_dd_pos(Array<double> in_loc, int in_ele, Array<double>& out_dd_pos);
 
   /*! filter solution using Local Fourier Spectral filters*/
-  void filter_solution_LFS();
+  void filter_solution_LFS(int in_disu_upts_from);
   
   // #### virtual methods ####
 
@@ -858,8 +858,9 @@ protected:
 
 	/*! Matrices for Local Fourier Spectral (stabilization) filter */
 	Array<double> stab_filter_interior; // filter matrix acting on the solution points upts
+//	int stab_filter_interior_sparse = 0;
 	Array<double> stab_filter_boundary; // filter matrix acting on the common interface points
-
+//	int stab_filter_boundary_sparse = 0;
 	/*! extra Arrays for similarity model: Leonard tensors, velocity/energy products */
 	Array<double> Lu, Le, uu, ue;
 
