@@ -1336,11 +1336,11 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 {
   if (n_eles!=0)
   {
-    
+
 #ifdef _CPU
-    
+
     int i,j,k,l,m;
-    
+
     for(i=0;i<n_eles;i++)
     {
       for(j=0;j<n_upts_per_ele;j++)
@@ -1351,20 +1351,20 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
         }
 
         if (motion) {
-          // Transform solution from static frame to dynamic frame
-          for (k=0; k<n_fields; k++) {
-            temp_u(k) /= J_dyn_upts(j,i);
-          }
-          // Get mesh velocity in dynamic frame
-          for (k=0; k<n_dims; k++) {
-            temp_v(k) = grid_vel_upts(j,i,k);
-          }
-          // Temporary flux vector for dynamic->static transformation
-          temp_f_ref.setup(n_fields,n_dims);
-        }else{
-          temp_v.initialize_to_zero();
-        }
-        
+            // Transform solution from static frame to dynamic frame
+            for (k=0; k<n_fields; k++) {
+                temp_u(k) /= J_dyn_upts(j,i);
+              }
+            // Get mesh velocity in dynamic frame
+            for (k=0; k<n_dims; k++) {
+                temp_v(k) = grid_vel_upts(j,i,k);
+              }
+            // Temporary flux vector for dynamic->static transformation
+            temp_f_ref.setup(n_fields,n_dims);
+          }else{
+            temp_v.initialize_to_zero();
+          } // end if(motion)
+
         if(n_dims==2)
         {
           calc_invf_2d(temp_u,temp_f);
@@ -1384,23 +1384,23 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
 
         // Transform from dynamic-physical space to static-physical space
         if (motion) {
-          for(k=0; k<n_fields; k++) {
-            for(l=0; l<n_dims; l++) {
-              temp_f_ref(k,l)=0.;
-              for(m=0; m<n_dims; m++) {
-                temp_f_ref(k,l) += JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
+            for(k=0; k<n_fields; k++) {
+                for(l=0; l<n_dims; l++) {
+                    temp_f_ref(k,l)=0.;
+                    for(m=0; m<n_dims; m++) {
+                        temp_f_ref(k,l) += JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
+                      }
+                  }
               }
-            }
-          }
 
-          // Copy Static-Physical Domain flux back to temp_f
-          for (k=0; k<n_fields; k++) {
-            for (l=0; l<n_dims; l++) {
-              temp_f(k,l) = temp_f_ref(k,l);
-            }
-          }
-        }
-        
+            // Copy Static-Physical Domain flux back to temp_f
+            for (k=0; k<n_fields; k++) {
+                for (l=0; l<n_dims; l++) {
+                    temp_f(k,l) = temp_f_ref(k,l);
+                  }
+              }
+          } // end if(motion)
+
         // Transform from static physical space to computational space
         for(k=0;k<n_fields;k++) {
           for(l=0;l<n_dims;l++) {
@@ -1412,9 +1412,9 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
         }
       }
     }
-    
+
 #endif
-    
+
 #ifdef _GPU
     evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.turb_model);
 #endif
@@ -1428,13 +1428,32 @@ void eles::extrapolate_totalFlux()
 {
   if (n_eles!=0)
   {
+      /*!
+       Performs C = (alpha*A*B) + (beta*C) where: \n
+       alpha = 1.0 \n
+       beta = 0.0 or 1.\n
+       A = opp_1 \n
+       B = tdisf_upts(dimension) \n
+       C = norm_tdisf_fpts
+
+       opp_1 is the polynomial extrapolation matrix time the outward unit normal in
+       the reference domain;
+       has dimensions n_f_pts_per_ele by n_upts_per_ele
+
+       Recall: opp_1(i)(k,j) = eval_nodal_basis(j,loc_of_k_f_pts)*tnorm_fpts(i,k);
+       */
+
 #ifdef _CPU
     
     if(opp_1_sparse==0) // dense
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
       
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,0.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,
+                  n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,
+                  1.0,opp_1(0).get_ptr_cpu(),n_fpts_per_ele,
+                  tdisf_upts.get_ptr_cpu(0,0,0,0),n_upts_per_ele,
+                  0.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
       for (int i=1;i<n_dims;i++)
       {
         cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n_fpts_per_ele,n_fields*n_eles,n_upts_per_ele,1.0,opp_1(i).get_ptr_cpu(),n_fpts_per_ele,tdisf_upts.get_ptr_cpu(0,0,0,i),n_upts_per_ele,1.0,norm_tdisf_fpts.get_ptr_cpu(),n_fpts_per_ele);
@@ -2006,7 +2025,24 @@ void eles::correct_gradient(void)
 void eles::extrapolate_corrected_gradient(void)
 {
   if (n_eles!=0)
-  {
+    {
+      /*!
+       Performs C = (alpha*A*B) + (beta*C) where: \n
+       alpha = 1.0 \n
+       beta = 0.0 \n
+       A = opp_0 \n
+       B = grad_disu_fpts \n
+       C = grad_disu_fpts
+
+       opp_6 is the polynomial extrapolation matrix;
+       has dimensions n_f_pts_per_ele by n_upts_per_ele
+
+       Recall: opp_0(j,i) = value of the ith nodal basis at the
+       jth flux point location in the reference domain
+
+       (vector of solution values at flux points) = opp_6 * (vector of solution values at nodes)
+       */
+
     Arows =  n_fpts_per_ele;
     Acols = n_upts_per_ele;
     
@@ -2025,7 +2061,11 @@ void eles::extrapolate_corrected_gradient(void)
       
       for (int i=0;i<n_dims;i++)
       {
-        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_6.get_ptr_cpu(),Astride,grad_disu_upts.get_ptr_cpu(0,0,0,i),Bstride,0.0,grad_disu_fpts.get_ptr_cpu(0,0,0,i),Cstride);
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,
+                    Arows,Bcols,Acols,
+                    1.0,opp_6.get_ptr_cpu(),Astride,
+                    grad_disu_upts.get_ptr_cpu(0,0,0,i),Bstride,
+                    0.0,grad_disu_fpts.get_ptr_cpu(0,0,0,i),Cstride);
       }
       
 #elif defined _NO_BLAS
@@ -5536,9 +5576,9 @@ double* eles::get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, 
   
   fpt=in_inter_local_fpt;
   
-  for(i=0;i<in_ele_local_inter;i++)
+  for(i = 0;i < in_ele_local_inter; i++)
   {
-    fpt+=n_fpts_per_inter(i);
+    fpt += n_fpts_per_inter(i);
   }
   
 #ifdef _GPU
