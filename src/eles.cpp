@@ -7766,6 +7766,7 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
   if (n_eles != 0) {
       double alpha = 0.8; // proportion of influence from interior filter
 
+      #ifdef _CPU
       // Find common interface values
       // disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i)
 
@@ -7779,6 +7780,13 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
                 }
             }
         }
+#endif
+
+
+#ifdef _GPU
+      error("Filters not implemented for GPUs just yet...");
+      //RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),h_ref.get_ptr_gpu(),run_input.dt,run_input.const_src,run_input.CFL,run_input.gamma,run_input.mu_inf,run_input.order,viscous,run_input.dt_type);
+#endif
 
       // Apply interior filter first
       // disu_upts = alpha * stab_filter_interior * disu_upts
@@ -7789,76 +7797,78 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
        beta = 0.0 \n
        A = stab_filter_interior \n
        B = disu_upts(in_disu_upts_from) \n
-       C = disu_fpts
+       C = disu_upts(in_disu_upts_from)
 
        stab_filter_interior is the interior filtering matrix;
        has dimensions n_upts_per_ele by n_upts_per_ele
        */
 
-      Arows =  n_upts_per_ele;
-      Acols = n_upts_per_ele;
+      Arows =  n_upts_per_ele; Acols = n_upts_per_ele;
 
-      Brows = Acols;
-      Bcols = n_fields*n_eles;
+      Brows = Acols; Bcols = n_fields*n_eles;
 
-      Astride = Arows;
-      Bstride = Brows;
-      Cstride = Arows;
+      Astride = Arows; Bstride = Brows; Cstride = Arows;
 
-  #ifdef _CPU
+#ifdef _CPU
+      double *A_matrix = stab_filter_interior.get_ptr_cpu();
+      double *B_matrix = disu_upts(in_disu_upts_from).get_ptr_cpu();
+#endif
 
-//      if(stab_filter_interior_sparse == 0) // dense
-      {
-  #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-        cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                    Arows, Bcols, Acols,
-                    alpha, stab_filter_interior.get_ptr_cpu(), Astride,
-                    disu_upts(in_disu_upts_from).get_ptr_cpu(), Bstride,
-                    0.0,disu_upts(in_disu_upts_from).get_ptr_cpu(), Cstride);
+#ifdef _GPU
+      double *A_matrix = stab_filter_interior.get_ptr_gpu();
+      double *B_matrix = disu_upts(in_disu_upts_from).get_ptr_gpu();
+#endif
 
-  #elif defined _NO_BLAS
-        dgemm(Arows,Bcols,Acols,
-              alpha,0.0,stab_filter_interior.get_ptr_cpu(),
-              disu_upts(in_disu_upts_from).get_ptr_cpu(),
-              disu_upts(in_disu_upts_from).get_ptr_cpu());
+      double *C_matrix = B_matrix;
 
-  #endif
-//      }
-//      else if(stab_filter_interior_sparse == 1) // mkl blas four-Array csr format
-//      {
-//  #if defined _MKL_BLAS
-//        mkl_dcsrmm(&transa,&n_upts_per_ele,&n_fields_mul_n_eles,&n_upts_per_ele,&one,matdescra,opp_0_data.get_ptr_cpu(),opp_0_cols.get_ptr_cpu(),opp_0_b.get_ptr_cpu(),opp_0_e.get_ptr_cpu(),disu_upts(in_disu_upts_from).get_ptr_cpu(),&n_upts_per_ele,&zero,disu_fpts.get_ptr_cpu(),&n_fpts_per_ele);
+      double beta = 0;
 
-//  #endif
-//      }
-//      else { cout << "ERROR: Unknown storage for opp_0 ... " << endl; }
+      dgemm_wrapper(Arows, Bcols, Acols, alpha,
+                    A_matrix, Astride, B_matrix, Bstride,
+                    beta, C_matrix, Cstride);
 
-  #endif
+      // Apply boundary filter next
+      // disu_upts = (1 - alpha) * stab_filter_boundary * disu_fpts + disu_upts
 
-  #ifdef _GPU
-//      if(stab_filter_boundary == 0)
-//      {
-        cublasDgemm('N','N',Arows,Bcols,Acols,
-                    1.0,stab_filter_interior.get_ptr_gpu(),Astride,
-                    disu_upts(in_disu_upts_from).get_ptr_gpu(),Bstride,
-                    0.0,disu_upts.get_ptr_gpu(),Cstride);
-//      }
-//      else if (stab_filter_boundary == 1)
-//      {
-//        bespoke_SPMV(n_fpts_per_ele,n_upts_per_ele,n_fields,n_eles,opp_0_ell_data.get_ptr_gpu(),opp_0_ell_indices.get_ptr_gpu(),opp_0_nnz_per_row,disu_upts(in_disu_upts_from).get_ptr_gpu(),disu_fpts.get_ptr_gpu(),ele_type,order,0);
-//      }
-//      else
-//      {
-//        cout << "ERROR: Unknown storage for opp_0 ... " << endl;
-//      }
-  #endif
+      /*!
+       Performs C = (alpha*A*B) + (beta*C) where: \n
+       alpha = 1 - alpha \n
+       beta = 1.0 \n
+       A = stab_filter_boundary \n
+       B = disu_fpts \n
+       C = disu_upts(in_disu_upts_from)
+
+       stab_filter_interior is the interior filtering matrix;
+       has dimensions n_upts_per_ele by n_upts_per_ele
+       */
+
+      Arows =  n_upts_per_ele; Acols = n_fpts_per_ele;
+
+      Brows = Acols; Bcols = n_fields*n_eles;
+
+      Astride = Arows; Bstride = Brows; Cstride = Arows;
+
+#ifdef _CPU
+      A_matrix = stab_filter_boundary.get_ptr_cpu();
+      B_matrix = disu_fpts.get_ptr_cpu();
+      C_matrix = disu_upts(in_disu_upts_from).get_ptr_cpu();
+#endif
+
+#ifdef _GPU
+      A_matrix = stab_filter_boundary.get_ptr_gpu();
+      B_matrix = disu_fpts.get_ptr_gpu();
+      C_matrix = disu_upts(in_disu_upts_from).get_ptr_gpu()
+#endif
+
+      alpha = 1. - alpha;
+      beta = 1.;
+
+      dgemm_wrapper(Arows, Bcols, Acols, alpha,
+                    A_matrix, Astride, B_matrix, Bstride,
+                    beta, C_matrix, Cstride);
+
 
     }
-
-
-
-    }
-
-
 }
+
 

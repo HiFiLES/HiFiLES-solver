@@ -3084,6 +3084,42 @@ void fill_stabilization_boundary_filter(Array<double>& filter_matrix, Array<doub
     }
 }
 
+// use cblas_dgemm, dgemm, or cublasDgemm
+// to perform C = (alpha*A*B) + (beta*C)
+void dgemm_wrapper(int Arows, int Bcols, int Acols,
+                   double alpha,
+                   double *A_matrix, int Astride,
+                   double *B_matrix, int Bstride,
+                   double beta,
+                   double *C_matrix, int Cstride) {
+
+#ifdef _CPU
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+  cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+              Arows, Bcols, Acols,
+              alpha, A_matrix, Astride,
+              B_matrix, Bstride,
+              beta, C_matrix, Cstride);
+
+#elif defined _NO_BLAS
+  dgemm(Arows,Bcols,Acols,
+        alpha, beta, A_matrix,
+        B_matrix,
+        C_matrix);
+#endif
+#endif
+
+#ifdef _GPU
+
+  cublasDgemm('N','N',Arows,Bcols,Acols,
+              alpha, A_matrix, Astride,
+              B_matrix, Bstride,
+              beta, C_matrix, Cstride);
+#endif
+
+
+}
+
 
 
 
