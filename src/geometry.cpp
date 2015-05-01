@@ -1483,14 +1483,8 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
               int ic=in_icvert(ind);
               for (int k=0;k<FlowSol->num_f_per_c(in_ctype(ic));k++)
                 {
-                  cout << "vlist_local: " << endl;
-                  vlist_local.print();
-
                   // Get local vertices of local face k of cell ic
                   get_vlist_loc_face(in_ctype(ic),in_c2n_v(ic),k,vlist_cell,num_v_per_f);
-
-                  cout << "num_face_vert: " << num_face_vert << endl;
-                  cout << "num_v_per_f: " << num_v_per_f << endl;
 
                   if (num_v_per_f!= num_face_vert)
                     continue;
@@ -1499,9 +1493,6 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
                   {
                     vlist_cell(j) = in_c2v(ic,vlist_cell(j));
                   }
-
-                  cout << "vlist_cell: " << endl;
-                  vlist_cell.print();
 
                   compare_faces_boundary(vlist_local,vlist_cell,num_v_per_f,found);
 
@@ -1516,8 +1507,6 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
             }
           if (found==0)
           {
-            cout << "num_v_per_face=" << num_v_per_f << endl;
-            cout << "vlist_bound(0)=" << vlist_bound(0) << " vlist_bound(1)=" << vlist_bound(1) << endl;
             cout << "vlist_bound(2)=" << vlist_bound(2) << " vlist_bound(3)=" << vlist_bound(3) << endl;
             FatalError("All nodes of boundary face belong to processor but could not find the coresponding faces");
           }
@@ -1663,8 +1652,6 @@ void create_iv2ivg(array<int> &inout_iv2ivg, array<int> &inout_c2v, int &out_n_v
           break;
         }
     }
-
-  cout << "vrtlist: " << in_n_cells << ", " << MAX_V_PER_C << ", " << sizeof(int) << ", " << sizeof(vrtlist) << endl;
 
   // Get rid of repeated digits
   temp(0) = vrtlist(staind);
@@ -1910,11 +1897,9 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   for(int i=0;i<n_bnds;i++)
   {
-    cout << "bc "<< i << ": " << flush;
     mesh_file.getline(buf,BUFSIZ);
     sscanf(buf,"%d %d %s", &bcdim, &bcid, bc_txt_temp);
     strcpy(bcTXT[bcid],bc_txt_temp);
-    cout << bc_txt_temp << endl;
     if (strstr(bc_txt_temp,"FLUID")) {
       FlowSol->n_dims=bcdim;
     }
@@ -1952,8 +1937,6 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
     mesh_file >> id >> elmtype >> ntags;
     mesh_file >> bcid;
 
-    cout << "id, elmtype, ntags, bcid =" << id << ", " << elmtype << ", " << ntags << ", " << bcid << endl;
-
     for (int tag=0; tag<ntags-1; tag++)
       mesh_file >> dummy;
 
@@ -1964,8 +1947,6 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
 
   }
   n_cells_global=icount;
-
-  cout << "n_cell_global=" << n_cells_global << endl;
 
   // Now assign kstart to each processor
   int kstart;
