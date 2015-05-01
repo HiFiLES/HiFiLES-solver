@@ -29,6 +29,7 @@
 #include <cstring>
 #include <cmath>
 #include <cstdlib>
+#include <string>
 
 #include "../include/input.h"
 #include "../include/array.h"
@@ -171,6 +172,237 @@ void input::set_vcjh_scheme_hexa(int in_vcjh_scheme_hexa)
 void input::set_vcjh_scheme_pri_1d(int in_vcjh_scheme_pri_1d)
 {
   vcjh_scheme_pri_1d= in_vcjh_scheme_pri_1d;
+}
+
+void input::readInputFile(string& fileName, int rank)
+{
+  fileReader opts(fileName);
+
+  v_bound.setup(3);
+  wave_speed.setup(3);
+  v_wall.setup(3);
+  diff_coeff = 0.;
+
+  /* ---- Basic Simulation Parameters ---- */
+
+  opts.getScalarValue("equation",equation);
+  opts.getScalarValue("order",order);
+  opts.getScalarValue("viscous",viscous,0);
+  opts.getScalarValue("mesh_file",mesh_file);
+  opts.getScalarValue("ic_form",ic_form,1);
+  opts.getScalarValue("test_case",test_case,0);
+  opts.getScalarValue("n_steps",n_steps);
+  opts.getScalarValue("restart_flag",restart_flag,0);
+  opts.getScalarValue("restart_iter",restart_iter);
+  opts.getScalarValue("n_restart_files",n_restart_files);
+
+  /* ---- Visualization / Monitoring / Output Parameters ---- */
+
+  opts.getScalarValue("plot_freq",plot_freq);
+  opts.getScalarValue("data_file_name",data_file_name,string("Mesh"));
+  opts.getScalarValue("restart_dump_freq",restart_dump_freq);
+  opts.getScalarValue("monitor_res_freq",monitor_res_freq);
+  opts.getScalarValue("monitor_cp_freq",monitor_cp_freq);
+  opts.getScalarValue("monitor_integrals_freq",monitor_integrals_freq);
+  opts.getScalarValue("res_norm_type",res_norm_type);
+  opts.getScalarValue("error_norm_type",error_norm_type,2);
+  opts.getScalarValue("res_norm_field",res_norm_field);
+  opts.getScalarValue("p_res",p_res);
+  opts.getScalarValue("write_type",write_type);
+  opts.getScalarValue("inters_cub_order",inters_cub_order);
+  opts.getScalarValue("volume_cub_order", volume_cub_order);
+
+  opts.getScalarValue("n_integral_quantities",n_integral_quantities);
+  opts.getVectorValue("integral_quantities",integral_quantities);
+  opts.getVectorValue("diagnostic_fields",diagnostic_fields);
+  opts.getVectorValue("average_fields",average_fields);
+  n_integral_quantities = integral_quantities.getDim(0);
+  n_diagnostic_fields = diagnostic_fields.get_dim(0);
+  n_average_fields = average_fields.get_dim(0);
+
+  /* ---- Basic Solver Parameters ---- */
+
+  opts.getScalarValue("riemann_solve_type",riemann_solve_type);
+  opts.getScalarValue("vis_riemann_solve_type",vis_riemann_solve_type);
+  opts.getScalarValue("adv_type",adv_type);
+  opts.getScalarValue("dt_type",dt_type);
+  if (dt_type == 2 && rank == 0) {
+    cout << "!!!!!!" << endl;
+    cout << "  Note: Local timestepping is still in an experimental phase,";
+    cout << "  especially for viscous simulations." << endl;
+    cout << "!!!!!!" << endl;
+  }
+  opts.getScalarValue("dt",dt);
+  opts.getScalarValue("CFL",CFL);
+
+  /* ---- Turbulence Modeling Parameters ---- */
+
+  opts.getScalarValue("turb_model",turb_model);
+  opts.getScalarValue("LES",LES);
+  if (LES) {
+    opts.getScalarValue("filter_type",filter_type);
+    opts.getScalarValue("filter_ratio",filter_ratio);
+    opts.getScalarValue("SGS_model",SGS_model);
+    opts.getScalarValue("wall_model",wall_model);
+    opts.getScalarValue("wall_layer_thickness",wall_layer_t);
+  }
+
+  /* ---- Mesh Motion Parameters ---- */
+
+  opts.getScalarValue("motion_flag",motion);
+  if (motion != STATIC_MESH) {
+    opts.getScalarValue("GCL_flag",GCL);
+    opts.getVectorValue("moving_boundaries",motion_type);
+    opts.getVectorValue("bound_vel_simple",bound_vel_simple);
+    //      in_run_input_file >> n_moving_bnds;
+    //      motion_type.setup(n_moving_bnds);
+    //      bound_vel_simple.setup(n_moving_bnds);
+    //      boundary_flags.setup(n_moving_bnds);
+    //      for (int i=0; i<n_moving_bnds; i++) {
+    //        in_run_input_file.getline(buf,BUFSIZ);
+    //        in_run_input_file >> boundary_flags(i) >> motion_type(i);
+    //        bound_vel_simple(i).setup(9);
+    //        for (int j=0; j<9; j++) {
+    //          in_run_input_file >> bound_vel_simple(i)(j);
+    //          //cout << bound_vel_simple(i)(j) << " ";
+    //        }
+    //      }
+    opts.getScalarValue("n_deform_iters",n_deform_iters);
+    opts.getScalarValue("mesh_output_freq",mesh_output_freq);
+    opts.getScalarValue("mesh_output_format",mesh_output_format);
+    opts.getScalarValue("restart_mesh_out",restart_mesh_out);
+  }
+
+  /* ---- Gas Parameters ---- */
+
+  opts.getScalarValue("gamma",gamma);
+  opts.getScalarValue("prandtl",prandtl);
+  opts.getScalarValue("S_gas",S_gas);
+  opts.getScalarValue("T_gas",T_gas);
+  opts.getScalarValue("R_gas",R_gas);
+  opts.getScalarValue("mu_gas",mu_gas);
+
+  /* ---- Boundary Conditions ---- */
+
+  opts.getScalarValue("dx_cyclic",dx_cyclic);
+  opts.getScalarValue("dy_cyclic",dy_cyclic);
+  opts.getScalarValue("dz_cyclic",dz_cyclic);
+
+  opts.getScalarValue("Mach_free_stream",Mach_free_stream);
+  opts.getScalarValue("nx_free_stream",nx_free_stream);
+  opts.getScalarValue("ny_free_stream",ny_free_stream);
+  opts.getScalarValue("nz_free_stream",nz_free_stream);
+  opts.getScalarValue("Re_free_stream",Re_free_stream);
+  opts.getScalarValue("L_free_stream",L_free_stream);
+  opts.getScalarValue("T_free_stream",T_free_stream);
+
+  opts.getScalarValue("rho_bound",rho_bound);
+  opts.getScalarValue("u_bound",v_bound(0));
+  opts.getScalarValue("v_bound",v_bound(1));
+  opts.getScalarValue("w_bound",v_bound(2));
+  opts.getScalarValue("p_bound",p_bound);
+
+  opts.getScalarValue("Mach_wall",Mach_wall);
+  opts.getScalarValue("nx_wall",nx_wall);
+  opts.getScalarValue("ny_wall",ny_wall);
+  opts.getScalarValue("nz_wall",nz_wall);
+  opts.getScalarValue("T_wall",T_wall);
+
+  opts.getScalarValue("fix_vis",fix_vis);
+  opts.getScalarValue("tau",tau);
+  opts.getScalarValue("pen_fact",pen_fact);
+
+  /* ---- Initial Conditions (use BC's by default) ---- */
+
+  opts.getScalarValue("Mach_c_ic",Mach_c_ic,Mach_free_stream);
+  opts.getScalarValue("nx_c_ic",nx_c_ic,nx_free_stream);
+  opts.getScalarValue("ny_c_ic",ny_c_ic,ny_free_stream);
+  opts.getScalarValue("nz_c_ic",nz_c_ic,nz_free_stream);
+  opts.getScalarValue("Re_c_ic",Re_c_ic,Re_free_stream);
+  opts.getScalarValue("T_c_ic",T_c_ic,T_free_stream);
+
+  opts.getScalarValue("rho_c_ic",rho_c_ic,rho_bound);
+  opts.getScalarValue("u_c_ic",u_c_ic,v_bound(0));
+  opts.getScalarValue("v_c_ic",v_c_ic,v_bound(1));
+  opts.getScalarValue("w_c_ic",w_c_ic,v_bound(2));
+  opts.getScalarValue("p_c_ic",p_c_ic,p_bound);
+
+  /* ---- Shock Capturing / Filtering ---- */
+
+  opts.getScalarValue("ArtifOn",ArtifOn,0);
+  if (ArtifOn) {
+    opts.getScalarValue("artif_only",artif_only);
+    opts.getScalarValue("artif_type",artif_type);
+    opts.getScalarValue("epsilon0",epsilon0);
+    opts.getScalarValue("s0",s0);
+    opts.getScalarValue("kappa",kappa);
+  }
+  opts.getScalarValue("shock_vortex_restart",shock_vortex_restart,0);
+
+  /* ---- FR Element Solution Point / Correction Function Parameters ---- */
+  // Tris
+  opts.getScalarValue("upts_type_tri",upts_type_tri,0);
+  opts.getScalarValue(" fpts_type_tri",fpts_type_tri,0);
+  opts.getScalarValue("vcjh_scheme_tri",vcjh_scheme_tri,0);
+  opts.getScalarValue("c_tri",c_tri,0);
+  opts.getScalarValue("sparse_tri",sparse_tri,0);
+  // Quads
+  opts.getScalarValue("upts_type_quad",upts_type_quad,0);
+  opts.getScalarValue("vcjh_scheme_quad",vcjh_scheme_quad,0);
+  opts.getScalarValue("eta_quad",eta_quad,0);
+  opts.getScalarValue("sparse_quad",sparse_quad,0);
+  // Hexs
+  opts.getScalarValue("upts_type_hexa",upts_type_hexa,0);
+  opts.getScalarValue("vcjh_scheme_hexa",vcjh_scheme_hexa,0);
+  opts.getScalarValue("eta_hexa",eta_hexa,0);
+  opts.getScalarValue("sparse_hexa",sparse_hexa,0);
+  // Tets
+  opts.getScalarValue("upts_type_tet",upts_type_tet,0);
+  opts.getScalarValue("fpts_type_tet",fpts_type_tet,0);
+  opts.getScalarValue("vcjh_scheme_tet",vcjh_scheme_tet,0);
+  opts.getScalarValue("c_tet",c_tet,0);
+  opts.getScalarValue("eta_tet",eta_tet,0);
+  opts.getScalarValue("sparse_tet",sparse_tet,0);
+  // Prisms
+  opts.getScalarValue("upts_type_pri_tri",upts_type_pri_tri,0);
+  opts.getScalarValue("upts_type_pri_1d",upts_type_pri_1d,0);
+  opts.getScalarValue("vcjh_scheme_pri_1d",vcjh_scheme_pri_1d,0);
+  opts.getScalarValue("eta_pri",eta_pri);
+  opts.getScalarValue("sparse_pri",sparse_pri);
+
+
+  /* ---- Uncategorized / Other ---- */
+
+  opts.getScalarValue("spinup_time",spinup_time);
+
+  opts.getScalarValue("const_src",const_src);
+
+  opts.getScalarValue("wave_speed_x",wave_speed(0));
+  opts.getScalarValue("wave_speed_y",wave_speed(1));
+  opts.getScalarValue( "wave_speed_z",wave_speed(2));
+  opts.getScalarValue("diff_coeff",diff_coeff);
+  opts.getScalarValue("lambda",lambda);
+
+  opts.getScalarValue("body_forcing",forcing);
+
+  opts.getVectorValue("x_coeffs",x_coeffs);
+  //    x_coeffs.setup(13);
+  //    for (int i=0;i<13;i++)
+  //      in_run_input_file >> x_coeffs(i);
+
+  opts.getVectorValue("y_coeffs",y_coeffs);
+  //    x_coeffs.setup(13);
+  //    for (int i=0;i<13;i++)
+  //      in_run_input_file >> x_coeffs(i);
+
+  opts.getVectorValue("z_coeffs",z_coeffs);
+  //    x_coeffs.setup(13);
+  //    for (int i=0;i<13;i++)
+  //      in_run_input_file >> z_coeffs(i);
+
+  opts.getScalarValue("perturb_ic",perturb_ic);
+
+  // setupParams();  // Non-Dimensionalization and other setup
 }
 
 void input::setup(ifstream& in_run_input_file, int rank)
@@ -989,4 +1221,260 @@ void input::setup(ifstream& in_run_input_file, int rank)
       }
     }
   }
+}
+
+fileReader::fileReader()
+{
+
+}
+
+fileReader::fileReader(string fileName)
+{
+  this->fileName = fileName;
+}
+
+fileReader::~fileReader()
+{
+  if (optFile.is_open()) optFile.close();
+}
+
+void fileReader::setFile(string fileName)
+{
+  this->fileName = fileName;
+}
+
+void fileReader::openFile(void)
+{
+  optFile.open(fileName.c_str(), ifstream::in);
+}
+
+void fileReader::closeFile()
+{
+  optFile.close();
+}
+
+template<typename T>
+void fileReader::getScalarValue(string optName, T &opt, T defaultVal)
+{
+  string str, optKey;
+
+  openFile();
+
+  if (!optFile.is_open() || !getline(optFile,str)) {
+    optFile.open(fileName.c_str());
+    if (!optFile.is_open())
+      FatalError("Cannont open input file for reading.");
+  }
+
+  // Rewind to the start of the file
+  optFile.seekg(0,optFile.beg);
+
+  // Search for the given option string
+  while (getline(optFile,str)) {
+    // Remove any leading whitespace & see if first word is the input option
+    stringstream ss;
+    ss.str(str);
+    ss >> optKey;
+    if (optKey.compare(optName)==0) {
+      if (!(ss >> opt)) {
+        // This could happen if, for example, trying to assign a string to a double
+        cout << "WARNING: Unable to assign value to option " << optName << endl;
+        cout << "Using default value of " << defaultVal << " instead." << endl;
+        opt = defaultVal;
+      }
+
+      closeFile();
+      return;
+    }
+  }
+
+  opt = defaultVal;
+  closeFile();
+}
+
+template<typename T>
+void fileReader::getScalarValue(string optName, T &opt)
+{
+  string str, optKey;
+
+  openFile();
+
+  if (!optFile.is_open()) {
+    optFile.open(fileName.c_str());
+    if (!optFile.is_open())
+      FatalError("Cannont open input file for reading.");
+  }
+
+  // Rewind to the start of the file
+  optFile.seekg(0,optFile.beg);
+
+  // Search for the given option string
+  while (getline(optFile,str)) {
+    // Remove any leading whitespace & see if first word is the input option
+    stringstream ss;
+    ss.str(str);
+    ss >> optKey;
+    if (optKey.compare(optName)==0) {
+      if (!(ss >> opt)) {
+        // This could happen if, for example, trying to assign a string to a double
+        cerr << "WARNING: Unable to assign value to option " << optName << endl;
+        string errMsg = "Required option not set: " + optName;
+        FatalError(errMsg.c_str())
+      }
+
+      closeFile();
+      return;
+    }
+  }
+
+  // Option was not found; throw error & exit
+  string errMsg = "Required option not found: " + optName;
+  FatalError(errMsg.c_str())
+}
+
+template<typename T, typename U>
+void fileReader::getMap(string optName, map<T,U> &opt) {
+  string str, optKey;
+  T tmpT;
+  U tmpU;
+  bool found;
+
+  openFile();
+
+  if (!optFile.is_open()) {
+    optFile.open(fileName.c_str());
+    if (!optFile.is_open())
+      FatalError("Cannont open input file for reading.");
+  }
+
+  // Rewind to the start of the file
+  optFile.seekg(0,optFile.beg);
+
+  // Search for the given option string
+  while (getline(optFile,str)) {
+    // Remove any leading whitespace & see if first word is the input option
+    stringstream ss;
+    ss.str(str);
+    ss >> optKey;
+    if (optKey.compare(optName)==0) {
+      found = true;
+      if (!(ss >> tmpT >> tmpU)) {
+        // This could happen if, for example, trying to assign a string to a double
+        cerr << "WARNING: Unable to assign value to option " << optName << endl;
+        string errMsg = "Required option not set: " + optName;
+        FatalError(errMsg.c_str())
+      }
+
+      opt[tmpT] = tmpU;
+      optKey = "";
+    }
+  }
+
+  if (!found) {
+    // Option was not found; throw error & exit
+    string errMsg = "Required option not found: " + optName;
+    FatalError(errMsg.c_str())
+  }
+
+  closeFile();
+}
+
+template<typename T>
+void fileReader::getVectorValue(string optName, vector<T> &opt)
+{
+  string str, optKey;
+
+  openFile();
+
+  if (!optFile.is_open()) {
+    optFile.open(fileName.c_str());
+    if (!optFile.is_open())
+      FatalError("Cannont open input file for reading.");
+  }
+
+  // Rewind to the start of the file
+  optFile.seekg(0,optFile.beg);
+
+  // Search for the given option string
+  while (getline(optFile,str)) {
+    // Remove any leading whitespace & see if first word is the input option
+    stringstream ss;
+    ss.str(str);
+    ss >> optKey;
+    if (optKey.compare(optName)==0) {
+      int nVals;
+      if (!(ss >> nVals)) {
+        // This could happen if, for example, trying to assign a string to a double
+        cerr << "WARNING: Unable to read number of entries for vector option " << optName << endl;
+        string errMsg = "Required option not set: " + optName;
+        FatalError(errMsg.c_str());
+      }
+
+      opt.resize(nVals);
+      for (int i=0; i<nVals; i++) {
+        if (!ss >> opt[i]) {
+          cerr << "WARNING: Unable to assign all values to vector option " << optName << endl;
+          string errMsg = "Required option not set: " + optName;
+          FatalError(errMsg.c_str())
+        }
+      }
+
+      closeFile();
+      return;
+    }
+  }
+
+  // Option was not found; throw error & exit
+  string errMsg = "Required option not found: " + optName;
+  FatalError(errMsg.c_str())
+}
+
+template<typename T>
+void fileReader::getVectorValue(string optName, array<T> &opt)
+{
+  string str, optKey;
+
+  openFile();
+
+  if (!optFile.is_open()) {
+    optFile.open(fileName.c_str());
+    if (!optFile.is_open())
+      FatalError("Cannont open input file for reading.");
+  }
+
+  // Rewind to the start of the file
+  optFile.seekg(0,optFile.beg);
+
+  // Search for the given option string
+  while (getline(optFile,str)) {
+    // Remove any leading whitespace & see if first word is the input option
+    stringstream ss;
+    ss.str(str);
+    ss >> optKey;
+    if (optKey.compare(optName)==0) {
+      int nVals;
+      if (!(ss >> nVals)) {
+        // This could happen if, for example, trying to assign a string to a double
+        cerr << "WARNING: Unable to read number of entries for vector option " << optName << endl;
+        string errMsg = "Required option not set: " + optName;
+        FatalError(errMsg.c_str());
+      }
+
+      opt.setup(nVals);
+      for (int i=0; i<nVals; i++) {
+        if (!ss >> opt(i)) {
+          cerr << "WARNING: Unable to assign all values to vector option " << optName << endl;
+          string errMsg = "Required option not set: " + optName;
+          FatalError(errMsg.c_str())
+        }
+      }
+
+      closeFile();
+      return;
+    }
+  }
+
+  // Option was not found; throw error & exit
+  string errMsg = "Required option not found: " + optName;
+  FatalError(errMsg.c_str())
 }

@@ -105,10 +105,10 @@ void write_tec(int in_file_num, struct solution* FlowSol)
 
 #ifdef _MPI
   MPI_Barrier(MPI_COMM_WORLD);
-  sprintf(file_name_s,"Mesh_%.09d_p%.04d.plt",in_file_num,FlowSol->rank);
+  sprintf(file_name_s,"%s_%.09d_p%.04d.plt",run_input.data_file_name,in_file_num,FlowSol->rank);
   if (FlowSol->rank==0) cout << "Writing Tecplot file number " << in_file_num << " ...." << endl;
 #else
-  sprintf(file_name_s,"Mesh_%.09d_p%.04d.plt",in_file_num,0);
+  sprintf(file_name_s,"%s_%.09d_p%.04d.plt",run_input.data_file_name,in_file_num,0);
   cout << "Writing Tecplot file number " << in_file_num << " on rank " << FlowSol->rank << endl;
 #endif
 
@@ -657,15 +657,15 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! Dump number */
   sprintf(dumpnum_s,"Mesh_%.09d",in_file_num);
   /*! Each rank writes a .vtu file in a subdirectory named 'dumpnum_s' created by master process */
-  sprintf(vtu_s,"Mesh_%.09d/Mesh_%.09d_%d.vtu",in_file_num,in_file_num,my_rank);
+  sprintf(vtu_s,"%s_%.09d/Mesh_%.09d_%d.vtu",run_input.data_file_name,in_file_num,in_file_num,my_rank);
   /*! On rank 0, write a .pvtu file to gather data from all .vtu files */
-  sprintf(pvtu_s,"Mesh_%.09d.pvtu",in_file_num);
+  sprintf(pvtu_s,"%s_%.09d.pvtu",run_input.data_file_name,in_file_num);
 
 #else
 
   /*! Only write a vtu file in serial */
-  sprintf(dumpnum_s,"Mesh_%.09d",in_file_num);
-  sprintf(vtu_s,"Mesh_%.09d.vtu",in_file_num);
+  sprintf(dumpnum_s,"%s_%.09d",run_input.data_file_name,in_file_num);
+  sprintf(vtu_s,"%s_%.09d.vtu",run_input.data_file_name,in_file_num);
 
 #endif
 
@@ -1066,11 +1066,11 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 
 #ifdef _MPI
   sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
-  sprintf(file_name_s2,"Rest_Mesh_%.09d_p%.04d.dat",in_file_num,FlowSol->rank);
+  sprintf(file_name_s2,"Rest_%s_%.09d_p%.04d.dat",run_input.data_file_name,in_file_num,FlowSol->rank);
   if (FlowSol->rank==0) cout << "Writing Restart file number " << in_file_num << " ...." << endl;
 #else
   sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,0);
-  sprintf(file_name_s2,"Rest_Mesh_%.09d_p%.04d.dat",in_file_num,0);
+  sprintf(file_name_s2,"Rest_%s_%.09d_p%.04d.dat",run_input.data_file_name,in_file_num,0);
   cout << "Writing Restart file number " << in_file_num << " ...." << endl;
 #endif
 

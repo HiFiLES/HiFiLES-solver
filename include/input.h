@@ -89,6 +89,7 @@ public:
   double CFL;
   int n_steps;
   int plot_freq;
+  string data_file_name;
   int restart_dump_freq;
   int adv_type;
 
@@ -264,4 +265,57 @@ public:
   int perturb_ic;
 
   double time, rk_time;
+};
+
+/*! \class fileReader
+ *  \brief Simple, robust method for reading input files
+ *  \author Jacob Crabill
+ *  \date 4/30/2015
+ */
+class fileReader
+{
+public:
+  /*! Default constructor */
+  fileReader();
+
+  fileReader(string fileName);
+
+  /*! Default destructor */
+  ~fileReader();
+
+  /*! Set the file to be read from */
+  void setFile(string fileName);
+
+  /*! Open the file to prepare for reading simulation parameters */
+  void openFile(void);
+
+  /*! Close the file & clean up */
+  void closeFile(void);
+
+  /* === Functions to read paramters from input file === */
+
+  /*! Read a single value from the input file; if not found, apply a default value */
+  template <typename T>
+  void getScalarValue(string optName, T &opt, T defaultVal);
+
+  /*! Read a single value from the input file; if not found, throw an error and exit */
+  template <typename T>
+  void getScalarValue(string optName, T &opt);
+
+  /*! Read a vector of values from the input file; if not found, apply the default value to all elements */
+  template <typename T>
+  void getVectorValue(string optName, vector<T> &opt, T defaultVal);
+
+  /*! Read a vector of values from the input file; if not found, throw an error and exit */
+  template <typename T>
+  void getVectorValue(string optName, vector<T> &opt);
+
+  /*! Read in a map of type <T,U> from input file; each entry prefaced by optName */
+  template <typename T, typename U>
+  void getMap(string optName, map<T, U> &opt);
+
+private:
+  ifstream optFile;
+  string fileName;
+
 };
