@@ -27,258 +27,185 @@ along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
 ----------------------------
  Solver parameters
 ----------------------------
-equation                          // 0: Euler/Navier-Stokes, 1:Advection/Adv-Diffusion
-0
-viscous                           // 0: Advection/Euler, 1: Advection-Diffusion/Navier-Stokes
-1
-riemann_solve_type                // 0: Rusanov, 1: Lax-Friedrich, 2: Roe
-0
-vis_riemann_solve_type            // 0: LDG
-0
-ic_form                           // 0: Isentropic Vortex, 1: Uniform flow, 2: Sine Wave (single), 3: Sine Wave (group), 4: Spherical distribution, 5: Constant for adv-diff, 6: up to 4th order polynomial (not in use), 7: initial conditions for Taylor-Green Vortex
-1
-test_case                         // 0: Normal (doesn't have an analytical solution), 1:Isentropic Vortex, 2: Advection-Equation
-0
-order                             // Order of basis polynomials
-3
-dt_type                           // 0: user-supplied dt, 1: global min dt from CFL-based estimate, 2: element-local CFL-based timestepping
-0
-dt                                // user-specified timestep
-0.0005
-CFL                               // CFL number
-1.0
-n_steps                           // number of timesteps
-10
-adv_type                          // 0: Forward Euler, 3: RK45
-3
-tau                               // tau parameter for LDG viscous flux
-1.0
-pen_fact                          // penalty factor for LDG viscous flux
-0.5
+// 0: Euler/Navier-Stokes, 1:Advection/Adv-Diffusion
+equation  0
+viscous   1
+
+// 0: Rusanov, 1: Lax-Friedrich, 2: Roe
+riemann_solve_type       0
+vis_riemann_solve_type   0
+
+// 0: Isentropic Vortex, 1: Uniform flow, 2: Sine Wave
+ic_form    1
+
+// 0: Normal (doesn't have an analytical solution), 1:Isentropic Vortex, 2: Advection-Equation
+test_case  0
+order      3          // Order of basis polynomials
+dt_type    0          // 0: User-supplied, 1: Global, 2: Local
+dt         0.0005
+CFL        3.5
+n_steps    10
+adv_type   3          // 0: Forward Euler, 3: RK45
+tau        1.0
+pen_fact   0.5
+
 -----------------------
 LES options
 -----------------------
-LES                               // 0: no LES, 1: LES
-1
-filter_type                       // 0: Vasilyev high-order, 1: discrete Gaussian, 2: Modal Vandermonde. Not all filters are available for each element type.
-2
-filter_ratio                      // Filter width ratio. Try range 1:2. Not used for Modal Vandermonde filter.
-2
-SGS_model                         // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
-2
-wall_model                        // Select near-wall model for solid boundaries. 0: none, 1: Werner-Wengle, 2: Breuer & Rodi Three-layer
-0
-wall_layer_thickness              // Set thickness of layer within which wall model is applied
-0
+LES           1                   // 0: no LES, 1: LES
+filter_type   2                   // 0: Vasilyev high-order, 1: discrete Gaussian, 2: Modal Vandermonde. Not all filters are available for each element type.
+filter_ratio  2                   // Filter width ratio. Try range 1:2. Not used for Modal Vandermonde filter.
+SGS_model     2                   // 0: Smagorinsky, 1: WALE, 2: WALE-similarity, 3: SVV, 4: Similarity
+wall_model    0                   // Select near-wall model for solid boundaries. 0: none, 1: Werner-Wengle, 2: Breuer & Rodi Three-layer
+wall_layer_thickness  0           // Set thickness of layer within which wall model is applied
+
 -----------------------
 Restart options
 -----------------------
-restart_flag                      // 0: start from 0, 1: start from specified restart file
-0
-restart_iter                      // restart file to start from
-500000
-n_restart_files                   // number of restart files (=no. of MPI procs)
-8
+restart_flag       0          // 0: start from 0, 1: start from specified restart file
+restart_iter       1000       // restart file to start from
+n_restart_files    8          // number of restart files (=no. of MPI procs)
+
 -----------------------
 Mesh options
 -----------------------
-mesh_file                         // filename of mesh
-sqcyl-tet-coarse-3.neu
-dx_cyclic                         distance between cyclic boundaries in x direction (set to large number if not cyclic)
-20000000000.0
-dy_cyclic                         distance between cyclic boundaries in y direction (set to large number if not cyclic)
-20000000000.0
-dz_cyclic                         distance between cyclic boundaries in z direction (set to large number if not cyclic)
-3.2
+mesh_file   sqcyl-tet-coarse-3.neu   filename of mesh
+
+dx_cyclic   20.0            distance between cyclic boundaries in x direction (comment out if not needed)
+dy_cyclic   20.0            distance between cyclic boundaries in y direction (comment out if not needed)
+dz_cyclic   20.0            distance between cyclic boundaries in z direction (comment out if not needed)
+
 -----------------------------------
 Monitoring, plotting parameters
 -----------------------------------
-p_res                             // Plotting resolution, number of nodes per direction
+p_res                  4           // Plotting resolution, number of nodes per direction
 4
-write_type                        // 0: Paraview, 1: Tecplot
+write_type             0          // 0: Paraview, 1: Tecplot
 0
-n_diagnostic_fields               // Choose extra fields to be written to file: u v w energy pressure mach vorticity q_criterion. Set to 0 for no diagnostic fields
-0
-n_average_fields                  // extra diagnostic fields written to file: rho_average u_average v_average w_average e_average. Set to 0 for no time averaged fields
-2 u_average v_average
-spinup_time                       // initial period (in seconds) until time averaging is started, if n_average_fields > 0
-0
-inters_cub_order                  // Order of cubature rule for integrating over element interfaces
-5
-volume_cub_order                  // Order of cubature rule for integrating over element volumes
-5
-plot_freq                         // number of timesteps between solution writes
-10
-restart_dump_freq                 // number of timesteps between restart file writes
-10000
-monitor_res_freq                  // number of timesteps between residual outputs
-1
-monitor_integrals_freq            // Compute global integral diagnostics
-0
-n_integral_quantities             // Choose integral diagnostics: kineticenergy, vorticity, pressuredilatation, straincolonproduct. Set to 0 for no diagnostics
-0
-res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
-1
-error_norm_type                   // 0:infinity norm, 1:L1 norm, 2:L2 norm
-1
-res_norm_field                    // 0: Density
-0
+// Choose extra fields to be written to file: u v w energy pressure mach vorticity q_criterion. 
+// Set to 0 or comment out for no diagnostic fields
+n_diagnostic_fields    3 u v mach 
+
+// Choose integral diagnostics: kineticenergy, vorticity, pressuredilatation, straincolonproduct. Set to 0 for no diagnostics
+// Set to 0 or comment out for no integral quantity output
+integral_quantities    0
+monitor_integrals_freq 0          // Compute global integral diagnostics
+
+// extra diagnostic fields written to file: rho_average u_average v_average w_average e_average. Set to 0 for no time averaged fields
+n_average_fields       2 u_average v_average
+spinup_time            0          // initial period (in seconds) until time averaging is started, if n_average_fields > 0
+
+inters_cub_order       5          // Order of cubature rule for integrating over element interfaces
+volume_cub_order       5          // Order of cubature rule for integrating over element volumes
+plot_freq              10         // number of timesteps between solution writes
+data_file_name         simData    // prefix for all output files
+restart_dump_freq      10000      // number of timesteps between restart file writes
+monitor_res_freq       1          // number of timesteps between residual outputs
+res_norm_type          1          // 0:infinity norm, 1:L1 norm, 2:L2 norm
+error_norm_type        1          // 0:infinity norm, 1:L1 norm, 2:L2 norm
+res_norm_field         0          // 0: Density
+
 ---------------------------
 Wave Equation parameters
 ---------------------------
-wave_speed_x                      // 
-1.
-wave_speed_y
-0.
-wave_speed_z
-0.
-lambda                            // 1: upwind
-1
+wave_speed_x   1       // Advection-equation wave speed, x component
+wave_speed_y   1       // Advection-equation wave speed, y component
+wave_speed_z   1       // Advection-equation wave speed, z component
+lambda         1       // 1: upwind
+
 ---------------------------
 Element parameters
 ---------------------------
-upts_type_tri                     // triangle solution point locations. 0: 'good' points (Williams and Shunn 2013), 1: alpha points (Hesthaven and Warburton 2007)
-0
-fpts_type_tri                     // triangle flux point locations. 0: 'good' points (Williams and Shunn 2013), 1: alpha points (Hesthaven and Warburton 2007)
-0
-vcjh_scheme_tri                   // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
-0
-c_tri                             // user-defined stabilization parameter if using option 0 for vcjh_scheme
-0.0
-sparse_tri                        // whether to utilize sparsity of element matrices. 0: don't use sparsity, 1: do use sparsity 
-0
-upts_type_quad                    // quad solution point locations.
-0
-vcjh_scheme_quad                  // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
-0
-eta_quad                          // user-defined stabilization parameter if using option 0 for vcjh_scheme
-0.0
-sparse_quad
-0
-upts_type_hexa                    // hex solution point locations.
-0
-vcjh_scheme_hexa                  // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
-0
-eta_hexa                          // user-defined stabilization parameter if using option 0 for vcjh_scheme
-0.0
-sparse_hexa
-0
-upts_type_tet                     // tet solution point locations.
-0
-fpts_type_tet                     // tet flux point locations.
-0
-vcjh_scheme_tet                   // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
-0
-eta_tet                           // user-defined stabilization parameter if using option 0 for vcjh_scheme
-0.0
-sparse_tet
-0
-upts_type_pri_tri                 // prism tri solution point locations.
-0
-upts_type_pri_1d                  // prism 1d solution point locations.
-0
-vcjh_scheme_pri_1d                // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
-0
-eta_pri                           // user-defined stabilization parameter if using option 0 for vcjh_scheme
-0.0
-sparse_pri
-0
+==== Tris ====
+upts_type_tri      0              // triangle solution point locations. 0: 'good' points (Williams and Shunn 2013), 1: alpha points (Hesthaven and Warburton 2007)
+fpts_type_tri      0              // triangle flux point locations. 0: 'good' points (Williams and Shunn 2013), 1: alpha points (Hesthaven and Warburton 2007)
+vcjh_scheme_tri    0              // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
+c_tri              0.             // user-defined stabilization parameter if using option 0 for vcjh_scheme
+sparse_tri         0              // whether to utilize sparsity of element matrices. 0: don't use sparsity, 1: do use sparsity 
+
+==== Quads ====
+upts_type_quad     0              // quad solution point locations.
+vcjh_scheme_quad   0              // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
+eta_quad           0.             // user-defined stabilization parameter if using option 0 for vcjh_scheme
+sparse_quad        0              // Use sparse matrix storage?
+
+==== Hexas ====
+upts_type_hexa     0              // hex solution point locations.
+vcjh_scheme_hexa   0              // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
+eta_hexa           0.             // user-defined stabilization parameter if using option 0 for vcjh_scheme
+sparse_hexa        0
+
+==== Tets ====
+upts_type_tet      0              // tet solution point locations.
+fpts_type_tet      0              // tet flux point locations.
+vcjh_scheme_tet    0              // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
+eta_tet            0.             // user-defined stabilization parameter if using option 0 for vcjh_scheme
+sparse_tet         0
+
+==== Prisms ====
+upts_type_pri_tri  0              // prism tri solution point locations.
+upts_type_pri_1d   0              // prism 1d solution point locations.
+vcjh_scheme_pri_1d 0              // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
+eta_pri            0.             // user-defined stabilization parameter if using option 0 for vcjh_scheme
+sparse_pri         0
+
 ------------------------------------
 Fluid Parameters
 ------------------------------------
-gamma
-1.4
-prandtl 
-0.72
-S_gas
-120.
-T_gas
-291.15
-R_gas
-286.9
-mu_gas
-4.673E-05
+gamma         1.4
+prandtl       0.72
+S_gas         120.
+T_gas         291.15
+R_gas         286.9
+mu_gas        1.827E-05
+
 -----------------------------------
 Boundary conditions
 -----------------------------------
----------
-Viscous
----------
-fix_vis                               // 0: Sutherland's law, 1: Constant viscosity
-0.
-Mach_free_stream 
-0.3
-nx_free_stream 
-1.
-ny_free_stream 
-0.
-nz_free_stream
-0.
-Re_free_stream 
-21400
-L_free_stream                         // reference length
-1.
-T_free_stream 
-300.0
-Mach_wall 
-0.0
-nx_wall
-1.
-ny_wall
-0.
-nz_wall 
-0.
-T_wall    
-300.0
-Mach_c_ic                             // initial Mach number
-0.3
-nx_c_ic
-1.
-ny_c_ic 
-0.
-nz_c_ic
-0.
-Re_c_ic                               // initial Reynolds number
-21400
-T_c_ic
-300.0
------------
-Inviscid
------------
-rho_c_ic
-1.0
-u_c_ic
-1.0
-v_c_ic
-0.0
-w_c_ic
-0.0
-p_c_ic                                // initial pressure
-17.857142857142854098
-rho_bound 
-1.
-u_bound  
-1.0
-v_bound 
-1.0
-w_bound 
-0.0
-p_bound                               // boundary pressure
-17.857142857142854098
+==== Viscous ====
+fix_vis           0                   // 0: Sutherland's law, 1: Constant viscosity
+Mach_free_stream  0.2
+nx_free_stream    1.
+ny_free_stream    0.
+nz_free_stream    0.
+Re_free_stream    100.
+L_free_stream     1.
+T_free_stream     300 
+T_wall            300
+Mach_wall         0.
+nx_wall           1.
+ny_wall           0.
+nz_wall           0.
+T_wall            300
+
+==== Inviscid ====
+rho_bound         1.
+u_bound           1.0
+v_bound           1.0
+w_bound           0.0
+p_bound           17.857142857142854098
+// Note 1: No non-dimensionalization for inviscid simulations;
+// however, the values above are such that speed of sound = 5
+
+// Note 2: If you would like to initialize your simulation to
+// something different than your boundary/freestream conditions,
+// each *_free_stream and *_bound quantity also has a *_c_ic which
+// can be set in the same manner to allow this
+
 -----------
 Forcing
 -----------
-body_forcing // Used for the periodic channel test case. 0 = no forcing, 1 = forcing
-1
+body_forcing  1  // Used for the periodic channel test case. 0 = no forcing, 1 = forcing
+
 -----------
-Initial Profile // If ic_form=6, use these parameters to describe polynomial initial condition. Useful for cyclic problems. Specify coeffs of poly of form a + bx + cx^2 + dx^3 + ex^4 + by + cy^2 + dy^3 + ey^4 + bz + cz^2 + dz^3 + ez^4
+Initial Profile: If ic_form=6, use these parameters to describe polynomial initial condition. Useful for cyclic problems. Specify coeffs of poly of form a + bx + cx^2 + dx^3 + ex^4 + by + cy^2 + dy^3 + ey^4 + bz + cz^2 + dz^3 + ez^4
 -----------
-x_coeffs // Coeffs of x-momentum
-1.875 0 0 0 0 0 0 0 0 0 -3.75 0 1.875
-y_coeffs // Coeffs of y-momentum
-0 0 0 0 0 0 0 0 0 0 0 0 0
-z_coeffs // Coeffs of z-momentum
-0 0 0 0 0 0 0 0 0 0 0 0 0
------------
-perturb_ic // If 1, add velocity perturbation to kickstart turbulence in periodic channel. 0 otherwise.
-1
+// Coeffs of x-momentum  [need the 13 so reader know how many quantities]
+x_coeffs  13  1.875 0 0 0 0 0 0 0 0 0 -3.75 0 1.875
+// Coeffs of y-momentum
+y_coeffs  13  0 0 0 0 0 0 0 0 0 0 0 0 0
+// Coeffs of y-momentum
+z_coeffs  13  0 0 0 0 0 0 0 0 0 0 0 0 0
+
+perturb_ic   1  // If 1, add velocity perturbation to kickstart turbulence in periodic channel. 0 otherwise.
+
