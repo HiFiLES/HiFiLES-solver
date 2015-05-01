@@ -264,4 +264,8 @@ public:
   int perturb_ic;
 
   double time, rk_time;
+
+  int filter_frequency = 1000;
+  double filter_alpha = 0.8;
+  double filter_width = 10.;
 };

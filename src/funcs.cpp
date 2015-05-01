@@ -2878,7 +2878,7 @@ double filter_integrand_tris(double r, double s) {
     rvect(1) = s;
 
   // define properties of the kernel function
-  double h = 10; // measure of the wavenumbers left unfiltered
+  double h = run_input.filter_width; // measure of the wavenumbers left unfiltered
 
   double distance = LOCAL_ELE_OF_INTEREST->reference_element_norm(rvect,LOCAL_X0);
 

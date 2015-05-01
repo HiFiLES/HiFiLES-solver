@@ -772,6 +772,18 @@ void input::setup(ifstream& in_run_input_file, int rank)
     {
       in_run_input_file >> shock_vortex_restart;
     }
+    else if (!param_name.compare("filter_frequency"))
+    {
+      in_run_input_file >> filter_frequency;
+    }
+    else if (!param_name.compare("filter_width"))
+    {
+      in_run_input_file >> filter_width;
+    }
+    else if (!param_name.compare("filter_alpha"))
+    {
+      in_run_input_file >> filter_alpha;
+    }
     else
     {
       cout << "input parameter =" << param_name << endl;

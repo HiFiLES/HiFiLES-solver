@@ -241,6 +241,14 @@ Array <double> inv_Array(Array <double>& input);
 /*! method to get transpose of a square Array*/
 Array <double> transpose_Array(Array <double>& in_Array);
 
+/*! Wrapper for using dgemm with BLAS, NO_BLAS, CPU, or GPU */
+void dgemm_wrapper(int Arows, int Bcols, int Acols,
+                   double alpha,
+                   double *A_matrix, int Astride,
+                   double *B_matrix, int Bstride,
+                   double beta,
+                   double *C_matrix, int Cstride);
+
 /*! END */
 
 

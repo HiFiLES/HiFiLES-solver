@@ -185,13 +185,13 @@ int main(int argc, char *argv[]) {
     }
 
     /*! Filter the solution if necessary */
-//    int nn = 1000;
-//    if ( (i_steps+1)%nn == 0 && i_steps > 300) {
-//        cout << "Filtering!" << endl;
-//        for(j=0; j<FlowSol.n_ele_types; j++) {
-//            FlowSol.mesh_eles(j)->filter_solution_LFS(0); // filter the solution computed last
-//          }
-//      }
+    int nn = run_input.filter_frequency;
+    if ( run_input.filter_frequency > 0 && (i_steps+1)%nn == 0) {
+        cout << "Filtering!" << endl;
+        for(j=0; j<FlowSol.n_ele_types; j++) {
+            FlowSol.mesh_eles(j)->filter_solution_LFS(0); // filter the solution computed last
+          }
+      }
 
 
     /*! Update total time, and increase the iteration index. */

@@ -7764,7 +7764,7 @@ void eles::calc_grid_velocity(void)
 void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is the stage in the time-stepping scheme
 
   if (n_eles != 0) {
-      double alpha = 0.8; // proportion of influence from interior filter
+      double alpha = run_input.filter_alpha; // proportion of influence from interior filter
 
       #ifdef _CPU
       // Find common interface values
@@ -7860,7 +7860,7 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
       C_matrix = disu_upts(in_disu_upts_from).get_ptr_gpu()
 #endif
 
-      alpha = 1. - alpha;
+      alpha = 1. - run_input.filter_alpha;
       beta = 1.;
 
       dgemm_wrapper(Arows, Bcols, Acols, alpha,
