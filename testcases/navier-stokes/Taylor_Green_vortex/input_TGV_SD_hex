@@ -1,220 +1,120 @@
 ----------------------------
  Solver parameters
 ----------------------------
-equation                          // 0: Euler/Navier-Stokes, 1:Advection/Adv-Diffusion
-0
-viscous
-1
-riemann_solve_type                // 0: Rusanov, 1: Lax-Friedrich, 2: Roe
-0
-vis_riemann_solve_type
-0
-ic_form                           // 0: Isentropic Vortex, 1: Uniform flow, 2: Sine Wave
-7
-test_case                         // 0: Normal (doesn't have an analytical solution), 1:Isentropic Vortex, 2: Advection-Equation
-0
-order                             // Order of basis polynomials
-3
-dt 
-0.001
-n_steps
-25
-adv_type                          // 0: Forward Euler, 3: RK45
-3
-tau 
-1.0
-pen_fact 
-0.5
+// 0: Euler/Navier-Stokes, 1:Advection/Adv-Diffusion
+equation  0
+viscous   1
+
+// 0: Rusanov, 1: Lax-Friedrich, 2: Roe
+riemann_solve_type       0
+vis_riemann_solve_type   0
+
+ic_form    7        // 0: Isentropic Vortex, 1: Uniform flow, 2: Sine Wave
+test_case  0        // 0: Normal (no analytical solution), 1:Isentropic Vortex, 2: Advection-Equation
+order      3        // Order of basis polynomials
+dt_type    0        // 0: User-supplied, 1: Global, 2: Local
+dt         0.001
+CFL        0.001
+n_steps    25
+adv_type   3        // 0: Forward Euler, 3: RK45
+tau        1.0
+pen_fact   0.5
+
 -----------------------
 Restart options
 -----------------------
-restart_flag
-0
-restart_iter
-10000
-n_restart_files
-1
+restart_flag      0
+
 -----------------------
 Mesh options
 -----------------------
-mesh_file
-Taylor-Green-Vortex-hex.neu
-dx_cyclic
-6.2831853071795862
-dy_cyclic
-6.2831853071795862
-dz_cyclic
-6.2831853071795862
+mesh_file   Taylor-Green-Vortex-hex.neu
+dx_cyclic   6.2831853071795862
+dy_cyclic   6.2831853071795862
+dz_cyclic   6.2831853071795862
+
 -----------------------------------
 Monitoring, plotting parameters
 -----------------------------------
-p_res                             // Plotting resolution, number of nodes per direction
-3
-write_type                        // 0: Paraview, 1: Tecplot
-0
-n_diagnostic_fields
-2 vorticity q_criterion
-inters_cub_order                  // Order of cubature rule for integrating over element interfaces
-4
-volume_cub_order                  // Order of cubature rule for integrating over element volumes
-4
-plot_freq
-10
-restart_dump_freq
-10000
-monitor_res_freq
-1
-monitor_cp_freq
-100
-monitor_integrals_freq                  // Compute global integrals. 0=no diagnostics
-100
-n_integral_quantities
-2 kineticenergy vorticity
-res_norm_type                     // 0:infinity norm, 1:L1 norm, 2:L2 norm
-1
-error_norm_type                   // 0:infinity norm, 1:L1 norm, 2:L2 norm
-1
-res_norm_field                    // Density
-0
----------------------------
-Wave Equation parameters
----------------------------
-wave_speed_x
-0.
-wave_speed_y
-0.
-wave_speed_z
-0.
-lambda                            // 1: upwind
-1
+p_res        3            // Plotting resolution, # of nodes per direction
+write_type   0            // 0: Paraview, 1: Tecplot
+diagnostic_fields  2 vorticity q_criterion
+inters_cub_order   4             // Order of cubature rule for integrating over element interfaces
+volume_cub_order   4             // Order of cubature rule for integrating over element volumes
+
+monitor_res_freq   1
+plot_freq          10
+data_file_name     TGV_SD_hex
+restart_dump_freq  10000
+res_norm_type      1              // 1:L1 norm, 2:L2 norm, 0:infinity norm <not implemented>
+error_norm_type    1              // 1:L1 norm, 2:L2 norm, 0:infinity norm <not implemented>
+res_norm_field     0              // Density
+
+integral_quantities  2 kineticenergy vorticity
+
 ---------------------------
 Element parameters
 ---------------------------
-upts_type_tri
-0
-fpts_type_tri
-0
-vcjh_scheme_tri
-0								  // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
-c_tri
-0.0
-sparse_tri
-0
-upts_type_quad
-0
-vcjh_scheme_quad
-0								  // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
-eta_quad
-0.0
-sparse_quad
-0
-upts_type_hexa
-0
-vcjh_scheme_hexa
-2								  // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
-eta_hexa
-0.0
-sparse_hexa
-0
-upts_type_tet
-1
-fpts_type_tet
-0
-vcjh_scheme_tet
-0								  // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
-eta_tet
-0.0
-sparse_tet
-0
-upts_type_pri_tri
-0
-upts_type_pri_1d
-0
-vcjh_scheme_pri_1d
-0								  // 0: custom, 1: DG, 2: SD, 3: HU, 4: C+
-eta_pri
-0.0
-sparse_pri
-0
+==== Tris ====
+upts_type_tri      0
+fpts_type_tri      0
+vcjh_scheme_tri    0
+c_tri              0.0
+sparse_tri         0
+
+==== Quads ====
+upts_type_quad     0    // 0: Gauss, 1: Gauss-Lobatto
+vcjh_scheme_quad   0    // 0: VCJH, 1: DG, 2: SD, 3: Hu, 4: c_+
+eta_quad           0.0
+sparse_quad        0
+
+==== Hexs ====
+upts_type_hexa     0
+vcjh_scheme_hexa   2
+eta_hexa           0.
+sparse_hexa        0
+
+==== Tets ====
+upts_type_tet      1
+fpts_type_tet      0
+vcjh_scheme_tet    0
+eta_tet            0.0
+sparse_tet         0
+
+==== Prisms ====
+upts_type_pri_tri  0
+upts_type_pri_1d   0
+vcjh_scheme_pri_1d 0
+eta_pri            0.0
+sparse_pri         0
+
 ------------------------------------
 Fluid Parameters
 ------------------------------------
-gamma
-1.4
-prandtl 
-0.72
-S_gas
-120.
-T_gas
-291.15
-R_gas
-286.9
-mu_gas
-6.25E-04
+gamma         1.4
+prandtl       0.72
+S_gas         120.
+T_gas         291.15
+R_gas         286.9
+mu_gas        1.827E-05
+
 -----------------------------------
 Boundary conditions
 -----------------------------------
----------
-Viscous
----------
-fix_vis                               // 0: Sutherland's law, 1: Constant viscosity
-1.
-Mach_free_stream 
-0.08
-nx_free_stream 
-0.
-ny_free_stream 
-0.
-nz_free_stream
-0.
-Re_free_stream 
-1600
-L_free_stream 
-1.
-T_free_stream 
-300.0
-Mach_wall 
-0.0
-nx_wall
-0.
-ny_wall
-0.
-nz_wall 
-0.
-T_wall    
-300.0
-Mach_c_ic
-0.08
-nx_c_ic
-0.
-ny_c_ic 
-0.
-nz_c_ic
-0.
-Re_c_ic
-1600
-T_c_ic
-300.0
------------
-Inviscid
------------
-rho_c_ic
-1.0
-u_c_ic
-0.0
-v_c_ic
-0.0
-w_c_ic
-0.0
-p_c_ic
-17.857142857142854098
-rho_bound 
-1.
-u_bound  
-0.0
-v_bound 
-0.0
-w_bound 
-0.0
-p_bound 
-17.857142857142854098
+==== Viscous ====
+fix_vis           1                   // 0: Sutherland's law, 1: Constant viscosity
+Mach_free_stream  0.08
+nx_free_stream    0.
+ny_free_stream    0.
+nz_free_stream    0.
+Re_free_stream    1600.
+L_free_stream     1.
+T_free_stream     300 
+T_wall            300
+
+==== Inviscid ====
+rho_bound         1.
+u_bound           1.0
+v_bound           0.0
+w_bound           0.0
+p_bound           17.857142857142854098

@@ -30,6 +30,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
+#include <vector>
+#include <map>
 
 #include "../include/input.h"
 #include "../include/array.h"
@@ -44,98 +46,7 @@ using namespace std;
 
 input::input()
 {
-  // ** Set default values for commonly-used parameters **
-  // -- Simulation Parameters
-  equation = 0;            // Euler / Navier-Stokes
-  viscous = 0;             // Inviscid
-  riemann_solve_type = 0;  // Rusanov
-  ic_form = 1;             // Uniform flow
-  test_case = 0;           // Not a test case
-  dt_type = 0;             // User-supplied constant time step
-  tau = 0;                 // Used in LDG flux
-  pen_fact = 0.5;          // Used in LDG flux
-  // -- Restart Options
-  restart_flag = 0;        // Not restarting
-  // -- Mesh Options
-  dx_cyclic = INFINITY;    // Not periodic in x
-  dy_cyclic = INFINITY;    // Not periodic in y
-  dz_cyclic = INFINITY;    // Not periodic in z
-  // -- Data Output Options
-  monitor_cp_freq = 0;     // No output
-  res_norm_type = 2;       // Use L2 norm on residual
-  error_norm_type = 2;     // Use L2 norm on residual
-  // -- Fluid Properties
-  R_gas = 286.9;           // Typical value of ideal gas constant for air (J/kg-K)
-  gamma = 1.4;             // Typical value of gamma for air
-  prandtl = .72;           // Typical value of Prandtl number for air
-  S_gas = 120;             // Typical value of S from Sutherland's Law
-  T_gas = 291.15;          // Typical temperature for Sutherland's Law (Kelvin)
-  mu_gas = 1.827E-5;       // Typical value of mu for air (kg/m-s)
-  // -- Boundary Conditions
-  L_free_stream = 1;       // Reference length of 1
-  T_free_stream = 300;     // Typical temperature (Kelvin)
-  Mach_wall = 0;           // Mach number of "moving wall" b.c.
-  T_wall = 300;
-  // -- Element Parameters
-  upts_type_tri = 0;
-  fpts_type_tri = 0;
-  vcjh_scheme_tri = 1;
-  c_tri = 0.0;
-  sparse_tri = 0;
-  upts_type_quad = 0;
-  vcjh_scheme_quad = 0;
-  eta_quad = 0.0;
-  sparse_quad = 0;
-  upts_type_hexa = 0;
-  vcjh_scheme_hexa = 0;
-  eta_hexa = 0;
-  sparse_hexa = 0;
-  upts_type_tet = 1;
-  fpts_type_tet = 0;
-  vcjh_scheme_tet = 0;
-  eta_tet =  0;
-  sparse_tet = 0;
-  upts_type_pri_tri = 0;
-  upts_type_pri_1d = 0;
-  vcjh_scheme_pri_1d = 0;
-  eta_pri = 0;
-  sparse_pri = 0;
 
-  // Set default values for optional parameters
-  turb_model = 0;
-  motion = 0;
-  GCL = 0;
-  n_deform_iters = 1;
-  restart_mesh_out = 0;
-  mesh_output_freq = INFINITY;
-  mesh_output_format = 1;
-  spinup_time = 0.0;
-
-  // Set shock capturing parameters to 0 in case they are not used
-  ArtifOn = 0;
-  artif_only = 0;
-  artif_type = 0;
-  epsilon0 = 0;
-  s0 = 0;
-  kappa = 0;
-  shock_vortex_restart = 0;
-  p_bound_out = 0;
-
-  // Initialize initial-condition values
-  // Viscous Params
-  Mach_c_ic = INFINITY;
-  nx_c_ic = INFINITY;
-  ny_c_ic = INFINITY;
-  nz_c_ic = INFINITY;
-  Re_c_ic = INFINITY;
-  T_c_ic = INFINITY;
-
-  // Inviscid Params
-  rho_c_ic = INFINITY;
-  u_c_ic = INFINITY;
-  v_c_ic = INFINITY;
-  w_c_ic = INFINITY;
-  p_c_ic = INFINITY;
 }
 
 input::~input()
@@ -174,14 +85,18 @@ void input::set_vcjh_scheme_pri_1d(int in_vcjh_scheme_pri_1d)
   vcjh_scheme_pri_1d= in_vcjh_scheme_pri_1d;
 }
 
-void input::readInputFile(string& fileName, int rank)
+void input::read_input_file(string fileName, int rank)
 {
   fileReader opts(fileName);
 
   v_bound.setup(3);
   wave_speed.setup(3);
   v_wall.setup(3);
-  diff_coeff = 0.;
+
+  /*
+   * HiFiLES Developers - Please keep this organized!  There are
+   * many parameters, so organization is the key to clarity.
+   */
 
   /* ---- Basic Simulation Parameters ---- */
 
@@ -193,30 +108,31 @@ void input::readInputFile(string& fileName, int rank)
   opts.getScalarValue("test_case",test_case,0);
   opts.getScalarValue("n_steps",n_steps);
   opts.getScalarValue("restart_flag",restart_flag,0);
-  opts.getScalarValue("restart_iter",restart_iter);
-  opts.getScalarValue("n_restart_files",n_restart_files);
+  if (restart_flag == 1) {
+    opts.getScalarValue("restart_iter",restart_iter);
+    opts.getScalarValue("n_restart_files",n_restart_files);
+  }
 
   /* ---- Visualization / Monitoring / Output Parameters ---- */
 
-  opts.getScalarValue("plot_freq",plot_freq);
+  opts.getScalarValue("plot_freq",plot_freq,500);
   opts.getScalarValue("data_file_name",data_file_name,string("Mesh"));
-  opts.getScalarValue("restart_dump_freq",restart_dump_freq);
-  opts.getScalarValue("monitor_res_freq",monitor_res_freq);
-  opts.getScalarValue("monitor_cp_freq",monitor_cp_freq);
-  opts.getScalarValue("monitor_integrals_freq",monitor_integrals_freq);
-  opts.getScalarValue("res_norm_type",res_norm_type);
+  opts.getScalarValue("restart_dump_freq",restart_dump_freq,0);
+  opts.getScalarValue("monitor_res_freq",monitor_res_freq,100);
+  opts.getScalarValue("monitor_cp_freq",monitor_cp_freq,0);
+  opts.getScalarValue("monitor_integrals_freq",monitor_integrals_freq,0);
+  opts.getScalarValue("res_norm_type",res_norm_type,2);
   opts.getScalarValue("error_norm_type",error_norm_type,2);
-  opts.getScalarValue("res_norm_field",res_norm_field);
-  opts.getScalarValue("p_res",p_res);
-  opts.getScalarValue("write_type",write_type);
-  opts.getScalarValue("inters_cub_order",inters_cub_order);
-  opts.getScalarValue("volume_cub_order", volume_cub_order);
+  opts.getScalarValue("res_norm_field",res_norm_field,0);
+  opts.getScalarValue("p_res",p_res,3);
+  opts.getScalarValue("write_type",write_type,1);
+  opts.getScalarValue("inters_cub_order",inters_cub_order,3);
+  opts.getScalarValue("volume_cub_order", volume_cub_order,3);
 
-  opts.getScalarValue("n_integral_quantities",n_integral_quantities);
-  opts.getVectorValue("integral_quantities",integral_quantities);
-  opts.getVectorValue("diagnostic_fields",diagnostic_fields);
-  opts.getVectorValue("average_fields",average_fields);
-  n_integral_quantities = integral_quantities.getDim(0);
+  opts.getVectorValueOptional("integral_quantities",integral_quantities);
+  opts.getVectorValueOptional("diagnostic_fields",diagnostic_fields);
+  opts.getVectorValueOptional("average_fields",average_fields);
+  n_integral_quantities = integral_quantities.get_dim(0);
   n_diagnostic_fields = diagnostic_fields.get_dim(0);
   n_average_fields = average_fields.get_dim(0);
 
@@ -232,13 +148,18 @@ void input::readInputFile(string& fileName, int rank)
     cout << "  especially for viscous simulations." << endl;
     cout << "!!!!!!" << endl;
   }
-  opts.getScalarValue("dt",dt);
-  opts.getScalarValue("CFL",CFL);
+
+  if (dt_type == 0) {
+    opts.getScalarValue("dt",dt);
+  }
+  else {
+    opts.getScalarValue("CFL",CFL);
+  }
 
   /* ---- Turbulence Modeling Parameters ---- */
 
-  opts.getScalarValue("turb_model",turb_model);
-  opts.getScalarValue("LES",LES);
+  opts.getScalarValue("turb_model",turb_model,0);
+  opts.getScalarValue("LES",LES,0);
   if (LES) {
     opts.getScalarValue("filter_type",filter_type);
     opts.getScalarValue("filter_ratio",filter_ratio);
@@ -249,11 +170,14 @@ void input::readInputFile(string& fileName, int rank)
 
   /* ---- Mesh Motion Parameters ---- */
 
-  opts.getScalarValue("motion_flag",motion);
+  opts.getScalarValue("motion_flag",motion,0);
   if (motion != STATIC_MESH) {
-    opts.getScalarValue("GCL_flag",GCL);
-    opts.getVectorValue("moving_boundaries",motion_type);
-    opts.getVectorValue("bound_vel_simple",bound_vel_simple);
+    opts.getScalarValue("GCL_flag",GCL,0);
+    opts.getVectorValueOptional("moving_boundaries",motion_type);
+
+    bound_vel_simple.setup(1);
+    opts.getVectorValueOptional("simple_bound_velocity",bound_vel_simple(0));
+    //opts.getVectorValueOptional("bound_vel_simple",bound_vel_simple);
     //      in_run_input_file >> n_moving_bnds;
     //      motion_type.setup(n_moving_bnds);
     //      bound_vel_simple.setup(n_moving_bnds);
@@ -268,25 +192,25 @@ void input::readInputFile(string& fileName, int rank)
     //        }
     //      }
     opts.getScalarValue("n_deform_iters",n_deform_iters);
-    opts.getScalarValue("mesh_output_freq",mesh_output_freq);
-    opts.getScalarValue("mesh_output_format",mesh_output_format);
-    opts.getScalarValue("restart_mesh_out",restart_mesh_out);
+    opts.getScalarValue("mesh_output_freq",mesh_output_freq,0);
+    opts.getScalarValue("mesh_output_format",mesh_output_format,1);
+    opts.getScalarValue("restart_mesh_out",restart_mesh_out,0);
   }
 
   /* ---- Gas Parameters ---- */
 
-  opts.getScalarValue("gamma",gamma);
-  opts.getScalarValue("prandtl",prandtl);
-  opts.getScalarValue("S_gas",S_gas);
-  opts.getScalarValue("T_gas",T_gas);
-  opts.getScalarValue("R_gas",R_gas);
-  opts.getScalarValue("mu_gas",mu_gas);
+  opts.getScalarValue("gamma",gamma,1.4);
+  opts.getScalarValue("prandtl",prandtl,.72);
+  opts.getScalarValue("S_gas",S_gas,120.);
+  opts.getScalarValue("T_gas",T_gas,291.15);
+  opts.getScalarValue("R_gas",R_gas,286.9);
+  opts.getScalarValue("mu_gas",mu_gas,1.827E-5);
 
   /* ---- Boundary Conditions ---- */
 
-  opts.getScalarValue("dx_cyclic",dx_cyclic);
-  opts.getScalarValue("dy_cyclic",dy_cyclic);
-  opts.getScalarValue("dz_cyclic",dz_cyclic);
+  opts.getScalarValue("dx_cyclic",dx_cyclic,(double)INFINITY);
+  opts.getScalarValue("dy_cyclic",dy_cyclic,(double)INFINITY);
+  opts.getScalarValue("dz_cyclic",dz_cyclic,(double)INFINITY);
 
   opts.getScalarValue("Mach_free_stream",Mach_free_stream);
   opts.getScalarValue("nx_free_stream",nx_free_stream);
@@ -302,15 +226,15 @@ void input::readInputFile(string& fileName, int rank)
   opts.getScalarValue("w_bound",v_bound(2));
   opts.getScalarValue("p_bound",p_bound);
 
-  opts.getScalarValue("Mach_wall",Mach_wall);
-  opts.getScalarValue("nx_wall",nx_wall);
-  opts.getScalarValue("ny_wall",ny_wall);
-  opts.getScalarValue("nz_wall",nz_wall);
-  opts.getScalarValue("T_wall",T_wall);
+  opts.getScalarValue("Mach_wall",Mach_wall,0.);
+  opts.getScalarValue("nx_wall",nx_wall,0.);
+  opts.getScalarValue("ny_wall",ny_wall,0.);
+  opts.getScalarValue("nz_wall",nz_wall,0.);
+  opts.getScalarValue("T_wall",T_wall,300.);
 
-  opts.getScalarValue("fix_vis",fix_vis);
-  opts.getScalarValue("tau",tau);
-  opts.getScalarValue("pen_fact",pen_fact);
+  opts.getScalarValue("fix_vis",fix_vis,1.);
+  opts.getScalarValue("tau",tau,0.);
+  opts.getScalarValue("pen_fact",pen_fact,0.5);
 
   /* ---- Initial Conditions (use BC's by default) ---- */
 
@@ -344,722 +268,75 @@ void input::readInputFile(string& fileName, int rank)
   opts.getScalarValue("upts_type_tri",upts_type_tri,0);
   opts.getScalarValue(" fpts_type_tri",fpts_type_tri,0);
   opts.getScalarValue("vcjh_scheme_tri",vcjh_scheme_tri,0);
-  opts.getScalarValue("c_tri",c_tri,0);
+  opts.getScalarValue("c_tri",c_tri,0.);
   opts.getScalarValue("sparse_tri",sparse_tri,0);
   // Quads
   opts.getScalarValue("upts_type_quad",upts_type_quad,0);
   opts.getScalarValue("vcjh_scheme_quad",vcjh_scheme_quad,0);
-  opts.getScalarValue("eta_quad",eta_quad,0);
+  opts.getScalarValue("eta_quad",eta_quad,0.);
   opts.getScalarValue("sparse_quad",sparse_quad,0);
   // Hexs
   opts.getScalarValue("upts_type_hexa",upts_type_hexa,0);
   opts.getScalarValue("vcjh_scheme_hexa",vcjh_scheme_hexa,0);
-  opts.getScalarValue("eta_hexa",eta_hexa,0);
+  opts.getScalarValue("eta_hexa",eta_hexa,0.);
   opts.getScalarValue("sparse_hexa",sparse_hexa,0);
   // Tets
   opts.getScalarValue("upts_type_tet",upts_type_tet,0);
   opts.getScalarValue("fpts_type_tet",fpts_type_tet,0);
   opts.getScalarValue("vcjh_scheme_tet",vcjh_scheme_tet,0);
-  opts.getScalarValue("c_tet",c_tet,0);
-  opts.getScalarValue("eta_tet",eta_tet,0);
+  opts.getScalarValue("c_tet",c_tet,0.);
+  opts.getScalarValue("eta_tet",eta_tet,0.);
   opts.getScalarValue("sparse_tet",sparse_tet,0);
   // Prisms
   opts.getScalarValue("upts_type_pri_tri",upts_type_pri_tri,0);
   opts.getScalarValue("upts_type_pri_1d",upts_type_pri_1d,0);
   opts.getScalarValue("vcjh_scheme_pri_1d",vcjh_scheme_pri_1d,0);
-  opts.getScalarValue("eta_pri",eta_pri);
+  opts.getScalarValue("eta_pri",eta_pri,0.);
   opts.getScalarValue("sparse_pri",sparse_pri);
 
-
-  /* ---- Uncategorized / Other ---- */
-
-  opts.getScalarValue("spinup_time",spinup_time);
-
-  opts.getScalarValue("const_src",const_src);
-
+  /* ---- Advection-Diffusion Parameters ---- */
+  if (equation == 1) {
   opts.getScalarValue("wave_speed_x",wave_speed(0));
   opts.getScalarValue("wave_speed_y",wave_speed(1));
   opts.getScalarValue( "wave_speed_z",wave_speed(2));
-  opts.getScalarValue("diff_coeff",diff_coeff);
+  opts.getScalarValue("diff_coeff",diff_coeff,0.);
   opts.getScalarValue("lambda",lambda);
+  }
 
-  opts.getScalarValue("body_forcing",forcing);
+  /* ---- Uncategorized / Other ---- */
 
-  opts.getVectorValue("x_coeffs",x_coeffs);
-  //    x_coeffs.setup(13);
-  //    for (int i=0;i<13;i++)
-  //      in_run_input_file >> x_coeffs(i);
+  opts.getScalarValue("spinup_time",spinup_time,0.);
+  opts.getScalarValue("const_src",const_src,0.);
+  opts.getScalarValue("body_forcing",forcing,0);
+  opts.getScalarValue("perturb_ic",perturb_ic,0);
 
-  opts.getVectorValue("y_coeffs",y_coeffs);
-  //    x_coeffs.setup(13);
-  //    for (int i=0;i<13;i++)
-  //      in_run_input_file >> x_coeffs(i);
-
-  opts.getVectorValue("z_coeffs",z_coeffs);
-  //    x_coeffs.setup(13);
-  //    for (int i=0;i<13;i++)
-  //      in_run_input_file >> z_coeffs(i);
-
-  opts.getScalarValue("perturb_ic",perturb_ic);
-
-  // setupParams();  // Non-Dimensionalization and other setup
+  // NOTE: the input file line must look like "x_coeffs <# coeffs> x1 x2 x3..."
+  opts.getVectorValueOptional("x_coeffs",x_coeffs);
+  opts.getVectorValueOptional("y_coeffs",y_coeffs);
+  opts.getVectorValueOptional("z_coeffs",z_coeffs);
 }
 
-void input::setup(ifstream& in_run_input_file, int rank)
+void input::setup(char* fileNameC, int rank)
 {
-  v_bound.setup(3);
-  wave_speed.setup(3);
-  v_wall.setup(3);
-  diff_coeff = 0.;
-  
-  char buf[BUFSIZ]={""};
-  char section_TXT[100];
-  string dummy, param_name;
-  bool blank;
+  string fileNameS;
+  fileNameS.assign(fileNameC);
 
-  // First loop over the input file and print content to output
-  if (rank==0)
-  {
-    while(!in_run_input_file.eof())
-    {
-      in_run_input_file.getline(buf,BUFSIZ);
-    }
-    // Rewind
-    in_run_input_file.clear();
-    in_run_input_file.seekg(0, ios::beg);
-  }
+  /* ---- Read necessary parameters from the input file ---- */
+  read_input_file(fileNameS,rank);
 
-  // Now read in parameters
-  while(!in_run_input_file.eof() )
-  {
-    // Read section name
-    in_run_input_file.getline(buf,BUFSIZ);
-    sscanf(buf,"%s",section_TXT);
-    param_name.assign(section_TXT,0,99);
-    blank = false;
+  /* ---- Non-Dimensionalization and other setup ---- */
+  setup_params(rank);
+}
 
-    if (in_run_input_file.peek()=='\n') {
-      // Blank line. Funky, but it's the only way
-      while(in_run_input_file.peek()=='\n')
-        in_run_input_file.get();
-      blank = true;
-    }
-    else if (!param_name.compare(0,5,"-----"))
-    {
-      // Section header, ignore next two lines
-      in_run_input_file.getline(buf,BUFSIZ);
-    }
-    else if (!param_name.compare(0,2,"//"))
-    {
-      // Skip comment line
-    }
-    else if (!param_name.compare("equation"))
-    {
-      in_run_input_file >> equation;
-    }
-    else if (!param_name.compare("order"))
-    {
-      in_run_input_file >> order;
-    }
-    else if (!param_name.compare("viscous"))
-    {
-      in_run_input_file >> viscous;
-    }
-    else if (!param_name.compare("riemann_solve_type"))
-    {
-      in_run_input_file >> riemann_solve_type;
-    }
-    else if (!param_name.compare("vis_riemann_solve_type"))
-    {
-      in_run_input_file >> vis_riemann_solve_type;
-    }
-    else if (!param_name.compare("ic_form"))
-    {
-      in_run_input_file >> ic_form;
-    }
-    else if (!param_name.compare("test_case"))
-    {
-      in_run_input_file >> test_case;
-    }
-    else if (!param_name.compare("n_diagnostic_fields"))
-    {
-      in_run_input_file >> n_diagnostic_fields;
-      diagnostic_fields.setup(n_diagnostic_fields);
-      for (int i=0;i<n_diagnostic_fields;i++)
-        in_run_input_file >> diagnostic_fields(i);
-    }
-    else if (!param_name.compare("n_average_fields"))
-    {
-      in_run_input_file >> n_average_fields;
-      average_fields.setup(n_average_fields);
-      for (int i=0;i<n_average_fields;i++)
-        in_run_input_file >> average_fields(i);
-    }
-    else if (!param_name.compare("spinup_time"))
-    {
-      in_run_input_file >> spinup_time;
-    }
-    else if (!param_name.compare("inters_cub_order"))
-    {
-      in_run_input_file >> inters_cub_order;
-    }
-    else if (!param_name.compare("volume_cub_order"))
-    {
-      in_run_input_file >> volume_cub_order;
-    }
-    else if (!param_name.compare("dt_type"))
-    {
-      in_run_input_file >> dt_type;
-
-      if (dt_type == 2 && rank == 0)
-      {
-        cout << "Note: Local timestepping is still in an experimental phase," 
-          << " especially for viscous simulations." ;
-      }
-    }
-    else if (!param_name.compare("dt"))
-    {
-      in_run_input_file >> dt;
-    }
-    else if (!param_name.compare("CFL"))
-    {
-      in_run_input_file >> CFL;
-    }
-    else if (!param_name.compare("n_steps"))
-    {
-      in_run_input_file >> n_steps;
-    }
-    else if (!param_name.compare("turb_model"))
-    {
-      in_run_input_file >> turb_model;
-    }
-    else if (!param_name.compare("LES"))
-    {
-      in_run_input_file >> LES;
-    }
-    else if (!param_name.compare("filter_type"))
-    {
-      in_run_input_file >> filter_type;
-    }
-    else if (!param_name.compare("filter_ratio"))
-    {
-      in_run_input_file >> filter_ratio;
-    }
-    else if (!param_name.compare("SGS_model"))
-    {
-      in_run_input_file >> SGS_model;
-    }
-    else if (!param_name.compare("wall_model"))
-    {
-      in_run_input_file >> wall_model;
-    }
-    else if (!param_name.compare("wall_layer_thickness"))
-    {
-      in_run_input_file >> wall_layer_t;
-    }
-    else if (!param_name.compare("plot_freq"))
-    {
-      in_run_input_file >> plot_freq;
-    }
-    else if (!param_name.compare("restart_dump_freq"))
-    {
-      in_run_input_file >> restart_dump_freq;
-    }
-    else if (!param_name.compare("restart_mesh_out"))
-    {
-      in_run_input_file >> restart_mesh_out;
-    }
-    else if (!param_name.compare("adv_type"))
-    {
-      in_run_input_file >> adv_type;
-    }
-    else if (!param_name.compare("const_src"))
-    {
-      in_run_input_file >> const_src;
-    }
-    else if (!param_name.compare("monitor_res_freq"))
-    {
-      in_run_input_file >> monitor_res_freq;
-    }
-    else if (!param_name.compare("monitor_cp_freq"))
-    {
-      in_run_input_file >> monitor_cp_freq;
-    }
-    else if (!param_name.compare("monitor_integrals_freq"))
-    {
-      in_run_input_file >> monitor_integrals_freq;
-    }
-    else if (!param_name.compare("n_integral_quantities"))
-    {
-      in_run_input_file >> n_integral_quantities;
-      integral_quantities.setup(n_integral_quantities);
-      for (int i=0;i<n_integral_quantities;i++)
-        in_run_input_file >> integral_quantities(i) ;
-    }
-    else if (!param_name.compare("res_norm_type"))
-    {
-      in_run_input_file >> res_norm_type;
-    }
-    else if (!param_name.compare("error_norm_type"))
-    {
-      in_run_input_file >> error_norm_type;
-    }
-    else if (!param_name.compare("res_norm_field"))
-    {
-      in_run_input_file >> res_norm_field;
-    }
-    else if (!param_name.compare("restart_flag"))
-    {
-      in_run_input_file >> restart_flag;
-    }
-    else if (!param_name.compare("restart_iter"))
-    {
-      in_run_input_file >> restart_iter;
-    }
-    else if (!param_name.compare("n_restart_files"))
-    {
-      in_run_input_file >> n_restart_files;
-    }
-    else if (!param_name.compare("rho_c_ic"))
-    {
-      in_run_input_file >> rho_c_ic;
-    }
-    else if (!param_name.compare("u_c_ic"))
-    {
-      in_run_input_file >> u_c_ic;
-    }
-    else if (!param_name.compare("v_c_ic"))
-    {
-      in_run_input_file >> v_c_ic;
-    }
-    else if (!param_name.compare("w_c_ic"))
-    {
-      in_run_input_file >> w_c_ic;
-    }
-    else if (!param_name.compare("p_c_ic"))
-    {
-      in_run_input_file >> p_c_ic;
-    }
-    else if (!param_name.compare("rho_bound"))
-    {
-      in_run_input_file >> rho_bound;
-    }
-    else if (!param_name.compare("u_bound"))
-    {
-      in_run_input_file >> v_bound(0);
-    }
-    else if (!param_name.compare("v_bound"))
-    {
-      in_run_input_file >> v_bound(1);
-    }
-    else if (!param_name.compare("w_bound"))
-    {
-      in_run_input_file >> v_bound(2);
-    }
-    else if (!param_name.compare("p_bound"))
-    {
-      in_run_input_file >> p_bound;
-    }
-    else if (!param_name.compare("wave_speed_x"))
-    {
-      in_run_input_file >> wave_speed(0);
-    }
-    else if (!param_name.compare("wave_speed_y"))
-    {
-      in_run_input_file >> wave_speed(1);
-    }
-    else if (!param_name.compare("wave_speed_z"))
-    {
-      in_run_input_file >> wave_speed(2);
-    }
-    else if (!param_name.compare("diff_coeff"))
-    {
-      in_run_input_file >> diff_coeff;
-    }
-    else if (!param_name.compare("lambda"))
-    {
-      in_run_input_file >> lambda;
-    }
-    else if (!param_name.compare("mesh_file"))
-    {
-      in_run_input_file >> mesh_file;
-    }
-    else if (!param_name.compare("motion_flag"))
-    {
-      in_run_input_file >> motion;
-    }
-    else if (!param_name.compare("GCL_flag"))
-    {
-      in_run_input_file >> GCL;
-    }
-    else if (!param_name.compare("moving_boundaries"))
-    {
-      in_run_input_file >> n_moving_bnds;
-      motion_type.setup(n_moving_bnds);
-      bound_vel_simple.setup(n_moving_bnds);
-      boundary_flags.setup(n_moving_bnds);
-      for (int i=0; i<n_moving_bnds; i++) {
-        in_run_input_file.getline(buf,BUFSIZ);
-        in_run_input_file >> boundary_flags(i) >> motion_type(i);
-        bound_vel_simple(i).setup(9);
-        for (int j=0; j<9; j++) {
-          in_run_input_file >> bound_vel_simple(i)(j);
-          //cout << bound_vel_simple(i)(j) << " ";
-        }
-      }
-    }
-    else if (!param_name.compare("n_deform_iters"))
-    {
-      in_run_input_file >> n_deform_iters;
-    }
-    else if (!param_name.compare("simple_bound_velocity"))
-    {
-//      bound_vel_simple.setup(3);
-//      for (int i=0; i<3; i++)
-//        in_run_input_file >> bound_vel_simple(i);
-    }
-    else if (!param_name.compare("mesh_output_freq"))
-    {
-      in_run_input_file >> mesh_output_freq;
-    }
-    else if (!param_name.compare("mesh_output_format"))
-    {
-      in_run_input_file >> mesh_output_format;
-    }
-    else if (!param_name.compare("upts_type_tri"))
-    {
-      in_run_input_file >> upts_type_tri;
-    }
-    else if (!param_name.compare("fpts_type_tri"))
-    {
-      in_run_input_file >> fpts_type_tri;
-    }
-    else if (!param_name.compare("vcjh_scheme_tri"))
-    {
-      in_run_input_file >> vcjh_scheme_tri;
-    }
-    else if (!param_name.compare("c_tri"))
-    {
-      in_run_input_file >> c_tri;
-    }
-    else if (!param_name.compare("sparse_tri"))
-    {
-      in_run_input_file >> sparse_tri;
-    }
-    else if (!param_name.compare("upts_type_quad"))
-    {
-      in_run_input_file >> upts_type_quad;
-    }
-    else if (!param_name.compare("vcjh_scheme_quad"))
-    {
-      in_run_input_file >> vcjh_scheme_quad;
-    }
-    else if (!param_name.compare("eta_quad"))
-    {
-      in_run_input_file >> eta_quad;
-    }
-    else if (!param_name.compare("sparse_quad"))
-    {
-      in_run_input_file >> sparse_quad;
-    }
-    else if (!param_name.compare("upts_type_hexa"))
-    {
-      in_run_input_file >> upts_type_hexa;
-    }
-    else if (!param_name.compare("vcjh_scheme_hexa"))
-    {
-      in_run_input_file >> vcjh_scheme_hexa;
-    }
-    else if (!param_name.compare("eta_hexa"))
-    {
-      in_run_input_file >> eta_hexa;
-    }
-    else if (!param_name.compare("sparse_hexa"))
-    {
-      in_run_input_file >> sparse_hexa;
-    }
-    else if (!param_name.compare("upts_type_tet"))
-    {
-      in_run_input_file >> upts_type_tet;
-    }
-    else if (!param_name.compare("fpts_type_tet"))
-    {
-      in_run_input_file >> fpts_type_tet;
-    }
-    else if (!param_name.compare("vcjh_scheme_tet"))
-    {
-      in_run_input_file >> vcjh_scheme_tet;
-    }
-    else if (!param_name.compare("c_tet"))
-    {
-      in_run_input_file >> c_tet;
-    }
-    else if (!param_name.compare("eta_tet"))
-    {
-      in_run_input_file >> eta_tet;
-    }
-    else if (!param_name.compare("sparse_tet"))
-    {
-      in_run_input_file >> sparse_tet;
-    }
-    else if (!param_name.compare("upts_type_pri_tri"))
-    {
-      in_run_input_file >> upts_type_pri_tri;
-    }
-    else if (!param_name.compare("upts_type_pri_1d"))
-    {
-      in_run_input_file >> upts_type_pri_1d;
-    }
-    else if (!param_name.compare("vcjh_scheme_pri_1d"))
-    {
-      in_run_input_file >> vcjh_scheme_pri_1d;
-    }
-    else if (!param_name.compare("eta_pri"))
-    {
-      in_run_input_file >> eta_pri;
-    }
-    else if (!param_name.compare("sparse_pri"))
-    {
-      in_run_input_file >> sparse_pri;
-    }
-    else if (!param_name.compare("dx_cyclic"))
-    {
-      in_run_input_file >> dx_cyclic;
-    }
-    else if (!param_name.compare("dy_cyclic"))
-    {
-      in_run_input_file >> dy_cyclic;
-    }
-    else if (!param_name.compare("dz_cyclic"))
-    {
-      in_run_input_file >> dz_cyclic;
-    }
-    else if (!param_name.compare("p_res"))
-    {
-      in_run_input_file >> p_res;
-    }
-    else if (!param_name.compare("write_type"))
-    {
-      in_run_input_file >> write_type;
-    }
-    else if (!param_name.compare("tau"))
-    {
-      in_run_input_file >> tau;
-    }
-    else if (!param_name.compare("pen_fact"))
-    {
-      in_run_input_file >> pen_fact;
-    }
-    else if (!param_name.compare("gamma"))
-    {
-      in_run_input_file >> gamma;
-    }
-    else if (!param_name.compare("prandtl"))
-    {
-      in_run_input_file >> prandtl;
-    }
-    else if (!param_name.compare("S_gas"))
-    {
-      in_run_input_file >> S_gas;
-    }
-    else if (!param_name.compare("T_gas"))
-    {
-      in_run_input_file >> T_gas;
-    }
-    else if (!param_name.compare("R_gas"))
-    {
-      in_run_input_file >> R_gas;
-    }
-    else if (!param_name.compare("mu_gas"))
-    {
-      in_run_input_file >> mu_gas;
-    }
-    else if (!param_name.compare("Mach_free_stream"))
-    {
-      in_run_input_file >> Mach_free_stream;
-    }
-    else if (!param_name.compare("nx_free_stream"))
-    {
-      in_run_input_file >> nx_free_stream;
-    }
-    else if (!param_name.compare("ny_free_stream"))
-    {
-      in_run_input_file >> ny_free_stream;
-    }
-    else if (!param_name.compare("nz_free_stream"))
-    {
-      in_run_input_file >> nz_free_stream;
-    }
-    else if (!param_name.compare("Re_free_stream"))
-    {
-      in_run_input_file >> Re_free_stream;
-    }
-    else if (!param_name.compare("L_free_stream"))
-    {
-      in_run_input_file >> L_free_stream;
-    }
-    else if (!param_name.compare("T_free_stream"))
-    {
-      in_run_input_file >> T_free_stream;
-    }
-    else if (!param_name.compare("fix_vis"))
-    {
-      in_run_input_file >> fix_vis;
-    }
-    else if (!param_name.compare("Mach_wall"))
-    {
-      in_run_input_file >> Mach_wall;
-    }
-    else if (!param_name.compare("nx_wall"))
-    {
-      in_run_input_file >> nx_wall;
-    }
-    else if (!param_name.compare("ny_wall"))
-    {
-      in_run_input_file >> ny_wall;
-    }
-    else if (!param_name.compare("nz_wall"))
-    {
-      in_run_input_file >> nz_wall;
-    }
-    else if (!param_name.compare("T_wall"))
-    {
-      in_run_input_file >> T_wall;
-    }
-    else if (!param_name.compare("Mach_c_ic"))
-    {
-      in_run_input_file >> Mach_c_ic;
-    }
-    else if (!param_name.compare("nx_c_ic"))
-    {
-      in_run_input_file >> nx_c_ic;
-    }
-    else if (!param_name.compare("ny_c_ic"))
-    {
-      in_run_input_file >> ny_c_ic;
-    }
-    else if (!param_name.compare("nz_c_ic"))
-    {
-      in_run_input_file >> nz_c_ic;
-    }
-    else if (!param_name.compare("Re_c_ic"))
-    {
-      in_run_input_file >> Re_c_ic;
-    }
-    else if (!param_name.compare("T_c_ic"))
-    {
-      in_run_input_file >> T_c_ic;
-    }
-    else if (!param_name.compare("body_forcing"))
-    {
-      in_run_input_file >> forcing;
-    }
-    else if (!param_name.compare("x_coeffs"))
-    {
-      x_coeffs.setup(13);
-      for (int i=0;i<13;i++)
-        in_run_input_file >> x_coeffs(i) ;
-    }
-    else if (!param_name.compare("y_coeffs"))
-    {
-      y_coeffs.setup(13);
-      for (int i=0;i<13;i++)
-        in_run_input_file >> y_coeffs(i) ;
-    }
-    else if (!param_name.compare("z_coeffs"))
-    {
-      z_coeffs.setup(13);
-      for (int i=0;i<13;i++)
-        in_run_input_file >> z_coeffs(i) ;
-    }
-    else if (!param_name.compare("perturb_ic"))
-    {
-      in_run_input_file >> perturb_ic;
-    }
-    else if (!param_name.compare("ArtifOn"))
-    {
-      in_run_input_file >> ArtifOn;
-    }
-    else if (!param_name.compare("artif_only"))
-    {
-      in_run_input_file >> artif_only;
-    }
-    else if (!param_name.compare("artif_type"))
-    {
-      in_run_input_file >> artif_type;
-    }
-    else if (!param_name.compare("epsilon0"))
-    {
-      in_run_input_file >> epsilon0;
-    }
-    else if (!param_name.compare("s0"))
-    {
-      in_run_input_file >> s0;
-    }
-    else if (!param_name.compare("kappa"))
-    {
-      in_run_input_file >> kappa;
-    }
-    else if (!param_name.compare("shock_vortex_restart"))
-    {
-      in_run_input_file >> shock_vortex_restart;
-    }
-    else
-    {
-      cout << "input parameter =" << param_name << endl;
-      FatalError("input parameter not recognized");
-    }
-    
-    // Read end of line, if NOT a comment line or blank line
-    if (param_name.compare(0,2,"//") && !blank)
-      in_run_input_file.getline(buf,BUFSIZ);
-  }
-
-  // -------------------------------------------
-  // SETUP INITIAL CONDITIONS IF NOT SPECIFIED
-  // -------------------------------------------
-
-  if (Mach_c_ic == INFINITY) {
-    Mach_c_ic = Mach_free_stream;
-  }
-  if (nx_c_ic == INFINITY) {
-    nx_c_ic = nx_free_stream;
-  }
-  if (ny_c_ic == INFINITY) {
-    ny_c_ic = ny_free_stream;
-  }
-  if (nz_c_ic == INFINITY) {
-    nz_c_ic = nz_free_stream;
-  }
-  if (Re_c_ic == INFINITY) {
-    Re_c_ic = Re_free_stream;
-  }
-  if (T_c_ic == INFINITY) {
-    T_c_ic = T_free_stream;
-  }
-  if (u_c_ic == INFINITY) {
-    u_c_ic = v_bound(0);
-  }
-  if (v_c_ic == INFINITY) {
-    v_c_ic = v_bound(1);
-  }
-  if (w_c_ic == INFINITY) {
-    w_c_ic = v_bound(2);
-  }
-  if (p_c_ic == INFINITY) {
-    p_c_ic = p_bound;
-  }
-  if (rho_c_ic == INFINITY) {
-    rho_c_ic = rho_bound;
-  }
-
+void input::setup_params(int rank)
+{
   // --------------------
   // ERROR CHECKING
   // --------------------
   
-  if (monitor_res_freq == 0) monitor_res_freq = 100000000;
-  if (monitor_cp_freq == 0) monitor_cp_freq = 100000000;
-  if (monitor_integrals_freq == 0) monitor_integrals_freq = 100000000;
+  if (monitor_res_freq == 0) monitor_res_freq = INFINITY;
+  if (monitor_cp_freq == 0) monitor_cp_freq = INFINITY;
+  if (monitor_integrals_freq == 0) monitor_integrals_freq = INFINITY;
   
   if (!mesh_file.compare(mesh_file.size()-3,3,"neu"))
     mesh_format=0;
@@ -1306,6 +583,7 @@ void fileReader::getScalarValue(string optName, T &opt)
   }
 
   // Rewind to the start of the file
+  optFile.clear();
   optFile.seekg(0,optFile.beg);
 
   // Search for the given option string
@@ -1314,6 +592,7 @@ void fileReader::getScalarValue(string optName, T &opt)
     stringstream ss;
     ss.str(str);
     ss >> optKey;
+    cout << str <<  endl;
     if (optKey.compare(optName)==0) {
       if (!(ss >> opt)) {
         // This could happen if, for example, trying to assign a string to a double
@@ -1462,10 +741,10 @@ void fileReader::getVectorValue(string optName, array<T> &opt)
 
       opt.setup(nVals);
       for (int i=0; i<nVals; i++) {
-        if (!ss >> opt(i)) {
+        if (!(ss >> opt(i))) {
           cerr << "WARNING: Unable to assign all values to vector option " << optName << endl;
           string errMsg = "Required option not set: " + optName;
-          FatalError(errMsg.c_str())
+          FatalError(errMsg.c_str());
         }
       }
 
@@ -1477,4 +756,55 @@ void fileReader::getVectorValue(string optName, array<T> &opt)
   // Option was not found; throw error & exit
   string errMsg = "Required option not found: " + optName;
   FatalError(errMsg.c_str())
+}
+
+template<typename T>
+void fileReader::getVectorValueOptional(string optName, array<T> &opt)
+{
+  string str, optKey;
+
+  openFile();
+
+  if (!optFile.is_open()) {
+    optFile.open(fileName.c_str());
+    if (!optFile.is_open())
+      FatalError("Cannont open input file for reading.");
+  }
+
+  // Rewind to the start of the file
+  optFile.seekg(0,optFile.beg);
+
+  // Search for the given option string
+  while (getline(optFile,str)) {
+    // Remove any leading whitespace & see if first word is the input option
+    stringstream ss;
+    ss.str(str);
+    ss >> optKey;
+    if (optKey.compare(optName)==0) {
+      int nVals;
+      if (!(ss >> nVals)) {
+        // This could happen if, for example, trying to assign a string to a double
+        cerr << "WARNING: Unable to read number of entries for vector option " << optName << endl;
+        cerr << "Option not set: " << optName << endl;
+        opt.setup(0);
+        return;
+      }
+
+      opt.setup(nVals);
+      for (int i=0; i<nVals; i++) {
+        if (!(ss >> opt(i))) {
+          cerr << "WARNING: Unable to assign all values to vector option " << optName << endl;
+          cerr << "Option not set: " << optName << endl;
+          opt.setup(0);
+          return;
+        }
+      }
+
+      closeFile();
+      return;
+    }
+  }
+
+  // Option was not found; setup array to size 0
+  opt.setup(0);
 }

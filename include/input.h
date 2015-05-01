@@ -27,6 +27,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <map>
 #include "array.h"
 
 class input
@@ -52,7 +54,14 @@ public:
   void set_c(double in_c_tri, double in_c_quad);
   void set_dt(double in_dt);
 
-  void setup(ifstream& in_run_input_file, int rank);
+  /*! Load input file & prepare all simulation parameters */
+  void setup(char *fileNameC, int rank);
+
+  /*! Read in parameters from file */
+  void read_input_file(string fileName, int rank);
+
+  /*! Apply non-dimensionalization and do misc. error checks */
+  void setup_params(int rank);
 
   // #### members ####
 
@@ -309,6 +318,16 @@ public:
   /*! Read a vector of values from the input file; if not found, throw an error and exit */
   template <typename T>
   void getVectorValue(string optName, vector<T> &opt);
+
+  template <typename T>
+  void getVectorValue(string optName, array<T> &opt);
+
+  /*! Read a vector of values from the input file; if not found, setup vector to size 0 and continue */
+  template <typename T>
+  void getVectorValueOptional(string optName, vector<T> &opt);
+
+  template <typename T>
+  void getVectorValueOptional(string optName, array<T> &opt);
 
   /*! Read in a map of type <T,U> from input file; each entry prefaced by optName */
   template <typename T, typename U>
