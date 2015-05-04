@@ -7766,7 +7766,7 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
   if (n_eles != 0) {
       double alpha = run_input.filter_alpha; // proportion of influence from interior filter
 
-      #ifdef _CPU
+#ifdef _CPU
       // Find common interface values
       // disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i)
 
@@ -7781,11 +7781,21 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
             }
         }
 #endif
-
-
 #ifdef _GPU
-      error("Filters not implemented for GPUs just yet...");
-      //RK11_update_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(0).get_ptr_gpu(),div_tconf_upts(0).get_ptr_gpu(),detjac_upts.get_ptr_gpu(),src_upts.get_ptr_gpu(),h_ref.get_ptr_gpu(),run_input.dt,run_input.const_src,run_input.CFL,run_input.gamma,run_input.mu_inf,run_input.order,viscous,run_input.dt_type);
+      /*!
+       * \brief cublasDaxpy
+       * Performs y = alpha * x + y
+       * where y = disu_fpts
+       * alpha = 1
+       * x = delta_disu_fpts
+       * n = n_upts_per_ele * n_eles * n_fields
+       */
+      double *y_vector = disu_fpts.get_ptr_gpu();
+      double *x_vector = delta_disu_fpts.get_ptr_gpu();
+
+      cublasDaxpy(n_upts_per_ele * n_eles * n_fields, 1.0,
+                  x_vector, 1 /*vector stride*/,
+                  y_vector, 1);
 #endif
 
       // Apply interior filter first
@@ -7793,7 +7803,7 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
 
       /*!
        Performs C = (alpha*A*B) + (beta*C) where: \n
-       alpha = alpha \n
+       alpha = run_input.filter_alpha \n
        beta = 0.0 \n
        A = stab_filter_interior \n
        B = disu_upts(in_disu_upts_from) \n
@@ -7832,7 +7842,7 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
 
       /*!
        Performs C = (alpha*A*B) + (beta*C) where: \n
-       alpha = 1 - alpha \n
+       alpha = 1 - run_input.filter_alpha \n
        beta = 1.0 \n
        A = stab_filter_boundary \n
        B = disu_fpts \n
