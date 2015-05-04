@@ -405,6 +405,12 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
   }
 
   compute_stabilization_filter();
+
+#ifdef _GPU
+  stab_filter_interior.mv_cpu_gpu();
+  stab_filter_boundary.mv_cpu_gpu();
+#endif
+
   
 }
 
