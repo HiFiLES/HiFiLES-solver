@@ -47,7 +47,7 @@ TECIO_LIB="lib/tecio-2008/lib"
 TECIO_INCLUDE="lib/tecio-2008/include"
 
 # If building the supplied ParMETIS libraries, need the MPI header location
-MPI_INCLUDE="/usr/include/mpich2"       # location of mpi.h
+MPI_INCLUDE="/usr/mpi/gcc/mvapich-1.2.0/include"       # location of mpi.h
 
 # If NOT building the supplied ParMetis library, location of installed libraries
 PARMETIS_LIB="/usr/local/lib"           # location of libparmetis.a

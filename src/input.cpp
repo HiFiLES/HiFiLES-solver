@@ -135,6 +135,11 @@ input::input()
   v_c_ic = INFINITY;
   w_c_ic = INFINITY;
   p_c_ic = INFINITY;
+
+  // Filter parameters
+  filter_frequency = 1000;
+  filter_alpha = 0.8;
+  filter_width = 10.;
 }
 
 input::~input()

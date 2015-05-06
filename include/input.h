@@ -265,7 +265,7 @@ public:
 
   double time, rk_time;
 
-  int filter_frequency = 1000;
-  double filter_alpha = 0.8;
-  double filter_width = 10.;
+  int filter_frequency;
+  double filter_alpha;
+  double filter_width;
 };
