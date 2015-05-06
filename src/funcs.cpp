@@ -2891,6 +2891,8 @@ double filter_integrand_tris(double r, double s) {
   return kernel_eval*basis_eval;
 }
 
+double ylower(double /*x*/) { return -1;}
+double yupper(double x) {return -x;}
 // populate the Local Fourier Spectral filter matrix in 2D for triangles
 void fill_stabilization_interior_filter_tris(Array<double>& filter_matrix, int order,
                                         Array<double>& loc_upts, eles_tris *element) {
@@ -2901,9 +2903,9 @@ void fill_stabilization_interior_filter_tris(Array<double>& filter_matrix, int o
   int n = filter_matrix.get_dim(0); // assume it's a square matrix already
 
   double abserr = 0, relerr = 1e-10;
-  double (*ylower)(double) = [] (double /* x*/) { return -1.; };
+//  double (*ylower)(double) = [] (double /* x*/) { return -1.; };
 
-  double (*yupper)(double) = [] (double x) { return -x; };
+//  double (*yupper)(double) = [] (double x) { return -x; };
 
   double result, errest, flag;
   int nofun;
@@ -3022,6 +3024,18 @@ double filter_function(Array<double>& loc_fpts, Array<double>& loc_upts, std::ve
   return result;
 }
 
+/*
+ * Additional local global variables to be used for function optimization
+*/
+static Array<double> LOCAL_LOC_FPTS;
+static Array<double> LOCAL_LOC_UPTS;
+static eles *LOCAL_ELEMENT;
+static int LOCAL_ROW;
+
+double filter_function_simple(std::vector<double>& x) {
+  return filter_function(LOCAL_LOC_FPTS, LOCAL_LOC_UPTS, x, LOCAL_ELEMENT, LOCAL_ROW);
+}
+
 // wrapper for the simplex_min_method function
 // finds the values of coefficients that minimize the filter_function
 void minimum_search(Array<double>& loc_fpts, Array<double>& loc_upts,
@@ -3030,10 +3044,14 @@ void minimum_search(Array<double>& loc_fpts, Array<double>& loc_upts,
   std::vector<double> solution; // vector that will hold the solution
 
   // create lambda function to be passed on to the optimizer
-  auto filter_function_simple =
-      [&loc_fpts, &loc_upts, element, row] (std::vector<double>& x) {
-      return filter_function(loc_fpts, loc_upts, x, element, row);
-    };
+  LOCAL_LOC_FPTS = loc_fpts;
+  LOCAL_LOC_UPTS = loc_upts;
+  LOCAL_ELEMENT = element;
+  LOCAL_ROW = row;
+//  auto filter_function_simple =
+//      [&loc_fpts, &loc_upts, element, row] (std::vector<double>& x) {
+//      return filter_function(loc_fpts, loc_upts, x, element, row);
+//    };
 
   solution = simplex_min_method(filter_function_simple, init);
 
