@@ -79,7 +79,7 @@ POST_UNINSTALL = :
 build_triplet = x86_64-unknown-linux-gnu
 host_triplet = x86_64-unknown-linux-gnu
 bin_PROGRAMS = ../bin/HiFiLES$(EXEEXT)
-#am__append_1 = ../src/cuda_kernels.cu
+am__append_1 = ../src/cuda_kernels.cu
 am__append_2 = ../src/mpi_inters.cpp
 subdir = obj
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am
@@ -111,7 +111,7 @@ am_____bin_HiFiLES_SOURCES_DIST = ../src/global.cpp ../src/input.cpp \
 	../src/HiFiLES.cpp ../src/cuda_kernels.cu \
 	../src/mpi_inters.cpp
 am__dirstamp = $(am__leading_dot)dirstamp
-#am__objects_1 = ../src/cuda_kernels.$(OBJEXT)
+am__objects_1 = ../src/cuda_kernels.$(OBJEXT)
 am__objects_2 =  \
 	../src/___bin_HiFiLES-mpi_inters.$(OBJEXT)
 am____bin_HiFiLES_OBJECTS = ../src/___bin_HiFiLES-global.$(OBJEXT) \
@@ -214,13 +214,13 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = aclocal-1.14
+ACLOCAL = ${SHELL} /home/mlopez14/hf/HiFiLES-solver/missing --run aclocal-1.11
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 0
 AR = ar
-AUTOCONF = autoconf
-AUTOHEADER = autoheader
-AUTOMAKE = automake-1.14
+AUTOCONF = ${SHELL} /home/mlopez14/hf/HiFiLES-solver/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/mlopez14/hf/HiFiLES-solver/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/mlopez14/hf/HiFiLES-solver/missing --run automake-1.11
 AWK = mawk
 BLAS_CXX = -I /usr/local/atlas/include -D_STANDARD_BLAS
 BLAS_LD = /usr/local/atlas/lib/libcblas.a /usr/local/atlas/lib/libatlas.a
@@ -230,10 +230,10 @@ CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
 CPP = gcc -E
 CPPFLAGS = 
-CUDA_ARCH = 
-CUDA_CXX = -D_CPU
-CUDA_LDFLAGS = 
-CUDA_LIBS = 
+CUDA_ARCH = -gencode=arch=compute_20,code=sm_20
+CUDA_CXX = -D_GPU -I/usr/local/cuda-5.0/include
+CUDA_LDFLAGS = -L/usr/local/cuda-5.0/lib64
+CUDA_LIBS = -lcudart -lcublas -lcusparse -lm
 CXX = mpicxx
 CXXCPP = mpicxx -E
 CXXDEPMODE = depmode=gcc3
@@ -265,7 +265,7 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = makeinfo
+MAKEINFO = ${SHELL} /home/mlopez14/hf/HiFiLES-solver/missing --run makeinfo
 MANIFEST_TOOL = :
 METIS_INCLUDE = -DMETIS_5 -I$(top_srcdir)/lib/parmetis-4.0.2/include -I$(top_srcdir)/lib/parmetis-4.0.2/metis/include
 METIS_LIB = $(top_builddir)/lib/parmetis-4.0.2/libparmetis.a $(top_builddir)/lib/parmetis-4.0.2/metis/libmetis.a
@@ -273,8 +273,8 @@ MKDIR_P = /bin/mkdir -p
 MPI_INCLUDE = -I/usr/local/include
 NM = /usr/bin/nm -B
 NMEDIT = 
-NVCC = 
-NVCCFLAGS = 
+NVCC = nvcc
+NVCCFLAGS = -D_GPU -I/usr/local/cuda-5.0/include -D_MPI -I/usr/local/include
 OBJDUMP = objdump
 OBJEXT = o
 OTOOL = 
@@ -338,7 +338,7 @@ libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
 localstatedir = ${prefix}/var
 mandir = ${datarootdir}/man
-mkdir_p = $(MKDIR_P)
+mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
 prefix = /..
@@ -384,11 +384,11 @@ AM_CPPFLAGS = -I../include/
 
 # MPI
 ___bin_HiFiLES_CXXFLAGS = -O3 -D_MPI -DMETIS_5 -I$(top_srcdir)/lib/parmetis-4.0.2/include -I$(top_srcdir)/lib/parmetis-4.0.2/metis/include  \
-	-DNO_PARMETIS -DNO_TECIO -D_CPU -I /usr/local/atlas/include -D_STANDARD_BLAS -I/usr/local/include \
+	-DNO_PARMETIS -DNO_TECIO -D_GPU -I/usr/local/cuda-5.0/include -I /usr/local/atlas/include -D_STANDARD_BLAS -I/usr/local/include \
 	$(am__empty)
 ___bin_HiFiLES_LDADD = $(top_builddir)/lib/parmetis-4.0.2/libparmetis.a $(top_builddir)/lib/parmetis-4.0.2/metis/libmetis.a   \
-	  /usr/local/atlas/lib/libcblas.a /usr/local/atlas/lib/libatlas.a $(am__empty)
-___bin_HiFiLES_LDFLAGS =  
+	 -lcudart -lcublas -lcusparse -lm /usr/local/atlas/lib/libcblas.a /usr/local/atlas/lib/libatlas.a $(am__empty)
+___bin_HiFiLES_LDFLAGS = -L/usr/local/cuda-5.0/lib64 
 
 # NOTE: '___bin_' is due to AM substituting the non-variable-name-friendly 
 # characters in the given expression above with an underscore
