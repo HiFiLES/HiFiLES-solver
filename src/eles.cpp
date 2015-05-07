@@ -7873,7 +7873,7 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
 #ifdef _GPU
       A_matrix = stab_filter_boundary.get_ptr_gpu();
       B_matrix = disu_fpts.get_ptr_gpu();
-      C_matrix = disu_upts(in_disu_upts_from).get_ptr_gpu()
+      C_matrix = disu_upts(in_disu_upts_from).get_ptr_gpu();
 #endif
 
       alpha = 1. - run_input.filter_alpha;

@@ -44,6 +44,20 @@ extern "C"
 }
 #endif
 
+#ifdef _MPI
+#include "mpi.h"
+#include "metis.h"
+#include "parmetis.h"
+#endif
+
+#if defined _GPU
+#include "cuda.h"
+#include "cuda_runtime_api.h"
+#include "cublas.h"
+#include "../include/cuda_kernels.h"
+#endif
+
+
 #include "../include/funcs.h"
 #include "../include/Array.h"
 #include "../include/cubature_1d.h"
