@@ -553,7 +553,7 @@ void eles::set_ics(double& time)
         if(n_dims==2)
         {
           // Simple 2D div-free vortex
-          p = 0.0;
+          p = 100 + rho/16.0*(cos(2.0*pos(0)) + cos(2.0*pos(1)))*(cos(2.0*pos(2)) + 2.0);
           ics(1) = sin(pos(0)/2.)*cos(pos(1)/2.);
           ics(2) = -1.0*cos(pos(0)/2.)*sin(pos(1)/2.);
           ics(3)=p/(gamma-1.0)+0.5*rho*(ics(1)*ics(1)+ics(2)*ics(2));
