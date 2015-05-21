@@ -104,6 +104,14 @@ void SetInput(struct solution* FlowSol) {
   else if (FlowSol->rank==2) { cudaSetDevice(3); }
 #endif
 
+#ifndef _ENRICO
+#ifndef _YOSEMITESAM
+  // NOTE: depening on system arcihtecture, this may not be the GPU device you want
+  // i.e. one of the devices may be a (non-scientific-computing) graphics card
+  cudaSetDevice(FlowSol->rank);
+#endif
+#endif
+
 #endif
 
 #endif
