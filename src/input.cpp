@@ -23,6 +23,7 @@
  * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -135,6 +136,19 @@ void input::read_input_file(string fileName, int rank)
   n_integral_quantities = integral_quantities.get_dim(0);
   n_diagnostic_fields = diagnostic_fields.get_dim(0);
   n_average_fields = average_fields.get_dim(0);
+
+  for (int i=0; i<n_integral_quantities; i++) {
+    std::transform(integral_quantities(i).begin(), integral_quantities(i).end(),
+                   integral_quantities(i).begin(), ::tolower);
+  }
+  for (int i=0; i<n_diagnostic_fields; i++) {
+    std::transform(diagnostic_fields(i).begin(), diagnostic_fields(i).end(),
+                   diagnostic_fields(i).begin(), ::tolower);
+  }
+  for (int i=0; i<n_average_fields; i++) {
+    std::transform(average_fields(i).begin(), average_fields(i).end(),
+                   average_fields(i).begin(), ::tolower);
+  }
 
   /* ---- Basic Solver Parameters ---- */
 
@@ -544,6 +558,7 @@ void fileReader::getScalarValue(string optName, T &opt, T defaultVal)
   }
 
   // Rewind to the start of the file
+  optFile.clear();
   optFile.seekg(0,optFile.beg);
 
   // Search for the given option string
@@ -592,7 +607,7 @@ void fileReader::getScalarValue(string optName, T &opt)
     stringstream ss;
     ss.str(str);
     ss >> optKey;
-    cout << str <<  endl;
+
     if (optKey.compare(optName)==0) {
       if (!(ss >> opt)) {
         // This could happen if, for example, trying to assign a string to a double
@@ -627,6 +642,7 @@ void fileReader::getMap(string optName, map<T,U> &opt) {
   }
 
   // Rewind to the start of the file
+  optFile.clear();
   optFile.seekg(0,optFile.beg);
 
   // Search for the given option string
@@ -672,6 +688,7 @@ void fileReader::getVectorValue(string optName, vector<T> &opt)
   }
 
   // Rewind to the start of the file
+  optFile.clear();
   optFile.seekg(0,optFile.beg);
 
   // Search for the given option string
@@ -722,6 +739,7 @@ void fileReader::getVectorValue(string optName, array<T> &opt)
   }
 
   // Rewind to the start of the file
+  optFile.clear();
   optFile.seekg(0,optFile.beg);
 
   // Search for the given option string
@@ -772,6 +790,7 @@ void fileReader::getVectorValueOptional(string optName, array<T> &opt)
   }
 
   // Rewind to the start of the file
+  optFile.clear();
   optFile.seekg(0,optFile.beg);
 
   // Search for the given option string

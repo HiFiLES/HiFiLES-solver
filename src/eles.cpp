@@ -4517,11 +4517,14 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
         diagfield_upt = in_epsilon_ppts(j);
       }
 
-      else
+      else {
+        cout << "plot_quantity = " << run_input.diagnostic_fields(k) << ": " << flush;
         FatalError("plot_quantity not recognized");
-      
-      if (isnan(diagfield_upt))
+      }
+      if (isnan(diagfield_upt)) {
+        cout << "In calculation of plot_quantitiy " << run_input.diagnostic_fields(k) << ": " << flush;
         FatalError("NaN");
+      }
       
       // set array with solution point value
       out_diag_field_ppts(j,k) = diagfield_upt;
