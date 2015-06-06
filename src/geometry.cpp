@@ -1909,11 +1909,11 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, Array<int> &
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   for(int i=0;i<n_bnds;i++)
   {
-    cout << "bc "<< i << ": " << flush;
+    //cout << "bc "<< i << ": " << flush;
     mesh_file.getline(buf,BUFSIZ);
     sscanf(buf,"%d %d %s", &bcdim, &bcid, bc_txt_temp);
     strcpy(bcTXT[bcid],bc_txt_temp);
-    cout << bc_txt_temp << endl;
+    //cout << bc_txt_temp << endl;
     if (strstr(bc_txt_temp,"FLUID")) {
       FlowSol->n_dims=bcdim;
     }
@@ -1951,7 +1951,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, Array<int> &
     mesh_file >> id >> elmtype >> ntags;
     mesh_file >> bcid;
 
-    cout << "id, elmtype, ntags, bcid =" << id << ", " << elmtype << ", " << ntags << ", " << bcid << endl;
+    //cout << "id, elmtype, ntags, bcid =" << id << ", " << elmtype << ", " << ntags << ", " << bcid << endl;
 
     for (int tag=0; tag<ntags-1; tag++)
       mesh_file >> dummy;
