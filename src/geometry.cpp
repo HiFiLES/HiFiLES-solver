@@ -83,7 +83,7 @@ void SetInput(struct solution* FlowSol) {
   /*! Get MPI rank and nproc. */
   MPI_Comm_rank(MPI_COMM_WORLD,&FlowSol->rank);
   MPI_Comm_size(MPI_COMM_WORLD,&FlowSol->nproc);
-  cout << "my_rank=" << FlowSol->rank << endl;
+  //cout << "my_rank=" << FlowSol->rank << endl;
 
 #ifdef _GPU
 
@@ -1537,7 +1537,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, Array<int>& in_ic
 
   mesh_file.close();
 
-  cout << "  Number of Boundary Faces: " << bdy_count << endl;
+  //cout << "  Number of Boundary Faces: " << bdy_count << endl;
 }
 
 void read_vertices_gambit(string& in_file_name, int in_n_verts, int &out_n_verts_global, Array<int> &in_iv2ivg, Array<double> &out_xv, solution *FlowSol)
@@ -1663,7 +1663,7 @@ void create_iv2ivg(Array<int> &inout_iv2ivg, Array<int> &inout_c2v, int &out_n_v
         }
     }
 
-  cout << "vrtlist: " << in_n_cells << ", " << MAX_V_PER_C << ", " << sizeof(int) << ", " << sizeof(vrtlist) << endl;
+  //cout << "vrtlist: " << in_n_cells << ", " << MAX_V_PER_C << ", " << sizeof(int) << ", " << sizeof(vrtlist) << endl;
 
   // Get rid of repeated digits
   temp(0) = vrtlist(staind);
@@ -1942,7 +1942,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, Array<int> &
   mesh_file >> n_entities;   // num cells in mesh
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
-  cout << "n_entities=" << n_entities << endl;
+  //cout << "n_entities=" << n_entities << endl;
 
   int icount=0;
 
@@ -1964,7 +1964,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, Array<int> &
   }
   n_cells_global=icount;
 
-  cout << "n_cell_global=" << n_cells_global << endl;
+  //cout << "n_cell_global=" << n_cells_global << endl;
 
   // Now assign kstart to each processor
   int kstart;

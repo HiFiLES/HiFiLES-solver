@@ -844,27 +844,30 @@ double eles_tris::calc_h_ref_specific(int in_ele)
  * `stab_filter_boundary` filters interior nodes using information from common boundary values
  */
 void eles_tris::compute_stabilization_filter() {
+
+if (rank==0) cout << "computing stabilization matrices for triangles" << endl;
+
   int n = n_upts_per_ele;
 
   Array<double> modal_filter(n,n);
 
   fill_stabilization_interior_filter_tris(modal_filter, order, loc_upts, this);
 
-  cout << "loc_upts = " << endl;
-  loc_upts.print();
-  cout << endl;
-  cout << "filtering matrix: " << endl;
-  cout << " number of points = " << n << endl;
-  modal_filter.print();
-  cout << "end of filtering matrix" << endl;
-  cout << "Vandermonde matrix: " << endl;
-  vandermonde.print();
-  cout << "Inv(V)" << endl;
-  inv_vandermonde.print();
-  cout << "nodal filtering matrix: " << endl;
+  //cout << "loc_upts = " << endl;
+  //loc_upts.print();
+  //cout << endl;
+  //cout << "filtering matrix: " << endl;
+  //cout << " number of points = " << n << endl;
+  //modal_filter.print();
+  //cout << "end of filtering matrix" << endl;
+  //cout << "Vandermonde matrix: " << endl;
+  //vandermonde.print();
+  //cout << "Inv(V)" << endl;
+  //inv_vandermonde.print();
+  //cout << "nodal filtering matrix: " << endl;
 
   stab_filter_interior = mult_Arrays(modal_filter, inv_vandermonde);
-  stab_filter_interior.print();
+  //stab_filter_interior.print();
 
   // normalize filter so it is conservative
   for (int i = 0; i < n; i++) {
@@ -877,23 +880,23 @@ void eles_tris::compute_stabilization_filter() {
         stab_filter_interior(i,j) /= sum;
     }
 
-  cout << "normalized nodal filtering matrix: " << endl;
-  stab_filter_interior.print();
+  //cout << "normalized nodal filtering matrix: " << endl;
+  //stab_filter_interior.print();
 
-  cout << " location of flux points" << endl;
-  tloc_fpts.print();
+  //cout << " location of flux points" << endl;
+  //tloc_fpts.print();
   fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
 
-  cout << "stab_filter_boundary = " << endl;
-  stab_filter_boundary.print();
+  //cout << "stab_filter_boundary = " << endl;
+  //stab_filter_boundary.print();
 
-  for (int i = 0; i < n_dims; i++) {
-      cout << "opp_2(" << i << ") = " << endl;
-      opp_2(i).print();
-      cout << endl << endl << "opp_4(" << i << ") = " << endl;
-      opp_4(i).print();
-    }
-
+//  for (int i = 0; i < n_dims; i++) {
+//      cout << "opp_2(" << i << ") = " << endl;
+//      opp_2(i).print();
+//      cout << endl << endl << "opp_4(" << i << ") = " << endl;
+//      opp_4(i).print();
+//    }
+if (rank==0) cout << "finished computing stabilization matrices for triangles" << endl;
 }
 
 /*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a circle in a symmetric, reference element

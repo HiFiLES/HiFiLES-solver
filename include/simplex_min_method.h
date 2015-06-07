@@ -150,7 +150,7 @@ std::vector<D> simplex_min_method(OP f,                   //target function
     }//optimization is finished
 
   if(cnt == max_iterations){//max number of iterations reached before tol is satisfied
-      printf("Iteration limit reached, result may not be optimal at %s:%d\n",__FILE__,__LINE__);
+      //printf("Iteration limit reached, result may not be optimal at %s:%d\n",__FILE__,__LINE__);
     }
   return x[x1];
 }

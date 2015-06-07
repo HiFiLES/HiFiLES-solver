@@ -2928,15 +2928,15 @@ void fill_stabilization_interior_filter_tris(Array<double>& filter_matrix, int o
       LOCAL_X0(0) = loc_upts(0,i);
       LOCAL_X0(1) = loc_upts(1,i);
 
-      cout << "considering points: " << endl;
-      LOCAL_X0.print();
-      cout << endl;
+      //cout << "considering points: " << endl;
+      //LOCAL_X0.print();
+      //cout << endl;
 
       for (int j = 0; j < n; j++) {
 
           LOCAL_BASIS_INDEX = j; // update basis number
 
-          cout << "considering basis: " << LOCAL_BASIS_INDEX << endl;
+          //cout << "considering basis: " << LOCAL_BASIS_INDEX << endl;
 
           quad2(filter_integrand_tris, -1, 1,
                 ylower,yupper, abserr, relerr,
@@ -2944,7 +2944,7 @@ void fill_stabilization_interior_filter_tris(Array<double>& filter_matrix, int o
 
           filter_matrix(i,j) = result;
 
-          cout << "integral = " << result << endl;
+          //cout << "integral = " << result << endl;
         }
     }
 
@@ -3054,7 +3054,7 @@ double filter_function_simple(std::vector<double>& x) {
 // finds the values of coefficients that minimize the filter_function
 void minimum_search(Array<double>& loc_fpts, Array<double>& loc_upts,
                     std::vector<double>& init, eles *element, int row) {
-  int n_coeffs = init.size();
+//  int n_coeffs = init.size();
   std::vector<double> solution; // vector that will hold the solution
 
   // create lambda function to be passed on to the optimizer
@@ -3069,10 +3069,10 @@ void minimum_search(Array<double>& loc_fpts, Array<double>& loc_upts,
 
   solution = simplex_min_method(filter_function_simple, init);
 
-  for (int i = 0; i < n_coeffs; i++) {
-      cout << "init[" << i <<"] = " << init[i] << endl;
-      cout << "solution[" << i <<"] = " << solution[i] << endl;
-    }
+//  for (int i = 0; i < n_coeffs; i++) {
+//      cout << "init[" << i <<"] = " << init[i] << endl;
+//      cout << "solution[" << i <<"] = " << solution[i] << endl;
+//    }
 
   init = solution;
 
@@ -3085,8 +3085,8 @@ void fill_stabilization_boundary_filter(Array<double>& filter_matrix, Array<doub
   int n = loc_upts.get_dim(1); // number of solution points
   int nf = loc_fpts.get_dim(1); // number of flux points
   int n_dims = loc_upts.get_dim(0); // number of dimensions
-  cout << "at fill_stabilization_boundary_filter" << endl;
-  cout << n << " " << nf << endl;
+  //cout << "at fill_stabilization_boundary_filter" << endl;
+  //cout << n << " " << nf << endl;
 
   filter_matrix.setup(n,nf);
 
@@ -3105,8 +3105,8 @@ void fill_stabilization_boundary_filter(Array<double>& filter_matrix, Array<doub
 //      /*! Temporary change; call filter_function to check implementation
 //       */
 
-      cout << "i = " << i << " filter_function = " <<
-              filter_function(loc_fpts, loc_upts, coeffs, element, i) << endl;
+//      cout << "i = " << i << " filter_function = " <<
+//              filter_function(loc_fpts, loc_upts, coeffs, element, i) << endl;
 
 
       for (int j = 0; j < nf; j++) {

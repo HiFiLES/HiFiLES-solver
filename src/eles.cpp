@@ -62,6 +62,9 @@ extern "C"
 #include "../include/source.h"
 #include "../include/eles.h"
 #include "../include/funcs.h"
+#include "../include/input.h"
+
+extern input run_input;
 
 using namespace std;
 
@@ -404,12 +407,14 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     set_connectivity_plot();
   }
 
-  compute_stabilization_filter();
+  if (run_input.filter_frequency > 0) {
+      compute_stabilization_filter();
 
 #ifdef _GPU
-  stab_filter_interior.mv_cpu_gpu();
-  stab_filter_boundary.mv_cpu_gpu();
+      stab_filter_interior.mv_cpu_gpu();
+      stab_filter_boundary.mv_cpu_gpu();
 #endif
+    }
 
   
 }
