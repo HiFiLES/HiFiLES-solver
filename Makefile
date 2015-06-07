@@ -183,22 +183,22 @@ $(OBJ)solver.o: solver.cpp solver.h input.h  error.h
 $(OBJ)output.o: output.cpp output.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
-$(OBJ)eles.o: eles.cpp eles.h array.h error.h input.h error.h
+$(OBJ)eles.o: eles.cpp eles.h Array.h error.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
-$(OBJ)eles_tris.o: eles_tris.cpp eles_tris.h eles.h funcs.h input.h array.h array.h cubature_1d.h error.h
+$(OBJ)eles_tris.o: eles_tris.cpp eles_tris.h eles.h funcs.h input.h Array.h cubature_1d.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)eles_quads.o: eles_quads.cpp eles_quads.h eles.h funcs.h input.h array.h error.h
+$(OBJ)eles_quads.o: eles_quads.cpp eles_quads.h eles.h funcs.h input.h Array.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)eles_hexas.o: eles_hexas.cpp eles_hexas.h eles.h funcs.h input.h array.h error.h
+$(OBJ)eles_hexas.o: eles_hexas.cpp eles_hexas.h eles.h funcs.h input.h Array.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)eles_tets.o: eles_tets.cpp eles_tets.h eles.h funcs.h input.h array.h error.h cubature_tri.h
+$(OBJ)eles_tets.o: eles_tets.cpp eles_tets.h eles.h funcs.h input.h Array.h error.h cubature_tri.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)eles_pris.o: eles_pris.cpp eles_pris.h eles.h funcs.h input.h array.h error.h
+$(OBJ)eles_pris.o: eles_pris.cpp eles_pris.h eles.h funcs.h input.h Array.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
 $(OBJ)inters.o: inters.cpp inters.h flux.h funcs.h input.h error.h
@@ -233,10 +233,10 @@ $(OBJ)cubature_hexa.o: cubature_hexa.cpp cubature_hexa.h error.h
 $(OBJ)cubature_tet.o: cubature_tet.cpp cubature_tet.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
-$(OBJ)flux.o: flux.cpp flux.h array.h input.h error.h
+$(OBJ)flux.o: flux.cpp flux.h Array.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 	
-$(OBJ)source.o: source.cpp source.h array.h input.h error.h
+$(OBJ)source.o: source.cpp source.h Array.h input.h error.h
 	$(CC) $(OPTS)  -c -o $@ $<
 
 $(OBJ)input.o: input.cpp input.h error.h
