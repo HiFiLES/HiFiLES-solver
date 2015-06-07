@@ -1005,64 +1005,6 @@ void eles_quads::eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<doub
 
 }
 
-// evaluate second derivative of nodal shape basis
-
-void eles_quads::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)
-{
-  int i,j;
-
-  if (is_perfect_square(in_n_spts))
-    {
-      int n_1d_spts = round(sqrt(1.0*in_n_spts));
-      array<double> loc_1d_spts(n_1d_spts);
-      set_loc_1d_spts(loc_1d_spts,n_1d_spts);
-
-      for (int k=0;k<in_n_spts;k++)
-        {
-          i=k/n_1d_spts;
-          j=k-(n_1d_spts*i);
-
-          dd_nodal_s_basis(k,0) = eval_dd_lagrange(in_loc(0),j,loc_1d_spts)*eval_lagrange(in_loc(1),i,loc_1d_spts);
-          dd_nodal_s_basis(k,1) = eval_lagrange(in_loc(0),j,loc_1d_spts)*eval_dd_lagrange(in_loc(1),i,loc_1d_spts);
-          dd_nodal_s_basis(k,2) = eval_d_lagrange(in_loc(0),j,loc_1d_spts)*eval_d_lagrange(in_loc(1),i,loc_1d_spts);
-        }
-    }
-  else if (in_n_spts==8)
-    {
-      dd_nodal_s_basis(0,0) = -0.5*(in_loc(1)-1.);
-      dd_nodal_s_basis(1,0) = -0.5*(in_loc(1)-1.);
-      dd_nodal_s_basis(2,0) = 0.5*(in_loc(1)+1.);
-      dd_nodal_s_basis(3,0) = 0.5*(in_loc(1)+1.);
-      dd_nodal_s_basis(4,0) = (in_loc(1)-1.);
-      dd_nodal_s_basis(5,0) = 0.;
-      dd_nodal_s_basis(6,0) = -(in_loc(1)+1.);
-      dd_nodal_s_basis(7,0) = 0.;
-
-      dd_nodal_s_basis(0,1) = -0.5*(in_loc(0)-1.);
-      dd_nodal_s_basis(1,1) = 0.5*(in_loc(0)+1.);
-      dd_nodal_s_basis(2,1) = 0.5*(in_loc(0)+1.);
-      dd_nodal_s_basis(3,1) = -0.5*(in_loc(0)-1.);
-      dd_nodal_s_basis(4,1) = 0.;
-      dd_nodal_s_basis(5,1) = -(in_loc(0)+1.);
-      dd_nodal_s_basis(6,1) = 0.;
-      dd_nodal_s_basis(7,1) = (in_loc(0)-1.);
-
-      dd_nodal_s_basis(0,2) = 0.25*(1.-2.*in_loc(0)-2.*in_loc(1));
-      dd_nodal_s_basis(1,2) = 0.25*(2.*in_loc(1)-2.*in_loc(0)-1.);
-      dd_nodal_s_basis(2,2) = 0.25*(2.*in_loc(0)+2.*in_loc(1)+1.);
-      dd_nodal_s_basis(3,2) = 0.25*(2.*in_loc(0)-2.*in_loc(1)-1.);
-      dd_nodal_s_basis(4,2) = in_loc(0);
-      dd_nodal_s_basis(5,2) = -in_loc(1);
-      dd_nodal_s_basis(6,2) = -in_loc(0);
-      dd_nodal_s_basis(7,2) = in_loc(1);
-    }
-  else
-    {
-      cout << "Shape basis not implemented yet in dd_nodal_s_basis, exiting" << endl;
-      exit(1);
-    }
-}
-
 // Evaluate 2D legendre basis
 double eles_quads::eval_legendre_basis_2D_hierarchical(int in_mode, array<double> in_loc, int in_basis_order)
 {

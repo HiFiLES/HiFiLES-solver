@@ -417,8 +417,6 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
       FlowSol->mesh_eles(i)->store_nodal_s_basis_ppts();
       FlowSol->mesh_eles(i)->store_d_nodal_s_basis_fpts();
       FlowSol->mesh_eles(i)->store_d_nodal_s_basis_upts();
-      FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_fpts();
-      FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_upts();
       FlowSol->mesh_eles(i)->store_nodal_s_basis_inters_cubpts();
       FlowSol->mesh_eles(i)->store_d_nodal_s_basis_inters_cubpts();
     }

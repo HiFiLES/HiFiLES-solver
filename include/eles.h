@@ -350,9 +350,6 @@ public:
   /*! calculate derivative of position at a flux point (using pre-computed gradients) */
   void calc_d_pos_fpt(int in_fpt, int in_ele, array<double>& out_d_pos);
   
-  /*! calculate second derivative of position */
-  void calc_dd_pos(array<double> in_loc, int in_ele, array<double>& out_dd_pos);
-  
   // #### virtual methods ####
 
   virtual void setup_ele_type_specific()=0;
@@ -386,9 +383,6 @@ public:
 
   /*! evaluate derivative of nodal shape basis */
   virtual void eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<double> in_loc, int in_n_spts)=0;
-
-  /*! evaluate second derivative of nodal shape basis */
-  virtual void eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)=0;
 
   /*! Calculate SGS flux */
   void calc_sgsf_upts(array<double>& temp_u, array<double>& temp_grad_u, double& detjac, int ele, int upt, array<double>& temp_sgsf);
@@ -509,25 +503,6 @@ public:
    */
   void calc_d_pos_dyn_inters_cubpt(int in_cubpt, int in_face, int in_ele, array<double> &out_d_pos);
 
-  /*! Calculate 2nd derivative of dynamic position wrt reference (initial,static) position */
-  void calc_dd_pos_dyn(array<double> in_loc, int in_ele, array<double> &out_dd_pos);
-
-  /*!
-   * Calculate 2nd derivative of dynamic position wrt reference (initial,static) position at fpt
-   * \param[in] in_fpt - ID of flux point within element to evaluate at
-   * \param[in] in_ele - local element ID
-   * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
-   */
-  void calc_dd_pos_dyn_fpt(int in_fpt, int in_ele, array<double> &out_dd_pos);
-
-  /*!
-   * Calculate 2nd derivative of dynamic position wrt reference (initial,static) position at upt
-   * \param[in] in_upt - ID of solution point within element to evaluate at
-   * \param[in] in_ele - local element ID
-   * \param[out] out_d_pos - array of size (n_dims,n_dims); (i,j) = dx_i / dX_j
-   */
-  void calc_dd_pos_dyn_upt(int in_upt, int in_ele, array<double> &out_dd_pos);
-
   /*! pre-computing shape basis contributions at flux points for more efficient access */
   void store_nodal_s_basis_fpts(void);
 
@@ -554,12 +529,6 @@ public:
 
   /*! pre-computing shape basis derivative contributions at solution points for more efficient access */
   void store_d_nodal_s_basis_inters_cubpts(void);
-
-  /*! pre-computing shape basis 2nd derivative contributions at flux points for more efficient access */
-  void store_dd_nodal_s_basis_fpts(void);
-
-  /*! pre-computing shape basis 2nd derivative contributions at solution points for more efficient access */
-  void store_dd_nodal_s_basis_upts(void);
 
   /*! initialize arrays for storing grid velocities */
   void initialize_grid_vel(int in_max_n_spts_per_ele);
@@ -817,12 +786,6 @@ protected:
   /*! nodal shape basis contributions at output plot points */
   array<array<double> > d_nodal_s_basis_inters_cubpts;
 
-  /*! nodal shape basis 2nd derivative contributions at flux points */
-  array<double> dd_nodal_s_basis_fpts;
-
-  /*! nodal shape basis 2nd derivative contributions at solution points */
-  array<double> dd_nodal_s_basis_upts;
-
 	/*! temporary solution storage at a single solution point */
 	array<double> temp_u;
 
@@ -1037,15 +1000,12 @@ protected:
 		
 	/*! transformed gradient of determinant of jacobian at solution points */
 	array<double> tgrad_detjac_upts;
-	
-	/*! transformed gradient of determinant of jacobian at flux points */
-	array<double> tgrad_detjac_fpts;
 
   /*! source term for SA turbulence model at solution points */
   array<double> src_upts;
 
   array<double> d_nodal_s_basis;
-  array<double> dd_nodal_s_basis;
+
   // TODO: change naming (comments) to reflect reuse
 
   /*!

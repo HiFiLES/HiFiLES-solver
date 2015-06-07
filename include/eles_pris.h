@@ -96,9 +96,6 @@ public:
   /*! evaluate derivative of nodal shape basis */
   void eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<double> in_loc, int in_n_spts);
 
-  /*! evaluate second derivative of nodal shape basis */
-  void eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts);
-
   /*! Calculate element volume */
   double calc_ele_vol(double& detjac);
 

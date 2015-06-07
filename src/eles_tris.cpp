@@ -641,15 +641,6 @@ void eles_tris::eval_d_nodal_s_basis(array<double> &d_nodal_s_basis, array<doubl
 
 }
 
-// evaluate second derivative of nodal shape basis
-void eles_tris::eval_dd_nodal_s_basis(array<double> &dd_nodal_s_basis, array<double> in_loc, int in_n_spts)
-{
-
-  eval_dn_nodal_s_basis(dd_nodal_s_basis,in_loc, in_n_spts, 2);
-
-}
-
-
 void eles_tris::fill_opp_3(array<double>& opp_3)
 {
   get_opp_3_tri(opp_3,loc_upts,loc_1d_fpts,vandermonde,inv_vandermonde,n_upts_per_ele, order, run_input.c_tri, run_input.vcjh_scheme_tri);
