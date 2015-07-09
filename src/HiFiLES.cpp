@@ -249,14 +249,14 @@ int main(int argc, char *argv[]) {
   
   /*! Close convergence history file. */
   
-  if (rank == 0)
+  if (rank == 0) {
     write_hist.close();
   
   /*! Compute execution time. */
   
   final_time = clock()-init_time;
   printf("Execution time= %f s\n", (double) final_time/((double) CLOCKS_PER_SEC));
-  
+    }
   /*! Finalize MPI. */
   
 #ifdef _MPI

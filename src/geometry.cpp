@@ -1152,7 +1152,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
                   >> n_mats         // num material groups
                   >> n_bcs          // num boundary groups
                   >> dummy;         // num space dimensions
-  cout << "Gambit mesh specs from header: " << ", " << n_verts_global << ", " << n_cells_global << ", " << n_mats << ", " << n_bcs << ", " << dummy << endl;
+  //cout << "Gambit mesh specs from header: " << ", " << n_verts_global << ", " << n_cells_global << ", " << n_mats << ", " << n_bcs << ", " << dummy << endl;
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   mesh_file.getline(buf,BUFSIZ);  // Skip 2 lines
   mesh_file.getline(buf,BUFSIZ);
@@ -1186,11 +1186,11 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
   for (int i=0;i<n_mats;i++)
     {
       mesh_file.getline(buf,BUFSIZ); // Read GROUP: 1 ELEMENTS
-      cout << buf << endl;
+      //cout << buf << endl;
       int nread = sscanf(buf,"%*s%d%*s%d%*s%d",&dummy,&gnel,&dummy2);
       if (3!=nread) {cout << "ERROR while reading Gambit file" << endl; cout << "nread =" << nread << endl; exit(1); }
       mesh_file.getline(buf,BUFSIZ); // Read group name
-      cout << buf << endl;
+      //cout << buf << endl;
       mesh_file.getline(buf,BUFSIZ); // Skip solver dependant flag
       for (int k=0;k<gnel;k++) mesh_file >> dummy;
       mesh_file.getline(buf,BUFSIZ); // Clear end of line
