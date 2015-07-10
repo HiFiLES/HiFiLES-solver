@@ -1186,11 +1186,12 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
   for (int i=0;i<n_mats;i++)
     {
       mesh_file.getline(buf,BUFSIZ); // Read GROUP: 1 ELEMENTS
-      //cout << buf << endl;
       int nread = sscanf(buf,"%*s%d%*s%d%*s%d",&dummy,&gnel,&dummy2);
-      if (3!=nread) {cout << "ERROR while reading Gambit file" << endl; cout << "nread =" << nread << endl; exit(1); }
+      if (3!=nread) {
+          cout << "ERROR while reading Gambit file" << endl;
+          cout << "nread =" << nread << endl; exit(1);
+        }
       mesh_file.getline(buf,BUFSIZ); // Read group name
-      //cout << buf << endl;
       mesh_file.getline(buf,BUFSIZ); // Skip solver dependant flag
       for (int k=0;k<gnel;k++) mesh_file >> dummy;
       mesh_file.getline(buf,BUFSIZ); // Clear end of line
@@ -1383,8 +1384,6 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
       bcflag = get_bc_number(bcname);
       out_bclist(i) = bcflag;
     }
-    if(FlowSol->rank==0)
-      cout << "\tout_bclist(" << i << ") = " << out_bclist(i) << ", " << bcname << endl;
   }
 
   //--- Find boundaries which are moving ---//
@@ -1446,8 +1445,6 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
         num_face_vert = 9;
         mesh_file >> vlist_bound(0) >> vlist_bound(2) >> vlist_bound(8) >> vlist_bound(6);
         mesh_file >> vlist_bound(1) >> vlist_bound(5) >> vlist_bound(7) >> vlist_bound(3) >> vlist_bound(4);
-        cout << "vlist_bound: " << endl;
-        vlist_bound.print();
       }
       else 
       {
@@ -1533,7 +1530,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
 
   mesh_file.close();
 
-  cout << "  Number of Boundary Faces: " << bdy_count << endl;
+  //cout << "  Number of Boundary Faces: " << bdy_count << endl;
 }
 
 void read_vertices_gambit(string& in_file_name, int in_n_verts, int &out_n_verts_global, array<int> &in_iv2ivg, array<double> &out_xv, solution *FlowSol)
@@ -1933,8 +1930,6 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   // Read number of elements and bdys
   mesh_file >> n_entities;   // num cells in mesh
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
-
-  cout << "n_entities=" << n_entities << endl;
 
   int icount=0;
 
@@ -2422,8 +2417,6 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
 
   n_cells = in_c2v.get_dim(0);
   n_verts = in_c2v.get_max()+1;
-
-  //cout << "n_verts=" << n_verts << endl;
 
   //array<int> num_v_per_c(5); // for 5 element types
   array<int> vlist_loc(MAX_V_PER_F),vlist_loc2(MAX_V_PER_F),vlist_glob(MAX_V_PER_F),vlist_glob2(MAX_V_PER_F); // faces cannot have more than 4 vertices
