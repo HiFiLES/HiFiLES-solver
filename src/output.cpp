@@ -657,7 +657,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   /*! Dump number */
   sprintf(dumpnum_s,"Mesh_%.09d",in_file_num);
   /*! Each rank writes a .vtu file in a subdirectory named 'dumpnum_s' created by master process */
-  sprintf(vtu_s,"%s_%.09d/Mesh_%.09d_%d.vtu",run_input.data_file_name.c_str(),in_file_num,in_file_num,my_rank);
+  sprintf(vtu_s,"%s_%.09d/%s_%.09d_%d.vtu",run_input.data_file_name.c_str(),in_file_num,run_input.data_file_name.c_str(),in_file_num,my_rank);
   /*! On rank 0, write a .pvtu file to gather data from all .vtu files */
   sprintf(pvtu_s,"%s_%.09d.pvtu",run_input.data_file_name.c_str(),in_file_num);
 
