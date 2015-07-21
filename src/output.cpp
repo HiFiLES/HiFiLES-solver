@@ -90,7 +90,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   int n_average_fields;
   int num_pts, num_elements;
 
-  char  file_name_s[50] ;
+  char  file_name_s[256] ;
   char *file_name;
   string fields("");
 
@@ -629,9 +629,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   int vtktypes[5] = {5,9,10,0,12};
 
   /*! File names */
-  char vtu_s[50];
-  char dumpnum_s[50];
-  char pvtu_s[50];
+  char vtu_s[256];
+  char dumpnum_s[256];
+  char pvtu_s[256];
   /*! File name pointers needed for opening files */
   char *vtu;
   char *pvtu;
@@ -655,7 +655,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   my_rank = FlowSol->rank;
   n_proc   = FlowSol->nproc;
   /*! Dump number */
-  sprintf(dumpnum_s,"Mesh_%.09d",in_file_num);
+  sprintf(dumpnum_s,"%s_%.09d",run_input.data_file_name.c_str(),in_file_num);
   /*! Each rank writes a .vtu file in a subdirectory named 'dumpnum_s' created by master process */
   sprintf(vtu_s,"%s_%.09d/%s_%.09d_%d.vtu",run_input.data_file_name.c_str(),in_file_num,run_input.data_file_name.c_str(),in_file_num,my_rank);
   /*! On rank 0, write a .pvtu file to gather data from all .vtu files */
@@ -1057,7 +1057,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 void write_restart(int in_file_num, struct solution* FlowSol)
 {
 
-  char file_name_s[50], file_name_s2[50];
+  char file_name_s[256], file_name_s2[256];
   char *file_name;
   ofstream restart_file, restart_mesh;
   restart_file.precision(15);
@@ -1108,8 +1108,8 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 
 void CalcForces(int in_file_num, struct solution* FlowSol) {
   
-  char file_name_s[50], *file_name;
-  char forcedir_s[50], *forcedir;
+  char file_name_s[256], *file_name;
+  char forcedir_s[256], *forcedir;
   struct stat st = {0};
   ofstream coeff_file;
   bool write_dir, write_forces;
@@ -1362,7 +1362,7 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 
   // Writing error to file
 
-  char  file_name_s[50] ;
+  char  file_name_s[256] ;
   char *file_name;
   int r_flag;
 
