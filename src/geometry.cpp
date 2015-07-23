@@ -1203,7 +1203,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
   // Read the boundary regions
   // --------------------------------
 
-  int bcNF, bcID, bcflag,icg,k, real_k, index;
+  int bcNF, bcID, bcflag,icg,k, real_face;
   string bcname;
   char bcTXT[100];
 
@@ -1235,47 +1235,47 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
       icg--;  // 1-indexed -> 0-indexed
       // Matching Gambit faces with face convention in code
       if (eleType==2 || eleType==3)
-        real_k = k-1;
+        real_face = k-1;
       // Hex
       else if (eleType==4)
       {
         if (k==1)
-          real_k = 0;
+          real_face = 0;
         else if (k==2)
-          real_k = 3;
+          real_face = 3;
         else if (k==3)
-          real_k = 5;
+          real_face = 5;
         else if (k==4)
-          real_k = 1;
+          real_face = 1;
         else if (k==5)
-          real_k = 4;
+          real_face = 4;
         else if (k==6)
-          real_k = 2;
+          real_face = 2;
       }
       // Tet
       else if (eleType==6)
       {
         if (k==1)
-          real_k = 3;
+          real_face = 3;
         else if (k==2)
-          real_k = 2;
+          real_face = 2;
         else if (k==3)
-          real_k = 0;
+          real_face = 0;
         else if (k==4)
-          real_k = 1;
+          real_face = 1;
       }
       else if (eleType==5)
       {
         if (k==1)
-          real_k = 2;
+          real_face = 2;
         else if (k==2)
-          real_k = 3;
+          real_face = 3;
         else if (k==3)
-          real_k = 4;
+          real_face = 4;
         else if (k==4)
-          real_k = 0;
+          real_face = 0;
         else if (k==5)
-          real_k = 1;
+          real_face = 1;
       }
       else
       {
@@ -1284,15 +1284,15 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
       }
 
       // Check if cell icg belongs to processor
-      index = index_locate_int(icg,cell_list.get_ptr_cpu(),in_n_cells);
+      int cellID = index_locate_int(icg,cell_list.get_ptr_cpu(),in_n_cells);
 
       // If it does, find local cell ic corresponding to icg
-      if (index!=-1)
+      if (cellID!=-1)
       {
         bdy_count++;
-        out_bctype(index,real_k) = bcflag;
-        out_bccells(i)(bf) = index;
-        out_bcfaces(i)(bf) = real_k;
+        out_bctype(cellID,real_face) = bcflag;
+        out_bccells(i)(bf) = cellID;
+        out_bcfaces(i)(bf) = real_face;
       }
     }
 
@@ -1440,6 +1440,12 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
         num_face_vert = 3;
         mesh_file >> vlist_bound(0) >> vlist_bound(1) >> vlist_bound(2);
       }
+      else if (elmtype == 9) // Quadratic Tri Face
+      {
+        num_face_vert = 3;
+        mesh_file >> vlist_bound(0) >> vlist_bound(1) >> vlist_bound(2);
+        mesh_file >> vlist_bound(3) >> vlist_bound(4) >> vlist_bound(5);
+      }
       else if (elmtype==10) // Quadratic quad face
       {
         num_face_vert = 9;
@@ -1489,7 +1495,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
                   // Get local vertices of local face k of cell ic
                   get_vlist_loc_face(in_ctype(ic),in_c2n_v(ic),k,vlist_cell,num_v_per_f);
 
-                  if (num_v_per_f!= num_face_vert)
+                  if (num_v_per_f != num_face_vert)
                     continue;
 
                   for (int j=0;j<num_v_per_f;j++)
@@ -1819,7 +1825,8 @@ void read_connectivity_gambit(string& in_file_name, int &out_n_cells, array<int>
             }
           else if (out_c2n_v(i)==10) // quadratic tet
             {
-              mesh_file >> out_c2v(i,0) >> out_c2v(i,4) >> out_c2v(i,1) >> out_c2v(i,5) >> out_c2v(i,7) >> out_c2v(i,2) >> out_c2v(i,6) >> out_c2v(i,9) >> out_c2v(i,8) >> out_c2v(i,3);
+              mesh_file >> out_c2v(i,0) >> out_c2v(i,4) >> out_c2v(i,1) >> out_c2v(i,5) >> out_c2v(i,7);
+              mesh_file >> out_c2v(i,2) >> out_c2v(i,6) >> out_c2v(i,9) >> out_c2v(i,8) >> out_c2v(i,3);
             }
           else
             FatalError("tet element type not implemented");
@@ -2059,8 +2066,10 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
                 else if (elmtype==11) // Quadratic tet
                 {
                   out_c2n_v(i) = 10;                  
-                  mesh_file >> out_c2v(i,0) >> out_c2v(i,8) >> out_c2v(i,5) >> out_c2v(i,2) >> out_c2v(i,3);
-                  mesh_file >> out_c2v(i,6) >> out_c2v(i,7) >> out_c2v(i,4) >> out_c2v(i,9) >> out_c2v(i,1); 
+                  //mesh_file >> out_c2v(i,0) >> out_c2v(i,8) >> out_c2v(i,5) >> out_c2v(i,2) >> out_c2v(i,3);
+                  //mesh_file >> out_c2v(i,6) >> out_c2v(i,7) >> out_c2v(i,4) >> out_c2v(i,9) >> out_c2v(i,1);
+                  mesh_file >> out_c2v(i,0) >> out_c2v(i,5) >> out_c2v(i,4) >> out_c2v(i,2) >> out_c2v(i,8);
+                  mesh_file >> out_c2v(i,1) >> out_c2v(i,7) >> out_c2v(i,3) >> out_c2v(i,9) >> out_c2v(i,6);
                 }
               }
               else if (elmtype==5 || elmtype==12) // Hexahedron
@@ -2811,38 +2820,74 @@ void get_vlist_loc_edge(int& in_ctype, int& in_n_spts, int& in_edge, array<int>&
       FatalError("2D elements not supported in get_vlist_loc_edge");
     }
   else if (in_ctype==2) // Tet
+  {
+    if (in_n_spts == 4) // Linear Tet
     {
       if(in_edge==0)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 1;
-        }
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 1;
+      }
       else if(in_edge==1)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 2;
-        }
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 2;
+      }
       else if(in_edge==2)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 3;
-        }
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 3;
+      }
       else if(in_edge==3)
-        {
-          out_vlist_loc(0) = 1;
-          out_vlist_loc(1) = 3;
-        }
+      {
+        out_vlist_loc(0) = 1;
+        out_vlist_loc(1) = 3;
+      }
       else if(in_edge==4)
-        {
-          out_vlist_loc(0) = 1;
-          out_vlist_loc(1) = 2;
-        }
+      {
+        out_vlist_loc(0) = 1;
+        out_vlist_loc(1) = 2;
+      }
       else if(in_edge==5)
-        {
-          out_vlist_loc(0) = 2;
-          out_vlist_loc(1) = 3;
-        }
+      {
+        out_vlist_loc(0) = 2;
+        out_vlist_loc(1) = 3;
+      }
     }
+    else if (in_n_spts == 10)
+    {
+      if(in_edge==0)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 5;
+      }
+      else if(in_edge==1)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 3;
+      }
+      else if(in_edge==2)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 7;
+      }
+      else if(in_edge==3)
+      {
+        out_vlist_loc(0) = 5;
+        out_vlist_loc(1) = 7;
+      }
+      else if(in_edge==4)
+      {
+        out_vlist_loc(0) = 5;
+        out_vlist_loc(1) = 3;
+      }
+      else if(in_edge==5)
+      {
+        out_vlist_loc(0) = 3;
+        out_vlist_loc(1) = 7;
+      }
+    }
+  }
   else if (in_ctype==3) // Prism
     {
       if(in_edge==0)
@@ -3107,34 +3152,64 @@ void get_vlist_loc_face(int& in_ctype, int& in_n_spts, int& in_face, array<int>&
         }
     }
   else if (in_ctype==2) // Tet
+  {
+    num_v_per_f = 3;
+    if (in_n_spts == 4) // Linear Tet
     {
-      num_v_per_f = 3;
       if(in_face==0)
-        {
-          out_vlist_loc(0) = 1;
-          out_vlist_loc(1) = 2;
-          out_vlist_loc(2) = 3;
-        }
+      {
+        out_vlist_loc(0) = 1;
+        out_vlist_loc(1) = 2;
+        out_vlist_loc(2) = 3;
+      }
       else if(in_face==1)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 3;
-          out_vlist_loc(2) = 2;
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 3;
+        out_vlist_loc(2) = 2;
 
-        }
+      }
       else if(in_face==2)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 1;
-          out_vlist_loc(2) = 3;
-        }
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 1;
+        out_vlist_loc(2) = 3;
+      }
       else if(in_face==3)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 2;
-          out_vlist_loc(2) = 1;
-        }
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 2;
+        out_vlist_loc(2) = 1;
+      }
     }
+    else if (in_n_spts == 10)  // Quadratic Tet
+    {
+      if(in_face==0)
+      {
+        out_vlist_loc(0) = 5;
+        out_vlist_loc(1) = 3;
+        out_vlist_loc(2) = 7;
+      }
+      else if(in_face==1)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 7;
+        out_vlist_loc(2) = 3;
+      }
+      else if(in_face==2)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 5;
+        out_vlist_loc(2) = 7;
+      }
+      else if(in_face==3)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 3;
+        out_vlist_loc(2) = 5;
+      }
+    }
+  }
   else if (in_ctype==3) // Prism
     {
       if(in_face==0)
