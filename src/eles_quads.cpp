@@ -59,7 +59,7 @@ using namespace std;
 
 eles_quads::eles_quads()
 {	
-
+  elementName = "quads";
 }
 
 // #### methods ####

@@ -2688,7 +2688,6 @@ Array <double> mult_Arrays(Array <double>& M1, Array <double>& M2)
           Array <double> product(dim_1_0,dim_2_1);
 
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
           cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,dim_1_0,dim_2_1,dim_1_1,1.0,M1.get_ptr_cpu(),dim_1_0,M2.get_ptr_cpu(),dim_2_0,0.0,product.get_ptr_cpu(),dim_1_0);
 
 #else
@@ -2885,7 +2884,7 @@ Array <double> inv_Array(Array <double>& in_Array)
     }
 }
 
-// integrand used to find Local Fourier Spectral filters in 2D
+// integrand used to find Local Fourier Spectral filters in triangles
 double filter_integrand_tris(double r, double s) {
     Array<double> rvect(2);
     rvect(0) = r;
@@ -2894,7 +2893,7 @@ double filter_integrand_tris(double r, double s) {
   // define properties of the kernel function
   double h = run_input.filter_width; // measure of the wavenumbers left unfiltered
 
-  double distance = LOCAL_ELE_OF_INTEREST->reference_element_norm(rvect,LOCAL_X0);
+  double distance = LOCAL_ELE_OF_INTEREST->reference_element_norm(rvect, LOCAL_X0);
 
   if (distance < 1e-10) distance = 1.;
 
@@ -2905,9 +2904,32 @@ double filter_integrand_tris(double r, double s) {
   return kernel_eval*basis_eval;
 }
 
+
+// integrand used to find Local Fourier Spectral filters in tetrahedral elements
+double filter_integrand_tets(double r, double s, double t) {
+    Array<double> rvect(3);
+    rvect(0) = r;
+    rvect(1) = s;
+    rvect(2) = t;
+
+  // define properties of the kernel function
+  double h = run_input.filter_width; // measure of the wavenumbers left unfiltered
+
+  double distance = LOCAL_ELE_OF_INTEREST->reference_element_norm(rvect, LOCAL_X0);
+
+  if (distance < 1e-10) distance = 1.;
+
+  double kernel_eval = h * j1(h * distance)/distance; // this function is tophat in spectral domain
+
+  double basis_eval = eval_dubiner_basis_3d(r,s,t,LOCAL_BASIS_INDEX,LOCAL_ORDER);
+
+  return kernel_eval*basis_eval;
+}
+
+
 double ylower(double /*x*/) { return -1;}
 double yupper(double x) {return -x;}
-// populate the Local Fourier Spectral filter matrix in 2D for triangles
+// populate the Local Fourier Spectral filter matrix in triangles
 void fill_stabilization_interior_filter_tris(Array<double>& filter_matrix, int order,
                                         Array<double>& loc_upts, eles_tris *element) {
   // store the local globa variables
@@ -2949,6 +2971,63 @@ void fill_stabilization_interior_filter_tris(Array<double>& filter_matrix, int o
     }
 
 }
+
+
+// limits of integration for tetrahedron
+double ylower_tet(double /*x*/) { return -1;}
+double yupper_tet(double z) {return -z;}
+double zlower_tet(double /*x*/, double /*y*/) { return -1;}
+double zupper_tet(double x, double y) {return -1 - x - y;}
+// populate the Local Fourier Spectral filter matrix in 2D for triangles
+void fill_stabilization_interior_filter_tets(Array<double>& filter_matrix, int order,
+                                        Array<double>& loc_upts, eles *element) {
+  // store the local globa variables
+  LOCAL_ORDER = order;
+  LOCAL_ELE_OF_INTEREST = element;
+  LOCAL_X0.setup(3); // store location of current solution point
+                    // of interest globally
+
+  int n = filter_matrix.get_dim(0); // assume it's a square matrix already
+
+  double abserr = 0, relerr = 1e-10;
+//  double (*ylower)(double) = [] (double /* x*/) { return -1.; };
+
+//  double (*yupper)(double) = [] (double x) { return -x; };
+
+  double result, errest, flag;
+  int nofun;
+  for (int i = 0; i < n; i++) {
+
+      LOCAL_X0(0) = loc_upts(0,i);
+      LOCAL_X0(1) = loc_upts(1,i);
+      LOCAL_X0(2) = loc_upts(2,i);
+
+      //cout << "considering points: " << endl;
+      //LOCAL_X0.print();
+      //cout << endl;
+
+      for (int j = 0; j < n; j++) {
+
+          LOCAL_BASIS_INDEX = j; // update basis number
+
+          cout << "considering basis: " << LOCAL_BASIS_INDEX << endl;
+
+          quad3(filter_integrand_tets, -1, 1,
+                ylower_tet, yupper_tet,
+                zlower_tet, zupper_tet,
+                abserr, relerr,
+                result, errest, nofun,flag);
+
+          filter_matrix(i,j) = result;
+
+          cout << "integral = " << result << endl;
+        }
+    }
+
+}
+
+
+
 
 // evaluates the polynomial coeffs(n)*x^n + coeffs(n-1)*x^{n-1) + ... + coeffs(1)*x
 double filter_poly(std::vector<double>& coeffs, double x) {
@@ -3090,14 +3169,7 @@ void fill_stabilization_boundary_filter(Array<double>& filter_matrix, Array<doub
 
   filter_matrix.setup(n,nf);
 
-  std::vector<double> coeffs(n_dims); // coefficients that need to be found for each row of the filter matrix
-
-
-  /*! Temporary change; assign values of coeffs to check implementation
-   */
-
-  coeffs[0] = 1.;
-  coeffs[1] = 1.;
+  std::vector<double> coeffs(n_dims, 1.); // coefficients that need to be found for each row of the filter matrix
 
   for (int i = 0; i < n; i++) {
 

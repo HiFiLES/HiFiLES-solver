@@ -64,19 +64,19 @@ public:
   /*! write extra restart file containing x,y,z of solution points instead of solution data */
   void write_restart_mesh(ofstream& restart_file);
 
-	/*! move all to from cpu to gpu */
-	void mv_all_cpu_gpu(void);
+  /*! move all to from cpu to gpu */
+  void mv_all_cpu_gpu(void);
 
-	/*! move wall distance Array to from cpu to gpu */
-	void mv_wall_distance_cpu_gpu(void);
+  /*! move wall distance Array to from cpu to gpu */
+  void mv_wall_distance_cpu_gpu(void);
 
   /*! move wall distance magnitude Array to from cpu to gpu */
   void mv_wall_distance_mag_cpu_gpu(void);
 
-	/*! copy transformed discontinuous solution at solution points to cpu */
-	void cp_disu_upts_gpu_cpu(void);
+  /*! copy transformed discontinuous solution at solution points to cpu */
+  void cp_disu_upts_gpu_cpu(void);
 
-	/*! copy transformed discontinuous solution at solution points to gpu */
+  /*! copy transformed discontinuous solution at solution points to gpu */
   void cp_disu_upts_cpu_gpu(void);
 
   void cp_grad_disu_upts_gpu_cpu(void);
@@ -325,18 +325,18 @@ public:
 
   /*! set transforms */
   void set_transforms(void);
-       
+
   /*! set transforms at the interface cubature points */
   void set_transforms_inters_cubpts(void);
 
   /*! set transforms at the volume cubature points */
   void set_transforms_vol_cubpts(void);
 
-	/*! Calculate distance of solution points to no-slip wall */
-	void calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, Array< Array<double> > loc_noslip_bdy);
+  /*! Calculate distance of solution points to no-slip wall */
+  void calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, Array< Array<double> > loc_noslip_bdy);
 
-	/*! Calculate distance of solution points to no-slip wall in parallel */
-	void calc_wall_distance_parallel(Array<int> n_seg_noslip_inters, Array<int> n_tri_noslip_inters, Array<int> n_quad_noslip_inters, Array< Array<double> > loc_noslip_bdy_global, int nproc);
+  /*! Calculate distance of solution points to no-slip wall in parallel */
+  void calc_wall_distance_parallel(Array<int> n_seg_noslip_inters, Array<int> n_tri_noslip_inters, Array<int> n_quad_noslip_inters, Array< Array<double> > loc_noslip_bdy_global, int nproc);
 
   /*! calculate position */
   void calc_pos(Array<double> in_loc, int in_ele, Array<double>& out_pos);
@@ -424,6 +424,9 @@ public:
 
   /*! Compute time-average diagnostic quantities */
   void CalcTimeAverageQuantities(double& time);
+
+  /*! Output element name */
+  std::string get_name() {return elementName;}
 
   void compute_wall_forces(Array<double>& inv_force, Array<double>& vis_force, double& temp_cl, double& temp_cd, ofstream& coeff_file, bool write_forces);
 
@@ -752,38 +755,38 @@ protected:
   Array<double> weight_volume_cubpts;
 
   /*! transformed normal at cubature points */
-	Array< Array<double> > tnorm_cubpts;
+  Array< Array<double> > tnorm_cubpts;
 
-	/*! location of plot points in standard element */
-	Array<double> loc_ppts;
-	
-	/*! location of shape points in standard element (simplex elements only)*/
-	Array<double> loc_spts;
-	
-	/*! number of interfaces per element */
-	int n_inters_per_ele;
-	
-	/*! number of flux points per interface */
-	Array<int> n_fpts_per_inter; 
+  /*! location of plot points in standard element */
+  Array<double> loc_ppts;
 
-	/*! number of cubature points per interface */
-	Array<int> n_cubpts_per_inter; 
+  /*! location of shape points in standard element (simplex elements only)*/
+  Array<double> loc_spts;
 
-	/*! number of cubature points per interface */
-	int n_cubpts_per_ele; 
+  /*! number of interfaces per element */
+  int n_inters_per_ele;
 
-	/*! element type (0=>quad,1=>tri,2=>tet,3=>pri,4=>hex) */
-	int ele_type; 
-	
-	/*! order of polynomials defining shapes */
-	int s_order;
-	
+  /*! number of flux points per interface */
+  Array<int> n_fpts_per_inter;
+
+  /*! number of cubature points per interface */
+  Array<int> n_cubpts_per_inter;
+
+  /*! number of cubature points per interface */
+  int n_cubpts_per_ele;
+
+  /*! element type (0=>quad,1=>tri,2=>tet,3=>pri,4=>hex) */
+  int ele_type;
+
+  /*! order of polynomials defining shapes */
+  int s_order;
+
   /*! maximum number of shape points used by any element */
   int max_n_spts_per_ele;
 
   /*! position of shape points (mesh vertices) in static-physical domain */
-	Array<double> shape;
-	
+  Array<double> shape;
+
   /*! position of shape points (mesh vertices) in dynamic-physical domain */
   Array<double> shape_dyn;
 
@@ -832,8 +835,8 @@ protected:
   /*! nodal shape basis 2nd derivative contributions at solution points */
   Array<double> dd_nodal_s_basis_upts;
 
-	/*! temporary solution storage at a single solution point */
-	Array<double> temp_u;
+  /*! temporary solution storage at a single solution point */
+  Array<double> temp_u;
 
   /*! temporary grid velocity storage at a single solution point */
   Array<double> temp_v;
@@ -850,73 +853,73 @@ protected:
   /*! constansts for RK time-stepping */
   Array<double> RK_a, RK_b, RK_c;
 
-	/*! temporary solution gradient storage */
-	Array<double> temp_grad_u;
+  /*! temporary solution gradient storage */
+  Array<double> temp_grad_u;
 
-	/*! Matrix of filter weights at solution points */
-	Array<double> filter_upts;
+  /*! Matrix of filter weights at solution points */
+  Array<double> filter_upts;
 
-	/*! Matrices for Local Fourier Spectral (stabilization) filter */
-	Array<double> stab_filter_interior; // filter matrix acting on the solution points upts
-//	int stab_filter_interior_sparse = 0;
-	Array<double> stab_filter_boundary; // filter matrix acting on the common interface points
-//	int stab_filter_boundary_sparse = 0;
-	/*! extra Arrays for similarity model: Leonard tensors, velocity/energy products */
-	Array<double> Lu, Le, uu, ue;
+  /*! Matrices for Local Fourier Spectral (stabilization) filter */
+  Array<double> stab_filter_interior; // filter matrix acting on the solution points upts
+  //	int stab_filter_interior_sparse = 0;
+  Array<double> stab_filter_boundary; // filter matrix acting on the common interface points
+  //	int stab_filter_boundary_sparse = 0;
+  /*! extra Arrays for similarity model: Leonard tensors, velocity/energy products */
+  Array<double> Lu, Le, uu, ue;
 
-	/*! temporary flux storage */
-	Array<double> temp_f;
+  /*! temporary flux storage */
+  Array<double> temp_f;
 
   /*! temporary flux storage */
   Array<double> temp_f_ref;
 
-	/*! temporary subgrid-scale flux storage */
-	Array<double> temp_sgsf;
+  /*! temporary subgrid-scale flux storage */
+  Array<double> temp_sgsf;
 
   /*! temporary subgrid-scale flux storage for dynamic->static transformation */
   Array<double> temp_sgsf_ref;
-	
-	/*! storage for distance of solution points to nearest no-slip boundary */
-	Array<double> wall_distance;
+
+  /*! storage for distance of solution points to nearest no-slip boundary */
+  Array<double> wall_distance;
   Array<double> wall_distance_mag;
 
-	Array<double> twall;
+  Array<double> twall;
 
-	/*! number of storage levels for time-integration scheme */
-	int n_adv_levels;
-	
+  /*! number of storage levels for time-integration scheme */
+  int n_adv_levels;
+
   /*! determinant of Jacobian (transformation matrix) at solution points
    *  (J = |G|) */
-	Array<double> detjac_upts;
-	
+  Array<double> detjac_upts;
+
   /*! determinant of Jacobian (transformation matrix) at flux points
    *  (J = |G|) */
-	Array<double> detjac_fpts;
+  Array<double> detjac_fpts;
 
   /*! determinant of jacobian at volume cubature points. TODO: what is this really? */
-	Array< Array<double> > vol_detjac_inters_cubpts;
+  Array< Array<double> > vol_detjac_inters_cubpts;
 
-	/*! determinant of volume jacobian at cubature points. TODO: what is this really? */
-	Array< Array<double> > vol_detjac_vol_cubpts;
+  /*! determinant of volume jacobian at cubature points. TODO: what is this really? */
+  Array< Array<double> > vol_detjac_vol_cubpts;
 
   /*! Full vector-transform matrix from static physical->computational frame, at solution points
    *  [Determinant of Jacobian times inverse of Jacobian] [J*G^-1] */
   Array<double> JGinv_upts;
-	
+
   /*! Full vector-transform matrix from static physical->computational frame, at flux points
    *  [Determinant of Jacobian times inverse of Jacobian] [J*G^-1] */
   Array<double> JGinv_fpts;
-	
+
   /*! Magnitude of transformed face-area normal vector from computational -> static-physical frame
    *  [magntiude of (normal dot inverse static transformation matrix)] [ |J*(G^-1)*(n*dA)| ] */
   Array<double> tdA_fpts;
 
-	/*! determinant of interface jacobian at flux points */
-	Array< Array<double> > inter_detjac_inters_cubpts;
+  /*! determinant of interface jacobian at flux points */
+  Array< Array<double> > inter_detjac_inters_cubpts;
 
-	/*! normal at flux points*/
-	Array<double> norm_fpts;
-	
+  /*! normal at flux points*/
+  Array<double> norm_fpts;
+
   /*! static-physical coordinates at flux points*/
   Array<double> pos_fpts;
 
@@ -964,96 +967,96 @@ protected:
         */
   Array< Array<double> > disu_upts;
 
-	/*!
-	running time-averaged diagnostic fields at solution points
-	*/
-	Array<double> disu_average_upts;
+  /*!
+        running time-averaged diagnostic fields at solution points
+        */
+  Array<double> disu_average_upts;
 
-	/*!
-	time (in secs) until start of time average period for above diagnostic fields
-	*/
+  /*!
+        time (in secs) until start of time average period for above diagnostic fields
+        */
   double spinup_time;
 
-	/*!
-	filtered solution at solution points for similarity and SVV LES models
-	*/
-	Array<double> disuf_upts;
+  /*!
+        filtered solution at solution points for similarity and SVV LES models
+        */
+  Array<double> disuf_upts;
 
   /*! position at the plot points */
   Array< Array<double> > pos_ppts;
 
-	/*!
-	description: transformed discontinuous solution at the flux points \n
-	indexing: (in_fpt, in_field, in_ele) \n
-	matrix mapping: (in_fpt || in_field, in_ele)
-	*/
-	Array<double> disu_fpts;
+  /*!
+        description: transformed discontinuous solution at the flux points \n
+        indexing: (in_fpt, in_field, in_ele) \n
+        matrix mapping: (in_fpt || in_field, in_ele)
+        */
+  Array<double> disu_fpts;
 
-	/*!
-	description: transformed discontinuous flux at the solution points \n
-	indexing: (in_upt, in_dim, in_field, in_ele) \n
-	matrix mapping: (in_upt, in_dim || in_field, in_ele)
-	*/
-	Array<double> tdisf_upts;
-	
-	/*!
-	description: subgrid-scale flux at the solution points \n
-	indexing: (in_upt, in_dim, in_field, in_ele) \n
-	matrix mapping: (in_upt, in_dim || in_field, in_ele)
-	*/
-	Array<double> sgsf_upts;
+  /*!
+        description: transformed discontinuous flux at the solution points \n
+        indexing: (in_upt, in_dim, in_field, in_ele) \n
+        matrix mapping: (in_upt, in_dim || in_field, in_ele)
+        */
+  Array<double> tdisf_upts;
 
-	/*!
-	description: subgrid-scale flux at the flux points \n
-	indexing: (in_fpt, in_dim, in_field, in_ele) \n
-	matrix mapping: (in_fpt, in_dim || in_field, in_ele)
-	*/
-	Array<double> sgsf_fpts;
+  /*!
+        description: subgrid-scale flux at the solution points \n
+        indexing: (in_upt, in_dim, in_field, in_ele) \n
+        matrix mapping: (in_upt, in_dim || in_field, in_ele)
+        */
+  Array<double> sgsf_upts;
 
-	/*!
-	normal transformed discontinuous flux at the flux points
-	indexing: \n
-	matrix mapping:
-	*/
-	Array<double> norm_tdisf_fpts;
-	
-	/*!
-	normal transformed continuous flux at the flux points
-	indexing: \n
-	matrix mapping:
-	*/
-	Array<double> norm_tconf_fpts;
-	
-	/*!
-	divergence of transformed continuous flux at the solution points
-	indexing: \n
-	matrix mapping:
-	*/
-	Array< Array<double> > div_tconf_upts;
-	
-	/*! delta of the transformed discontinuous solution at the flux points   */
-	Array<double> delta_disu_fpts;
+  /*!
+        description: subgrid-scale flux at the flux points \n
+        indexing: (in_fpt, in_dim, in_field, in_ele) \n
+        matrix mapping: (in_fpt, in_dim || in_field, in_ele)
+        */
+  Array<double> sgsf_fpts;
 
-	/*! gradient of discontinuous solution at solution points */
-	Array<double> grad_disu_upts;
-	
-	/*! gradient of discontinuous solution at flux points */
-	Array<double> grad_disu_fpts;
+  /*!
+        normal transformed discontinuous flux at the flux points
+        indexing: \n
+        matrix mapping:
+        */
+  Array<double> norm_tdisf_fpts;
 
-	/*! transformed discontinuous viscous flux at the solution points */
-	//Array<double> tdisvisf_upts;
-	
-	/*! normal transformed discontinuous viscous flux at the flux points */
-	//Array<double> norm_tdisvisf_fpts;
-	
-	/*! normal transformed continuous viscous flux at the flux points */
-	//Array<double> norm_tconvisf_fpts;
-		
-	/*! transformed gradient of determinant of jacobian at solution points */
-	Array<double> tgrad_detjac_upts;
-	
-	/*! transformed gradient of determinant of jacobian at flux points */
-	Array<double> tgrad_detjac_fpts;
+  /*!
+        normal transformed continuous flux at the flux points
+        indexing: \n
+        matrix mapping:
+        */
+  Array<double> norm_tconf_fpts;
+
+  /*!
+        divergence of transformed continuous flux at the solution points
+        indexing: \n
+        matrix mapping:
+        */
+  Array< Array<double> > div_tconf_upts;
+
+  /*! delta of the transformed discontinuous solution at the flux points   */
+  Array<double> delta_disu_fpts;
+
+  /*! gradient of discontinuous solution at solution points */
+  Array<double> grad_disu_upts;
+
+  /*! gradient of discontinuous solution at flux points */
+  Array<double> grad_disu_fpts;
+
+  /*! transformed discontinuous viscous flux at the solution points */
+  //Array<double> tdisvisf_upts;
+
+  /*! normal transformed discontinuous viscous flux at the flux points */
+  //Array<double> norm_tdisvisf_fpts;
+
+  /*! normal transformed continuous viscous flux at the flux points */
+  //Array<double> norm_tconvisf_fpts;
+
+  /*! transformed gradient of determinant of jacobian at solution points */
+  Array<double> tgrad_detjac_upts;
+
+  /*! transformed gradient of determinant of jacobian at flux points */
+  Array<double> tgrad_detjac_fpts;
 
   /*! source term for SA turbulence model at solution points */
   Array<double> src_upts;
@@ -1264,5 +1267,8 @@ protected:
 
   /*! Global cell number of element as in the code */
   Array<int> ele2global_ele_code;
+
+protected:
+  std::string elementName;
 
 };

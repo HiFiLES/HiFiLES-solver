@@ -118,10 +118,10 @@ public:
   double calc_h_ref_specific(int in_ele);
 
   /*! Compute stabilization filter */
-  void compute_stabilization_filter(){}
+  void compute_stabilization_filter();
 
   /*! Norm in reference element for which ||x|| = 1 draws a circle in symmetric element*/
-  double reference_element_norm(Array<double>& rvect, Array<double>& r0vect){}
+  double reference_element_norm(Array<double>& rvect, Array<double>& r0vect);
 
 protected:
 
@@ -133,5 +133,6 @@ protected:
   Array<double> vandermonde;
   Array<double> inv_vandermonde;
   Array<double> inv_vandermonde_rest;
+  Array<double> norm_matrix;
 
 };

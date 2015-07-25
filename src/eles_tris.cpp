@@ -59,6 +59,7 @@ using namespace std;
 
 eles_tris::eles_tris()
 {
+  elementName = "tris";
 }
 
 // #### methods ####

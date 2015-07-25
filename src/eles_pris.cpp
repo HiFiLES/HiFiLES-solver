@@ -43,7 +43,8 @@ using namespace std;
 // default constructor
 
 eles_pris::eles_pris()
-{	
+{
+  elementName = "pris";
 }
 
 // #### methods ####

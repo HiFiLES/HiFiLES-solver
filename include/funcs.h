@@ -34,6 +34,7 @@
 #endif
 
 class eles_tris;
+class eles_tets;
 class eles;
 
 /*! evaluate lagrange basis */
@@ -137,6 +138,9 @@ void eval_poly_ic(Array<double>& pos, double rho, Array<double>& ics, int n_dims
 int factorial(int in_n);
 
 void fill_stabilization_interior_filter_tris(Array<double>& filter_matrix, int order, Array<double> &loc_upts, eles_tris *element);
+
+void fill_stabilization_interior_filter_tets(Array<double>& filter_matrix, int order,
+                                        Array<double>& loc_upts, eles *element);
 
 void fill_stabilization_boundary_filter(Array<double>& filter_matrix, Array<double>& loc_fpts, Array<double>& loc_upts, eles *element);
 

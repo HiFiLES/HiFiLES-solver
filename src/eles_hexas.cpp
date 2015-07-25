@@ -61,7 +61,7 @@ using namespace std;
 
 eles_hexas::eles_hexas()
 {	
-
+  elementName = "hexas";
 }
 
 void eles_hexas::setup_ele_type_specific()

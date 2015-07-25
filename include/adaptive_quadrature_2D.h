@@ -11,4 +11,11 @@ void quad2(double (*fun) (double x, double y),
              double abserr, double relerr,
              double& result, double& errest, int& nofun, double& flag);
 
+void quad3(double (*fun) (double x, double y, double z),
+             double a, double b,
+           double (*y_lower_limit) (double), double (*y_upper_limit) (double),
+           double (*z_lower_limit) (double,double), double (*z_upper_limit) (double,double),
+             double abserr, double relerr,
+             double& result, double& errest, int& nofun, double& flag);
+
 #endif // ADAPTIVE_QUADRATURE_H

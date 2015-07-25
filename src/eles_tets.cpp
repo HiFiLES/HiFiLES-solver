@@ -60,6 +60,7 @@ using namespace std;
 
 eles_tets::eles_tets()
 {
+  elementName = "tets";
 }
 
 // #### methods ####
@@ -131,6 +132,17 @@ void eles_tets::setup_ele_type_specific()
       set_opp_6(run_input.sparse_tet);
 
       temp_grad_u.setup(n_fields,n_dims);
+
+
+      norm_matrix(0,0) = 1.;
+      norm_matrix(0,1) = 0.5;
+      norm_matrix(0,2) = 0.5;
+      norm_matrix(1,0) = 0;
+      norm_matrix(1,1) =  0.866025403784439;
+      norm_matrix(1,2) = 0.288675134594813;
+      norm_matrix(2,0) = 0;
+      norm_matrix(2,1) = 0;
+      norm_matrix(2,2) = 0.816496580927726;
 
       // Compute tet filter matrix
       if(filter) compute_filter_upts();
@@ -1513,3 +1525,78 @@ double eles_tets::calc_h_ref_specific(int in_ele)
   {
     FatalError("Reference length calculation not implemented for this element!")
   }
+
+
+void eles_tets::compute_stabilization_filter() {
+
+  if (rank==0) {
+      cout << "computing stabilization matrices for tetrahedra" << endl;
+
+      int n = n_upts_per_ele;
+
+      Array<double> modal_filter(n,n);
+      #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+      cout << "will use blas" << endl;
+      #endif
+      fill_stabilization_interior_filter_tets(modal_filter, order, loc_upts, (eles*) this);
+
+      cout << "loc_upts = " << endl;
+      loc_upts.print();
+      cout << endl;
+      cout << "filtering matrix: " << endl;
+      cout << " number of points = " << n << endl;
+      modal_filter.print();
+      cout << "end of filtering matrix" << endl;
+      cout << "Vandermonde matrix: " << endl;
+      vandermonde.print();
+      cout << "Inv(V)" << endl;
+      inv_vandermonde.print();
+      cout << "nodal filtering matrix: " << endl;
+
+      stab_filter_interior = mult_Arrays(modal_filter, inv_vandermonde);
+      stab_filter_interior.print();
+
+      // normalize filter so it is conservative
+      for (int i = 0; i < n; i++) {
+          double sum = 0;
+          for (int j = 0; j < n; j++)
+            sum += stab_filter_interior(i,j);
+
+          // apply the normalization
+          for (int j = 0; j < n; j++)
+            stab_filter_interior(i,j) /= sum;
+        }
+
+      cout << "normalized nodal filtering matrix: " << endl;
+      stab_filter_interior.print();
+
+      cout << " location of flux points" << endl;
+      tloc_fpts.print();
+      fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
+
+      cout << "stab_filter_boundary = " << endl;
+      stab_filter_boundary.print();
+
+      //  for (int i = 0; i < n_dims; i++) {
+      //      cout << "opp_2(" << i << ") = " << endl;
+      //      opp_2(i).print();
+      //      cout << endl << endl << "opp_4(" << i << ") = " << endl;
+      //      opp_4(i).print();
+      //    }
+      if (rank==0) cout << "finished computing stabilization matrices for tetrahedra" << endl;
+    }
+}
+
+/*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a sphere in a symmetric, reference element
+ */
+double eles_tets::reference_element_norm( Array<double>& rvect, Array<double>& r0vect) {
+  Array<double>& A = norm_matrix;
+  double dr(rvect(0) - r0vect(0)), ds(rvect(1) - r0vect(1)), dt(rvect(2) - r0vect(2));
+  double dist_squared = 0;
+  for (int i = 0; i < 3; i++) {
+      dist_squared += pow(A(i,0)*dr + A(i,1)*ds + A(i,2)*dt, 2);
+    }
+  return sqrt(dist_squared);
+}
+
+
