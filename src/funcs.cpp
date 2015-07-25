@@ -3164,8 +3164,8 @@ void fill_stabilization_boundary_filter(Array<double>& filter_matrix, Array<doub
   int n = loc_upts.get_dim(1); // number of solution points
   int nf = loc_fpts.get_dim(1); // number of flux points
   int n_dims = loc_upts.get_dim(0); // number of dimensions
-  //cout << "at fill_stabilization_boundary_filter" << endl;
-  //cout << n << " " << nf << endl;
+  cout << "at fill_stabilization_boundary_filter" << endl;
+  cout << n << " " << nf << endl;
 
   filter_matrix.setup(n,nf);
 
@@ -3177,8 +3177,8 @@ void fill_stabilization_boundary_filter(Array<double>& filter_matrix, Array<doub
 //      /*! Temporary change; call filter_function to check implementation
 //       */
 
-//      cout << "i = " << i << " filter_function = " <<
-//              filter_function(loc_fpts, loc_upts, coeffs, element, i) << endl;
+      cout << "i = " << i << " filter_function = " <<
+              filter_function(loc_fpts, loc_upts, coeffs, element, i) << endl;
 
 
       for (int j = 0; j < nf; j++) {
