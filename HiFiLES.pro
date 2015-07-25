@@ -39,7 +39,8 @@ SOURCES += \
     include/vector_structure.inl \
     include/linear_solvers_structure.inl \
     include/matrix_structure.inl \
-    src/source.cpp
+    src/source.cpp \
+    src/adaptive_quadrature_2D.cpp
 
 HEADERS += \
     $$INCLUDE_DIR/util.h \
@@ -76,7 +77,8 @@ HEADERS += \
     include/linear_solvers_structure.hpp \
     include/matrix_structure.hpp \
     include/source.h \
-    include/simplex_min_method.h
+    include/simplex_min_method.h \
+    include/adaptive_quadrature_2D.h
 
 OTHER_FILES += \
     $$DATA_DIR/loc_tri_inter_pts.dat \
