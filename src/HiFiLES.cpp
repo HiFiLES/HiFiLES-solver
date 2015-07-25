@@ -189,7 +189,8 @@ int main(int argc, char *argv[]) {
     if ( run_input.filter_frequency > 0 && (i_steps+1)%nn == 0) {
         cout << "Filtering!" << endl;
         for(j=0; j<FlowSol.n_ele_types; j++) {
-            FlowSol.mesh_eles(j)->filter_solution_LFS(0); // filter the solution computed last
+            if (FlowSol.mesh_eles(j)->get_n_eles() != 0)
+              FlowSol.mesh_eles(j)->filter_solution_LFS(0); // filter the solution computed last
           }
       }
 
