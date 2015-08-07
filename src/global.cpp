@@ -31,6 +31,7 @@ using namespace std;
 
 input run_input;
 const double pi=4*atan(1);
+double NAN_ENCOUNTERED = 0; // used in the broadcast
 
 const char* HIFILES_DIR = getenv("HIFILES_HOME");
 

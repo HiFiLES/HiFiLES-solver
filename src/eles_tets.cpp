@@ -1076,18 +1076,15 @@ void eles_tets::fill_opp_3(Array<double>& opp_3)
 
   compute_filt_matrix_tet(Filt,run_input.vcjh_scheme_tet, run_input.c_tet);
 
+  cout << "before get_opp_3_dt_tet" << endl;
   get_opp_3_dg_tet(opp_3_dg);
 
-  //cout << "opp_3_dg" << endl;
-  //opp_3_dg.print();
-  //cout << endl;
-
+  cout << "before multiplying arrays" << endl;
   m_temp = mult_Arrays(Filt,opp_3_dg);
 
-  //cout << "opp_3_vcjh" << endl;
-  //m_temp.print();
-  //cout << endl;
   opp_3 = Array<double>(m_temp);
+
+  cout << "done with fill_opp_3 tet" << endl;
 }
 
 
@@ -1176,7 +1173,7 @@ double eles_tets::eval_div_dg_tet(int in_index, Array<double>& loc)
   // 2. Perform the edge integrals to obtain coefficients sigma_i
   for (int i=0;i<n_upts_per_ele;i++)
     {
-      cubature_tri cub2d(12); //TODO: Check if strong enough
+      cubature_tri cub2d(2); //TODO: Check if strong enough
       integral = 0.;
 
       for (int j=0;j<cub2d.get_n_pts();j++)
@@ -1333,27 +1330,6 @@ void eles_tets::compute_filt_matrix_tet(Array<double>& Filt, int vcjh_scheme_tet
   Ds = mult_Arrays(temps,inv_vandermonde);
   Dt = mult_Arrays(tempt,inv_vandermonde);
 
-  //cout << "Dr nodal" << endl;
-  //Dr.print();
-  //cout << endl;
-  //cout << "Dr dubiner" << endl;
-  //(Dr*vandermonde).print();
-  //cout << endl;
-
-  //cout << "Ds nodal" << endl;
-  //Ds.print();
-  //cout << endl;
-  //cout << "Ds dubiner" << endl;
-  //(Ds*vandermonde).print();
-  //cout << endl;
-
-  //cout << "Dt nodal" << endl;
-  //Dt.print();
-  //cout << endl;
-  //cout << "Dt dubiner" << endl;
-  //(Dt*vandermonde).print();
-  //cout << endl;
-
   //Create identity matrix
   zero_Array(Identity);
 
@@ -1394,14 +1370,6 @@ void eles_tets::compute_filt_matrix_tet(Array<double>& Filt, int vcjh_scheme_tet
           D_high_order_trans = transpose_Array(D_high_order(indx));
           D_T_D(indx) = mult_Arrays(D_high_order_trans,D_high_order(indx));
 
-          //cout << "indx=" << indx << endl;
-          //(D_high_order(indx)*vandermonde).print();
-
-          //cout << endl;
-          //mtemp_2 = vandermonde.get_trans()*D_T_D(indx)*vandermonde;
-          //mtemp_2.print();
-          //cout << endl;
-
           // Scale by c_coeff
           for (int i=0;i<n_upts_per_ele;i++) {
               for (int j=0;j<n_upts_per_ele;j++) {
@@ -1429,86 +1397,6 @@ void eles_tets::compute_filt_matrix_tet(Array<double>& Filt, int vcjh_scheme_tet
   Filt_dubiner = mult_Arrays(inv_vandermonde,Filt);
   Filt_dubiner = mult_Arrays(Filt_dubiner,vandermonde);
 
-  //cout << "Filt" << endl;
-  //Filt.print();
-  //cout << endl;
-
-  //cout << "Filt_dubiner" << endl;
-  //Filt_dubiner.print();
-
-
-  /*
-  // ------------------------
-  // Diagonal filter
-  // ------------------------
-  matrix Filt_dubiner(n_upts_per_ele,n_upts_per_ele);
-  int n_upts_lower = (order+1)*order/2;
-
-  double frac;
-
-  if (vcjh_scheme_tri==0)
-  {
-    double c_1d = c_tet*2*order;
-    double cp = 1./pow(2.0,order)*factorial(2*order)/ (factorial(order)*factorial(order));
-    double kappa = (2*order+1)/2*(factorial(order)*cp)*(factorial(order)*cp);
-    frac = 1./ (1+c_1d*kappa);
-  }
-  else if (vcjh_scheme_tri==1) // DG
-  {
-    frac = 1.0;
-  }
-  else if (vcjh_scheme_tri==2) // SD-like
-  {
-    frac = (order+1.)/(2.*order+1);
-  }
-  else if (vcjh_scheme_tri==3) // HU-like
-  {
-    frac = (order)/(2.*order+1);
-  }
-  else if (vcjh_scheme_tri==4) // Cplus scheme
-  {
-    if (order==2)
-      c_tet = 4.3e-2;
-    else if (order==3)
-      c_tet = 6.4e-4;
-    else if (order==4)
-      c_tet = 5.3e-6;
-    else
-      FatalError("C_plus scheme not implemented for this order");
-
-    double c_1d = c_tet*2*order;
-    double cp = 1./pow(2.0,order)*factorial(2*order)/ (factorial(order)*factorial(order));
-    double kappa = (2*order+1)/2*(factorial(order)*cp)*(factorial(order)*cp);
-    frac = 1./ (1+c_1d*kappa);
-  }
-  else
-    FatalError("VCJH triangular scheme not recognized");
-
-  cout << "Filtering fraction=" << frac << endl;
-
-  for (int j=0;j<n_upts_per_ele;j++) {
-    for (int k=0;k<n_upts_per_ele;k++) {
-      if (j==k) {
-        if (j < n_upts_lower)
-          Filt_dubiner(j,k) = 1.;
-        else
-          Filt_dubiner(j,k) = frac;
-      }
-      else {
-        Filt_dubiner(j,k) = 0.;
-      }
-    }
-  }
-
-  Filt = vandermonde_tri*Filt_dubiner*inv_vandermonde_tri;
-
-  //cout << "Filt_dubiner_diag" << endl;
-  //Filt_dubiner.print();
-
-  cout << "Filt_diag" << endl;
-  Filt.print();
-  */
-
 }
 
 /*! Calculate element volume */
@@ -1528,9 +1416,11 @@ double eles_tets::calc_h_ref_specific(int in_ele)
 
 
 void eles_tets::compute_stabilization_filter() {
+  cout << "filter_frequency = " << run_input.filter_frequency << endl;
+  cout << "number of tets = " << get_n_eles() << endl;
 
   if (rank==0) {
-      cout << "computing stabilization matrices for tetrahedra" << endl;
+      if (rank==0) cout << "computing stabilization matrices for tetrahedra" << endl;
 
       int n = n_upts_per_ele;
 
@@ -1539,7 +1429,7 @@ void eles_tets::compute_stabilization_filter() {
       cout << "will use blas" << endl;
       #endif
       fill_stabilization_interior_filter_tets(modal_filter, order, loc_upts, (eles*) this);
-
+      if(rank == 0) FatalError("forced stop");
       cout << "loc_upts = " << endl;
       loc_upts.print();
       cout << endl;
@@ -1585,6 +1475,7 @@ void eles_tets::compute_stabilization_filter() {
       //    }
       if (rank==0) cout << "finished computing stabilization matrices for tetrahedra" << endl;
     }
+
 }
 
 /*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a sphere in a symmetric, reference element
@@ -1592,6 +1483,10 @@ void eles_tets::compute_stabilization_filter() {
 double eles_tets::reference_element_norm( Array<double>& rvect, Array<double>& r0vect) {
   Array<double>& A = norm_matrix;
   double dr(rvect(0) - r0vect(0)), ds(rvect(1) - r0vect(1)), dt(rvect(2) - r0vect(2));
+
+//  printf("dr, ds, dt = %.2f, %.2f, %.2f", dr, ds, dt);
+//  cout << endl;
+
   double dist_squared = 0;
   for (int i = 0; i < 3; i++) {
       dist_squared += pow(A(i,0)*dr + A(i,1)*ds + A(i,2)*dt, 2);

@@ -113,8 +113,8 @@ void quad3(double (*fun) (double x, double y, double z),
   Z_LOWER_LIMIT = z_lower_limit;
   Z_UPPER_LIMIT = z_upper_limit;
 
-  ABSERR = 1;//abserr;
-  RELERR = 1;//relerr;
+  ABSERR = 1e-4;//abserr;
+  RELERR = 1e-5;//relerr;
 
   result = integral_along_x();
 

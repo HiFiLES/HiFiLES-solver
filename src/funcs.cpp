@@ -2911,19 +2911,19 @@ double filter_integrand_tets(double r, double s, double t) {
     rvect(0) = r;
     rvect(1) = s;
     rvect(2) = t;
-
+//    return 1. - r*r - 2*s*s + 3*t*t + 4*r*s + 5*r*t + 6*r*s*t;
   // define properties of the kernel function
   double h = run_input.filter_width; // measure of the wavenumbers left unfiltered
 
   double distance = LOCAL_ELE_OF_INTEREST->reference_element_norm(rvect, LOCAL_X0);
 
-  if (distance < 1e-10) distance = 1.;
+  //if (distance < 1e-10) distance = 1.;
 
-  double kernel_eval = h * j1(h * distance)/distance; // this function is tophat in spectral domain
+  //double kernel_eval = h * j1(h * distance)/distance; // this function is tophat in spectral domain
 
-  double basis_eval = eval_dubiner_basis_3d(r,s,t,LOCAL_BASIS_INDEX,LOCAL_ORDER);
+  //double basis_eval = eval_dubiner_basis_3d(r,s,t,LOCAL_BASIS_INDEX,LOCAL_ORDER);
 
-  return kernel_eval*basis_eval;
+  return distance; //kernel_eval
 }
 
 
