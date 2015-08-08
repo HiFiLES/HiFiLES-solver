@@ -133,6 +133,7 @@ void eles_tets::setup_ele_type_specific()
 
       temp_grad_u.setup(n_fields,n_dims);
 
+      norm_matrix.setup(3,3);
 
       norm_matrix(0,0) = 1.;
       norm_matrix(0,1) = 0.5;
@@ -1429,14 +1430,15 @@ void eles_tets::compute_stabilization_filter() {
       cout << "will use blas" << endl;
       #endif
       fill_stabilization_interior_filter_tets(modal_filter, order, loc_upts, (eles*) this);
-      if(rank == 0) FatalError("forced stop");
-      cout << "loc_upts = " << endl;
-      loc_upts.print();
-      cout << endl;
+
       cout << "filtering matrix: " << endl;
       cout << " number of points = " << n << endl;
       modal_filter.print();
       cout << "end of filtering matrix" << endl;
+      if(rank == 0) FatalError("forced stop");
+      cout << "loc_upts = " << endl;
+      loc_upts.print();
+      cout << endl;
       cout << "Vandermonde matrix: " << endl;
       vandermonde.print();
       cout << "Inv(V)" << endl;
@@ -1482,10 +1484,10 @@ void eles_tets::compute_stabilization_filter() {
  */
 double eles_tets::reference_element_norm( Array<double>& rvect, Array<double>& r0vect) {
   Array<double>& A = norm_matrix;
-  double dr(rvect(0) - r0vect(0)), ds(rvect(1) - r0vect(1)), dt(rvect(2) - r0vect(2));
 
-//  printf("dr, ds, dt = %.2f, %.2f, %.2f", dr, ds, dt);
-//  cout << endl;
+  double dr = (rvect(0) - r0vect(0));
+  double ds = (rvect(1) - r0vect(1));
+  double dt = (rvect(2) - r0vect(2));
 
   double dist_squared = 0;
   for (int i = 0; i < 3; i++) {
@@ -1493,5 +1495,3 @@ double eles_tets::reference_element_norm( Array<double>& rvect, Array<double>& r
     }
   return sqrt(dist_squared);
 }
-
-

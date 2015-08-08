@@ -2895,9 +2895,9 @@ double filter_integrand_tris(double r, double s) {
 
   double distance = LOCAL_ELE_OF_INTEREST->reference_element_norm(rvect, LOCAL_X0);
 
-  if (distance < 1e-10) distance = 1.;
+  if (distance < 1e-10) distance = 1e-10;
 
-  double kernel_eval = h * j1(h * distance)/distance; // this function is tophat in spectral domain
+  double kernel_eval = h * j1( h * distance)/distance; // this function is tophat in spectral domain
 //eval_dubiner_basis_2d(r,s,i,in_order)
   double basis_eval = eval_dubiner_basis_2d(r,s,LOCAL_BASIS_INDEX,LOCAL_ORDER);
 
@@ -2917,13 +2917,19 @@ double filter_integrand_tets(double r, double s, double t) {
 
   double distance = LOCAL_ELE_OF_INTEREST->reference_element_norm(rvect, LOCAL_X0);
 
-  //if (distance < 1e-10) distance = 1.;
+  Array<double> vec1; vec1(0) = 0; vec1(1) = 0; vec1(2) = 0;
+  Array<double> vec2; vec2(0) = 1; vec2(1) = 1; vec2(2) = 1;
 
-  //double kernel_eval = h * j1(h * distance)/distance; // this function is tophat in spectral domain
+  if (distance < 1e-10) {
+//      cout << "distance is tiny!" << endl;
+      distance = 1e-10;
+  }
 
-  //double basis_eval = eval_dubiner_basis_3d(r,s,t,LOCAL_BASIS_INDEX,LOCAL_ORDER);
+  double kernel_eval = h * j1(h * distance)/distance; // this function is tophat in spectral domain
 
-  return distance; //kernel_eval
+  double basis_eval = eval_dubiner_basis_3d(r,s,t,LOCAL_BASIS_INDEX,LOCAL_ORDER);
+
+  return kernel_eval * basis_eval;
 }
 
 
