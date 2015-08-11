@@ -3008,7 +3008,8 @@ void fill_stabilization_interior_filter_tets(Array<double>& filter_matrix, int o
       LOCAL_X0(1) = loc_upts(1,i);
       LOCAL_X0(2) = loc_upts(2,i);
 
-      //cout << "considering points: " << endl;
+//      cout << "considering point number: "
+//           << i << endl;
       //LOCAL_X0.print();
       //cout << endl;
 
@@ -3016,7 +3017,7 @@ void fill_stabilization_interior_filter_tets(Array<double>& filter_matrix, int o
 
           LOCAL_BASIS_INDEX = j; // update basis number
 
-          cout << "considering basis: " << LOCAL_BASIS_INDEX << endl;
+//          cout << "considering basis: " << LOCAL_BASIS_INDEX << endl;
 
           quad3(filter_integrand_tets, -1, 1,
                 ylower_tet, yupper_tet,
@@ -3026,7 +3027,7 @@ void fill_stabilization_interior_filter_tets(Array<double>& filter_matrix, int o
 
           filter_matrix(i,j) = result;
 
-          cout << "integral = " << result << endl;
+//          cout << "integral = " << result << endl;
         }
     }
 
