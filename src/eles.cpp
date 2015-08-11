@@ -1059,20 +1059,22 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
           for (int inp=0;inp<n_upts_per_ele;inp++)
           {
             // User supplied timestep
-            if (run_input.dt_type == 0)
-              disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
+            if (run_input.dt_type != 0)
+            {
+              // Global minimum timestep
+              if (run_input.dt_type == 1)
+                run_input.dt = dt_local(0);
             
-            // Global minimum timestep
-            else if (run_input.dt_type == 1)
-              disu_upts(0)(inp,ic,i) -= dt_local(0)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
-            
-            // Element local timestep
-            else if (run_input.dt_type == 2)
-              disu_upts(0)(inp,ic,i) -= dt_local(ic)*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
-            else
-              FatalError("ERROR: dt_type not recognized!")
+              // Element local timestep
+              else if (run_input.dt_type == 2)
+                run_input.dt = dt_local(ic);
+
+              else
+                FatalError("ERROR: dt_type not recognized!")
+            }
               
-              }
+            disu_upts(0)(inp,ic,i) -= run_input.dt*(div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) - run_input.const_src - src_upts(inp,ic,i));
+          }
         }
       }
       
@@ -1160,13 +1162,15 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
             rhs = -div_tconf_upts(0)(inp,ic,i)/detjac_upts(inp,ic) + run_input.const_src + src_upts(inp,ic,i);
             res = disu_upts(1)(inp,ic,i);
             
-            if (run_input.dt_type == 0)
-              res = rk4a*res + run_input.dt*rhs;
-            else if (run_input.dt_type == 1)
-              res = rk4a*res + dt_local(0)*rhs;
-            else if (run_input.dt_type == 2)
-              res = rk4a*res + dt_local(ic)*rhs;
+            if (run_input.dt_type != 0)
+            {
+              if (run_input.dt_type == 1)
+                run_input.dt = dt_local(0);
+              else if (run_input.dt_type == 2)
+                run_input.dt = dt_local(ic);
+            }
             
+            res = rk4a*res + run_input.dt*rhs;
             disu_upts(1)(inp,ic,i) = res;
             disu_upts(0)(inp,ic,i) += rk4b*res;
           }
