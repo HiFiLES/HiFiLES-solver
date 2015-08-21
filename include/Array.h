@@ -119,6 +119,14 @@ public:
 
   void print(void);
 
+  // enable outputting array contents via cout<<array;
+  template <typename R>
+  friend std::ostream& operator<<(std::ostream& out, Array<R>& array);
+
+  // enable reading array contents via cin>>array;
+  template <typename R>
+  friend std::istream& operator>>(std::istream& out, Array<R>& array);
+
   // move data from cpu to gpu
 
   void mv_cpu_gpu(void);
@@ -421,42 +429,48 @@ T Array<T>::get_min(void)
 // print
 
 template <typename T>
-void Array<T>::print(void)
-{
-  if(dim_3==1)
+void Array<T>::print(void) {
+  cout << *this;
+}
+
+
+// returns an ostream object with the contents of the array
+template <typename T>
+std::ostream& operator<<(std::ostream& out, Array<T>& array) {
+  if(array.dim_3==1)
     {
       int i,j,k;
-      bool threeD = (dim_2==1?false:true);
-      for (k = 0; k< dim_2; k++)
+      bool threeD = (array.dim_2 == 1 ? false:true );
+      for (k = 0; k< array.dim_2; k++)
         {
           if (threeD)
-            cout<<endl<<"ans(:,:,"<<k+1<<") = "<<endl;
-          for(i=0; i<dim_0; i++)
+            out << endl << "ans(:,:," << k+1 << ") = " << endl;
+          for(i = 0; i < array.dim_0; i++)
             {
-              for(j=0; j<dim_1; j++)
+              for(j=0; j < array.dim_1; j++)
                 {
 
-                  if((*this)(i,j,k)*(*this)(i,j,k)<1e-12)
+                  if(array(i,j,k) * array(i,j,k) < 1e-12)
                     {
-                      cout << left << setw(13) << setprecision(6)
+                      out << left << setw(13) << setprecision(6)
                            << "0";
                     }
                   else
                     {
-                      cout << left << setw(13) << setprecision(6)
-                           << (*this)(i,j,k);
+                      out << left << setw(13) << setprecision(6)
+                           << array(i,j,k);
                     }
                 }
 
-              cout << endl;
+              out << endl;
             }
           if (threeD)
-            cout<<endl;
+            out << endl;
         }
     }
   else
     {
-      cout << "ERROR: Can only print an Array of dimension three or less ...." << endl;
+      out << "ERROR: Can only print an Array of dimension three or less ...." << endl;
     }
 }
 
