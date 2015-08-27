@@ -3240,14 +3240,8 @@ bool fileExists(const std::string fileName) {
 /*! Transforms string to double
  * Input: s : string to be transformed
  */
-double stringToDouble( const std::string& s )
-{
-  std::istringstream i(s);
-  double x;
-  while (i >> x) {
-      std::cout << "x = " << x << " ";
-  }
-  return x;
+std::string num2str( const double num) {
+  return static_cast<ostringstream*>( &(ostringstream() << num) )->str();
 }
 
 

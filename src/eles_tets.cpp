@@ -1417,78 +1417,79 @@ double eles_tets::calc_h_ref_specific(int in_ele)
 
 
 void eles_tets::compute_stabilization_filter() {
+
+  string internalFileName, boundaryFileName;
+
+  internalFileName = "tet_" + num2str(run_input.upts_type_tet) + "_internal.txt";
+
+  boundaryFileName = "tet_" + num2str(run_input.fpts_type_tet) + "_boundary.txt";
+
   cout << "filter_frequency = " << run_input.filter_frequency << endl;
   cout << "number of tets = " << get_n_eles() << endl;
 
-//  if (rank==0) {
-      if (rank==0) cout << "computing stabilization matrices for tetrahedra" << endl;
+  if (fileExists(internalFileName)) {
+      stab_filter_interior.initFromFile(internalFileName);
+      cout << "read internal tet filter from file " + internalFileName << endl;
+      cout << stab_filter_interior << endl;
+    } else {
+      if (rank==0) cout << "computing internal stabilization matrices for tetrahedra" << endl;
 
       int n = n_upts_per_ele;
 
       Array<double> modal_filter(n,n);
-      #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
+
+#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
       cout << "will use blas" << endl;
-      #endif
+#endif
+
       fill_stabilization_interior_filter_tets(modal_filter, order, loc_upts, (eles*) this);
 
-//      cout << "filtering matrix: " << endl;
-//      cout << " number of points = " << n << endl;
-//      modal_filter.print();
-//      cout << "end of filtering matrix" << endl;
-//      //if(rank == 0) FatalError("forced stop");
-//      cout << "loc_upts = " << endl;
-//      loc_upts.print();
-//      cout << endl;
-//      cout << "Vandermonde matrix: " << endl;
-//      vandermonde.print();
-//      cout << "Inv(V)" << endl;
-//      inv_vandermonde.print();
-//      cout << "nodal filtering matrix: " << endl;
-
       stab_filter_interior = mult_Arrays(modal_filter, inv_vandermonde);
-//      stab_filter_interior.print();
-
-//      cout << "normalized nodal filtering matrix: " << endl;
-//      stab_filter_interior.print();
-
-//      cout << " location of flux points" << endl;
-//      tloc_fpts.print();
-      fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
-
-
 
       // normalize filter so it is conservative
       for (int i = 0; i < n; i++) {
           double sum_interior = 0;
-          double sum_boundary = 0;
           for (int j = 0; j < n; j++) {
               sum_interior += stab_filter_interior(i,j);
-              sum_boundary += stab_filter_boundary(i,j);
-          }
+            }
 
           // apply the normalization
           for (int j = 0; j < n; j++) {
               stab_filter_interior(i,j) /= sum_interior;
+            }
+        }
+
+      stab_filter_interior.writeToFile(internalFileName);
+      cout << "wrote internal tet filter to file " + internalFileName << endl;
+    }
+
+  if (fileExists(boundaryFileName)) {
+      stab_filter_boundary.initFromFile(boundaryFileName);
+      cout << "read boundary tet filter from file " + boundaryFileName << endl;
+      cout << stab_filter_boundary << endl;
+    } else {
+      if (rank==0) cout << "computing boundary matrices for tetrahedra" << endl;
+      int n = n_upts_per_ele;
+      fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
+      // normalize filter so it is conservative
+      for (int i = 0; i < n; i++) {
+          double sum_boundary = 0;
+          for (int j = 0; j < n; j++) {
+              sum_boundary += stab_filter_boundary(i,j);
+            }
+
+          // apply the normalization
+          for (int j = 0; j < n; j++) {
               if (sum_boundary > 1) {
-                  cout << "sum_boundary at row " << i
-                       << ": " << sum_boundary << endl;
                   stab_filter_boundary(i,j) /= sum_boundary;
-              }
-          }
-      }
-
-      cout << "stab_filter_boundary = " << endl;
-      stab_filter_boundary.print();
-
-      //  for (int i = 0; i < n_dims; i++) {
-      //      cout << "opp_2(" << i << ") = " << endl;
-      //      opp_2(i).print();
-      //      cout << endl << endl << "opp_4(" << i << ") = " << endl;
-      //      opp_4(i).print();
-      //    }
-      if (rank==0) cout << "finished computing stabilization matrices for tetrahedra" << endl;
-//    }
-
+                }
+            }
+        }
+      stab_filter_boundary.writeToFile(boundaryFileName);
+      cout << "wrote boundary tet filter to file " + boundaryFileName << endl;
+    }
+  if (rank==0) cout << "finished computing stabilization matrices for tetrahedra" << endl;
+  FatalError("Forced Termination");
 }
 
 /*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a sphere in a symmetric, reference element

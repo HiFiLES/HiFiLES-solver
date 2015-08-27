@@ -26,6 +26,7 @@
 #pragma once
 
 #include <cmath>
+#include <string.h>
 
 #if defined _GPU
 #include "cuda_runtime_api.h"
@@ -259,7 +260,7 @@ void dgemm_wrapper(int Arows, int Bcols, int Acols,
 bool fileExists(const std::string fileName);
 
 /*! Transforms string to double */
-double string_to_double( const std::string& s );
+std::string num2str( const double num);
 
 /*! END */
 
