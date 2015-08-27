@@ -635,7 +635,7 @@ void eles::set_ics(double& time)
 // set initial conditions
 
 
-void eles::read_restart_data(ifstream& restart_file)
+void eles::read_restart_data(std::ifstream& restart_file)
 {
   
   if (n_eles==0) return;
@@ -730,7 +730,7 @@ void eles::read_restart_data(ifstream& restart_file)
 }
 
 
-void eles::write_restart_data(ofstream& restart_file)
+void eles::write_restart_data(std::ofstream& restart_file)
 {
   restart_file << "n_eles" << endl;
   restart_file << n_eles << endl;
@@ -756,7 +756,7 @@ void eles::write_restart_data(ofstream& restart_file)
   restart_file << endl;
 }
 
-void eles::write_restart_mesh(ofstream& restart_file)
+void eles::write_restart_mesh(std::ofstream& restart_file)
 {
   restart_file << "n_eles" << endl;
   restart_file << n_eles << endl;
@@ -6643,7 +6643,7 @@ void eles::evaluate_body_force(int in_file_num)
     Array <double> disu_cubpt(4);
     Array <double> integral(4);
     Array <double> norm(n_dims), flow(n_dims), loc(n_dims), pos(n_dims);
-    ofstream write_mdot;
+    std::ofstream write_mdot;
     bool open_mdot;
 
     for (i=0;i<4;i++)
@@ -7059,7 +7059,7 @@ void eles::CalcTimeAverageQuantities(double& time)
   }
 }
 
-void eles::compute_wall_forces( Array<double>& inv_force, Array<double>& vis_force,  double& temp_cl, double& temp_cd, ofstream& coeff_file, bool write_forces)
+void eles::compute_wall_forces( Array<double>& inv_force, Array<double>& vis_force,  double& temp_cl, double& temp_cd, std::ofstream& coeff_file, bool write_forces)
 {
   
   Array<double> u_l(n_fields),norm(n_dims);

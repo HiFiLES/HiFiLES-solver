@@ -759,7 +759,7 @@ void eles_tets::set_vandermonde_restart()
   inv_vandermonde_rest = inv_Array(vandermonde);
 }
 
-int eles_tets::read_restart_info(ifstream& restart_file)
+int eles_tets::read_restart_info(std::ifstream &restart_file)
 {
   string str;
   // Move to triangle element
@@ -792,7 +792,7 @@ int eles_tets::read_restart_info(ifstream& restart_file)
 }
 
 // write restart info
-void eles_tets::write_restart_info(ofstream& restart_file)
+void eles_tets::write_restart_info(std::ofstream& restart_file)
 {
   restart_file << "TETS" << endl;
 

@@ -178,7 +178,7 @@ void input::set_vcjh_scheme_pri_1d(int in_vcjh_scheme_pri_1d)
   vcjh_scheme_pri_1d= in_vcjh_scheme_pri_1d;
 }
 
-void input::setup(ifstream& in_run_input_file, int rank)
+void input::setup(std::ifstream& in_run_input_file, int rank)
 {
   v_bound.setup(3);
   wave_speed.setup(3);

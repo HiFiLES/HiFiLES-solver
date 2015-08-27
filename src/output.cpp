@@ -94,7 +94,7 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   char *file_name;
   string fields("");
 
-  ofstream write_tec;
+  std::ofstream write_tec;
   write_tec.precision(15);
 
   // number of additional diagnostic fields
@@ -638,9 +638,9 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
   char *dumpnum;
 
   /*! Output files */
-  ofstream write_vtu;
+  std::ofstream write_vtu;
   write_vtu.precision(15);
-  ofstream write_pvtu;
+  std::ofstream write_pvtu;
   write_pvtu.precision(15);
 
   /*! no. of optional diagnostic fields */
@@ -683,7 +683,7 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
           mkdir(dumpnum, 0755);
         }
       /*! Delete old .vtu files from directory */
-      //remove(strcat(dumpnum,"/*.vtu"));
+      //remove(std::strcat(dumpnum,"/*.vtu"));
     }
 
   /*! Master node writes the .pvtu file */
@@ -1059,7 +1059,7 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 
   char file_name_s[50], file_name_s2[50];
   char *file_name;
-  ofstream restart_file, restart_mesh;
+  std::ofstream restart_file, restart_mesh;
   restart_file.precision(15);
   restart_mesh.precision(15);
 
@@ -1111,7 +1111,7 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   char file_name_s[50], *file_name;
   char forcedir_s[50], *forcedir;
   struct stat st = {0};
-  ofstream coeff_file;
+  std::ofstream coeff_file;
   bool write_dir, write_forces;
   Array<double> temp_inv_force(FlowSol->n_dims);
   Array<double> temp_vis_force(FlowSol->n_dims);
@@ -1370,7 +1370,7 @@ void compute_error(int in_file_num, struct solution* FlowSol)
     {
       sprintf(file_name_s,"error000.dat");
       file_name = &file_name_s[0];
-      ofstream write_error;
+      std::ofstream write_error;
 
       write_error.open(file_name,ios::app);
       write_error << in_file_num << ", ";
@@ -1499,7 +1499,7 @@ void CalcNormResidual(struct solution* FlowSol) {
   }
 }
 
-void HistoryOutput(int in_file_num, clock_t init, ofstream *write_hist, struct solution* FlowSol) {
+void HistoryOutput(int in_file_num, clock_t init, std::ofstream *write_hist, struct solution* FlowSol) {
   
   int i, n_fields;
   clock_t final;
@@ -1656,12 +1656,12 @@ void check_stability(struct solution* FlowSol)
 
 
   //file input
-  ifstream read_time;
+  std::ifstream read_time;
   read_time.open("time_step.dat",ios::in);
   read_time.precision(12);
 
   //file output
-  ofstream write_time;
+  std::ofstream write_time;
   write_time.open("temp.dat",ios::out);
   write_time.precision(12);
 

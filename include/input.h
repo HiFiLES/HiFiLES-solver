@@ -52,7 +52,7 @@ public:
   void set_c(double in_c_tri, double in_c_quad);
   void set_dt(double in_dt);
 
-  void setup(ifstream& in_run_input_file, int rank);
+  void setup(std::ifstream& in_run_input_file, int rank);
 
   // #### members ####
 
@@ -62,11 +62,11 @@ public:
   int equation;
 
   int n_diagnostic_fields;
-  Array<string> diagnostic_fields;
+  Array<std::string> diagnostic_fields;
   int n_average_fields;
-  Array<string> average_fields;
+  Array<std::string> average_fields;
   int n_integral_quantities;
-  Array<string> integral_quantities;
+  Array<std::string> integral_quantities;
 
   double prandtl;
 
@@ -120,7 +120,7 @@ public:
   int n_deform_iters;
   int mesh_output_freq;
   int mesh_output_format;
-  Array<string> boundary_flags;
+  Array<std::string> boundary_flags;
   Array<Array<double> > bound_vel_simple;
   Array<int> motion_type;
   /* -------------------------------- */
@@ -140,7 +140,7 @@ public:
   double T_total_bound;
 
   int mesh_format;
-  string mesh_file;
+  std::string mesh_file;
 
   double dx_cyclic;
   double dy_cyclic;

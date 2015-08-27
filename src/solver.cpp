@@ -393,7 +393,7 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
 
   char file_name_s[50];
   char *file_name;
-  ifstream restart_file;
+  std::ifstream restart_file;
   restart_file.precision(15);
 
   // Open the restart files and read info

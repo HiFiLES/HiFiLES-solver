@@ -52,10 +52,10 @@ int main(int argc, char *argv[]) {
   int i, j;                           /*!< Loop iterators */
   int i_steps = 0;                    /*!< Iteration index */
   int RKSteps;                        /*!< Number of RK steps */
-  ifstream run_input_file;            /*!< Config input file */
+  std::ifstream run_input_file;            /*!< Config input file */
   clock_t init_time, final_time;                /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
-  ofstream write_hist;                /*!< Output files (forces, statistics, and history) */
+  std::ofstream write_hist;                /*!< Output files (forces, statistics, and history) */
   mesh Mesh;                          /*!< Store mesh details & perform mesh motion */
   
   /*! Check the command line input. */
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   
   /*! Read the config file and store the information in run_input. */
   
-  run_input_file.open(argv[1], ifstream::in);
+  run_input_file.open(argv[1], std::ifstream::in);
   if (!run_input_file) FatalError("Unable to open input file");
   run_input.setup(run_input_file, rank);
   

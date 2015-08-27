@@ -509,7 +509,7 @@ void eles_tris::set_vandermonde_restart()
 }
 
 /*! read restart info */
-int eles_tris::read_restart_info(ifstream& restart_file)
+int eles_tris::read_restart_info(std::ifstream& restart_file)
 {
 
   string str;
@@ -544,7 +544,7 @@ int eles_tris::read_restart_info(ifstream& restart_file)
 }
 
 // write restart info
-void eles_tris::write_restart_info(ofstream& restart_file)
+void eles_tris::write_restart_info(std::ofstream& restart_file)
 {
   restart_file << "TRIS" << endl;
 

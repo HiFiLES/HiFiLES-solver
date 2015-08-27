@@ -81,5 +81,5 @@ public:
   Array<double> weights;
   
   // cubature data file
-  ifstream datfile;
+  std::ifstream datfile;
 };

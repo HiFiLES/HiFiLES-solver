@@ -1133,7 +1133,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, Array<int>& in_
   // output: bctype
 
   char buf[BUFSIZ]={""};
-  ifstream mesh_file;
+  std::ifstream mesh_file;
 
   Array<int> cell_list(in_n_cells);
 
@@ -1317,7 +1317,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, Array<int>& in_ic
 {
   string str;
 
-  ifstream mesh_file;
+  std::ifstream mesh_file;
 
   mesh_file.open(&in_file_name[0]);
   if (!mesh_file)
@@ -1559,7 +1559,7 @@ void read_vertices_gambit(string& in_file_name, int in_n_verts, int &out_n_verts
 {
 
   // Now open gambit file and read the vertices
-  ifstream mesh_file;
+  std::ifstream mesh_file;
   char buf[BUFSIZ]={""};
 
   mesh_file.open(&in_file_name[0]);
@@ -1611,7 +1611,7 @@ void read_vertices_gmsh(string& in_file_name, int in_n_verts, int& out_n_verts_g
   string str;
 
   // Now open gambit file and read the vertices
-  ifstream mesh_file;
+  std::ifstream mesh_file;
   char buf[BUFSIZ]={""};
 
   mesh_file.open(&in_file_name[0]);
@@ -1726,7 +1726,7 @@ void read_connectivity_gambit(string& in_file_name, int &out_n_cells, Array<int>
   int dummy,dummy2;
 
   char buf[BUFSIZ]={""};
-  ifstream mesh_file;
+  std::ifstream mesh_file;
 
   mesh_file.open(&in_file_name[0]);
   if (!mesh_file)
@@ -1901,7 +1901,7 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, Array<int> &
   char buf[BUFSIZ]={""};
   char bcTXT[100][100];// can read up to 100 different boundary conditions
   char bc_txt_temp[100];
-  ifstream mesh_file;
+  std::ifstream mesh_file;
 
   string str;
   

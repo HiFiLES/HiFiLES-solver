@@ -49,7 +49,7 @@ cubature_tri::cubature_tri()
 
 cubature_tri::cubature_tri(int in_order) // set by order
 {
-  ifstream datfile;
+  std::ifstream datfile;
   char buf[BUFSIZ]={""};
   char section_TXT[100], param_TXT[100];
   char* f;
@@ -118,7 +118,7 @@ cubature_tri::cubature_tri(int in_order) // set by order
     filename = HIFILES_DIR;
     filename += "/data/cubature_tri.dat";
     f = (char*)filename.c_str();
-    datfile.open(f, ifstream::in);
+    datfile.open(f, std::ifstream::in);
     if (!datfile) FatalError("Unable to open cubature file");
     
     // read data from file to Arrays

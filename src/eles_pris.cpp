@@ -653,7 +653,7 @@ void eles_pris::set_vandermonde_tri_restart()
   inv_vandermonde_tri_rest = inv_Array(vandermonde_tri_rest);
 }
 
-int eles_pris::read_restart_info(ifstream& restart_file)
+int eles_pris::read_restart_info(std::ifstream& restart_file)
 {
 
   string str;
@@ -698,7 +698,7 @@ int eles_pris::read_restart_info(ifstream& restart_file)
 
 }
 
-void eles_pris::write_restart_info(ofstream& restart_file)        
+void eles_pris::write_restart_info(std::ofstream& restart_file)        
 {
   restart_file << "PRIS" << endl;
 

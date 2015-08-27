@@ -56,13 +56,13 @@ public:
   void set_ics(double& time);
 
   /*! read data from restart file */
-  void read_restart_data(ifstream& restart_file);
+  void read_restart_data(std::ifstream& restart_file);
 
   /*! write data to restart file */
-  void write_restart_data(ofstream& restart_file);
+  void write_restart_data(std::ofstream& restart_file);
 
   /*! write extra restart file containing x,y,z of solution points instead of solution data */
-  void write_restart_mesh(ofstream& restart_file);
+  void write_restart_mesh(std::ofstream& restart_file);
 
   /*! move all to from cpu to gpu */
   void mv_all_cpu_gpu(void);
@@ -366,9 +366,9 @@ public:
   /*! prototype for element reference length calculation */
   virtual double calc_h_ref_specific(int in_eles) = 0;
 
-  virtual int read_restart_info(ifstream& restart_file)=0;
+  virtual int read_restart_info(std::ifstream& restart_file)=0;
 
-  virtual void write_restart_info(ofstream& restart_file)=0;
+  virtual void write_restart_info(std::ofstream& restart_file)=0;
 
   /*! Compute interface jacobian determinant on face */
   virtual double compute_inter_detjac_inters_cubpts(int in_inter, Array<double> d_pos)=0;
@@ -428,7 +428,7 @@ public:
   /*! Output element name */
   std::string get_name() {return elementName;}
 
-  void compute_wall_forces(Array<double>& inv_force, Array<double>& vis_force, double& temp_cl, double& temp_cd, ofstream& coeff_file, bool write_forces);
+  void compute_wall_forces(Array<double>& inv_force, Array<double>& vis_force, double& temp_cl, double& temp_cd, std::ofstream& coeff_file, bool write_forces);
 
   Array<double> compute_error(int in_norm_type, double& time);
   

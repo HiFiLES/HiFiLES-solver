@@ -40,7 +40,9 @@ SOURCES += \
     include/linear_solvers_structure.inl \
     include/matrix_structure.inl \
     src/source.cpp \
-    src/adaptive_quadrature_2D.cpp
+    src/adaptive_quadrature_2D.cpp \
+    Array.cpp \
+    src/Array.cpp
 
 HEADERS += \
     $$INCLUDE_DIR/util.h \

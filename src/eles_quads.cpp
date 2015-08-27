@@ -691,7 +691,7 @@ void eles_quads::compute_filter_upts(void)
 
 //#### helper methods ####
 
-int eles_quads::read_restart_info(ifstream& restart_file)
+int eles_quads::read_restart_info(std::ifstream &restart_file)
 {
 
   string str;
@@ -722,7 +722,7 @@ int eles_quads::read_restart_info(ifstream& restart_file)
 }
 
 //
-void eles_quads::write_restart_info(ofstream& restart_file)        
+void eles_quads::write_restart_info(std::ofstream& restart_file)
 {
   restart_file << "QUADS" << endl;
 
