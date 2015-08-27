@@ -25,25 +25,23 @@
 
 #pragma once
 
-#include <fstream>
+#include "error.h"
+#include "funcs.h"
 #include <iomanip>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <sys/stat.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sstream>
-#include <stdio.h>
 #include <typeinfo>
-#include "error.h"
+#include <vector>
 
 #ifdef _GPU
 #include "cuda.h"
 #include "cuda_runtime_api.h"
 #endif
-
-
-bool fileExists(const std::string fileName);
-double string_to_double( const std::string& s );
 
 template <typename T>
 class Array

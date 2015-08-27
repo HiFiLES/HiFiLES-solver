@@ -2,8 +2,9 @@
 #define ARRAY_CPP_
 
 
-#include "../include/Array.h"
-#include <vector>
+//#include "../include/Array.h"
+#include "../include/funcs.h"
+
 // #### constructors ####
 
 // default constructor
@@ -522,7 +523,6 @@ std::istream& operator>>(std::istream& in, Array<R>& array) {
     }
 
   return in;
-
 }
 
 #endif

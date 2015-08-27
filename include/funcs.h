@@ -26,7 +26,6 @@
 #pragma once
 
 #include <cmath>
-#include "Array.h"
 
 #if defined _GPU
 #include "cuda_runtime_api.h"
@@ -36,6 +35,8 @@
 class eles_tris;
 class eles_tets;
 class eles;
+template <typename T>
+class Array;
 
 /*! evaluate lagrange basis */
 double eval_lagrange(double in_r, int in_mode, Array<double>& in_loc_pts);
@@ -252,6 +253,13 @@ void dgemm_wrapper(int Arows, int Bcols, int Acols,
                    double *B_matrix, int Bstride,
                    double beta,
                    double *C_matrix, int Cstride);
+
+
+/*! Checks if the file fileName exists */
+bool fileExists(const std::string fileName);
+
+/*! Transforms string to double */
+double string_to_double( const std::string& s );
 
 /*! END */
 

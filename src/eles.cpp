@@ -408,6 +408,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
   }
 
   if (run_input.filter_frequency > 0 && get_n_eles() > 0) {
+
+
       compute_stabilization_filter();
 
 

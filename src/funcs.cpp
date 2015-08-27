@@ -59,7 +59,7 @@ extern "C"
 
 
 #include "../include/funcs.h"
-#include "../include/Array.h"
+//#include "../include/Array.h"
 #include "../include/cubature_1d.h"
 #include "../include/global.h"
 #include "../include/eles.h"
@@ -3227,8 +3227,27 @@ void dgemm_wrapper(int Arows, int Bcols, int Acols,
               B_matrix, Bstride,
               beta, C_matrix, Cstride);
 #endif
+}
 
+/*! Checks if the file fileName exists
+ * Input: fileName : name of the file whose existence is checked
+ */
+bool fileExists(const std::string fileName) {
+  struct stat buffer;
+  return (stat (fileName.c_str(), &buffer) == 0);
+}
 
+/*! Transforms string to double
+ * Input: s : string to be transformed
+ */
+double stringToDouble( const std::string& s )
+{
+  std::istringstream i(s);
+  double x;
+  while (i >> x) {
+      std::cout << "x = " << x << " ";
+  }
+  return x;
 }
 
 
