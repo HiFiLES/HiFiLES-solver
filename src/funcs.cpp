@@ -3059,8 +3059,6 @@ double boundary_filter_radial_function(Array<double>& loc_fpts,
   int nf = loc_fpts.get_dim(1); // number of flux points
   Array<double> temp_upt(n_dims), temp_fpt(n_dims); // place holders for locations of solution and flux points
 
-
-
   // copy location of current solution and flux points of interest
   for (int ll = 0; ll < n_dims; ll++) {
       temp_upt(ll) = loc_upts(ll, row);
@@ -3069,7 +3067,7 @@ double boundary_filter_radial_function(Array<double>& loc_fpts,
 
   double curr_distance = filter_poly(coeffs,
                                      element->reference_element_norm(temp_upt,temp_fpt));
-  if (curr_distance < 1e-10) {
+  if (curr_distance < 1e-12) {
       return 1.;
     }
 
@@ -3100,7 +3098,8 @@ double boundary_filter_radial_function(Array<double>& loc_fpts,
 
 // cost function to be minimized in order to find coefficients that allow boundary filter matrix
 // to satisfy the constraints of: conservation and plane preservation
-double filter_function(Array<double>& loc_fpts, Array<double>& loc_upts, std::vector<double>& coeffs, eles *element, int row) {
+double filter_cost_function(Array<double>& loc_fpts, Array<double>& loc_upts,
+                       std::vector<double>& coeffs, eles *element, int row) {
   int nf = loc_fpts.get_dim(1); // number of flux points
   int n_dims = loc_fpts.get_dim(0); // number of dimensions
   Array<double> row_temp(nf);
@@ -3118,7 +3117,7 @@ double filter_function(Array<double>& loc_fpts, Array<double>& loc_upts, std::ve
       for (int k = 0; k < nf; k++)
         sum += row_temp(k)*loc_fpts(dim, k);
 
-      result += (sum - loc_upts(dim, row))*(sum - loc_upts(dim, row));
+      result += pow(sum - loc_upts(dim, row), 2);
     }
 
   return result;
@@ -3133,7 +3132,7 @@ static eles *LOCAL_ELEMENT;
 static int LOCAL_ROW;
 
 double filter_function_simple(std::vector<double>& x) {
-  return filter_function(LOCAL_LOC_FPTS, LOCAL_LOC_UPTS, x, LOCAL_ELEMENT, LOCAL_ROW);
+  return filter_cost_function(LOCAL_LOC_FPTS, LOCAL_LOC_UPTS, x, LOCAL_ELEMENT, LOCAL_ROW);
 }
 
 // wrapper for the simplex_min_method function
@@ -3176,16 +3175,20 @@ void fill_stabilization_boundary_filter(Array<double>& filter_matrix, Array<doub
 
   filter_matrix.setup(n,nf);
 
-  std::vector<double> coeffs(n_dims, 1.); // coefficients that need to be found for each row of the filter matrix
-
   for (int i = 0; i < n; i++) {
+
+      std::vector<double> coeffs(n_dims, 1.); // coefficients that need to be found for each row of the filter matrix
 
       minimum_search(loc_fpts, loc_upts, coeffs, element, i);
 //      /*! Temporary change; call filter_function to check implementation
 //       */
 
       cout << "i = " << i << " filter_function = " <<
-              filter_function(loc_fpts, loc_upts, coeffs, element, i) << endl;
+              filter_cost_function(loc_fpts, loc_upts, coeffs, element, i) << "; ";
+      for (int j = 0; j < n_dims; j++) {
+          cout <<coeffs[j]<<", ";
+        }
+      cout << endl;
 
 
       for (int j = 0; j < nf; j++) {

@@ -1422,7 +1422,8 @@ void eles_tets::compute_stabilization_filter() {
 
   internalFileName = "tet_" + num2str(run_input.upts_type_tet) + "_internal.txt";
 
-  boundaryFileName = "tet_" + num2str(run_input.fpts_type_tet) + "_boundary.txt";
+  boundaryFileName = "tet_upts" + num2str(run_input.upts_type_tet) +
+      "_fpts" + num2str(run_input.fpts_type_tet) + "_boundary.txt";
 
   cout << "filter_frequency = " << run_input.filter_frequency << endl;
   cout << "number of tets = " << get_n_eles() << endl;
@@ -1446,18 +1447,7 @@ void eles_tets::compute_stabilization_filter() {
 
       stab_filter_interior = mult_Arrays(modal_filter, inv_vandermonde);
 
-      // normalize filter so it is conservative
-      for (int i = 0; i < n; i++) {
-          double sum_interior = 0;
-          for (int j = 0; j < n; j++) {
-              sum_interior += stab_filter_interior(i,j);
-            }
-
-          // apply the normalization
-          for (int j = 0; j < n; j++) {
-              stab_filter_interior(i,j) /= sum_interior;
-            }
-        }
+      stab_filter_interior.normalizeRows();
 
       stab_filter_interior.writeToFile(internalFileName);
       cout << "wrote internal tet filter to file " + internalFileName << endl;
@@ -1469,26 +1459,19 @@ void eles_tets::compute_stabilization_filter() {
       cout << stab_filter_boundary << endl;
     } else {
       if (rank==0) cout << "computing boundary matrices for tetrahedra" << endl;
-      int n = n_upts_per_ele;
-      fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
-      // normalize filter so it is conservative
-      for (int i = 0; i < n; i++) {
-          double sum_boundary = 0;
-          for (int j = 0; j < n; j++) {
-              sum_boundary += stab_filter_boundary(i,j);
-            }
 
-          // apply the normalization
-          for (int j = 0; j < n; j++) {
-              if (sum_boundary > 1) {
-                  stab_filter_boundary(i,j) /= sum_boundary;
-                }
-            }
-        }
+      fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
+
+      stab_filter_boundary.normalizeRows();
+
       stab_filter_boundary.writeToFile(boundaryFileName);
       cout << "wrote boundary tet filter to file " + boundaryFileName << endl;
     }
-  if (rank==0) cout << "finished computing stabilization matrices for tetrahedra" << endl;
+  if (rank==0) {
+      loc_upts.writeToFile("loc_upts_"+ num2str(run_input.upts_type_tet) +".txt",true);
+      tloc_fpts.writeToFile("loc_fpts_"+ num2str(run_input.fpts_type_tet) +".txt",true);
+      cout << "finished computing stabilization matrices for tetrahedra" << endl;
+    }
   FatalError("Forced Termination");
 }
 

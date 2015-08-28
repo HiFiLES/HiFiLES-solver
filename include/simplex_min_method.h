@@ -22,9 +22,9 @@
 template<class D, class OP>
 std::vector<D> simplex_min_method(OP f,                   //target function
                        std::vector<D> init,    //initial guess of the parameters
-                       D tol=1E8*std::numeric_limits<D>::epsilon(), //termination criteria
+                       D tol=1E-4, //termination criteria
                        std::vector<std::vector<D> > x =  std::vector<std::vector<D> >(),//x: The Simplex
-                       int max_iterations = 1E2){    //iteration step number
+                       int max_iterations = 1E3){    //iteration step number
 
   int N=init.size();                         //space dimension
   const double a=1.0, b=1.0, g=0.5, h=0.5;   //coefficients

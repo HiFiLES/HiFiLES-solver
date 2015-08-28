@@ -159,6 +159,10 @@ public:
 
   /*! Read array contents froma a file */
   void initFromFile(const std::string fileName);
+
+  /*! Normalize array rows */
+  void normalizeRows();
+
 protected:
 
   int dim_0;

@@ -525,5 +525,26 @@ std::istream& operator>>(std::istream& in, Array<R>& array) {
   return in;
 }
 
+/*! Normalizes the rows of the matrix
+ * Input: matrix : matrix whose rows will be normalized by their sum
+ */
+template<typename R>
+void Array<R>::normalizeRows() {
+  std::cout << "num rows: " << dim_0 << std::endl;
+  std::cout << "num cols: " << dim_1 << std::endl;
+  for (int i = 0; i < dim_0; i++) {
+      double sum_row = 0;
+      for (int j = 0; j < dim_1; j++) {
+          sum_row += (*this)(i,j);
+        }
+
+      // apply the normalization
+      for (int j = 0; j < dim_1; j++) {
+          (*this)(i,j) /= sum_row;
+        }
+    }
+}
+
+
 #endif
 
