@@ -42,7 +42,8 @@ SOURCES += \
     src/source.cpp \
     src/adaptive_quadrature_2D.cpp \
     Array.cpp \
-    src/Array.cpp
+    src/Array.cpp \
+    src/quanc8.cpp
 
 HEADERS += \
     $$INCLUDE_DIR/util.h \
