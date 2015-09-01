@@ -1431,7 +1431,7 @@ void eles_tets::compute_stabilization_filter() {
   if (fileExists(internalFileName)) {
       stab_filter_interior.initFromFile(internalFileName);
       cout << "read internal tet filter from file " + internalFileName << endl;
-      cout << stab_filter_interior << endl;
+      //cout << stab_filter_interior << endl;
     } else {
       if (rank==0) cout << "computing internal stabilization matrices for tetrahedra" << endl;
 
@@ -1456,7 +1456,7 @@ void eles_tets::compute_stabilization_filter() {
   if (fileExists(boundaryFileName)) {
       stab_filter_boundary.initFromFile(boundaryFileName);
       cout << "read boundary tet filter from file " + boundaryFileName << endl;
-      cout << stab_filter_boundary << endl;
+      //cout << stab_filter_boundary << endl;
     } else {
       if (rank==0) cout << "computing boundary matrices for tetrahedra" << endl;
 
@@ -1472,7 +1472,7 @@ void eles_tets::compute_stabilization_filter() {
       tloc_fpts.writeToFile("loc_fpts_"+ num2str(run_input.fpts_type_tet) +".txt",true);
       cout << "finished computing stabilization matrices for tetrahedra" << endl;
     }
-  FatalError("Forced Termination");
+  //FatalError("Forced Termination");
 }
 
 /*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a sphere in a symmetric, reference element
