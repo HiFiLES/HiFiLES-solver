@@ -1434,7 +1434,10 @@ void eles_tets::compute_stabilization_filter() {
       cout << "read internal tet filter from file " + internalFileName << endl;
       //cout << stab_filter_interior << endl;
     } else {
-      if (rank==0) cout << "computing internal stabilization matrices for tetrahedra" << endl;
+      if (rank==0) {
+          cout << " did not find " << internalFileName << endl;
+          cout << "computing internal stabilization matrices for tetrahedra" << endl;
+        }
 
       int n = n_upts_per_ele;
 
@@ -1459,7 +1462,10 @@ void eles_tets::compute_stabilization_filter() {
       cout << "read boundary tet filter from file " + boundaryFileName << endl;
       //cout << stab_filter_boundary << endl;
     } else {
-      if (rank==0) cout << "computing boundary matrices for tetrahedra" << endl;
+      if (rank==0) {
+          cout << " did not find " << boundaryFileName << endl;
+          cout << "computing boundary matrices for tetrahedra" << endl;
+        }
 
       fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
 
