@@ -1420,7 +1420,8 @@ void eles_tets::compute_stabilization_filter() {
 
   string internalFileName, boundaryFileName;
 
-  internalFileName = "tet_" + num2str(run_input.upts_type_tet) + "_internal.txt";
+  internalFileName = "tet_" + num2str(run_input.upts_type_tet) +
+      + "_width_" + num2str(run_input.filter_width) + "_internal.txt";
 
   boundaryFileName = "tet_upts" + num2str(run_input.upts_type_tet) +
       "_fpts" + num2str(run_input.fpts_type_tet) + "_boundary.txt";
