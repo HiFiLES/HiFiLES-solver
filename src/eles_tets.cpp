@@ -1174,7 +1174,7 @@ double eles_tets::eval_div_dg_tet(int in_index, Array<double>& loc)
   // 2. Perform the edge integrals to obtain coefficients sigma_i
   for (int i=0;i<n_upts_per_ele;i++)
     {
-      cubature_tri cub2d(2); //TODO: Check if strong enough
+      cubature_tri cub2d(12); //TODO: Check if strong enough
       integral = 0.;
 
       for (int j=0;j<cub2d.get_n_pts();j++)
