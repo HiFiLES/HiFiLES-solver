@@ -75,6 +75,8 @@ static Array<double> LOCAL_X0;
 static int LOCAL_BASIS_INDEX;
 static int LOCAL_ORDER;
 static eles *LOCAL_ELE_OF_INTEREST;
+static double LOCAL_BESSEL_X; // used in the besselIntegrand function
+static double LOCAL_BESSEL_NU;
 
 
 static double (*SPECIFIC_ELEMENT_NORM_2D)(double, double, double, double);
@@ -2925,7 +2927,7 @@ double filter_integrand_tets(double r, double s, double t) {
       distance = 1e-10;
   }
 
-  double kernel_eval = h * j1(h * distance)/distance; // this function is tophat in spectral domain
+  double kernel_eval = h * besselThreeHalves(h * distance)/distance; // this function is tophat in spectral domain
 
   double basis_eval = eval_dubiner_basis_3d(r,s,t,LOCAL_BASIS_INDEX,LOCAL_ORDER);
 
@@ -3008,16 +3010,13 @@ void fill_stabilization_interior_filter_tets(Array<double>& filter_matrix, int o
       LOCAL_X0(1) = loc_upts(1,i);
       LOCAL_X0(2) = loc_upts(2,i);
 
-//      cout << "considering point number: "
-//           << i << endl;
-      //LOCAL_X0.print();
-      //cout << endl;
+
 
       for (int j = 0; j < n; j++) {
 
           LOCAL_BASIS_INDEX = j; // update basis number
-
-//          cout << "considering basis: " << LOCAL_BASIS_INDEX << endl;
+          cout << "considering point number: " << i << "; ";
+          cout << "basis: " << LOCAL_BASIS_INDEX << "; ";
 
           quad3(filter_integrand_tets, -1, 1,
                 ylower_tet, yupper_tet,
@@ -3027,7 +3026,7 @@ void fill_stabilization_interior_filter_tets(Array<double>& filter_matrix, int o
 
           filter_matrix(i,j) = result;
 
-//          cout << "integral = " << result << endl;
+          cout << "integral = " << result << endl;
         }
     }
 
@@ -3245,6 +3244,35 @@ bool fileExists(const std::string fileName) {
  */
 std::string num2str( const double num) {
   return static_cast<ostringstream*>( &(ostringstream() << num) )->str();
+}
+
+/*! Integrand in the integral used for calculating the Bessel function
+ * of the first kind
+ */
+double besselIntegrand(double t) {
+  return pow(1 - pow(t,2), -0.5 + LOCAL_BESSEL_NU) * cos(t * LOCAL_BESSEL_X);
+}
+
+/*! Calculates the Bessel function of the first kind: J_{\nu}(x)
+ * where \nu is real and greater than -1/2
+ */
+double besselj(double nu, double x) {
+  double integral, errest, flag;
+  int nofun;
+  LOCAL_BESSEL_NU = nu;
+  LOCAL_BESSEL_X = x;
+  quanc8(besselIntegrand, 0., 1.,
+         0., 1e-10,
+         integral, errest, nofun, flag);
+  return pow(2, 1-nu) * pow(x, nu)
+      /(sqrt(pi) * tgamma(0.5 + nu))
+      * integral;
+}
+
+/*! Calculates the Bessel function of the first kind J_{3/2}(x)
+ */
+double besselThreeHalves(double x) {
+  return 2 * (sin(x) - x*cos(x))/ (sqrt(2*pi) * pow(x, 1.5));
 }
 
 
