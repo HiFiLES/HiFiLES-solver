@@ -262,6 +262,15 @@ bool fileExists(const std::string fileName);
 /*! Transforms string to double */
 std::string num2str( const double num);
 
+/*! Calculates the Bessel function of the first kind: J_{\nu}(x)
+ * where \nu is real and greater than -1/2
+ */
+double besselj(double nu, double x);
+
+/*! Calculates the Bessel function of the first kind J_{3/2}(x)
+ */
+double besselThreeHalves(double x);
+
 /*! END */
 
 
