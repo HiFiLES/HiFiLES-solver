@@ -852,29 +852,9 @@ void eles_tris::calc_stabilization_filter_internal() {
 
   fill_stabilization_interior_filter_tris(modal_filter, order, loc_upts, this);
 
-  //cout << "loc_upts = " << endl;
-  //loc_upts.print();
-  //cout << endl;
-  //cout << "filtering matrix: " << endl;
-  //cout << " number of points = " << n << endl;
-  //modal_filter.print();
-  //cout << "end of filtering matrix" << endl;
-  //cout << "Vandermonde matrix: " << endl;
-  //vandermonde.print();
-  //cout << "Inv(V)" << endl;
-  //inv_vandermonde.print();
-  //cout << "nodal filtering matrix: " << endl;
-
   stab_filter_interior = mult_Arrays(modal_filter, inv_vandermonde);
-  //stab_filter_interior.print();
 
   stab_filter_interior.normalizeRows();
-
-  //cout << "normalized nodal filtering matrix: " << endl;
-  //stab_filter_interior.print();
-
-  //cout << " location of flux points" << endl;
-  //tloc_fpts.print();
 }
 
 
@@ -884,17 +864,6 @@ void eles_tris::calc_stabilization_filter_internal() {
  */
 void eles_tris::calc_stabilization_filter_boundary() {
   fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
-
-  //cout << "stab_filter_boundary = " << endl;
-  //stab_filter_boundary.print();
-
-  //  for (int i = 0; i < n_dims; i++) {
-  //      cout << "opp_2(" << i << ") = " << endl;
-  //      opp_2(i).print();
-  //      cout << endl << endl << "opp_4(" << i << ") = " << endl;
-  //      opp_4(i).print();
-  //    }
-
 }
 
 

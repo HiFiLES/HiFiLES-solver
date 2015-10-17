@@ -461,13 +461,14 @@ std::ostream& operator<<(std::ostream& out, Array<T>& array) {
  * Input: overwriteEnabled : overwrites existing file if true; otherwise leaves existing file intact
  */
 template <typename T>
-void Array<T>::writeToFile(const std::string fileName, bool overwriteEnabled) {
+void Array<T>::writeToFile(const std::string& fileName, bool overwriteEnabled) {
   if (this->dim_2 > 1) FatalError("At Array<T>::writeToFile; cannot write matrix of dimensions greater than 2 to file");
 
   if (!overwriteEnabled) { // if we don't want to overwrite the file, check for its existence
 
       if ( fileExists(fileName) ) return;
     }
+
   std::ofstream file(fileName.c_str());
   file << *this;
   file.close();
@@ -479,7 +480,7 @@ void Array<T>::writeToFile(const std::string fileName, bool overwriteEnabled) {
  * Input: overwriteEnabled : overwrites existing file if true; otherwise leaves existing file intact
  */
 template <typename T>
-void Array<T>::initFromFile(const std::string fileName) {
+void Array<T>::initFromFile(const std::string& fileName) {
 
   std::ifstream file(fileName.c_str());
   file >> *this;

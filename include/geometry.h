@@ -164,4 +164,6 @@ void find_rot_mpifaces(Array<int> &in_f2v, Array<int> &in_f2nv, Array<double>& i
 
 void compare_mpi_faces(Array<double> &xvert1, Array<double> &xvert2, int& num_v_per_f, int& rtag, Array<double> &delta_cyclic, double tol, struct solution* FlowSol);
 
+void store_eles_bases(eles* FlowSol);
+
 #endif

@@ -302,7 +302,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
   Array<double> pos(FlowSol->n_dims);
 
-  if (FlowSol->rank==0) cout << "setting elements shape ... ";
+  if (FlowSol->rank==0) cout << "setting elements' shape ... ";
   for (int i=0;i<FlowSol->num_eles;i++) {
       if (ctype(i) == 0) //tri
         {
@@ -405,15 +405,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (FlowSol->rank==0) cout << "pre-computing nodal shape-basis functions ... " << flush;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-      FlowSol->mesh_eles(i)->store_nodal_s_basis_fpts();
-      FlowSol->mesh_eles(i)->store_nodal_s_basis_upts();
-      FlowSol->mesh_eles(i)->store_nodal_s_basis_ppts();
-      FlowSol->mesh_eles(i)->store_d_nodal_s_basis_fpts();
-      FlowSol->mesh_eles(i)->store_d_nodal_s_basis_upts();
-      FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_fpts();
-      FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_upts();
-      FlowSol->mesh_eles(i)->store_nodal_s_basis_inters_cubpts();
-      FlowSol->mesh_eles(i)->store_d_nodal_s_basis_inters_cubpts();
+        store_eles_bases(FlowSol->mesh_eles(i));
     }
   }
   if (FlowSol->rank==0) cout << "done." << endl;
@@ -4021,5 +4013,22 @@ void compare_mpi_faces(Array<double> &xvert1, Array<double> &xvert2, int& num_v_
 
 }
 
-#endif
+#endif  // end #ifdef MPI
+
+
+void store_eles_bases(eles* element) {
+
+//  char * fileNamesInit[] = {element->
+  std::vector<std::string> fileNames;
+
+  element->store_nodal_s_basis_fpts();
+  element->store_nodal_s_basis_upts();
+  element->store_nodal_s_basis_ppts();
+  element->store_d_nodal_s_basis_fpts();
+  element->store_d_nodal_s_basis_upts();
+  element->store_dd_nodal_s_basis_fpts();
+  element->store_dd_nodal_s_basis_upts();
+  element->store_nodal_s_basis_inters_cubpts();
+  element->store_d_nodal_s_basis_inters_cubpts();
+}
 

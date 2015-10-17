@@ -155,10 +155,10 @@ public:
   void initialize_to_value(const T val);
 
   /*! Write array contents to a file */
-  void writeToFile(const std::string fileName, bool overwriteEnabled = true);
+  void writeToFile(const std::string& fileName, bool overwriteEnabled = true);
 
   /*! Read array contents froma a file */
-  void initFromFile(const std::string fileName);
+  void initFromFile(const std::string& fileName);
 
   /*! Normalize array rows */
   void normalizeRows();

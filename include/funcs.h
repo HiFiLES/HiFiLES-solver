@@ -270,7 +270,6 @@ double besselj(double nu, double x);
 /*! Calculates the Bessel function of the first kind J_{3/2}(x)
  */
 double besselThreeHalves(double x);
-
 /*! END */
 
 
