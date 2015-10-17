@@ -360,8 +360,11 @@ public:
 
   virtual void setup_ele_type_specific()=0;
 
-  /*! Compute stabilization filter */
-  virtual void compute_stabilization_filter() = 0;
+  void calc_stabilization_filter_all_eles();
+
+  /*! Compute stabilization filter for each specific element*/
+  virtual void calc_stabilization_filter_internal() = 0;
+  virtual void calc_stabilization_filter_boundary() = 0;
 
   /*! prototype for element reference length calculation */
   virtual double calc_h_ref_specific(int in_eles) = 0;

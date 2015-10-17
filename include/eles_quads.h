@@ -139,7 +139,8 @@ public:
   double eval_legendre_basis_2D_hierarchical(int, Array<double>, int in_order);
 
   /*! Compute stabilization filter */
-  void compute_stabilization_filter(){}
+  void calc_stabilization_filter_internal(){}
+  void calc_stabilization_filter_boundary(){}
 
   /*! Norm in reference element for which ||x|| = 1 draws a circle in symmetric element*/
   double reference_element_norm(Array<double>& rvect, Array<double>& r0vect){}

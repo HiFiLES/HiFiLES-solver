@@ -408,8 +408,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
   }
 
   if (run_input.filter_frequency > 0 && get_n_eles() > 0) {
-
-      compute_stabilization_filter();
+      cout << "filter frequency = " << run_input.filter_frequency << endl;
+      calc_stabilization_filter_all_eles();
 
 
 #ifdef _GPU
@@ -7758,6 +7758,59 @@ void eles::calc_grid_velocity(void)
 }
 #endif
 
+
+/*! Calls the element-specific functions to create filtering matrices.
+ Store the results in a matrix, used previously-stored matrices if they exist*/
+void eles::calc_stabilization_filter_all_eles() {
+
+  string internalFileName, boundaryFileName;
+
+  internalFileName = elementName + "_internal_uptsType_" + num2str(upts_type) +
+      + "_width_" + num2str(run_input.filter_width) +
+      "_p_" + num2str(run_input.order) + ".txt";
+
+  boundaryFileName = elementName + "_boundary_uptsType_" + num2str(upts_type) +
+      "_fptsType_" + num2str(fpts_type) +
+      "_p_" + num2str(run_input.order) + ".txt";
+
+  cout << "filter_frequency = " << run_input.filter_frequency << endl;
+  cout << "number of " << elementName << " = " << get_n_eles() << endl;
+
+
+  if (fileExists(internalFileName)) {
+      stab_filter_interior.initFromFile(internalFileName);
+      cout << "read internal " + elementName + " filter from file " + internalFileName << endl;
+    } else {
+      if (rank==0) {
+          cout << " did not find " << internalFileName << endl;
+          cout << "computing internal stabilization matrices for " + elementName << endl;
+        }
+
+      calc_stabilization_filter_internal();
+
+      stab_filter_interior.writeToFile(internalFileName);
+      cout << "wrote internal " + elementName + " filter to file " + internalFileName << endl;
+    }
+
+  if (fileExists(boundaryFileName)) {
+      stab_filter_boundary.initFromFile(boundaryFileName);
+      cout << "read boundary tet filter from file " + boundaryFileName << endl;
+    } else {
+      if (rank==0) {
+          cout << " did not find " << boundaryFileName << endl;
+          cout << "computing boundary matrices for " + elementName << endl;
+        }
+
+      calc_stabilization_filter_boundary();
+
+      stab_filter_boundary.writeToFile(boundaryFileName);
+      cout << "wrote boundary " + elementName + " filter to file " + boundaryFileName << endl;
+    }
+
+}
+
+
+
 /*! filter solution using Local Fourier Spectral filters
  * Proceeds with the following steps:
  *
@@ -7770,7 +7823,7 @@ void eles::calc_grid_velocity(void)
  * Final filter application
  * disu_upts(field_i) = (1-alpha) * stab_filter_boundary * disu_fpts(field_i) + disu_upts(field_i)
  *
- * WARNING: SHOULD BE USED ONLY WITH TRIANGULAR ELEMENTS FOR NOW; OTHERWISE
+ * WARNING: SHOULD BE USED ONLY WITH TRIANGULAR OR TETRAHEDRAL ELEMENTS FOR NOW; OTHERWISE
  * THERE WILL BE OUT-OF-BOUNDS MEMORY ACCESSES
 */
 void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is the stage in the time-stepping scheme

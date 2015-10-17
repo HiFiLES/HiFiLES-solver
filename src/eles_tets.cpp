@@ -1415,72 +1415,32 @@ double eles_tets::calc_h_ref_specific(int in_ele)
     FatalError("Reference length calculation not implemented for this element!")
   }
 
+/*! Calculate internal stabilization filter */
+void eles_tets::calc_stabilization_filter_internal() {
 
-void eles_tets::compute_stabilization_filter() {
+  int n = n_upts_per_ele;
 
-  string internalFileName, boundaryFileName;
+  Array<double> modal_filter(n,n);
 
-  internalFileName = "tet_" + num2str(run_input.upts_type_tet) +
-      + "_width_" + num2str(run_input.filter_width) + "_internal.txt";
+  fill_stabilization_interior_filter_tets(modal_filter, order, loc_upts, (eles*) this);
 
-  boundaryFileName = "tet_upts" + num2str(run_input.upts_type_tet) +
-      "_fpts" + num2str(run_input.fpts_type_tet) + "_boundary.txt";
+  stab_filter_interior = mult_Arrays(modal_filter, inv_vandermonde);
 
-  cout << "filter_frequency = " << run_input.filter_frequency << endl;
-  cout << "number of tets = " << get_n_eles() << endl;
-
-  if (fileExists(internalFileName)) {
-      stab_filter_interior.initFromFile(internalFileName);
-      cout << "read internal tet filter from file " + internalFileName << endl;
-      //cout << stab_filter_interior << endl;
-    } else {
-      if (rank==0) {
-          cout << " did not find " << internalFileName << endl;
-          cout << "computing internal stabilization matrices for tetrahedra" << endl;
-        }
-
-      int n = n_upts_per_ele;
-
-      Array<double> modal_filter(n,n);
-
-#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-      cout << "will use blas" << endl;
-#endif
-
-      fill_stabilization_interior_filter_tets(modal_filter, order, loc_upts, (eles*) this);
-
-      stab_filter_interior = mult_Arrays(modal_filter, inv_vandermonde);
-
-      stab_filter_interior.normalizeRows();
-
-      stab_filter_interior.writeToFile(internalFileName);
-      cout << "wrote internal tet filter to file " + internalFileName << endl;
-    }
-
-  if (fileExists(boundaryFileName)) {
-      stab_filter_boundary.initFromFile(boundaryFileName);
-      cout << "read boundary tet filter from file " + boundaryFileName << endl;
-      //cout << stab_filter_boundary << endl;
-    } else {
-      if (rank==0) {
-          cout << " did not find " << boundaryFileName << endl;
-          cout << "computing boundary matrices for tetrahedra" << endl;
-        }
-
-      fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
-
-      stab_filter_boundary.normalizeRows();
-
-      stab_filter_boundary.writeToFile(boundaryFileName);
-      cout << "wrote boundary tet filter to file " + boundaryFileName << endl;
-    }
-  if (rank==0) {
-      loc_upts.writeToFile("loc_upts_"+ num2str(run_input.upts_type_tet) +".txt",true);
-      tloc_fpts.writeToFile("loc_fpts_"+ num2str(run_input.fpts_type_tet) +".txt",true);
-      cout << "finished computing stabilization matrices for tetrahedra" << endl;
-    }
-  //FatalError("Forced Termination");
+  stab_filter_interior.normalizeRows();
 }
+
+/*! Calculate boundary stabilization filter */
+void eles_tets::calc_stabilization_filter_boundary() {
+
+  fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
+
+  stab_filter_boundary.normalizeRows();
+
+}
+
+
+
+
 
 /*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a sphere in a symmetric, reference element
  */

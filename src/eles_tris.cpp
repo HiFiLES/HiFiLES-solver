@@ -844,9 +844,7 @@ double eles_tris::calc_h_ref_specific(int in_ele)
  * `stab_filter_interior` acts on the interior nodes and applies a spectral filter
  * `stab_filter_boundary` filters interior nodes using information from common boundary values
  */
-void eles_tris::compute_stabilization_filter() {
-
-if (rank==0) cout << "computing stabilization matrices for triangles" << endl;
+void eles_tris::calc_stabilization_filter_internal() {
 
   int n = n_upts_per_ele;
 
@@ -870,35 +868,35 @@ if (rank==0) cout << "computing stabilization matrices for triangles" << endl;
   stab_filter_interior = mult_Arrays(modal_filter, inv_vandermonde);
   //stab_filter_interior.print();
 
-  // normalize filter so it is conservative
-  for (int i = 0; i < n; i++) {
-      double sum = 0;
-      for (int j = 0; j < n; j++)
-        sum += stab_filter_interior(i,j);
-
-      // apply the normalization
-      for (int j = 0; j < n; j++)
-        stab_filter_interior(i,j) /= sum;
-    }
+  stab_filter_interior.normalizeRows();
 
   //cout << "normalized nodal filtering matrix: " << endl;
   //stab_filter_interior.print();
 
   //cout << " location of flux points" << endl;
   //tloc_fpts.print();
+}
+
+
+/*! Creates the filtering matrices for triangles:
+ * `stab_filter_interior` acts on the interior nodes and applies a spectral filter
+ * `stab_filter_boundary` filters interior nodes using information from common boundary values
+ */
+void eles_tris::calc_stabilization_filter_boundary() {
   fill_stabilization_boundary_filter(stab_filter_boundary, tloc_fpts, loc_upts, this);
 
   //cout << "stab_filter_boundary = " << endl;
   //stab_filter_boundary.print();
 
-//  for (int i = 0; i < n_dims; i++) {
-//      cout << "opp_2(" << i << ") = " << endl;
-//      opp_2(i).print();
-//      cout << endl << endl << "opp_4(" << i << ") = " << endl;
-//      opp_4(i).print();
-//    }
-if (rank==0) cout << "finished computing stabilization matrices for triangles" << endl;
+  //  for (int i = 0; i < n_dims; i++) {
+  //      cout << "opp_2(" << i << ") = " << endl;
+  //      opp_2(i).print();
+  //      cout << endl << endl << "opp_4(" << i << ") = " << endl;
+  //      opp_4(i).print();
+  //    }
+
 }
+
 
 /*! calculates ||rvect - r0vect||_2 such that ||x||_2 = 1 draws a circle in a symmetric, reference element
  */

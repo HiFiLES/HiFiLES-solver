@@ -89,7 +89,7 @@ struct solution {
   
   /*! No-slip wall flux point coordinates for wall models. */
 
-	Array< Array<double> > loc_noslip_bdy;
+  Array< Array<double> > loc_noslip_bdy;
 
   /*! Diagnostic output quantities. */
   
@@ -117,7 +117,7 @@ struct solution {
     
   /*! No-slip wall flux point coordinates for wall models. */
 
-	Array< Array<double> > loc_noslip_bdy_global;
+  Array< Array<double> > loc_noslip_bdy_global;
 
 #endif
   

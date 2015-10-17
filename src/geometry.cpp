@@ -283,26 +283,13 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (FlowSol->rank==0) cout << "initializing elements" << endl;
 
   for (int i = 0; i < FlowSol->n_ele_types; i++) { // loop through all elements
-      //if (FlowSol->mesh_eles(i)->get_n_eles() != 0) { // skip those not in the mesh
+//      if (FlowSol->mesh_eles(i)->get_n_eles() != 0) { // skip those not in the mesh
           if (FlowSol->rank==0) cout << FlowSol->mesh_eles(i)->get_name() << endl;
 
           FlowSol->mesh_eles(i)->setup(temp_num_eles[i], max_n_spts(i));
-        //}
+//        }
     }
-
-//  if (FlowSol->mesh_eles(0)->get_n_eles()!=0) {
-//      if (FlowSol->rank==0) cout << "tris" << endl;
-//    FlowSol->mesh_eles_tris.setup(num_tris,max_n_spts_per_tri);
-//    }
-//  if (FlowSol->rank==0) cout << "quads" << endl;
-//  FlowSol->mesh_eles_quads.setup(num_quads,max_n_spts_per_quad);
-//  if (FlowSol->rank==0) cout << "tets" << endl;
-//  FlowSol->mesh_eles_tets.setup(num_tets,max_n_spts_per_tet);
-//  if (FlowSol->rank==0) cout << "pris" << endl;
-//  FlowSol->mesh_eles_pris.setup(num_pris,max_n_spts_per_pri);
-//  if (FlowSol->rank==0) cout << "hexas" << endl;
-//  FlowSol->mesh_eles_hexas.setup(num_hexas,max_n_spts_per_hexa);
-//  if (FlowSol->rank==0) cout << "done initializing elements" << endl;
+  if (FlowSol->rank==0) cout << "done initializing elements" << endl;
 
   // Set shape for each cell
   Array<int> local_c(FlowSol->num_eles);
