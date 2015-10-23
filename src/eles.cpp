@@ -409,7 +409,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 
   fileNamePrefix = elementName + "_uptsType_" + num2str(upts_type)
       + "_fptsType_" + num2str(fpts_type) + "_p_" + num2str(order);
-  fileNameSuffix = ".txt";
+  fileNameSuffix = ".hifiles.txt";
 
 
   if (run_input.filter_frequency > 0 && get_n_eles() > 0) {
@@ -7822,6 +7822,58 @@ void eles::calc_stabilization_filter_all_eles() {
     }
 
 }
+
+
+void eles::compute_all_basis_functions() {
+
+  int numFuncs = 6;
+  std::string arrayNames[] = {"nodal_s_basis_fpts",
+                                 "nodal_s_basis_upts",
+                                 "nodal_s_basis_ppts",
+                                 "d_nodal_s_basis_fpts",
+                          //       "d_nodal_s_basis_upts",
+                                 "dd_nodal_s_basis_fpts",
+                                 "dd_nodal_s_basis_upts"};
+                            //     "nodal_s_basis_inters_cubpts"};
+                           //      "d_nodal_s_basis_inters_cubpts"
+
+  Array<double> * arrayList[] = {&nodal_s_basis_fpts,
+                         &nodal_s_basis_upts,
+                         &nodal_s_basis_ppts,
+                         &d_nodal_s_basis_fpts,
+                        // &d_nodal_s_basis_upts,
+                         &dd_nodal_s_basis_fpts,
+                         &dd_nodal_s_basis_upts};
+                       //  &nodal_s_basis_inters_cubpts};
+                       //  &d_nodal_s_basis_inters_cubpts
+
+
+  typedef void (eles::*MemFuncPtr)(); // create a type to point to member functions of eles
+  MemFuncPtr funcArray[] = {&eles::store_nodal_s_basis_fpts,
+                           &eles::store_nodal_s_basis_upts,
+                           &eles::store_nodal_s_basis_ppts,
+                           &eles::store_d_nodal_s_basis_fpts,
+                      //     &eles::store_d_nodal_s_basis_upts,
+                           &eles::store_dd_nodal_s_basis_fpts,
+                           &eles::store_dd_nodal_s_basis_upts};
+                        //   &eles::store_nodal_s_basis_inters_cubpts};
+                       //    &eles::store_d_nodal_s_basis_inters_cubpts
+
+
+  for (int i = 0; i < numFuncs; i++) { // check that all files exist
+      std::string fileName = fileNamePrefix + "_" + arrayNames[i] + fileNameSuffix;
+      // if any single one of them does not exist, compute everything and overwrite existing files
+      if (!fileExists(fileName)) {
+          (this->*(funcArray[i]) )(); // execute the function that creates the array
+          arrayList[i]->writeToFile(fileName);
+          cout << "executed function to create " << fileName << endl;
+        } else {
+          arrayList[i]->initFromFile(fileName);
+        }
+    }
+}
+
+
 
 
 

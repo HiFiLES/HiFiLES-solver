@@ -361,6 +361,9 @@ public:
 
   /*! filter solution using Local Fourier Spectral filters*/
   void filter_solution_LFS(int in_disu_upts_from);
+
+  /*! Compute all matrices related to the shape functions of the element */
+  void compute_all_basis_functions();
   
   // #### virtual methods ####
 

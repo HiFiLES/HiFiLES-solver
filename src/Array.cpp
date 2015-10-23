@@ -419,40 +419,27 @@ void Array<T>::initialize_to_value(const T val)
 // returns an ostream object with the contents of the array
 template <typename T>
 std::ostream& operator<<(std::ostream& out, Array<T>& array) {
-  if(array.dim_3 == 1)
+  out << array.dim_0 << " " << array.dim_1 << " "
+      << array.dim_2 << " " << array.dim_3
+      << std::endl << std::endl;
+  for (int l = 0; l < array.dim_3; l++)
     {
-      bool threeD = (array.dim_2 == 1 ? false:true );
       for (int k = 0; k< array.dim_2; k++)
         {
-          if (threeD)
-            out << std::endl << "ans(:,:," << k+1 << ") = " << std::endl;
           for(int i = 0; i < array.dim_0; i++)
             {
               for(int j=0; j < array.dim_1; j++)
                 {
-
-                  if(array(i,j,k) * array(i,j,k) < 1e-12)
-                    {
-                      out << std::left << std::setw(13) << std::setprecision(6)
-                           << "0";
-                    }
-                  else
-                    {
-                      out << std::left << std::setw(13) << std::setprecision(6)
-                           << array(i,j,k);
-                    }
+                  out << std::left << std::setw(20) << std::setprecision(12)
+                      << array(i,j,k);
                 }
-
               out << std::endl;
             }
-          if (threeD)
-            out << std::endl;
+          out << std::endl;
         }
+      out << std::endl;
     }
-  else
-    {
-      out << "ERROR: Can only print an Array of dimension three or less ...." << std::endl;
-    }
+
   return out;
 }
 
@@ -462,8 +449,6 @@ std::ostream& operator<<(std::ostream& out, Array<T>& array) {
  */
 template <typename T>
 void Array<T>::writeToFile(const std::string& fileName, bool overwriteEnabled) {
-  if (this->dim_2 > 1) FatalError("At Array<T>::writeToFile; cannot write matrix of dimensions greater than 2 to file");
-
   if (!overwriteEnabled) { // if we don't want to overwrite the file, check for its existence
 
       if ( fileExists(fileName) ) return;
@@ -494,35 +479,38 @@ void Array<T>::initFromFile(const std::string& fileName) {
  * Output: array : will be modified to store the contents of the array
  * Output: istream : passess the istream back to the client for further processing if desired
  */
-template <typename R>
+  template <typename R>
 std::istream& operator>>(std::istream& in, Array<R>& array) {
-
-  std::vector< std::vector<double> > temp_array;
-
+  const int NUM_DIMS = 4; // maximum number of dimensions of an Array
   std::string line;
-  while (getline(in, line)) {
-      std::istringstream input(line);
+  Array<int> dims(NUM_DIMS); // will store the dimensions of the array
 
-      std::vector<double> temp_row;
-      double temp_double;
-      while (input >> temp_double) {
-          temp_row.push_back(temp_double);
-        }
-      temp_array.push_back(temp_row);
+  getline(in, line); // get information about the dimensions of the array
+  std::istringstream input(line);
+  for (int i = 0; i < NUM_DIMS; i++) {
+      input >> dims(i);
     }
 
-  // Resize the array and copy its contents
-  int nRows = temp_array.size();
-  int nCols = temp_array[0].size();
+  // pre-allocate memory for the array
+  array.setup(dims(0), dims(1), dims(2), dims(3));
 
-  array.setup(nRows, nCols);
-
-  for (int j = 0; j < nCols; j++) {
-      for (int i = 0; i < nRows; i++) {
-          array(i,j) = temp_array[i][j];
+  // get all the contents from the file
+  for (int l = 0; l < array.dim_3; l++)
+    {
+      for (int k = 0; k< array.dim_2; k++)
+        {
+          getline(in, line); // get empty line
+          for(int i = 0; i < array.dim_0; i++)
+            {
+              getline(in, line); // get a row
+              std::istringstream input(line);
+              for(int j=0; j < array.dim_1; j++)
+                {
+                  input >> array(i,j,k,l);
+                }
+            }
         }
     }
-
   return in;
 }
 
