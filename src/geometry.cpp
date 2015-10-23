@@ -402,7 +402,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (FlowSol->rank==0) cout << "done." << endl;
 
   // Pre-compute shape basis - CRITICAL for deforming-mesh performance
-  if (FlowSol->rank==0) cout << "pre-computing nodal shape-basis functions ... " << flush;
+  if (FlowSol->rank==0) cout << "pre-computing nodal shape-basis functions ... " << endl << flush;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
         FlowSol->mesh_eles(i)->compute_all_basis_functions();

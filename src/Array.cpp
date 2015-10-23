@@ -494,12 +494,10 @@ std::istream& operator>>(std::istream& in, Array<R>& array) {
   std::string line;
   Array<int> dims(NUM_DIMS); // will store the dimensions of the array
 
-   std::cout << "Read array of dimensions ";
   for (int i = 0; i < NUM_DIMS; i++) {
       in >> dims(i); // ingest the dimensions
-      std::cout << dims(i) << " ";
     }
-  std::cout << std::endl;
+
   // pre-allocate memory for the array
   array.setup(dims(0), dims(1), dims(2), dims(3));
 
