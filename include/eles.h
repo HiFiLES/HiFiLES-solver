@@ -177,6 +177,12 @@ public:
   /*! get element type */
   int get_ele_type(void);
 
+  /*! get solution points type */
+  int get_upts_type() const;
+
+  /*! get flux points type */
+  int get_fpts_type() const;
+
   /*! get number of dimensions */
   int get_n_dims(void);
 
@@ -1273,5 +1279,7 @@ protected:
 
 protected:
   std::string elementName;
+  std::string fileNamePrefix;
+  std::string fileNameSuffix;
 
 };

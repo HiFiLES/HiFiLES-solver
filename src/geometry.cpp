@@ -405,7 +405,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (FlowSol->rank==0) cout << "pre-computing nodal shape-basis functions ... " << flush;
   for(int i=0;i<FlowSol->n_ele_types;i++) {
     if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-        store_eles_bases(FlowSol->mesh_eles(i));
+        compute_basis_functions(FlowSol->mesh_eles(i));
     }
   }
   if (FlowSol->rank==0) cout << "done." << endl;
@@ -4016,19 +4016,47 @@ void compare_mpi_faces(Array<double> &xvert1, Array<double> &xvert2, int& num_v_
 #endif  // end #ifdef MPI
 
 
-void store_eles_bases(eles* element) {
+void compute_basis_functions(eles* element) {
 
-//  char * fileNamesInit[] = {element->
-  std::vector<std::string> fileNames;
+  std::string prefix = element->get_name() + "_uptsType_" + num2str(element->get_upts_type())
+      + "_fptsType_" + num2str(element->get_fpts_type()) + "_";
+  std::string suffix = ".txt";
+  int numFuncs = 9;
+  std::string fileNames[] = {prefix + "_nodal_s_basis_fpts" + suffix,
+                                 prefix + "nodal_s_basis_upts" + suffix,
+                                 prefix + "nodal_s_basis_ppts" + suffix,
+                                 prefix + "store_d_nodal_s_basis_fpts" + suffix,
+                                 prefix + "d_nodal_s_basis_upts" + suffix,
+                                 prefix + "dd_nodal_s_basis_fpts" + suffix,
+                                 prefix + "store_dd_nodal_s_basis_upts" + suffix,
+                                 prefix + "nodal_s_basis_inters_cubpts" + suffix,
+                                 prefix + "d_nodal_s_basis_inters_cubpts" + suffix};
 
-  element->store_nodal_s_basis_fpts();
-  element->store_nodal_s_basis_upts();
-  element->store_nodal_s_basis_ppts();
-  element->store_d_nodal_s_basis_fpts();
-  element->store_d_nodal_s_basis_upts();
-  element->store_dd_nodal_s_basis_fpts();
-  element->store_dd_nodal_s_basis_upts();
-  element->store_nodal_s_basis_inters_cubpts();
-  element->store_d_nodal_s_basis_inters_cubpts();
+  typedef void (eles::*MemFuncPtr)(); // create a type to point to member functions of eles
+  MemFuncPtr funcArray[] = {&eles::store_nodal_s_basis_fpts,
+                           &eles::store_nodal_s_basis_upts,
+                           &eles::store_nodal_s_basis_ppts,
+                           &eles::store_d_nodal_s_basis_fpts,
+                           &eles::store_d_nodal_s_basis_upts,
+                           &eles::store_dd_nodal_s_basis_fpts,
+                           &eles::store_dd_nodal_s_basis_upts,
+                           &eles::store_nodal_s_basis_inters_cubpts,
+                           &eles::store_d_nodal_s_basis_inters_cubpts};
+
+  for (int i = 0; i < numFuncs; i++) { // check that all files exist
+      // if any single one of them does not exist, compute everything and overwrite existing files
+      if (!fileExists(fileNames[i])) {
+          element->store_nodal_s_basis_fpts(); // creates nodal_s_basis_fpts
+          element->store_nodal_s_basis_upts(); // creates nodal_s_basis_upts
+          element->store_nodal_s_basis_ppts(); // creates nodal_s_basis_ppts
+          element->store_d_nodal_s_basis_fpts(); // creates store_d_nodal_s_basis_fpts
+          element->store_d_nodal_s_basis_upts(); // creates d_nodal_s_basis_upts
+          element->store_dd_nodal_s_basis_fpts(); // creates dd_nodal_s_basis_fpts
+          element->store_dd_nodal_s_basis_upts(); // creates store_dd_nodal_s_basis_upts
+          element->store_nodal_s_basis_inters_cubpts(); // creates nodal_s_basis_inters_cubpts
+          element->store_d_nodal_s_basis_inters_cubpts(); // creates d_nodal_s_basis_inters_cubpts
+          return;
+        }
+    }
 }
 

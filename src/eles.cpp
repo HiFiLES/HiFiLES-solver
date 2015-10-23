@@ -407,6 +407,11 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     set_connectivity_plot();
   }
 
+  fileNamePrefix = elementName + "_uptsType_" + num2str(upts_type)
+      + "_fptsType_" + num2str(fpts_type) + "_p_" + num2str(order);
+  fileNameSuffix = ".txt";
+
+
   if (run_input.filter_frequency > 0 && get_n_eles() > 0) {
       cout << "filter frequency = " << run_input.filter_frequency << endl;
       calc_stabilization_filter_all_eles();
@@ -3591,6 +3596,16 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
 int eles::get_ele_type(void)
 {
   return ele_type;
+}
+
+// get solution points type
+int eles::get_upts_type() const {
+  return upts_type;
+}
+
+// get flux points type
+int eles::get_fpts_type() const {
+  return fpts_type;
 }
 
 // get number of elements
@@ -7765,13 +7780,12 @@ void eles::calc_stabilization_filter_all_eles() {
 
   string internalFileName, boundaryFileName;
 
-  internalFileName = elementName + "_internal_uptsType_" + num2str(upts_type) +
-      + "_width_" + num2str(run_input.filter_width) +
-      "_p_" + num2str(run_input.order) + ".txt";
+  internalFileName = fileNamePrefix +
+      + "_internalFilter_width_" + num2str(run_input.filter_width) +
+      fileNameSuffix;
 
-  boundaryFileName = elementName + "_boundary_uptsType_" + num2str(upts_type) +
-      "_fptsType_" + num2str(fpts_type) +
-      "_p_" + num2str(run_input.order) + ".txt";
+  boundaryFileName = fileNamePrefix +
+      + "_boundaryFilter" + fileNameSuffix;
 
   cout << "filter_frequency = " << run_input.filter_frequency << endl;
   cout << "number of " << elementName << " = " << get_n_eles() << endl;
