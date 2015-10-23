@@ -7816,8 +7816,9 @@ void eles::calc_stabilization_filter_all_eles() {
 }
 
 typedef void (eles::*MemFuncPtr)(); // create a type to point to member functions of eles
+template <typename T>
 void eles::run_function_if_file_nonexistent(MemFuncPtr function,
-                                            Array<double> &array, std::string fileName) {
+                                            Array<T> &array, std::string fileName) {
   // if file does not exist, compute
   if (!fileExists(fileName)) {
       (this->*function)(); // execute the function that creates the array
@@ -7881,8 +7882,14 @@ void eles::compute_all_basis_functions() {
 
   for (int i = 0; i < numFuncs; i++) { // check that all files exist
       std::string fileName = fileNamePrefix + "_" + arrayNames[i] + fileNameSuffix;
-
       this->run_function_if_file_nonexistent(funcArray[i], *arrayList[i], fileName);
+    }
+
+  for (int i = 0; i < numNestedArrays; i++) {
+      std::string fileName = fileNamePrefix + "_" + nestedArrayNames[i] + fileNameSuffix;
+      this->run_function_if_file_nonexistent(nestedArrayFuncArray[i], *nestedArrayList[i], fileName);
+//      (this->*nestedArrayFuncArray[i])();
+//      std::cout << *nestedArrayList[i] << std::endl;
     }
 
 }

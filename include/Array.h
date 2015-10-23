@@ -127,6 +127,12 @@ public:
   template <typename R>
   friend std::istream& operator>>(std::istream& in, Array<R>& array);
 
+//  template <typename R>
+//  friend std::ostream& operator<<(std::ostream& out, Array<Array<R> > nestedArray);
+
+//  template <typename R>
+//  friend std::istream& operator>>(std::istream& out, Array<Array<R> > nestedArray);
+
   // move data from cpu to gpu
 
   void mv_cpu_gpu(void);

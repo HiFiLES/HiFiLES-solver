@@ -4,7 +4,7 @@
 
 //#include "../include/Array.h"
 #include "../include/funcs.h"
-
+#include <stdexcept>
 // #### constructors ####
 
 // default constructor
@@ -415,13 +415,12 @@ void Array<T>::initialize_to_value(const T val)
   }
 }
 
-
 // returns an ostream object with the contents of the array
 template <typename T>
 std::ostream& operator<<(std::ostream& out, Array<T>& array) {
   out << array.dim_0 << " " << array.dim_1 << " "
       << array.dim_2 << " " << array.dim_3
-      << std::endl << std::endl;
+      << std::endl;
   for (int l = 0; l < array.dim_3; l++)
     {
       for (int k = 0; k< array.dim_2; k++)
@@ -495,12 +494,12 @@ std::istream& operator>>(std::istream& in, Array<R>& array) {
   std::string line;
   Array<int> dims(NUM_DIMS); // will store the dimensions of the array
 
-  getline(in, line); // get information about the dimensions of the array
-  std::istringstream input(line);
+   std::cout << "Read array of dimensions ";
   for (int i = 0; i < NUM_DIMS; i++) {
-      input >> dims(i);
+      in >> dims(i); // ingest the dimensions
+      std::cout << dims(i) << " ";
     }
-
+  std::cout << std::endl;
   // pre-allocate memory for the array
   array.setup(dims(0), dims(1), dims(2), dims(3));
 
@@ -509,17 +508,16 @@ std::istream& operator>>(std::istream& in, Array<R>& array) {
     {
       for (int k = 0; k< array.dim_2; k++)
         {
-          getline(in, line); // get empty line
           for(int i = 0; i < array.dim_0; i++)
             {
-              getline(in, line); // get a row
-              std::istringstream input(line);
               for(int j=0; j < array.dim_1; j++)
                 {
-                  input >> array(i,j,k,l);
+                  in >> array(i,j,k,l);
                 }
             }
+          getline(in, line); // get empty line
         }
+      getline(in, line); // get empty line
     }
   return in;
 }
