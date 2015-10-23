@@ -364,6 +364,9 @@ public:
 
   /*! Compute all matrices related to the shape functions of the element */
   void compute_all_basis_functions();
+
+  typedef void (eles::*MemFuncPtr)(); // create a type to point to member functions of eles
+  void run_function_if_file_nonexistent(MemFuncPtr, Array<double>& array, std::string fileName);
   
   // #### virtual methods ####
 

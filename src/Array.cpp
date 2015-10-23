@@ -458,6 +458,11 @@ void Array<T>::writeToFile(const std::string& fileName, bool overwriteEnabled) {
   file << *this;
   file.close();
 
+  std::cout << "Wrote array of dimensions "
+            << this->dim_0 << " "
+            << this->dim_1 << " "
+            << this->dim_2 << " "
+            << this->dim_3 << " to file " << fileName << std::endl;
 }
 
 /*! Read array contents from file
@@ -471,6 +476,11 @@ void Array<T>::initFromFile(const std::string& fileName) {
   file >> *this;
   file.close();
 
+  std::cout << "Read array of dimensions "
+            << this->dim_0 << " "
+            << this->dim_1 << " "
+            << this->dim_2 << " "
+            << this->dim_3 << " from file " << fileName << std::endl;
 }
 
 
@@ -519,8 +529,6 @@ std::istream& operator>>(std::istream& in, Array<R>& array) {
  */
 template<typename R>
 void Array<R>::normalizeRows() {
-  std::cout << "num rows: " << dim_0 << std::endl;
-  std::cout << "num cols: " << dim_1 << std::endl;
   for (int i = 0; i < dim_0; i++) {
       double sum_row = 0;
       for (int j = 0; j < dim_1; j++) {

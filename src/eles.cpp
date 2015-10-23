@@ -7787,13 +7787,8 @@ void eles::calc_stabilization_filter_all_eles() {
   boundaryFileName = fileNamePrefix +
       + "_boundaryFilter" + fileNameSuffix;
 
-  cout << "filter_frequency = " << run_input.filter_frequency << endl;
-  cout << "number of " << elementName << " = " << get_n_eles() << endl;
-
-
   if (fileExists(internalFileName)) {
       stab_filter_interior.initFromFile(internalFileName);
-      cout << "read internal " + elementName + " filter from file " + internalFileName << endl;
     } else {
       if (rank==0) {
           cout << " did not find " << internalFileName << endl;
@@ -7803,12 +7798,10 @@ void eles::calc_stabilization_filter_all_eles() {
       calc_stabilization_filter_internal();
 
       stab_filter_interior.writeToFile(internalFileName);
-      cout << "wrote internal " + elementName + " filter to file " + internalFileName << endl;
     }
 
   if (fileExists(boundaryFileName)) {
       stab_filter_boundary.initFromFile(boundaryFileName);
-      cout << "read boundary tet filter from file " + boundaryFileName << endl;
     } else {
       if (rank==0) {
           cout << " did not find " << boundaryFileName << endl;
@@ -7818,59 +7811,80 @@ void eles::calc_stabilization_filter_all_eles() {
       calc_stabilization_filter_boundary();
 
       stab_filter_boundary.writeToFile(boundaryFileName);
-      cout << "wrote boundary " + elementName + " filter to file " + boundaryFileName << endl;
     }
 
 }
 
+typedef void (eles::*MemFuncPtr)(); // create a type to point to member functions of eles
+void eles::run_function_if_file_nonexistent(MemFuncPtr function,
+                                            Array<double> &array, std::string fileName) {
+  // if file does not exist, compute
+  if (!fileExists(fileName)) {
+      (this->*function)(); // execute the function that creates the array
+      array.writeToFile(fileName);
+    } else {
+      array.initFromFile(fileName);
+    }
+}
 
+
+
+
+
+
+/*! Calls the element-specific functions to create matrices related to basis functions.
+ Store the results in a matrix, used previously-stored matrices if they exist */
 void eles::compute_all_basis_functions() {
 
-  int numFuncs = 6;
+  int numFuncs = 7;
+  int numNestedArrays = 2;
   std::string arrayNames[] = {"nodal_s_basis_fpts",
                                  "nodal_s_basis_upts",
                                  "nodal_s_basis_ppts",
                                  "d_nodal_s_basis_fpts",
-                          //       "d_nodal_s_basis_upts",
+                                 "d_nodal_s_basis_upts",
                                  "dd_nodal_s_basis_fpts",
                                  "dd_nodal_s_basis_upts"};
-                            //     "nodal_s_basis_inters_cubpts"};
-                           //      "d_nodal_s_basis_inters_cubpts"
+
+  std::string nestedArrayNames[] = {"nodal_s_basis_inters_cubpts",
+                                    "d_nodal_s_basis_inters_cubpts"};
 
   Array<double> * arrayList[] = {&nodal_s_basis_fpts,
-                         &nodal_s_basis_upts,
-                         &nodal_s_basis_ppts,
-                         &d_nodal_s_basis_fpts,
-                        // &d_nodal_s_basis_upts,
-                         &dd_nodal_s_basis_fpts,
-                         &dd_nodal_s_basis_upts};
-                       //  &nodal_s_basis_inters_cubpts};
-                       //  &d_nodal_s_basis_inters_cubpts
+                                 &nodal_s_basis_upts,
+                                 &nodal_s_basis_ppts,
+                                 &d_nodal_s_basis_fpts,
+                                 &d_nodal_s_basis_upts,
+                                 &dd_nodal_s_basis_fpts,
+                                 &dd_nodal_s_basis_upts};
+
+  typedef Array<Array<double> > nestedArray;
+  Array<Array<double> >* nestedArrayList []= {&nodal_s_basis_inters_cubpts,
+                                    &d_nodal_s_basis_inters_cubpts};
+
 
 
   typedef void (eles::*MemFuncPtr)(); // create a type to point to member functions of eles
-  MemFuncPtr funcArray[] = {&eles::store_nodal_s_basis_fpts,
-                           &eles::store_nodal_s_basis_upts,
-                           &eles::store_nodal_s_basis_ppts,
-                           &eles::store_d_nodal_s_basis_fpts,
-                      //     &eles::store_d_nodal_s_basis_upts,
-                           &eles::store_dd_nodal_s_basis_fpts,
-                           &eles::store_dd_nodal_s_basis_upts};
-                        //   &eles::store_nodal_s_basis_inters_cubpts};
-                       //    &eles::store_d_nodal_s_basis_inters_cubpts
 
+  // This is the list of functions that will be called
+  // These functions compute the entries of different matrices
+
+  MemFuncPtr funcArray[] = {&eles::store_nodal_s_basis_fpts,
+                            &eles::store_nodal_s_basis_upts,
+                            &eles::store_nodal_s_basis_ppts,
+                            &eles::store_d_nodal_s_basis_fpts,
+                            &eles::store_d_nodal_s_basis_upts,
+                            &eles::store_dd_nodal_s_basis_fpts,
+                            &eles::store_dd_nodal_s_basis_upts};
+// These functions compute matrices in the form of nested arrays: Array<Array<double> >
+  MemFuncPtr nestedArrayFuncArray[] = {&eles::store_nodal_s_basis_inters_cubpts,
+                                       &eles::store_d_nodal_s_basis_inters_cubpts};
 
   for (int i = 0; i < numFuncs; i++) { // check that all files exist
       std::string fileName = fileNamePrefix + "_" + arrayNames[i] + fileNameSuffix;
-      // if any single one of them does not exist, compute everything and overwrite existing files
-      if (!fileExists(fileName)) {
-          (this->*(funcArray[i]) )(); // execute the function that creates the array
-          arrayList[i]->writeToFile(fileName);
-          cout << "executed function to create " << fileName << endl;
-        } else {
-          arrayList[i]->initFromFile(fileName);
-        }
+
+      this->run_function_if_file_nonexistent(funcArray[i], *arrayList[i], fileName);
     }
+
 }
 
 
