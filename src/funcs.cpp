@@ -2493,7 +2493,7 @@ void eval_dn_nodal_s_basis(Array<double> &dd_nodal_s_basis,
               diff_N_a = diffPoly(diff_N_a,diff_coord);
             }
 
-          // Evaluate differentiated shape function and store in Array d_nodal_s_basis
+          // Evaluate differentiated shape function and store in Array dd_nodal_s_basis
 
           dd_nodal_s_basis(a, (i==num_deriv_iterations-1 ? (i==0?0:1):(i==0? i:(i+1)))) = evalPoly(diff_N_a,coords);
         }
