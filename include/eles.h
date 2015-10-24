@@ -332,6 +332,12 @@ public:
   /*! set transforms */
   void set_transforms(void);
 
+  /*! set transforms at solution points */
+  void set_transforms_upts(void);
+
+  /*! set transforms at flux points */
+  void set_transforms_fpts(void);
+
   /*! set transforms at the interface cubature points */
   void set_transforms_inters_cubpts(void);
 
