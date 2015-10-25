@@ -67,6 +67,7 @@ extern "C"
 #include "../include/adaptive_quadrature_2D.h"
 #include "../include/simplex_min_method.h"
 
+#define _(x) std::cout << #x << ": " << x << std::endl
 
 using namespace std;
 
@@ -2913,7 +2914,7 @@ double filter_integrand_tets(double r, double s, double t) {
     rvect(0) = r;
     rvect(1) = s;
     rvect(2) = t;
-//    return 1. - r*r - 2*s*s + 3*t*t + 4*r*s + 5*r*t + 6*r*s*t;
+
   // define properties of the kernel function
   double h = run_input.filter_width; // measure of the wavenumbers left unfiltered
 
@@ -2923,7 +2924,6 @@ double filter_integrand_tets(double r, double s, double t) {
   Array<double> vec2; vec2(0) = 1; vec2(1) = 1; vec2(2) = 1;
 
   if (distance < 1e-10) {
-//      cout << "distance is tiny!" << endl;
       distance = 1e-10;
   }
 
@@ -2947,9 +2947,6 @@ void fill_stabilization_interior_filter_tris(Array<double>& filter_matrix, int o
   int n = filter_matrix.get_dim(0); // assume it's a square matrix already
 
   double abserr = 0, relerr = 1e-10;
-//  double (*ylower)(double) = [] (double /* x*/) { return -1.; };
-
-//  double (*yupper)(double) = [] (double x) { return -x; };
 
   double result, errest, flag;
   int nofun;
@@ -2958,23 +2955,15 @@ void fill_stabilization_interior_filter_tris(Array<double>& filter_matrix, int o
       LOCAL_X0(0) = loc_upts(0,i);
       LOCAL_X0(1) = loc_upts(1,i);
 
-      //cout << "considering points: " << endl;
-      //LOCAL_X0.print();
-      //cout << endl;
-
       for (int j = 0; j < n; j++) {
 
           LOCAL_BASIS_INDEX = j; // update basis number
-
-          //cout << "considering basis: " << LOCAL_BASIS_INDEX << endl;
 
           quad2(filter_integrand_tris, -1, 1,
                 ylower,yupper, abserr, relerr,
                 result, errest, nofun,flag);
 
           filter_matrix(i,j) = result;
-
-          //cout << "integral = " << result << endl;
         }
     }
 
@@ -2998,9 +2987,6 @@ void fill_stabilization_interior_filter_tets(Array<double>& filter_matrix, int o
   int n = filter_matrix.get_dim(0); // assume it's a square matrix already
 
   double abserr = 0, relerr = 1e-10;
-//  double (*ylower)(double) = [] (double /* x*/) { return -1.; };
-
-//  double (*yupper)(double) = [] (double x) { return -x; };
 
   double result, errest, flag;
   int nofun;
@@ -3015,8 +3001,6 @@ void fill_stabilization_interior_filter_tets(Array<double>& filter_matrix, int o
       for (int j = 0; j < n; j++) {
 
           LOCAL_BASIS_INDEX = j; // update basis number
-          cout << "considering point number: " << i << "; ";
-          cout << "basis: " << LOCAL_BASIS_INDEX << "; ";
 
           quad3(filter_integrand_tets, -1, 1,
                 ylower_tet, yupper_tet,
@@ -3026,7 +3010,6 @@ void fill_stabilization_interior_filter_tets(Array<double>& filter_matrix, int o
 
           filter_matrix(i,j) = result;
 
-          cout << "integral = " << result << endl;
         }
     }
 
@@ -3234,10 +3217,27 @@ void dgemm_wrapper(int Arows, int Bcols, int Acols,
 /*! Checks if the file fileName exists
  * Input: fileName : name of the file whose existence is checked
  */
-bool fileExists(const std::string fileName) {
+bool fileExists(const std::string& fileName) {
   struct stat buffer;
   return (stat (fileName.c_str(), &buffer) == 0);
 }
+
+/*! Counts the number of missing files
+ * Input: fileNames : names of the files whose non-existence is counted
+ *        numFiles: number of files to count, must match the number of elements in fileNames
+ */
+int countNumberMissingFiles(const std::string fileNames [], int numFiles) {
+  int numFilesMissing = 0; // counter of the number of matrix files missing
+  for (int i = 0; i < numFiles; i++) {
+      std::string fileName = fileNames[i];
+      if (!fileExists(fileName)) {
+          numFilesMissing++;
+        }
+    }
+
+  return numFilesMissing;
+}
+
 
 /*! Transforms string to double
  * Input: s : string to be transformed

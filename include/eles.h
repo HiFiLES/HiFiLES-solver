@@ -335,6 +335,9 @@ public:
   /*! set transforms at solution points */
   void set_transforms_upts(void);
 
+  /*! calculate transforms at solution points */
+  void calc_transforms_upts(void);
+
   /*! set transforms at flux points */
   void set_transforms_fpts(void);
 

@@ -257,7 +257,10 @@ void dgemm_wrapper(int Arows, int Bcols, int Acols,
 
 
 /*! Checks if the file fileName exists */
-bool fileExists(const std::string fileName);
+bool fileExists(const std::string &fileName);
+
+/*! Count the number of files missing */
+int countNumberMissingFiles(const std::string fileNames[], int numFiles);
 
 /*! Transforms string to double */
 std::string num2str( const double num);
