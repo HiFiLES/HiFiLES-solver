@@ -2009,36 +2009,6 @@ void eles::correct_gradient(void)
 #endif
     
   }
-  
-  /*
-   for (int i=0;i<n_fpts_per_ele;i++)
-   for (int j=0;j<n_eles;j++)
-   for (int k=0;k<n_fields;k++)
-   {
-   if (ele2global_ele(j)==53)
-   {
-   cout << setprecision(10)  << i << " " << ele2global_ele(j) << " " << k << " " << " " << delta_disu_fpts(i,j,k) << endl;
-   }
-   }
-   */
-  
-  /*
-   cout << "OUTPUT" << endl;
-   #ifdef _GPU
-   grad_disu_upts.cp_gpu_cpu();
-   #endif
-   
-   for (int i=0;i<n_upts_per_ele;i++)
-   for (int j=0;j<n_eles;j++)
-   for (int k=0;k<n_fields;k++)
-   for (int m=0;m<n_dims;m++)
-   {
-   if (ele2global_ele(j)==53)
-   {
-   cout << setprecision(10)  << i << " " << ele2global_ele(j) << " " << k << " " << m << " " << grad_disu_upts(i,j,k,m) << endl;
-   }
-   }
-   */
 }
 
 
@@ -2131,19 +2101,6 @@ void eles::extrapolate_corrected_gradient(void)
 #endif
     
   }
-  
-  /*
-   cout << "OUTPUT" << endl;
-   #ifdef _GPU
-   grad_disu_fpts.cp_gpu_cpu();
-   #endif
-   
-   for (int i=0;i<n_fpts_per_ele;i++)
-   for (int j=0;j<n_eles;j++)
-   for (int k=0;k<n_fields;k++)
-   for (int m=0;m<n_dims;m++)
-   cout << setprecision(10)  << i << " " << j<< " " << k << " " << m << " " << grad_disu_fpts(i,j,k,m) << endl;
-   */
 }
 
 /*! If at first RK step and using certain LES models, compute some model-related quantities.
@@ -4826,23 +4783,30 @@ void eles::set_transforms_upts(void) {
             }
 
         } else {
-
-
           calc_transforms_upts();
+
           Array<double> JGinv_upts_real = JGinv_upts;
 
           for (int i = 0; i < numMatricesCreated; i++) {
               matrices[i]->initFromFile(matrixNames[i]);
             }
 
-          JGinv_upts_real - JGinv_upts;
+          daxpy(JGinv_upts.size(), -1, JGinv_upts.get_ptr_cpu(), JGinv_upts_real.get_ptr_cpu());
 
 
+          for (int i = 0; i < JGinv_upts.size(); i++) {
+              if (JGinv_upts_real(i) != 0)
+                JGinv_upts_real(i) = log(abs(JGinv_upts_real(i)));
+            }
 
+//          _(JGinv_upts_real);
+
+          calc_transforms_upts();
+          JGinv_upts.initFromFile(matrixNames[1]);
         }
 
 #ifdef _GPU
-    detjac_upts.cp_cpu_gpu(); // Copy since need in write_tec
+    detjac_upts.cp_cpu_gpu(); // Copy since needed in write_tec
     JGinv_upts.cp_cpu_gpu(); // Copy since needed for calc_d_pos_dyn
 
 #endif
@@ -7802,10 +7766,6 @@ void eles::run_function_if_file_nonexistent(MemFuncPtr function,
       array.initFromFile(fileName);
     }
 }
-
-
-
-
 
 
 /*! Calls the element-specific functions to create matrices related to basis functions.

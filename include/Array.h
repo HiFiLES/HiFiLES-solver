@@ -80,21 +80,9 @@ public:
 
   void setup(int in_dim_0, int in_dim_1=1, int in_dim_2=1, int in_dim_3=1);
 
-  // access/set 1d
-
-  T& operator() (int in_pos_0);
-
-  // access/set 2d
-
-  T& operator() (int in_pos_0, int in_pos_1);
-
-  // access/set 3d
-
-  T& operator() (int in_pos_0, int in_pos_1, int in_pos_2);
-
-  // access/set 4d
-
-  T& operator() (int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3);
+// access data
+  T& operator() (int in_pos_0, int in_pos_1 = 0, int in_pos_2 = 0, int in_pos_3 = 0);
+  T& operator() (int in_pos_0, int in_pos_1 = 0, int in_pos_2 = 0, int in_pos_3 = 0) const;
 
   // return pointer
 
@@ -109,6 +97,9 @@ public:
   // return dimension
 
   int get_dim(int in_dim);
+
+  // return number of elements
+  int size() const;
 
   // method to get maximum value of Array
 
@@ -127,11 +118,11 @@ public:
   template <typename R>
   friend std::istream& operator>>(std::istream& in, Array<R>& array);
 
-//  template <typename R>
-//  friend std::ostream& operator<<(std::ostream& out, Array<Array<R> > nestedArray);
+  template <typename R>
+  friend void toBinary(Array<R>* array, std::ofstream& file);
 
-//  template <typename R>
-//  friend std::istream& operator>>(std::istream& out, Array<Array<R> > nestedArray);
+  template <typename R>
+  friend void fromBinary(Array<R>* array, std::ifstream& file);
 
   // move data from cpu to gpu
 
@@ -161,10 +152,10 @@ public:
   void initialize_to_value(const T val);
 
   /*! Write array contents to a file */
-  void writeToFile(const std::string& fileName, bool overwriteEnabled = true);
+  void writeToFile(std::string fileName, bool inBinary = true);
 
   /*! Read array contents froma a file */
-  void initFromFile(const std::string& fileName);
+  void initFromFile(std::string fileName);
 
   /*! Normalize array rows */
   void normalizeRows();

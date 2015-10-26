@@ -2,8 +2,7 @@
 #define ARRAY_CPP_
 
 
-//#include "../include/Array.h"
-#include "../include/funcs.h"
+#include "../include/Array.h"
 #include <stdexcept>
 // #### constructors ####
 
@@ -45,19 +44,20 @@ Array<T>::Array(int in_dim_0, int in_dim_1, int in_dim_2, int in_dim_3)
 template <typename T>
 Array<T>::Array(const Array<T>& in_Array)
 {
-  int i;
-
   dim_0=in_Array.dim_0;
   dim_1=in_Array.dim_1;
   dim_2=in_Array.dim_2;
   dim_3=in_Array.dim_3;
 
-  cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
+  cpu_data = new T[in_Array.size()];
 
-  for(i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
+  for(int i = 0; i < in_Array.size(); i++)
     {
-      cpu_data[i]=in_Array.cpu_data[i];
+      (*this)(i)=in_Array(i);
     }
+
+  cpu_flag=1;
+  gpu_flag=0;
 }
 
 // assignment
@@ -65,33 +65,15 @@ Array<T>::Array(const Array<T>& in_Array)
 template <typename T>
 Array<T>& Array<T>::operator=(const Array<T>& in_Array)
 {
-  int i;
+  this->setup(in_Array.dim_0, in_Array.dim_1, in_Array.dim_2, in_Array.dim_3);
 
-  if(this == &in_Array)
+  for(int i = 0; i < in_Array.size(); i++)
     {
-      return (*this);
+      (*this)(i)=in_Array(i);
     }
-  else
-    {
-      delete[] cpu_data;
 
-      dim_0=in_Array.dim_0;
-      dim_1=in_Array.dim_1;
-      dim_2=in_Array.dim_2;
-      dim_3=in_Array.dim_3;
+  return (*this);
 
-      cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
-      //NOTE: THIS COPIES POINTERS; NOT VALUES
-      for(i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
-        {
-          cpu_data[i]=in_Array.cpu_data[i];
-        }
-
-      cpu_flag=1;
-      gpu_flag=0;
-
-      return (*this);
-    }
 }
 
 // destructor
@@ -117,31 +99,19 @@ void Array<T>::setup(int in_dim_0, int in_dim_1, int in_dim_2, int in_dim_3)
   dim_2=in_dim_2;
   dim_3=in_dim_3;
 
-  cpu_data=new T[dim_0*dim_1*dim_2*dim_3];
+  cpu_data=new T[size()];
   cpu_flag=1;
   gpu_flag=0;
 }
 
 template <typename T>
-T& Array<T>::operator()(int in_pos_0)
-{
-  return cpu_data[in_pos_0]; // column major with matrix indexing
-}
-
-template <typename T>
-T& Array<T>::operator()(int in_pos_0, int in_pos_1)
-{
-  return cpu_data[in_pos_0+(dim_0*in_pos_1)]; // column major with matrix indexing
-}
-
-template <typename T>
-T& Array<T>::operator()(int in_pos_0, int in_pos_1, int in_pos_2)
-{
-  return cpu_data[in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)]; // column major with matrix indexing
-}
-
-template <typename T>
 T& Array<T>::operator()(int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3)
+{
+  return cpu_data[in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)+(dim_0*dim_1*dim_2*in_pos_3)]; // column major with matrix indexing
+}
+
+template <typename T>
+T& Array<T>::operator()(int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3) const
 {
   return cpu_data[in_pos_0+(dim_0*in_pos_1)+(dim_0*dim_1*in_pos_2)+(dim_0*dim_1*dim_2*in_pos_3)]; // column major with matrix indexing
 }
@@ -197,7 +167,6 @@ T* Array<T>::get_ptr_gpu(int in_pos_0, int in_pos_1, int in_pos_2, int in_pos_3)
 
 
 // obtain dimension
-
 template <typename T>
 int Array<T>::get_dim(int in_dim)
 {
@@ -222,6 +191,13 @@ int Array<T>::get_dim(int in_dim)
       std::cout << "ERROR: Invalid dimension ... " << std::endl;
       return 0;
     }
+}
+
+// get number of entries in array
+template <typename T>
+int Array<T>::size() const
+{
+  return dim_0 * dim_1 * dim_2 * dim_3;
 }
 
 
@@ -429,7 +405,7 @@ std::ostream& operator<<(std::ostream& out, Array<T>& array) {
             {
               for(int j=0; j < array.dim_1; j++)
                 {
-                  out << std::left << std::setw(20) << std::setprecision(12)
+                  out << std::left << std::setw(35) << std::setprecision(30)
                       << array(i,j,k);
                 }
               out << std::endl;
@@ -442,38 +418,52 @@ std::ostream& operator<<(std::ostream& out, Array<T>& array) {
   return out;
 }
 
+
 /*! Write array contents to file
  * Input: fileName : name of the file to be written/overwritten
- * Input: overwriteEnabled : overwrites existing file if true; otherwise leaves existing file intact
+ * Input: inBinary : whether or not to write the file in binary
  */
 template <typename T>
-void Array<T>::writeToFile(const std::string& fileName, bool overwriteEnabled) {
-  if (!overwriteEnabled) { // if we don't want to overwrite the file, check for its existence
+void Array<T>::writeToFile(std::string fileName, bool inBinary) {
 
-      if ( fileExists(fileName) ) return;
-    }
+  if (inBinary) {
+//      fileName += ".bin";
+      std::ofstream file(fileName.c_str(), std::ios::binary);
+      //toBinary(this, file);
+      file.close();
 
+    } else {
   std::ofstream file(fileName.c_str());
   file << *this;
   file.close();
+      }
 
   std::cout << "Wrote array of dimensions "
             << this->dim_0 << " "
             << this->dim_1 << " "
             << this->dim_2 << " "
             << this->dim_3 << " to file " << fileName << std::endl;
+
 }
 
 /*! Read array contents from file
- * Input: fileName : name of the file to be written/overwritten
- * Input: overwriteEnabled : overwrites existing file if true; otherwise leaves existing file intact
+ * Input: fileName : name of the file to be read to initialize the array
  */
 template <typename T>
-void Array<T>::initFromFile(const std::string& fileName) {
+void Array<T>::initFromFile(std::string fileName) {
 
-  std::ifstream file(fileName.c_str());
-  file >> *this;
-  file.close();
+  std::string fileNameBinary = fileName;// + ".bin";
+  if (fileExists(fileNameBinary)) {
+      fileName = fileNameBinary;
+      std::ifstream file(fileName.c_str(), std::ios::binary);
+      //fromBinary(this, file);
+      file.close();
+    } else {
+
+      std::ifstream file(fileName.c_str());
+      file >> *this;
+      file.close();
+    }
 
   std::cout << "Read array of dimensions "
             << this->dim_0 << " "
@@ -517,6 +507,7 @@ std::istream& operator>>(std::istream& in, Array<R>& array) {
         }
       getline(in, line); // get empty line
     }
+
   return in;
 }
 

@@ -3275,6 +3275,64 @@ double besselThreeHalves(double x) {
   return 2 * (sin(x) - x*cos(x))/ (sqrt(2*pi) * pow(x, 1.5));
 }
 
+/*! Write an item in binary format */
+template <typename T>
+void toBinary(Array<T> *array, std::ofstream& file) {
+  // write the size of the array
+  file.write((char*) &(array->dim_0), sizeof(int));
+  file.write((char*) &(array->dim_1), sizeof(int));
+  file.write((char*) &(array->dim_2), sizeof(int));
+  file.write((char*) &(array->dim_3), sizeof(int));
+
+  // write the rest of the array
+  for (int i = 0; i < array->size(); i++) {
+      toBinary(&((*array)(i)), file);
+    }
+}
+
+template<>
+void toBinary(Array<double>* array, std::ofstream& file) {
+  // write the size of the array
+  file.write((char*) &(array->dim_0), sizeof(int));
+  file.write((char*) &(array->dim_1), sizeof(int));
+  file.write((char*) &(array->dim_2), sizeof(int));
+  file.write((char*) &(array->dim_3), sizeof(int));
+
+  // write the rest of the array
+  file.write((char*) array->get_ptr_cpu(), array->size() * sizeof(int));
+}
+
+/*! Read an array in binary format */
+template <typename T>
+void fromBinary(Array<T>* array, std::ifstream& file) {
+  // write the size of the array
+  file.read((char*) &(array->dim_0), sizeof(int));
+  file.read((char*) &(array->dim_1), sizeof(int));
+  file.read((char*) &(array->dim_2), sizeof(int));
+  file.read((char*) &(array->dim_3), sizeof(int));
+
+  // write the rest of the array
+  for (int i = 0; i < array->size(); i++) {
+      fromBinary(&((*array)(i)), file);
+    }
+}
+
+/*! Read an array in binary format */
+template <>
+void fromBinary(Array<double>* array, std::ifstream& file) {
+  // write the size of the array
+  file.read((char*) &(array->dim_0), sizeof(int));
+  file.read((char*) &(array->dim_1), sizeof(int));
+  file.read((char*) &(array->dim_2), sizeof(int));
+  file.read((char*) &(array->dim_3), sizeof(int));
+
+  // write the rest of the array
+  file.read((char*) array->get_ptr_cpu(), array->size() * sizeof(double));
+
+}
+
+//template void toBinary(Array<Array<double> >* array, std::ofstream& file);
+
 
 
 
