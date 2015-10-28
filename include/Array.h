@@ -157,6 +157,14 @@ public:
   /*! Read array contents froma a file */
   void initFromFile(std::string fileName);
 
+  /*! Write array in binary format */
+  template <typename R>
+  friend void toBinary(Array<R>* array, std::ofstream& file);
+
+  /*! Read an array in binary format */
+  template <typename R>
+  friend void fromBinary(Array<R>* array, std::ifstream& file);
+
   /*! Normalize array rows */
   void normalizeRows();
 
@@ -175,4 +183,15 @@ protected:
 
 };
 
+/*! Write array in binary format */
+template <typename T>
+void toBinary(Array<T>* array, std::ofstream& file);
+
+/*! Read an array in binary format */
+template <typename T>
+void fromBinary(Array<T>* array, std::ifstream& file);
+
+
+void fromBinary(double* number, std::ifstream& file);
+void toBinary(double* number, std::ofstream& file);
 #include "../src/Array.cpp" // include class implementation because it is templated

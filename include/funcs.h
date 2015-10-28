@@ -274,13 +274,8 @@ double besselj(double nu, double x);
  */
 double besselThreeHalves(double x);
 
-/*! Write array in binary format */
-template <typename T>
-void toBinary(Array<T>* array, std::ofstream& file);
 
-/*! Read an array in binary format */
-template <typename T>
-void fromBinary(Array<T>* array, std::ifstream& file);
 /*! END */
+
 
 

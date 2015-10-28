@@ -64,7 +64,7 @@ extern "C"
 #include "../include/funcs.h"
 #include "../include/input.h"
 
-#define _(x) std::cout << #x << ": " << x << std::endl
+
 
 extern input run_input;
 
@@ -4753,18 +4753,14 @@ void eles::set_transforms_upts(void) {
   if (n_eles!=0)
   {
 
-      int numMatricesCreated = 2; // number of matrices created in this function
+      int numMatricesCreated = 3; // number of matrices created in this function
       std::string matrixNames [] = {"_detjac_upts",
                                     "_JGinv_upts",
-                                    "_pos_upts",
-                                    "_d_nodal_s_basis"
-                                   "_dd_nodal_s_basis"};
+                                    "_pos_upts"};
 
       Array<double>* matrices [] = {&detjac_upts,
                                     &JGinv_upts,
-                                    &pos_upts,
-                                    &d_nodal_s_basis,
-                                   &dd_nodal_s_basis};
+                                    &pos_upts};
 
       // add the prefix and the suffix to the matrix names
       for (int i = 0; i < numMatricesCreated; i++) {
@@ -4783,26 +4779,10 @@ void eles::set_transforms_upts(void) {
             }
 
         } else {
-          calc_transforms_upts();
-
-          Array<double> JGinv_upts_real = JGinv_upts;
 
           for (int i = 0; i < numMatricesCreated; i++) {
               matrices[i]->initFromFile(matrixNames[i]);
             }
-
-          daxpy(JGinv_upts.size(), -1, JGinv_upts.get_ptr_cpu(), JGinv_upts_real.get_ptr_cpu());
-
-
-          for (int i = 0; i < JGinv_upts.size(); i++) {
-              if (JGinv_upts_real(i) != 0)
-                JGinv_upts_real(i) = log(abs(JGinv_upts_real(i)));
-            }
-
-//          _(JGinv_upts_real);
-
-          calc_transforms_upts();
-          JGinv_upts.initFromFile(matrixNames[1]);
         }
 
 #ifdef _GPU
@@ -4810,8 +4790,6 @@ void eles::set_transforms_upts(void) {
     JGinv_upts.cp_cpu_gpu(); // Copy since needed for calc_d_pos_dyn
 
 #endif
-
-
     }
 }
 

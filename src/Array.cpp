@@ -405,8 +405,8 @@ std::ostream& operator<<(std::ostream& out, Array<T>& array) {
             {
               for(int j=0; j < array.dim_1; j++)
                 {
-                  out << std::left << std::setw(35) << std::setprecision(30)
-                      << array(i,j,k);
+                  out << std::left << std::setw(50) << std::setprecision(45)
+                      << array(i,j,k,l);
                 }
               out << std::endl;
             }
@@ -429,14 +429,14 @@ void Array<T>::writeToFile(std::string fileName, bool inBinary) {
   if (inBinary) {
 //      fileName += ".bin";
       std::ofstream file(fileName.c_str(), std::ios::binary);
-      //toBinary(this, file);
+      toBinary(this, file);
       file.close();
 
     } else {
-  std::ofstream file(fileName.c_str());
-  file << *this;
-  file.close();
-      }
+      std::ofstream file(fileName.c_str());
+      file << *this;
+      file.close();
+    }
 
   std::cout << "Wrote array of dimensions "
             << this->dim_0 << " "
@@ -454,12 +454,13 @@ void Array<T>::initFromFile(std::string fileName) {
 
   std::string fileNameBinary = fileName;// + ".bin";
   if (fileExists(fileNameBinary)) {
+      std::cout << "binary " << fileName << " exists" << std::endl;
       fileName = fileNameBinary;
       std::ifstream file(fileName.c_str(), std::ios::binary);
-      //fromBinary(this, file);
+      fromBinary(this, file);
       file.close();
     } else {
-
+      std::cout << "binary " << fileName << " does not exist" << std::endl;
       std::ifstream file(fileName.c_str());
       file >> *this;
       file.close();
@@ -530,5 +531,35 @@ void Array<R>::normalizeRows() {
 }
 
 
-#endif
 
+/*! Write an item in binary format */
+template <typename T>
+void toBinary(Array<T> *array, std::ofstream& file) {
+  // write the size of the array
+  file.write((char*) &(array->dim_0), sizeof(int));
+  file.write((char*) &(array->dim_1), sizeof(int));
+  file.write((char*) &(array->dim_2), sizeof(int));
+  file.write((char*) &(array->dim_3), sizeof(int));
+
+  // write the rest of the array
+  for (int i = 0; i < array->size(); i++) {
+      toBinary(&(*array)(i), file);
+    }
+}
+
+/*! Read an array in binary format */
+template <typename T>
+void fromBinary(Array<T>* array, std::ifstream& file) {
+  // write the size of the array
+  file.read((char*) &(array->dim_0), sizeof(int));
+  file.read((char*) &(array->dim_1), sizeof(int));
+  file.read((char*) &(array->dim_2), sizeof(int));
+  file.read((char*) &(array->dim_3), sizeof(int));
+
+  // write the rest of the array
+  for (int i = 0; i < array->size(); i++) {
+      fromBinary(&(*array)(i), file);
+    }
+}
+
+#endif

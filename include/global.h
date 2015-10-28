@@ -81,3 +81,5 @@ int dgemm(int Arows, int Bcols, int Acols, double alpha, double beta, double* a,
 
 /*! routine that mimics BLAS daxpy */
 int daxpy(int n, double alpha, double *x, double *y);
+
+#define _(x) std::cout << #x << ": " << x << std::endl
