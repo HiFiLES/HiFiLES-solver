@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <execinfo.h>
 
 #include "../include/global.h"
 #include "../include/Array.h"

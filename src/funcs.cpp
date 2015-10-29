@@ -3278,7 +3278,7 @@ double besselThreeHalves(double x) {
 
 /*! Read an array in binary format */
 void fromBinary(double* number, std::ifstream& file) {
-  // write the rest of the array
+  // read the rest of the array
   file.read((char*) number, sizeof(double));
 }
 

@@ -556,6 +556,9 @@ void fromBinary(Array<T>* array, std::ifstream& file) {
   file.read((char*) &(array->dim_2), sizeof(int));
   file.read((char*) &(array->dim_3), sizeof(int));
 
+  array->setup(array->dim_0, array->dim_1,
+                array->dim_2, array->dim_3);
+
   // write the rest of the array
   for (int i = 0; i < array->size(); i++) {
       fromBinary(&(*array)(i), file);
