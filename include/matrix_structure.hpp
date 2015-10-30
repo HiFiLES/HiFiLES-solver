@@ -78,7 +78,7 @@ public:
 	 * \brief Initializes space matrix system.
 	 * \param[in] nVar - Number of variables.
 	 * \param[in] nEqn - Number of equations.
-     * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] geometry - Geometrical definition of the problem.
 	 * \param[in] config - Definition of the particular problem.
 	 */
     void Initialize(int n_verts, int n_verts_global, int n_var, int n_eqns, Array<Array<int> > &v2e, Array<int> &v2n_e, Array<int> &e2v);

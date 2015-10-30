@@ -166,6 +166,7 @@ cubature_hexa& cubature_hexa::operator=(const cubature_hexa& in_cubature)
       locs=in_cubature.locs;
       weights=in_cubature.weights;
     }
+  return *this;
 }
 
 // destructor

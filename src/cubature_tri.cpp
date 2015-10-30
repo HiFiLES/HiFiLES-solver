@@ -202,6 +202,7 @@ cubature_tri& cubature_tri::operator=(const cubature_tri& in_cubature_tri)
       locs=in_cubature_tri.locs;
       weights=in_cubature_tri.weights;
     }
+  return *this;
 }
 
 // destructor

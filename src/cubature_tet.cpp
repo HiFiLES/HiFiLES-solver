@@ -204,6 +204,8 @@ cubature_tet& cubature_tet::operator=(const cubature_tet& in_cubature)
       locs=in_cubature.locs;
       weights=in_cubature.weights;
     }
+
+  return *this;
 }
 
 

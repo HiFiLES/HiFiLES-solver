@@ -70,11 +70,11 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 
   /*! If at first RK step and using certain LES models, compute some model-related quantities. */
   if(run_input.LES==1 && in_disu_upts_from==0) {
-      if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
-          for(i=0; i<FlowSol->n_ele_types; i++)
-            FlowSol->mesh_eles(i)->calc_sgs_terms(in_disu_upts_from);
-        }
+    if(run_input.SGS_model==2 || run_input.SGS_model==3 || run_input.SGS_model==4) {
+      for(i=0; i<FlowSol->n_ele_types; i++)
+        FlowSol->mesh_eles(i)->calc_sgs_terms(in_disu_upts_from);
     }
+  }
 
   /*! Shock capturing part - only concentration method on GPU and on quads for now */
   /*! TO be added: Persson's method for triangles with artificial viscosity structure */
@@ -83,11 +83,11 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 
     // #ifdef _GPU
 
-      if(run_input.artif_type == 1){
-          /*! This routine does shock detection. For concentration method filter is also applied in this routine itself */
-          for(i=0;i<FlowSol->n_ele_types;i++)
-            FlowSol->mesh_eles(i)->shock_capture_concentration(in_disu_upts_from);
-      }
+    if(run_input.artif_type == 1){
+      /*! This routine does shock detection. For concentration method filter is also applied in this routine itself */
+      for(i=0;i<FlowSol->n_ele_types;i++)
+        FlowSol->mesh_eles(i)->shock_capture_concentration(in_disu_upts_from);
+    }
 
     // #endif
   }
@@ -104,10 +104,10 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 #endif
 
   if (FlowSol->viscous) {
-      /*! Compute the uncorrected gradient of the solution at the solution points. */
-      for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->calculate_gradient(in_disu_upts_from);
-    }
+    /*! Compute the uncorrected gradient of the solution at the solution points. */
+    for(i=0; i<FlowSol->n_ele_types; i++)
+      FlowSol->mesh_eles(i)->calculate_gradient(in_disu_upts_from);
+  }
 
   /*! Compute the inviscid flux at the solution points and store in total flux storage. */
   for(i=0; i<FlowSol->n_ele_types; i++)
@@ -117,18 +117,18 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   // If running periodic channel or periodic hill cases,
   // calculate body forcing and add to source term
   if(run_input.forcing==1 and in_rk_stage==0
-     and run_input.equation==0 and FlowSol->n_dims==3) {
+      and run_input.equation==0 and FlowSol->n_dims==3) {
 
 #ifdef _GPU
-      // copy disu_upts for body force calculation
-      for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
+    // copy disu_upts for body force calculation
+    for(i=0; i<FlowSol->n_ele_types; i++)
+      FlowSol->mesh_eles(i)->cp_disu_upts_gpu_cpu();
 #endif
 
-      for(i=0;i<FlowSol->n_ele_types;i++) {
-          FlowSol->mesh_eles(i)->evaluate_body_force(in_file_num);
-        }
+    for(i=0;i<FlowSol->n_ele_types;i++) {
+      FlowSol->mesh_eles(i)->evaluate_body_force(in_file_num);
     }
+  }
 
   /*! Compute the inviscid numerical fluxes.
    Compute the common solution and solution corrections (viscous only). */
@@ -141,44 +141,44 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 #ifdef _MPI
   /*! Send the previously computed values across the MPI interfaces. */
   if (FlowSol->nproc>1) {
-      for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-        FlowSol->mesh_mpi_inters(i).receive_solution();
+    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+      FlowSol->mesh_mpi_inters(i).receive_solution();
 
-      for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-        FlowSol->mesh_mpi_inters(i).calculate_common_invFlux();
-    }
+    for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+      FlowSol->mesh_mpi_inters(i).calculate_common_invFlux();
+  }
 #endif
 
   if (FlowSol->viscous) {
-      /*! Compute corrected gradient of the solution at the solution and flux points. */
-      for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->correct_gradient();
+    /*! Compute corrected gradient of the solution at the solution and flux points. */
+    for(i=0; i<FlowSol->n_ele_types; i++)
+      FlowSol->mesh_eles(i)->correct_gradient();
 
-      for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->extrapolate_corrected_gradient();
+    for(i=0; i<FlowSol->n_ele_types; i++)
+      FlowSol->mesh_eles(i)->extrapolate_corrected_gradient();
 
 #ifdef _MPI
-      /*! Send the corrected value and SGS flux across the MPI interface. */
-      if (FlowSol->nproc>1) {
-          for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-            FlowSol->mesh_mpi_inters(i).send_corrected_gradient();
+    /*! Send the corrected value and SGS flux across the MPI interface. */
+    if (FlowSol->nproc>1) {
+      for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+        FlowSol->mesh_mpi_inters(i).send_corrected_gradient();
 
-          if (run_input.LES) {
-            for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-              FlowSol->mesh_mpi_inters(i).send_sgsf_fpts();
-          }
-        }
+      if (run_input.LES) {
+        for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+          FlowSol->mesh_mpi_inters(i).send_sgsf_fpts();
+      }
+    }
 #endif
 
-      /*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
-      for(i=0; i<FlowSol->n_ele_types; i++)
-        FlowSol->mesh_eles(i)->evaluate_viscFlux(in_disu_upts_from);
-    }
+/*! Compute discontinuous viscous flux at upts and add to inviscid flux at upts. */
+    for(i=0; i<FlowSol->n_ele_types; i++)
+      FlowSol->mesh_eles(i)->evaluate_viscFlux(in_disu_upts_from);
+  }
 
   /*! If using LES, compute the SGS flux at flux points. */
   if (run_input.LES) {
-	  for(i=0; i<FlowSol->n_ele_types; i++)
-			FlowSol->mesh_eles(i)->evaluate_sgsFlux();
+    for(i=0; i<FlowSol->n_ele_types; i++)
+      FlowSol->mesh_eles(i)->evaluate_sgsFlux();
   }
 
   /*! For viscous or inviscid, compute the normal discontinuous flux at flux points. */
@@ -190,29 +190,29 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
     FlowSol->mesh_eles(i)->calculate_divergence(in_div_tconf_upts_to);
 
   if (FlowSol->viscous) {
-      /*! Compute normal interface viscous flux and add to normal inviscid flux. */
-      for(i=0; i<FlowSol->n_int_inter_types; i++)
-        FlowSol->mesh_int_inters(i).calculate_common_viscFlux();
+    /*! Compute normal interface viscous flux and add to normal inviscid flux. */
+    for(i=0; i<FlowSol->n_int_inter_types; i++)
+      FlowSol->mesh_int_inters(i).calculate_common_viscFlux();
 
-      for(i=0; i<FlowSol->n_bdy_inter_types; i++)
-        FlowSol->mesh_bdy_inters(i).evaluate_boundaryConditions_viscFlux(FlowSol->time);
+    for(i=0; i<FlowSol->n_bdy_inter_types; i++)
+      FlowSol->mesh_bdy_inters(i).evaluate_boundaryConditions_viscFlux(FlowSol->time);
 
 #if _MPI
-      /*! Evaluate the MPI interfaces. */
-      if (FlowSol->nproc>1) {
-          for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-            FlowSol->mesh_mpi_inters(i).receive_corrected_gradient();
+    /*! Evaluate the MPI interfaces. */
+    if (FlowSol->nproc>1) {
+      for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+        FlowSol->mesh_mpi_inters(i).receive_corrected_gradient();
 
-          if (run_input.LES) {
-            for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-            FlowSol->mesh_mpi_inters(i).receive_sgsf_fpts();
-          }
+      if (run_input.LES) {
+        for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+          FlowSol->mesh_mpi_inters(i).receive_sgsf_fpts();
+      }
 
-          for(i=0; i<FlowSol->n_mpi_inter_types; i++)
-            FlowSol->mesh_mpi_inters(i).calculate_common_viscFlux();
-        }
-#endif
+      for(i=0; i<FlowSol->n_mpi_inter_types; i++)
+        FlowSol->mesh_mpi_inters(i).calculate_common_viscFlux();
     }
+#endif
+  }
 
   /*! Compute the divergence of the transformed continuous flux. */
   for(i=0; i<FlowSol->n_ele_types; i++)
@@ -252,7 +252,7 @@ double* get_norm_tconf_fpts_ptr(int in_ele_type, int in_ele, int in_field, int i
 
 double* get_sgsf_fpts_ptr(int in_ele_type, int in_ele, int in_local_inter, int in_field, int in_dim, int in_fpt, struct solution* FlowSol)
 {
-	return FlowSol->mesh_eles(in_ele_type)->get_sgsf_fpts_ptr(in_fpt,in_local_inter,in_field,in_dim,in_ele);
+  return FlowSol->mesh_eles(in_ele_type)->get_sgsf_fpts_ptr(in_fpt,in_local_inter,in_field,in_dim,in_ele);
 }
 
 // get pointer to determinant of jacobian at a flux point
@@ -356,34 +356,34 @@ void InitSolution(struct solution* FlowSol)
   if (FlowSol->rank==0) cout << "Setting initial conditions... " << endl;
 
   if (run_input.restart_flag==0) {
-      for(int i=0;i<FlowSol->n_ele_types;i++) {
-          if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
+    for(int i=0;i<FlowSol->n_ele_types;i++) {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
 
-            FlowSol->mesh_eles(i)->set_ics(FlowSol->time);
-        }
-
-      FlowSol->time = 0.;
+        FlowSol->mesh_eles(i)->set_ics(FlowSol->time);
     }
+
+    FlowSol->time = 0.;
+  }
   else
-    {
-      FlowSol->ini_iter = run_input.restart_iter;
-      read_restart(run_input.restart_iter,run_input.n_restart_files,FlowSol);
-    }
+  {
+    FlowSol->ini_iter = run_input.restart_iter;
+    read_restart(run_input.restart_iter,run_input.n_restart_files,FlowSol);
+  }
 
   for (int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          FlowSol->mesh_eles(i)->set_disu_upts_to_zero_other_levels();
-        }
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      FlowSol->mesh_eles(i)->set_disu_upts_to_zero_other_levels();
     }
+  }
 
   // copy solution to gpu
 #ifdef _GPU
   for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          FlowSol->mesh_eles(i)->cp_disu_upts_cpu_gpu();
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      FlowSol->mesh_eles(i)->cp_disu_upts_cpu_gpu();
 
-        }
     }
+  }
 #endif
 
 }
@@ -399,48 +399,48 @@ void read_restart(int in_file_num, int in_n_files, struct solution* FlowSol)
   // Open the restart files and read info
 
   for (int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          for (int j=0;j<in_n_files;j++)
-            {
-              sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,j);
-              file_name = &file_name_s[0];
-              restart_file.open(file_name);
-              if (!restart_file)
-                FatalError("Could not open restart file ");
+      for (int j=0;j<in_n_files;j++)
+      {
+        sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,j);
+        file_name = &file_name_s[0];
+        restart_file.open(file_name);
+        if (!restart_file)
+          FatalError("Could not open restart file ");
 
-              restart_file >> FlowSol->time;
+        restart_file >> FlowSol->time;
 
-              int info_found = FlowSol->mesh_eles(i)->read_restart_info(restart_file);
-              restart_file.close();
+        int info_found = FlowSol->mesh_eles(i)->read_restart_info(restart_file);
+        restart_file.close();
 
-              if (info_found)
-                break;
-            }
-        }
+        if (info_found)
+          break;
+      }
     }
+  }
 
   // Now open all the restart files one by one and store data belonging to you
 
   for (int j=0;j<in_n_files;j++)
-    {
-      //cout <<  "Reading restart file " << j << endl;
-      sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,j);
-      file_name = &file_name_s[0];
-      restart_file.open(file_name);
+  {
+    //cout <<  "Reading restart file " << j << endl;
+    sprintf(file_name_s,"Rest_%.09d_p%.04d.dat",in_file_num,j);
+    file_name = &file_name_s[0];
+    restart_file.open(file_name);
 
-      if (restart_file.fail())
-        FatalError(strcat((char *)"Could not open restart file ",file_name));
+    if (restart_file.fail())
+      FatalError(strcat((char *)"Could not open restart file ",file_name));
 
-      for (int i=0;i<FlowSol->n_ele_types;i++)  {
-          if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+    for (int i=0;i<FlowSol->n_ele_types;i++)  {
+      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-              FlowSol->mesh_eles(i)->read_restart_data(restart_file);
+        FlowSol->mesh_eles(i)->read_restart_data(restart_file);
 
-            }
-        }
-      restart_file.close();
+      }
     }
+    restart_file.close();
+  }
   cout << "Rank=" << FlowSol->rank << " Done reading restart files" << endl;
 }
 

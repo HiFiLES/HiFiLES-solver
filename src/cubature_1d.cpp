@@ -138,7 +138,7 @@ cubature_1d::cubature_1d(const cubature_1d& in_cubature_1d)
 
 cubature_1d& cubature_1d::operator=(const cubature_1d& in_cubature_1d)
 {
-  // check for self asignment
+  // check for self assignment
   if(this == &in_cubature_1d)
     {
       return (*this);
@@ -150,6 +150,8 @@ cubature_1d& cubature_1d::operator=(const cubature_1d& in_cubature_1d)
       locs=in_cubature_1d.locs;
       weights=in_cubature_1d.weights;
     }
+
+  return *this;
 }
 
 // destructor

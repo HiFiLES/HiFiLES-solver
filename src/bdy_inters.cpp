@@ -57,6 +57,7 @@ bdy_inters::bdy_inters()
   LES=run_input.LES;
   wall_model = run_input.wall_model;
   motion=run_input.motion;
+  max_bdy_params = 30;
 }
 
 bdy_inters::~bdy_inters() { }
@@ -77,7 +78,6 @@ void bdy_inters::setup(int in_n_inters, int in_inters_type)
 
 void bdy_inters::set_bdy_params()
 {
-  max_bdy_params=30;
   bdy_params.setup(max_bdy_params);
 
   bdy_params(0) = run_input.rho_bound;

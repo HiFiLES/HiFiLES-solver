@@ -156,6 +156,7 @@ cubature_quad& cubature_quad::operator=(const cubature_quad& in_cubature)
       locs=in_cubature.locs;
       weights=in_cubature.weights;
     }
+  return *this;
 }
 
 // destructor

@@ -20,6 +20,8 @@ Array<T>::Array()
 
   cpu_flag=1;
   gpu_flag=0;
+
+  gpu_data = NULL;
 }
 
 // constructor 1
@@ -37,6 +39,8 @@ Array<T>::Array(int in_dim_0, int in_dim_1, int in_dim_2, int in_dim_3)
 
   cpu_flag=1;
   gpu_flag=0;
+
+  gpu_data = NULL;
 }
 //*/
 // copy constructor
@@ -58,6 +62,8 @@ Array<T>::Array(const Array<T>& in_Array)
 
   cpu_flag=1;
   gpu_flag=0;
+
+  gpu_data = NULL;
 }
 
 // assignment
@@ -141,7 +147,6 @@ T* Array<T>::get_ptr_gpu(void)
       FatalError("GPU Array does not exist");
     }
 }
-
 
 
 // return pointer

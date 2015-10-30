@@ -1351,13 +1351,15 @@ int eles_pris::face0_map(int index)
 /*! Calculate element volume */
 double eles_pris::calc_ele_vol(double& detjac)
 {
-
+  FatalError("Element volume calculation not implemented for this element!");
+  return 0.0;
 }
 
 /*! Calculate element reference length for timestep calculation */
 double eles_pris::calc_h_ref_specific(int in_ele)
   {
-    FatalError("Reference length calculation not implemented for this element!")
+    FatalError("Reference length calculation not implemented for this element!");
+    return 0.0;
   }
 
 

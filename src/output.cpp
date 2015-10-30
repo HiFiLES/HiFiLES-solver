@@ -120,35 +120,35 @@ void write_tec(int in_file_num, struct solution* FlowSol)
 
   // string of field names
   if (run_input.equation==0)
+  {
+    if(n_dims==2)
     {
-      if(n_dims==2)
-        {
-          fields += "Variables = \"x\", \"y\", \"rho\", \"mom_x\", \"mom_y\", \"ene\"";
-        }
-      else if(n_dims==3)
-        {
-          fields += "Variables = \"x\", \"y\", \"z\", \"rho\", \"mom_x\", \"mom_y\", \"mom_z\", \"ene\"";
-        }
-      else
-        {
-          cout << "ERROR: Invalid number of dimensions ... " << endl;
-        }
+      fields += "Variables = \"x\", \"y\", \"rho\", \"mom_x\", \"mom_y\", \"ene\"";
     }
+    else if(n_dims==3)
+    {
+      fields += "Variables = \"x\", \"y\", \"z\", \"rho\", \"mom_x\", \"mom_y\", \"mom_z\", \"ene\"";
+    }
+    else
+    {
+      cout << "ERROR: Invalid number of dimensions ... " << endl;
+    }
+  }
   else if (run_input.equation==1)
+  {
+    if(n_dims==2)
     {
-      if(n_dims==2)
-        {
-          fields += "Variables = \"x\", \"y\", \"rho\"";
-        }
-      else if(n_dims==3)
-        {
-          fields += "Variables = \"x\", \"y\", \"z\", \"rho\"";
-        }
-      else
-        {
-          cout << "ERROR: Invalid number of dimensions ... " << endl;
-        }
+      fields += "Variables = \"x\", \"y\", \"rho\"";
     }
+    else if(n_dims==3)
+    {
+      fields += "Variables = \"x\", \"y\", \"z\", \"rho\"";
+    }
+    else
+    {
+      cout << "ERROR: Invalid number of dimensions ... " << endl;
+    }
+  }
 
   if (run_input.turb_model==1) {
     fields += ", \"mu_tilde\"";
@@ -156,24 +156,24 @@ void write_tec(int in_file_num, struct solution* FlowSol)
 
   // append the names of the time-average diagnostic fields
   if(n_average_fields>0)
-    {
-      fields += ", ";
+  {
+    fields += ", ";
 
-      for(m=0;m<n_average_fields;m++)
-        fields += "\"" + run_input.average_fields(m) + "\", ";
+    for(m=0;m<n_average_fields;m++)
+      fields += "\"" + run_input.average_fields(m) + "\", ";
 
-    }
+  }
 
   // append the names of the diagnostic fields
   if(n_diag_fields>0)
-    {
-      fields += ", ";
+  {
+    fields += ", ";
 
-      for(m=0;m<n_diag_fields-1;m++)
-        fields += "\"" + run_input.diagnostic_fields(m) + "\", ";
+    for(m=0;m<n_diag_fields-1;m++)
+      fields += "\"" + run_input.diagnostic_fields(m) + "\", ";
 
-      fields += "\"" + run_input.diagnostic_fields(n_diag_fields-1) + "\"";
-    }
+    fields += "\"" + run_input.diagnostic_fields(n_diag_fields-1) + "\"";
+  }
 
   // write field names to file
   write_tec << fields << endl;
@@ -181,381 +181,381 @@ void write_tec(int in_file_num, struct solution* FlowSol)
   int time_iter = 0;
 
   for(i=0;i<FlowSol->n_ele_types;i++)
-    {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+  {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          n_fields = FlowSol->mesh_eles(i)->get_n_fields();
-          n_ppts_per_ele = FlowSol->mesh_eles(i)->get_n_ppts_per_ele();
-          num_pts = (FlowSol->mesh_eles(i)->get_n_eles())*n_ppts_per_ele;
-          num_elements = (FlowSol->mesh_eles(i)->get_n_eles())*(FlowSol->mesh_eles(i)->get_n_peles_per_ele());
+      n_fields = FlowSol->mesh_eles(i)->get_n_fields();
+      n_ppts_per_ele = FlowSol->mesh_eles(i)->get_n_ppts_per_ele();
+      num_pts = (FlowSol->mesh_eles(i)->get_n_eles())*n_ppts_per_ele;
+      num_elements = (FlowSol->mesh_eles(i)->get_n_eles())*(FlowSol->mesh_eles(i)->get_n_peles_per_ele());
 
-          pos_ppts_temp.setup(n_ppts_per_ele,n_dims);
-          disu_ppts_temp.setup(n_ppts_per_ele,n_fields);
-          grad_disu_ppts_temp.setup(n_ppts_per_ele,n_fields,n_dims);
-          diag_ppts_temp.setup(n_ppts_per_ele,n_diag_fields);
-          disu_average_ppts_temp.setup(n_ppts_per_ele,n_average_fields);
+      pos_ppts_temp.setup(n_ppts_per_ele,n_dims);
+      disu_ppts_temp.setup(n_ppts_per_ele,n_fields);
+      grad_disu_ppts_temp.setup(n_ppts_per_ele,n_fields,n_dims);
+      diag_ppts_temp.setup(n_ppts_per_ele,n_diag_fields);
+      disu_average_ppts_temp.setup(n_ppts_per_ele,n_average_fields);
 
-          /*! Temporary field for sensor Array at plot points */
-          sensor_ppts_temp.setup(n_ppts_per_ele);
+      /*! Temporary field for sensor Array at plot points */
+      sensor_ppts_temp.setup(n_ppts_per_ele);
 
-          /*! Temporary field for artificial viscosity co-efficients at plot points */
-          epsilon_ppts_temp.setup(n_ppts_per_ele);
+      /*! Temporary field for artificial viscosity co-efficients at plot points */
+      epsilon_ppts_temp.setup(n_ppts_per_ele);
 
-          // write element specific header
-          if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
-            {
-              write_tec << "ZONE N = " << num_pts << ", E = " << num_elements << ", DATAPACKING = POINT, ZONETYPE = FETRIANGLE" << endl;
-            }
-          else if(FlowSol->mesh_eles(i)->get_ele_type()==1) // quad
-            {
-              write_tec << "ZONE N = " << num_pts << ", E = " << num_elements << ", DATAPACKING = POINT, ZONETYPE = FEQUADRILATERAL" << endl;
-            }
-          else if (FlowSol->mesh_eles(i)->get_ele_type()==2) // tet
-            {
-              write_tec << "ZONE N = " << num_pts << ", E = " << num_elements << ", DATAPACKING = POINT, ZONETYPE = FETETRAHEDRON" << endl;
-            }
-          else if (FlowSol->mesh_eles(i)->get_ele_type()==3) // prisms
-            {
-              write_tec << "ZONE N = " << num_pts << ", E = " << num_elements << ", DATAPACKING = POINT, ZONETYPE = FEBRICK" << endl;
-            }
-          else if(FlowSol->mesh_eles(i)->get_ele_type()==4) // hexa
-            {
-              write_tec << "ZONE N = " << num_pts << ", E = " << num_elements << ", DATAPACKING = POINT, ZONETYPE = FEBRICK" << endl;
-            }
-          else
-            {
-              FatalError("Invalid element type");
-            }
+      // write element specific header
+      if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
+      {
+        write_tec << "ZONE N = " << num_pts << ", E = " << num_elements << ", DATAPACKING = POINT, ZONETYPE = FETRIANGLE" << endl;
+      }
+      else if(FlowSol->mesh_eles(i)->get_ele_type()==1) // quad
+      {
+        write_tec << "ZONE N = " << num_pts << ", E = " << num_elements << ", DATAPACKING = POINT, ZONETYPE = FEQUADRILATERAL" << endl;
+      }
+      else if (FlowSol->mesh_eles(i)->get_ele_type()==2) // tet
+      {
+        write_tec << "ZONE N = " << num_pts << ", E = " << num_elements << ", DATAPACKING = POINT, ZONETYPE = FETETRAHEDRON" << endl;
+      }
+      else if (FlowSol->mesh_eles(i)->get_ele_type()==3) // prisms
+      {
+        write_tec << "ZONE N = " << num_pts << ", E = " << num_elements << ", DATAPACKING = POINT, ZONETYPE = FEBRICK" << endl;
+      }
+      else if(FlowSol->mesh_eles(i)->get_ele_type()==4) // hexa
+      {
+        write_tec << "ZONE N = " << num_pts << ", E = " << num_elements << ", DATAPACKING = POINT, ZONETYPE = FEBRICK" << endl;
+      }
+      else
+      {
+        FatalError("Invalid element type");
+      }
 
-          if(time_iter == 0)
-            {
-              write_tec <<"SolutionTime=" << FlowSol->time << endl;
-              time_iter = 1;
-            }
+      if(time_iter == 0)
+      {
+        write_tec <<"SolutionTime=" << FlowSol->time << endl;
+        time_iter = 1;
+      }
 
-          // write element specific data
+      // write element specific data
 
-          for(j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
-            {
-              FlowSol->mesh_eles(i)->calc_pos_ppts(j,pos_ppts_temp);
-              FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
-              FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
+      for(j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
+      {
+        FlowSol->mesh_eles(i)->calc_pos_ppts(j,pos_ppts_temp);
+        FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
+        FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
 
-              if(run_input.ArtifOn)
-              {
-                /*! Calculate the sensor at the plot points */
-                FlowSol->mesh_eles(i)->calc_sensor_ppts(j,sensor_ppts_temp);
+        if(run_input.ArtifOn)
+        {
+          /*! Calculate the sensor at the plot points */
+          FlowSol->mesh_eles(i)->calc_sensor_ppts(j,sensor_ppts_temp);
 
-                if(run_input.artif_type == 0)
-                  /*! Calculate the artificial viscosity co-efficients at plot points */
-                  FlowSol->mesh_eles(i)->calc_epsilon_ppts(j,epsilon_ppts_temp);
-              }
-
-              /*! Calculate the time averaged fields at the plot points */
-              if(n_average_fields > 0)
-                {
-                  FlowSol->mesh_eles(i)->calc_time_average_ppts(j,disu_average_ppts_temp);
-                }
-
-              /*! Calculate the diagnostic fields at the plot points */
-              if(n_diag_fields > 0)
-                {
-                  FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j, disu_ppts_temp, grad_disu_ppts_temp, sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp, FlowSol->time);
-                }
-
-              for(k=0;k<n_ppts_per_ele;k++)
-                {
-                  for(l=0;l<n_dims;l++)
-                    {
-                      write_tec << pos_ppts_temp(k,l) << " ";
-                    }
-
-                  for(l=0;l<n_fields;l++)
-                    {
-                      if ( std::isnan(disu_ppts_temp(k,l))) {
-                          FatalError("Nan in tecplot file, exiting");
-                        }
-                      else {
-                          write_tec << disu_ppts_temp(k,l) << " ";
-                        }
-                    }
-
-                  /*! Write out optional time-averaged diagnostic fields */
-                  for(l=0;l<n_average_fields;l++)
-                    {
-                      if ( std::isnan(disu_average_ppts_temp(k,l))) {
-                          FatalError("Nan in tecplot file, exiting");
-                        }
-                      else {
-                          write_tec << disu_average_ppts_temp(k,l) << " ";
-                        }
-                    }
-
-                  /*! Write out optional diagnostic fields */
-                  for(l=0;l<n_diag_fields;l++)
-                    {
-                      if ( std::isnan(diag_ppts_temp(k,l))) {
-                          FatalError("Nan in tecplot file, exiting");
-                        }
-                      else {
-                          write_tec << diag_ppts_temp(k,l) << " ";
-                        }
-                    }
-
-                  write_tec << endl;
-                }
-            }
-
-          // write element specific connectivity
-
-          if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
-            {
-              for (j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
-                {
-                  for(k=0;k<p_res-1;k++) // look to right from each point
-                    {
-                      for(l=0;l<p_res-k-1;l++)
-                        {
-                          vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
-                          vertex_1=vertex_0+1;
-                          vertex_2=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
-                          vertex_0+=j*(p_res*(p_res+1)/2);
-                          vertex_1+=j*(p_res*(p_res+1)/2);
-                          vertex_2+=j*(p_res*(p_res+1)/2);
-
-                          write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << endl;
-                        }
-                    }
-
-                  for(k=0;k<p_res-2;k++) //  look to left from each point
-                    {
-                      for(l=1;l<p_res-k-1;l++)
-                        {
-                          vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
-                          vertex_1=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
-                          vertex_2=l-1+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
-
-                          vertex_0+=j*(p_res*(p_res+1)/2);
-                          vertex_1+=j*(p_res*(p_res+1)/2);
-                          vertex_2+=j*(p_res*(p_res+1)/2);
-
-                          write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << endl;
-                        }
-                    }
-                }
-
-            }
-          else if(FlowSol->mesh_eles(i)->get_ele_type()==1) // quad
-            {
-              for (j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
-                {
-                  for(k=0;k<p_res-1;k++)
-                    {
-                      for(l=0;l<p_res-1;l++)
-                        {
-                          vertex_0=l+(p_res*k);
-                          vertex_1=vertex_0+1;
-                          vertex_2=vertex_0+p_res+1;
-                          vertex_3=vertex_0+p_res;
-
-                          vertex_0 += j*p_res*p_res;
-                          vertex_1 += j*p_res*p_res;
-                          vertex_2 += j*p_res*p_res;
-                          vertex_3 += j*p_res*p_res;
-
-                          write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1 << " " <<  vertex_3+1  << endl;
-                        }
-                    }
-                }
-            }
-          else if (FlowSol->mesh_eles(i)->get_ele_type()==2) // tet
-            {
-              int temp = (p_res)*(p_res+1)*(p_res+2)/6;
-
-              for (int m=0;m<FlowSol->mesh_eles(i)->get_n_eles();m++)
-                {
-
-                  for(int k=0;k<p_res-1;k++)
-                    {
-                      for(int j=0;j<p_res-1-k;j++)
-                        {
-                          for(int i=0;i<p_res-1-k-j;i++)
-                            {
-
-                              vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i;
-
-                              vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
-
-                              vertex_2 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i;
-
-                              vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i;
-
-                              vertex_0+=m*temp;
-                              vertex_1+=m*temp;
-                              vertex_2+=m*temp;
-                              vertex_3+=m*temp;
-
-                              write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_3+1 << endl;
-
-                            }
-                        }
-                    }
-
-                  for(int k=0;k<p_res-2;k++)
-                    {
-                      for(int j=0;j<p_res-2-k;j++)
-                        {
-                          for(int i=0;i<p_res-2-k-j;i++)
-                            {
-
-                              vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
-
-                              vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
-                              vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i + 1;
-                              vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + (i-1) + 1;
-                              vertex_4 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + (i-1) + 1;
-                              vertex_5 = temp - (p_res-(k))*(p_res+1-(k))*(p_res+2-(k))/6 + (j+1)*(p_res-(k)) - (j)*(j+1)/2 + (i-1) + 1;
-
-                              vertex_0+=m*temp;
-                              vertex_1+=m*temp;
-                              vertex_2+=m*temp;
-                              vertex_3+=m*temp;
-                              vertex_4+=m*temp;
-                              vertex_5+=m*temp;
-
-                              write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_5+1 << endl;
-                              write_tec << vertex_0+1  << " " <<  vertex_2+1  << " " <<  vertex_4+1  << " " << vertex_5+1 << endl;
-                              write_tec << vertex_2+1  << " " <<  vertex_3+1  << " " <<  vertex_4+1  << " " << vertex_5+1 << endl;
-                              write_tec << vertex_1+1  << " " <<  vertex_2+1  << " " <<  vertex_3+1  << " " << vertex_5+1 << endl;
-                            }
-                        }
-                    }
-
-                  for(int k=0;k<p_res-3;k++)
-                    {
-                      for(int j=0;j<p_res-3-k;j++)
-                        {
-                          for(int i=0;i<p_res-3-k-j;i++)
-                            {
-
-                              vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
-                              vertex_1 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + i + 1;
-                              vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i ;
-                              vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i + 1;
-
-                              vertex_0+=m*temp;
-                              vertex_1+=m*temp;
-                              vertex_2+=m*temp;
-                              vertex_3+=m*temp;
-
-                              write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_3+1 << endl;
-                            }
-                        }
-                    }
-                }
-
-            }
-          else if (FlowSol->mesh_eles(i)->get_ele_type()==3) // prisms
-            {
-              int temp = (p_res)*(p_res+1)/2;
-
-              for (int m=0;m<FlowSol->mesh_eles(i)->get_n_eles();m++)
-                {
-
-                  for (int l=0;l<p_res-1;l++)
-                    {
-                      for(int j=0;j<p_res-1;j++) // look to right from each point
-                        {
-                          for(int k=0;k<p_res-j-1;k++)
-                            {
-                              vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
-                              vertex_1=vertex_0+1;
-                              vertex_2=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
-
-                              vertex_3 = vertex_0 + temp;
-                              vertex_4 = vertex_1 + temp;
-                              vertex_5 = vertex_2 + temp;
-
-                              vertex_0+=m*(p_res*(p_res+1)/2*p_res);
-                              vertex_1+=m*(p_res*(p_res+1)/2*p_res);
-                              vertex_2+=m*(p_res*(p_res+1)/2*p_res);
-                              vertex_3+=m*(p_res*(p_res+1)/2*p_res);
-                              vertex_4+=m*(p_res*(p_res+1)/2*p_res);
-                              vertex_5+=m*(p_res*(p_res+1)/2*p_res);
-
-                              write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_2+1 << " " << vertex_3+1 << " " << vertex_4+1 << " " << vertex_5+1 << " " << vertex_5+1 << endl;
-                            }
-                        }
-                    }
-
-                  for (int l=0;l<p_res-1;l++)
-                    {
-                      for(int j=0;j<p_res-2;j++) //  look to left from each point
-                        {
-                          for(int k=1;k<p_res-j-1;k++)
-                            {
-                              vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
-                              vertex_1=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
-                              vertex_2=k-1+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
-
-                              vertex_3 = vertex_0 + temp;
-                              vertex_4 = vertex_1 + temp;
-                              vertex_5 = vertex_2 + temp;
-
-                              vertex_0+=m*(p_res*(p_res+1)/2*p_res);
-                              vertex_1+=m*(p_res*(p_res+1)/2*p_res);
-                              vertex_2+=m*(p_res*(p_res+1)/2*p_res);
-                              vertex_3+=m*(p_res*(p_res+1)/2*p_res);
-                              vertex_4+=m*(p_res*(p_res+1)/2*p_res);
-                              vertex_5+=m*(p_res*(p_res+1)/2*p_res);
-
-                              write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_2+1 << " " << vertex_3+1 << " " << vertex_4+1 << " " << vertex_5+1 << " " << vertex_5+1 << endl;
-                            }
-                        }
-                    }
-                }
-            }
-          else if(FlowSol->mesh_eles(i)->get_ele_type()==4) // hexa
-            {
-              for (int j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
-                {
-                  for(int k=0;k<p_res-1;k++)
-                    {
-                      for(int l=0;l<p_res-1;l++)
-                        {
-                          for(int m=0;m<p_res-1;m++)
-                            {
-                              vertex_0=m+(p_res*l)+(p_res*p_res*k);
-                              vertex_1=vertex_0+1;
-                              vertex_2=vertex_0+p_res+1;
-                              vertex_3=vertex_0+p_res;
-
-                              vertex_4=vertex_0+p_res*p_res;
-                              vertex_5=vertex_4+1;
-                              vertex_6=vertex_4+p_res+1;
-                              vertex_7=vertex_4+p_res;
-
-                              vertex_0 += j*p_res*p_res*p_res;
-                              vertex_1 += j*p_res*p_res*p_res;
-                              vertex_2 += j*p_res*p_res*p_res;
-                              vertex_3 += j*p_res*p_res*p_res;
-                              vertex_4 += j*p_res*p_res*p_res;
-                              vertex_5 += j*p_res*p_res*p_res;
-                              vertex_6 += j*p_res*p_res*p_res;
-                              vertex_7 += j*p_res*p_res*p_res;
-
-                              write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1 << " " <<  vertex_3+1  << " " << vertex_4+1 << " " << vertex_5+1 << " " << vertex_6+1 << " " << vertex_7+1 <<endl;
-                            }
-                        }
-                    }
-                }
-            }
-          else
-            {
-              FatalError("ERROR: Invalid element type ... ");
-            }
+          if(run_input.artif_type == 0)
+            /*! Calculate the artificial viscosity co-efficients at plot points */
+            FlowSol->mesh_eles(i)->calc_epsilon_ppts(j,epsilon_ppts_temp);
         }
+
+        /*! Calculate the time averaged fields at the plot points */
+        if(n_average_fields > 0)
+        {
+          FlowSol->mesh_eles(i)->calc_time_average_ppts(j,disu_average_ppts_temp);
+        }
+
+        /*! Calculate the diagnostic fields at the plot points */
+        if(n_diag_fields > 0)
+        {
+          FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j, disu_ppts_temp, grad_disu_ppts_temp, sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp, FlowSol->time);
+        }
+
+        for(k=0;k<n_ppts_per_ele;k++)
+        {
+          for(l=0;l<n_dims;l++)
+          {
+            write_tec << pos_ppts_temp(k,l) << " ";
+          }
+
+          for(l=0;l<n_fields;l++)
+          {
+            if ( std::isnan(disu_ppts_temp(k,l))) {
+              FatalError("Nan in tecplot file, exiting");
+            }
+            else {
+              write_tec << disu_ppts_temp(k,l) << " ";
+            }
+          }
+
+          /*! Write out optional time-averaged diagnostic fields */
+          for(l=0;l<n_average_fields;l++)
+          {
+            if ( std::isnan(disu_average_ppts_temp(k,l))) {
+              FatalError("Nan in tecplot file, exiting");
+            }
+            else {
+              write_tec << disu_average_ppts_temp(k,l) << " ";
+            }
+          }
+
+          /*! Write out optional diagnostic fields */
+          for(l=0;l<n_diag_fields;l++)
+          {
+            if ( std::isnan(diag_ppts_temp(k,l))) {
+              FatalError("Nan in tecplot file, exiting");
+            }
+            else {
+              write_tec << diag_ppts_temp(k,l) << " ";
+            }
+          }
+
+          write_tec << endl;
+        }
+      }
+
+      // write element specific connectivity
+
+      if(FlowSol->mesh_eles(i)->get_ele_type()==0) // tri
+      {
+        for (j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
+        {
+          for(k=0;k<p_res-1;k++) // look to right from each point
+          {
+            for(l=0;l<p_res-k-1;l++)
+            {
+              vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
+              vertex_1=vertex_0+1;
+              vertex_2=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
+              vertex_0+=j*(p_res*(p_res+1)/2);
+              vertex_1+=j*(p_res*(p_res+1)/2);
+              vertex_2+=j*(p_res*(p_res+1)/2);
+
+              write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << endl;
+            }
+          }
+
+          for(k=0;k<p_res-2;k++) //  look to left from each point
+          {
+            for(l=1;l<p_res-k-1;l++)
+            {
+              vertex_0=l+(k*(p_res+1))-((k*(k+1))/2);
+              vertex_1=l+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
+              vertex_2=l-1+((k+1)*(p_res+1))-(((k+1)*(k+2))/2);
+
+              vertex_0+=j*(p_res*(p_res+1)/2);
+              vertex_1+=j*(p_res*(p_res+1)/2);
+              vertex_2+=j*(p_res*(p_res+1)/2);
+
+              write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << endl;
+            }
+          }
+        }
+
+      }
+      else if(FlowSol->mesh_eles(i)->get_ele_type()==1) // quad
+      {
+        for (j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
+        {
+          for(k=0;k<p_res-1;k++)
+          {
+            for(l=0;l<p_res-1;l++)
+            {
+              vertex_0=l+(p_res*k);
+              vertex_1=vertex_0+1;
+              vertex_2=vertex_0+p_res+1;
+              vertex_3=vertex_0+p_res;
+
+              vertex_0 += j*p_res*p_res;
+              vertex_1 += j*p_res*p_res;
+              vertex_2 += j*p_res*p_res;
+              vertex_3 += j*p_res*p_res;
+
+              write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1 << " " <<  vertex_3+1  << endl;
+            }
+          }
+        }
+      }
+      else if (FlowSol->mesh_eles(i)->get_ele_type()==2) // tet
+      {
+        int temp = (p_res)*(p_res+1)*(p_res+2)/6;
+
+        for (int m=0;m<FlowSol->mesh_eles(i)->get_n_eles();m++)
+        {
+
+          for(int k=0;k<p_res-1;k++)
+          {
+            for(int j=0;j<p_res-1-k;j++)
+            {
+              for(int i=0;i<p_res-1-k-j;i++)
+              {
+
+                vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i;
+
+                vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
+
+                vertex_2 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i;
+
+                vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i;
+
+                vertex_0+=m*temp;
+                vertex_1+=m*temp;
+                vertex_2+=m*temp;
+                vertex_3+=m*temp;
+
+                write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_3+1 << endl;
+
+              }
+            }
+          }
+
+          for(int k=0;k<p_res-2;k++)
+          {
+            for(int j=0;j<p_res-2-k;j++)
+            {
+              for(int i=0;i<p_res-2-k-j;i++)
+              {
+
+                vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + j*(p_res-k) - (j-1)*j/2 + i + 1;
+
+                vertex_1 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
+                vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + j*(p_res-(k+1)) - (j-1)*j/2 + i + 1;
+                vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + (i-1) + 1;
+                vertex_4 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + (i-1) + 1;
+                vertex_5 = temp - (p_res-(k))*(p_res+1-(k))*(p_res+2-(k))/6 + (j+1)*(p_res-(k)) - (j)*(j+1)/2 + (i-1) + 1;
+
+                vertex_0+=m*temp;
+                vertex_1+=m*temp;
+                vertex_2+=m*temp;
+                vertex_3+=m*temp;
+                vertex_4+=m*temp;
+                vertex_5+=m*temp;
+
+                write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_5+1 << endl;
+                write_tec << vertex_0+1  << " " <<  vertex_2+1  << " " <<  vertex_4+1  << " " << vertex_5+1 << endl;
+                write_tec << vertex_2+1  << " " <<  vertex_3+1  << " " <<  vertex_4+1  << " " << vertex_5+1 << endl;
+                write_tec << vertex_1+1  << " " <<  vertex_2+1  << " " <<  vertex_3+1  << " " << vertex_5+1 << endl;
+              }
+            }
+          }
+
+          for(int k=0;k<p_res-3;k++)
+          {
+            for(int j=0;j<p_res-3-k;j++)
+            {
+              for(int i=0;i<p_res-3-k-j;i++)
+              {
+
+                vertex_0 = temp - (p_res-k)*(p_res+1-k)*(p_res+2-k)/6 + (j+1)*(p_res-k) - (j)*(j+1)/2 + i + 1;
+                vertex_1 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j)*(p_res-(k+1)) - (j-1)*(j)/2 + i + 1;
+                vertex_2 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i ;
+                vertex_3 = temp - (p_res-(k+1))*(p_res+1-(k+1))*(p_res+2-(k+1))/6 + (j+1)*(p_res-(k+1)) - (j)*(j+1)/2 + i + 1;
+
+                vertex_0+=m*temp;
+                vertex_1+=m*temp;
+                vertex_2+=m*temp;
+                vertex_3+=m*temp;
+
+                write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_3+1 << endl;
+              }
+            }
+          }
+        }
+
+      }
+      else if (FlowSol->mesh_eles(i)->get_ele_type()==3) // prisms
+      {
+        int temp = (p_res)*(p_res+1)/2;
+
+        for (int m=0;m<FlowSol->mesh_eles(i)->get_n_eles();m++)
+        {
+
+          for (int l=0;l<p_res-1;l++)
+          {
+            for(int j=0;j<p_res-1;j++) // look to right from each point
+            {
+              for(int k=0;k<p_res-j-1;k++)
+              {
+                vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
+                vertex_1=vertex_0+1;
+                vertex_2=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
+
+                vertex_3 = vertex_0 + temp;
+                vertex_4 = vertex_1 + temp;
+                vertex_5 = vertex_2 + temp;
+
+                vertex_0+=m*(p_res*(p_res+1)/2*p_res);
+                vertex_1+=m*(p_res*(p_res+1)/2*p_res);
+                vertex_2+=m*(p_res*(p_res+1)/2*p_res);
+                vertex_3+=m*(p_res*(p_res+1)/2*p_res);
+                vertex_4+=m*(p_res*(p_res+1)/2*p_res);
+                vertex_5+=m*(p_res*(p_res+1)/2*p_res);
+
+                write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_2+1 << " " << vertex_3+1 << " " << vertex_4+1 << " " << vertex_5+1 << " " << vertex_5+1 << endl;
+              }
+            }
+          }
+
+          for (int l=0;l<p_res-1;l++)
+          {
+            for(int j=0;j<p_res-2;j++) //  look to left from each point
+            {
+              for(int k=1;k<p_res-j-1;k++)
+              {
+                vertex_0=k+(j*(p_res+1))-((j*(j+1))/2) + l*temp;
+                vertex_1=k+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
+                vertex_2=k-1+((j+1)*(p_res+1))-(((j+1)*(j+2))/2) + l*temp;
+
+                vertex_3 = vertex_0 + temp;
+                vertex_4 = vertex_1 + temp;
+                vertex_5 = vertex_2 + temp;
+
+                vertex_0+=m*(p_res*(p_res+1)/2*p_res);
+                vertex_1+=m*(p_res*(p_res+1)/2*p_res);
+                vertex_2+=m*(p_res*(p_res+1)/2*p_res);
+                vertex_3+=m*(p_res*(p_res+1)/2*p_res);
+                vertex_4+=m*(p_res*(p_res+1)/2*p_res);
+                vertex_5+=m*(p_res*(p_res+1)/2*p_res);
+
+                write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1  << " " << vertex_2+1 << " " << vertex_3+1 << " " << vertex_4+1 << " " << vertex_5+1 << " " << vertex_5+1 << endl;
+              }
+            }
+          }
+        }
+      }
+      else if(FlowSol->mesh_eles(i)->get_ele_type()==4) // hexa
+      {
+        for (int j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
+        {
+          for(int k=0;k<p_res-1;k++)
+          {
+            for(int l=0;l<p_res-1;l++)
+            {
+              for(int m=0;m<p_res-1;m++)
+              {
+                vertex_0=m+(p_res*l)+(p_res*p_res*k);
+                vertex_1=vertex_0+1;
+                vertex_2=vertex_0+p_res+1;
+                vertex_3=vertex_0+p_res;
+
+                vertex_4=vertex_0+p_res*p_res;
+                vertex_5=vertex_4+1;
+                vertex_6=vertex_4+p_res+1;
+                vertex_7=vertex_4+p_res;
+
+                vertex_0 += j*p_res*p_res*p_res;
+                vertex_1 += j*p_res*p_res*p_res;
+                vertex_2 += j*p_res*p_res*p_res;
+                vertex_3 += j*p_res*p_res*p_res;
+                vertex_4 += j*p_res*p_res*p_res;
+                vertex_5 += j*p_res*p_res*p_res;
+                vertex_6 += j*p_res*p_res*p_res;
+                vertex_7 += j*p_res*p_res*p_res;
+
+                write_tec << vertex_0+1  << " " <<  vertex_1+1  << " " <<  vertex_2+1 << " " <<  vertex_3+1  << " " << vertex_4+1 << " " << vertex_5+1 << " " << vertex_6+1 << " " << vertex_7+1 <<endl;
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        FatalError("ERROR: Invalid element type ... ");
+      }
     }
+  }
 
   write_tec.close();
 
@@ -575,7 +575,7 @@ input: FlowSol																								solution structure
 output: Mesh_<in_file_num>.vtu																(serial) data file
 output: Mesh_<in_file_num>/Mesh_<in_file_num>_<rank>.vtu			(parallel) data file containing portion of domain owned by current node. Files contained in directory Mesh_<in_file_num>.
 output: Mesh_<in_file_num>.pvtu																(parallel) file stitching together all .vtu files (written by master node)
-*/
+ */
 
 void write_vtu(int in_file_num, struct solution* FlowSol)
 {
@@ -678,63 +678,63 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
   /*! Master node creates a subdirectory to store .vtu files */
   if (my_rank == 0) {
-      struct stat st = {0};
-      if (stat(dumpnum, &st) == -1) {
-          mkdir(dumpnum, 0755);
-        }
-      /*! Delete old .vtu files from directory */
-      //remove(std::strcat(dumpnum,"/*.vtu"));
+    struct stat st = {0};
+    if (stat(dumpnum, &st) == -1) {
+      mkdir(dumpnum, 0755);
     }
+    /*! Delete old .vtu files from directory */
+    //remove(std::strcat(dumpnum,"/*.vtu"));
+  }
 
   /*! Master node writes the .pvtu file */
   if (my_rank == 0) {
-      cout << "Writing Paraview dump number " << dumpnum << " ...." << endl;
+    cout << "Writing Paraview dump number " << dumpnum << " ...." << endl;
 
-      write_pvtu.open(pvtu);
-      write_pvtu << "<?xml version=\"1.0\" ?>" << endl;
-      write_pvtu << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">" << endl;
-      write_pvtu << "	<PUnstructuredGrid GhostLevel=\"1\">" << endl;
+    write_pvtu.open(pvtu);
+    write_pvtu << "<?xml version=\"1.0\" ?>" << endl;
+    write_pvtu << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">" << endl;
+    write_pvtu << "	<PUnstructuredGrid GhostLevel=\"1\">" << endl;
 
-      /*! Write point data */
-      write_pvtu << "		<PPointData Scalars=\"Density\" Vectors=\"Velocity\">" << endl;
-      write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Density\" />" << endl;
-      write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
-      write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
+    /*! Write point data */
+    write_pvtu << "		<PPointData Scalars=\"Density\" Vectors=\"Velocity\">" << endl;
+    write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Density\" />" << endl;
+    write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Velocity\" NumberOfComponents=\"3\" />" << endl;
+    write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Energy\" />" << endl;
 
-      /*! write out modified turbulent viscosity */
-      if (run_input.turb_model==1) {
-        write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Mu_Tilde\" />" << endl;
-      }
-
-      // Optional time-averaged diagnostic fields
-      for(m=0;m<n_average_fields;m++)
-        {
-          write_pvtu << "			<PDataArray type=\"Float32\" Name=\"" << run_input.average_fields(m) << "\" />" << endl;
-        }
-
-      // Optional diagnostic fields
-      for(m=0;m<n_diag_fields;m++)
-        {
-          write_pvtu << "			<PDataArray type=\"Float32\" Name=\"" << run_input.diagnostic_fields(m) << "\" />" << endl;
-        }
-
-      write_pvtu << "		</PPointData>" << endl;
-
-      /*! Write points */
-      write_pvtu << "		<PPoints>" << endl;
-      write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" />" << endl;
-      write_pvtu << "		</PPoints>" << endl;
-
-      /*! Write names of source .vtu files to include */
-      for (i=0;i<n_proc;++i) {
-          write_pvtu << "		<Piece Source=\"" << dumpnum << "/" << dumpnum <<"_" << i << ".vtu" << "\" />" << endl;
-        }
-
-      /*! Write footer */
-      write_pvtu << "	</PUnstructuredGrid>" << endl;
-      write_pvtu << "</VTKFile>" << endl;
-      write_pvtu.close();
+    /*! write out modified turbulent viscosity */
+    if (run_input.turb_model==1) {
+      write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Mu_Tilde\" />" << endl;
     }
+
+    // Optional time-averaged diagnostic fields
+    for(m=0;m<n_average_fields;m++)
+    {
+      write_pvtu << "			<PDataArray type=\"Float32\" Name=\"" << run_input.average_fields(m) << "\" />" << endl;
+    }
+
+    // Optional diagnostic fields
+    for(m=0;m<n_diag_fields;m++)
+    {
+      write_pvtu << "			<PDataArray type=\"Float32\" Name=\"" << run_input.diagnostic_fields(m) << "\" />" << endl;
+    }
+
+    write_pvtu << "		</PPointData>" << endl;
+
+    /*! Write points */
+    write_pvtu << "		<PPoints>" << endl;
+    write_pvtu << "			<PDataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" />" << endl;
+    write_pvtu << "		</PPoints>" << endl;
+
+    /*! Write names of source .vtu files to include */
+    for (i=0;i<n_proc;++i) {
+      write_pvtu << "		<Piece Source=\"" << dumpnum << "/" << dumpnum <<"_" << i << ".vtu" << "\" />" << endl;
+    }
+
+    /*! Write footer */
+    write_pvtu << "	</PUnstructuredGrid>" << endl;
+    write_pvtu << "</VTKFile>" << endl;
+    write_pvtu.close();
+  }
 
 #else
 
@@ -759,286 +759,286 @@ void write_vtu(int in_file_num, struct solution* FlowSol)
 
   /*! Loop over element types */
   for(i=0;i<FlowSol->n_ele_types;i++)
-    {
-      /*! no. of elements of type i */
-      n_eles = FlowSol->mesh_eles(i)->get_n_eles();
-      /*! Only proceed if there any elements of type i */
-      if (n_eles!=0) {
-          /*! element type */
-          ele_type = FlowSol->mesh_eles(i)->get_ele_type();
+  {
+    /*! no. of elements of type i */
+    n_eles = FlowSol->mesh_eles(i)->get_n_eles();
+    /*! Only proceed if there any elements of type i */
+    if (n_eles!=0) {
+      /*! element type */
+      ele_type = FlowSol->mesh_eles(i)->get_ele_type();
 
-          /*! no. of plot points per ele */
-          n_points = FlowSol->mesh_eles(i)->get_n_ppts_per_ele();
+      /*! no. of plot points per ele */
+      n_points = FlowSol->mesh_eles(i)->get_n_ppts_per_ele();
 
-          /*! no. of plot sub-elements per ele */
-          n_cells  = FlowSol->mesh_eles(i)->get_n_peles_per_ele();
+      /*! no. of plot sub-elements per ele */
+      n_cells  = FlowSol->mesh_eles(i)->get_n_peles_per_ele();
 
-          /*! no. of vertices per ele */
-          n_verts  = FlowSol->mesh_eles(i)->get_n_verts_per_ele();
+      /*! no. of vertices per ele */
+      n_verts  = FlowSol->mesh_eles(i)->get_n_verts_per_ele();
 
-          /*! no. of solution fields */
-          n_fields = FlowSol->mesh_eles(i)->get_n_fields();
+      /*! no. of solution fields */
+      n_fields = FlowSol->mesh_eles(i)->get_n_fields();
 
-          /*! no. of dimensions */
-          n_dims = FlowSol->mesh_eles(i)->get_n_dims();
+      /*! no. of dimensions */
+      n_dims = FlowSol->mesh_eles(i)->get_n_dims();
 
-          /*! Temporary Array of plot point coordinates */
-          pos_ppts_temp.setup(n_points,n_dims);
+      /*! Temporary Array of plot point coordinates */
+      pos_ppts_temp.setup(n_points,n_dims);
 
-          /*! Temporary solution Array at plot points */
-          disu_ppts_temp.setup(n_points,n_fields);
+      /*! Temporary solution Array at plot points */
+      disu_ppts_temp.setup(n_points,n_fields);
 
-          /*! Temporary Array of time averaged fields at the plot points */
-          if(n_average_fields > 0) {
-            disu_average_ppts_temp.setup(n_points,n_average_fields);
-          }
+      /*! Temporary Array of time averaged fields at the plot points */
+      if(n_average_fields > 0) {
+        disu_average_ppts_temp.setup(n_points,n_average_fields);
+      }
 
-          if(n_diag_fields > 0) {
-            /*! Temporary solution Array at plot points */
-            grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
+      if(n_diag_fields > 0) {
+        /*! Temporary solution Array at plot points */
+        grad_disu_ppts_temp.setup(n_points,n_fields,n_dims);
 
-            /*! Temporary diagnostic field Array at plot points */
-            diag_ppts_temp.setup(n_points,n_diag_fields);
+        /*! Temporary diagnostic field Array at plot points */
+        diag_ppts_temp.setup(n_points,n_diag_fields);
 
-            /*! Temporary field for sensor Array at plot points */
-            sensor_ppts_temp.setup(n_points);
+        /*! Temporary field for sensor Array at plot points */
+        sensor_ppts_temp.setup(n_points);
 
-            /*! Temporary field for artificial viscosity co-efficients at plot points */
-            epsilon_ppts_temp.setup(n_points);
-          }
+        /*! Temporary field for artificial viscosity co-efficients at plot points */
+        epsilon_ppts_temp.setup(n_points);
+      }
 
-          /*! Temporary grid velocity Array at plot points */
-          if (run_input.motion) {
-            FlowSol->mesh_eles(i)->set_grid_vel_ppts();
-            grid_vel_ppts_temp = FlowSol->mesh_eles(i)->get_grid_vel_ppts();
-          }
+      /*! Temporary grid velocity Array at plot points */
+      if (run_input.motion) {
+        FlowSol->mesh_eles(i)->set_grid_vel_ppts();
+        grid_vel_ppts_temp = FlowSol->mesh_eles(i)->get_grid_vel_ppts();
+      }
 
-          con.setup(n_verts,n_cells);
-          con = FlowSol->mesh_eles(i)->get_connectivity_plot();
+      con.setup(n_verts,n_cells);
+      con = FlowSol->mesh_eles(i)->get_connectivity_plot();
 
-          /*! Loop over individual elements and write their data as a separate VTK DataArray */
-          for(j=0;j<n_eles;j++)
-            {
-              write_vtu << "		<Piece NumberOfPoints=\"" << n_points << "\" NumberOfCells=\"" << n_cells << "\">" << endl;
+      /*! Loop over individual elements and write their data as a separate VTK DataArray */
+      for(j=0;j<n_eles;j++)
+      {
+        write_vtu << "		<Piece NumberOfPoints=\"" << n_points << "\" NumberOfCells=\"" << n_cells << "\">" << endl;
 
-              /*! Calculate the prognostic (solution) fields at the plot points */
-              FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
+        /*! Calculate the prognostic (solution) fields at the plot points */
+        FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
 
 
-              /*! Calculate time averaged diagnostic fields at the plot points */
-              if(n_average_fields > 0) {
-                FlowSol->mesh_eles(i)->calc_time_average_ppts(j,disu_average_ppts_temp);
-              }
-
-              if(n_diag_fields > 0) {
-                /*! Calculate the gradient of the prognostic fields at the plot points */
-                FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
-
-                if(run_input.ArtifOn)
-                {
-                  /*! Calculate the sensor at the plot points */
-                  FlowSol->mesh_eles(i)->calc_sensor_ppts(j,sensor_ppts_temp);
-
-                  if(run_input.artif_type == 0)
-                    /*! Calculate the artificial viscosity co-efficients at plot points */
-                    FlowSol->mesh_eles(i)->calc_epsilon_ppts(j,epsilon_ppts_temp);
-                }
-
-                /*! Calculate the diagnostic fields at the plot points */
-                FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j, disu_ppts_temp, grad_disu_ppts_temp, sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp, FlowSol->time);
-              }
-
-              /*! write out solution to file */
-              write_vtu << "			<PointData>" << endl;
-
-              /*! density */
-              write_vtu << "				<DataArray type= \"Float32\" Name=\"Density\" format=\"ascii\">" << endl;
-              for(k=0;k<n_points;k++)
-                {
-                  write_vtu << disu_ppts_temp(k,0) << " ";
-                }
-              write_vtu << endl;
-              write_vtu << "				</DataArray>" << endl;
-
-              /*! velocity */
-              write_vtu << "				<DataArray type= \"Float32\" NumberOfComponents=\"3\" Name=\"Velocity\" format=\"ascii\">" << endl;
-              for(k=0;k<n_points;k++)
-                {
-                  /*! Divide momentum components by density to obtain velocity components */
-                  write_vtu << disu_ppts_temp(k,1)/disu_ppts_temp(k,0) << " " << disu_ppts_temp(k,2)/disu_ppts_temp(k,0) << " ";
-
-                  /*! In 2D the z-component of velocity is not stored, but Paraview needs it so write a 0. */
-                  if(n_dims==2)
-                    {
-                      write_vtu << 0.0 << " ";
-                    }
-                  /*! In 3D just write the z-component of velocity */
-                  else
-                    {
-                      write_vtu << disu_ppts_temp(k,3)/disu_ppts_temp(k,0) << " ";
-                    }
-                }
-              write_vtu << endl;
-              write_vtu << "				</DataArray>" << endl;
-
-              /*! energy */
-              write_vtu << "				<DataArray type= \"Float32\" Name=\"Energy\" format=\"ascii\">" << endl;
-              for(k=0;k<n_points;k++)
-                {
-                  /*! In 2D energy is the 4th solution component */
-                  if(n_dims==2)
-                    {
-                      write_vtu << disu_ppts_temp(k,3)/disu_ppts_temp(k,0) << " ";
-                    }
-                  /*! In 3D energy is the 5th solution component */
-                  else
-                    {
-                      write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
-                    }
-                }
-              write_vtu << endl;
-              write_vtu << "				</DataArray>" << endl;
-
-              /*! modified turbulent viscosity */
-              if (run_input.turb_model == 1) {
-                write_vtu << "				<DataArray type= \"Float32\" Name=\"Nu_Tilde\" format=\"ascii\">" << endl;
-                for(k=0;k<n_points;k++)
-                {
-                  /*! In 2D nu_tilde is the 5th solution component */
-                  if(n_dims==2)
-                  {
-                    write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
-                  }
-                  /*! In 3D nu_tilde is the 6th solution component */
-                  else
-                  {
-                    write_vtu << disu_ppts_temp(k,5)/disu_ppts_temp(k,0) << " ";
-                  }
-                }
-                /*! End the line and finish writing DataArray and PointData objects */
-                write_vtu << endl;
-                write_vtu << "				</DataArray>" << endl;
-              }
-
-              if (run_input.motion) {
-                /*! grid velocity */
-                write_vtu << "				<DataArray type= \"Float32\" NumberOfComponents=\"3\" Name=\"GridVelocity\" format=\"ascii\">" << endl;
-                for(k=0;k<n_points;k++)
-                {
-                  write_vtu << grid_vel_ppts_temp(0,k,j) << " " << grid_vel_ppts_temp(1,k,j) << " ";
-
-                  /*! In 2D the z-component of velocity is not stored, but Paraview needs it so write a 0. */
-                  if(n_fields==4)
-                  {
-                    write_vtu << 0.0 << " ";
-                  }
-                  /*! In 3D just write the z-component of velocity */
-                  else
-                  {
-                    write_vtu << grid_vel_ppts_temp(2,k,j) << " ";
-                  }
-                }
-                write_vtu << endl;
-                write_vtu << "				</DataArray>" << endl;
-              }
-
-              /*! Write out optional time-averaged diagnostic fields */
-              for(m=0;m<n_average_fields;m++)
-                {
-                  write_vtu << "				<DataArray type= \"Float32\" Name=\"" << run_input.average_fields(m) << "\" format=\"ascii\">" << endl;
-                  for(k=0;k<n_points;k++)
-                    {
-                      write_vtu << disu_average_ppts_temp(k,m) << " ";
-                    }
-
-                  /*! End the line and finish writing DataArray object */
-                  write_vtu << endl;
-                  write_vtu << "				</DataArray>" << endl;
-                }
-
-              /*! Write out optional diagnostic fields */
-              for(m=0;m<n_diag_fields;m++)
-                {
-                  write_vtu << "				<DataArray type= \"Float32\" Name=\"" << run_input.diagnostic_fields(m) << "\" format=\"ascii\">" << endl;
-                  for(k=0;k<n_points;k++)
-                    {
-                      write_vtu << diag_ppts_temp(k,m) << " ";
-                    }
-
-                  /*! End the line and finish writing DataArray object */
-                  write_vtu << endl;
-                  write_vtu << "				</DataArray>" << endl;
-                }
-
-              /*! finish writing PointData object */
-              write_vtu << "			</PointData>" << endl;
-
-              /*! Calculate the plot coordinates */
-              FlowSol->mesh_eles(i)->calc_pos_ppts(j,pos_ppts_temp);
-
-              /*! write out the plot coordinates */
-              write_vtu << "			<Points>" << endl;
-              write_vtu << "				<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">" << endl;
-
-              /*! Loop over plot points in element */
-              for(k=0;k<n_points;k++)
-                {
-                  for(l=0;l<n_dims;l++)
-                    {
-                      write_vtu << pos_ppts_temp(k,l) << " ";
-                    }
-
-                  /*! If 2D, write a 0 as the z-component */
-                  if(n_dims==2)
-                    {
-                      write_vtu << "0 ";
-                    }
-                }
-
-              write_vtu << endl;
-              write_vtu << "				</DataArray>" << endl;
-              write_vtu << "			</Points>" << endl;
-
-              /*! write out Cell data: connectivity, offsets, element types */
-              write_vtu << "			<Cells>" << endl;
-
-              /*! Write connectivity Array */
-              write_vtu << "				<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << endl;
-
-              for(k=0;k<n_cells;k++)
-                {
-                  for(l=0;l<n_verts;l++)
-                    {
-                      write_vtu << con(l,k) << " ";
-                    }
-                  write_vtu << endl;
-                }
-              write_vtu << "				</DataArray>" << endl;
-
-              /*! Write cell numbers */
-              write_vtu << "				<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << endl;
-              for(k=0;k<n_cells;k++)
-                {
-                  write_vtu << (k+1)*n_verts << " ";
-                }
-              write_vtu << endl;
-              write_vtu << "				</DataArray>" << endl;
-
-              /*! Write VTK element type */
-              write_vtu << "				<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << endl;
-              for(k=0;k<n_cells;k++)
-                {
-                  write_vtu << vtktypes[i] << " ";
-                }
-              write_vtu << endl;
-              write_vtu << "				</DataArray>" << endl;
-
-              /*! Write cell and piece footers */
-              write_vtu << "			</Cells>" << endl;
-              write_vtu << "		</Piece>" << endl;
-            }
+        /*! Calculate time averaged diagnostic fields at the plot points */
+        if(n_average_fields > 0) {
+          FlowSol->mesh_eles(i)->calc_time_average_ppts(j,disu_average_ppts_temp);
         }
+
+        if(n_diag_fields > 0) {
+          /*! Calculate the gradient of the prognostic fields at the plot points */
+          FlowSol->mesh_eles(i)->calc_grad_disu_ppts(j,grad_disu_ppts_temp);
+
+          if(run_input.ArtifOn)
+          {
+            /*! Calculate the sensor at the plot points */
+            FlowSol->mesh_eles(i)->calc_sensor_ppts(j,sensor_ppts_temp);
+
+            if(run_input.artif_type == 0)
+              /*! Calculate the artificial viscosity co-efficients at plot points */
+              FlowSol->mesh_eles(i)->calc_epsilon_ppts(j,epsilon_ppts_temp);
+          }
+
+          /*! Calculate the diagnostic fields at the plot points */
+          FlowSol->mesh_eles(i)->calc_diagnostic_fields_ppts(j, disu_ppts_temp, grad_disu_ppts_temp, sensor_ppts_temp, epsilon_ppts_temp, diag_ppts_temp, FlowSol->time);
+        }
+
+        /*! write out solution to file */
+        write_vtu << "			<PointData>" << endl;
+
+        /*! density */
+        write_vtu << "				<DataArray type= \"Float32\" Name=\"Density\" format=\"ascii\">" << endl;
+        for(k=0;k<n_points;k++)
+        {
+          write_vtu << disu_ppts_temp(k,0) << " ";
+        }
+        write_vtu << endl;
+        write_vtu << "				</DataArray>" << endl;
+
+        /*! velocity */
+        write_vtu << "				<DataArray type= \"Float32\" NumberOfComponents=\"3\" Name=\"Velocity\" format=\"ascii\">" << endl;
+        for(k=0;k<n_points;k++)
+        {
+          /*! Divide momentum components by density to obtain velocity components */
+          write_vtu << disu_ppts_temp(k,1)/disu_ppts_temp(k,0) << " " << disu_ppts_temp(k,2)/disu_ppts_temp(k,0) << " ";
+
+          /*! In 2D the z-component of velocity is not stored, but Paraview needs it so write a 0. */
+          if(n_dims==2)
+          {
+            write_vtu << 0.0 << " ";
+          }
+          /*! In 3D just write the z-component of velocity */
+          else
+          {
+            write_vtu << disu_ppts_temp(k,3)/disu_ppts_temp(k,0) << " ";
+          }
+        }
+        write_vtu << endl;
+        write_vtu << "				</DataArray>" << endl;
+
+        /*! energy */
+        write_vtu << "				<DataArray type= \"Float32\" Name=\"Energy\" format=\"ascii\">" << endl;
+        for(k=0;k<n_points;k++)
+        {
+          /*! In 2D energy is the 4th solution component */
+          if(n_dims==2)
+          {
+            write_vtu << disu_ppts_temp(k,3)/disu_ppts_temp(k,0) << " ";
+          }
+          /*! In 3D energy is the 5th solution component */
+          else
+          {
+            write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
+          }
+        }
+        write_vtu << endl;
+        write_vtu << "				</DataArray>" << endl;
+
+        /*! modified turbulent viscosity */
+        if (run_input.turb_model == 1) {
+          write_vtu << "				<DataArray type= \"Float32\" Name=\"Nu_Tilde\" format=\"ascii\">" << endl;
+          for(k=0;k<n_points;k++)
+          {
+            /*! In 2D nu_tilde is the 5th solution component */
+            if(n_dims==2)
+            {
+              write_vtu << disu_ppts_temp(k,4)/disu_ppts_temp(k,0) << " ";
+            }
+            /*! In 3D nu_tilde is the 6th solution component */
+            else
+            {
+              write_vtu << disu_ppts_temp(k,5)/disu_ppts_temp(k,0) << " ";
+            }
+          }
+          /*! End the line and finish writing DataArray and PointData objects */
+          write_vtu << endl;
+          write_vtu << "				</DataArray>" << endl;
+        }
+
+        if (run_input.motion) {
+          /*! grid velocity */
+          write_vtu << "				<DataArray type= \"Float32\" NumberOfComponents=\"3\" Name=\"GridVelocity\" format=\"ascii\">" << endl;
+          for(k=0;k<n_points;k++)
+          {
+            write_vtu << grid_vel_ppts_temp(0,k,j) << " " << grid_vel_ppts_temp(1,k,j) << " ";
+
+            /*! In 2D the z-component of velocity is not stored, but Paraview needs it so write a 0. */
+            if(n_fields==4)
+            {
+              write_vtu << 0.0 << " ";
+            }
+            /*! In 3D just write the z-component of velocity */
+            else
+            {
+              write_vtu << grid_vel_ppts_temp(2,k,j) << " ";
+            }
+          }
+          write_vtu << endl;
+          write_vtu << "				</DataArray>" << endl;
+        }
+
+        /*! Write out optional time-averaged diagnostic fields */
+        for(m=0;m<n_average_fields;m++)
+        {
+          write_vtu << "				<DataArray type= \"Float32\" Name=\"" << run_input.average_fields(m) << "\" format=\"ascii\">" << endl;
+          for(k=0;k<n_points;k++)
+          {
+            write_vtu << disu_average_ppts_temp(k,m) << " ";
+          }
+
+          /*! End the line and finish writing DataArray object */
+          write_vtu << endl;
+          write_vtu << "				</DataArray>" << endl;
+        }
+
+        /*! Write out optional diagnostic fields */
+        for(m=0;m<n_diag_fields;m++)
+        {
+          write_vtu << "				<DataArray type= \"Float32\" Name=\"" << run_input.diagnostic_fields(m) << "\" format=\"ascii\">" << endl;
+          for(k=0;k<n_points;k++)
+          {
+            write_vtu << diag_ppts_temp(k,m) << " ";
+          }
+
+          /*! End the line and finish writing DataArray object */
+          write_vtu << endl;
+          write_vtu << "				</DataArray>" << endl;
+        }
+
+        /*! finish writing PointData object */
+        write_vtu << "			</PointData>" << endl;
+
+        /*! Calculate the plot coordinates */
+        FlowSol->mesh_eles(i)->calc_pos_ppts(j,pos_ppts_temp);
+
+        /*! write out the plot coordinates */
+        write_vtu << "			<Points>" << endl;
+        write_vtu << "				<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">" << endl;
+
+        /*! Loop over plot points in element */
+        for(k=0;k<n_points;k++)
+        {
+          for(l=0;l<n_dims;l++)
+          {
+            write_vtu << pos_ppts_temp(k,l) << " ";
+          }
+
+          /*! If 2D, write a 0 as the z-component */
+          if(n_dims==2)
+          {
+            write_vtu << "0 ";
+          }
+        }
+
+        write_vtu << endl;
+        write_vtu << "				</DataArray>" << endl;
+        write_vtu << "			</Points>" << endl;
+
+        /*! write out Cell data: connectivity, offsets, element types */
+        write_vtu << "			<Cells>" << endl;
+
+        /*! Write connectivity Array */
+        write_vtu << "				<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << endl;
+
+        for(k=0;k<n_cells;k++)
+        {
+          for(l=0;l<n_verts;l++)
+          {
+            write_vtu << con(l,k) << " ";
+          }
+          write_vtu << endl;
+        }
+        write_vtu << "				</DataArray>" << endl;
+
+        /*! Write cell numbers */
+        write_vtu << "				<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << endl;
+        for(k=0;k<n_cells;k++)
+        {
+          write_vtu << (k+1)*n_verts << " ";
+        }
+        write_vtu << endl;
+        write_vtu << "				</DataArray>" << endl;
+
+        /*! Write VTK element type */
+        write_vtu << "				<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << endl;
+        for(k=0;k<n_cells;k++)
+        {
+          write_vtu << vtktypes[i] << " ";
+        }
+        write_vtu << endl;
+        write_vtu << "				</DataArray>" << endl;
+
+        /*! Write cell and piece footers */
+        write_vtu << "			</Cells>" << endl;
+        write_vtu << "		</Piece>" << endl;
+      }
     }
+  }
 
   /*! Write footer of file */
   write_vtu << "	</UnstructuredGrid>" << endl;
@@ -1088,26 +1088,26 @@ void write_restart(int in_file_num, struct solution* FlowSol)
 
   //header
   for (int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          FlowSol->mesh_eles(i)->write_restart_info(restart_file);
-          FlowSol->mesh_eles(i)->write_restart_data(restart_file);
+      FlowSol->mesh_eles(i)->write_restart_info(restart_file);
+      FlowSol->mesh_eles(i)->write_restart_data(restart_file);
 
-          // Output handy file of point locations for easy post-processing
-          if (run_input.restart_mesh_out) {
-            FlowSol->mesh_eles(i)->write_restart_info(restart_mesh);
-            FlowSol->mesh_eles(i)->write_restart_mesh(restart_mesh);
-          }
+      // Output handy file of point locations for easy post-processing
+      if (run_input.restart_mesh_out) {
+        FlowSol->mesh_eles(i)->write_restart_info(restart_mesh);
+        FlowSol->mesh_eles(i)->write_restart_mesh(restart_mesh);
+      }
 
-        }
     }
+  }
 
   restart_file.close();
 
 }
 
 void CalcForces(int in_file_num, struct solution* FlowSol) {
-  
+
   char file_name_s[50], *file_name;
   char forcedir_s[50], *forcedir;
   struct stat st = {0};
@@ -1139,72 +1139,72 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
 
   // Master node creates a subdirectory to store cp_*.dat files
   if ((my_rank == 0) && (write_dir))
+  {
+    if (stat(forcedir, &st) == -1)
     {
-      if (stat(forcedir, &st) == -1)
-        {
-          mkdir(forcedir, 0755);
-        }
+      mkdir(forcedir, 0755);
     }
+  }
 
   if (write_forces)
-    {
-      sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,my_rank);
-      file_name = &file_name_s[0];
-    
-      // open files for writing
-      coeff_file.open(file_name);
-    }
+  {
+    sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,my_rank);
+    file_name = &file_name_s[0];
+
+    // open files for writing
+    coeff_file.open(file_name);
+  }
 
 #else
 
   if (write_dir)
+  {
+    if (stat(forcedir, &st) == -1)
     {
-      if (stat(forcedir, &st) == -1)
-        {
-          mkdir(forcedir, 0755);
-        }
+      mkdir(forcedir, 0755);
     }
+  }
 
   if (write_forces)
-    {
-      sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,0);
-      file_name = &file_name_s[0];
-    
-      // open file for writing
-      coeff_file.open(file_name);
-    }
+  {
+    sprintf(file_name_s,"force_files/cp_%.09d_p%.04d.dat",in_file_num,0);
+    file_name = &file_name_s[0];
+
+    // open file for writing
+    coeff_file.open(file_name);
+  }
 
 #endif
-  
+
   // zero the forces and coeffs
   for (int m=0;m<FlowSol->n_dims;m++)
-    {
-      FlowSol->inv_force(m) = 0.;
-      FlowSol->vis_force(m) = 0.;
-    }
-  
+  {
+    FlowSol->inv_force(m) = 0.;
+    FlowSol->vis_force(m) = 0.;
+  }
+
   FlowSol->coeff_lift = 0.0;
   FlowSol->coeff_drag = 0.0;
 
   // loop over elements and compute forces on solid surfaces
   for(int i=0;i<FlowSol->n_ele_types;i++)
+  {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
     {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
-        {
-          // compute surface forces and coefficients
-          FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force, temp_vis_force, temp_cl, temp_cd, coeff_file, write_forces);
+      // compute surface forces and coefficients
+      FlowSol->mesh_eles(i)->compute_wall_forces(temp_inv_force, temp_vis_force, temp_cl, temp_cd, coeff_file, write_forces);
 
-          // set surface forces
-          for (int m=0;m<FlowSol->n_dims;m++) {
-              FlowSol->inv_force(m) += temp_inv_force(m);
-              FlowSol->vis_force(m) += temp_vis_force(m);
-            }
+      // set surface forces
+      for (int m=0;m<FlowSol->n_dims;m++) {
+        FlowSol->inv_force(m) += temp_inv_force(m);
+        FlowSol->vis_force(m) += temp_vis_force(m);
+      }
 
-          // set lift and drag coefficients
-          FlowSol->coeff_lift += temp_cl;
-          FlowSol->coeff_drag += temp_cd;
-        }
+      // set lift and drag coefficients
+      FlowSol->coeff_lift += temp_cl;
+      FlowSol->coeff_drag += temp_cd;
     }
+  }
 
 #ifdef _MPI
 
@@ -1214,27 +1214,27 @@ void CalcForces(int in_file_num, struct solution* FlowSol) {
   double coeff_drag_global=0.0;
 
   for (int m=0;m<FlowSol->n_dims;m++) {
-      inv_force_global(m) = 0.;
-      vis_force_global(m) = 0.;
-      MPI_Reduce(&FlowSol->inv_force(m),&inv_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      MPI_Reduce(&FlowSol->vis_force(m),&vis_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-    }
+    inv_force_global(m) = 0.;
+    vis_force_global(m) = 0.;
+    MPI_Reduce(&FlowSol->inv_force(m),&inv_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+    MPI_Reduce(&FlowSol->vis_force(m),&vis_force_global(m),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  }
 
   MPI_Reduce(&FlowSol->coeff_lift,&coeff_lift_global,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&FlowSol->coeff_drag,&coeff_drag_global,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-  
+
   for (int m=0;m<FlowSol->n_dims;m++)
-    {
-      FlowSol->inv_force(m) = inv_force_global(m);
-      FlowSol->vis_force(m) = vis_force_global(m);
-    }
-  
+  {
+    FlowSol->inv_force(m) = inv_force_global(m);
+    FlowSol->vis_force(m) = vis_force_global(m);
+  }
+
   FlowSol->coeff_lift = coeff_lift_global;
   FlowSol->coeff_drag = coeff_drag_global;
 
 #endif
 
-  if (write_forces) { coeff_file.close(); }
+if (write_forces) { coeff_file.close(); }
 }
 
 // Calculate integral diagnostic quantities
@@ -1244,29 +1244,29 @@ void CalcIntegralQuantities(int in_file_num, struct solution* FlowSol) {
 
   // Loop over element types
   for(int i=0;i<FlowSol->n_ele_types;i++)
+  {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
     {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
-        {
-          // initialize to zero
-          for(int j=0;j<nintq;++j)
-            {
-              FlowSol->integral_quantities(j) = 0.0;
-            }
-          FlowSol->mesh_eles(i)->CalcIntegralQuantities(nintq, FlowSol->integral_quantities);
-        }
+      // initialize to zero
+      for(int j=0;j<nintq;++j)
+      {
+        FlowSol->integral_quantities(j) = 0.0;
+      }
+      FlowSol->mesh_eles(i)->CalcIntegralQuantities(nintq, FlowSol->integral_quantities);
     }
+  }
 
 #ifdef _MPI
 
   Array<double> integral_quantities_global(nintq);
   for(int j=0;j<nintq;++j)
-    {
-      integral_quantities_global(j) = 0.0;
-      MPI_Reduce(&FlowSol->integral_quantities(j),&integral_quantities_global(j),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      FlowSol->integral_quantities(j) = integral_quantities_global(j);
-    }
+  {
+    integral_quantities_global(j) = 0.0;
+    MPI_Reduce(&FlowSol->integral_quantities(j),&integral_quantities_global(j),1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+    FlowSol->integral_quantities(j) = integral_quantities_global(j);
+  }
 #endif
-  
+
 }
 
 // Calculate time averaged diagnostic quantities
@@ -1274,57 +1274,56 @@ void CalcTimeAverageQuantities(struct solution* FlowSol) {
 
   // Loop over element types
   for(int i=0;i<FlowSol->n_ele_types;i++)
+  {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
     {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0)
-        {
-          FlowSol->mesh_eles(i)->CalcTimeAverageQuantities(FlowSol->time);
-        }
+      FlowSol->mesh_eles(i)->CalcTimeAverageQuantities(FlowSol->time);
     }
+  }
 }
 
 void compute_error(int in_file_num, struct solution* FlowSol)
 {
   int n_fields;
 
-  //HACK (assume same number of fields for all elements)
   for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          n_fields = FlowSol->mesh_eles(i)->get_n_fields();
-        }
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      n_fields = FlowSol->mesh_eles(i)->get_n_fields();
     }
+  }
 
   Array<double> error(2,n_fields);
   Array<double> temp_error(2,n_fields);
 
   for (int i=0; i<n_fields; i++)
-    {
-      error(0,i) = 0.;
-      error(1,i) = 0.;
-    }
+  {
+    error(0,i) = 0.;
+    error(1,i) = 0.;
+  }
 
   //Compute the error
   for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
-          temp_error = FlowSol->mesh_eles(i)->compute_error(run_input.error_norm_type,FlowSol->time);
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+      temp_error = FlowSol->mesh_eles(i)->compute_error(run_input.error_norm_type,FlowSol->time);
 
-          for(int j=0;j<n_fields; j++) {
-              error(0,j) += temp_error(0,j);
-              if(FlowSol->viscous) {
-                  error(1,j) += temp_error(1,j);
-                }
-            }
+      for(int j=0;j<n_fields; j++) {
+        error(0,j) += temp_error(0,j);
+        if(FlowSol->viscous) {
+          error(1,j) += temp_error(1,j);
         }
+      }
     }
+  }
 
 #ifdef _MPI
   int n_err_vals = 2*n_fields;
 
   Array<double> error_global(2,n_fields);
   for (int i=0; i<n_fields; i++)
-    {
-      error_global(0,i) = 0.;
-      error_global(1,i) = 0.;
-    }
+  {
+    error_global(0,i) = 0.;
+    error_global(1,i) = 0.;
+  }
 
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Reduce(error.get_ptr_cpu(),error_global.get_ptr_cpu(),n_err_vals,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
@@ -1333,32 +1332,32 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 #endif
 
   if (FlowSol->rank==0)
+  {
+    if (run_input.error_norm_type==1) // L1 norm
     {
-      if (run_input.error_norm_type==1) // L1 norm
-        {
-          error = error;
-        }
-      else if (run_input.error_norm_type==2) // L2 norm
-        {
-          for(int j=0;j<n_fields; j++) {
-              error(0,j) = sqrt(error(0,j));
-              if(FlowSol->viscous) {
-                  error(1,j) = sqrt(error(1,j));
-                }
-            }
-        }
-
-      for(int j=0;j<n_fields; j++) {
-          cout << scientific << " sol error, field " << j << " = " << setprecision(13) << error(0,j) << endl;
-        }
-      if(FlowSol->viscous)
-        {
-          for(int j=0;j<n_fields; j++) {
-              cout << scientific << " grad error, field " << j << " = " << setprecision(13) << error(1,j) << endl;
-            }
-        }
-
+      //error = error;
     }
+    else if (run_input.error_norm_type==2) // L2 norm
+    {
+      for(int j=0;j<n_fields; j++) {
+        error(0,j) = sqrt(error(0,j));
+        if(FlowSol->viscous) {
+          error(1,j) = sqrt(error(1,j));
+        }
+      }
+    }
+
+    for(int j=0;j<n_fields; j++) {
+      cout << scientific << " sol error, field " << j << " = " << setprecision(13) << error(0,j) << endl;
+    }
+    if(FlowSol->viscous)
+    {
+      for(int j=0;j<n_fields; j++) {
+        cout << scientific << " grad error, field " << j << " = " << setprecision(13) << error(1,j) << endl;
+      }
+    }
+
+  }
 
   // Writing error to file
 
@@ -1367,66 +1366,66 @@ void compute_error(int in_file_num, struct solution* FlowSol)
   int r_flag;
 
   if (FlowSol->rank==0)
-    {
-      sprintf(file_name_s,"error000.dat");
-      file_name = &file_name_s[0];
-      std::ofstream write_error;
+  {
+    sprintf(file_name_s,"error000.dat");
+    file_name = &file_name_s[0];
+    std::ofstream write_error;
 
-      write_error.open(file_name,ios::app);
-      write_error << in_file_num << ", ";
-      write_error <<  run_input.order << ", ";
-      write_error <<  scientific << run_input.c_tet << ", ";
-      write_error << run_input.mesh_file << ", ";
-      write_error << run_input.upts_type_tri << ", ";
-      write_error << run_input.upts_type_quad << ", ";
-      write_error << run_input.fpts_type_tri << ", ";
-      write_error << run_input.adv_type << ", ";
-      write_error << run_input.riemann_solve_type << ", ";
-      write_error << scientific << run_input.error_norm_type  << ", " ;
+    write_error.open(file_name,ios::app);
+    write_error << in_file_num << ", ";
+    write_error <<  run_input.order << ", ";
+    write_error <<  scientific << run_input.c_tet << ", ";
+    write_error << run_input.mesh_file << ", ";
+    write_error << run_input.upts_type_tri << ", ";
+    write_error << run_input.upts_type_quad << ", ";
+    write_error << run_input.fpts_type_tri << ", ";
+    write_error << run_input.adv_type << ", ";
+    write_error << run_input.riemann_solve_type << ", ";
+    write_error << scientific << run_input.error_norm_type  << ", " ;
 
+    for(int j=0;j<n_fields; j++) {
+      write_error << scientific << error(0,j);
+      if((j == (n_fields-1)) && FlowSol->viscous==0)
+      {
+        write_error << endl;
+      }
+      else
+      {
+        write_error <<", ";
+      }
+    }
+
+    if(FlowSol->viscous) {
       for(int j=0;j<n_fields; j++) {
-          write_error << scientific << error(0,j);
-          if((j == (n_fields-1)) && FlowSol->viscous==0)
-            {
-              write_error << endl;
-            }
-          else
-            {
-              write_error <<", ";
-            }
+        write_error << scientific << error(1,j);
+        if(j == (n_fields-1))
+        {
+          write_error << endl;
         }
-
-      if(FlowSol->viscous) {
-          for(int j=0;j<n_fields; j++) {
-              write_error << scientific << error(1,j);
-              if(j == (n_fields-1))
-                {
-                  write_error << endl;
-                }
-              else
-                {
-                  write_error <<", ";
-                }
-            }
+        else
+        {
+          write_error <<", ";
         }
+      }
+    }
 
-      write_error.close();
+    write_error.close();
 
-      double etol = 1.0e-5;
+    double etol = 1.0e-5;
 
-      r_flag = 0;
+    r_flag = 0;
 
-      //HACK
-      /*
+    //HACK
+    /*
      if( ((abs(ene_hist - error(0,n_fields-1))/ene_hist) < etol && (abs(grad_ene_hist - error(1,n_fields-1))/grad_ene_hist) < etol) || (abs(error(0,n_fields-1)) > abs(ene_hist)) )
      {
      r_flag = 1;
      }
      */
 
-      FlowSol->ene_hist = error(0,n_fields-1);
-      FlowSol->grad_ene_hist = error(1,n_fields-1);
-    }
+    FlowSol->ene_hist = error(0,n_fields-1);
+    FlowSol->grad_ene_hist = error(1,n_fields-1);
+  }
 
   //communicate exit_state across processors
 #ifdef _MPI
@@ -1436,24 +1435,24 @@ void compute_error(int in_file_num, struct solution* FlowSol)
 
 #ifdef _MPI
   if(r_flag)
-    {
-      MPI_Finalize();
-    }
+  {
+    MPI_Finalize();
+  }
 #endif
 
   if(r_flag)
-    {
-      cout << "Tolerance achieved " << endl;
-      exit(0);
-    }
+  {
+    cout << "Tolerance achieved " << endl;
+    exit(0);
+  }
 
 }
 
 void CalcNormResidual(struct solution* FlowSol) {
-  
+
   int i, j, n_upts = 0, n_fields;
   double sum[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, norm[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  
+
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
 
@@ -1471,27 +1470,27 @@ void CalcNormResidual(struct solution* FlowSol) {
         sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
     }
   }
-  
+
 #ifdef _MPI
-  
+
   int n_upts_global = 0;
   double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  
+
   n_upts = n_upts_global;
   for(i=0; i<n_fields; i++) sum[i] = sum_global[i];
-  
+
 #endif
-  
+
   if (FlowSol->rank == 0) {
-    
+
     // Compute the norm
     for(i=0; i<n_fields; i++) {
       if (run_input.res_norm_type==1) { FlowSol->norm_residual(i) = sum[i] / n_upts; } // L1 norm
       else if (run_input.res_norm_type==2) { FlowSol->norm_residual(i) = sqrt(sum[i]) / n_upts; } // L2 norm
       else FatalError("norm_type not recognized");
-      
+
       if (std::isnan(FlowSol->norm_residual(i))) {
         FatalError("NaN residual encountered. Exiting");
       }
@@ -1500,21 +1499,21 @@ void CalcNormResidual(struct solution* FlowSol) {
 }
 
 void HistoryOutput(int in_file_num, clock_t init, std::ofstream *write_hist, struct solution* FlowSol) {
-  
+
   int i, n_fields;
   clock_t final;
   // TODO: write heads when starting from a restart file
   bool open_hist, write_heads;
   int n_diags = run_input.n_integral_quantities;
   double in_time = FlowSol->time;
-  
+
   if (FlowSol->n_dims==2) n_fields = 4;
   else n_fields = 5;
 
   if (run_input.turb_model==1) {
     n_fields++;
   }
-  
+
   // set write flag
   if (run_input.restart_flag==0) {
     open_hist = (in_file_num == 1);
@@ -1526,30 +1525,30 @@ void HistoryOutput(int in_file_num, clock_t init, std::ofstream *write_hist, str
   }
 
   if (FlowSol->rank == 0) {
-    
+
     // Open history file
     if (open_hist) {
 
       write_hist->open("history.plt", ios::out);
       write_hist->precision(15);
       write_hist[0] << "TITLE = \"HiFiLES simulation\"" << endl;
-      
+
       write_hist[0] << "VARIABLES = \"Iteration\"";
-      
+
       // Add residual and variables
       if (FlowSol->n_dims==2) write_hist[0] << ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"CL</sub>(Total)\",\"CD</sub>(Total)\"";
       else write_hist[0] <<  ",\"log<sub>10</sub>(Res[<greek>r</greek>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>v<sub>z</sub>])\",\"log<sub>10</sub>(Res[<greek>r</greek>E])\",\"F<sub>x</sub>(Total)\",\"F<sub>y</sub>(Total)\",\"F<sub>z</sub>(Total)\",\"CL</sub>(Total)\",\"CD</sub>(Total)\"";
-      
+
       // Add integral diagnostics
       for(i=0; i<n_diags; i++)
         write_hist[0] << ",\"Diagnostics[" << i << "]\"";
 
       // Add physical and computational time
       write_hist[0] << ",\"Time<sub>Physical</sub>\",\"Time<sub>Comp</sub>(m)\"" << endl;
-      
+
       write_hist[0] << "ZONE T= \"Convergence history\"" << endl;
     }
-    
+
     // Write the header
     if (write_heads) {
       if (FlowSol->n_dims==2) {
@@ -1561,7 +1560,7 @@ void HistoryOutput(int in_file_num, clock_t init, std::ofstream *write_hist, str
         else cout <<  "\n  Iter       Res[Rho]   Res[RhoVelx]   Res[RhoVely]   Res[RhoVelz]      Res[RhoE]   Res[MuTilde]       Fx_Total       Fy_Total       Fz_Total" << endl;
       }
     }
-    
+
     // Output residuals
     cout.precision(8);
     cout.setf(ios::fixed, ios::floatfield);
@@ -1571,23 +1570,23 @@ void HistoryOutput(int in_file_num, clock_t init, std::ofstream *write_hist, str
       cout.width(15); cout << FlowSol->norm_residual(i);
       write_hist[0] << ", " << log10(FlowSol->norm_residual(i));
     }
-    
+
     // Output forces
     for(i=0; i< FlowSol->n_dims; i++) {
       cout.width(15); cout << FlowSol->inv_force(i) + FlowSol->vis_force(i);
       write_hist[0] << ", " << FlowSol->inv_force(i) + FlowSol->vis_force(i);
     }
-    
+
     // Output lift and drag coeffs
     write_hist[0] << ", " << FlowSol->coeff_lift  << ", " << FlowSol->coeff_drag;
-    
+
     // Output integral diagnostic quantities
     for(i=0; i<n_diags; i++)
       write_hist[0] << ", " << FlowSol->integral_quantities(i);
 
     // Output physical time
     write_hist[0] << ", " << in_time;
-    
+
     // Compute execution time
     final = clock()-init;
     write_hist[0] << ", " << (double) final/(((double) CLOCKS_PER_SEC) * 60.0) << endl;
@@ -1615,28 +1614,28 @@ void check_stability(struct solution* FlowSol)
   // check element specific data
 
   for(int i=0;i<FlowSol->n_ele_types;i++) {
-      if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
+    if (FlowSol->mesh_eles(i)->get_n_eles()!=0) {
 
-          n_fields = FlowSol->mesh_eles(i)->get_n_fields();
+      n_fields = FlowSol->mesh_eles(i)->get_n_fields();
 
-          disu_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),n_fields);
+      disu_ppts_temp.setup(FlowSol->mesh_eles(i)->get_n_ppts_per_ele(),n_fields);
 
-          for(int j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
-            {
-              FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
+      for(int j=0;j<FlowSol->mesh_eles(i)->get_n_eles();j++)
+      {
+        FlowSol->mesh_eles(i)->calc_disu_ppts(j,disu_ppts_temp);
 
-              for(int k=0;k<FlowSol->mesh_eles(i)->get_n_ppts_per_ele();k++)
-                {
-                  for(int l=0;l<n_fields;l++)
-                    {
-                      if ( std::isnan(disu_ppts_temp(k,l)) || (abs(disu_ppts_temp(k,l))> e_thresh) ) {
-                          r_flag = 1;
-                        }
-                    }
-                }
+        for(int k=0;k<FlowSol->mesh_eles(i)->get_n_ppts_per_ele();k++)
+        {
+          for(int l=0;l<n_fields;l++)
+          {
+            if ( std::isnan(disu_ppts_temp(k,l)) || (abs(disu_ppts_temp(k,l))> e_thresh) ) {
+              r_flag = 1;
             }
+          }
         }
+      }
     }
+  }
 
   //HACK
   c_now   = run_input.c_tet;
@@ -1644,15 +1643,15 @@ void check_stability(struct solution* FlowSol)
 
 
   if( r_flag==0 )
-    {
-      a_temp = dt_now;
-      b_temp = run_input.b_init;
-    }
+  {
+    a_temp = dt_now;
+    b_temp = run_input.b_init;
+  }
   else
-    {
-      a_temp = run_input.a_init;
-      b_temp = dt_now;
-    }
+  {
+    a_temp = run_input.a_init;
+    b_temp = dt_now;
+  }
 
 
   //file input
@@ -1666,49 +1665,49 @@ void check_stability(struct solution* FlowSol)
   write_time.precision(12);
 
   if(bisect_ind > 0)
+  {
+    for(int i=0; i<file_lines; i++)
     {
-      for(int i=0; i<file_lines; i++)
-        {
-          read_time >> c_file >> a_file >> b_file;
+      read_time >> c_file >> a_file >> b_file;
 
-          cout << c_file << " " << a_file << " " << b_file << endl;
+      cout << c_file << " " << a_file << " " << b_file << endl;
 
-          if(i == (file_lines-1))
-            {
-              cout << "Writing to time step file ..." << endl;
-              write_time << c_now << " " << a_temp << " " << b_temp << endl;
+      if(i == (file_lines-1))
+      {
+        cout << "Writing to time step file ..." << endl;
+        write_time << c_now << " " << a_temp << " " << b_temp << endl;
 
-              read_time.close();
-              write_time.close();
+        read_time.close();
+        write_time.close();
 
-              remove("time_step.dat");
-              rename("temp.dat","time_step.dat");
-            }
-          else
-            {
-              write_time << c_file << " " << a_file << " " << b_file << endl;
-            }
-        }
+        remove("time_step.dat");
+        rename("temp.dat","time_step.dat");
+      }
+      else
+      {
+        write_time << c_file << " " << a_file << " " << b_file << endl;
+      }
     }
+  }
 
 
   if(bisect_ind==0)
+  {
+    for(int i=0; i<file_lines; i++)
     {
-      for(int i=0; i<file_lines; i++)
-        {
-          read_time >> c_file >> a_file >> b_file;
-          write_time << c_file << " " << a_file << " " << b_file << endl;
-        }
-
-      cout << "Writing to time step file ..." << endl;
-      write_time << c_now << " " << a_temp << " " << b_temp << endl;
-
-      read_time.close();
-      write_time.close();
-
-      remove("time_step.dat");
-      rename("temp.dat","time_step.dat");
+      read_time >> c_file >> a_file >> b_file;
+      write_time << c_file << " " << a_file << " " << b_file << endl;
     }
+
+    cout << "Writing to time step file ..." << endl;
+    write_time << c_now << " " << a_temp << " " << b_temp << endl;
+
+    read_time.close();
+    write_time.close();
+
+    remove("time_step.dat");
+    rename("temp.dat","time_step.dat");
+  }
 
   if( (abs(b_temp - a_temp)/(0.5*(b_temp + a_temp))) < i_tol )
     exit(1);
