@@ -341,6 +341,9 @@ public:
   /*! set transforms at flux points */
   void set_transforms_fpts(void);
 
+  /*! calculate tansforms at flux points */
+  void calc_transforms_fpts(void);
+
   /*! set transforms at the interface cubature points */
   void set_transforms_inters_cubpts(void);
 

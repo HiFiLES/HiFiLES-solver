@@ -4793,171 +4793,215 @@ void eles::set_transforms_upts(void) {
     }
 }
 
+void eles::calc_transforms_fpts(void) {
+  int i,j,k;
 
+  int n_comp;
+
+  if(n_dims == 2)
+    {
+      n_comp = 3;
+    }
+  else if(n_dims == 3)
+    {
+      n_comp = 6;
+    }
+
+  Array<double> loc(n_dims);
+  Array<double> pos(n_dims);
+  Array<double> d_pos(n_dims,n_dims);
+  Array<double> dd_pos(n_dims,n_comp);
+  Array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
+
+  double xr, xs, xt;
+  double yr, ys, yt;
+  double zr, zs, zt;
+
+  // Compute metrics term at flux points
+  /// Determinant of Jacobian (transformation matrix)
+  detjac_fpts.setup(n_fpts_per_ele,n_eles);
+  /// Determinant of Jacobian times inverse of Jacobian (Full vector transform from physcial->reference frame)
+  JGinv_fpts.setup(n_dims,n_dims,n_fpts_per_ele,n_eles);
+  tdA_fpts.setup(n_fpts_per_ele,n_eles);
+  norm_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+  // Static-Physical position of solution points
+  pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+
+
+  if (rank==0)
+    cout << endl << " at flux points"  << endl;
+
+  for(i=0;i<n_eles;i++)
+    {
+      if ((i%(max(n_eles,10)/10))==0 && rank==0)
+        cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
+
+      for(j=0;j<n_fpts_per_ele;j++)
+        {
+          // get coordinates of the flux point
+
+          for(k=0;k<n_dims;k++)
+            {
+              loc(k)=tloc_fpts(k,j);
+            }
+
+          calc_pos(loc,i,pos);
+
+          for(k=0;k<n_dims;k++)
+            {
+              pos_fpts(j,i,k)=pos(k);
+            }
+
+          // calculate first derivatives of shape functions at the flux points
+
+          calc_d_pos(loc,i,d_pos);
+
+          // calculate second derivatives of shape functions at the flux point
+
+          if(viscous)
+            calc_dd_pos(loc,i,dd_pos);
+
+          // store quantities at the flux point
+
+          if(n_dims==2)
+            {
+              xr = d_pos(0,0);
+              xs = d_pos(0,1);
+
+              yr = d_pos(1,0);
+              ys = d_pos(1,1);
+
+              // store determinant of jacobian at flux point
+
+              detjac_fpts(j,i)= xr*ys - xs*yr;
+
+              if (detjac_fpts(j,i) < 0)
+                {
+                  FatalError("Negative Jacobian at flux points");
+                }
+
+              // store inverse of determinant of jacobian multiplied by jacobian at the flux point
+
+              JGinv_fpts(0,0,j,i)= ys;
+              JGinv_fpts(0,1,j,i)= -xs;
+              JGinv_fpts(1,0,j,i)= -yr;
+              JGinv_fpts(1,1,j,i)= xr;
+
+              // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
+
+              tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_fpts(0,j)*d_pos(1,1))-(tnorm_fpts(1,j)*d_pos(1,0));
+              tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_fpts(0,j)*d_pos(0,1))+(tnorm_fpts(1,j)*d_pos(0,0));
+
+              // store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
+
+              tdA_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
+                                 tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
+
+
+              // store normal at flux point
+
+              norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/tdA_fpts(j,i);
+              norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/tdA_fpts(j,i);
+            }
+          else if(n_dims==3)
+            {
+              xr = d_pos(0,0);
+              xs = d_pos(0,1);
+              xt = d_pos(0,2);
+
+              yr = d_pos(1,0);
+              ys = d_pos(1,1);
+              yt = d_pos(1,2);
+
+              zr = d_pos(2,0);
+              zs = d_pos(2,1);
+              zt = d_pos(2,2);
+
+              // store determinant of jacobian at flux point
+
+              detjac_fpts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
+
+              // store inverse of determinant of jacobian multiplied by jacobian at the flux point
+
+              JGinv_fpts(0,0,j,i) = ys*zt - yt*zs;
+              JGinv_fpts(0,1,j,i) = xt*zs - xs*zt;
+              JGinv_fpts(0,2,j,i) = xs*yt - xt*ys;
+              JGinv_fpts(1,0,j,i) = yt*zr - yr*zt;
+              JGinv_fpts(1,1,j,i) = xr*zt - xt*zr;
+              JGinv_fpts(1,2,j,i) = xt*yr - xr*yt;
+              JGinv_fpts(2,0,j,i) = yr*zs - ys*zr;
+              JGinv_fpts(2,1,j,i) = xs*zr - xr*zs;
+              JGinv_fpts(2,2,j,i) = xr*ys - xs*yr;
+
+              // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
+
+              tnorm_dot_inv_detjac_mul_jac(0)=((tnorm_fpts(0,j)*(d_pos(1,1)*d_pos(2,2)-d_pos(1,2)*d_pos(2,1)))+(tnorm_fpts(1,j)*(d_pos(1,2)*d_pos(2,0)-d_pos(1,0)*d_pos(2,2)))+(tnorm_fpts(2,j)*(d_pos(1,0)*d_pos(2,1)-d_pos(1,1)*d_pos(2,0))));
+              tnorm_dot_inv_detjac_mul_jac(1)=((tnorm_fpts(0,j)*(d_pos(0,2)*d_pos(2,1)-d_pos(0,1)*d_pos(2,2)))+(tnorm_fpts(1,j)*(d_pos(0,0)*d_pos(2,2)-d_pos(0,2)*d_pos(2,0)))+(tnorm_fpts(2,j)*(d_pos(0,1)*d_pos(2,0)-d_pos(0,0)*d_pos(2,1))));
+              tnorm_dot_inv_detjac_mul_jac(2)=((tnorm_fpts(0,j)*(d_pos(0,1)*d_pos(1,2)-d_pos(0,2)*d_pos(1,1)))+(tnorm_fpts(1,j)*(d_pos(0,2)*d_pos(1,0)-d_pos(0,0)*d_pos(1,2)))+(tnorm_fpts(2,j)*(d_pos(0,0)*d_pos(1,1)-d_pos(0,1)*d_pos(1,0))));
+
+              // store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
+
+              tdA_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
+                                 tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
+                                 tnorm_dot_inv_detjac_mul_jac(2)*tnorm_dot_inv_detjac_mul_jac(2));
+
+              // store normal at flux point
+
+              norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/tdA_fpts(j,i);
+              norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/tdA_fpts(j,i);
+              norm_fpts(j,i,2)=tnorm_dot_inv_detjac_mul_jac(2)/tdA_fpts(j,i);
+            }
+          else
+            {
+              cout << "ERROR: Invalid number of dimensions ... " << endl;
+            }
+        }
+    }
+}
+
+/*! Set transforms at flux points
+ * In this function, we set the values of the following matrices
+ * detjac_fpts
+ * JGinv_fpts
+ * tdA_fpts
+ * norm_fpts
+ * pos_fpts
+ */
 void eles::set_transforms_fpts(void) {
   if (n_eles!=0)
     {
-      int i,j,k;
+      int numMatricesCreated = 5; // number of matrices created in this function
+      std::string matrixNames [] = {"_detjac_fpts",
+                                    "_JGinv_fpts",
+                                    "_tdA_fpts",
+                                    "_norm_fpts",
+                                    "_pos_fpts"};
 
-      int n_comp;
+      Array<double>* matrices [] = {&detjac_fpts,
+                                    &JGinv_fpts,
+                                    &tdA_fpts,
+                                    &norm_fpts,
+                                    &pos_fpts};
 
-      if(n_dims == 2)
-        {
-          n_comp = 3;
+      // add the prefix and the suffix to the matrix names
+      for (int i = 0; i < numMatricesCreated; i++) {
+          matrixNames[i] = fileNamePrefix + matrixNames[i] + fileNameSuffix;
         }
-      else if(n_dims == 3)
-        {
-          n_comp = 6;
-        }
 
-      Array<double> loc(n_dims);
-      Array<double> pos(n_dims);
-      Array<double> d_pos(n_dims,n_dims);
-      Array<double> dd_pos(n_dims,n_comp);
-      Array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
+      int numFilesMissing = countNumberMissingFiles(matrixNames, numMatricesCreated);
 
-      double xr, xs, xt;
-      double yr, ys, yt;
-      double zr, zs, zt;
+      // check if the files exist, otherwise compute all of the matrix values
+      if (numFilesMissing > 0) {
 
-      // Compute metrics term at flux points
-      /// Determinant of Jacobian (transformation matrix)
-      detjac_fpts.setup(n_fpts_per_ele,n_eles);
-      /// Determinant of Jacobian times inverse of Jacobian (Full vector transform from physcial->reference frame)
-      JGinv_fpts.setup(n_dims,n_dims,n_fpts_per_ele,n_eles);
-      tdA_fpts.setup(n_fpts_per_ele,n_eles);
-      norm_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
-      // Static-Physical position of solution points
-      pos_fpts.setup(n_fpts_per_ele,n_eles,n_dims);
+          calc_transforms_fpts();
 
+          for (int i = 0; i < numMatricesCreated; i++) {
+              matrices[i]->writeToFile(matrixNames[i]);
+            }
 
-      if (rank==0)
-        cout << endl << " at flux points"  << endl;
-
-      for(i=0;i<n_eles;i++)
-        {
-          if ((i%(max(n_eles,10)/10))==0 && rank==0)
-            cout << fixed << setprecision(2) <<  (i*1.0/n_eles)*100 << "% " << flush;
-
-          for(j=0;j<n_fpts_per_ele;j++)
-            {
-              // get coordinates of the flux point
-
-              for(k=0;k<n_dims;k++)
-                {
-                  loc(k)=tloc_fpts(k,j);
-                }
-
-              calc_pos(loc,i,pos);
-
-              for(k=0;k<n_dims;k++)
-                {
-                  pos_fpts(j,i,k)=pos(k);
-                }
-
-              // calculate first derivatives of shape functions at the flux points
-
-              calc_d_pos(loc,i,d_pos);
-
-              // calculate second derivatives of shape functions at the flux point
-
-              if(viscous)
-                calc_dd_pos(loc,i,dd_pos);
-
-              // store quantities at the flux point
-
-              if(n_dims==2)
-                {
-                  xr = d_pos(0,0);
-                  xs = d_pos(0,1);
-
-                  yr = d_pos(1,0);
-                  ys = d_pos(1,1);
-
-                  // store determinant of jacobian at flux point
-
-                  detjac_fpts(j,i)= xr*ys - xs*yr;
-
-                  if (detjac_fpts(j,i) < 0)
-                    {
-                      FatalError("Negative Jacobian at flux points");
-                    }
-
-                  // store inverse of determinant of jacobian multiplied by jacobian at the flux point
-
-                  JGinv_fpts(0,0,j,i)= ys;
-                  JGinv_fpts(0,1,j,i)= -xs;
-                  JGinv_fpts(1,0,j,i)= -yr;
-                  JGinv_fpts(1,1,j,i)= xr;
-
-                  // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
-
-                  tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_fpts(0,j)*d_pos(1,1))-(tnorm_fpts(1,j)*d_pos(1,0));
-                  tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_fpts(0,j)*d_pos(0,1))+(tnorm_fpts(1,j)*d_pos(0,0));
-
-                  // store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
-
-                  tdA_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
-                                     tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
-
-
-                  // store normal at flux point
-
-                  norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/tdA_fpts(j,i);
-                  norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/tdA_fpts(j,i);
-                }
-              else if(n_dims==3)
-                {
-                  xr = d_pos(0,0);
-                  xs = d_pos(0,1);
-                  xt = d_pos(0,2);
-
-                  yr = d_pos(1,0);
-                  ys = d_pos(1,1);
-                  yt = d_pos(1,2);
-
-                  zr = d_pos(2,0);
-                  zs = d_pos(2,1);
-                  zt = d_pos(2,2);
-
-                  // store determinant of jacobian at flux point
-
-                  detjac_fpts(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
-
-                  // store inverse of determinant of jacobian multiplied by jacobian at the flux point
-
-                  JGinv_fpts(0,0,j,i) = ys*zt - yt*zs;
-                  JGinv_fpts(0,1,j,i) = xt*zs - xs*zt;
-                  JGinv_fpts(0,2,j,i) = xs*yt - xt*ys;
-                  JGinv_fpts(1,0,j,i) = yt*zr - yr*zt;
-                  JGinv_fpts(1,1,j,i) = xr*zt - xt*zr;
-                  JGinv_fpts(1,2,j,i) = xt*yr - xr*yt;
-                  JGinv_fpts(2,0,j,i) = yr*zs - ys*zr;
-                  JGinv_fpts(2,1,j,i) = xs*zr - xr*zs;
-                  JGinv_fpts(2,2,j,i) = xr*ys - xs*yr;
-
-                  // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
-
-                  tnorm_dot_inv_detjac_mul_jac(0)=((tnorm_fpts(0,j)*(d_pos(1,1)*d_pos(2,2)-d_pos(1,2)*d_pos(2,1)))+(tnorm_fpts(1,j)*(d_pos(1,2)*d_pos(2,0)-d_pos(1,0)*d_pos(2,2)))+(tnorm_fpts(2,j)*(d_pos(1,0)*d_pos(2,1)-d_pos(1,1)*d_pos(2,0))));
-                  tnorm_dot_inv_detjac_mul_jac(1)=((tnorm_fpts(0,j)*(d_pos(0,2)*d_pos(2,1)-d_pos(0,1)*d_pos(2,2)))+(tnorm_fpts(1,j)*(d_pos(0,0)*d_pos(2,2)-d_pos(0,2)*d_pos(2,0)))+(tnorm_fpts(2,j)*(d_pos(0,1)*d_pos(2,0)-d_pos(0,0)*d_pos(2,1))));
-                  tnorm_dot_inv_detjac_mul_jac(2)=((tnorm_fpts(0,j)*(d_pos(0,1)*d_pos(1,2)-d_pos(0,2)*d_pos(1,1)))+(tnorm_fpts(1,j)*(d_pos(0,2)*d_pos(1,0)-d_pos(0,0)*d_pos(1,2)))+(tnorm_fpts(2,j)*(d_pos(0,0)*d_pos(1,1)-d_pos(0,1)*d_pos(1,0))));
-
-                  // store magnitude of transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the flux point
-
-                  tdA_fpts(j,i)=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
-                                     tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
-                                     tnorm_dot_inv_detjac_mul_jac(2)*tnorm_dot_inv_detjac_mul_jac(2));
-
-                  // store normal at flux point
-
-                  norm_fpts(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/tdA_fpts(j,i);
-                  norm_fpts(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/tdA_fpts(j,i);
-                  norm_fpts(j,i,2)=tnorm_dot_inv_detjac_mul_jac(2)/tdA_fpts(j,i);
-                }
-              else
-                {
-                  cout << "ERROR: Invalid number of dimensions ... " << endl;
-                }
+        } else {
+          for (int i = 0; i < numMatricesCreated; i++) {
+              matrices[i]->initFromFile(matrixNames[i]);
             }
         }
 
@@ -4980,7 +5024,6 @@ void eles::set_transforms_fpts(void) {
 
 #endif
 
-      if (rank==0) cout << endl;
     } // if n_eles!=0
 }
 

@@ -302,7 +302,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
   Array<double> pos(FlowSol->n_dims);
 
-  if (FlowSol->rank==0) cout << "setting elements' shape ... ";
+  if (FlowSol->rank==0) cout << "setting elements' shape ... " << endl;
   for (int i=0;i<FlowSol->num_eles;i++) {
       if (ctype(i) == 0) //tri
         {
