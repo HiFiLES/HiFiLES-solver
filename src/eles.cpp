@@ -4263,8 +4263,6 @@ void eles::calc_disu_ppts(int in_ele, Array<double>& out_disu_ppts)
       {
         if (motion) {
           disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i)/J_dyn_upts(j,in_ele);
-          //disu_upts_plot(j,i)=1/J_dyn_upts(j,in_ele);
-          //cout << in_ele << "," << j << "," << i << ": " << disu_upts(0)(j,in_ele,i) << ", " << J_dyn_upts(j,in_ele) << endl;
         }else{
           disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
         }
@@ -5109,7 +5107,7 @@ void eles::set_transforms_dynamic(void)
           J_dyn_upts(j,i)= xr*ys - xs*yr;
 
           if (first_time && run_input.GCL) {
-          //if (in_rkstep==0) {
+            //if (in_rkstep==0) {
             Jbar_upts(0)(j,i) = J_dyn_upts(j,i);
           }
 
@@ -5202,7 +5200,7 @@ void eles::set_transforms_dynamic(void)
           J_dyn_fpts(j,i)= xr*ys - xs*yr;
 
           if (first_time && run_input.GCL) {
-          //if (in_rkstep==0) {
+            //if (in_rkstep==0) {
             Jbar_fpts(0)(j,i) = J_dyn_fpts(j,i);
           }
 
@@ -5218,14 +5216,14 @@ void eles::set_transforms_dynamic(void)
           JGinv_dyn_fpts(1,0,j,i)= -yr;
           JGinv_dyn_fpts(1,1,j,i)=  xr;
 
-//          if (viscous)
-//          {
-//            // store static->dynamic transformation matrix
-//            JinvG_dyn_fpts(j,i,0,0)= xr/J_dyn_fpts(j,i);
-//            JinvG_dyn_fpts(j,i,0,1)= xs/J_dyn_fpts(j,i);
-//            JinvG_dyn_fpts(j,i,1,0)= yr/J_dyn_fpts(j,i);
-//            JinvG_dyn_fpts(j,i,1,1)= ys/J_dyn_fpts(j,i);
-//          }
+          //          if (viscous)
+          //          {
+          //            // store static->dynamic transformation matrix
+          //            JinvG_dyn_fpts(j,i,0,0)= xr/J_dyn_fpts(j,i);
+          //            JinvG_dyn_fpts(j,i,0,1)= xs/J_dyn_fpts(j,i);
+          //            JinvG_dyn_fpts(j,i,1,0)= yr/J_dyn_fpts(j,i);
+          //            JinvG_dyn_fpts(j,i,1,1)= ys/J_dyn_fpts(j,i);
+          //          }
 
           // temporarily store transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
           norm_dot_JGinv(0)= ( norm_fpts(j,i,0)*ys -norm_fpts(j,i,1)*yr);
@@ -5233,7 +5231,7 @@ void eles::set_transforms_dynamic(void)
 
           // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
           ndA_dyn_fpts(j,i)=sqrt(norm_dot_JGinv(0)*norm_dot_JGinv(0)+
-                                 norm_dot_JGinv(1)*norm_dot_JGinv(1));
+              norm_dot_JGinv(1)*norm_dot_JGinv(1));
 
           // store normal at flux point
           norm_dyn_fpts(j,i,0)=norm_dot_JGinv(0)/ndA_dyn_fpts(j,i);
@@ -5277,8 +5275,8 @@ void eles::set_transforms_dynamic(void)
 
           // store magnitude of transformed normal dot determinant of jacobian multiplied by inverse of jacobian at the flux point
           ndA_dyn_fpts(j,i)=sqrt(norm_dot_JGinv(0)*norm_dot_JGinv(0)+
-                                 norm_dot_JGinv(1)*norm_dot_JGinv(1)+
-                                 norm_dot_JGinv(2)*norm_dot_JGinv(2));
+              norm_dot_JGinv(1)*norm_dot_JGinv(1)+
+              norm_dot_JGinv(2)*norm_dot_JGinv(2));
 
           // store normal at flux point
           norm_dyn_fpts(j,i,0)=norm_dot_JGinv(0)/ndA_dyn_fpts(j,i);
@@ -5520,15 +5518,12 @@ void eles::calc_transforms_inters_cubpts(void)
  * norm_inters_cubpts
  * vol_detjac_inters_cubpts
  */
-
 void eles::set_transforms_inters_cubpts(void)
 {
   if (n_eles!=0)
   {
     // Initialize bdy_ele2ele Array
     (*this).set_bdy_ele2ele();
-
-
 
     int numMatricesCreated = 3; // number of matrices created in this function
     std::string matrixNames [] = {"_inter_detjac_inters_cubpts",
@@ -5564,44 +5559,64 @@ void eles::set_transforms_inters_cubpts(void)
   } // if n_eles!=0
 }
 
-// Set transforms at volume cubature points
+/*! \brief Calculates transforms at volume cubature points
+ *
+ * Finds the values of the following matrices
+ * vol_detjac_vol_cubpts
+ */
+void eles::calc_transforms_vol_cubpts(void) {
+  int i,j,m;
+      Array<double> d_pos(n_dims,n_dims);
+      Array<double> loc(n_dims);
+      Array<double> pos(n_dims);
+
+      vol_detjac_vol_cubpts.setup(n_cubpts_per_ele);
+
+      for (i=0;i<n_cubpts_per_ele;i++)
+        vol_detjac_vol_cubpts(i).setup(n_eles);
+
+      for (i=0;i<n_eles;i++)
+      {
+        for (j=0;j<n_cubpts_per_ele;j++)
+        {
+          // Get jacobian determinant at cubpts
+          for (m=0;m<n_dims;m++)
+            loc(m) = loc_volume_cubpts(m,j);
+
+          calc_pos(loc,i,pos);
+          calc_d_pos(loc,i,d_pos);
+
+          if (n_dims==2)
+          {
+            vol_detjac_vol_cubpts(j)(i) = d_pos(0,0)*d_pos(1,1) - d_pos(0,1)*d_pos(1,0);
+          }
+          else if (n_dims==3)
+          {
+            vol_detjac_vol_cubpts(j)(i) = d_pos(0,0)*(d_pos(1,1)*d_pos(2,2) - d_pos(1,2)*d_pos(2,1))
+            - d_pos(0,1)*(d_pos(1,0)*d_pos(2,2) - d_pos(1,2)*d_pos(2,0))
+            + d_pos(0,2)*(d_pos(1,0)*d_pos(2,1) - d_pos(1,1)*d_pos(2,0));
+          }
+        }
+      }
+}
+/*! \brief Sets transforms at volume cubature points
+ *
+ * Sets the values of the following matrices
+ * depending on whether or not they exist in the hard-drive:
+ * vol_detjac_vol_cubpts
+ */
 void eles::set_transforms_vol_cubpts(void)
 {
   if(n_eles!=0)
   {
-    int i,j,m;
-    Array<double> d_pos(n_dims,n_dims);
-    Array<double> loc(n_dims);
-    Array<double> pos(n_dims);
-    
-    vol_detjac_vol_cubpts.setup(n_cubpts_per_ele);
-    
-    for (i=0;i<n_cubpts_per_ele;i++)
-      vol_detjac_vol_cubpts(i).setup(n_eles);
-    
-    for (i=0;i<n_eles;i++)
-    {
-      for (j=0;j<n_cubpts_per_ele;j++)
-      {
-        // Get jacobian determinant at cubpts
-        for (m=0;m<n_dims;m++)
-          loc(m) = loc_volume_cubpts(m,j);
-        
-        calc_pos(loc,i,pos);
-        calc_d_pos(loc,i,d_pos);
-        
-        if (n_dims==2)
-        {
-          vol_detjac_vol_cubpts(j)(i) = d_pos(0,0)*d_pos(1,1) - d_pos(0,1)*d_pos(1,0);
-        }
-        else if (n_dims==3)
-        {
-          vol_detjac_vol_cubpts(j)(i) = d_pos(0,0)*(d_pos(1,1)*d_pos(2,2) - d_pos(1,2)*d_pos(2,1))
-          - d_pos(0,1)*(d_pos(1,0)*d_pos(2,2) - d_pos(1,2)*d_pos(2,0))
-          + d_pos(0,2)*(d_pos(1,0)*d_pos(2,1) - d_pos(1,1)*d_pos(2,0));
-        }
-      }
+    std::string matrixName = fileNamePrefix + "_vol_detjac_vol_cubpts" + fileNameSuffix;
+    if (!fileExists(matrixName )) {
+      calc_transforms_vol_cubpts();
+      vol_detjac_vol_cubpts.writeToFile(matrixName);
+    } else {
+      vol_detjac_vol_cubpts.initFromFile(matrixName);
     }
+
   }
 }
 
@@ -5845,12 +5860,6 @@ double* eles::get_delta_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_i
   int fpt;
   
   fpt=in_inter_local_fpt;
-  
-  //if (ele2global_ele(in_ele)==53)
-  //{
-  //  cout << "HERE" << endl;
-  //  cout << "local_face=" << in_ele_local_inter << endl;
-  //}
   
   for(i=0;i<in_ele_local_inter;i++)
   {
@@ -7086,7 +7095,7 @@ void eles::CalcTimeAverageQuantities(double& time)
 
 void eles::compute_wall_forces( Array<double>& inv_force, Array<double>& vis_force,  double& temp_cl, double& temp_cd, std::ofstream& coeff_file, bool write_forces)
 {
-  
+
   Array<double> u_l(n_fields),norm(n_dims);
   double p_l,v_sq,vn_l;
   Array<double> grad_u_l(n_fields,n_dims);
@@ -7102,12 +7111,12 @@ void eles::compute_wall_forces( Array<double>& inv_force, Array<double>& vis_for
   double inte, mu, rt_ratio, gamma=run_input.gamma;
   double diag, tauw, taundotn, wgt, detjac;
   double factor, aoa, aos, cp, cf, cl, cd;
-  
+
   // Need to add a reference area to the input file... Not needed for Cp/Cf,
   // but will be needed for forces if not equal to 1.0 for different geometries
-  
+
   double area_ref = 1.0;
-  
+
   for (int m=0;m<n_dims;m++)
   {
     Finv(m) = 0.;
@@ -7115,263 +7124,263 @@ void eles::compute_wall_forces( Array<double>& inv_force, Array<double>& vis_for
     inv_force(m) = 0.;
     vis_force(m) = 0.;
   }
-  
+
   temp_cd = 0.0;
   temp_cl = 0.0;
-  
+
   // angle of attack
   aoa = atan2(run_input.v_c_ic, run_input.u_c_ic);
-  
+
   // angle of side slip
   if (n_dims == 3)
   {
     aos = atan2(run_input.w_c_ic, run_input.u_c_ic);
   }
-  
+
   // one over the dynamic pressure - factor for computing friction coeff, pressure coeff, forces
   factor = 1.0 / (0.5*run_input.rho_c_ic*(run_input.u_c_ic*run_input.u_c_ic+run_input.v_c_ic*run_input.v_c_ic+run_input.w_c_ic*run_input.w_c_ic));
 
   // Add a header to the force file
   if (write_forces) { coeff_file << setw(18) << "x" << setw(18) << "Cp" << setw(18) << "Cf" << endl; }
-  
+
   // loop over the boundary elements
   for (int i=0;i<n_bdy_eles;i++) {
 
-      int ele = bdy_ele2ele(i);
-    
-      // loop over the interfaces of the element
-      for (int l=0;l<n_inters_per_ele;l++) {
+    int ele = bdy_ele2ele(i);
 
-          if (bctype(ele,l) == 7 || bctype(ele,l) == 11 || bctype(ele,l) == 12 || bctype(ele,l)==16) {
+    // loop over the interfaces of the element
+    for (int l=0;l<n_inters_per_ele;l++) {
 
-              // Compute force on this interface
-              for (int j=n_cubpts_per_inter(l)-1;j>=0;j--)
-                {
-                  // Get determinant of Jacobian (=area of interface)
-                  detjac = inter_detjac_inters_cubpts(l)(j,i);
+      if (bctype(ele,l) == 7 || bctype(ele,l) == 11 || bctype(ele,l) == 12 || bctype(ele,l)==16) {
 
-                  // Get cubature weight
-                  wgt = weight_inters_cubpts(l)(j);
+        // Compute force on this interface
+        for (int j=n_cubpts_per_inter(l)-1;j>=0;j--)
+        {
+          // Get determinant of Jacobian (=area of interface)
+          detjac = inter_detjac_inters_cubpts(l)(j,i);
 
-                  // Get position of cubature point
-                  for (int m=0;m<n_dims;m++)
-                    loc(m) = loc_inters_cubpts(l)(m,j);
+          // Get cubature weight
+          wgt = weight_inters_cubpts(l)(j);
 
-                  calc_pos(loc,ele,pos);
+          // Get position of cubature point
+          for (int m=0;m<n_dims;m++)
+            loc(m) = loc_inters_cubpts(l)(m,j);
 
-                  // Compute solution at current cubature point
-                  for (int m=0;m<n_fields;m++) {
-                      double value = 0.;
-                      for (int k=0;k<n_upts_per_ele;k++) {
-                          value += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,m);
-                        }
-                      u_l(m) = value;
-                    }
+          calc_pos(loc,ele,pos);
 
-                  // If viscous, extrapolate the gradient at the cubature points
-                  if (viscous==1)
-                    {
-                      for (int m=0;m<n_fields;m++) {
-                          for (int n=0;n<n_dims;n++) {
-                              double value=0.;
-                              for (int k=0;k<n_upts_per_ele;k++) {
-                                  value += opp_inters_cubpts(l)(j,k)*grad_disu_upts(k,ele,m,n);
-                                }
-                              grad_u_l(m,n) = value;
-                            }
-                        }
-                    }
-
-                  // Get the normal
-                  for (int m=0;m<n_dims;m++)
-                    {
-                      norm(m) = norm_inters_cubpts(l)(j,i,m);
-                    }
-
-                  // Get pressure
-
-                  // Not dual consistent
-                  if (bctype(ele,l)!=16) {
-                      v_sq = 0.;
-                      for (int m=0;m<n_dims;m++)
-                        v_sq += (u_l(m+1)*u_l(m+1));
-                      p_l   = (gamma-1.0)*( u_l(n_dims+1) - 0.5*v_sq/u_l(0));
-                    }
-                  else
-                    {
-                      //Dual consistent approach
-                      vn_l = 0.;
-                      for (int m=0;m<n_dims;m++)
-                        vn_l += u_l(m+1)*norm(m);
-                      vn_l /= u_l(0);
-
-                      for (int m=0;m<n_dims;m++)
-                        u_l(m+1) = u_l(m+1)-(vn_l)*norm(m);
-
-                      v_sq = 0.;
-                      for (int m=0;m<n_dims;m++)
-                        v_sq += (u_l(m+1)*u_l(m+1));
-                      p_l   = (gamma-1.0)*( u_l(n_dims+1) - 0.5*v_sq/u_l(0));
-                    }
-                  
-                  // calculate pressure coefficient at current point on the surface
-                  cp = (p_l-run_input.p_c_ic)*factor;
-                  
-                  // Inviscid force
-                  for (int m=0;m<n_dims;m++)
-                    {
-                      Finv(m) = wgt*(p_l-run_input.p_c_ic)*norm(m)*detjac*factor;
-                    }
-                  
-                  // inviscid component of the lift and drag coefficients
-                  
-                  if (n_dims==2)
-                  {
-                    cl = -Finv(0)*sin(aoa) + Finv(1)*cos(aoa);
-                    cd = Finv(0)*cos(aoa) + Finv(1)*sin(aoa);
-                  }
-                  else if (n_dims==3)
-                  {
-                    cl = -Finv(0)*sin(aoa) + Finv(1)*cos(aoa);
-                    cd = Finv(0)*cos(aoa)*cos(aos) + Finv(1)*sin(aoa) + Finv(2)*sin(aoa)*cos(aos);
-                  }
-                  
-                  // write to file
-                  if (write_forces) { coeff_file << scientific << setw(18) << setprecision(12) << pos(0) << " " << setw(18) << setprecision(12) << cp;}
-
-                  if (viscous==1)
-                    {
-                      // TODO: Have a function that returns tau given u and grad_u
-                      // Computing the n_dims derivatives of rho,u,v,w and ene
-                      for (int m=0;m<n_dims;m++)
-                        {
-                          drho(m) = grad_u_l(0,m);
-                          for (int n=0;n<n_dims;n++)
-                            {
-                              dv(n,m) = 1.0/u_l(0)*(grad_u_l(n+1,m)-drho(m)*u_l(n+1));;
-                            }
-                          de(m) = 1.0/u_l(0)*(grad_u_l(n_dims+1,m)-drho(m)*u_l(n_dims+1));;
-                        }
-
-                      // trace of stress tensor
-                      diag = 0.;
-                      for (int m=0;m<n_dims;m++)
-                        {
-                          diag += dv(m,m);
-                        }
-                      diag /= 3.0;
-
-                      // internal energy
-                      inte = u_l(n_dims+1)/u_l(0);
-                      for (int m=0;m<n_dims;m++)
-                        {
-                          inte -= 0.5*u_l(m+1)*u_l(m+1);
-                        }
-
-                      // get viscosity
-                      rt_ratio = (run_input.gamma-1.0)*inte/(run_input.rt_inf);
-                      mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
-                      mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
-
-                      // Compute the coefficient of friction and wall shear stress
-                      if (n_dims==2)
-                        {
-                          // stresses w.r.t. normal
-                          taun(0) = mu*(2.*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1));
-                          taun(1) = mu*(2.*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0));
-
-                          // take dot product with normal
-                          taundotn = taun(0)*norm(0)+taun(1)*norm(1);
-                          
-                          // stresses tangent to wall
-                          tautan(0) = taun(0) - taundotn*norm(0);
-                          tautan(1) = taun(1) - taundotn*norm(1);
-
-                          // wall shear stress
-                          tauw = sqrt(pow(tautan(0),2)+pow(tautan(1),2));
-
-                          // coefficient of friction
-                          cf = tauw*factor;
-                          
-                          if (write_forces) { coeff_file << " " << setw(18) <<setprecision(12) << cf; }
-
-                          // viscous force
-                          for (int m=0;m<n_dims;m++)
-                          {
-                            Fvis(m) = -wgt*taun(m)*detjac*factor;
-                          }
-                          
-                          // viscous component of the lift and drag coefficients
-                          
-                          cl += -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
-                          cd += Fvis(0)*cos(aoa) + Fvis(1)*sin(aoa);
-                          
-                        }
-
-                      if (n_dims==3)
-                        {
-                          // stresses w.r.t. normal
-                          taun(0) = mu*(2.*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1) + (dv(0,2)+dv(2,0))*norm(2));
-                          taun(1) = mu*(2.*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(2));
-                          taun(2) = mu*(2.*(dv(2,2)-diag)*norm(2) + (dv(0,2)+dv(2,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(1));
-                          
-                          // take dot product with normal
-                          taundotn = taun(0)*norm(0)+taun(1)*norm(1)+taun(2)*norm(2);
-                          
-                          // stresses tangent to wall
-                          tautan(0) = taun(0) - taundotn*norm(0);
-                          tautan(1) = taun(1) - taundotn*norm(1);
-                          tautan(2) = taun(2) - taundotn*norm(2);
-                          
-                          // wall shear stress
-                          tauw = sqrt(pow(tautan(0),2)+pow(tautan(1),2)+pow(tautan(2),2));
-                          
-                          // coefficient of friction
-                          cf = tauw*factor;
-                          
-                          if (write_forces) { coeff_file << " " << setw(18) <<setprecision(12) << cf; }
-                          
-                          // viscous force
-                          for (int m=0;m<n_dims;m++)
-                            {
-                              Fvis(m) = -wgt*taun(m)*detjac*factor;
-                            }
-
-                          // viscous component of the lift and drag coefficients
-                          // TODO: make this work for any orientation of axes
-                          
-                          cl += -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
-                          cd += Fvis(0)*cos(aoa)*cos(aos) + Fvis(1)*sin(aoa) + Fvis(2)*sin(aoa)*cos(aos);
-                          
-                        }
-                    } // End of if viscous
-
-                  if (write_forces) { coeff_file << endl; }
-                  
-                  // Add force and coefficient contributions from current face
-                  for (int m=0;m<n_dims;m++)
-                  {
-                    inv_force(m) += Finv(m);
-                    vis_force(m) += Fvis(m);
-                  }
-                  temp_cl += cl;
-                  temp_cd += cd;
-                }
+          // Compute solution at current cubature point
+          for (int m=0;m<n_fields;m++) {
+            double value = 0.;
+            for (int k=0;k<n_upts_per_ele;k++) {
+              value += opp_inters_cubpts(l)(j,k)*disu_upts(0)(k,ele,m);
             }
+            u_l(m) = value;
+          }
+
+          // If viscous, extrapolate the gradient at the cubature points
+          if (viscous==1)
+          {
+            for (int m=0;m<n_fields;m++) {
+              for (int n=0;n<n_dims;n++) {
+                double value=0.;
+                for (int k=0;k<n_upts_per_ele;k++) {
+                  value += opp_inters_cubpts(l)(j,k)*grad_disu_upts(k,ele,m,n);
+                }
+                grad_u_l(m,n) = value;
+              }
+            }
+          }
+
+          // Get the normal
+          for (int m=0;m<n_dims;m++)
+          {
+            norm(m) = norm_inters_cubpts(l)(j,i,m);
+          }
+
+          // Get pressure
+
+          // Not dual consistent
+          if (bctype(ele,l)!=16) {
+            v_sq = 0.;
+            for (int m=0;m<n_dims;m++)
+              v_sq += (u_l(m+1)*u_l(m+1));
+            p_l   = (gamma-1.0)*( u_l(n_dims+1) - 0.5*v_sq/u_l(0));
+          }
+          else
+          {
+            //Dual consistent approach
+            vn_l = 0.;
+            for (int m=0;m<n_dims;m++)
+              vn_l += u_l(m+1)*norm(m);
+            vn_l /= u_l(0);
+
+            for (int m=0;m<n_dims;m++)
+              u_l(m+1) = u_l(m+1)-(vn_l)*norm(m);
+
+            v_sq = 0.;
+            for (int m=0;m<n_dims;m++)
+              v_sq += (u_l(m+1)*u_l(m+1));
+            p_l   = (gamma-1.0)*( u_l(n_dims+1) - 0.5*v_sq/u_l(0));
+          }
+
+          // calculate pressure coefficient at current point on the surface
+          cp = (p_l-run_input.p_c_ic)*factor;
+
+          // Inviscid force
+          for (int m=0;m<n_dims;m++)
+          {
+            Finv(m) = wgt*(p_l-run_input.p_c_ic)*norm(m)*detjac*factor;
+          }
+
+          // inviscid component of the lift and drag coefficients
+
+          if (n_dims==2)
+          {
+            cl = -Finv(0)*sin(aoa) + Finv(1)*cos(aoa);
+            cd = Finv(0)*cos(aoa) + Finv(1)*sin(aoa);
+          }
+          else if (n_dims==3)
+          {
+            cl = -Finv(0)*sin(aoa) + Finv(1)*cos(aoa);
+            cd = Finv(0)*cos(aoa)*cos(aos) + Finv(1)*sin(aoa) + Finv(2)*sin(aoa)*cos(aos);
+          }
+
+          // write to file
+          if (write_forces) { coeff_file << scientific << setw(18) << setprecision(12) << pos(0) << " " << setw(18) << setprecision(12) << cp;}
+
+          if (viscous==1)
+          {
+            // TODO: Have a function that returns tau given u and grad_u
+            // Computing the n_dims derivatives of rho,u,v,w and ene
+            for (int m=0;m<n_dims;m++)
+            {
+              drho(m) = grad_u_l(0,m);
+              for (int n=0;n<n_dims;n++)
+              {
+                dv(n,m) = 1.0/u_l(0)*(grad_u_l(n+1,m)-drho(m)*u_l(n+1));;
+              }
+              de(m) = 1.0/u_l(0)*(grad_u_l(n_dims+1,m)-drho(m)*u_l(n_dims+1));;
+            }
+
+            // trace of stress tensor
+            diag = 0.;
+            for (int m=0;m<n_dims;m++)
+            {
+              diag += dv(m,m);
+            }
+            diag /= 3.0;
+
+            // internal energy
+            inte = u_l(n_dims+1)/u_l(0);
+            for (int m=0;m<n_dims;m++)
+            {
+              inte -= 0.5*u_l(m+1)*u_l(m+1);
+            }
+
+            // get viscosity
+            rt_ratio = (run_input.gamma-1.0)*inte/(run_input.rt_inf);
+            mu = (run_input.mu_inf)*pow(rt_ratio,1.5)*(1+(run_input.c_sth))/(rt_ratio+(run_input.c_sth));
+            mu = mu + run_input.fix_vis*(run_input.mu_inf - mu);
+
+            // Compute the coefficient of friction and wall shear stress
+            if (n_dims==2)
+            {
+              // stresses w.r.t. normal
+              taun(0) = mu*(2.*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1));
+              taun(1) = mu*(2.*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0));
+
+              // take dot product with normal
+              taundotn = taun(0)*norm(0)+taun(1)*norm(1);
+
+              // stresses tangent to wall
+              tautan(0) = taun(0) - taundotn*norm(0);
+              tautan(1) = taun(1) - taundotn*norm(1);
+
+              // wall shear stress
+              tauw = sqrt(pow(tautan(0),2)+pow(tautan(1),2));
+
+              // coefficient of friction
+              cf = tauw*factor;
+
+              if (write_forces) { coeff_file << " " << setw(18) <<setprecision(12) << cf; }
+
+              // viscous force
+              for (int m=0;m<n_dims;m++)
+              {
+                Fvis(m) = -wgt*taun(m)*detjac*factor;
+              }
+
+              // viscous component of the lift and drag coefficients
+
+              cl += -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
+              cd += Fvis(0)*cos(aoa) + Fvis(1)*sin(aoa);
+
+            }
+
+            if (n_dims==3)
+            {
+              // stresses w.r.t. normal
+              taun(0) = mu*(2.*(dv(0,0)-diag)*norm(0) + (dv(0,1)+dv(1,0))*norm(1) + (dv(0,2)+dv(2,0))*norm(2));
+              taun(1) = mu*(2.*(dv(1,1)-diag)*norm(1) + (dv(0,1)+dv(1,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(2));
+              taun(2) = mu*(2.*(dv(2,2)-diag)*norm(2) + (dv(0,2)+dv(2,0))*norm(0) + (dv(1,2)+dv(2,1))*norm(1));
+
+              // take dot product with normal
+              taundotn = taun(0)*norm(0)+taun(1)*norm(1)+taun(2)*norm(2);
+
+              // stresses tangent to wall
+              tautan(0) = taun(0) - taundotn*norm(0);
+              tautan(1) = taun(1) - taundotn*norm(1);
+              tautan(2) = taun(2) - taundotn*norm(2);
+
+              // wall shear stress
+              tauw = sqrt(pow(tautan(0),2)+pow(tautan(1),2)+pow(tautan(2),2));
+
+              // coefficient of friction
+              cf = tauw*factor;
+
+              if (write_forces) { coeff_file << " " << setw(18) <<setprecision(12) << cf; }
+
+              // viscous force
+              for (int m=0;m<n_dims;m++)
+              {
+                Fvis(m) = -wgt*taun(m)*detjac*factor;
+              }
+
+              // viscous component of the lift and drag coefficients
+              // TODO: make this work for any orientation of axes
+
+              cl += -Fvis(0)*sin(aoa) + Fvis(1)*cos(aoa);
+              cd += Fvis(0)*cos(aoa)*cos(aos) + Fvis(1)*sin(aoa) + Fvis(2)*sin(aoa)*cos(aos);
+
+            }
+          } // End of if viscous
+
+          if (write_forces) { coeff_file << endl; }
+
+          // Add force and coefficient contributions from current face
+          for (int m=0;m<n_dims;m++)
+          {
+            inv_force(m) += Finv(m);
+            vis_force(m) += Fvis(m);
+          }
+          temp_cl += cl;
+          temp_cd += cd;
         }
+      }
     }
+  }
 }
 
 /*! Set the grid velocity at one shape point
- *  TODO: CUDA */
+*/
 void eles::set_grid_vel_spt(int in_ele, int in_spt, Array<double> in_vel)
 {
   for (int i=0; i<n_dims; i++)
     vel_spts(i,in_spt,in_ele) = in_vel(i);
 }
 
-/*! Store nodal basis at flux points to avoid re-calculating every time
- *  TODO: CUDA (mv to GPU) */
+/*! Store nodal basis at flux points to avoid re-calculating every time */
+
 void eles::store_nodal_s_basis_fpts(void)
 {
   int ic,fpt,j,k;
@@ -7461,6 +7470,45 @@ void eles::store_nodal_s_basis_inters_cubpts()
       }
     }
   }
+}
+
+/*! \brief Calls store_nodal_s_basis_vol_cubpts and store_d_nodal_s_basis_vol_cubpts if
+ * the matrices they create are not present
+ * Creates matrices:
+ * store_nodal_s_basis_vol_cubpts
+ */
+void eles::set_nodal_basis_inters_cubpts(void) {
+  int numMatricesCreated = 2; // number of matrices created in this function
+  std::string matrixNames [] = {"_nodal_s_basis_vol_cubpts",
+      "_d_nodal_s_basis_vol_cubpts"};
+
+  Array<double>* matrices [] = {&nodal_s_basis_vol_cubpts,
+      &d_nodal_s_basis_vol_cubpts};
+
+  // add the prefix and the suffix to the matrix names
+  for (int i = 0; i < numMatricesCreated; i++) {
+    matrixNames[i] = fileNamePrefix + matrixNames[i] + fileNameSuffix;
+  }
+
+  int numFilesMissing = countNumberMissingFiles(matrixNames, numMatricesCreated);
+
+  // check if the files exist, otherwise compute all of the matrix values
+  if (numFilesMissing > 0) {
+
+    store_nodal_s_basis_vol_cubpts();
+    store_d_nodal_s_basis_vol_cubpts();
+
+    for (int i = 0; i < numMatricesCreated; i++) {
+      matrices[i]->writeToFile(matrixNames[i]);
+    }
+
+  } else {
+    for (int i = 0; i < numMatricesCreated; i++) {
+      matrices[i]->initFromFile(matrixNames[i]);
+    }
+  }
+
+
 }
 
 

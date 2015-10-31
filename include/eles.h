@@ -353,6 +353,9 @@ public:
   /*! set transforms at the volume cubature points */
   void set_transforms_vol_cubpts(void);
 
+  /*! set transforms at the volume cubature points */
+  void calc_transforms_vol_cubpts(void);
+
   /*! Calculate distance of solution points to no-slip wall */
   void calc_wall_distance(int n_seg_noslip_inters, int n_tri_noslip_inters, int n_quad_noslip_inters, Array< Array<double> > loc_noslip_bdy);
 
@@ -579,6 +582,11 @@ public:
 
   /*! pre-computing shape basis contributions at plot points for more efficient access */
   void store_nodal_s_basis_ppts(void);
+
+  /*! Calls store_nodal_s_basis_vol_cubpts and store_d_nodal_s_basis_vol_cubpts if
+   * the matrices they create are not present
+   */
+  void set_nodal_basis_inters_cubpts(void);
 
   /*! pre-computing shape basis contributions at plot points for more efficient access */
   void store_nodal_s_basis_vol_cubpts(void);
