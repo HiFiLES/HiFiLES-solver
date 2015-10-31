@@ -20,3 +20,7 @@
 #define FatalError(s) {                                             \
   printf("Fatal error '%s' at %s:%d\n",s,__FILE__,__LINE__);        \
   exit(1); }
+
+//#define _MPI
+
+//#define _CPU

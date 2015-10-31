@@ -347,6 +347,9 @@ public:
   /*! set transforms at the interface cubature points */
   void set_transforms_inters_cubpts(void);
 
+  /*! set transforms at the interface cubature points */
+  void calc_transforms_inters_cubpts(void);
+
   /*! set transforms at the volume cubature points */
   void set_transforms_vol_cubpts(void);
 
@@ -383,7 +386,7 @@ public:
   
   // #### virtual methods ####
 
-  virtual void setup_ele_type_specific()=0;
+  virtual void setup_ele_type_specific() = 0;
 
   void calc_stabilization_filter_all_eles();
 

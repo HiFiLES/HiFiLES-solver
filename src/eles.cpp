@@ -4969,62 +4969,62 @@ void eles::calc_transforms_fpts(void) {
  */
 void eles::set_transforms_fpts(void) {
   if (n_eles!=0)
-    {
-      int numMatricesCreated = 5; // number of matrices created in this function
-      std::string matrixNames [] = {"_detjac_fpts",
-                                    "_JGinv_fpts",
-                                    "_tdA_fpts",
-                                    "_norm_fpts",
-                                    "_pos_fpts"};
+  {
+    int numMatricesCreated = 5; // number of matrices created in this function
+    std::string matrixNames [] = {"_detjac_fpts",
+        "_JGinv_fpts",
+        "_tdA_fpts",
+        "_norm_fpts",
+        "_pos_fpts"};
 
-      Array<double>* matrices [] = {&detjac_fpts,
-                                    &JGinv_fpts,
-                                    &tdA_fpts,
-                                    &norm_fpts,
-                                    &pos_fpts};
+    Array<double>* matrices [] = {&detjac_fpts,
+        &JGinv_fpts,
+        &tdA_fpts,
+        &norm_fpts,
+        &pos_fpts};
 
-      // add the prefix and the suffix to the matrix names
+    // add the prefix and the suffix to the matrix names
+    for (int i = 0; i < numMatricesCreated; i++) {
+      matrixNames[i] = fileNamePrefix + matrixNames[i] + fileNameSuffix;
+    }
+
+    int numFilesMissing = countNumberMissingFiles(matrixNames, numMatricesCreated);
+
+    // check if the files exist, otherwise compute all of the matrix values
+    if (numFilesMissing > 0) {
+
+      calc_transforms_fpts();
+
       for (int i = 0; i < numMatricesCreated; i++) {
-          matrixNames[i] = fileNamePrefix + matrixNames[i] + fileNameSuffix;
-        }
+        matrices[i]->writeToFile(matrixNames[i]);
+      }
 
-      int numFilesMissing = countNumberMissingFiles(matrixNames, numMatricesCreated);
-
-      // check if the files exist, otherwise compute all of the matrix values
-      if (numFilesMissing > 0) {
-
-          calc_transforms_fpts();
-
-          for (int i = 0; i < numMatricesCreated; i++) {
-              matrices[i]->writeToFile(matrixNames[i]);
-            }
-
-        } else {
-          for (int i = 0; i < numMatricesCreated; i++) {
-              matrices[i]->initFromFile(matrixNames[i]);
-            }
-        }
+    } else {
+      for (int i = 0; i < numMatricesCreated; i++) {
+        matrices[i]->initFromFile(matrixNames[i]);
+      }
+    }
 
 #ifdef _GPU
-      tdA_fpts.mv_cpu_gpu();
-      pos_fpts.cp_cpu_gpu();
+    tdA_fpts.mv_cpu_gpu();
+    pos_fpts.cp_cpu_gpu();
 
-      JGinv_fpts.cp_cpu_gpu();
-      detjac_fpts.cp_cpu_gpu();
+    JGinv_fpts.cp_cpu_gpu();
+    detjac_fpts.cp_cpu_gpu();
 
-      if (motion) {
-          norm_fpts.cp_cpu_gpu(); // cp b/c needed for set_transforms_dynamic()
-        }
-      else
-        {
-          norm_fpts.mv_cpu_gpu();
-          // move the dummy dynamic-transform pointers to GPUs
-          cp_transforms_cpu_gpu();
-        }
+    if (motion) {
+      norm_fpts.cp_cpu_gpu(); // cp b/c needed for set_transforms_dynamic()
+    }
+    else
+    {
+      norm_fpts.mv_cpu_gpu();
+      // move the dummy dynamic-transform pointers to GPUs
+      cp_transforms_cpu_gpu();
+    }
 
 #endif
 
-    } // if n_eles!=0
+  } // if n_eles!=0
 }
 
 void eles::set_transforms(void)
@@ -5381,138 +5381,187 @@ void eles::set_bdy_ele2ele(void)
   
 }
 
+/*! \brief calculate transforms at interfaces
+ *
+ * Calculates the values of the following matrices:
+ * inter_detjac_inters_cubpts
+ * norm_inters_cubpts
+ * vol_detjac_inters_cubpts
+ */
+void eles::calc_transforms_inters_cubpts(void)
+{
+  int n_comp;
 
-// set transforms
+  double xr, xs, xt;
+  double yr, ys, yt;
+  double zr, zs, zt;
+
+  if(n_dims == 2)
+  {
+    n_comp = 3;
+  }
+  if(n_dims == 3)
+  {
+    n_comp = 6;
+  }
+  double mag_tnorm;
+
+
+  Array<double> loc(n_dims);
+  Array<double> d_pos(n_dims,n_dims);
+  Array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
+
+  inter_detjac_inters_cubpts.setup(n_inters_per_ele);
+  norm_inters_cubpts.setup(n_inters_per_ele);
+  vol_detjac_inters_cubpts.setup(n_inters_per_ele);
+
+  for (int i=0;i<n_inters_per_ele;i++)
+  {
+    inter_detjac_inters_cubpts(i).setup(n_cubpts_per_inter(i),n_bdy_eles);
+    norm_inters_cubpts(i).setup(n_cubpts_per_inter(i),n_bdy_eles,n_dims);
+    vol_detjac_inters_cubpts(i).setup(n_cubpts_per_inter(i),n_bdy_eles);
+  }
+
+  for(int i=0;i<n_bdy_eles;i++)
+  {
+    for (int l=0;l<n_inters_per_ele;l++)
+    {
+      for(int j=0;j<n_cubpts_per_inter(l);j++)
+      {
+        // get coordinates of the cubature point
+
+        for(int k=0;k<n_dims;k++)
+        {
+          loc(k)=loc_inters_cubpts(l)(k,j);
+        }
+
+        // calculate first derivatives of shape functions at the cubature points
+
+        // TODO: Need mapping between bdy_interfaces and ele
+        calc_d_pos(loc,bdy_ele2ele(i),d_pos);
+
+        // store quantities at the cubature point
+
+        if(n_dims==2)
+        {
+
+          xr = d_pos(0,0);
+          xs = d_pos(0,1);
+
+          yr = d_pos(1,0);
+          ys = d_pos(1,1);
+
+          // store determinant of jacobian at cubature point. TODO: what is this for?
+          vol_detjac_inters_cubpts(l)(j,i)= xr*ys - xs*yr;
+
+          // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the cubature point
+          tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_inters_cubpts(l)(0,j)*d_pos(1,1))-(tnorm_inters_cubpts(l)(1,j)*d_pos(1,0));
+          tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_inters_cubpts(l)(0,j)*d_pos(0,1))+(tnorm_inters_cubpts(l)(1,j)*d_pos(0,0));
+
+          // calculate interface area
+          mag_tnorm = sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
+              tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
+
+          // store normal at cubature point
+          norm_inters_cubpts(l)(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm;
+          norm_inters_cubpts(l)(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm;
+
+          inter_detjac_inters_cubpts(l)(j,i) = compute_inter_detjac_inters_cubpts(l,d_pos);
+        }
+        else if(n_dims==3)
+        {
+
+          xr = d_pos(0,0);
+          xs = d_pos(0,1);
+          xt = d_pos(0,2);
+
+          yr = d_pos(1,0);
+          ys = d_pos(1,1);
+          yt = d_pos(1,2);
+
+          zr = d_pos(2,0);
+          zs = d_pos(2,1);
+          zt = d_pos(2,2);
+
+          // store determinant of jacobian at cubature point
+          vol_detjac_inters_cubpts(l)(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
+
+          // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the cubature point
+          tnorm_dot_inv_detjac_mul_jac(0)=((tnorm_inters_cubpts(l)(0,j)*(d_pos(1,1)*d_pos(2,2)-d_pos(1,2)*d_pos(2,1)))+(tnorm_inters_cubpts(l)(1,j)*(d_pos(1,2)*d_pos(2,0)-d_pos(1,0)*d_pos(2,2)))+(tnorm_inters_cubpts(l)(2,j)*(d_pos(1,0)*d_pos(2,1)-d_pos(1,1)*d_pos(2,0))));
+          tnorm_dot_inv_detjac_mul_jac(1)=((tnorm_inters_cubpts(l)(0,j)*(d_pos(0,2)*d_pos(2,1)-d_pos(0,1)*d_pos(2,2)))+(tnorm_inters_cubpts(l)(1,j)*(d_pos(0,0)*d_pos(2,2)-d_pos(0,2)*d_pos(2,0)))+(tnorm_inters_cubpts(l)(2,j)*(d_pos(0,1)*d_pos(2,0)-d_pos(0,0)*d_pos(2,1))));
+          tnorm_dot_inv_detjac_mul_jac(2)=((tnorm_inters_cubpts(l)(0,j)*(d_pos(0,1)*d_pos(1,2)-d_pos(0,2)*d_pos(1,1)))+(tnorm_inters_cubpts(l)(1,j)*(d_pos(0,2)*d_pos(1,0)-d_pos(0,0)*d_pos(1,2)))+(tnorm_inters_cubpts(l)(2,j)*(d_pos(0,0)*d_pos(1,1)-d_pos(0,1)*d_pos(1,0))));
+
+          // calculate interface area
+          mag_tnorm=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
+              tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
+              tnorm_dot_inv_detjac_mul_jac(2)*tnorm_dot_inv_detjac_mul_jac(2));
+
+          // store normal at cubature point
+          norm_inters_cubpts(l)(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm;
+          norm_inters_cubpts(l)(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm;
+          norm_inters_cubpts(l)(j,i,2)=tnorm_dot_inv_detjac_mul_jac(2)/mag_tnorm;
+
+          inter_detjac_inters_cubpts(l)(j,i) = compute_inter_detjac_inters_cubpts(l,d_pos);
+        }
+        else
+        {
+          FatalError("ERROR: Invalid number of dimensions ... ");
+        }
+      }
+    }
+  }
+}
+
+/*! \brief set transforms at interfaces
+ *
+ * Sets the values of the following matrices
+ * depending on whether or not they exist in the hard-drive:
+ * inter_detjac_inters_cubpts
+ * norm_inters_cubpts
+ * vol_detjac_inters_cubpts
+ */
 
 void eles::set_transforms_inters_cubpts(void)
 {
   if (n_eles!=0)
-    {
-      int i,j,k;
-      int n_comp;
+  {
+    // Initialize bdy_ele2ele Array
+    (*this).set_bdy_ele2ele();
 
-      double xr, xs, xt;
-      double yr, ys, yt;
-      double zr, zs, zt;
 
-      // Initialize bdy_ele2ele Array
-      (*this).set_bdy_ele2ele();
 
-      if(n_dims == 2)
-        {
-          n_comp = 3;
-        }
-      if(n_dims == 3)
-        {
-          n_comp = 6;
-        }
-      double mag_tnorm;
+    int numMatricesCreated = 3; // number of matrices created in this function
+    std::string matrixNames [] = {"_inter_detjac_inters_cubpts",
+        "_norm_inters_cubpts",
+        "_vol_detjac_inters_cubpts"};
 
-      Array<double> loc(n_dims);
-      Array<double> d_pos(n_dims,n_dims);
-      Array<double> tnorm_dot_inv_detjac_mul_jac(n_dims);
+    Array<Array<double> >* matrices [] = {&inter_detjac_inters_cubpts,
+        &norm_inters_cubpts,
+        &vol_detjac_inters_cubpts };
 
-      inter_detjac_inters_cubpts.setup(n_inters_per_ele);
-      norm_inters_cubpts.setup(n_inters_per_ele);
-      vol_detjac_inters_cubpts.setup(n_inters_per_ele);
+    // add the prefix and the suffix to the matrix names
+    for (int i = 0; i < numMatricesCreated; i++) {
+      matrixNames[i] = fileNamePrefix + matrixNames[i] + fileNameSuffix;
+    }
 
-      for (int i=0;i<n_inters_per_ele;i++)
-        {
-          inter_detjac_inters_cubpts(i).setup(n_cubpts_per_inter(i),n_bdy_eles);
-          norm_inters_cubpts(i).setup(n_cubpts_per_inter(i),n_bdy_eles,n_dims);
-          vol_detjac_inters_cubpts(i).setup(n_cubpts_per_inter(i),n_bdy_eles);
-        }
+    int numFilesMissing = countNumberMissingFiles(matrixNames, numMatricesCreated);
 
-      for(i=0;i<n_bdy_eles;i++)
-        {
-          for (int l=0;l<n_inters_per_ele;l++)
-            {
-              for(j=0;j<n_cubpts_per_inter(l);j++)
-                {
-                  // get coordinates of the cubature point
+    // check if the files exist, otherwise compute all of the matrix values
+    if (numFilesMissing > 0) {
 
-                  for(k=0;k<n_dims;k++)
-                    {
-                      loc(k)=loc_inters_cubpts(l)(k,j);
-                    }
+      calc_transforms_inters_cubpts();
 
-                  // calculate first derivatives of shape functions at the cubature points
+      for (int i = 0; i < numMatricesCreated; i++) {
+        matrices[i]->writeToFile(matrixNames[i]);
+      }
 
-                  // TODO: Need mapping between bdy_interfaces and ele
-                  calc_d_pos(loc,bdy_ele2ele(i),d_pos);
+    } else {
+      for (int i = 0; i < numMatricesCreated; i++) {
+        matrices[i]->initFromFile(matrixNames[i]);
+      }
+    }
 
-                  // store quantities at the cubature point
-
-                  if(n_dims==2)
-                    {
-
-                      xr = d_pos(0,0);
-                      xs = d_pos(0,1);
-
-                      yr = d_pos(1,0);
-                      ys = d_pos(1,1);
-
-                      // store determinant of jacobian at cubature point. TODO: what is this for?
-                      vol_detjac_inters_cubpts(l)(j,i)= xr*ys - xs*yr;
-
-                      // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the cubature point
-                      tnorm_dot_inv_detjac_mul_jac(0)=(tnorm_inters_cubpts(l)(0,j)*d_pos(1,1))-(tnorm_inters_cubpts(l)(1,j)*d_pos(1,0));
-                      tnorm_dot_inv_detjac_mul_jac(1)=-(tnorm_inters_cubpts(l)(0,j)*d_pos(0,1))+(tnorm_inters_cubpts(l)(1,j)*d_pos(0,0));
-
-                      // calculate interface area
-                      mag_tnorm = sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
-                                       tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1));
-
-                      // store normal at cubature point
-                      norm_inters_cubpts(l)(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm;
-                      norm_inters_cubpts(l)(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm;
-
-                      inter_detjac_inters_cubpts(l)(j,i) = compute_inter_detjac_inters_cubpts(l,d_pos);
-                    }
-                  else if(n_dims==3)
-                    {
-
-                      xr = d_pos(0,0);
-                      xs = d_pos(0,1);
-                      xt = d_pos(0,2);
-
-                      yr = d_pos(1,0);
-                      ys = d_pos(1,1);
-                      yt = d_pos(1,2);
-
-                      zr = d_pos(2,0);
-                      zs = d_pos(2,1);
-                      zt = d_pos(2,2);
-
-                      // store determinant of jacobian at cubature point
-                      vol_detjac_inters_cubpts(l)(j,i) = xr*(ys*zt - yt*zs) - xs*(yr*zt - yt*zr) + xt*(yr*zs - ys*zr);
-
-                      // temporarily store transformed normal dot inverse of determinant of jacobian multiplied by jacobian at the cubature point
-                      tnorm_dot_inv_detjac_mul_jac(0)=((tnorm_inters_cubpts(l)(0,j)*(d_pos(1,1)*d_pos(2,2)-d_pos(1,2)*d_pos(2,1)))+(tnorm_inters_cubpts(l)(1,j)*(d_pos(1,2)*d_pos(2,0)-d_pos(1,0)*d_pos(2,2)))+(tnorm_inters_cubpts(l)(2,j)*(d_pos(1,0)*d_pos(2,1)-d_pos(1,1)*d_pos(2,0))));
-                      tnorm_dot_inv_detjac_mul_jac(1)=((tnorm_inters_cubpts(l)(0,j)*(d_pos(0,2)*d_pos(2,1)-d_pos(0,1)*d_pos(2,2)))+(tnorm_inters_cubpts(l)(1,j)*(d_pos(0,0)*d_pos(2,2)-d_pos(0,2)*d_pos(2,0)))+(tnorm_inters_cubpts(l)(2,j)*(d_pos(0,1)*d_pos(2,0)-d_pos(0,0)*d_pos(2,1))));
-                      tnorm_dot_inv_detjac_mul_jac(2)=((tnorm_inters_cubpts(l)(0,j)*(d_pos(0,1)*d_pos(1,2)-d_pos(0,2)*d_pos(1,1)))+(tnorm_inters_cubpts(l)(1,j)*(d_pos(0,2)*d_pos(1,0)-d_pos(0,0)*d_pos(1,2)))+(tnorm_inters_cubpts(l)(2,j)*(d_pos(0,0)*d_pos(1,1)-d_pos(0,1)*d_pos(1,0))));
-
-                      // calculate interface area
-                      mag_tnorm=sqrt(tnorm_dot_inv_detjac_mul_jac(0)*tnorm_dot_inv_detjac_mul_jac(0)+
-                                     tnorm_dot_inv_detjac_mul_jac(1)*tnorm_dot_inv_detjac_mul_jac(1)+
-                                     tnorm_dot_inv_detjac_mul_jac(2)*tnorm_dot_inv_detjac_mul_jac(2));
-
-                      // store normal at cubature point
-                      norm_inters_cubpts(l)(j,i,0)=tnorm_dot_inv_detjac_mul_jac(0)/mag_tnorm;
-                      norm_inters_cubpts(l)(j,i,1)=tnorm_dot_inv_detjac_mul_jac(1)/mag_tnorm;
-                      norm_inters_cubpts(l)(j,i,2)=tnorm_dot_inv_detjac_mul_jac(2)/mag_tnorm;
-
-                      inter_detjac_inters_cubpts(l)(j,i) = compute_inter_detjac_inters_cubpts(l,d_pos);
-                    }
-                  else
-                    {
-                      FatalError("ERROR: Invalid number of dimensions ... ");
-                    }
-                }
-            }
-        }
-
-    } // if n_eles!=0
+  } // if n_eles!=0
 }
 
 // Set transforms at volume cubature points

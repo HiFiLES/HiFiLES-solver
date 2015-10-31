@@ -154,7 +154,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   /////////////////////////////////////////////////
 
   Array<int> f2c,f2loc_f,c2f,c2e,f2v,f2nv;
-  Array<int> rot_tag,unmatched_inters;
+  Array<int> rot_tag, unmatched_inters;
   int n_unmatched_inters;
 
   // cannot have more than num_eles*6 faces

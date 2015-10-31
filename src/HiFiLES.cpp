@@ -98,9 +98,8 @@ int main(int argc, char *argv[]) {
   SetInput(&FlowSol);
   
   /*! Read the mesh file from a file. */
-  
   GeoPreprocess(&FlowSol, Mesh);
-  
+
   InitSolution(&FlowSol);
   
   init_time = clock();

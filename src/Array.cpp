@@ -513,7 +513,6 @@ std::istream& operator>>(std::istream& in, Array<R>& array) {
         }
       getline(in, line); // get empty line
     }
-
   return in;
 }
 
@@ -534,7 +533,6 @@ void Array<R>::normalizeRows() {
         }
     }
 }
-
 
 
 /*! Write an item in binary format */
