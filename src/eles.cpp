@@ -84,10 +84,24 @@ eles::~eles() {}
 
 // #### methods ####
 
+void eles::set_operators(void)
+{
+  set_opp_0(sparseFlag);
+  set_opp_1(sparseFlag);
+  set_opp_2(sparseFlag);
+  set_opp_3(sparseFlag);
+  if (viscous) {
+    set_opp_4(sparseFlag);
+    set_opp_5(sparseFlag);
+    set_opp_6(sparseFlag);
+  }
+}
+
 // set number of elements
 
 void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 {
+
   if (run_input.adv_type==0) {
     RK_a.setup(1);
     RK_b.setup(1);
@@ -143,6 +157,13 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 
     // Initialize the element specific static members
     (*this).setup_ele_type_specific();
+
+    fileNamePrefix = "rank" + num2str(rank) + "_" + elementName + "_uptsType_" + num2str(upts_type)
+        + "_fptsType_" + num2str(fpts_type) + "_p_" + num2str(order);
+    fileNameSuffix = ".hifiles.bin";
+
+    // Generate all operators for extrapolation, interpolation, and derivatives
+    set_operators();
 
     if(run_input.adv_type==0)
     {
@@ -408,11 +429,6 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     
     set_connectivity_plot();
   }
-
-  fileNamePrefix = "rank" + num2str(rank) + "_" + elementName + "_uptsType_" + num2str(upts_type)
-      + "_fptsType_" + num2str(fpts_type) + "_p_" + num2str(order);
-  fileNameSuffix = ".hifiles.txt";
-
 
   if (run_input.filter_frequency > 0 && get_n_eles() > 0) {
       cout << "filter frequency = " << run_input.filter_frequency << endl;
@@ -3436,118 +3452,118 @@ void eles::shock_capture_concentration(int in_disu_upts_from)
 
 void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_Array_ptr, double* out_sensor, double* sigma)
 {
-    int stride = in_n_upts_per_ele * in_n_eles;
-    double tmp_sensor = 0;
+  int stride = in_n_upts_per_ele * in_n_eles;
+  double tmp_sensor = 0;
 
-    double nodal_rho[8];  // Array allocated so that it can handle upto p=7
-    double modal_rho[8];
-    double uE[8];
-    double temp;
-    double p = 3;	// exponent in concentration method
-    double J = 0.15;
-    int shock_found = 0;
+  double nodal_rho[8];  // Array allocated so that it can handle upto p=7
+  double modal_rho[8];
+  double uE[8];
+  double temp;
+  double p = 3;	// exponent in concentration method
+  double J = 0.15;
+  int shock_found = 0;
 
-    if(in_n_eles != 0){
-        // X-slices
-        for(int m = 0; m < in_n_eles; m++)
-        {
-          tmp_sensor = 0;
-            for(int i=0; i < in_order + 1; i++)
-            {
-                for(int j=0; j < in_order + 1; j++){
-                    nodal_rho[j] = in_disu_upts_ptr[ m * in_n_upts_per_ele + i * (in_order+1) + j];
-                }
-
-                for(int j=0; j < in_order+1; j++){
-                    modal_rho[j] = 0;
-                    for(int k=0; k<in_order+1; k++){
-                        modal_rho[j] += in_inv_vandermonde_ptr[j + k * (in_order+1)] * nodal_rho[k];
-                    }
-                }
-
-                for(int j=0; j < in_order+1; j++){
-                    uE[j] = 0;
-                    for(int k=0; k < in_order+1; k++)
-                        uE[j] += modal_rho[k]*concentration_Array_ptr[j * (in_order+1) + k];
-
-                    uE[j] = abs( (3.1415 / (in_order+1) ) * uE[j]);
-                    temp = pow(uE[j],p) * pow(in_order+1, p/2);
-
-                    if(temp >= J)
-                        shock_found++;
-
-                    if(temp > tmp_sensor)
-                        tmp_sensor = temp;
-                }
-
-            }
-
-            // Y-slices
-            for(int i=0; i < in_order+1; i++)
-            {
-                for(int j=0; j<in_order+1; j++){
-                    nodal_rho[j] = in_disu_upts_ptr[m * in_n_upts_per_ele + j * (in_order+1) + i];
-                }
-
-                for(int j=0; j<in_order+1; j++){
-                    modal_rho[j] = 0;
-                    for(int k=0; k<in_order+1; k++)
-                        modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)] * nodal_rho[k];
-                }
-
-                for(int j=0; j<in_order+1; j++){
-                    uE[j] = 0;
-                    for(int k=0; k<in_order+1; k++)
-                        uE[j] += modal_rho[k] * concentration_Array_ptr[j * (in_order+1) + k];
-
-                    uE[j] = ( 3.1415 / (in_order+1) ) * uE[j];
-                    temp = pow(abs(uE[j]), p) * pow(in_order+1, p/2);
-
-                    if(temp >= J)
-                        shock_found++;
-
-                    if(temp > tmp_sensor)
-                        tmp_sensor = temp;
-                }
-            }
-
-            out_sensor[m] = tmp_sensor;
-
-            /* -------------------------------------------------------------------------------------- */
-            /* Exponential modal filter */
-
-            if(tmp_sensor > s0 + kappa && in_artif_type == 1) {
-                double nodal_sol[36];
-                double modal_sol[36];
-
-                for(int k=0; k<in_n_fields; k++) {
-
-                    for(int i=0; i<in_n_upts_per_ele; i++){
-                        nodal_sol[i] = in_disu_upts_ptr[m * in_n_upts_per_ele + k * stride + i];
-                    }
-
-                    // Nodal to modal only upto 1st order
-                    for(int i=0; i<in_n_upts_per_ele; i++){
-                        modal_sol[i] = 0;
-                        for(int j=0; j<in_n_upts_per_ele; j++)
-                            modal_sol[i] += in_inv_vandermonde2D_ptr[i + j * in_n_upts_per_ele] * nodal_sol[j];
-
-                        modal_sol[i] = modal_sol[i] * sigma[i];
-                        //printf("The exp filter values are %f \n",modal_sol[i]);
-                    }
-
-                    // Change back to nodal
-                    for(int i=0; i<in_n_upts_per_ele; i++){
-                        nodal_sol[i] = 0;
-                        for(int j=0; j<in_n_upts_per_ele; j++)
-                            nodal_sol[i] += in_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*modal_sol[j];
-
-                        in_disu_upts_ptr[m*in_n_upts_per_ele + k*stride + i] = nodal_sol[i];
-                    }
-                }
-            }
+  if(in_n_eles != 0){
+    // X-slices
+    for(int m = 0; m < in_n_eles; m++)
+    {
+      tmp_sensor = 0;
+      for(int i=0; i < in_order + 1; i++)
+      {
+        for(int j=0; j < in_order + 1; j++){
+          nodal_rho[j] = in_disu_upts_ptr[ m * in_n_upts_per_ele + i * (in_order+1) + j];
         }
+
+        for(int j=0; j < in_order+1; j++){
+          modal_rho[j] = 0;
+          for(int k=0; k<in_order+1; k++){
+            modal_rho[j] += in_inv_vandermonde_ptr[j + k * (in_order+1)] * nodal_rho[k];
+          }
+        }
+
+        for(int j=0; j < in_order+1; j++){
+          uE[j] = 0;
+          for(int k=0; k < in_order+1; k++)
+            uE[j] += modal_rho[k]*concentration_Array_ptr[j * (in_order+1) + k];
+
+          uE[j] = abs( (3.1415 / (in_order+1) ) * uE[j]);
+          temp = pow(uE[j],p) * pow(in_order+1, p/2);
+
+          if(temp >= J)
+            shock_found++;
+
+          if(temp > tmp_sensor)
+            tmp_sensor = temp;
+        }
+
+      }
+
+      // Y-slices
+      for(int i=0; i < in_order+1; i++)
+      {
+        for(int j=0; j<in_order+1; j++){
+          nodal_rho[j] = in_disu_upts_ptr[m * in_n_upts_per_ele + j * (in_order+1) + i];
+        }
+
+        for(int j=0; j<in_order+1; j++){
+          modal_rho[j] = 0;
+          for(int k=0; k<in_order+1; k++)
+            modal_rho[j] += in_inv_vandermonde_ptr[j + k*(in_order+1)] * nodal_rho[k];
+        }
+
+        for(int j=0; j<in_order+1; j++){
+          uE[j] = 0;
+          for(int k=0; k<in_order+1; k++)
+            uE[j] += modal_rho[k] * concentration_Array_ptr[j * (in_order+1) + k];
+
+          uE[j] = ( 3.1415 / (in_order+1) ) * uE[j];
+          temp = pow(abs(uE[j]), p) * pow(in_order+1, p/2);
+
+          if(temp >= J)
+            shock_found++;
+
+          if(temp > tmp_sensor)
+            tmp_sensor = temp;
+        }
+      }
+
+      out_sensor[m] = tmp_sensor;
+
+      /* -------------------------------------------------------------------------------------- */
+      /* Exponential modal filter */
+
+      if(tmp_sensor > s0 + kappa && in_artif_type == 1) {
+        double nodal_sol[36];
+        double modal_sol[36];
+
+        for(int k=0; k<in_n_fields; k++) {
+
+          for(int i=0; i<in_n_upts_per_ele; i++){
+            nodal_sol[i] = in_disu_upts_ptr[m * in_n_upts_per_ele + k * stride + i];
+          }
+
+          // Nodal to modal only upto 1st order
+          for(int i=0; i<in_n_upts_per_ele; i++){
+            modal_sol[i] = 0;
+            for(int j=0; j<in_n_upts_per_ele; j++)
+              modal_sol[i] += in_inv_vandermonde2D_ptr[i + j * in_n_upts_per_ele] * nodal_sol[j];
+
+            modal_sol[i] = modal_sol[i] * sigma[i];
+            //printf("The exp filter values are %f \n",modal_sol[i]);
+          }
+
+          // Change back to nodal
+          for(int i=0; i<in_n_upts_per_ele; i++){
+            nodal_sol[i] = 0;
+            for(int j=0; j<in_n_upts_per_ele; j++)
+              nodal_sol[i] += in_vandermonde2D_ptr[i + j*in_n_upts_per_ele]*modal_sol[j];
+
+            in_disu_upts_ptr[m*in_n_upts_per_ele + k*stride + i] = nodal_sol[i];
+          }
+        }
+      }
     }
+  }
 }
 
 // get the type of element
@@ -3891,7 +3907,7 @@ void eles::set_opp_2(int in_sparse)
 void eles::set_opp_3(int in_sparse)
 {
   std::string fileName = fileNamePrefix + "_opp_3" + fileNameSuffix;
-  
+
   if (!fileExists(fileName)) {
   opp_3.setup(n_upts_per_ele,n_fpts_per_ele);
   (*this).fill_opp_3(opp_3);
@@ -4015,14 +4031,6 @@ void eles::set_opp_5(int in_sparse)
     {
       for(k=0;k<n_upts_per_ele;k++)
       {
-        /*
-         for(l=0;l<n_dims;l++)
-         {
-         loc(l)=loc_upts(l,k);
-         }
-         */
-        
-        //opp_5(i)(k,j) = eval_div_vcjh_basis(j,loc)*tnorm_fpts(i,j);
         opp_5(i)(k,j) = opp_3(k,j) * tnorm_fpts(i,j);
       }
     }
@@ -4032,9 +4040,6 @@ void eles::set_opp_5(int in_sparse)
   for (int i=0;i<n_dims;i++)
     opp_5(i).cp_cpu_gpu();
 #endif
-  
-  //cout << "opp_5" << endl;
-  //opp_5.print();
   
   if(in_sparse==0)
   {

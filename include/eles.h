@@ -329,6 +329,9 @@ public:
   /*! returns position of a solution point */
   double get_loc_upt(int in_upt, int in_dim);
 
+  /*! set operators */
+  void set_operators(void);
+
   /*! set transforms */
   void set_transforms(void);
 
@@ -1311,5 +1314,6 @@ protected:
   std::string elementName;
   std::string fileNamePrefix;
   std::string fileNameSuffix;
+  bool sparseFlag;
 
 };

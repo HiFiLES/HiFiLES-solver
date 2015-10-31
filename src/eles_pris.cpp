@@ -108,17 +108,10 @@ void eles_pris::setup_ele_type_specific()
 
   set_tnorm_fpts();
 
-  set_opp_0(run_input.sparse_pri);
-  set_opp_1(run_input.sparse_pri);
-  set_opp_2(run_input.sparse_pri);
-  set_opp_3(run_input.sparse_pri);
+  sparseFlag = run_input.sparse_pri;
 
   if(viscous)
     {
-      set_opp_4(run_input.sparse_pri);
-      set_opp_5(run_input.sparse_pri);
-      set_opp_6(run_input.sparse_pri);
-
       temp_grad_u.setup(n_fields,n_dims);
     }
 
