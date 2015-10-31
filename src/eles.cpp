@@ -3890,14 +3890,17 @@ void eles::set_opp_2(int in_sparse)
 
 void eles::set_opp_3(int in_sparse)
 {
+  std::string fileName = fileNamePrefix + "_opp_3" + fileNameSuffix;
   
+  if (!fileExists(fileName)) {
   opp_3.setup(n_upts_per_ele,n_fpts_per_ele);
   (*this).fill_opp_3(opp_3);
   
-  //cout << "OPP_3" << endl;
-  //cout << "ele_type=" << ele_type << endl;
-  //opp_3.print();
-  //cout << endl;
+  opp_3.writeToFile(fileName);
+  } else {
+    opp_3.initFromFile(fileName);
+  }
+
   
 #ifdef _GPU
   opp_3.cp_cpu_gpu();
