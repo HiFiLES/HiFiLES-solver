@@ -268,4 +268,6 @@ public:
   int filter_frequency;
   double filter_alpha;
   double filter_width;
+
+  int nproc; // number of processors
 };

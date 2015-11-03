@@ -459,13 +459,13 @@ void Array<T>::initFromFile(std::string fileName) {
 
   std::string fileNameBinary = fileName;// + ".bin";
   if (fileExists(fileNameBinary)) {
-      std::cout << "binary " << fileName << " exists" << std::endl;
+//      std::cout << "binary " << fileName << " exists" << std::endl;
       fileName = fileNameBinary;
       std::ifstream file(fileName.c_str(), std::ios::binary);
       fromBinary(this, file);
       file.close();
     } else {
-      std::cout << "binary " << fileName << " does not exist" << std::endl;
+//      std::cout << "binary " << fileName << " does not exist" << std::endl;
       std::ifstream file(fileName.c_str());
       file >> *this;
       file.close();
@@ -567,5 +567,72 @@ void fromBinary(Array<T>* array, std::ifstream& file) {
       fromBinary(&(*array)(i), file);
     }
 }
+
+
+/*! BLAS wrappers */
+
+/*! dgemm performs the operation: this = alpha * A * B + beta * this */
+/*! where A, B are 2D matrices, and alpha, beta are scalars */
+template <typename T>
+void Array<T>::dgemm(double alpha, Array<T>& A, Array<T>& B, double beta)
+{
+  int Arows =  A.get_dim(0); int Acols = A.get_dim(1);
+
+  int Brows = B.get_dim(0); int Bcols = B.get_dim(1);
+
+  int Astride = Arows; int Bstride = Brows; int Cstride = Arows;
+
+  // Perform a few checks before carrying out the calculations
+
+#ifdef _CPU
+  double* A_matrix = A.get_ptr_cpu();
+  double* B_matrix = B.get_ptr_cpu();
+  double* C_matrix = this->get_ptr_cpu();
+#endif
+
+#ifdef _GPU
+  double* A_matrix = A.get_ptr_gpu();
+  double* B_matrix = B.get_ptr_gpu();
+  double* C_matrix = this->get_ptr_gpu();
+#endif
+
+  dgemm_wrapper(Arows, Bcols, Acols, alpha,
+      A_matrix, Astride, B_matrix, Bstride,
+      beta, C_matrix, Cstride);
+}
+
+/*! daxpy performs the operation: this = alpha * x + this */
+/*! where x and y are vectors of the same length and alpha is a scalar */
+template <typename T>
+void Array<T>:: daxpy(double alpha, Array<T>& x) {
+
+  int n = x.size(); // number of elements
+
+  if (n != this->size()) {
+    FatalError("at Array<T>:: daxpy: array dimensions do not match");
+  }
+
+
+#ifdef _CPU
+  double *x_vector = x.get_ptr_cpu();
+  double *y_vector = this->get_ptr_cpu();
+
+  ::daxpy(n, alpha, x_vector, y_vector); // the double colons forces the compiler to use the daxpy function in global.cpp
+
+#endif
+#ifdef _GPU
+  double *x_vector = x.get_ptr_gpu();
+  double *y_vector = this->get_ptr_gpu();
+
+
+      cublasDaxpy(n, alpha,
+                  x_vector, 1 /*x vector stride*/,
+                  y_vector, 1 /*y vector stride*/);
+#endif
+}
+
+
+
+
 
 #endif

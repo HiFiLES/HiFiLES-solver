@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
   int nproc;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  run_input.nproc = nproc;
 #endif
   
   if (rank == 0) {

@@ -274,6 +274,11 @@ double besselj(double nu, double x);
  */
 double besselThreeHalves(double x);
 
+/*! routine that mimics BLAS dgemm */
+int dgemm(int Arows, int Bcols, int Acols, double alpha, double beta, double* a, double* b, double* c);
+
+/*! routine that mimics BLAS daxpy */
+int daxpy(int n, double alpha, double *x, double *y);
 
 /*! END */
 

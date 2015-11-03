@@ -101,7 +101,7 @@ void eles::set_operators(void)
 
 void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
 {
-
+  nproc = run_input.nproc;
   if (run_input.adv_type==0) {
     RK_a.setup(1);
     RK_b.setup(1);
@@ -158,9 +158,10 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     // Initialize the element specific static members
     (*this).setup_ele_type_specific();
 
-    fileNamePrefix = "rank" + num2str(rank) + "_" + elementName + "_uptsType_" + num2str(upts_type)
+    fileNamePrefix = "rank_" + num2str(rank) + "_of_" + num2str(nproc) +
+        "_" + elementName + "_uptsType_" + num2str(upts_type)
         + "_fptsType_" + num2str(fpts_type) + "_p_" + num2str(order);
-    fileNameSuffix = ".hifiles.bin";
+    fileNameSuffix = ".HiFiLES.bin";
 
     // Generate all operators for extrapolation, interpolation, and derivatives
     set_operators();
@@ -3450,7 +3451,11 @@ void eles::shock_capture_concentration(int in_disu_upts_from)
   }
 }
 
-void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_Array_ptr, double* out_sensor, double* sigma)
+void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
+    int in_n_fields, int in_order, int in_ele_type, int in_artif_type,
+    double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr,
+    double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr,
+    double* concentration_Array_ptr, double* out_sensor, double* sigma)
 {
   int stride = in_n_upts_per_ele * in_n_eles;
   double tmp_sensor = 0;
@@ -3549,7 +3554,6 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
               modal_sol[i] += in_inv_vandermonde2D_ptr[i + j * in_n_upts_per_ele] * nodal_sol[j];
 
             modal_sol[i] = modal_sol[i] * sigma[i];
-            //printf("The exp filter values are %f \n",modal_sol[i]);
           }
 
           // Change back to nodal
@@ -7978,116 +7982,26 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
   if (n_eles != 0) {
       double alpha = run_input.filter_alpha; // proportion of influence from interior filter
 
-#ifdef _CPU
       // Find common interface values
       // disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i)
 
-      for (int field = 0; field < n_fields; field++)
-        {
-          for (int element = 0; element <n_eles; element++)
-            {
-              for (int sol_point = 0; sol_point < n_upts_per_ele; sol_point++)
-                {
-                  disu_fpts(sol_point,element,field) += delta_disu_fpts(sol_point,element,field);
-                }
-            }
-        }
-#endif
-#ifdef _GPU
-      /*!
-       * \brief cublasDaxpy
-       * Performs y = alpha * x + y
-       * where y = disu_fpts
-       * alpha = 1
-       * x = delta_disu_fpts
-       * n = n_upts_per_ele * n_eles * n_fields
-       */
-      double *y_vector = disu_fpts.get_ptr_gpu();
-      double *x_vector = delta_disu_fpts.get_ptr_gpu();
 
-      cublasDaxpy(n_upts_per_ele * n_eles * n_fields, 1.0,
-                  x_vector, 1 /*vector stride*/,
-                  y_vector, 1);
-#endif
 
       // Apply interior filter first
       // disu_upts = alpha * stab_filter_interior * disu_upts
 
-      /*!
-       Performs C = (alpha*A*B) + (beta*C) where: \n
-       alpha = run_input.filter_alpha \n
-       beta = 0.0 \n
-       A = stab_filter_interior \n
-       B = disu_upts(in_disu_upts_from) \n
-       C = disu_upts(in_disu_upts_from)
-
-       stab_filter_interior is the interior filtering matrix;
-       has dimensions n_upts_per_ele by n_upts_per_ele
-       */
-
-      Arows =  n_upts_per_ele; Acols = n_upts_per_ele;
-
-      Brows = Acols; Bcols = n_fields*n_eles;
-
-      Astride = Arows; Bstride = Brows; Cstride = Arows;
-
-#ifdef _CPU
-      double *A_matrix = stab_filter_interior.get_ptr_cpu();
-      double *B_matrix = disu_upts(in_disu_upts_from).get_ptr_cpu();
-#endif
-
-#ifdef _GPU
-      double *A_matrix = stab_filter_interior.get_ptr_gpu();
-      double *B_matrix = disu_upts(in_disu_upts_from).get_ptr_gpu();
-#endif
-
-      double *C_matrix = B_matrix;
-
       double beta = 0;
-
-      dgemm_wrapper(Arows, Bcols, Acols, alpha,
-                    A_matrix, Astride, B_matrix, Bstride,
-                    beta, C_matrix, Cstride);
+      disu_upts(in_disu_upts_from).dgemm(alpha, stab_filter_interior, disu_upts(in_disu_upts_from),
+          beta);
 
       // Apply boundary filter next
       // disu_upts = (1 - alpha) * stab_filter_boundary * disu_fpts + disu_upts
 
-      /*!
-       Performs C = (alpha*A*B) + (beta*C) where: \n
-       alpha = 1 - run_input.filter_alpha \n
-       beta = 1.0 \n
-       A = stab_filter_boundary \n
-       B = disu_fpts \n
-       C = disu_upts(in_disu_upts_from)
-
-       stab_filter_interior is the interior filtering matrix;
-       has dimensions n_upts_per_ele by n_upts_per_ele
-       */
-
-      Arows =  n_upts_per_ele; Acols = n_fpts_per_ele;
-
-      Brows = Acols; Bcols = n_fields*n_eles;
-
-      Astride = Arows; Bstride = Brows; Cstride = Arows;
-
-#ifdef _CPU
-      A_matrix = stab_filter_boundary.get_ptr_cpu();
-      B_matrix = disu_fpts.get_ptr_cpu();
-      C_matrix = disu_upts(in_disu_upts_from).get_ptr_cpu();
-#endif
-
-#ifdef _GPU
-      A_matrix = stab_filter_boundary.get_ptr_gpu();
-      B_matrix = disu_fpts.get_ptr_gpu();
-      C_matrix = disu_upts(in_disu_upts_from).get_ptr_gpu();
-#endif
-
       alpha = 1. - run_input.filter_alpha;
       beta = 1.;
 
-      dgemm_wrapper(Arows, Bcols, Acols, alpha,
-                    A_matrix, Astride, B_matrix, Bstride,
-                    beta, C_matrix, Cstride);
+      disu_upts(in_disu_upts_from).dgemm(alpha, stab_filter_boundary, disu_fpts,
+          beta);
 
 
     }
