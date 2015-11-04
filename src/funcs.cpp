@@ -3188,6 +3188,7 @@ void dgemm_wrapper(int Arows, int Bcols, int Acols,
       B_matrix, Bstride,
       beta, C_matrix, Cstride);
 
+
 #elif defined _NO_BLAS
   dgemm(Arows,Bcols,Acols,
       alpha, beta, A_matrix,

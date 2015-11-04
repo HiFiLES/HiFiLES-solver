@@ -7980,19 +7980,30 @@ void eles::compute_all_basis_functions() {
 void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is the stage in the time-stepping scheme
 
   if (n_eles != 0) {
+
       double alpha = run_input.filter_alpha; // proportion of influence from interior filter
 
       // Find common interface values
       // disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i)
+//      _(disu_fpts.get_max());
+      disu_fpts.daxpy(1.0, delta_disu_fpts);
+//      _(disu_fpts.get_max());
+
+//      _(delta_disu_fpts.get_min());
+//      _(delta_disu_fpts.get_max());
 
 
-
+//      _(stab_filter_interior.get_min());
+//      _(stab_filter_interior.get_max());
       // Apply interior filter first
       // disu_upts = alpha * stab_filter_interior * disu_upts
-
-      double beta = 0;
+//      disu_upts(1) = disu_upts(0);
+      double beta = 1e-50;//1e-12;
+//      _(disu_upts(in_disu_upts_from).get_max());
+//      _(alpha);
       disu_upts(in_disu_upts_from).dgemm(alpha, stab_filter_interior, disu_upts(in_disu_upts_from),
           beta);
+//      _(disu_upts(in_disu_upts_from).get_max());
 
       // Apply boundary filter next
       // disu_upts = (1 - alpha) * stab_filter_boundary * disu_fpts + disu_upts
@@ -8000,9 +8011,10 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
       alpha = 1. - run_input.filter_alpha;
       beta = 1.;
 
+//      _(disu_upts(in_disu_upts_from).get_max());
+
       disu_upts(in_disu_upts_from).dgemm(alpha, stab_filter_boundary, disu_fpts,
           beta);
-
-
+//      _(disu_upts(in_disu_upts_from).get_max());
     }
 }

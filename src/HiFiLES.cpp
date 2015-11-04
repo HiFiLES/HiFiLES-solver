@@ -49,14 +49,33 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
+  Array<Array<double> > mat(2);
+
+  Array<double> a(3,3);
+  a.fill(2);
+  mat(0) = a;
+  _(a);
+  Array<double> b(3,3);
+  b.fill(3);
+  _(b);
+  mat(1) = b;
+  mat(0) = mat(1);
+  double alpha = 1;
+  double beta = 1e-50;
+  mat(1).dgemm(alpha, mat(0), mat(1), beta);
+  _(a);
+
+  _(mat);
+//  FatalError("forced stop");
+
   int rank = 0, error_state = 0;
   int i, j;                           /*!< Loop iterators */
   int i_steps = 0;                    /*!< Iteration index */
   int RKSteps;                        /*!< Number of RK steps */
-  std::ifstream run_input_file;            /*!< Config input file */
-  clock_t init_time, final_time;                /*!< To control the time */
+  std::ifstream run_input_file;       /*!< Config input file */
+  clock_t init_time, final_time;      /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
-  std::ofstream write_hist;                /*!< Output files (forces, statistics, and history) */
+  std::ofstream write_hist;           /*!< Output files (forces, statistics, and history) */
   mesh Mesh;                          /*!< Store mesh details & perform mesh motion */
   
   /*! Check the command line input. */
@@ -142,10 +161,10 @@ int main(int argc, char *argv[]) {
 
   /*! Dump initial Paraview or tecplot file. */
   
-  if (FlowSol.write_type == 0) write_vtu(FlowSol.ini_iter+i_steps, &FlowSol);
-  else if (FlowSol.write_type == 1) write_tec(FlowSol.ini_iter+i_steps, &FlowSol);
-  else FatalError("ERROR: Trying to write unrecognized file format ... ");
-  
+//  if (FlowSol.write_type == 0) write_vtu(FlowSol.ini_iter+i_steps, &FlowSol);
+//  else if (FlowSol.write_type == 1) write_tec(FlowSol.ini_iter+i_steps, &FlowSol);
+//  else FatalError("ERROR: Trying to write unrecognized file format ... ");
+//
   if (FlowSol.rank == 0) cout << endl;
   
   /////////////////////////////////////////////////

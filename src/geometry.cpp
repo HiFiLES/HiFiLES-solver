@@ -174,9 +174,9 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   Mesh.v2n_e.initialize_to_zero();
 
   // Initialize Arrays to -1
-  f2c.initialize_to_value(-1);
-  f2loc_f.initialize_to_value(-1);
-  c2f.initialize_to_value(-1);
+  f2c.fill(-1);
+  f2loc_f.fill(-1);
+  c2f.fill(-1);
 
   Array<int> icvsta, icvert;
 
@@ -2522,7 +2522,7 @@ void CompConnectivity(Array<int>& in_c2v, Array<int>& in_c2n_v, Array<int>& in_c
 
       // Create Array ic2e
       Array<int> num_e_per_c(5);
-      out_c2e.initialize_to_value(-1);
+      out_c2e.fill(-1);
 
       num_e_per_c(0) = 3;
       num_e_per_c(1) = 4;

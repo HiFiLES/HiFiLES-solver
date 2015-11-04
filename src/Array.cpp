@@ -388,7 +388,7 @@ void Array<T>::initialize_to_zero()
 
 // Initialize Array to given value
 template <typename T>
-void Array<T>::initialize_to_value(const T val)
+void Array<T>::fill(const T val)
 {
   for(int i=0; i<dim_0*dim_1*dim_2*dim_3; i++)
   {
@@ -588,6 +588,8 @@ void Array<T>::dgemm(double alpha, Array<T>& A, Array<T>& B, double beta)
   double* A_matrix = A.get_ptr_cpu();
   double* B_matrix = B.get_ptr_cpu();
   double* C_matrix = this->get_ptr_cpu();
+//  std::cout << "A: " << A << std::endl;
+//  std::cout << "B: " << B << std::endl;
 #endif
 
 #ifdef _GPU
@@ -599,6 +601,8 @@ void Array<T>::dgemm(double alpha, Array<T>& A, Array<T>& B, double beta)
   dgemm_wrapper(Arows, Bcols, Acols, alpha,
       A_matrix, Astride, B_matrix, Bstride,
       beta, C_matrix, Cstride);
+
+//  std::cout << "A: " << A << std::endl;
 }
 
 /*! daxpy performs the operation: this = alpha * x + this */
@@ -612,7 +616,6 @@ void Array<T>:: daxpy(double alpha, Array<T>& x) {
     FatalError("at Array<T>:: daxpy: array dimensions do not match");
   }
 
-
 #ifdef _CPU
   double *x_vector = x.get_ptr_cpu();
   double *y_vector = this->get_ptr_cpu();
@@ -624,15 +627,10 @@ void Array<T>:: daxpy(double alpha, Array<T>& x) {
   double *x_vector = x.get_ptr_gpu();
   double *y_vector = this->get_ptr_gpu();
 
-
       cublasDaxpy(n, alpha,
                   x_vector, 1 /*x vector stride*/,
                   y_vector, 1 /*y vector stride*/);
 #endif
 }
-
-
-
-
 
 #endif

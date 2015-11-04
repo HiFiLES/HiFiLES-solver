@@ -140,7 +140,6 @@ public:
 
   void cp_gpu_cpu(void);
 
-
   // remove data from cpu
 
   void rm_cpu(void);
@@ -149,7 +148,7 @@ public:
   void initialize_to_zero();
 
   /*! Initialize Array to given value */
-  void initialize_to_value(const T val);
+  void fill(const T val);
 
   /*! Write array contents to a file */
   void writeToFile(std::string fileName, bool inBinary = true);
