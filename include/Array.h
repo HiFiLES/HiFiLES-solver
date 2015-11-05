@@ -41,6 +41,31 @@
 #ifdef _GPU
 #include "cuda.h"
 #include "cuda_runtime_api.h"
+#include "cublas.h"
+#include "../include/cuda_kernels.h"
+#endif
+
+
+#if defined _ACCELERATE_BLAS
+#include <Accelerate/Accelerate.h>
+#endif
+
+#if defined _MKL_BLAS
+#include "mkl.h"
+#include "mkl_spblas.h"
+#endif
+
+#if defined _STANDARD_BLAS
+extern "C"
+{
+#include "cblas.h"
+}
+#endif
+
+#ifdef _MPI
+#include "mpi.h"
+#include "metis.h"
+#include "parmetis.h"
 #endif
 
 template <typename T>
