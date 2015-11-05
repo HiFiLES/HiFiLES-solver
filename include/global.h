@@ -75,5 +75,3 @@ enum {MOTION_DISABLED, MOTION_ENABLED};
 
 /*! environment variable specifying location of HiFiLES repository */
 extern const char* HIFILES_DIR;
-
-#define _(x) std::cout << #x << ": " << x << std::endl

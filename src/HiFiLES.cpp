@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
   mat(1).dgemm(alpha, mat(0), mat(1), beta);
   _(a);
 
-  _(mat);
+//  _(mat);
 //  FatalError("forced stop");
 
   int rank = 0, error_state = 0;

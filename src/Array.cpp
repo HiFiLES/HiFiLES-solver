@@ -280,6 +280,8 @@ void Array<T>::mv_cpu_gpu(void)
 
   cpu_flag=0;
   gpu_flag=1;
+  _("mv_cpu_gpu()");
+  _(gpu_flag);
 
   check_cuda_error("After Memcpy, asking for too much memory?",__FILE__,__LINE__);
 
@@ -399,6 +401,20 @@ void Array<T>::fill(const T val)
 // returns an ostream object with the contents of the array
 template <typename T>
 std::ostream& operator<<(std::ostream& out, Array<T>& array) {
+
+#ifdef _GPU
+  // We need to pass the gpu data back to the cpu to output it
+  _(array.cpu_flag);
+  _(array.gpu_flag);
+  if (array.cpu_flag == 0) {
+      if (array.gpu_flag == 1) {
+          array.cp_gpu_cpu();
+        } else {
+          FatalError("At Array<T>::operator<<: data not in GPU nor CPU");
+        }
+    }
+#endif
+
   out << array.dim_0 << " " << array.dim_1 << " "
       << array.dim_2 << " " << array.dim_3
       << std::endl;
@@ -420,6 +436,11 @@ std::ostream& operator<<(std::ostream& out, Array<T>& array) {
       out << std::endl;
     }
 
+#ifdef _GPU
+  // When we are done, delete the data in the CPU to avoid memory leaks
+  array.rm_cpu();
+#endif
+
   return out;
 }
 
@@ -430,6 +451,17 @@ std::ostream& operator<<(std::ostream& out, Array<T>& array) {
  */
 template <typename T>
 void Array<T>::writeToFile(std::string fileName, bool inBinary) {
+
+#ifdef _GPU
+  // We need to pass the gpu data back to the cpu to output it
+  if (this->cpu_flag == 0) {
+      if (this->gpu_flag == 1) {
+          this->cp_cpu_gpu();
+        } else {
+          FatalError("At Array<T>::writeToFile: data not in GPU nor CPU");
+        }
+    }
+#endif
 
   if (inBinary) {
 //      fileName += ".bin";
@@ -448,6 +480,11 @@ void Array<T>::writeToFile(std::string fileName, bool inBinary) {
             << this->dim_1 << " "
             << this->dim_2 << " "
             << this->dim_3 << " to file " << fileName << std::endl;
+
+#ifdef _GPU
+  // When we are done, delete the data in the CPU to avoid memory leaks
+  this->rm_cpu();
+#endif
 
 }
 
@@ -470,6 +507,13 @@ void Array<T>::initFromFile(std::string fileName) {
       file >> *this;
       file.close();
     }
+
+#ifdef _GPU
+  // We need to pass the gpu data to the gpu
+  this->mv_cpu_gpu();
+#endif
+
+
 
   std::cout << "Read array of dimensions "
             << this->dim_0 << " "
@@ -591,8 +635,22 @@ void Array<T>::dgemm(double alpha, Array<T>& A, Array<T>& B, double beta)
 //  std::cout << "A: " << A << std::endl;
 //  std::cout << "B: " << B << std::endl;
 #endif
-
+  _("dgemm");
 #ifdef _GPU
+  // Ensure the matrices are in the GPU; client should not worry about this
+  if (this->gpu_flag == 0) {
+      _(this->gpu_flag);
+    this->mv_cpu_gpu();
+    }
+  if (A.gpu_flag == 0) {
+      _(A.gpu_flag);
+      A.mv_cpu_gpu();
+    }
+  if (B.gpu_flag == 0) {
+      _(B.gpu_flag);
+      B.mv_cpu_gpu();
+    }
+
   double* A_matrix = A.get_ptr_gpu();
   double* B_matrix = B.get_ptr_gpu();
   double* C_matrix = this->get_ptr_gpu();
@@ -624,6 +682,14 @@ void Array<T>:: daxpy(double alpha, Array<T>& x) {
 
 #endif
 #ifdef _GPU
+
+  if (this->gpu_flag == 0) {
+    this->mv_cpu_gpu();
+    }
+  if (x.gpu_flag == 0) {
+      x.mv_cpu_gpu();
+    }
+
   double *x_vector = x.get_ptr_gpu();
   double *y_vector = this->get_ptr_gpu();
 
