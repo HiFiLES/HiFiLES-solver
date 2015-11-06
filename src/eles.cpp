@@ -62,6 +62,7 @@ extern "C"
 #include "../include/source.h"
 #include "../include/eles.h"
 #include "../include/funcs.h"
+#include "../include/solver.h"
 
 using namespace std;
 
@@ -327,6 +328,8 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     
     set_shape(in_max_n_spts_per_ele);
     ele2global_ele.setup(n_eles);
+    ele2inters.setup(n_eles,n_inters_per_ele);
+    ele2inters_types.setup(n_eles,n_inters_per_ele);
     bctype.setup(n_eles,n_inters_per_ele);
 
     // TODO: reduce unused allocation space (i.e. more spts alloc'd than needed)
@@ -355,9 +358,6 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     transa='N';
     one=1.0;
     zero=0.0;
-    
-    n_fields_mul_n_eles=n_fields*n_eles;
-    n_dims_mul_n_upts_per_ele=n_dims*n_upts_per_ele;
     
     // Residual (divergence of continuous flux)
     div_tconf_upts.setup(n_adv_levels);
@@ -667,29 +667,17 @@ void eles::set_ics(double& time)
     
     temp_u_ref.setup(n_fields);
     
-    // increment for linearized Jacobian calculation
-    // set to square root of machine zero
-    // this value for 64-bit double-precision machine
-    eps_imp = 1.0e-5;
-    perturb_upts.setup(n_upts_per_ele,n_eles,n_fields);
-    
-    /*rho=run_input.rho_c_ic;
+    rho=run_input.rho_c_ic;
     vx=run_input.u_c_ic;
     vy=run_input.v_c_ic;
     vz=run_input.w_c_ic;
-    p=run_input.p_c_ic;*/
+    p=run_input.p_c_ic;
 
-    /*rho=run_input.rho_free_stream;
-    vx=run_input.u_free_stream;
-    vy=run_input.v_free_stream;
-    vz=run_input.w_free_stream;
-    p=run_input.p_free_stream;*/
-    
-    rho=0;
+    /*rho=0;
     vx=0;
     vy=0;
     vz=0;
-    p=0;
+    p=0;*/
 
     temp_u_ref(0)=rho;
     temp_u_ref(1)=rho*vx;
@@ -1346,6 +1334,11 @@ double eles::calc_dt_local(int in_ele)
         lam_visc = lam_visc_new;
     }
 
+    // HACK: ramp up CFL at start
+    double CFL_max = run_input.CFL;
+    
+    
+
     if (viscous)
     {
       dt_visc = (run_input.CFL * 0.25 * h_ref(0,in_ele) * h_ref(0,in_ele))/(lam_visc) * 1.0/(2.0*run_input.order+1.0);
@@ -1465,16 +1458,6 @@ void eles::evaluate_invFlux(int in_disu_upts_from)
           temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
         }
 
-        if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
-
-          // increment solution
-          for(k=0;k<n_fields;k++)
-          {
-            //cout << "perturbation: " << setprecision(8) << abs(temp_u(k) - temp_u_ref(k))*eps_imp << endl;
-            //temp_u(k) += abs(temp_u(k) - temp_u_ref(k))*eps_imp;
-          }
-        }
-        
         if (motion) {
           // Transform solution from static frame to dynamic frame
           for (k=0; k<n_fields; k++) {
@@ -1683,6 +1666,7 @@ void eles::calculate_divergence(int in_div_tconf_upts_to)
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
       
+      // initializes residual to zero
       cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_2(0).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,0,0,0),Bstride,0.0,div_tconf_upts(in_div_tconf_upts_to).get_ptr_cpu(),Cstride);
       for (int i=1;i<n_dims;i++)
       {
@@ -1776,11 +1760,6 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
     
 #endif
     
-    //for (int i=0;i<n_fpts_per_ele;i++)
-      //for (int j=0;j<n_eles;j++)
-        //for (int k=0;k<n_fields;k++)
-          //cout << "norm_tdisf_fpts, norm_tconf_fpts: " << setprecision(8) << norm_tdisf_fpts(j,i,k) << ", " << norm_tconf_fpts(j,i,k) << endl;
-
     if(opp_3_sparse==0) // dense
     {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
@@ -1805,40 +1784,40 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
       cout << "ERROR: Unknown storage for opp_3 ... " << endl;
     }
 
-    /*double sum = 0.0;
-    for (int i=0;i<n_upts_per_ele;i++)
-      for (int j=0;j<n_eles;j++)
-        for (int k=0;k<n_fields;k++)
-          sum += div_tconf_upts(in_div_tconf_upts_to)(i,j,k);
+    array<double> pos(n_dims);
+    double sum = 0.0;
+    pos.initialize_to_zero();
 
-    
-    cout << "level, min/max/sum of residual: " << in_div_tconf_upts_to << ", " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to).get_min() << ", " << div_tconf_upts(in_div_tconf_upts_to).get_max() << ", " << sum << endl;
+    for (int i=0;i<n_upts_per_ele;i++) {
+      for (int j=0;j<n_eles;j++) {
+        for (int k=0;k<n_fields;k++) {
+          sum += abs(div_tconf_upts(in_div_tconf_upts_to)(i,j,k));
 
-    //for (int i=0;i<n_fpts_per_ele;i++)
-      //for (int j=0;j<n_eles;j++)
-        //for (int k=0;k<n_fields;k++)
-          //cout << "norm_tconf_fpts after BLAS: " << setprecision(8) << norm_tconf_fpts(j,i,k) << endl;
+          // Stop the simulation if NaN residual
+          if (isnan(div_tconf_upts(in_div_tconf_upts_to)(i,j,k))) {
+            calc_pos_upt(i, j, pos);
+            
+            // print some diagnostics
+            cout << "in_div_tconf_upts_to, ele, coords: " << in_div_tconf_upts_to << ", " << j << ", " << pos(0) << ", " << pos(1) << ", " << pos(2) << endl;
 
-    if(run_input.adv_type==-1) {
-      array<double> pos(n_dims);
-      for (int i=0;i<n_upts_per_ele;i++) {
-        for (int j=0;j<n_eles;j++) {
-          for (int k=0;k<n_fields;k++) {
-            if (isnan(div_tconf_upts(in_div_tconf_upts_to)(i,j,k))) {
-              calc_pos_upt(i, j, pos);
-              
-              cout << "in_div_tconf_upts_to, ele, coords: " << in_div_tconf_upts_to << ", " << j << ", " << pos(0) << ", " << pos(1) << endl;
+            if(run_input.adv_type==-1) {
               cout << "disu(0), disu(1), disu(2): " << setprecision(8) << disu_upts(0)(i,j,k) << ", " << disu_upts(1)(i,j,k) << ", " << disu_upts(2)(i,j,k) << endl;
               cout << "div_tconf_upts(0), div_tconf_upts(1), div_tconf_upts(2): " << setprecision(8) << div_tconf_upts(0)(i,j,k) << ", " << div_tconf_upts(1)(i,j,k) << ", " << div_tconf_upts(2)(i,j,k) << endl;
               cout << "lhs: " << setprecision(8) << endl;
               lhs_matrix(j).print();
-              
-              FatalError("NaN in residual, exiting.");
             }
+            else {
+              cout << "disu_upts: " << setprecision(8) << disu_upts(in_div_tconf_upts_to)(i,j,k) << endl;
+              cout << "div_tconf_upts: " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to)(i,j,k) << endl;
+            }
+            
+            FatalError("NaN in residual, exiting.");
           }
         }
       }
-    }*/
+    }
+
+    if(in_div_tconf_upts_to == 0) cout << "level, min/max/abs sum of residual: " << in_div_tconf_upts_to << ", " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to).get_min() << ", " << div_tconf_upts(in_div_tconf_upts_to).get_max() << ", " << sum << endl;
 
 #endif
     
@@ -2551,14 +2530,6 @@ void eles::evaluate_viscFlux(int in_disu_upts_from)
           for (m=0;m<n_dims;m++)
           {
             temp_grad_u(k,m) = grad_disu_upts(j,i,k,m);
-          }
-        }
-
-        if (run_input.adv_type == -1 and in_disu_upts_from == 2) {
-          // increment solution
-          for(k=0;k<n_fields;k++)
-          {
-            //temp_u(k) += abs(temp_u(k) - temp_u_ref(k))*eps_imp;
           }
         }
 
@@ -3717,46 +3688,62 @@ void eles::shock_capture_concentration_cpu(int in_n_eles, int in_n_upts_per_ele,
 // Perturb solution
 void eles::perturb_solution(int color)
 {
+  
   if (n_eles!=0) {
+    
 #ifdef _CPU
 
-    int i,j,k;
-    double perturb, sgn;
-    
+    int i,j,k,l,indx;
+    double perturb, sgn, temp;
+
+    // increment for linearized Jacobian calculation
+    // set to square root of machine zero
+    // this value for 64-bit double-precision machine
+    //double eps = 1.0e-5;
+    double eps = 1.0e-8;
+
     for(i=0; i<n_eles; i++) {
-      for(j=0; j<n_fields; j++) {
-        
-        temp_u(j) = disu_upts(0)(color,i,j);
+      for(j=0; j<n_upts_per_ele; j++) {
+        for(k=0; k<n_fields; k++) {
+          
+          indx = j*n_fields+k;
+          
+          if(indx == color) {
 
-        // 1. Kelley (2003)
-        //if(temp_u(j)==0) sgn = 1.0;
-        //else sgn = temp_u(j)/abs(temp_u(j));
-        //perturb = max(abs(temp_u(j)), 1.0)*sgn*eps_imp;
-        
-        // 2. use old solution (disu_upts(2)) as reference values
-        //temp_u_ref(j) = disu_upts(2)(color,i,j);
-        perturb = temp_u(j) - temp_u_ref(j);
-        if(perturb==0) sgn = 1.0;
-        else sgn = perturb/abs(perturb);
-        //perturb_upts(color,i,j) = max(abs(perturb), 1.0)*sgn*eps_imp;
-        perturb = max(abs(perturb), 1.0)*sgn*eps_imp;
+            temp = disu_upts(2)(j,i,k);
+            
+            // 1. Kelley (2003)
+            //if(temp_u(j)==0) sgn = 1.0;
+            //else sgn = temp_u(j)/abs(temp_u(j));
+            //perturb = max(abs(temp_u(j)), 1.0)*sgn*eps;
+            
+            // 2. use old solution (disu_upts(2)) as reference values
+            //temp_u_ref(j) = disu_upts(2)(j,i,k);
+            perturb = temp - temp_u_ref(k);
+            if(perturb==0) sgn = 1.0;
+            else sgn = perturb/abs(perturb);
+            //perturb_upts(color,i,j) = max(abs(perturb), 1.0)*sgn*eps;
+            perturb = max(abs(perturb), 1.0)*sgn*eps;
+            
+            // 3. 2-norm approach - integrate over n_upts_per_ele
+            /*perturb = 0.0;
+            for(l=0; l<n_upts_per_ele; l++) {
+              perturb += pow(disu_upts(0)(l,i,k)-temp_u_ref(k), 2);
+            }
+            perturb /= n_upts_per_ele;
+            perturb = max(sqrt(perturb)*eps, eps);*/
+            
+            // 4. simple approach
+            //perturb = eps;
+            
+            //if(i==0) cout << "field, u^n, u^(n-1), sign, perturb: " << j << ", " << setprecision(8) << temp_u(j) << ", "  << temp_u_ref(j) << ", "  << sgn << ", " << perturb_upts(color,i,j) << endl;
+            
+            //cout << "perturb: " << setprecision(8) << perturb << endl;
+            //disu_upts(2)(color,i,j) += perturb_upts(color,i,j);
+            disu_upts(2)(j,i,k) += perturb;
 
-        // 3. 2-norm approach - integrate over n_upts_per_ele
-        //perturb = 0.0;
-        //for(k=0; k<n_upts_per_ele; k++) {
-          //perturb += pow(disu_upts(0)(k,i,j), 2);
-        //}
-        //perturb = max(sqrt(perturb)*eps_imp, eps_imp);
-        
-        // 4. simple approach
-        //perturb_upts(color,i,j) = eps_imp;
-        
-        //if(i==0) cout << "field, u^n, u^(n-1), sign, perturb: " << j << ", " << setprecision(8) << temp_u(j) << ", "  << temp_u_ref(j) << ", "  << sgn << ", " << perturb_upts(color,i,j) << endl;
-
-        //cout << "perturb: " << setprecision(8) << perturb << endl;
-        //disu_upts(2)(color,i,j) += perturb_upts(color,i,j);
-        disu_upts(2)(color,i,j) += perturb;
-        
+          }
+        }
       }
     }
 
@@ -3767,20 +3754,105 @@ void eles::perturb_solution(int color)
 // for each color (i.e. solution point), add contribution to perturbed residual
 void eles::add_perturbed_residual_to_lhs(int n_colors, int color)
 {
+  
   if (n_eles!=0) {
+
 #ifdef _CPU
     
-    double sum = 0.0;
-    for (int j=0;j<n_eles;j++) {
-      for (int i=0;i<n_upts_per_ele;i++) {
-        for (int k=0;k<n_fields;k++) {
-          // divide residual by n_colors
-          div_tconf_upts(1)(i,j,k) += div_tconf_upts(2)(i,j,k)/n_colors;
-          sum += div_tconf_upts(1)(i,j,k);
+    int i,j,k,l,m,n,indx,indy;
+    double jac, temp, perturb,sgn,dt,detjac;
+    //double sum = 0.0;
+    double eps = 1.0e-8;
+    
+    // TODO: experiment with different preconditioners (multiply identity matrix by precond.)
+
+    // HACK: un-perturb solution if using option 2 below
+    /*for(i=0; i<n_eles; i++) {
+     for(j=0; j<n_upts_per_ele; j++) {
+     for(k=0; k<n_fields; k++) {
+     disu_upts(2)(j,i,k) -= perturb_upts(j,i,k);
+     }
+     }
+     }*/
+    
+    for (i=0;i<n_eles;i++) {
+      
+      // get timestep for current element
+      dt = get_timestep_ele(i);
+
+      // compute off-diagonal terms
+      for (j=0;j<n_upts_per_ele;j++) {
+        for (k=0;k<n_fields;k++) {
+          
+          // old method: sum up all perturbed residuals and divide by n_colors
+          //div_tconf_upts(1)(j,i,k) += div_tconf_upts(2)(j,i,k)/n_colors;
+          //sum += abs(div_tconf_upts(1)(j,i,k));
+
+          indx = j*n_fields+k;
+          
+          // add contributions to colorth column of Jacobian
+          // TODO: find more efficient way to get upt and field from color
+          if(indx == color) {
+            
+            jac = -(div_tconf_upts(2)(j,i,k) - div_tconf_upts(1)(j,i,k));
+            
+            if(i==0) cout << "color, res(1), res(2), jac: " << indx << ", " << setprecision(10) << div_tconf_upts(1)(j,i,k) << ", " << div_tconf_upts(2)(j,i,k) << ", " << jac << endl;
+            
+            // loop over columns of Jacobian block
+            for(l=0; l<n_upts_per_ele; l++) {
+              
+              for(m=0; m<n_fields; m++) {
+                
+                // column index
+                indy = l*n_fields+m;
+                
+                temp = disu_upts(0)(l,i,m);
+                
+                // 1. Kelley (2003)
+                //if(temp_u(m)==0) sgn = 1.0;
+                //else sgn = temp_u(m)/abs(temp_u(m));
+                //perturb = max(abs(temp_u(m)), 1.0)*sgn*eps;
+                
+                // 2. use old solution (disu_upts(2)) as reference values
+                //temp_u_ref(m) = disu_upts(2)(l,i,m);
+                perturb = temp - temp_u_ref(m);
+                if(perturb==0) sgn = 1.0;
+                else sgn = perturb/abs(perturb);
+                perturb = max(abs(perturb), 1.0)*sgn*eps;
+                
+                // 3. 2-norm approach - integrate over n_upts_per_ele
+                /*perturb = 0.0;
+                for(n=0; n<n_upts_per_ele; n++) {
+                  perturb += pow(disu_upts(0)(n,i,m)-temp_u_ref(m), 2);
+                }
+                perturb /= n_upts_per_ele;
+                perturb = max(sqrt(perturb)*eps, eps);*/
+                
+                // 4. simple approach
+                //perturb = eps;
+                
+                //if(i==0) cout << "upt, field, indy, eps, jac/eps: " << l << ", " << m << ", " << indy << ", " << setprecision(10) << perturb << ", " << jac/perturb << endl;
+                
+                // fill <color>th column in Jacobian
+                // ignore terms like dR(u)/dv, dR(rho)/de etc. Only keep dR(u)/du etc.
+                if(m == k) lhs_matrix(i)(indy,indx) = -jac/perturb;
+              }
+            }
+          }
+
+          // add diagonal terms
+          if(color == n_colors-1) {
+            lhs_matrix(i)(indx,indx) += detjac_upts(j,i)/dt;
+          }
         }
       }
     }
-    //cout << "color, min/max/sum of perturbed residual: " << color << ", " << setprecision(8) << div_tconf_upts(1).get_min() << ", " << div_tconf_upts(1).get_max() << ", " << sum << endl;
+    //cout << "color, min/max/abs sum of perturbed residual: " << color << ", " << setprecision(8) << div_tconf_upts(1).get_min() << ", " << div_tconf_upts(1).get_max() << ", " << sum << endl;
+
+    if(color == n_colors-1) {
+      cout << "lhs_matrix(0) " << setprecision(8) << endl;
+      lhs_matrix(0).print();
+    }
 
 #endif
   }
@@ -3790,6 +3862,7 @@ void eles::add_perturbed_residual_to_lhs(int n_colors, int color)
 
 void eles::extrapolate_solution_ele(int in_disu_upts_from, int ele)
 {
+  
   Arows =  n_fpts_per_ele;
   Acols = n_upts_per_ele;
   Brows = Acols;
@@ -3933,78 +4006,131 @@ void eles::evaluate_invFlux_ele(int in_disu_upts_from, int ele)
 
 }
 
+void eles::calculate_common_invFlux_ele(int ele, struct solution* FlowSol)
+{
+
+#ifdef _CPU
+  
+  int i, inter, int_inter, inter_type;
+
+  for(i=0; i<n_inters_per_ele; i++) {
+    
+    // global interface number
+    inter = ele2inters(ele,i);
+
+    // seg/tri/quad inter
+    inter_type = ele2inters_types(ele,i);
+
+    // lookup number of inter in list of int_inters of type inter_type
+    int_inter = FlowSol->global_inter2inter(inter);
+
+    //cout << "ele, inter, global_inter, inter_type, bc_type " << ele << ", " << int_inter << ", " << inter << ", " << inter_type << ", " << bctype(ele,i) << endl;
+
+    // internal inters only
+    if (bctype(ele,i) == 0) {
+      FlowSol->mesh_int_inters(inter_type).calculate_common_invFlux_inter(int_inter);
+    }
+  }
+#endif
+}
+
+void eles::evaluate_boundaryConditions_invFlux_ele(int ele, struct solution* FlowSol)
+{
+  
+#ifdef _CPU
+  
+  int i, inter, bdy_inter, inter_type;
+  
+  for(i=0; i<n_inters_per_ele; i++) {
+    
+    // global interface number
+    inter = ele2inters(ele,i);
+    
+    // seg/tri/quad inter
+    inter_type = ele2inters_types(ele,i);
+    
+    // lookup number of inter in list of int_inters of type inter_type
+    bdy_inter = FlowSol->global_inter2inter(inter);
+
+    //if(bctype(ele,i) != 0) cout << "ele, inter, global_inter, inter_type, bc_type " << ele << ", " << bdy_inter << ", " << inter << ", " << inter_type << ", " << bctype(ele,i) << endl;
+
+    // boundary inters only
+    if (bctype(ele,i) != 0) {
+      FlowSol->mesh_bdy_inters(inter_type).evaluate_boundaryConditions_invFlux_inter(FlowSol->time, bdy_inter);
+    }
+  }
+#endif
+}
+
 // calculate the normal transformed discontinuous flux at the flux points in one element
 
-void eles::extrapolate_totalFlux_ele(int in_disu_upts_from, int ele)
+void eles::extrapolate_totalFlux_ele(int ele)
 {
-  if (n_eles!=0)
-  {
-    Arows = n_fpts_per_ele;
-    Acols = n_upts_per_ele;
-    Brows = Acols;
-    Bcols = n_fields;
-    
-    Astride = Arows;
-    Bstride = Brows*n_eles;
-    Cstride = Arows*n_eles;
-    
+  
+  Arows = n_fpts_per_ele;
+  Acols = n_upts_per_ele;
+  Brows = Acols;
+  Bcols = n_fields;
+  
+  Astride = Arows;
+  Bstride = Brows*n_eles;
+  Cstride = Arows*n_eles;
+  
 #ifdef _CPU
-    
-    if(opp_1_sparse==0) // dense
-    {
+  
+  if(opp_1_sparse==0) // dense
+  {
 #if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-      
-      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_1(0).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,ele,0,0),Bstride,0.0,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),Cstride);
-      for (int i=1;i<n_dims;i++)
-      {
-        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_1(i).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,ele,0,i),Bstride,1.0,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),Cstride);
-      }
-      
+    
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_1(0).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,ele,0,0),Bstride,0.0,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),Cstride);
+    for (int i=1;i<n_dims;i++)
+    {
+      cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,Arows,Bcols,Acols,1.0,opp_1(i).get_ptr_cpu(),Astride,tdisf_upts.get_ptr_cpu(0,ele,0,i),Bstride,1.0,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),Cstride);
+    }
+    
 #elif defined _NO_BLAS
-      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_1(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,0),norm_tdisf_fpts.get_ptr_cpu(0,ele,0));
-      for (int i=1;i<n_dims;i++)
-      {
-        dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,1.0,opp_1(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,i),norm_tdisf_fpts.get_ptr_cpu(0,ele,0));
-      }
-#endif
-    }
-    else if(opp_1_sparse==1) // mkl blas four-array csr format
+    dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,0.0,opp_1(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,0),norm_tdisf_fpts.get_ptr_cpu(0,ele,0));
+    for (int i=1;i<n_dims;i++)
     {
+      dgemm(Arows,Bcols,Acols,Astride,Bstride,Cstride,1.0,1.0,opp_1(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,i),norm_tdisf_fpts.get_ptr_cpu(0,ele,0));
+    }
+#endif
+  }
+  else if(opp_1_sparse==1) // mkl blas four-array csr format
+  {
 #if defined _MKL_BLAS
-      
-      mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_1_data(0).get_ptr_cpu(),opp_1_cols(0).get_ptr_cpu(),opp_1_b(0).get_ptr_cpu(),opp_1_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,0),&Bstride,&zero,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),&Cstride);
-      
-      for (int i=1;i<n_dims;i++) {
-        mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_1_data(i).get_ptr_cpu(),opp_1_cols(i).get_ptr_cpu(),opp_1_b(i).get_ptr_cpu(),opp_1_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,i),&Bstride,&one,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),&Cstride);
-      }
-      
-#endif
-    }
-    else
-    {
-      cout << "ERROR: Unknown storage for opp_1 ... " << endl;
+    
+    mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_1_data(0).get_ptr_cpu(),opp_1_cols(0).get_ptr_cpu(),opp_1_b(0).get_ptr_cpu(),opp_1_e(0).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,0),&Bstride,&zero,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),&Cstride);
+    
+    for (int i=1;i<n_dims;i++) {
+      mkl_dcsrmm(&transa,&Arows,&Bcols,&Acols,&one,matdescra,opp_1_data(i).get_ptr_cpu(),opp_1_cols(i).get_ptr_cpu(),opp_1_b(i).get_ptr_cpu(),opp_1_e(i).get_ptr_cpu(),tdisf_upts.get_ptr_cpu(0,ele,0,i),&Bstride,&one,norm_tdisf_fpts.get_ptr_cpu(0,ele,0),&Cstride);
     }
     
 #endif
-    
+  }
+  else
+  {
+    cout << "ERROR: Unknown storage for opp_1 ... " << endl;
+  }
+  
+#endif
+  
 #ifdef _GPU
-    
-    if (opp_1_sparse==0)
+  
+  if (opp_1_sparse==0)
+  {
+    cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_1(0).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,ele,0,0),Bstride,0.0,norm_tdisf_fpts.get_ptr_gpu(0,ele,0),Cstride);
+    for (int i=1;i<n_dims;i++)
     {
-      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_1(0).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,ele,0,0),Bstride,0.0,norm_tdisf_fpts.get_ptr_gpu(0,ele,0),Cstride);
-      for (int i=1;i<n_dims;i++)
-      {
-        cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_1(i).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,ele,0,i),Bstride,1.0,norm_tdisf_fpts.get_ptr_gpu(0,ele,0),Cstride);
-      }
+      cublasDgemm('N','N',Arows,Bcols,Acols,1.0,opp_1(i).get_ptr_gpu(),Astride,tdisf_upts.get_ptr_gpu(0,ele,0,i),Bstride,1.0,norm_tdisf_fpts.get_ptr_gpu(0,ele,0),Cstride);
     }
-    else if (opp_1_sparse==1)
-    {
-      
-    }
-
-#endif
+  }
+  else if (opp_1_sparse==1)
+  {
     
   }
+  
+#endif
 }
 
 // calculate the divergence of the transformed discontinuous flux at the solution points in one element
@@ -4154,7 +4280,7 @@ void eles::calculate_corrected_divergence_ele(int in_div_tconf_upts_to, int ele)
   }
   else if (opp_3_sparse==1)
   {
-    // TODO: sparse matrix version
+    
   }
   else
   {
@@ -4164,97 +4290,41 @@ void eles::calculate_corrected_divergence_ele(int in_div_tconf_upts_to, int ele)
   
 }
 
-// Perturb solution
-void eles::perturb_solution_ele(int color, int ele)
-{
-
-#ifdef _CPU
-  
-  int j,k;
-  double perturb, sgn;
-  
-  for(j=0; j<n_fields; j++) {
-    
-    temp_u(j) = disu_upts(0)(color,ele,j);
-    
-    // 1. Kelley (2003)
-    //if(temp_u(j)==0) sgn = 1.0;
-    //else sgn = temp_u(j)/abs(temp_u(j));
-    //perturb = max(abs(temp_u(j)), 1.0)*sgn*eps_imp;
-    
-    // 2. use old solution (disu_upts(2)) as reference values
-    //temp_u_ref(j) = disu_upts(2)(color,ele,j);
-    perturb = temp_u(j) - temp_u_ref(j);
-    if(perturb==0) sgn = 1.0;
-    else sgn = perturb/abs(perturb);
-    //perturb_upts(color,ele,j) = max(abs(perturb), 1.0)*sgn*eps_imp;
-    perturb = max(abs(perturb), 1.0)*sgn*eps_imp;
-    
-    // 3. 2-norm approach - integrate over n_upts_per_ele
-    //perturb = 0.0;
-    //for(k=0; k<n_upts_per_ele; k++) {
-    //perturb += pow(disu_upts(0)(k,ele,j), 2);
-    //}
-    //perturb = max(sqrt(perturb)*eps_imp, eps_imp);
-    
-    // 4. simple approach
-    //perturb_upts(color,ele,j) = eps_imp;
-    
-    //if(i==0) cout << "field, u^n, u^(n-1), sign, perturb: " << j << ", " << setprecision(8) << temp_u(j) << ", "  << temp_u_ref(j) << ", "  << sgn << ", " << perturb_upts(color,ele,j) << endl;
-    
-    //cout << "perturb: " << setprecision(8) << perturb << endl;
-    //disu_upts(2)(color,ele,j) += perturb_upts(color,ele,j);
-    disu_upts(2)(color,ele,j) += perturb;
-  }
-  
-#endif
-}
-
-// initialize residual array to zero
-void eles::zero_residual(int in_level)
-{
-  if (n_eles!=0) {
-#ifdef _CPU
-
-    div_tconf_upts(in_level).initialize_to_zero();
-    
-#endif
-  }
-}
-
 // Calculate residual for a single element
-void eles::calc_residual_ele(int ele, int in_disu_upts_from, array<double> &residual_ele)
+void eles::calc_residual_ele(int ele, int in_disu_upts_from, struct solution* FlowSol)
 {
-  cout << "calculating residual in ele " << ele << endl;
+  //cout << "calculating residual in ele " << ele << endl;
   
   int in_div_tconf_upts_to = in_disu_upts_from;
-
-  // Perturb solution
-  //perturb_solution_ele(color, ele);
   
   // Compute the solution at the flux points
   extrapolate_solution_ele(in_disu_upts_from, ele);
 
-  // if parallel, send solution
-  
+#ifdef _MPI
+  // Send the solution at the flux points across the MPI interfaces
+  //if (FlowSol->nproc>1)
+    //send_solution_ele(ele);
+#endif
   
   // Evaluate inviscid flux
   evaluate_invFlux_ele(in_disu_upts_from, ele);
   
   // calculate inviscid flux on interior interfaces
-  
+  calculate_common_invFlux_ele(ele, FlowSol);
   
   // calculate inviscid flux on boundary interfaces
+  evaluate_boundaryConditions_invFlux_ele(ele, FlowSol);
   
-  
-  // if parallel, receive solution
-  
-  
-  // if parallel, calculate inviscid interface flux on partition interfaces
-  
-  
+#ifdef _MPI
+  // Receive the previously computed values from other MPI interfaces and compute inviscid flux
+  if (FlowSol->nproc>1) {
+    //receive_solution_ele(ele);
+    //calculate_common_invFlux_mpi_ele(in_disu_upts_from, ele);
+  }
+#endif
+
   // extrapolate total flux
-  extrapolate_totalFlux_ele(in_disu_upts_from, ele);
+  extrapolate_totalFlux_ele(ele);
   
   // calculate flux divergence
   calculate_divergence_ele(in_div_tconf_upts_to, ele);
@@ -4262,113 +4332,35 @@ void eles::calc_residual_ele(int ele, int in_disu_upts_from, array<double> &resi
   // correct flux divergence
   calculate_corrected_divergence_ele(in_div_tconf_upts_to, ele);
   
-  // add perturbed residual to LHS matrix
-  //add_perturbed_residual_to_lhs_ele(n_colors, color, ele);
+  // check for NaNs
+  array<double> pos(n_dims);
+  double sum = 0.0;
   
-}
-
-// initialize LHS matrix to zero
-void eles::CalcLHSMatrix(double time, int n_colors)
-{
-  if (n_eles!=0) {
-#ifdef _CPU
-    
-    // TODO: experiment with different preconditioners (multiply identity matrix by precond.)
-    
-    int i,j,k,l,m,o,indx,indy;
-    double dt, detjac, sum, perturb, sgn, jac;
-    array<double> pos(n_dims);
-    
-    // HACK: un-perturb solution if using option 2 below
-    /*for(i=0; i<n_eles; i++) {
-     for(j=0; j<n_upts_per_ele; j++) {
-     for(k=0; k<n_fields; k++) {
-     disu_upts(2)(j,i,k) -= perturb_upts(j,i,k);
-     }
-     }
-     }*/
-    
-    for(i=0; i<n_eles; i++) {
+  for (int i=0;i<n_upts_per_ele;i++) {
+    for (int k=0;k<n_fields;k++) {
+      sum += div_tconf_upts(in_div_tconf_upts_to)(i,ele,k);
       
-      // get timestep for current element
-      dt = get_timestep_ele(i);
-      
-      lhs_matrix(i).initialize_to_zero();
-      
-      // get cell volume?
-      //vol = (*this).calc_ele_vol(detjac);
-      //h = run_input.filter_ratio*pow(vol,1./n_dims)/(order+1.);
-      // or element lengthscale used in local timestepping:
-      //h = h_ref(j,i);
-      
-      for(j=0; j<n_upts_per_ele; j++) {
+      // Stop the simulation if NaN residual
+      if (isnan(div_tconf_upts(in_div_tconf_upts_to)(i,ele,k))) {
+        calc_pos_upt(i, ele, pos);
         
-        detjac = detjac_upts(j,i);
+        // print some diagnostics
+        cout << "in_div_tconf_upts_to, ele, coords: " << in_div_tconf_upts_to << ", " << ele << ", " << pos(0) << ", " << pos(1) << ", " << pos(2) << endl;
         
-        for(k=0; k<n_fields; k++) {
-          indx = j*n_fields+k;
-          lhs_matrix(i)(indx,indx) = detjac/dt;
-          
-          // linearized Jacobian: dR/dQ = (R(Q+eps)-R(Q))/eps
-          jac = -(div_tconf_upts(1)(j,i,k) - div_tconf_upts(0)(j,i,k));
-          
-          //norm(m) = pow(jac, 2);
-          //calc_pos_upt(j,i,pos);
-          //cout << "ele, indx, res(0), res(1), res(2), jac: " << i << ", " << indx << ", " << setprecision(8) << div_tconf_upts(0)(j,i,k) << ", " << div_tconf_upts(1)(j,i,k) << ", " << div_tconf_upts(2)(j,i,k) << ", " << jac << endl;
-          
-          // loop over columns of Jacobian block
-          for(l=0; l<n_upts_per_ele; l++) {
-            
-            for(m=0; m<n_fields; m++) {
-              
-              // column index
-              indy = l*n_fields+m;
-              
-              temp_u(m) = disu_upts(0)(l,i,m);
-              
-              // 1. Kelley (2003)
-              //if(temp_u(m)==0) sgn = 1.0;
-              //else sgn = temp_u(m)/abs(temp_u(m));
-              //perturb = max(abs(temp_u(m)), 1.0)*sgn*eps_imp;
-              
-              // 2. use old solution (disu_upts(2)) as reference values
-              //temp_u_ref(m) = disu_upts(2)(l,i,m);
-              perturb = temp_u(m) - temp_u_ref(m);
-              if(perturb==0) sgn = 1.0;
-              else sgn = perturb/abs(perturb);
-              perturb = max(abs(perturb), 1.0)*sgn*eps_imp;
-              
-              // 3. 2-norm approach - integrate over n_upts_per_ele
-              //perturb = 0.0;
-              //for(o=0; o<n_upts_per_ele; o++) {
-              //perturb += pow(disu_upts(0)(o,i,m), 2);
-              //}
-              //perturb = max(sqrt(perturb)*eps_imp, eps_imp);
-              
-              // 4. simple approach
-              //perturb = eps_imp;
-              
-              //if(i==55) cout << "indy, u^n, u^(n-1), sign, eps, jac/eps: " << indy << ", " << setprecision(8) << temp_u(m) << ", "  << temp_u_ref(m) << ", "  << sgn << ", " << perturb << ", " << jac/perturb << endl;
-              
-              // fill <color>th row (/column?) in Jacobian
-              lhs_matrix(i)(indx,indy) -= jac/perturb;
-              
-              //sum += lhs_matrix(i)(indx,indy);
-            }
-          }
+        if(run_input.adv_type==-1) {
+          cout << "disu(0), disu(1), disu(2): " << setprecision(8) << disu_upts(0)(i,ele,k) << ", " << disu_upts(1)(i,ele,k) << ", " << disu_upts(2)(i,ele,k) << endl;
+          cout << "div_tconf_upts(0), div_tconf_upts(1), div_tconf_upts(2): " << setprecision(8) << div_tconf_upts(0)(i,ele,k) << ", " << div_tconf_upts(1)(i,ele,k) << ", " << div_tconf_upts(2)(i,ele,k) << endl;
+          cout << "lhs: " << setprecision(8) << endl;
+          lhs_matrix(ele).print();
         }
-        //for(k=0; k<n_fields; k++) {
-        //norm(k) = sqrt(norm(k));
-        //if(i==0) cout << "field, norm: " << k << ", " << setprecision(12) << norm(k) << endl;
-        //}
+        else {
+          cout << "disu_upts: " << setprecision(8) << disu_upts(in_div_tconf_upts_to)(i,ele,k) << endl;
+          cout << "div_tconf_upts: " << setprecision(8) << div_tconf_upts(in_div_tconf_upts_to)(i,ele,k) << endl;
+        }
+        
+        FatalError("NaN in residual, exiting.");
       }
-      //cout << "ele, lhs_matrix " << i << setprecision(8) << endl;
-      //lhs_matrix(i).print();
     }
-    cout << "lhs_matrix(55) " << setprecision(8) << endl;
-    lhs_matrix(55).print();
-    
-#endif
   }
 }
 
@@ -4408,7 +4400,7 @@ void eles::LU_decomp(void)
 }
 
 // forward and backwards sweeps of LU-SGS implicit method
-void eles::SGS_sweep(int direction)
+void eles::SGS_sweep(int direction, struct solution* FlowSol)
 {
   if (n_eles!=0) {
     
@@ -4424,12 +4416,10 @@ void eles::SGS_sweep(int direction)
     
     int i,j,k;
     int corr, ele, indx, indy;
-    int in_disu_upts_from = 0;
     double dt, detjac;
     array<double> delta_qstar(n_upts_per_ele,n_fields);
     array<double> block_lhs(block_dim,block_dim), block_rhs(block_dim);
     array<int> block_indx(block_dim);
-    array<double> residual_ele(n_upts_per_ele,n_fields);
     
     // loop over eles - check numbering is contiguous in physical space
     for(i=0; i<n_eles; i++) {
@@ -4441,9 +4431,8 @@ void eles::SGS_sweep(int direction)
       
       dt = get_timestep_ele(ele);
       
-      // TODO: calculate residual for current element only
-      calc_residual_ele(ele, in_disu_upts_from, residual_ele);
-      
+      // calculate residual for current element only
+      calc_residual_ele(ele, 1, FlowSol);
       
       for(j=0; j<n_upts_per_ele; j++) {
         
@@ -4614,6 +4603,19 @@ void eles::set_ele2global_ele(int in_ele, int in_global_ele)
   ele2global_ele(in_ele) = in_global_ele;
 }
 
+// set interface numbers corresponding to element number
+
+void eles::set_ele2inters(int in_ele, array<int>& in_inters, array<int>& in_inters_types)
+{
+  
+  // only set inters if not -1
+  for(int i=0; i<n_inters_per_ele; i++) {
+    if(in_inters(i) != -1) {
+      ele2inters(in_ele,i) = in_inters(i);
+      ele2inters_types(in_ele,i) = in_inters_types(i);
+    }
+  }
+}
 
 // set opp_0 (transformed discontinuous solution at solution points to transformed discontinuous solution at flux points)
 

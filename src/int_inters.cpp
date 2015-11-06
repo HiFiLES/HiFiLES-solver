@@ -98,8 +98,10 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
   int i,j,k;
   int i_rhs,j_rhs;
 
-      get_lut(rot_tag);
+  //cout << "setting ptrs at inter, ele_l, ele_r " << in_inter << ", " << in_ele_l << ", " << in_ele_r << endl;
 
+  get_lut(rot_tag);
+  
       for(i=0;i<n_fields;i++)
         {
           for(j=0;j<n_fpts_per_inter;j++)
@@ -108,6 +110,8 @@ void int_inters::set_interior(int in_inter, int in_ele_type_l, int in_ele_type_r
 
               disu_fpts_l(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
               disu_fpts_r(j,in_inter,i)=get_disu_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
+
+              //cout << "setting ptrs; at inter, fpt, field, temp_u_l, temp_u_r " << in_inter << ", " << j << ", " << i << ", " << setprecision(8) << *disu_fpts_l(j,in_inter,i) << ", " << *disu_fpts_r(j,in_inter,i) << endl;
 
               norm_tconf_fpts_l(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_l,in_ele_l,i,in_local_inter_l,j,FlowSol);
               norm_tconf_fpts_r(j,in_inter,i)=get_norm_tconf_fpts_ptr(in_ele_type_r,in_ele_r,i,in_local_inter_r,j_rhs,FlowSol);
@@ -491,6 +495,132 @@ void int_inters::calculate_common_viscFlux(int in_disu_upts_from)
 #ifdef _GPU
   if (n_inters!=0)
     calculate_common_viscFlux_gpu_kernel_wrapper(n_fpts_per_inter,n_dims,n_fields,n_inters,disu_fpts_l.get_ptr_gpu(),disu_fpts_r.get_ptr_gpu(),grad_disu_fpts_l.get_ptr_gpu(),grad_disu_fpts_r.get_ptr_gpu(),norm_tconf_fpts_l.get_ptr_gpu(),norm_tconf_fpts_r.get_ptr_gpu(),tdA_fpts_l.get_ptr_gpu(),tdA_fpts_r.get_ptr_gpu(),ndA_dyn_fpts_l.get_ptr_gpu(),ndA_dyn_fpts_r.get_ptr_gpu(),J_dyn_fpts_l.get_ptr_gpu(),J_dyn_fpts_r.get_ptr_gpu(),norm_fpts.get_ptr_gpu(),norm_dyn_fpts.get_ptr_gpu(),sgsf_fpts_l.get_ptr_gpu(),sgsf_fpts_r.get_ptr_gpu(),run_input.riemann_solve_type,run_input.vis_riemann_solve_type,run_input.pen_fact,run_input.tau,run_input.gamma,run_input.prandtl,run_input.rt_inf,run_input.mu_inf,run_input.c_sth,run_input.fix_vis,run_input.equation,run_input.diff_coeff,LES,motion,run_input.turb_model,run_input.c_v1,run_input.omega,run_input.prandtl_t);
+#endif
+}
+
+
+// calculate normal transformed continuous inviscid flux at the flux points on a single interface
+void int_inters::calculate_common_invFlux_inter(int inter)
+{
+  
+#ifdef _CPU
+
+  array<double> norm(n_dims), fn(n_fields);
+  array<double> u_c(n_fields);
+  
+  for(int j=0;j<n_fpts_per_inter;j++)
+  {
+    
+    // calculate discontinuous solution at flux points
+    for(int k=0;k<n_fields;k++) {
+      temp_u_l(k)=(*disu_fpts_l(j,inter,k));
+      temp_u_r(k)=(*disu_fpts_r(j,inter,k));
+    }
+    
+    if (motion) {
+      // Transform solution to dynamic space
+      for (int k=0; k<n_fields; k++) {
+        temp_u_l(k) /= (*J_dyn_fpts_l(j,inter));
+        temp_u_r(k) /= (*J_dyn_fpts_r(j,inter));
+      }
+      // Get mesh velocity
+      for (int k=0; k<n_dims; k++) {
+        temp_v(k)=(*grid_vel_fpts(j,inter,k));
+      }
+    }else{
+      temp_v.initialize_to_zero();
+    }
+    
+    // Interface unit-normal vector
+    if (motion) {
+      for (int m=0;m<n_dims;m++)
+        norm(m) = *norm_dyn_fpts(j,inter,m);
+    }else{
+      for (int m=0;m<n_dims;m++)
+        norm(m) = *norm_fpts(j,inter,m);
+    }
+    
+    // Calling Riemann solver
+    if (run_input.riemann_solve_type==0) // Rusanov
+    {
+      // calculate flux from discontinuous solution at flux points
+      if(n_dims==2) {
+        calc_invf_2d(temp_u_l,temp_f_l);
+        calc_invf_2d(temp_u_r,temp_f_r);
+        if (motion) {
+          calc_alef_2d(temp_u_l,temp_v,temp_f_l);
+          calc_alef_2d(temp_u_r,temp_v,temp_f_r);
+        }
+      }
+      else if(n_dims==3) {
+        calc_invf_3d(temp_u_l,temp_f_l);
+        calc_invf_3d(temp_u_r,temp_f_r);
+        if (motion) {
+          calc_alef_3d(temp_u_l,temp_v,temp_f_l);
+          calc_alef_3d(temp_u_r,temp_v,temp_f_r);
+        }
+      }
+      else
+        FatalError("ERROR: Invalid number of dimensions ... ");
+      
+      rusanov_flux(temp_u_l,temp_u_r,temp_v,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.gamma);
+    }
+    else if (run_input.riemann_solve_type==1) { // Lax-Friedrich
+      lax_friedrich(temp_u_l,temp_u_r,norm,fn,n_dims,n_fields,run_input.lambda,run_input.wave_speed);
+    }
+    else if (run_input.riemann_solve_type==2) { // ROE
+      roe_flux(temp_u_l,temp_u_r,temp_v,norm,fn,n_dims,n_fields,run_input.gamma);
+    }
+    else
+      FatalError("Riemann solver not implemented");
+    
+    // Transform back to computational space from dynamic physical space
+    if (motion)
+    {
+      for(int k=0; k<n_fields; k++) {
+        (*norm_tconf_fpts_l(j,inter,k)) = fn(k)*(*ndA_dyn_fpts_l(j,inter))*(*tdA_fpts_l(j,inter));
+        (*norm_tconf_fpts_r(j,inter,k)) =-fn(k)*(*ndA_dyn_fpts_r(j,inter))*(*tdA_fpts_r(j,inter));
+      }
+    }
+    else
+    {
+      // Transform back to reference space from static physical space
+      for(int k=0;k<n_fields;k++) {
+        (*norm_tconf_fpts_l(j,inter,k))= fn(k)*(*tdA_fpts_l(j,inter));
+        (*norm_tconf_fpts_r(j,inter,k))=-fn(k)*(*tdA_fpts_r(j,inter));
+      }
+    }
+    
+    if(viscous)
+    {
+      // Calling viscous riemann solver
+      if (run_input.vis_riemann_solve_type==0)
+        ldg_solution(0,temp_u_l,temp_u_r,u_c,run_input.pen_fact,norm);
+      else
+        FatalError("Viscous Riemann solver not implemented");
+      
+      if (motion) // include transformation back to static space
+      {
+        for(int k=0;k<n_fields;k++) {
+          *delta_disu_fpts_l(j,inter,k) = (u_c(k) - temp_u_l(k))*(*J_dyn_fpts_l(j,inter));
+          *delta_disu_fpts_r(j,inter,k) = (u_c(k) - temp_u_r(k))*(*J_dyn_fpts_r(j,inter));
+        }
+      }
+      else
+      {
+        for(int k=0;k<n_fields;k++) {
+          *delta_disu_fpts_l(j,inter,k) = (u_c(k) - temp_u_l(k));
+          *delta_disu_fpts_r(j,inter,k) = (u_c(k) - temp_u_r(k));
+        }
+      }
+    }
+    
+  }
+
+#endif
+  
+#ifdef _GPU
+
 #endif
 }
 

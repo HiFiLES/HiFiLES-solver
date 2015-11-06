@@ -2549,12 +2549,11 @@ void gaussj(int n, array<double>& A, array<double>& b)
 
 /* Given a matrix A[1..n][1..n], this routine replaces it by the LU
   decomposition of a rowwise permutation of itself. A and n are input.
-  A is output, arranged as in equation (2.3.14) above; indx[1..n] is an
-  output vector that records the row permutation effected by the partial
-  pivoting; d is output as +-1 depending on whether the number of row
-  interchanges was even or odd, respectively.
-  This routine is used in combination with lubksb to solve linear
-  equations or invert a matrix.
+  A is output; indx[1..n] is an output vector that records the row
+  permutation effected by the partial pivoting; d is output as +-1
+  depending on whether the number of row interchanges was even or odd
+  respectively. This routine is used in combination with lubksb to 
+  solve linear equations or invert a matrix.
   From Numerical Recipes (http://www.nr.com/)*/
 
 void LUdecomp(int n, array<int>& indx, array<double>& vv, array<double>& A)
@@ -2563,6 +2562,7 @@ void LUdecomp(int n, array<int>& indx, array<double>& vv, array<double>& A)
   double big,dum,sum,temp,TINY;
 
   TINY = 1.0e-20; // or 1.0e-10?
+  // d is necessary for calculating the determinant of A
   //*d = 1.0; // no row interchanges yet
 
   // loop over rows

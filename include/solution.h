@@ -91,6 +91,9 @@ struct solution {
   array<int_inters> mesh_int_inters;
   array<bdy_inters> mesh_bdy_inters;
   
+  // lookup table to transfer between numbering of total inters and {int/bdy/mpi}+{seg/tri/quad} inters
+  array<int> global_inter2inter;
+  
   int rank;
   
   /*! No-slip wall flux point coordinates for wall models. */

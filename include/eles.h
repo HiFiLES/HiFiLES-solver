@@ -159,10 +159,8 @@ public:
   /*! Add contribution to perturbed residual */
   void add_perturbed_residual_to_lhs(int n_colors, int color);
   
-  void zero_residual(int in_level);
-  
   /*! calculate residual in current element */
-  void calc_residual_ele(int ele, int in_disu_upts_from, array<double>& residual_ele);
+  void calc_residual_ele(int ele, int in_disu_upts_from, struct solution* FlowSol);
   
   /*! calculate the discontinuous solution at the flux points in one element */
   void extrapolate_solution_ele(int in_disu_upts_from, int ele);
@@ -170,8 +168,18 @@ public:
   /*! calculate transformed discontinuous inviscid flux at solution points in one element */
   void evaluate_invFlux_ele(int in_disu_upts_from, int ele);
 
+  /*! calculate normal transformed continuous inviscid flux at the flux points in one element */
+  void calculate_common_invFlux_ele(int ele, struct solution* FlowSol);
+
+  /*! calculate normal transformed continuous inviscid flux at the flux points on boundaries of one element */
+  void evaluate_boundaryConditions_invFlux_ele(int ele, struct solution* FlowSol);
+
+  void send_solution_ele(int ele);
+  
+  void receive_solution_ele(int ele);
+
   /*! calculate normal transformed discontinuous flux at flux points in one element */
-  void extrapolate_totalFlux_ele(int in_disu_upts_from, int ele);
+  void extrapolate_totalFlux_ele(int ele);
 
   /*! calculate divergence of transformed discontinuous flux at solution points in one element */
   void calculate_divergence_ele(int in_div_tconf_upts_to, int ele);
@@ -179,19 +187,11 @@ public:
   /*! calculate divergence of transformed continuous flux at solution points in one element */
   void calculate_corrected_divergence_ele(int in_div_tconf_upts_to, int ele);
   
-  /*! Perturb the conservative variables in one element */
-  void perturb_solution_ele(int color, int ele);
-  
-  /*! Add contribution to perturbed residual in one element */
-  void add_perturbed_residual_to_lhs_ele(int n_colors, int color, int ele);
-  
-  void CalcLHSMatrix(double time, int n_colors);
-  
   /*! LU decomposition of LHS matrix for implicit method */
   void LU_decomp(void);
 
   /*! Symmetric Gauss-Seidel iteration */
-  void SGS_sweep(int direction);
+  void SGS_sweep(int direction, struct solution* FlowSol);
 
   /*! advance solution using a runge-kutta scheme */
   void AdvanceSolution(int in_step, int adv_type);
@@ -250,6 +250,9 @@ public:
   /*!  set global element number */
   void set_ele2global_ele(int in_ele, int in_global_ele);
 
+  /*! set element-interface lookup table */
+  void set_ele2inters(int in_ele, array<int>& in_inters, array<int>& in_inters_types);
+  
   /*! get a pointer to the transformed discontinuous solution at a flux point */
   double* get_disu_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
   
@@ -751,6 +754,12 @@ protected:
   /*! Global cell number of element */
   array<int> ele2global_ele;
 
+  /*! element interface global numbers */
+  array<int> ele2inters;
+
+  /*! element interface types */
+  array<int> ele2inters_types;
+
   /*! Global cell number of element */
   array<int> bdy_ele2ele;
 
@@ -1023,9 +1032,6 @@ protected:
   /*! dimension of LHS matrix blocks */
   int block_dim;
   
-  /*! solution increment for calculating linearized Jacobian */
-  double eps_imp;
-  
   array<double> perturb_upts;
 
 	/*!
@@ -1289,12 +1295,6 @@ protected:
 
   /*! one for mkl sparse blas */
   double one;
-
-  /*! number of fields multiplied by number of elements */
-  int n_fields_mul_n_eles;
-
-  /*! number of dimensions multiplied by number of solution points per element */
-  int n_dims_mul_n_upts_per_ele;
 
   int rank;
   int nproc;

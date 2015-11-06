@@ -62,11 +62,28 @@ using namespace std;
 #define MULTI_ZONE
 //#define SINGLE_ZONE
 
+void CalcResidualEle(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
+  
+  int in_disu_upts_from = 0;        /*!< Define... */
+  int in_div_tconf_upts_to = 0;     /*!< Define... */
+  int i,j;                            /*!< Loop iterator */
+  
+  // calculate residual for current element only
+  for(i=0; i<FlowSol->n_ele_types; i++) {
+    //FlowSol->mesh_eles(i)->extrapolate_solution(in_disu_upts_from);
+    if(FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+      for(j=0; j<FlowSol->mesh_eles(i)->get_n_eles(); j++) {
+        FlowSol->mesh_eles(i)->calc_residual_ele(j, in_disu_upts_from, FlowSol);
+      }
+    }
+  }
+}
+
 void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
 
   int in_disu_upts_from = 0;        /*!< Define... */
   int in_div_tconf_upts_to = 0;     /*!< Define... */
-  int i;                            /*!< Loop iterator */
+  int i,j;                            /*!< Loop iterator */
   
   // if implicit, select appropriate solution and residual arrays
   if (run_input.adv_type == -1) {
@@ -110,9 +127,15 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   }
 
   /*! Compute the solution at the flux points. */
-  for(i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->extrapolate_solution(in_disu_upts_from);
-
+  for(i=0; i<FlowSol->n_ele_types; i++) {
+   FlowSol->mesh_eles(i)->extrapolate_solution(in_disu_upts_from);
+    /*if(FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+      for(j=0; j<FlowSol->mesh_eles(i)->get_n_eles(); j++) {
+        FlowSol->mesh_eles(i)->extrapolate_solution_ele(in_disu_upts_from, j);
+      }
+    }*/
+  }
+  
 #ifdef _MPI
   /*! Send the solution at the flux points across the MPI interfaces. */
   if (FlowSol->nproc>1)
@@ -127,8 +150,14 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
     }
 
   /*! Compute the inviscid flux at the solution points and store in total flux storage. */
-  for(i=0; i<FlowSol->n_ele_types; i++)
+  for(i=0; i<FlowSol->n_ele_types; i++) {
     FlowSol->mesh_eles(i)->evaluate_invFlux(in_disu_upts_from);
+    /*if(FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+      for(j=0; j<FlowSol->mesh_eles(i)->get_n_eles(); j++) {
+        FlowSol->mesh_eles(i)->evaluate_invFlux_ele(in_disu_upts_from, j);
+      }
+    }*/
+  }
 
 
   // If running periodic channel or periodic hill cases,
@@ -146,6 +175,14 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
     }
   }
 
+  /*for(i=0;i<FlowSol->n_ele_types;i++) {
+    if(FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+      for(j=0; j<FlowSol->mesh_eles(i)->get_n_eles(); j++) {
+        FlowSol->mesh_eles(i)->calculate_common_invFlux_ele(j, FlowSol);
+        FlowSol->mesh_eles(i)->evaluate_boundaryConditions_invFlux_ele(j, FlowSol);
+      }
+    }
+  }*/
   /*! Compute the inviscid numerical fluxes.
    Compute the common solution and solution corrections (viscous only). */
   for(i=0; i<FlowSol->n_int_inter_types; i++)
@@ -198,12 +235,24 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
   }
 
   /*! For viscous or inviscid, compute the normal discontinuous flux at flux points. */
-  for(i=0; i<FlowSol->n_ele_types; i++)
+  for(i=0; i<FlowSol->n_ele_types; i++) {
     FlowSol->mesh_eles(i)->extrapolate_totalFlux();
-
+    /*if(FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+      for(j=0; j<FlowSol->mesh_eles(i)->get_n_eles(); j++) {
+        FlowSol->mesh_eles(i)->extrapolate_totalFlux_ele(j);
+      }
+    }*/
+  }
+  
   /*! For viscous or inviscid, compute the divergence of flux at solution points. */
-  for(i=0; i<FlowSol->n_ele_types; i++)
+  for(i=0; i<FlowSol->n_ele_types; i++) {
     FlowSol->mesh_eles(i)->calculate_divergence(in_div_tconf_upts_to);
+    /*if(FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+      for(j=0; j<FlowSol->mesh_eles(i)->get_n_eles(); j++) {
+        FlowSol->mesh_eles(i)->calculate_divergence_ele(in_disu_upts_from, j);
+      }
+    }*/
+  }
 
   if (FlowSol->viscous) {
       /*! Compute normal interface viscous flux and add to normal inviscid flux. */
@@ -231,8 +280,14 @@ void CalcResidual(int in_file_num, int in_rk_stage, struct solution* FlowSol) {
     }
 
   /*! Compute the divergence of the transformed continuous flux. */
-  for(i=0; i<FlowSol->n_ele_types; i++)
+  for(i=0; i<FlowSol->n_ele_types; i++) {
     FlowSol->mesh_eles(i)->calculate_corrected_divergence(in_div_tconf_upts_to);
+    /*if(FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+      for(j=0; j<FlowSol->mesh_eles(i)->get_n_eles(); j++) {
+        FlowSol->mesh_eles(i)->calculate_corrected_divergence_ele(in_disu_upts_from, j);
+      }
+    }*/
+  }
 
   // add residual perturbed at ith solution point in every ele
   if (run_input.adv_type == -1 and in_div_tconf_upts_to == 2) {
@@ -506,6 +561,6 @@ void LUDecomp(struct solution* FlowSol) {
 void SGSSweep(int direction, struct solution* FlowSol) {
   
   for(int i=0; i<FlowSol->n_ele_types; i++)
-    FlowSol->mesh_eles(i)->SGS_sweep(direction);
+    FlowSol->mesh_eles(i)->SGS_sweep(direction, FlowSol);
   
 }

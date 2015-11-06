@@ -75,6 +75,9 @@ public:
   /*! calculate normal transformed continuous viscous flux at the flux points on boundaries*/
   void evaluate_boundaryConditions_viscFlux(double time_bound, int in_disu_upts_from);
 
+  /*! calculate normal transformed continuous inviscid flux at the flux points on one boundary interface*/
+  void evaluate_boundaryConditions_invFlux_inter(double time_bound, int inter);
+
 protected:
 
   // #### members ####

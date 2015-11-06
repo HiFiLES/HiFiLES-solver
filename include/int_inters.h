@@ -66,6 +66,9 @@ public:
   /*! calculate delta in transformed discontinuous solution at flux points */
   void calc_delta_disu_fpts(void);
 
+  /*! calculate normal transformed continuous inviscid flux at the flux points */
+  void calculate_common_invFlux_inter(int inter);
+
 protected:
 
   // #### members ####

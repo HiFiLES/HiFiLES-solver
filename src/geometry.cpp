@@ -166,8 +166,8 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   f2v.setup(max_inters,MAX_V_PER_F); // each edge/face cannot have more than 4 vertices
   f2nv.setup(max_inters);
   f2loc_f.setup(max_inters,2);
-  c2f.setup(FlowSol->num_eles,MAX_F_PER_C); // one cell cannot have more than 8 faces
-  c2e.setup(FlowSol->num_eles,MAX_E_PER_C); // one cell cannot have more than 8 faces
+  c2f.setup(FlowSol->num_eles,MAX_F_PER_C); // one cell cannot have more than 6 faces
+  c2e.setup(FlowSol->num_eles,MAX_E_PER_C); // one cell cannot have more than 12 edges
   rot_tag.setup(max_inters);
   unmatched_inters.setup(max_inters);
 
@@ -207,6 +207,9 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   for (int i=0; i<Mesh.n_bnds; i++) {
       Mesh.nBndPts(i) = Mesh.boundPts(i).get_dim(0);
   }
+  
+  // Set up lookup table to transfer between numbering of total inters and {int/bdy/mpi}+{seg/tri/quad} inters
+  FlowSol->global_inter2inter.setup(FlowSol->num_inters);
 
   /////////////////////////////////////////////////
   /// Initializing Elements
@@ -300,7 +303,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
     if(FlowSol->rank==0) cout << "colors:" << endl;
     for (int i=0;i<FlowSol->n_ele_types;i++)
     {
-      if(FlowSol->mesh_eles(i)->get_n_eles() != 0) FlowSol->n_colors(i) = FlowSol->mesh_eles(i)->get_n_upts_per_ele();
+      if(FlowSol->mesh_eles(i)->get_n_eles() != 0) FlowSol->n_colors(i) = FlowSol->mesh_eles(i)->get_n_upts_per_ele()*FlowSol->mesh_eles(i)->get_n_fields();
       cout << FlowSol->n_colors(i) << endl;
     }
   }
@@ -315,14 +318,32 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   int hexas_count = 0;
 
   array<double> pos(FlowSol->n_dims);
-
+  array<int> inters(c2f.get_dim(1)), inters_types(c2f.get_dim(1));
+  int nverts;
+  
   if (FlowSol->rank==0) cout << "setting elements shape ... ";
   for (int i=0;i<FlowSol->num_eles;i++) {
+    
+      // inter numbers and types for this element
+      // TODO: need to set inters(j) to numbering of int_inters, bdy_inters, mpi_inters - NOT total inters
+      for(int j=0; j<inters.get_dim(0); j++) {
+        inters(j) = c2f(i,j);
+        
+        // get type of interface by no. of vertices
+        nverts = f2nv(inters(j));
+        if(nverts==2) inters_types(j) = 0; // segment
+        else if(nverts==3) inters_types(j) = 1; // triangle
+        else if(nverts==4) inters_types(j) = 2; // quad
+        
+        //if(inters(j) != -1) cout << "geometry.cpp: ele, inter, inter_local, type, bctype " << i << ", " << inters(j) << ", " << f2loc_f(inters(j),0) << ", " << inters_types(j) << ", " << bctype_c( f2c(inters(j),0),f2loc_f(inters(j),0) ) << endl;
+      }
+    
       if (ctype(i) == 0) //tri
         {
           local_c(i) = tris_count;
           FlowSol->mesh_eles_tris.set_n_spts(tris_count,c2n_v(i));
           FlowSol->mesh_eles_tris.set_ele2global_ele(tris_count,ic2icg(i));
+          FlowSol->mesh_eles_tris.set_ele2inters(tris_count,inters,inters_types);
 
           for (int j=0;j<c2n_v(i);j++)
             {
@@ -342,6 +363,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           local_c(i) = quads_count;
           FlowSol->mesh_eles_quads.set_n_spts(quads_count,c2n_v(i));
           FlowSol->mesh_eles_quads.set_ele2global_ele(quads_count,ic2icg(i));
+          FlowSol->mesh_eles_quads.set_ele2inters(quads_count,inters,inters_types);
           for (int j=0;j<c2n_v(i);j++)
             {
               pos(0) = xv(c2v(i,j),0);
@@ -360,6 +382,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           local_c(i) = tets_count;
           FlowSol->mesh_eles_tets.set_n_spts(tets_count,c2n_v(i));
           FlowSol->mesh_eles_tets.set_ele2global_ele(tets_count,ic2icg(i));
+          FlowSol->mesh_eles_tets.set_ele2inters(tets_count,inters,inters_types);
           for (int j=0;j<c2n_v(i);j++)
             {
               pos(0) = xv(c2v(i,j),0);
@@ -379,6 +402,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           local_c(i) = pris_count;
           FlowSol->mesh_eles_pris.set_n_spts(pris_count,c2n_v(i));
           FlowSol->mesh_eles_pris.set_ele2global_ele(pris_count,ic2icg(i));
+          FlowSol->mesh_eles_pris.set_ele2inters(pris_count,inters,inters_types);
           for (int j=0;j<c2n_v(i);j++)
             {
               pos(0) = xv(c2v(i,j),0);
@@ -398,6 +422,7 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           local_c(i) = hexas_count;
           FlowSol->mesh_eles_hexas.set_n_spts(hexas_count,c2n_v(i));
           FlowSol->mesh_eles_hexas.set_ele2global_ele(hexas_count,ic2icg(i));
+          FlowSol->mesh_eles_hexas.set_ele2inters(hexas_count,inters,inters_types);
           for (int j=0;j<c2n_v(i);j++)
             {
               pos(0) = xv(c2v(i,j),0);
@@ -634,19 +659,24 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
 
   for(int i_mpi=0;i_mpi<FlowSol->n_mpi_inters;i_mpi++)
     {
+      // global interface number
       int i = f_mpi2f(i_mpi);
       bctype_f = bctype_c( f2c(i,0),f2loc_f(i,0) );
       ic_l = f2c(i,0);
 
       if (f2nv(i)==2) {
+          // set lookup table
+          FlowSol->global_inter2inter(i) = i_seg_mpi;
           FlowSol->mesh_mpi_inters(0).set_mpi(i_seg_mpi,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),rot_tag_mpi(i_mpi),FlowSol);
           i_seg_mpi++;
         }
       else if (f2nv(i)==3) {
+          FlowSol->global_inter2inter(i) = i_tri_mpi;
           FlowSol->mesh_mpi_inters(1).set_mpi(i_tri_mpi,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),rot_tag_mpi(i_mpi),FlowSol);
           i_tri_mpi++;
         }
       else if (f2nv(i)==4) {
+          FlowSol->global_inter2inter(i) = i_quad_mpi;
           FlowSol->mesh_mpi_inters(2).set_mpi(i_quad_mpi,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),rot_tag_mpi(i_mpi),FlowSol);
           i_quad_mpi++;
         }
@@ -778,14 +808,18 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
           if(bctype_f==0)
             {
               if (f2nv(i)==2) {
+                  // set lookup table
+                  FlowSol->global_inter2inter(i) = i_seg_int;
                   FlowSol->mesh_int_inters(0).set_interior(i_seg_int,ctype(ic_l),ctype(ic_r),local_c(ic_l),local_c(ic_r),f2loc_f(i,0),f2loc_f(i,1),rot_tag(i),FlowSol);
                   i_seg_int++;
                 }
               if (f2nv(i)==3) {
+                  FlowSol->global_inter2inter(i) = i_tri_int;
                   FlowSol->mesh_int_inters(1).set_interior(i_tri_int,ctype(ic_l),ctype(ic_r),local_c(ic_l),local_c(ic_r),f2loc_f(i,0),f2loc_f(i,1),rot_tag(i),FlowSol);
                   i_tri_int++;
                 }
               if (f2nv(i)==4) {
+                  FlowSol->global_inter2inter(i) = i_quad_int;
                   FlowSol->mesh_int_inters(2).set_interior(i_quad_int,ctype(ic_l),ctype(ic_r),local_c(ic_l),local_c(ic_r),f2loc_f(i,0),f2loc_f(i,1),rot_tag(i),FlowSol);
                   i_quad_int++;
                 }
@@ -795,14 +829,18 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
               if (bctype_f!=99) //  Not a deleted cyclic face
                 {
                   if (f2nv(i)==2){
+                      // set lookup table
+                      FlowSol->global_inter2inter(i) = i_seg_bdy;
                       FlowSol->mesh_bdy_inters(0).set_boundary(i_seg_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),FlowSol);
                       i_seg_bdy++;
                     }
                   else if (f2nv(i)==3){
+                      FlowSol->global_inter2inter(i) = i_tri_bdy;
                       FlowSol->mesh_bdy_inters(1).set_boundary(i_tri_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),FlowSol);
                       i_tri_bdy++;
                     }
                   else if (f2nv(i)==4){
+                      FlowSol->global_inter2inter(i) = i_quad_bdy;
                       FlowSol->mesh_bdy_inters(2).set_boundary(i_quad_bdy,bctype_f,ctype(ic_l),local_c(ic_l),f2loc_f(i,0),FlowSol);
                       i_quad_bdy++;
                     }

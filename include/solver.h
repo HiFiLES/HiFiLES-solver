@@ -43,6 +43,8 @@
 #include "mpi_inters.h"
 #endif
 
+void CalcResidualEle(int in_file_num, int in_rk_stage, struct solution* FlowSol);
+
 /*!
  * \brief Calculate the residual.
  * \param[in] FlowSol - Structure with the entire solution and mesh information.
