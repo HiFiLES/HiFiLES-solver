@@ -15,6 +15,8 @@
 
 #include <stdio.h>
 #include <execinfo.h>
+#include <unistd.h>
+#include <iostream>
 /********************************************************
  * Prints the error message, the stack trace, and exits
  * ******************************************************/
