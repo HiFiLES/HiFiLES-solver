@@ -30,6 +30,11 @@
 		05CCBCBD1824729D0074A979 /* mpi_inters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05CCBCA51824729D0074A979 /* mpi_inters.cpp */; };
 		05E96FA318258403000BE589 /* output.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05E96FA118258403000BE589 /* output.cpp */; };
 		05E96FA418258403000BE589 /* solver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05E96FA218258403000BE589 /* solver.cpp */; };
+		817A6CF51A8BE6BA0045C0D0 /* linear_solvers_structure.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 817A6CF01A8BE6BA0045C0D0 /* linear_solvers_structure.cpp */; };
+		817A6CF61A8BE6BA0045C0D0 /* matrix_structure.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 817A6CF11A8BE6BA0045C0D0 /* matrix_structure.cpp */; };
+		817A6CF71A8BE6BA0045C0D0 /* mesh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 817A6CF21A8BE6BA0045C0D0 /* mesh.cpp */; };
+		817A6CF81A8BE6BA0045C0D0 /* source.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 817A6CF31A8BE6BA0045C0D0 /* source.cpp */; };
+		817A6CF91A8BE6BA0045C0D0 /* vector_structure.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 817A6CF41A8BE6BA0045C0D0 /* vector_structure.cpp */; };
 		81C26AD718F4760F001F5947 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 81C26AD518F4760F001F5947 /* Makefile */; };
 /* End PBXBuildFile section */
 
@@ -112,6 +117,20 @@
 		05E96FA0182583E9000BE589 /* output.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = output.h; path = include/output.h; sourceTree = "<group>"; };
 		05E96FA118258403000BE589 /* output.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = output.cpp; path = src/output.cpp; sourceTree = "<group>"; };
 		05E96FA218258403000BE589 /* solver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = solver.cpp; path = src/solver.cpp; sourceTree = "<group>"; };
+		813125011AC9D17B004F686A /* linear_solvers_structure.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = linear_solvers_structure.hpp; path = include/linear_solvers_structure.hpp; sourceTree = "<group>"; };
+		813125021AC9D17B004F686A /* linear_solvers_structure.inl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = linear_solvers_structure.inl; path = include/linear_solvers_structure.inl; sourceTree = "<group>"; };
+		813125031AC9D17B004F686A /* matrix_structure.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = matrix_structure.hpp; path = include/matrix_structure.hpp; sourceTree = "<group>"; };
+		813125041AC9D17B004F686A /* matrix_structure.inl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = matrix_structure.inl; path = include/matrix_structure.inl; sourceTree = "<group>"; };
+		813125051AC9D17B004F686A /* mesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mesh.h; path = include/mesh.h; sourceTree = "<group>"; };
+		813125061AC9D17B004F686A /* source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = source.h; path = include/source.h; sourceTree = "<group>"; };
+		813125071AC9D17B004F686A /* vector_structure.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = vector_structure.hpp; path = include/vector_structure.hpp; sourceTree = "<group>"; };
+		813125081AC9D17C004F686A /* vector_structure.inl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = vector_structure.inl; path = include/vector_structure.inl; sourceTree = "<group>"; };
+		817A6CEF1A8BE6BA0045C0D0 /* cuda_kernels.cu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = cuda_kernels.cu; path = src/cuda_kernels.cu; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		817A6CF01A8BE6BA0045C0D0 /* linear_solvers_structure.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = linear_solvers_structure.cpp; path = src/linear_solvers_structure.cpp; sourceTree = "<group>"; };
+		817A6CF11A8BE6BA0045C0D0 /* matrix_structure.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = matrix_structure.cpp; path = src/matrix_structure.cpp; sourceTree = "<group>"; };
+		817A6CF21A8BE6BA0045C0D0 /* mesh.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mesh.cpp; path = src/mesh.cpp; sourceTree = "<group>"; };
+		817A6CF31A8BE6BA0045C0D0 /* source.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = source.cpp; path = src/source.cpp; sourceTree = "<group>"; };
+		817A6CF41A8BE6BA0045C0D0 /* vector_structure.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = vector_structure.cpp; path = src/vector_structure.cpp; sourceTree = "<group>"; };
 		81C26AD518F4760F001F5947 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		81C26AD618F4760F001F5947 /* Makefile.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.in; sourceTree = "<group>"; };
 		E994EDC5192416DE0058FE94 /* input_template */ = {isa = PBXFileReference; lastKnownFileType = text; path = input_template; sourceTree = "<group>"; };
@@ -252,6 +271,14 @@
 		05CCBC8D182472820074A979 /* include */ = {
 			isa = PBXGroup;
 			children = (
+				813125011AC9D17B004F686A /* linear_solvers_structure.hpp */,
+				813125021AC9D17B004F686A /* linear_solvers_structure.inl */,
+				813125031AC9D17B004F686A /* matrix_structure.hpp */,
+				813125041AC9D17B004F686A /* matrix_structure.inl */,
+				813125051AC9D17B004F686A /* mesh.h */,
+				813125061AC9D17B004F686A /* source.h */,
+				813125071AC9D17B004F686A /* vector_structure.hpp */,
+				813125081AC9D17C004F686A /* vector_structure.inl */,
 				05CCBCDA182472A70074A979 /* solution.h */,
 				05CCBCD6182472A70074A979 /* geometry.h */,
 				05E96F9F182583C5000BE589 /* solver.h */,
@@ -275,6 +302,12 @@
 		05CCBC8E182472890074A979 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				817A6CEF1A8BE6BA0045C0D0 /* cuda_kernels.cu */,
+				817A6CF01A8BE6BA0045C0D0 /* linear_solvers_structure.cpp */,
+				817A6CF11A8BE6BA0045C0D0 /* matrix_structure.cpp */,
+				817A6CF21A8BE6BA0045C0D0 /* mesh.cpp */,
+				817A6CF31A8BE6BA0045C0D0 /* source.cpp */,
+				817A6CF41A8BE6BA0045C0D0 /* vector_structure.cpp */,
 				05CCBC9E1824729C0074A979 /* HiFiLES.cpp */,
 				05CCBCA41824729D0074A979 /* geometry.cpp */,
 				05E96FA218258403000BE589 /* solver.cpp */,
@@ -344,7 +377,9 @@
 			files = (
 				05E96FA418258403000BE589 /* solver.cpp in Sources */,
 				05CCBCB61824729D0074A979 /* HiFiLES.cpp in Sources */,
+				817A6CF71A8BE6BA0045C0D0 /* mesh.cpp in Sources */,
 				05CCBCAC1824729D0074A979 /* cubature_tri.cpp in Sources */,
+				817A6CF81A8BE6BA0045C0D0 /* source.cpp in Sources */,
 				05CCBCB71824729D0074A979 /* input.cpp in Sources */,
 				05CCBCA91824729D0074A979 /* cubature_hexa.cpp in Sources */,
 				05CCBCB51824729D0074A979 /* global.cpp in Sources */,
@@ -352,6 +387,7 @@
 				05CCBCB21824729D0074A979 /* eles.cpp in Sources */,
 				05CCBCB11824729D0074A979 /* eles_tris.cpp in Sources */,
 				05CCBCA71824729D0074A979 /* bdy_inters.cpp in Sources */,
+				817A6CF61A8BE6BA0045C0D0 /* matrix_structure.cpp in Sources */,
 				05E96FA318258403000BE589 /* output.cpp in Sources */,
 				05CCBCBC1824729D0074A979 /* geometry.cpp in Sources */,
 				05CCBCBD1824729D0074A979 /* mpi_inters.cpp in Sources */,
@@ -363,7 +399,9 @@
 				05CCBCAA1824729D0074A979 /* cubature_quad.cpp in Sources */,
 				05CCBCB01824729D0074A979 /* eles_tets.cpp in Sources */,
 				05CCBCB81824729D0074A979 /* int_inters.cpp in Sources */,
+				817A6CF51A8BE6BA0045C0D0 /* linear_solvers_structure.cpp in Sources */,
 				05CCBCAF1824729D0074A979 /* eles_quads.cpp in Sources */,
+				817A6CF91A8BE6BA0045C0D0 /* vector_structure.cpp in Sources */,
 				05CCBCAB1824729D0074A979 /* cubature_tet.cpp in Sources */,
 				05CCBCAD1824729D0074A979 /* eles_hexas.cpp in Sources */,
 			);
