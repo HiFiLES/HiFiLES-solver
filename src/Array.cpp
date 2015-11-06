@@ -280,8 +280,6 @@ void Array<T>::mv_cpu_gpu(void)
 
   cpu_flag=0;
   gpu_flag=1;
-  _("mv_cpu_gpu()");
-  _(gpu_flag);
 
   check_cuda_error("After Memcpy, asking for too much memory?",__FILE__,__LINE__);
 
@@ -316,9 +314,6 @@ template <typename T>
 void Array<T>::cp_gpu_cpu(void)
 {
 #ifdef _GPU
-
-  //delete[] cpu_data;
-  //cpu_data = new T[dim_0*dim_1*dim_2*dim_3];
 
   if (gpu_flag==0)
     FatalError("GPU data does not exist");
@@ -404,14 +399,8 @@ std::ostream& operator<<(std::ostream& out, Array<T>& array) {
 
 #ifdef _GPU
   // We need to pass the gpu data back to the cpu to output it
-  _(array.cpu_flag);
-  _(array.gpu_flag);
-  if (array.cpu_flag == 0) {
-      if (array.gpu_flag == 1) {
-          array.cp_gpu_cpu();
-        } else {
-          FatalError("At Array<T>::operator<<: data not in GPU nor CPU");
-        }
+  if (array.gpu_flag == 1) {
+      array.cp_gpu_cpu();
     }
 #endif
 
@@ -436,11 +425,6 @@ std::ostream& operator<<(std::ostream& out, Array<T>& array) {
       out << std::endl;
     }
 
-#ifdef _GPU
-  // When we are done, delete the data in the CPU to avoid memory leaks
-  array.rm_cpu();
-#endif
-
   return out;
 }
 
@@ -456,7 +440,7 @@ void Array<T>::writeToFile(std::string fileName, bool inBinary) {
   // We need to pass the gpu data back to the cpu to output it
   if (this->cpu_flag == 0) {
       if (this->gpu_flag == 1) {
-          this->cp_cpu_gpu();
+          this->cp_gpu_cpu();
         } else {
           FatalError("At Array<T>::writeToFile: data not in GPU nor CPU");
         }
@@ -464,7 +448,6 @@ void Array<T>::writeToFile(std::string fileName, bool inBinary) {
 #endif
 
   if (inBinary) {
-//      fileName += ".bin";
       std::ofstream file(fileName.c_str(), std::ios::binary);
       toBinary(this, file);
       file.close();
@@ -480,12 +463,6 @@ void Array<T>::writeToFile(std::string fileName, bool inBinary) {
             << this->dim_1 << " "
             << this->dim_2 << " "
             << this->dim_3 << " to file " << fileName << std::endl;
-
-#ifdef _GPU
-  // When we are done, delete the data in the CPU to avoid memory leaks
-  this->rm_cpu();
-#endif
-
 }
 
 /*! Read array contents from file
@@ -494,26 +471,17 @@ void Array<T>::writeToFile(std::string fileName, bool inBinary) {
 template <typename T>
 void Array<T>::initFromFile(std::string fileName) {
 
-  std::string fileNameBinary = fileName;// + ".bin";
+  std::string fileNameBinary = fileName;
   if (fileExists(fileNameBinary)) {
-//      std::cout << "binary " << fileName << " exists" << std::endl;
       fileName = fileNameBinary;
       std::ifstream file(fileName.c_str(), std::ios::binary);
       fromBinary(this, file);
       file.close();
     } else {
-//      std::cout << "binary " << fileName << " does not exist" << std::endl;
       std::ifstream file(fileName.c_str());
       file >> *this;
       file.close();
     }
-
-#ifdef _GPU
-  // We need to pass the gpu data to the gpu
-  this->mv_cpu_gpu();
-#endif
-
-
 
   std::cout << "Read array of dimensions "
             << this->dim_0 << " "
@@ -565,6 +533,13 @@ std::istream& operator>>(std::istream& in, Array<R>& array) {
  */
 template<typename R>
 void Array<R>::normalizeRows() {
+
+  bool copyBack = false;
+  if (cpu_flag == 0) {
+      this->mv_gpu_cpu();
+      copyBack = true;
+    }
+
   for (int i = 0; i < dim_0; i++) {
       double sum_row = 0;
       for (int j = 0; j < dim_1; j++) {
@@ -576,6 +551,11 @@ void Array<R>::normalizeRows() {
           (*this)(i,j) /= sum_row;
         }
     }
+
+  if (copyBack) {
+      this->mv_cpu_gpu();
+    }
+
 }
 
 
@@ -632,22 +612,16 @@ void Array<T>::dgemm(double alpha, Array<T>& A, Array<T>& B, double beta)
   double* A_matrix = A.get_ptr_cpu();
   double* B_matrix = B.get_ptr_cpu();
   double* C_matrix = this->get_ptr_cpu();
-//  std::cout << "A: " << A << std::endl;
-//  std::cout << "B: " << B << std::endl;
 #endif
-  _("dgemm");
 #ifdef _GPU
   // Ensure the matrices are in the GPU; client should not worry about this
   if (this->gpu_flag == 0) {
-      _(this->gpu_flag);
     this->mv_cpu_gpu();
     }
   if (A.gpu_flag == 0) {
-      _(A.gpu_flag);
       A.mv_cpu_gpu();
     }
   if (B.gpu_flag == 0) {
-      _(B.gpu_flag);
       B.mv_cpu_gpu();
     }
 
@@ -659,8 +633,6 @@ void Array<T>::dgemm(double alpha, Array<T>& A, Array<T>& B, double beta)
   dgemm_wrapper(Arows, Bcols, Acols, alpha,
       A_matrix, Astride, B_matrix, Bstride,
       beta, C_matrix, Cstride);
-
-//  std::cout << "A: " << A << std::endl;
 }
 
 /*! daxpy performs the operation: this = alpha * x + this */

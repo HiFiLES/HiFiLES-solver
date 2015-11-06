@@ -49,25 +49,6 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
-  Array<Array<double> > mat(2);
-
-  Array<double> a(3,3);
-  a.fill(2);
-  mat(0) = a;
-  _(a);
-  Array<double> b(3,3);
-  b.fill(3);
-  _(b);
-  mat(1) = b;
-  mat(0) = mat(1);
-  double alpha = 1;
-  double beta = 1e-50;
-  mat(1).dgemm(alpha, mat(0), mat(1), beta);
-  _(a);
-
-//  _(mat);
-//  FatalError("forced stop");
-
   int rank = 0, error_state = 0;
   int i, j;                           /*!< Loop iterators */
   int i_steps = 0;                    /*!< Iteration index */
