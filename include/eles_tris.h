@@ -125,9 +125,7 @@ protected:
   void set_vandermonde_restart();
 
   // members
-  Array<double> vandermonde;
   Array<double> vandermonde_rest;
-  Array<double> inv_vandermonde;
   Array<double> inv_vandermonde_rest;
 
   Array<double> loc_1d_fpts;

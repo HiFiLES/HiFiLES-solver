@@ -26,6 +26,7 @@
 #include <iostream>
 #include <iomanip>
 #include <math.h>
+#include <queue>
 
 #if defined _ACCELERATE_BLAS
 #include <Accelerate/Accelerate.h>
@@ -156,7 +157,7 @@ void eles::setup(int in_n_eles, int in_max_n_spts_per_ele)
     n_bdy_eles=0;
 
     // Initialize the element specific static members
-    (*this).setup_ele_type_specific();
+    setup_ele_type_specific();
 
     fileNamePrefix = "rank_" + num2str(rank) + "_of_" + num2str(nproc) +
         "_" + elementName + "_uptsType_" + num2str(upts_type)
@@ -8004,12 +8005,40 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
       // ended computation of filtered solution
 
       // Compute modes of current solution
-      // uhat = disu_upts(3) := inv_vandermonde * disu_upts
-      disu_upts(3).dgemm(1, inv_vandermonde, disu_upts(0));
+      // uhat = disu_upts(0) := inv_vandermonde * disu_upts
+      disu_upts(0).dgemm(1, inv_vandermonde, disu_upts(0));
 
       // Compute modes of filtered solution
       // ubarhat = disu_upts(2) := inv_vandermonde * disu_upts(1)
-      disu_upts(2).dgemm(1, inv_vandermonde, disu_upts(1));
+      disu_upts(1).dgemm(1, inv_vandermonde, disu_upts(1));
 
+      // Compare the magnitudes of the energy contents in the highest modes
+      // and store which elements will be filtered
+      std::queue<int> toFilter;
+      for (int i = 0; i < n_eles * n_fields; i++) {
+        double filteredEnergy = abs(disu_upts(0)(n_upts_per_ele-1, i));
+        double unfilteredEnergy = abs(disu_upts(1)(n_upts_per_ele-1, i));
+        if (filteredEnergy < 0.1*unfilteredEnergy) { // if filtering will help
+          toFilter.push(i);
+        }
+      }
+
+      // Restore solution to previous values (we only have to disu_upts arrays...)
+      // Compute modes of current solution
+      // u = disu_upts(0) := vandermonde * inv_vandermonde * disu_upts
+      disu_upts(0).dgemm(1, vandermonde, disu_upts(0));
+//      _("passed dgemm 3");
+      // Restore filtered solution
+      // ubar = disu_upts(2) := vandermonde * inv_vandermonde * disu_upts(1)
+      disu_upts(1).dgemm(1, vandermonde, disu_upts(1));
+
+      // Re-assign values to those that do need to be filtered
+      _(toFilter.size());
+      while(!toFilter.empty()) {
+        int eleToFilter = toFilter.front(); toFilter.pop();
+        for (int j = 0; j < n_upts_per_ele; j++) {
+          disu_upts(0)(j,eleToFilter) = disu_upts(1)(j,eleToFilter);
+        }
+      }
     }
 }

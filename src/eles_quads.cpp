@@ -742,9 +742,6 @@ void eles_quads::set_vandermonde(void)
   for (int i=0;i<order+1;i++)
     for (int j=0;j<order+1;j++)
       vandermonde(i,j) = eval_legendre(loc_1d_upts(i),j);
-
-  // Store its inverse
-  inv_vandermonde = inv_Array(vandermonde);
 }
 
 // Set the 2D inverse Vandermonde Array needed for shock capturing

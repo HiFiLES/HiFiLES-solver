@@ -28,7 +28,9 @@
   backtrace_symbols_fd(array, size, STDERR_FILENO);                 \
   exit(1); }
 
-#define _(x) std::cout << #x << ": " << x << std::endl
+#define _(x) {   \
+  std::cout << "At " << __FILE__ << ": " << __LINE__ \
+  << ": " << #x << ": " << x << std::endl; }
 
 //#define _MPI
 

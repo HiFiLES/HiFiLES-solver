@@ -130,8 +130,6 @@ protected:
   void set_vandermonde(void);
 
   // members
-  Array<double> vandermonde;
-  Array<double> inv_vandermonde;
 
   /*! return position of 1d solution point */
   double get_loc_1d_upt(int in_index);

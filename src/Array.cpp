@@ -577,7 +577,7 @@ void toBinary(Array<T> *array, std::ofstream& file) {
 /*! Read an array in binary format */
 template <typename T>
 void fromBinary(Array<T>* array, std::ifstream& file) {
-  // write the size of the array
+  // read the size of the array
   file.read((char*) &(array->dim_0), sizeof(int));
   file.read((char*) &(array->dim_1), sizeof(int));
   file.read((char*) &(array->dim_2), sizeof(int));
@@ -586,7 +586,7 @@ void fromBinary(Array<T>* array, std::ifstream& file) {
   array->setup(array->dim_0, array->dim_1,
                 array->dim_2, array->dim_3);
 
-  // write the rest of the array
+  // read the rest of the array
   for (int i = 0; i < array->size(); i++) {
       fromBinary(&(*array)(i), file);
     }
