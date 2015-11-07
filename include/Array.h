@@ -196,7 +196,7 @@ public:
 
   /*! dgemm performs the operation: this = alpha * A * B + beta * this */
   /*! where A, B are 2D matrices, and alpha, beta are scalars */
-  void dgemm(double alpha, Array<T>& A, Array<T>& B, double beta);
+  void dgemm(double alpha, Array<T>& A, Array<T>& B, double beta = 1e-50);
 
   /*! daxpy performs the operation: this = alpha * x + y */
   /*! where x and y are vectors of the same length and alpha is a scalar */
