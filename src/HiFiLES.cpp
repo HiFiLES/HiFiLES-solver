@@ -49,6 +49,31 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
+  int nn = 5;
+  Array<double> a(nn,nn);
+  Array<double> b(nn,2*nn);
+  Array<double> c(nn,2*nn);
+a.fill(0);
+b.fill(3);
+  for (int ii = 0; ii < a.get_dim(0); ii++) {
+    a(ii,ii) = 1;
+  }
+
+  for (int ii = 0; ii < b.get_dim(0); ii++) {
+    for (int jj = 0; jj < b.get_dim(1); jj++) {
+      b(ii,jj) = 10*ii + jj;
+    }
+  }
+
+  c.dgemm(1, a, b);
+  _(a);
+  _(b);
+  _(c);
+
+//  FatalError("Forced Stop");
+
+
+
   int rank = 0, error_state = 0;
   int i, j;                           /*!< Loop iterators */
   int i_steps = 0;                    /*!< Iteration index */
@@ -188,7 +213,7 @@ int main(int argc, char *argv[]) {
     /*! Filter the solution if necessary */
     int nn = run_input.filter_frequency;
     if ( run_input.filter_frequency > 0 && (i_steps+1)%nn == 0) {
-        cout << "Filtering!" << endl;
+//        cout << "Filtering!" << endl;
         for(j=0; j<FlowSol.n_ele_types; j++) {
             if (FlowSol.mesh_eles(j)->get_n_eles() != 0)
               FlowSol.mesh_eles(j)->filter_solution_LFS(0); // filter the solution computed last
@@ -213,6 +238,20 @@ int main(int argc, char *argv[]) {
     }
 
 #endif
+
+    /*! Dump Paraview or Tecplot file. */
+
+    if(i_steps%FlowSol.plot_freq == 0) {
+      if(FlowSol.write_type == 0) write_vtu(FlowSol.ini_iter+i_steps, &FlowSol);
+      else if(FlowSol.write_type == 1) write_tec(FlowSol.ini_iter+i_steps, &FlowSol);
+      else FatalError("ERROR: Trying to write unrecognized file format ... ");
+    }
+
+    /*! Dump restart file. */
+
+    if(i_steps%FlowSol.restart_dump_freq==0) {
+      write_restart(FlowSol.ini_iter+i_steps, &FlowSol);
+    }
 
     /*! Force, integral quantities, and residual computation and output. */
 
@@ -241,19 +280,6 @@ int main(int argc, char *argv[]) {
       if (FlowSol.rank == 0) cout << endl;
     }
     
-    /*! Dump Paraview or Tecplot file. */
-    
-    if(i_steps%FlowSol.plot_freq == 0) {
-      if(FlowSol.write_type == 0) write_vtu(FlowSol.ini_iter+i_steps, &FlowSol);
-      else if(FlowSol.write_type == 1) write_tec(FlowSol.ini_iter+i_steps, &FlowSol);
-      else FatalError("ERROR: Trying to write unrecognized file format ... ");
-    }
-    
-    /*! Dump restart file. */
-    
-    if(i_steps%FlowSol.restart_dump_freq==0) {
-      write_restart(FlowSol.ini_iter+i_steps, &FlowSol);
-    }
     
   }
   

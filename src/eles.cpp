@@ -7980,10 +7980,17 @@ void eles::compute_all_basis_functions() {
 */
 void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is the stage in the time-stepping scheme
 
-  // This function can only be used when at least a 4-stage time-stepping method is used
+  // This function uses the two levels of storage of disu_upts
+  // plus the storage in matrices grad_disu_upts and tdisf_upts
   if (n_eles != 0) {
-
-
+    // For temporary storage of modes of unfiltered solution
+    Array<double>& uhat = grad_disu_upts;
+    // For temporary storage of modes of filtered solution
+    Array<double>& ubarhat = tdisf_upts;
+    // For temporary storage of unfiltered solution
+    Array<double>& u = disu_upts(0);
+    // For temporary storage of filtered solution
+    Array<double>& ubar = disu_upts(1);
     // Start computation of filtered solution
       double alpha = run_input.filter_alpha; // proportion of influence from interior filter
 
@@ -7992,53 +7999,69 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
       disu_fpts.daxpy(1.0, delta_disu_fpts);
 
       // Apply interior filter first
-      // disu_upts(1) = alpha * stab_filter_interior * disu_upts(0)
-
-      disu_upts(1).dgemm(alpha, stab_filter_interior, disu_upts(0));
+      // ubar = alpha * stab_filter_interior * u
+//      ubar = u;
+//      Array<double> eye(n_upts_per_ele,n_upts_per_ele);
+//      eye.fill(0);
+//      for (int i = 0; i < n_upts_per_ele; i++) {
+//        eye(i,i) = 1;
+//      }
+//      ubar.dgemm(1.0, eye, u);
+      ubar.dgemm(alpha, stab_filter_interior, u);
 
       // Apply boundary filter next
-      // disu_upts(1) = (1 - alpha) * stab_filter_boundary * disu_fpts + 1 * disu_upts(1)
-      alpha = 1. - run_input.filter_alpha;
-      double beta = 1.;
-
-      disu_upts(1).dgemm(alpha, stab_filter_boundary, disu_fpts, beta);
+      // ubar = (1 - alpha) * stab_filter_boundary * u_at_boundaries + 1 * ubar
+      ubar.dgemm( 1 - alpha, stab_filter_boundary, disu_fpts, 1);
       // ended computation of filtered solution
 
       // Compute modes of current solution
-      // uhat = disu_upts(0) := inv_vandermonde * disu_upts
-      disu_upts(0).dgemm(1, inv_vandermonde, disu_upts(0));
+      // uhat := inv_vandermonde * disu_upts
+      uhat.dgemm(1, inv_vandermonde, u);
+
+      // 10049     0.08469791
 
       // Compute modes of filtered solution
       // ubarhat = disu_upts(2) := inv_vandermonde * disu_upts(1)
-      disu_upts(1).dgemm(1, inv_vandermonde, disu_upts(1));
+      ubarhat.dgemm(1, inv_vandermonde, ubar);
 
       // Compare the magnitudes of the energy contents in the highest modes
       // and store which elements will be filtered
       std::queue<int> toFilter;
-      for (int i = 0; i < n_eles * n_fields; i++) {
-        double filteredEnergy = abs(disu_upts(0)(n_upts_per_ele-1, i));
-        double unfilteredEnergy = abs(disu_upts(1)(n_upts_per_ele-1, i));
-        if (filteredEnergy < 0.1*unfilteredEnergy) { // if filtering will help
+
+      for (int i = 0; i < n_eles; i++) { // sense density energy
+//        toFilter.push(i);
+        double filteredEnergy = abs(ubarhat(n_upts_per_ele-1, i, 0));
+        double unfilteredEnergy = abs(uhat(n_upts_per_ele-1, i, 0));
+        if (filteredEnergy < 0.6 * unfilteredEnergy) { // if filtering will help
           toFilter.push(i);
         }
       }
 
-      // Restore solution to previous values (we only have to disu_upts arrays...)
-      // Compute modes of current solution
-      // u = disu_upts(0) := vandermonde * inv_vandermonde * disu_upts
-      disu_upts(0).dgemm(1, vandermonde, disu_upts(0));
-//      _("passed dgemm 3");
-      // Restore filtered solution
-      // ubar = disu_upts(2) := vandermonde * inv_vandermonde * disu_upts(1)
-      disu_upts(1).dgemm(1, vandermonde, disu_upts(1));
-
       // Re-assign values to those that do need to be filtered
+
+      // Without filtering, the last iteration is:
+//      10259     0.07601360     0.42626376     0.35414806     4.49315343    -0.47374864     0.33501263
+
+
+      // With filtering every iteration, residual is:
+//      10042     0.51892059     2.57045886     1.90536512    31.97692831    -0.16423232     0.30025576
+
+
+      // With filtering those above 0.6
+//      11451     0.85259704     3.86264649     2.90872272    51.72523286     7.00985026    -2.39342226
       _(toFilter.size());
+      u = ubar;
       while(!toFilter.empty()) {
         int eleToFilter = toFilter.front(); toFilter.pop();
-        for (int j = 0; j < n_upts_per_ele; j++) {
-          disu_upts(0)(j,eleToFilter) = disu_upts(1)(j,eleToFilter);
+        for (int field = 0; field < n_fields; field++) {
+          for (int j = 0; j < n_upts_per_ele; j++) {
+            //          _(u(j, eleToFilter));
+            u(j, eleToFilter, field) = ubar(j,eleToFilter, field);
+            //          _("new value");
+            //          _(u(j, eleToFilter));
+          }
         }
+        //        FatalError("Forced Stop");
       }
-    }
+  }
 }

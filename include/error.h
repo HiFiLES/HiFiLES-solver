@@ -24,7 +24,8 @@
   void* array[10];                                                  \
   size_t size;                                                      \
   size = backtrace(array,10);                                       \
-  printf("Fatal error '%s' at %s:%d\n\n",s,__FILE__,__LINE__);      \
+  std::cout << "Fatal error at " << __FILE__ <<": " << __LINE__ \
+  << ": " << s << std::endl;      \
   backtrace_symbols_fd(array, size, STDERR_FILENO);                 \
   exit(1); }
 

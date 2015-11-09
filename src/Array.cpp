@@ -415,7 +415,7 @@ std::ostream& operator<<(std::ostream& out, Array<T>& array) {
             {
               for(int j=0; j < array.dim_1; j++)
                 {
-                  out << std::left << std::setw(50) << std::setprecision(45)
+                  out << std::right << std::setw(12) << std::setprecision(5)
                       << array(i,j,k,l);
                 }
               out << std::endl;
@@ -600,9 +600,16 @@ void fromBinary(Array<T>* array, std::ifstream& file) {
 template <typename T>
 void Array<T>::dgemm(double alpha, Array<T>& A, Array<T>& B, double beta)
 {
-  int Arows =  A.get_dim(0); int Acols = A.get_dim(1);
+  if (this == &A || this == &B) {
+    std::stringstream ss;
+    ss << "at Array<T>::dgemm: input matrices A and B must be different from "
+        << "matrix to which result A*B will be assigned";
+    FatalError(ss.str());
+  }
 
-  int Brows = B.get_dim(0); int Bcols = B.get_dim(1);
+  int Arows =  A.get_dim(0); int Acols = A.get_dim(1) * A.get_dim(2) * A.get_dim(3);
+
+  int Brows = B.get_dim(0); int Bcols = B.get_dim(1) * B.get_dim(2) * B.get_dim(3);
 
   int Astride = Arows; int Bstride = Brows; int Cstride = Arows;
 
