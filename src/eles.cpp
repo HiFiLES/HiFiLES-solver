@@ -5214,6 +5214,7 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
           //cout << in_ele << "," << j << "," << i << ": " << disu_upts(0)(j,in_ele,i) << ", " << J_dyn_upts(j,in_ele) << endl;
         }else{
           disu_upts_plot(j,i)=disu_upts(0)(j,in_ele,i);
+          cout << "disu_upts_plot: " << disu_upts_plot(j,i) << endl;
         }
       }
     }
@@ -5228,6 +5229,13 @@ void eles::calc_disu_ppts(int in_ele, array<double>& out_disu_ppts)
     
 #endif
     
+    for(i=0;i<n_fields;i++)
+    {
+      for(j=0;j<n_upts_per_ele;j++)
+      {
+        cout << "out_disu_ppts: " << out_disu_ppts(j,i) << endl;
+      }
+    }
   }
 }
 
@@ -5380,6 +5388,14 @@ void eles::calc_diagnostic_fields_ppts(int in_ele, array<double>& in_disu_ppts, 
   
   for(j=0;j<n_ppts_per_ele;j++)
   {
+    if(rank==0) {
+      cout << "disu: " << endl;
+      for (i=0;i<n_fields;i++) {
+        cout << in_disu_ppts(j,i) << ", ";
+      }
+      cout << endl;
+    }
+
     // Compute velocity square
     v_sq = 0.;
     for (m=0;m<n_dims;m++)
