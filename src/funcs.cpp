@@ -395,14 +395,17 @@ double eval_d_oesfr_1d(double in_r, int in_mode, int in_order)
   return dtemp_0;
 }
 
-void get_opp_3_tri(Array<double>& opp_3, Array<double>& loc_upts_tri, Array<double>& loc_1d_fpts, Array<double>& vandermonde_tri, Array<double>& inv_vandermonde_tri, int n_upts_per_tri, int order, double c_tri, int vcjh_scheme_tri)
+void get_opp_3_tri(Array<double>& opp_3, Array<double>& loc_upts_tri, Array<double>& loc_1d_fpts,
+    Array<double>& vandermonde_tri, Array<double>& inv_vandermonde_tri,
+    int n_upts_per_tri, int order, double c_tri, int vcjh_scheme_tri)
 {
 
   Array<double> Filt(n_upts_per_tri,n_upts_per_tri);
   Array<double> opp_3_dg(n_upts_per_tri, 3*(order+1));
   Array<double> m_temp;
 
-  compute_filt_matrix_tri(Filt,vandermonde_tri,inv_vandermonde_tri,n_upts_per_tri,order,c_tri,vcjh_scheme_tri,loc_upts_tri);
+  compute_filt_matrix_tri(Filt,vandermonde_tri,inv_vandermonde_tri,
+      n_upts_per_tri,order,c_tri,vcjh_scheme_tri,loc_upts_tri);
 
   get_opp_3_dg(opp_3_dg, loc_upts_tri, loc_1d_fpts, n_upts_per_tri, order);
   m_temp = mult_Arrays(Filt,opp_3_dg);
@@ -446,39 +449,14 @@ void compute_modal_filter_1d(Array <double>& filter_upts, Array<double>& vanderm
 
   // Exponential filter (SVV method) (similar to Meister et al 2009)
 
-  // Full form: alpha = Cp*p*dt
-  /*alpha = Cp*p;
-
-  for(i=0;i<p+1;i++) {
-    eta = i/(p+1.0);
-    modal(ind,ind) = exp(-alpha*pow(eta,2*p));
-    ind++;
-  }*/
-
   // Gaussian filter in modal space (from SD3D)
   for(i=0;i<N;i++) {
     eta = i/double(N);
     modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
   }
 
-  // Sharp cutoff filter
-  //modal(N-1,N-1) = 1.0;
-
-  //cout<<"modal coeffs:"<<endl;
-  //modal.print();
-
-#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
-
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
-
-#else // inefficient matrix multiplication
-
-  mtemp = mult_Arrays(inv_vandermonde,modal);
-  filter_upts = mult_Arrays(mtemp,vandermonde);
-
-#endif
+  mtemp.dgemm(1.0, inv_vandermonde, modal);
+  filter_upts.dgemm(1.0, mtemp, vandermonde);
 }
 
 // Compute a modal filter matrix for a triangular element, given Vandermonde matrix and inverse
@@ -495,41 +473,14 @@ void compute_modal_filter_tri(Array <double>& filter_upts, Array<double>& vander
 
   // Exponential filter (SVV method) (similar to Meister et al 2009)
 
-  // Full form: alpha = Cp*(p+1)*dt/delta
-  /*alpha = Cp*p;
-
-  for(i=0;i<p+1;i++) {
-    for(j=0;j<p-i+1;j++) {
-      eta = (i+j)/(p+1.0);
-      modal(ind,ind) = exp(-alpha*pow(eta,2*p));
-      ind++;
-    }
-  }*/
-
   // Gaussian filter in modal space (from SD3D)
   for(i=0;i<N;i++) {
     eta = i/double(N);
     modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
   }
 
-  // Sharp modal cutoff filter
-  //modal(N-1,N-1)=0.0;
-
-  //cout<<"modal coeffs:"<<endl;
-  //modal.print();
-
-#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
-
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
-
-#else // inefficient matrix multiplication
-
-  mtemp = mult_Arrays(inv_vandermonde,modal);
-  filter_upts = mult_Arrays(mtemp,vandermonde);
-
-#endif
+  mtemp.dgemm(1.0, inv_vandermonde, modal);
+  filter_upts.dgemm(1.0, mtemp, vandermonde);
 }
 
 // Compute a modal filter matrix for a tetrahedral element, given Vandermonde matrix and inverse
@@ -546,46 +497,20 @@ void compute_modal_filter_tet(Array <double>& filter_upts, Array<double>& vander
 
   // Exponential filter (SVV method) (similar to Meister et al 2009)
 
-  // Full form: alpha = Cp*(p+1)*dt/delta
-  /*alpha = Cp*p;
-
-  for(i=0;i<p+1;i++) {
-    for(j=0;j<p-i+1;j++) {
-      for(k=0;k<p-i-j+1;k++) {
-        eta = (i+j+k)/(p+1.0);
-        modal(ind,ind) = exp(-alpha*pow(eta,2*p));
-        ind++;
-      }
-    }
-  }*/
-
   // Gaussian filter in modal space (from SD3D)
   for(i=0;i<N;i++) {
     eta = i/double(N);
     modal(i,i) = exp(-pow(2.0*eta,2.0)/48.0);
   }
 
-  // Sharp modal cutoff filter
-  //modal(N-1,N-1)=0.0;
+  mtemp.dgemm(1.0, inv_vandermonde, modal);
+  filter_upts.dgemm(1.0, mtemp, vandermonde);
 
-  //cout<<"modal coeffs:"<<endl;
-  //modal.print();
-
-#if defined _ACCELERATE_BLAS || defined _MKL_BLAS || defined _STANDARD_BLAS
-
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,vandermonde.get_ptr_cpu(),N,modal.get_ptr_cpu(),N,0.0,mtemp.get_ptr_cpu(),N);
-
-  cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,N,N,N,1.0,mtemp.get_ptr_cpu(),N,inv_vandermonde.get_ptr_cpu(),N,0.0,filter_upts.get_ptr_cpu(),N);
-
-#else // inefficient matrix multiplication
-
-  mtemp = mult_Arrays(inv_vandermonde,modal);
-  filter_upts = mult_Arrays(mtemp,vandermonde);
-
-#endif
 }
 
-void compute_filt_matrix_tri(Array<double>& Filt, Array<double>& vandermonde_tri, Array<double>& inv_vandermonde_tri, int n_upts_tri, int order, double c_tri, int vcjh_scheme_tri, Array<double>& loc_upts_tri)
+void compute_filt_matrix_tri(Array<double>& Filt, Array<double>& vandermonde_tri,
+    Array<double>& inv_vandermonde_tri, int n_upts_tri, int order, double c_tri,
+    int vcjh_scheme_tri, Array<double>& loc_upts_tri)
 {
 
   // -----------------
@@ -689,7 +614,6 @@ void compute_filt_matrix_tri(Array<double>& Filt, Array<double>& vandermonde_tri
   // Set Array with binomial coefficients multiplied by value of c
   for(int k=0; k<(order+1);k++) {
     c_coeff(k) = (1./n_upts_tri)*(factorial(order)/( factorial(k)*factorial(order-k) ));
-    //cout << "k=" << k << "coeff= " << c_coeff(k) << endl;
   }
 
   // Initialize K to zero
@@ -707,20 +631,9 @@ void compute_filt_matrix_tri(Array<double>& Filt, Array<double>& vandermonde_tri
       D_high_order(k) = mult_Arrays(D_high_order(k),Ds);
     for (int m2=0;m2<m;m2++)
       D_high_order(k) = mult_Arrays(D_high_order(k),Dr);
-    //cout << "k=" << k << endl;
-    //cout<<"D_high_order(k)"<<endl;
-    //D_high_order(k).print();
-    //cout << endl;
 
     D_high_order_trans = transpose_Array(D_high_order(k));
     D_T_D(k) = mult_Arrays(D_high_order_trans,D_high_order(k));
-
-    //mtemp_2 = transpose_Array(vandermonde_tri);
-    //mtemp_2 = mult_Arrays(mtemp_2,D_high_order(k));
-    //mtemp_2 = mult_Arrays(mtemp_2,vandermonde_tri);
-    //cout<<"V^T*D_high_order(k)*V"<<endl;
-    //mtemp_2.print();
-    //cout << endl;
 
     // Scale by c_coeff
     for (int i=0;i<n_upts_tri;i++) {
@@ -746,87 +659,6 @@ void compute_filt_matrix_tri(Array<double>& Filt, Array<double>& vandermonde_tri
   Filt = inv_Array(mtemp_1);
   Filt_dubiner = mult_Arrays(inv_vandermonde_tri,Filt);
   Filt_dubiner = mult_Arrays(Filt_dubiner,vandermonde_tri);
-
-  //cout << "Filt" << endl;
-  //Filt.print();
-  //cout << endl;
-  //cout << "Filt_dubiner" << endl;
-  //Filt_dubiner.print();
-  //cout << endl;
-
-  /*
-  // ------------------------
-  // Diagonal filter
-  // ------------------------
-  //matrix Filt_dubiner(n_upts_tri,n_upts_tri);
-  int n_upts_lower = (order+1)*order/2;
-
-  double frac;
-
-  if (vcjh_scheme_tri==0)
-  {
-    double c_1d = c_tri*2*order;
-    double cp = 1./pow(2.0,order)*factorial(2*order)/ (factorial(order)*factorial(order));
-    double kappa = (2*order+1)/2*(factorial(order)*cp)*(factorial(order)*cp);
-    frac = 1./ (1+c_1d*kappa);
-  }
-  else if (vcjh_scheme_tri==1) // DG
-  {
-    frac = 1.0;
-  }
-  else if (vcjh_scheme_tri==2) // SD-like
-  {
-    frac = (order+1.)/(2.*order+1);
-  }
-  else if (vcjh_scheme_tri==3) // HU-like
-  {
-    frac = (order)/(2.*order+1);
-  }
-  else if (vcjh_scheme_tri==4) // Cplus scheme
-  {
-    if (order==2)
-      c_tri = 4.3e-2;
-    else if (order==3)
-      c_tri = 6.4e-4;
-    else if (order==4)
-      c_tri = 5.3e-6;
-    else
-      FatalError("C_plus scheme not implemented for this order");
-
-    double c_1d = c_tri*2*order;
-    double cp = 1./pow(2.0,order)*factorial(2*order)/ (factorial(order)*factorial(order));
-    double kappa = (2*order+1)/2*(factorial(order)*cp)*(factorial(order)*cp);
-    frac = 1./ (1+c_1d*kappa);
-  }
-  else
-    FatalError("VCJH triangular scheme not recognized");
-
-  cout << "Filtering fraction=" << frac << endl;
-
-  for (int j=0;j<n_upts_tri;j++) {
-    for (int k=0;k<n_upts_tri;k++) {
-      if (j==k) {
-        if (j < n_upts_lower)
-          Filt_dubiner(j,k) = 1.;
-        else
-          Filt_dubiner(j,k) = frac;
-      }
-      else {
-        Filt_dubiner(j,k) = 0.;
-      }
-    }
-  }
-
-  Filt = mult_Arrays(vandermonde_tri,Filt_dubiner);
-  Filt = mult_Arrays(Filt,inv_vandermonde_tri);
-
-  cout << "Filt_dubiner_diag" << endl;
-  Filt_dubiner.print();
-
-  cout << "Filt_diag" << endl;
-  Filt.print();
-   */
-
 }
 
 

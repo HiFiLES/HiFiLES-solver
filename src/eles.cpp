@@ -8000,13 +8000,6 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
 
       // Apply interior filter first
       // ubar = alpha * stab_filter_interior * u
-//      ubar = u;
-//      Array<double> eye(n_upts_per_ele,n_upts_per_ele);
-//      eye.fill(0);
-//      for (int i = 0; i < n_upts_per_ele; i++) {
-//        eye(i,i) = 1;
-//      }
-//      ubar.dgemm(1.0, eye, u);
       ubar.dgemm(alpha, stab_filter_interior, u);
 
       // Apply boundary filter next
@@ -8017,8 +8010,6 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
       // Compute modes of current solution
       // uhat := inv_vandermonde * disu_upts
       uhat.dgemm(1, inv_vandermonde, u);
-
-      // 10049     0.08469791
 
       // Compute modes of filtered solution
       // ubarhat = disu_upts(2) := inv_vandermonde * disu_upts(1)
@@ -8032,36 +8023,20 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
 //        toFilter.push(i);
         double filteredEnergy = abs(ubarhat(n_upts_per_ele-1, i, 0));
         double unfilteredEnergy = abs(uhat(n_upts_per_ele-1, i, 0));
-        if (filteredEnergy < 0.6 * unfilteredEnergy) { // if filtering will help
+        if (filteredEnergy < 0.9 * unfilteredEnergy) { // if filtering will help
           toFilter.push(i);
         }
       }
 
       // Re-assign values to those that do need to be filtered
-
-      // Without filtering, the last iteration is:
-//      10259     0.07601360     0.42626376     0.35414806     4.49315343    -0.47374864     0.33501263
-
-
-      // With filtering every iteration, residual is:
-//      10042     0.51892059     2.57045886     1.90536512    31.97692831    -0.16423232     0.30025576
-
-
-      // With filtering those above 0.6
-//      11451     0.85259704     3.86264649     2.90872272    51.72523286     7.00985026    -2.39342226
-      _(toFilter.size());
       u = ubar;
       while(!toFilter.empty()) {
         int eleToFilter = toFilter.front(); toFilter.pop();
         for (int field = 0; field < n_fields; field++) {
           for (int j = 0; j < n_upts_per_ele; j++) {
-            //          _(u(j, eleToFilter));
             u(j, eleToFilter, field) = ubar(j,eleToFilter, field);
-            //          _("new value");
-            //          _(u(j, eleToFilter));
           }
         }
-        //        FatalError("Forced Stop");
       }
   }
 }

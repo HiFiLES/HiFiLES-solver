@@ -645,7 +645,8 @@ void eles_tris::eval_dd_nodal_s_basis(Array<double> &dd_nodal_s_basis, Array<dou
 
 void eles_tris::fill_opp_3(Array<double>& opp_3)
 {
-  get_opp_3_tri(opp_3,loc_upts,loc_1d_fpts,vandermonde,inv_vandermonde,n_upts_per_ele, order, run_input.c_tri, run_input.vcjh_scheme_tri);
+  get_opp_3_tri(opp_3,loc_upts,loc_1d_fpts,vandermonde,inv_vandermonde,
+      n_upts_per_ele, order, run_input.c_tri, run_input.vcjh_scheme_tri);
 }
 
 // Filtering operators for use in subgrid-scale modelling
