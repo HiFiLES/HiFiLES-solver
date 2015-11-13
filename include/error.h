@@ -23,10 +23,14 @@
 #define FatalError(s) {                                           \
   void* array[10];                                                  \
   size_t size;                                                      \
+  char** strings;                                                     \
   size = backtrace(array,10);                                       \
+  strings = backtrace_symbols(array, size);         \
+  for (int stringIndex = 0; stringIndex < size; stringIndex++) { \
+      std::cout << strings[stringIndex] << std::endl;                   \
+  }                                                                   \
   std::cout << "Fatal error at " << __FILE__ <<": " << __LINE__ \
   << ": " << s << std::endl;      \
-  backtrace_symbols_fd(array, size, STDERR_FILENO);                 \
   exit(1); }
 
 #define _(x) {   \

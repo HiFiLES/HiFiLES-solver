@@ -8015,6 +8015,8 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
       // ubarhat = disu_upts(2) := inv_vandermonde * disu_upts(1)
       ubarhat.dgemm(1, inv_vandermonde, ubar);
 
+#ifdef _CPU
+
       // Compare the magnitudes of the energy contents in the highest modes
       // and store which elements will be filtered
       std::queue<int> toFilter;
@@ -8038,5 +8040,15 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
           }
         }
       }
+
+
+#endif
+#define _GPU
+#ifdef _GPU
+      selectively_use_filtered_solution_values(u, ubar, uhat, ubarhat);
+
+#endif
+
+
   }
 }

@@ -23,6 +23,8 @@
  * along with HiFiLES.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "../include/Array.h"
+
 #pragma once
 
 #define PI 3.141592653589793
@@ -120,4 +122,5 @@ void push_back_shape_dyn_kernel_wrapper(int n_dims, int n_eles, int max_n_spts_p
 void shock_capture_concentration_gpu_kernel_wrapper(int in_n_eles, int in_n_upts_per_ele, int in_n_fields, int in_order, int in_ele_type, int in_artif_type, double s0, double kappa, double* in_disu_upts_ptr, double* in_inv_vandermonde_ptr, double* in_inv_vandermonde2D_ptr, double* in_vandermonde2D_ptr, double* concentration_Array_ptr, double* out_sensor, double* sigma);
 
 /*! Wrapper for replacing unfiltered values with filtered values */
-void selectively_use_filtered_solution_values(Array<double>* u, Array<double>* ubar, Array<double>* uhat, Array<double>* uhatbar);
+void selectively_use_filtered_solution_values(Array<double>& u, Array<double>& ubar,
+                                              Array<double>& uhat, Array<double>& ubarhat);
