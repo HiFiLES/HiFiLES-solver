@@ -5985,7 +5985,9 @@ void calculate_common_viscFlux_mpi_gpu_kernel_wrapper(int n_fpts_per_inter, int 
 
 #endif
 
-void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_ptr, int* opp_ell_indices_ptr, int nnz_per_row, double* b_ptr, double *c_ptr, int cell_type, int order, int add_flag)
+void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_ptr,
+    int* opp_ell_indices_ptr, int nnz_per_row, double* b_ptr, double *c_ptr,
+    int cell_type, int order, int add_flag)
 {
   int eles_per_block=2;
   int grid_size = (n_eles-1)/(eles_per_block)+1;
@@ -6011,3 +6013,74 @@ void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_p
   }
 }
 
+
+// Apply the filter if the quantity being filtered contains higher energy in the highest mode
+
+template<int n_fields>
+__global__ void selectively_use_filtered_solution_values_gpu_kernel(double *u, double *uhat, double *ubar, double* ubarhat
+    int n_upts_per_ele, int n_eles)
+{
+  const int tid = threadIdx.x;
+  const int element_index = blockIdx.x * blockDim.x + ic_loc;
+
+  if (element_index <= n_eles) {
+    return;
+  }
+
+  // get the index of the value of rho
+  int value_index = n_upts_per_ele * element_index;
+
+  // do nothing if the unfiltered solution is less energetic than the filtered solution
+  if (uhat[value_index] < ubarhat[value_index]) {
+    return;
+  }
+
+  // otherwise, swap values
+  for (int si = 0; si < n_upts_per_ele; si++) { // loop through the solution points
+
+#pragma unroll
+    for (int fi = 0; fi < n_fields; fi++) { // loop through the fields
+      int index = element_index + n_eles * fi + n_eles*n_fields * si; // index of the values that will be copied
+          u[index] = ubar[index];
+    }
+  }
+
+}
+
+
+/*! Wrapper for replacing unfiltered values with filtered values */
+void selectively_use_filtered_solution_values(
+    Array<double>* u,     Array<double>* ubar,
+    Array<double>* uhat,  Array<double>* uhatbar) {
+
+  // Obtain information about the solution arrays, we assume they all have the same dimensions
+  int n_upts_per_ele = u.get_dim(0);
+  int n_eles = u.get_dim(1);
+  int n_fields = u.get_dim(2);
+
+  // Specify distribution of work among threads
+  int threadsPerBlock = 256;
+  int numBlocks = 1024/threadsPerBlock + 1;
+  int n_eles_per_block = n_eles/numBlocks;
+
+  switch (n_fields) {
+    case 1:
+  selectively_use_filtered_solution_values_gpu_kernel<1><<<numBlocks, threadsPerBlock>>>
+      (u.get_gpu_ptr(), uhat.get_gpu_ptr(), ubar.get_gpu_ptr(), ubarhat.get_gpu_ptr(), n_upts_per_ele, n_eles);
+  return;
+    case 4:
+      selectively_use_filtered_solution_values_gpu_kernel<4><<<numBlocks, threadsPerBlock>>>
+          (u.get_gpu_ptr(), uhat.get_gpu_ptr(), ubar.get_gpu_ptr(), ubarhat.get_gpu_ptr(), n_upts_per_ele, n_eles);
+      return;
+    case 5:
+      selectively_use_filtered_solution_values_gpu_kernel<5><<<numBlocks, threadsPerBlock>>>
+          (u.get_gpu_ptr(), uhat.get_gpu_ptr(), ubar.get_gpu_ptr(), ubarhat.get_gpu_ptr(), n_upts_per_ele, n_eles);
+      return;
+    case 6:
+      selectively_use_filtered_solution_values_gpu_kernel<6><<<numBlocks, threadsPerBlock>>>
+          (u.get_gpu_ptr(), uhat.get_gpu_ptr(), ubar.get_gpu_ptr(), ubarhat.get_gpu_ptr(), n_upts_per_ele, n_eles);
+      return;
+    default:
+      FatalError("Number of fields is not valid");
+  }
+}
