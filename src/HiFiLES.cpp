@@ -49,6 +49,36 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
+Array<double> u;
+Array<double> ubar;
+
+u.setup(2,3,4);
+ubar.setup(2,3,4);
+
+u.fill(1);
+ubar.fill(2);
+
+u.mv_cpu_gpu();
+ubar.mv_cpu_gpu();
+
+cout << "********************************** BEFORE ****************************" << endl;
+_(u);
+_(ubar);
+selectively_use_filtered_solution_values(u,u,ubar,ubar);
+u.cp_gpu_cpu();
+ubar.cp_gpu_cpu();
+cout << "********************************** AFTER ****************************" << endl;
+_(u);
+_(ubar);
+
+
+FatalError("Forced early stop!!");
+
+
+
+
+
+
   int rank = 0, error_state = 0;
   int i, j;                           /*!< Loop iterators */
   int i_steps = 1;                    /*!< Iteration index */

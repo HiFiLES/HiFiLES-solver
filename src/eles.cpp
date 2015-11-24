@@ -8064,11 +8064,14 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
 #ifdef _GPU
       selectively_use_filtered_solution_values(u, ubar, uhat, ubarhat);
 #endif
-	//u.daxpy(-1, ubar);
+	u.daxpy(-1, ubar);
+	_(u);
+	//_(ubar);
+	u.cp_gpu_cpu();
 	_(u.get_max());
 	_(u.get_min());
-	_(ubar.get_max());
-	_(ubar.get_min());
+	//_(ubar.get_max());
+	//_(ubar.get_min());
 	FatalError("Forced Stop!!");
 
   }
