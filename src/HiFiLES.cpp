@@ -49,34 +49,9 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
-  int nn = 5;
-  Array<double> a(nn,nn);
-  Array<double> b(nn,2*nn);
-  Array<double> c(nn,2*nn);
-a.fill(0);
-b.fill(3);
-  for (int ii = 0; ii < a.get_dim(0); ii++) {
-    a(ii,ii) = 1;
-  }
-
-  for (int ii = 0; ii < b.get_dim(0); ii++) {
-    for (int jj = 0; jj < b.get_dim(1); jj++) {
-      b(ii,jj) = 10*ii + jj;
-    }
-  }
-
-  c.dgemm(1, a, b);
-  _(a);
-  _(b);
-  _(c);
-
-//  FatalError("Forced Stop");
-
-
-
   int rank = 0, error_state = 0;
   int i, j;                           /*!< Loop iterators */
-  int i_steps = 0;                    /*!< Iteration index */
+  int i_steps = 1;                    /*!< Iteration index */
   int RKSteps;                        /*!< Number of RK steps */
   std::ifstream run_input_file;       /*!< Config input file */
   clock_t init_time, final_time;      /*!< To control the time */
@@ -179,7 +154,7 @@ b.fill(3);
   
   /*! Main solver loop (outer loop). */
   
-  while(i_steps < FlowSol.n_steps) {
+  while(i_steps <= FlowSol.n_steps) {
     
     if (FlowSol.adv_type == 0) RKSteps = 1;
     if (FlowSol.adv_type == 3) RKSteps = 5;
@@ -212,7 +187,7 @@ b.fill(3);
 
     /*! Filter the solution if necessary */
     int nn = run_input.filter_frequency;
-    if ( run_input.filter_frequency > 0 && (i_steps+1)%nn == 0) {
+    if ( run_input.filter_frequency > 0 && (i_steps)%nn == 0) {
 //        cout << "Filtering!" << endl;
         for(j=0; j<FlowSol.n_ele_types; j++) {
             if (FlowSol.mesh_eles(j)->get_n_eles() != 0)
@@ -220,13 +195,6 @@ b.fill(3);
           }
       }
 
-
-    /*! Update total time, and increase the iteration index. */
-    
-    FlowSol.time += run_input.dt;
-    run_input.time = FlowSol.time;
-    i_steps++;
-    
     /*! Copy solution and gradients from GPU to CPU, ready for the following routines */
 #ifdef _GPU
 
@@ -279,6 +247,12 @@ b.fill(3);
       
       if (FlowSol.rank == 0) cout << endl;
     }
+
+    /*! Update total time, and increase the iteration index. */
+
+    FlowSol.time += run_input.dt;
+    run_input.time = FlowSol.time;
+    i_steps++;
     
     
   }
@@ -289,16 +263,17 @@ b.fill(3);
   
   /*! Close convergence history file. */
   
-  if (rank == 0)
+  if (rank == 0) {
     write_hist.close();
   
   /*! Compute execution time. */
-  
+
   final_time = clock()-init_time;
   printf("Execution time= %f s\n", (double) final_time/((double) CLOCKS_PER_SEC));
-  
+
+    }
   /*! Finalize MPI. */
-  
+
 #ifdef _MPI
   MPI_Finalize();
 #endif

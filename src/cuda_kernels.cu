@@ -5997,20 +5997,20 @@ __global__ void selectively_use_filtered_solution_values_gpu_kernel(double *u, d
     return;
   }
 
-  // get the index of the value of rho
-  int value_index = n_upts_per_ele * element_index;
+  // get the index of the value of rho energy in the highest mode
+  int value_index = (n_upts_per_ele-1) + (n_fields) * element_index + (n_fields*n_eles) * 0;
 
   // do nothing if the unfiltered solution is less energetic than the filtered solution
-  if (uhat[value_index] < ubarhat[value_index]) {
-    return;
-  }
+//  if (uhat[value_index] < ubarhat[value_index]) {
+//    return;
+//  }
 
   // otherwise, swap values
-  for (int si = 0; si < n_upts_per_ele; si++) { // loop through the solution points
-
 #pragma unroll
-    for (int fi = 0; fi < n_fields; fi++) { // loop through the fields
-      int index = element_index + n_eles * fi + n_eles*n_fields * si; // index of the values that will be copied
+  for (int fi = 0; fi < n_fields; fi++) { // loop through the fields
+
+    for (int si = 0; si < n_upts_per_ele; si++) { // loop through the solution points
+      int index = si + (n_fields) * element_index + (n_fields*n_eles) * fi; // index of the values that will be copied
           u[index] = ubar[index];
     }
   }

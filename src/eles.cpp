@@ -8025,13 +8025,12 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
 //        toFilter.push(i);
         double filteredEnergy = abs(ubarhat(n_upts_per_ele-1, i, 0));
         double unfilteredEnergy = abs(uhat(n_upts_per_ele-1, i, 0));
-        if (filteredEnergy < 0.9 * unfilteredEnergy) { // if filtering will help
+//        if (filteredEnergy < 0.9 * unfilteredEnergy) { // if filtering will help
           toFilter.push(i);
-        }
+//        }
       }
 
       // Re-assign values to those that do need to be filtered
-      u = ubar;
       while(!toFilter.empty()) {
         int eleToFilter = toFilter.front(); toFilter.pop();
         for (int field = 0; field < n_fields; field++) {
@@ -8041,14 +8040,36 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
         }
       }
 
-
 #endif
-#define _GPU
+      // Filtering every 10, with 2 CPUs
+//      9     0.31746207     1.43369526     0.86160181    19.42261717    21.12788730    -0.20551066
+//      10     0.33732200     1.43624008     0.89367595    20.68716979    15.34393673    -0.17993956
+//      11     0.27097404     1.23006712     0.68066498    15.99168517    16.33256277    -0.11459836
+
+      // Filtering every 10, with 2GPUs
+//      9     0.31746207     1.43369526     0.86160181    19.42261717    21.12788730    -0.20551066
+//      10     0.34741697     1.43624008     0.89367595    20.68716979    18.99184868    -1.90190435
+//      11     0.29643616     1.35175270     0.78483009    19.08666034    20.02215069    -1.86458882
+
+
+      // No filtering, 2 GPUs
+      //522     0.22097250     0.91263750     0.65335237    13.01321682     0.83368148    -0.49862135
+
+      // No filtering, 2 CPUs
+      //522     0.22097250     0.91263750     0.65335237    13.01321682     0.83368148    -0.49862135
+
+
+
+
 #ifdef _GPU
       selectively_use_filtered_solution_values(u, ubar, uhat, ubarhat);
-
 #endif
-
+	//u.daxpy(-1, ubar);
+	_(u.get_max());
+	_(u.get_min());
+	_(ubar.get_max());
+	_(ubar.get_min());
+	FatalError("Forced Stop!!");
 
   }
 }
