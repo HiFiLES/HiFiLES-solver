@@ -5998,7 +5998,7 @@ __global__ void selectively_use_filtered_solution_values_gpu_kernel(double *u, d
     return;
   }
 
-  printf("'%i''  \n\n", element_index);
+  //printf("'%i''  \n\n", element_index);
   // get the index of the value of rho energy in the highest mode
   int value_index = (n_upts_per_ele-1) + (n_fields) * element_index + (n_fields*n_eles) * 0;
 
@@ -6014,7 +6014,7 @@ __global__ void selectively_use_filtered_solution_values_gpu_kernel(double *u, d
     for (int si = 0; si < n_upts_per_ele; si++) { // loop through the solution points
       int index = si + (n_upts_per_ele) * element_index + (n_upts_per_ele*n_eles) * fi; // index of the values that will be copied
  // printf("'%i,   %i, %i, %i''  \n\n", si, fi, element_index, index);
-  printf("'%f,   %f''  \n\n", u[index], ubar[index]);
+  //printf("'%f,   %f''  \n\n", u[index], ubar[index]);
           u[index] = ubar[index];
 
     }
@@ -6063,15 +6063,15 @@ void selectively_use_filtered_solution_values(
   int n_eles = u.get_dim(1);
   int n_fields = u.get_dim(2);
 
-_(n_upts_per_ele);
-_(n_eles);
-_(n_fields);
+//_(n_upts_per_ele);
+//_(n_eles);
+//_(n_fields);
 
 
   // Specify distribution of work among threads
   int threadsPerBlock = 256;
   int numBlocks = n_eles/threadsPerBlock + 1;
-_(numBlocks);
+//_(numBlocks);
   switch (n_fields) {
     case 1:
   selectively_use_filtered_solution_values_gpu_kernel<1><<<numBlocks, threadsPerBlock>>>
