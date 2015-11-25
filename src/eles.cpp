@@ -8014,7 +8014,7 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
       // Compute modes of filtered solution
       // ubarhat = disu_upts(2) := inv_vandermonde * disu_upts(1)
       ubarhat.dgemm(1, inv_vandermonde, ubar);
-
+_(inv_vandermonde);
 #ifdef _CPU
 
       // Compare the magnitudes of the energy contents in the highest modes
@@ -8025,7 +8025,7 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
 //        toFilter.push(i);
         double filteredEnergy = abs(ubarhat(n_upts_per_ele-1, i, 0));
         double unfilteredEnergy = abs(uhat(n_upts_per_ele-1, i, 0));
-//        if (filteredEnergy < 0.9 * unfilteredEnergy) { // if filtering will help
+        if (filteredEnergy < 0.9 * unfilteredEnergy) { // if filtering will help
           toFilter.push(i);
 //        }
       }
@@ -8062,9 +8062,11 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
 
 
 #ifdef _GPU
-      selectively_use_filtered_solution_values(u, ubar, uhat, ubarhat);
+      selectively_use_filtered_solution_values(u, uhat, ubar, ubarhat);
 #endif
-	FatalError("Forced Stop!!");
-
+	//u.daxpy(-1.0, ubar);
+	//_(u);//u.mv_gpu_cpu();
+	//_(u.get_min());
+	//_(u.get_max());
   }
 }

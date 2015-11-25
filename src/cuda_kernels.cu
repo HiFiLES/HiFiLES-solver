@@ -5998,14 +5998,16 @@ __global__ void selectively_use_filtered_solution_values_gpu_kernel(double *u, d
     return;
   }
 
-  //printf("'%i''  \n\n", element_index);
-  // get the index of the value of rho energy in the highest mode
-  int value_index = (n_upts_per_ele-1) + (n_fields) * element_index + (n_fields*n_eles) * 0;
 
+  // get the index of the value of rho energy in the highest mode
+  int value_index = (n_upts_per_ele-1) + (n_upts_per_ele) * element_index + (n_fields*n_eles) * 0;
+
+  printf("'%i,  %.8f, %.8f''  \n\n", element_index, uhat[value_index], ubarhat[value_index]);
   // do nothing if the unfiltered solution is less energetic than the filtered solution
-//  if (uhat[value_index] < ubarhat[value_index]) {
-//    return;
-//  }
+  if (uhat[value_index] <= ubarhat[value_index]) {
+    return;
+  }
+
 
   // otherwise, swap values
 //#pragma unroll

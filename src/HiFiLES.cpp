@@ -49,7 +49,27 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
-  int rank = 0, error_state = 0;
+  Array<double> a;
+	Array<double> b;
+	a.setup(2,3,4);
+	b.setup(2,3,4);
+	a.fill(1);
+	b.fill(2);
+	a.mv_cpu_gpu();
+	b.mv_cpu_gpu();
+	cout << setw(20) << "***********************************" << "BEFORE FUNCTION" << endl;
+	 _(a); _(b); 
+	selectively_use_filtered_solution_values(a,a,b,b);
+	a.mv_gpu_cpu();
+	b.mv_gpu_cpu();
+	cout << setw(20) << "***********************************" << "After FUNCTION" << endl;
+	_(a);
+	_(b);
+	//FatalError("ForcedStop");
+
+
+
+	int rank = 0, error_state = 0;
   int i, j;                           /*!< Loop iterators */
   int i_steps = 1;                    /*!< Iteration index */
   int RKSteps;                        /*!< Number of RK steps */
