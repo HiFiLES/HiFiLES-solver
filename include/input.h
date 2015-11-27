@@ -265,9 +265,12 @@ public:
 
   double time, rk_time;
 
-  int filter_frequency;
-  double filter_alpha;
-  double filter_width;
+  int filter_frequency; //<! Number of iterations after which the filtering strategy is applied
+  double filter_alpha; //<! Value between 0 and 1; 1 results in giving all weight to internal values
+                       //<! 0 results in giving all weight to boundary values
+  double filter_width; //<! Wavelength below which signal will be filtered, relative to the size of the reference element
+  double filter_energy_threshold; //<! Used when selecting which elements to filter:
+                      //<! If filtered_energy < filter_energy_threshold * unfiltered_energy, apply filter
 
   int nproc; // number of processors
 };

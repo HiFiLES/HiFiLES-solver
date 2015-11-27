@@ -123,4 +123,4 @@ void shock_capture_concentration_gpu_kernel_wrapper(int in_n_eles, int in_n_upts
 
 /*! Wrapper for replacing unfiltered values with filtered values */
 void selectively_use_filtered_solution_values(Array<double>& u, Array<double>& ubar,
-                                              Array<double>& uhat, Array<double>& ubarhat);
+                                              Array<double>& uhat, Array<double>& ubarhat, double filter_energy_threshold);

@@ -5989,7 +5989,8 @@ void calculate_common_viscFlux_mpi_gpu_kernel_wrapper(int n_fpts_per_inter, int 
 template<int n_fields>
 __global__ void selectively_use_filtered_solution_values_gpu_kernel(double *u, double *uhat,
                                                                     double *ubar, double* ubarhat,
-                                                                    int n_upts_per_ele, int n_eles)
+                                                                    int n_upts_per_ele, int n_eles,
+                                                                    double filter_energy_threshold)
 {
   const int element_index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -6001,7 +6002,7 @@ __global__ void selectively_use_filtered_solution_values_gpu_kernel(double *u, d
   int value_index = (n_upts_per_ele-1) + (n_upts_per_ele) * element_index + (n_fields*n_eles) * 0;
 
   // do nothing if the unfiltered solution is less energetic than the filtered solution
-  if (abs(uhat[value_index]) <= abs(ubarhat[value_index])) {
+  if (filter_energy_threshold * abs(uhat[value_index]) <= abs(ubarhat[value_index])) {
     return;
   }
   
@@ -6050,38 +6051,37 @@ void bespoke_SPMV(int m, int n, int n_fields, int n_eles, double* opp_ell_data_p
 /*! Wrapper for replacing unfiltered values with filtered values */
 void selectively_use_filtered_solution_values(
     Array<double>& u,     Array<double>& uhat,
-    Array<double>& ubar,  Array<double>& ubarhat) {
+    Array<double>& ubar,  Array<double>& ubarhat, double filter_energy_threshold) {
 
   // Obtain information about the solution arrays, we assume they all have the same dimensions
   int n_upts_per_ele = u.get_dim(0);
   int n_eles = u.get_dim(1);
   int n_fields = u.get_dim(2);
 
-//_(n_upts_per_ele);
-//_(n_eles);
-//_(n_fields);
-
-
   // Specify distribution of work among threads
   int threadsPerBlock = 256;
   int numBlocks = n_eles/threadsPerBlock + 1;
-//_(numBlocks);
+
   switch (n_fields) {
     case 1:
   selectively_use_filtered_solution_values_gpu_kernel<1><<<numBlocks, threadsPerBlock>>>
-      (u.get_ptr_gpu(), uhat.get_ptr_gpu(), ubar.get_ptr_gpu(), ubarhat.get_ptr_gpu(), n_upts_per_ele, n_eles);
+      (u.get_ptr_gpu(), uhat.get_ptr_gpu(), ubar.get_ptr_gpu(), ubarhat.get_ptr_gpu(), 
+      n_upts_per_ele, n_eles, filter_energy_threshold);
   return;
     case 4:
       selectively_use_filtered_solution_values_gpu_kernel<4><<<numBlocks, threadsPerBlock>>>
-          (u.get_ptr_gpu(), uhat.get_ptr_gpu(), ubar.get_ptr_gpu(), ubarhat.get_ptr_gpu(), n_upts_per_ele, n_eles);
+          (u.get_ptr_gpu(), uhat.get_ptr_gpu(), ubar.get_ptr_gpu(), ubarhat.get_ptr_gpu(),
+           n_upts_per_ele, n_eles, filter_energy_threshold);
       return;
     case 5:
       selectively_use_filtered_solution_values_gpu_kernel<5><<<numBlocks, threadsPerBlock>>>
-          (u.get_ptr_gpu(), uhat.get_ptr_gpu(), ubar.get_ptr_gpu(), ubarhat.get_ptr_gpu(), n_upts_per_ele, n_eles);
+          (u.get_ptr_gpu(), uhat.get_ptr_gpu(), ubar.get_ptr_gpu(), ubarhat.get_ptr_gpu(),
+           n_upts_per_ele, n_eles, filter_energy_threshold);
       return;
     case 6:
       selectively_use_filtered_solution_values_gpu_kernel<6><<<numBlocks, threadsPerBlock>>>
-          (u.get_ptr_gpu(), uhat.get_ptr_gpu(), ubar.get_ptr_gpu(), ubarhat.get_ptr_gpu(), n_upts_per_ele, n_eles);
+          (u.get_ptr_gpu(), uhat.get_ptr_gpu(), ubar.get_ptr_gpu(), ubarhat.get_ptr_gpu(),
+           n_upts_per_ele, n_eles, filter_energy_threshold);
       return;
     default:
       FatalError("Number of fields is not valid");

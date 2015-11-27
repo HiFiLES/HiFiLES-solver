@@ -8024,7 +8024,7 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
       //        toFilter.push(i);
       double filteredEnergy = abs(ubarhat(n_upts_per_ele-1, i, 0));
       double unfilteredEnergy = abs(uhat(n_upts_per_ele-1, i, 0));
-      if (filteredEnergy < unfilteredEnergy) { // if filtering will help
+      if (filteredEnergy < run_input.filter_energy_threshold * unfilteredEnergy) { // if filtering will help
         toFilter.push(i);
       }
     }
@@ -8057,11 +8057,8 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
     // No filtering, 2 CPUs
     //522     0.22097250     0.91263750     0.65335237    13.01321682     0.83368148    -0.49862135
 
-
-
-
 #ifdef _GPU
-    selectively_use_filtered_solution_values(u, uhat, ubar, ubarhat);
+    selectively_use_filtered_solution_values(u, uhat, ubar, ubarhat, run_input.filter_energy_threshold);
 #endif
     //u.daxpy(-1.0, ubar);
     //_(u);//u.mv_gpu_cpu();

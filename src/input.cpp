@@ -136,10 +136,11 @@ input::input()
   w_c_ic = INFINITY;
   p_c_ic = INFINITY;
 
-  // Filter parameters
+  // Default filter parameters
   filter_frequency = 0;
   filter_alpha = 0.8;
   filter_width = 10.;
+  filter_energy_threshold = 1;
 }
 
 input::~input()
@@ -784,6 +785,10 @@ void input::setup(std::ifstream& in_run_input_file, int rank)
     else if (!param_name.compare("filter_width"))
     {
       in_run_input_file >> filter_width;
+    }
+    else if (!param_name.compare("filter_energy_threshold"))
+    {
+      in_run_input_file >> filter_energy_threshold;
     }
     else if (!param_name.compare("filter_alpha"))
     {
