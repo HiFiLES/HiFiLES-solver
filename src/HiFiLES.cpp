@@ -49,23 +49,30 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
-  Array<double> a;
-	Array<double> b;
-	a.setup(2,3,4);
-	b.setup(2,3,4);
-	a.fill(1);
-	b.fill(2);
-	a.mv_cpu_gpu();
-	b.mv_cpu_gpu();
-	cout << setw(20) << "***********************************" << "BEFORE FUNCTION" << endl;
-	 _(a); _(b); 
-	selectively_use_filtered_solution_values(a,a,b,b);
-	a.mv_gpu_cpu();
-	b.mv_gpu_cpu();
-	cout << setw(20) << "***********************************" << "After FUNCTION" << endl;
-	_(a);
-	_(b);
-	//FatalError("ForcedStop");
+//  Array<double> a;
+//  Array<double> b;
+//  Array<double> ones;
+//  ones.setup(2,2);
+//  for (int ii = 0; ii < ones.get_dim(0); ii++) {
+//    ones(ii, ii) = 0.25 * (ii + 1);
+//  }
+//  a.setup(2,3,4);
+//  b.setup(2,3,4);
+//  a.fill(1);
+//  b.fill(2);
+//  a.mv_cpu_gpu();
+//  b.mv_cpu_gpu();
+//  cout << setw(20) << "***********************************" << "BEFORE FUNCTION" << endl;
+//  _(a); _(b);
+//  a.dgemm(1, ones, b);
+////  a.mv_gpu_cpu();
+////  b.mv_gpu_cpu();
+//  cout << setw(20) << "***********************************" << "After FUNCTION" << endl;
+//  _(a);
+//  _(b);
+//  _(ones);
+//  return 0;
+//  FatalError("ForcedStop");
 
 
 

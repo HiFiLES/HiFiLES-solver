@@ -7992,81 +7992,81 @@ void eles::filter_solution_LFS(int in_disu_upts_from) { // in_disu_upts_from is 
     // For temporary storage of filtered solution
     Array<double>& ubar = disu_upts(1);
     // Start computation of filtered solution
-      double alpha = run_input.filter_alpha; // proportion of influence from interior filter
+    double alpha = run_input.filter_alpha; // proportion of influence from interior filter
 
-      // Find common interface values
-      // disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i)
-      disu_fpts.daxpy(1.0, delta_disu_fpts);
+    // Find common interface values
+    // disu_fpts(field_i) = (delta_disu_fpts)(field_i) + (disu_fpts)(field_i)
+    disu_fpts.daxpy(1.0, delta_disu_fpts);
 
-      // Apply interior filter first
-      // ubar = alpha * stab_filter_interior * u
-      ubar.dgemm(alpha, stab_filter_interior, u);
+    // Apply interior filter first
+    // ubar = alpha * stab_filter_interior * u
+    ubar.dgemm(alpha, stab_filter_interior, u);
 
-      // Apply boundary filter next
-      // ubar = (1 - alpha) * stab_filter_boundary * u_at_boundaries + 1 * ubar
-      ubar.dgemm( 1 - alpha, stab_filter_boundary, disu_fpts, 1);
-      // ended computation of filtered solution
+    // Apply boundary filter next
+    // ubar = (1 - alpha) * stab_filter_boundary * u_at_boundaries + 1 * ubar
+    ubar.dgemm( 1 - alpha, stab_filter_boundary, disu_fpts, 1);
+    // ended computation of filtered solution
 
-      // Compute modes of current solution
-      // uhat := inv_vandermonde * disu_upts
-      uhat.dgemm(1, inv_vandermonde, u);
+    // Compute modes of current solution
+    // uhat := inv_vandermonde * disu_upts
+    uhat.dgemm(1, inv_vandermonde, u);
 
-      // Compute modes of filtered solution
-      // ubarhat = disu_upts(2) := inv_vandermonde * disu_upts(1)
-      ubarhat.dgemm(1, inv_vandermonde, ubar);
-_(inv_vandermonde);
+    // Compute modes of filtered solution
+    // ubarhat = disu_upts(2) := inv_vandermonde * disu_upts(1)
+    ubarhat.dgemm(1, inv_vandermonde, ubar);
 #ifdef _CPU
 
-      // Compare the magnitudes of the energy contents in the highest modes
-      // and store which elements will be filtered
-      std::queue<int> toFilter;
+    // Compare the magnitudes of the energy contents in the highest modes
+    // and store which elements will be filtered
+    std::queue<int> toFilter;
 
-      for (int i = 0; i < n_eles; i++) { // sense density energy
-//        toFilter.push(i);
-        double filteredEnergy = abs(ubarhat(n_upts_per_ele-1, i, 0));
-        double unfilteredEnergy = abs(uhat(n_upts_per_ele-1, i, 0));
-        if (filteredEnergy < 0.9 * unfilteredEnergy) { // if filtering will help
-          toFilter.push(i);
-//        }
+    for (int i = 0; i < n_eles; i++) { // sense density energy
+      //        toFilter.push(i);
+      double filteredEnergy = abs(ubarhat(n_upts_per_ele-1, i, 0));
+      double unfilteredEnergy = abs(uhat(n_upts_per_ele-1, i, 0));
+      if (filteredEnergy < unfilteredEnergy) { // if filtering will help
+        toFilter.push(i);
       }
+    }
 
-      // Re-assign values to those that do need to be filtered
-      while(!toFilter.empty()) {
-        int eleToFilter = toFilter.front(); toFilter.pop();
-        for (int field = 0; field < n_fields; field++) {
-          for (int j = 0; j < n_upts_per_ele; j++) {
-            u(j, eleToFilter, field) = ubar(j,eleToFilter, field);
-          }
+    // Re-assign values to those that do need to be filtered
+    while(!toFilter.empty()) {
+      int eleToFilter = toFilter.front(); toFilter.pop();
+      for (int field = 0; field < n_fields; field++) {
+        for (int j = 0; j < n_upts_per_ele; j++) {
+          u(j, eleToFilter, field) = ubar(j,eleToFilter, field);
         }
       }
+    }
 
 #endif
-      // Filtering every 10, with 2 CPUs
-//      9     0.31746207     1.43369526     0.86160181    19.42261717    21.12788730    -0.20551066
-//      10     0.33732200     1.43624008     0.89367595    20.68716979    15.34393673    -0.17993956
-//      11     0.27097404     1.23006712     0.68066498    15.99168517    16.33256277    -0.11459836
+    // Filtering every 10, with 2 CPUs
+    //      9     0.31746207     1.43369526     0.86160181    19.42261717    21.12788730    -0.20551066
+    //      10     0.33732200     1.43624008     0.89367595    20.68716979    15.34393673    -0.17993956
+    //      11     0.27097404     1.23006712     0.68066498    15.99168517    16.33256277    -0.11459836
 
-      // Filtering every 10, with 2GPUs
-//      9     0.31746207     1.43369526     0.86160181    19.42261717    21.12788730    -0.20551066
-//      10     0.34741697     1.43624008     0.89367595    20.68716979    18.99184868    -1.90190435
-//      11     0.29643616     1.35175270     0.78483009    19.08666034    20.02215069    -1.86458882
+    // Filtering every 10, with 2GPUs
+    //      9     0.31746207     1.43369526     0.86160181    19.42261717    21.12788730    -0.20551066
+    //      10     0.34741697     1.43624008     0.89367595    20.68716979    18.99184868    -1.90190435
+    //      11     0.29643616     1.35175270     0.78483009    19.08666034    20.02215069    -1.86458882
 
 
-      // No filtering, 2 GPUs
-      //522     0.22097250     0.91263750     0.65335237    13.01321682     0.83368148    -0.49862135
+    // No filtering, 2 GPUs
+    //522     0.22097250     0.91263750     0.65335237    13.01321682     0.83368148    -0.49862135
 
-      // No filtering, 2 CPUs
-      //522     0.22097250     0.91263750     0.65335237    13.01321682     0.83368148    -0.49862135
+    // No filtering, 2 CPUs
+    //522     0.22097250     0.91263750     0.65335237    13.01321682     0.83368148    -0.49862135
 
 
 
 
 #ifdef _GPU
-      selectively_use_filtered_solution_values(u, uhat, ubar, ubarhat);
+    selectively_use_filtered_solution_values(u, uhat, ubar, ubarhat);
 #endif
-	//u.daxpy(-1.0, ubar);
-	//_(u);//u.mv_gpu_cpu();
-	//_(u.get_min());
-	//_(u.get_max());
+    //u.daxpy(-1.0, ubar);
+    //_(u);//u.mv_gpu_cpu();
+    //_(u.get_min());
+    //_(u.get_max());
   }
 }
+
