@@ -122,21 +122,23 @@ int get_bc_number(string& bcname) {
 
   int bcflag;
 
-  if (!bcname.compare("Sub_In_Simp")) bcflag = 1;         // Subsonic inflow simple (free pressure) //
-  else if (!bcname.compare("Sub_Out_Simp")) bcflag = 2;   // Subsonic outflow simple (fixed pressure) //
-  else if (!bcname.compare("Sub_In_Char")) bcflag = 3;    // Subsonic inflow characteristic //
-  else if (!bcname.compare("Sub_Out_Char")) bcflag = 4;   // Subsonic outflow characteristic //
-  else if (!bcname.compare("Sup_In")) bcflag = 5;         // Supersonic inflow //
-  else if (!bcname.compare("Sup_Out")) bcflag = 6;        // Supersonic outflow //
-  else if (!bcname.compare("Slip_Wall")) bcflag = 7;      // Slip wall //
-  else if (!bcname.compare("Cyclic")) bcflag = 9;
-  else if (!bcname.compare("Isotherm_Fix")) bcflag = 11;  // Isothermal, no-slip wall //
-  else if (!bcname.compare("Adiabat_Fix")) bcflag = 12;   // Adiabatic, no-slip wall //
-  else if (!bcname.compare("Isotherm_Move")) bcflag = 13; // Isothermal, no-slip moving wall //
-  else if (!bcname.compare("Adiabat_Move")) bcflag = 14;  // Adiabatic, no-slip moving wall //
-  else if (!bcname.compare("Char")) bcflag = 15;          // Characteristic //
-  else if (!bcname.compare("Slip_Wall_Dual")) bcflag = 16;// Dual consistent BC //
-  else if (!bcname.compare("AD_Wall")) bcflag = 50;       // Advection, Advection-Diffusion Boundary Conditions //
+  std::transform(bcname.begin(), bcname.end(), bcname.begin(), ::tolower);
+
+  if (!bcname.compare("sub_in_simp")) bcflag = 1;         // Subsonic inflow simple (free pressure) //
+  else if (!bcname.compare("sub_out_simp")) bcflag = 2;   // Subsonic outflow simple (fixed pressure) //
+  else if (!bcname.compare("sub_in_char")) bcflag = 3;    // Subsonic inflow characteristic //
+  else if (!bcname.compare("sub_out_char")) bcflag = 4;   // Subsonic outflow characteristic //
+  else if (!bcname.compare("sup_in")) bcflag = 5;         // Supersonic inflow //
+  else if (!bcname.compare("sup_out")) bcflag = 6;        // Supersonic outflow //
+  else if (!bcname.compare("slip_wall")) bcflag = 7;      // Slip wall //
+  else if (!bcname.compare("cyclic")) bcflag = 9;
+  else if (!bcname.compare("isotherm_fix")) bcflag = 11;  // Isothermal, no-slip wall //
+  else if (!bcname.compare("adiabat_fix")) bcflag = 12;   // Adiabatic, no-slip wall //
+  else if (!bcname.compare("isotherm_move")) bcflag = 13; // Isothermal, no-slip moving wall //
+  else if (!bcname.compare("adiabat_move")) bcflag = 14;  // Adiabatic, no-slip moving wall //
+  else if (!bcname.compare("char")) bcflag = 15;          // Characteristic //
+  else if (!bcname.compare("slip_wall_dual")) bcflag = 16;// Dual consistent BC //
+  else if (!bcname.compare("ad_wall")) bcflag = 50;       // Advection, Advection-Diffusion Boundary Conditions //
   else
   {
     cout << "Boundary = " << bcname << endl;
