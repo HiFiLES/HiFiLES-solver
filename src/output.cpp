@@ -1488,15 +1488,14 @@ void CalcNormResidual(struct solution* FlowSol) {
   }
   
 #ifdef _MPI
+  double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   if (run_input.res_norm_type == 0) {
     // Get maximum
-    double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   }
   else {
     // Get sum
     int n_upts_global = 0;
-    double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
