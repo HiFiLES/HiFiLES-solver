@@ -1461,25 +1461,48 @@ void CalcNormResidual(struct solution* FlowSol) {
     n_fields++;
   }
 
-  for(i=0; i<FlowSol->n_ele_types; i++) {
-    if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
-      FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
-      FlowSol->mesh_eles(i)->cp_src_upts_gpu_cpu();
-      n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
+  if (run_input.res_norm_type == 0) {
+    // Infinity Norm
+    for(i=0; i<FlowSol->n_ele_types; i++) {
+      if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+        FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
+        FlowSol->mesh_eles(i)->cp_src_upts_gpu_cpu();
 
-      for(j=0; j<n_fields; j++)
-        sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
+        for(j=0; j<n_fields; j++)
+          sum[j] = max(sum[j], FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j));
+      }
+    }
+  }
+  else {
+    // 1- or 2-Norm
+    for(i=0; i<FlowSol->n_ele_types; i++) {
+      if (FlowSol->mesh_eles(i)->get_n_eles() != 0) {
+        FlowSol->mesh_eles(i)->cp_div_tconf_upts_gpu_cpu();
+        FlowSol->mesh_eles(i)->cp_src_upts_gpu_cpu();
+        n_upts += FlowSol->mesh_eles(i)->get_n_eles()*FlowSol->mesh_eles(i)->get_n_upts_per_ele();
+
+        for(j=0; j<n_fields; j++)
+          sum[j] += FlowSol->mesh_eles(i)->compute_res_upts(run_input.res_norm_type, j);
+      }
     }
   }
   
 #ifdef _MPI
-  
-  int n_upts_global = 0;
-  double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  
-  n_upts = n_upts_global;
+  if (run_input.res_norm_type == 0) {
+    // Get maximum
+    double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  }
+  else {
+    // Get sum
+    int n_upts_global = 0;
+    double sum_global[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    MPI_Reduce(&n_upts, &n_upts_global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(sum, sum_global, 5, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    n_upts = n_upts_global;
+  }
+
   for(i=0; i<n_fields; i++) sum[i] = sum_global[i];
   
 #endif
@@ -1488,7 +1511,8 @@ void CalcNormResidual(struct solution* FlowSol) {
     
     // Compute the norm
     for(i=0; i<n_fields; i++) {
-      if (run_input.res_norm_type==1) { FlowSol->norm_residual(i) = sum[i] / n_upts; } // L1 norm
+      if (run_input.res_norm_type==0) { FlowSol->norm_residual(i) = sum[i]; } // Infinity Norm
+      else if (run_input.res_norm_type==1) { FlowSol->norm_residual(i) = sum[i] / n_upts; } // L1 norm
       else if (run_input.res_norm_type==2) { FlowSol->norm_residual(i) = sqrt(sum[i]) / n_upts; } // L2 norm
       else FatalError("norm_type not recognized");
       

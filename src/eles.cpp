@@ -1077,7 +1077,7 @@ void eles::AdvanceSolution(int in_step, int adv_type) {
           }
         }
       }
-      
+
 #endif
       
 #ifdef _GPU
@@ -1656,7 +1656,7 @@ void eles::calculate_corrected_divergence(int in_div_tconf_upts_to)
       cout << "ERROR: Unknown storage for opp_3 ... " << endl;
     }
 #endif
-    
+
   }
 }
 
@@ -1747,7 +1747,7 @@ void eles::calculate_gradient(int in_disu_upts_from)
     }
 #endif
   }
-  
+
   /*
    cout << "OUTPUT" << endl;
    #ifdef _GPU
@@ -3938,7 +3938,7 @@ void eles::set_opp_5(int in_sparse)
   opp_5.setup(n_dims);
   for (int i=0;i<n_dims;i++)
     opp_5(i).setup(n_upts_per_ele, n_fpts_per_ele);
-  
+
   for(i=0;i<n_dims;i++)
   {
     for(j=0;j<n_fpts_per_ele;j++)
@@ -6094,6 +6094,9 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
   for (i=0; i<n_eles; i++) {
     cell_sum=0;
     for (j=0; j<n_upts_per_ele; j++) {
+      if (in_norm_type == 0) {
+        cell_sum = max(cell_sum, abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field)));
+      }
       if (in_norm_type == 1) {
         cell_sum += abs(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
       }
@@ -6101,7 +6104,10 @@ double eles::compute_res_upts(int in_norm_type, int in_field) {
         cell_sum += (div_tconf_upts(0)(j, i, in_field)/detjac_upts(j,i)-run_input.const_src-src_upts(j,i,in_field))*(div_tconf_upts(0)(j, i, in_field)/detjac_upts(j, i)-run_input.const_src-src_upts(j,i,in_field));
       }
     }
-    sum += cell_sum;
+    if (in_norm_type==0)
+      sum = max(cell_sum,sum);
+    else
+      sum += cell_sum;
   }
   
   return sum;
