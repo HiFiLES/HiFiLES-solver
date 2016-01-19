@@ -47,6 +47,10 @@ ifeq ($(MACHINE),ENRICO)
 	OPTS    += -D_$(MACHINE)
 endif
 
+ifeq ($(MACHINE),YOSEMITESAM)
+	OPTS    += -D_$(MACHINE)
+endif
+
 # Includes
 
 OPTS    += -I include 
