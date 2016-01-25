@@ -10,7 +10,7 @@
 # HiFiLES (High Fidelity Large Eddy Simulation).
 # Copyright (C) 2013 Aerospace Computing Laboratory.
 
-import sys,time, os, subprocess, datetime, signal, os.path
+import sys,time, os, subprocess, datetime, signal, os.path, stat
 
 class testcase:
 
@@ -169,53 +169,128 @@ class testcase:
         file_out.write("EXT_ITER=%d\n"%(self.test_iter+1))
     file_out.close()
 
+
+def createConfigFile(configFileName, options, newConfigFileName, main_dir):
+    """Updates the configuration file used to compile HiFiLES.
+    
+    Inputs:
+    configFile: string; name of the reference configuration file
+    options: dictionary; each key-value pair corresponds to a configuration file variable to be modified
+    
+    Output: newConfigFileContents: array of strings with the modified variables
+    """
+    
+    # Open the reference configuration file
+    with open(os.path.join(main_dir, configFileName),'r') as configFile:
+        configFileContents = [line for line in configFile]
+    
+    # Copy the contents of the default configuration file to the new file
+    newConfigFileContents = configFileContents
+    
+    # Then modify the contents
+    currentLine = 0
+    for line in configFileContents:
+        # For each line, figure out if it corresponds to a variable-value definition
+        lineSplit = line.split('=', 1)
+        # If the returned array has two elements, it is likely a variable-value pair
+        if len(lineSplit) == 2:
+            variable = lineSplit[0]
+            # If it is indeed a variable that needs to be modified, update the new config File
+            if variable in options:
+                newConfigFileContents[currentLine] = \
+                    variable + '=' + "\"" + options[variable] + "\"\n"
+        currentLine += 1
+    
+    # Write the contents to a file
+    with open(os.path.join(main_dir, newConfigFileName),'w') as newConfigFile:
+        newConfigFile.write(''.join(newConfigFileContents))
+        os.fchmod(newConfigFile.fileno(), stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
+
+
+def main():
+    '''This program runs HiFiLES and ensures that the output matches specified values. This will be used to do nightly checks to make sure nothing is broken. '''
+
+    # Build HiFiLES_CFD using a working configure_run.sh script as reference
+    # For debuggin purposes, let us set the environment variable
+    os.environ['HIFILES_HOME'] = '/home/mlopez14/HiFiLES-solver'
+    os.environ['HIFILES_RUN'] = '/home/mlopez14/HiFiLES-solver/bin'
+  
+    # Name of the environment variable where the path to HiFiLES is stored
+    hifilesLocationVar = 'HIFILES_HOME'
+    # Name of the reference configuration script (path to MPI, CUDA, etc. must be set in the script below)
+    configFileName = 'configure_run.sh'
+
+    try:
+        main_dir = os.environ[hifilesLocationVar]
+    except:
+        print('Error: ' + hifilesLocationVar + ' is not an environment variable')
+        return
+
+
+## Specify how to modify the reference configuration file
+# The keys must match the variable that will be modified in the configuration file
+# The values must be valid variable values in the configuration file
+    confiFileOptions = dict()
+    
+    for platform in {"CPU", "GPU"}:
+        for parallel in {"YES", "NO"}:
+            confiFileOptions['NODE'] = platform
+            confiFileOptions['PARALLEL'] = parallel
+            
+            # Specify the name of the new configuration file
+            newConfigFileName = "NODE-" + confiFileOptions['NODE'] + "_" + "PARALLEL-" + \
+                                 confiFileOptions['PARALLEL'] + "-configFile.sh"
+            print(newConfigFileName)
+                # Modify the reference configuration file
+            createConfigFile(configFileName, confiFileOptions, newConfigFileName, main_dir)
+            # Execute the configuration script
+            os.system("cd " + main_dir + "; bash " + newConfigFileName)
+            # Make the executable
+            os.system("cd " + main_dir + "; make clean; make -j")
+  
+  
+            os.chdir(os.environ['HIFILES_HOME'])
+            os.chdir(os.environ['HIFILES_RUN'])
+            if not os.path.exists("./HiFiLES"):
+                print('Could not build HiFiLES in NODE: ' + platform + ' and PARALLEL: ' + parallel)
+                continue
+
+            os.chdir(os.environ['HIFILES_HOME'])
+
+   ##########################
+   ###  Compressible N-S  ###
+   ##########################
+
+            # Cylinder
+            cylinder              = testcase('cylinder')
+            cylinder.cfg_dir      = "testcases/navier-stokes/cylinder"
+            cylinder.cfg_file     = "input_cylinder_visc"
+            cylinder.test_iter    = 25
+            cylinder.test_vals    = [0.180251,  1.152697,  0.270985,  10.072776,  17.702310,  -0.097602]
+            cylinder.HiFiLES_exec = "HiFiLES"
+            cylinder.timeout      = 1600
+            cylinder.tol          = 0.00001
+            passed1               = cylinder.run_test()
+   
+            # Taylor-Green vortex
+            tgv              = testcase('tgv')
+            tgv.cfg_dir      = "testcases/navier-stokes/Taylor_Green_vortex"
+            tgv.cfg_file     = "input_TGV_SD_hex"
+            tgv.test_iter    = 25
+            tgv.test_vals    = [0.00013215,0.05076817,0.05076814,0.06456282,0.07476870,0.00000000,0.00000000,0.00000000]
+            tgv.HiFiLES_exec = "HiFiLES"
+            tgv.timeout      = 1600
+            tgv.tol          = 0.00001
+            passed2          = tgv.run_test()
+            
+            # Remove the HiFiLES binary
+            os.system('rm ' + os.environ['HIFILES_RUN'] + '/HiFiLES')
+
+    if (passed1 and passed2):
+        sys.exit(0)
+    else:
+        sys.exit(1)
+        
 if __name__=="__main__":
-  '''This program runs HiFiLES and ensures that the output matches specified values. This will be used to do nightly checks to make sure nothing is broken. '''
-
-  # Build HiFiLES_CFD in serial using the right Makefile.in
-  # Note that we are hard-coding this for enrico at the moment
-  # This will eventually be a call to the autoconf stuff
-  
-  os.chdir(os.environ['HIFILES_HOME'])
-  os.system('cp makefiles/makefile.enrico_serial.in ./makefile.in')
-  os.system('make clean')
-  os.system('make')
-  
-  os.chdir(os.environ['HIFILES_RUN'])
-  if not os.path.exists("./HiFiLES"):
-    print 'Could not build HiFiLES'
-    sys.exit(1)
-
-  os.chdir(os.environ['HIFILES_HOME'])
-
-  ##########################
-  ###  Compressible N-S  ###
-  ##########################
-
-  # Cylinder
-  cylinder              = testcase('cylinder')
-  cylinder.cfg_dir      = "testcases/navier-stokes/cylinder"
-  cylinder.cfg_file     = "input_cylinder_visc"
-  cylinder.test_iter    = 25
-  cylinder.test_vals    = [0.273009,1.178080,1.268071,15.483935,8.855743,9.092093]
-  cylinder.HiFiLES_exec = "HiFiLES"
-  cylinder.timeout      = 1600
-  cylinder.tol          = 0.00001
-  passed1               = cylinder.run_test()
-  
-  # Taylor-Green vortex
-  tgv              = testcase('tgv')
-  tgv.cfg_dir      = "testcases/navier-stokes/Taylor_Green_vortex"
-  tgv.cfg_file     = "input_TGV_SD_hex"
-  tgv.test_iter    = 25
-  tgv.test_vals    = [0.00013215,0.05076817,0.05076814,0.06456282,0.07476870,0.00000000,0.00000000,0.00000000]
-  tgv.HiFiLES_exec = "HiFiLES"
-  tgv.timeout      = 1600
-  tgv.tol          = 0.00001
-  passed2          = tgv.run_test()
-
-  if (passed1 and passed2):
-    sys.exit(0)
-  else:
-    sys.exit(1)
+    main()
 
