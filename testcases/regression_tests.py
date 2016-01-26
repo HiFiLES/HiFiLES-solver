@@ -29,10 +29,11 @@ class testcase:
 
     # These can be optionally varied 
     self.HiFiLES_dir     = "/home/fpalacios"
-    self.HiFiLES_exec    = "default" 
-    self.timeout     = 300
-    self.tol         = 0.001
-    self.outputdir   = "/home/fpalacios"
+    self.HiFiLES_exec    = "default"
+    self.mpi_cmd         = "mpirun -n 4"
+    self.timeout         = 300
+    self.tol             = 0.001
+    self.outputdir       = "/home/fpalacios"
 
   def run_test(self):
 
@@ -47,7 +48,7 @@ class testcase:
 
     # Assemble the shell command to run HiFiLES
     self.HiFiLES_exec = os.path.join("$HIFILES_RUN", self.HiFiLES_exec)
-    command_base = "%s %s > outputfile"%(self.HiFiLES_exec, self.cfg_file)
+    command_base = "%s %s %s > outputfile"%(self.mpi_cmd, self.HiFiLES_exec, self.cfg_file)
     command      = "%s"%(command_base)
 
     # Run HiFiLES
@@ -211,9 +212,10 @@ def main():
     '''This program runs HiFiLES and ensures that the output matches specified values. This will be used to do nightly checks to make sure nothing is broken. '''
 
     # Build HiFiLES_CFD using a working configure_run.sh script as reference
-    # For debuggin purposes, let us set the environment variable
-    os.environ['HIFILES_HOME'] = '/home/mlopez14/HiFiLES-solver'
-    os.environ['HIFILES_RUN'] = '/home/mlopez14/HiFiLES-solver/bin'
+    # For debugging purposes, uncomment the two lines below to hard-code the environment variables
+    # HIFILES_HOME (location of the main git directory) and HIFILES_RUN (location where the HiFiLES executable is
+    # os.environ['HIFILES_HOME'] = '/home/mlopez14/HiFiLES-solver'
+    # os.environ['HIFILES_RUN'] = '/home/mlopez14/HiFiLES-solver/bin'
   
     # Name of the environment variable where the path to HiFiLES is stored
     hifilesLocationVar = 'HIFILES_HOME'
@@ -225,15 +227,21 @@ def main():
     except:
         print('Error: ' + hifilesLocationVar + ' is not an environment variable')
         return
+    # Go to HiFiLES's main directory
+    os.chdir(os.environ['HIFILES_HOME'])
 
-
-## Specify how to modify the reference configuration file
-# The keys must match the variable that will be modified in the configuration file
-# The values must be valid variable values in the configuration file
+    # Loop through all possible configurations: serial or not, CPU or GPU
     confiFileOptions = dict()
-    
+    testReport = dict() # Where the results of whether or not a test passes will be recorded
     for platform in {"CPU", "GPU"}:
         for parallel in {"YES", "NO"}:
+            
+            # Remove the HiFiLES binary and previous makefiles
+            os.system('rm ' + os.environ['HIFILES_RUN'] + '/HiFiLES')
+            os.system('rm Makefile')
+            
+            testName = platform + "_Parralel_" + parallel
+            testResults = [] # This array will store a 1 or 0 for every test
             confiFileOptions['NODE'] = platform
             confiFileOptions['PARALLEL'] = parallel
             
@@ -243,20 +251,29 @@ def main():
             print(newConfigFileName)
                 # Modify the reference configuration file
             createConfigFile(configFileName, confiFileOptions, newConfigFileName, main_dir)
+
             # Execute the configuration script
             os.system("cd " + main_dir + "; bash " + newConfigFileName)
+            
+            if not os.path.exists("Makefile"):
+                print('Could not configure HiFiLES in NODE: ' + platform + ' and PARALLEL: ' + parallel)
+                continue
+            
             # Make the executable
             os.system("cd " + main_dir + "; make clean; make -j")
-  
-  
-            os.chdir(os.environ['HIFILES_HOME'])
-            os.chdir(os.environ['HIFILES_RUN'])
-            if not os.path.exists("./HiFiLES"):
+            
+            if not os.path.exists(os.environ['HIFILES_RUN'] + "/HiFiLES"):
                 print('Could not build HiFiLES in NODE: ' + platform + ' and PARALLEL: ' + parallel)
                 continue
 
-            os.chdir(os.environ['HIFILES_HOME'])
-
+            if parallel == "NO":
+                mpi_command = ""
+            else:
+                if platform == "CPU":
+                    mpi_command = "mpirun -n 4"
+                else:
+                    mpi_command = "mpirun -n 4 -machinefile mfile"
+                
    ##########################
    ###  Compressible N-S  ###
    ##########################
@@ -270,7 +287,8 @@ def main():
             cylinder.HiFiLES_exec = "HiFiLES"
             cylinder.timeout      = 1600
             cylinder.tol          = 0.00001
-            passed1               = cylinder.run_test()
+            cylinder.mpi_cmd      = mpi_command;
+            testResults.append( cylinder.run_test() )
    
             # Taylor-Green vortex
             tgv              = testcase('tgv')
@@ -281,15 +299,13 @@ def main():
             tgv.HiFiLES_exec = "HiFiLES"
             tgv.timeout      = 1600
             tgv.tol          = 0.00001
-            passed2          = tgv.run_test()
+            tgv.mpi_cmd      = mpi_command;
+            testResults.append( tgv.run_test() )
             
-            # Remove the HiFiLES binary
-            os.system('rm ' + os.environ['HIFILES_RUN'] + '/HiFiLES')
+            # Store the test results
+            testReport[testName] = testResults
 
-    if (passed1 and passed2):
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    print(testReport)
         
 if __name__=="__main__":
     main()
