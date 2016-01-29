@@ -52,7 +52,9 @@ class testcase:
     command      = "%s"%(command_base)
 
     # Run HiFiLES
-    os.chdir(os.path.join('./',self.cfg_dir)) 
+    cur_dir = os.path.join('./',self.cfg_dir) 
+    os.chdir(cur_dir)
+    os.system('cp $HIFILES_HOME/bin/mfile .')
     start   = datetime.datetime.now()
     print("\nPath at terminal when executing this file")
     print(command)
@@ -182,8 +184,11 @@ def createConfigFile(configFileName, options, newConfigFileName, main_dir):
     """
     
     # Open the reference configuration file
-    with open(os.path.join(main_dir, configFileName),'r') as configFile:
+    configFile = open(os.path.join(main_dir, configFileName),'r')
+    try:
         configFileContents = [line for line in configFile]
+    finally:
+	configFile.close()
     
     # Copy the contents of the default configuration file to the new file
     newConfigFileContents = configFileContents
@@ -203,10 +208,12 @@ def createConfigFile(configFileName, options, newConfigFileName, main_dir):
         currentLine += 1
     
     # Write the contents to a file
-    with open(os.path.join(main_dir, newConfigFileName),'w') as newConfigFile:
+    newConfigFile = open(os.path.join(main_dir, newConfigFileName),'w')
+    try:
         newConfigFile.write(''.join(newConfigFileContents))
-        os.fchmod(newConfigFile.fileno(), stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
-
+	os.chmod(newConfigFile.name, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
+    finally:
+	newConfigFile.close()
 
 def main():
     '''This program runs HiFiLES and ensures that the output matches specified values. This will be used to do nightly checks to make sure nothing is broken. '''
@@ -215,7 +222,7 @@ def main():
     # For debugging purposes, uncomment the two lines below to hard-code the environment variables
     # HIFILES_HOME (location of the main git directory) and HIFILES_RUN (location where the HiFiLES executable is
     # os.environ['HIFILES_HOME'] = '/home/mlopez14/HiFiLES-solver'
-    # os.environ['HIFILES_RUN'] = '/home/mlopez14/HiFiLES-solver/bin'
+    os.environ['HIFILES_RUN'] = os.environ['HIFILES_HOME'] + '/bin' 
   
     # Name of the environment variable where the path to HiFiLES is stored
     hifilesLocationVar = 'HIFILES_HOME'
@@ -233,8 +240,9 @@ def main():
     # Loop through all possible configurations: serial or not, CPU or GPU
     confiFileOptions = dict()
     testReport = dict() # Where the results of whether or not a test passes will be recorded
-    for platform in {"CPU", "GPU"}:
-        for parallel in {"YES", "NO"}:
+    
+    for platform in ["GPU","CPU"]: 
+        for parallel in ["YES","NO"]:
             
             # Remove the HiFiLES binary and previous makefiles
             os.system('rm ' + os.environ['HIFILES_RUN'] + '/HiFiLES')
@@ -261,6 +269,7 @@ def main():
             
             # Make the executable
             os.system("cd " + main_dir + "; make clean; make -j")
+            #os.system("cd " + main_dir + "; make -j")
             
             if not os.path.exists(os.environ['HIFILES_RUN'] + "/HiFiLES"):
                 print('Could not build HiFiLES in NODE: ' + platform + ' and PARALLEL: ' + parallel)
@@ -269,10 +278,7 @@ def main():
             if parallel == "NO":
                 mpi_command = ""
             else:
-                if platform == "CPU":
-                    mpi_command = "mpirun -n 4"
-                else:
-                    mpi_command = "mpirun -n 4 -machinefile mfile"
+                mpi_command = "mpirun -n 4 -machinefile mfile"
                 
    ##########################
    ###  Compressible N-S  ###
