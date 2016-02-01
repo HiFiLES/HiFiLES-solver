@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4  
 '''
-Generates an machinefile containing all nodes that are being used below a given threshold
+Tools for generating an machinefile containing all nodes that are being used below a given threshold
 This file can be used with mpi.
 '''
-import os, subprocess, decimal
+import subprocess # to get cluster information with ganglia
+import decimal # to convert string to float
 
 def getFreeNodes(thresholdUsage):
 # Checks for the currently running processes
@@ -25,11 +26,10 @@ def getFreeNodes(thresholdUsage):
     freeNodes.sort()
     return freeNodes
 
-def printMachineFile(fileName, thresholdUsage, nRepeats):
+def printMachineFile(fileName, freeNodes, nRepeats):
 # Creates a machine file with name fileName usable by mpi with the names of the nodes
-# whose usage is below thresholdUsage. Each name is repeated nRepeats
+# in freeNodes. Each name is repeated nRepeats
 # times
-    freeNodes = getFreeNodes(thresholdUsage)
     file = open(fileName, 'w')
     try:
         for node in freeNodes:
@@ -40,7 +40,8 @@ def printMachineFile(fileName, thresholdUsage, nRepeats):
 
 
 def main():
-    printMachineFile("mfile", 10, 2)
+    freeNodes = ['compute-0-0', 'compute-0-1']
+    printMachineFile("mfile", freeNodes, 2)
 
 
 if __name__ == "__main__": 
