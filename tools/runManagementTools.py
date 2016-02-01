@@ -5,22 +5,27 @@ Tools for running HiFiLES cases automatically
 '''
 
 import os
-from inputFileTools import createInputFile # used to create input files
-from machinefileTools import printMachineFile, getFreeNodes
 
+# Importing modules from 'tools' folder
+from inputFileTools import createInputFile # used to create input files
+from machinefileTools import printMachineFile, getFreeNodes # used to create machinefile files
+
+def product(*args, **kwds):
+    # From https://docs.python.org/2/library/itertools.html#itertools.product
+    # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
+    # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
+    pools = map(tuple, args) * kwds.get('repeat', 1)
+    result = [[]]
+    for pool in pools:
+        result = [x+[y] for x in result for y in pool]
+    for prod in result:
+        yield tuple(prod)
 
 def setupRunFolder(curFolder, execName, referenceFolder):
 # Creates a folder with name caseName containing:
 # HiFiLES executable
 # pre-processed geometry matrices (.HiFiLES.bin files) from a reference folder
-    """   
-    Inputs:
-    caseName: string; name of the new folder where all the data needed for the run will be stored
-    homeFolder: full path of main directory of HiFiLES; executable is assumbed to be in $homeFolder/bin
-    referenceFolder: full path of folder that contains the pre-processed geometry files of a reference run: must have same mesh as current run
-    options: dict; each key corresponds to a variable in the input file that will be modified with its corresponding value
-    """
-    
+
     # Copy HiFiLES executable to current folder
     if os.system('cp ' + execName + ' ' + curFolder) != 0:
         raise (execName + ' does not exist')
@@ -29,7 +34,38 @@ def setupRunFolder(curFolder, execName, referenceFolder):
     if os.system('cp ' + os.path.join(referenceFolder, '*.HiFiLES.bin' + ' ' + curFolder)) != 0:
         raise ('Binary matrix files could not be copied from ' + referenceFolder + ' to ' + curFolder)
     
+def assembleRuns(runs):
+# Creates an array of dictionaries that can be readily used to create input files with the createInputFile function
+    """
+    Inputs: 
+    runs: dictionary with variables to be modified as keys, and arrays of corresponding entries as values
+    Output:
+    runOptions: array of dictionaries
+    """
     
+    # Get all keys and values for the dictionary
+    keys = [item for singleRun in runs for item in singleRun[0]]
+    values = [singleRun[1] for singleRun in runs]
+        
+    
+    # Generate all possible cases
+    cases = list(product(*values)) # finds all combinations of the desired inputs; equivalent to list(itertols.product(*values)) in Python 2.6+
+    
+    # Understand which variables are modified together
+    varList = [run[0] for run in runs]
+    # Stores the index of varList where the key is found
+    # keyLocation[i] = j means that keys[i] is in runs[j][0]
+    keyLocation = [index for key in keys for (index,vars) in enumerate(varList) if key in vars]
+
+    # Assemble the cases
+    runOptions = []
+    for case in cases:
+        # ensure that fullCase[i] = case[keyLocation[i]] to enable the creation of the dictionary
+        fullCase = [case[i] for i in keyLocation]
+        runOptions.append( dict( zip(keys, fullCase) ) )
+        
+    return runOptions
+
 
 def main():
     options = dict()
@@ -65,11 +101,31 @@ def main():
 #     freeNodes = getFreeNodes(50)
     freeNodes = ['compute-0-0', 'compute-0-1']
     
-    printMachineFile(mfileName, freeNodes, 2)
+#     printMachineFile(mfileName, freeNodes, 2)
+#     
+#     createInputFile(referenceInputFile, newInputFile, options)
+#     
+#     setupRunFolder(newFolder, execName, referenceFolder)
+
+
+
+    runs = []
+    # Create list of variable ranges desired
+    runs.append( (['viscous'], [0]) )
+    runs.append( (['dt'], [1e-5]) )
+    runs.append( (['order'], [2]) )
+    runs.append( (['plot_freq'], [0]) )
+    runs.append( (['Mach_free_stream', 'Mach_c_ic'], [0.1, 0.2]) )
+    runs.append( (['Re_free_stream', 'Re_free_stream'], [200, 300]) )
+
+    runOptions = assembleRuns(runs)
     
-    createInputFile(referenceInputFile, newInputFile, options)
+    # Generate all input files necessary
+    for (index, options) in enumerate(runOptions):
+        newInputFile = os.path.join(newFolder, 'input_file_' + caseName + '_' + str(index))
+        createInputFile(referenceInputFile, newInputFile, options)
     
-    setupRunFolder(newFolder, execName, referenceFolder)
+    print runOptions
 
 
 if __name__ == "__main__": 
