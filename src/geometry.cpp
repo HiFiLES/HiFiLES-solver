@@ -283,12 +283,10 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
   if (FlowSol->rank==0) cout << "initializing elements" << endl;
 
   for (int i = 0; i < FlowSol->n_ele_types; i++) { // loop through all elements
-//      if (FlowSol->mesh_eles(i)->get_n_eles() != 0) { // skip those not in the mesh
-          if (FlowSol->rank==0) cout << FlowSol->mesh_eles(i)->get_name() << endl;
+    if (FlowSol->rank==0) cout << FlowSol->mesh_eles(i)->get_name() << endl;
 
-          FlowSol->mesh_eles(i)->setup(temp_num_eles[i], max_n_spts(i));
-//        }
-    }
+    FlowSol->mesh_eles(i)->setup(temp_num_eles[i], max_n_spts(i));
+  }
   if (FlowSol->rank==0) cout << "done initializing elements" << endl;
 
   // Set shape for each cell
