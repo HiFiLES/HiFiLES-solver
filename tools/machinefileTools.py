@@ -24,6 +24,7 @@ def getFreeNodes(thresholdUsage):
             if "compute-" in node and usage <= thresholdUsage:
                 freeNodes.append(node)
     freeNodes.sort()
+    print(freeNodes)
     return freeNodes
 
 def printMachineFile(fileName, freeNodes, nRepeats):

@@ -33,8 +33,9 @@ def setupRunFolder(curFolder, execName, referenceFolder):
         raise (execName + ' does not exist')
     
     # Copy binary matrix files for this case from the reference folder
-    if os.system('cp ' + os.path.join(referenceFolder, '*.HiFiLES.bin') + ' ' + curFolder) != 0:
-        raise ('Binary matrix files could not be copied from ' + referenceFolder + ' to ' + curFolder)
+    if referenceFolder != '':
+        if os.system('cp ' + os.path.join(referenceFolder, '*.HiFiLES.bin') + ' ' + curFolder) != 0:
+             print('Binary matrix files could not be copied from ' + referenceFolder + ' to ' + curFolder)
     
     # Copy meshes from reference folder
     os.system('cp ' + os.path.join(referenceFolder, '*.msh') + ' ' + curFolder)
@@ -89,10 +90,10 @@ def main():
     casePrefix = 'newRuns'
     
     # Specify paths to folders and files
-    os.environ['HIFILES_HOME'] = '/home/mlopez14/HiFiLES-solver'
+#    os.environ['HIFILES_HOME'] = '/home/mlopez14/HiFiLES-solver'
     homeFolder = os.environ['HIFILES_HOME']
-    referenceFolder = os.path.join(homeFolder, 'bin', 'sense')
-    referenceInputFile = os.path.join(homeFolder, 'testcases', 'navier-stokes', 'cylinder', 'input_cylinder_visc')
+    referenceFolder = os.path.join(homeFolder, 'testcases', 'navier-stokes', 'cylinder')
+    referenceInputFile = os.path.join(referenceFolder, 'input_cylinder_visc')
     execName = os.path.join(homeFolder, 'bin', 'HiFiLES')
     
     
@@ -101,6 +102,7 @@ def main():
     caseFileName = os.path.join(caseFolder, casePrefix + '_case_file')
     
     # Write configuration for the runs in the case file
+    os.system('mkdir -p ' + caseFolder)
     caseFile = open(caseFileName, 'a')
     try:
         caseFile.write('homeFolder=' + homeFolder + '\n')
@@ -115,23 +117,29 @@ def main():
     runs.append( (['viscous'], [1]) )
     runs.append( (['dt'], [1e-5]) )
     runs.append( (['order'], [3]) )
+    runs.append( (['n_steps'], [1e5]) )
     runs.append( (['plot_freq'], [1e8]) )
     runs.append( (['Mach_free_stream', 'Mach_c_ic'], [0.21, 0.2]) )
     runs.append( (['Re_free_stream', 'Re_c_ic'], [20, 21]) )
 
     runOptions = assembleRuns(runs)
-    
+    newFolder = ''
+    oldFreeNodes = [''] 
     # Generate all input files necessary
     for (index, options) in enumerate(runOptions):
+        
+        if index == 2:     # set the first run as the reference run
+            referenceFolder = newFolder
         
         # Pause runs while processors become free
         while True:
         # Gather free nodes
             # freeNodes = ['compute-0-0', 'compute-0-1']
-            freeNodes = getFreeNodes(50)
+            freeNodes = getFreeNodes(0.30)
         
             # Check if the number of free nodes is greater than the number of requested nodes
-            if len(freeNodes) < numNodesPerCase:
+            # or if there has been no change in the number of free nodes
+            if len(freeNodes) < numNodesPerCase or freeNodes == oldFreeNodes:
                 time.sleep(5)
             else:
                 caseFile = open(caseFileName, 'a')
@@ -142,7 +150,8 @@ def main():
                 break
 
         newFolder = os.path.join(caseFolder, str(index))
-    
+        oldFreeNodes = freeNodes
+ 
         os.system('mkdir -p ' + newFolder)
         
         newInputFile = os.path.join(newFolder, 'input_file' )
@@ -154,7 +163,8 @@ def main():
         setupRunFolder(newFolder, execName, referenceFolder)
         
         # Run the case
-        command = 'mpirun -n ' + str(numNodesPerCase) + ' -machinefile ' + mfileName + ' ' + execName + ' ' + newInputFile + ' > HiFiLES.out'
+        os.chdir(newFolder)
+        command = 'mpirun -n ' + str(numNodesPerCase) + ' -machinefile ' + mfileName + ' ' + execName + ' ' + newInputFile + ' > HiFiLES.out&'
         os.system(command)
         print('Executed: ' + command)
 
