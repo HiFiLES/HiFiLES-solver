@@ -127,8 +127,8 @@ def main():
         # Pause runs while processors become free
         while True:
         # Gather free nodes
-            freeNodes = ['compute-0-0', 'compute-0-1']
-            # freeNodes = getFreeNodes(50)
+            # freeNodes = ['compute-0-0', 'compute-0-1']
+            freeNodes = getFreeNodes(50)
         
             # Check if the number of free nodes is greater than the number of requested nodes
             if len(freeNodes) < numNodesPerCase:
@@ -152,6 +152,11 @@ def main():
         printMachineFile(mfileName, freeNodes, 2)
         
         setupRunFolder(newFolder, execName, referenceFolder)
+        
+        # Run the case
+        command = 'mpirun -n ' + str(numNodesPerCase) + ' -machinefile ' + mfileName + ' ' + execName + ' ' + newInputFile + ' > HiFiLES.out'
+        os.system(command)
+        print('Executed: ' + command)
 
 
 if __name__ == "__main__": 
