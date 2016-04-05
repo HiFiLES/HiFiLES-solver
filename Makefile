@@ -66,7 +66,7 @@ endif
 ifeq ($(PARALLEL),MPI)
 	OPTS += -I $(MPI_DIR)/include
 	OPTS += -I $(PARMETIS_DIR)/include
-	OPTS += -I $(PARMETIS_DIR)/metis/include
+	OPTS += -I $(METIS_DIR)/include
 endif
 
 ifeq ($(CODE),DEBUG)
@@ -139,7 +139,7 @@ endif
 
 ifeq ($(PARALLEL),MPI)
 	OBJS += $(OBJ)mpi_inters.o
-	OBJS += $(PARMETIS_BUILD_DIR)/libparmetis.a $(PARMETIS_BUILD_DIR)/libmetis.a
+	OBJS += $(PARMETIS_BUILD_DIR)/libparmetis.a $(METIS_BUILD_DIR)/libmetis.a
 endif
 	
 ifeq ($(TECIO),YES)
@@ -259,3 +259,11 @@ endif
 
 clean: 
 	rm $(BIN)HiFiLES $(OBJ)*.o
+
+install: default
+	mkdir -p ${PREFIX}/bin ${PREFIX}/data
+	cp -f $(BIN)HiFiLES ${PREFIX}/bin
+	chmod 755 ${PREFIX}/bin/HiFiLES
+	cp -f data/*.dat ${PREFIX}/data
+	chmod 644 ${PREFIX}/data/*.dat
+

@@ -2235,8 +2235,8 @@ void repartition_mesh(int &out_n_cells, array<int> &out_c2v, array<int> &out_c2n
 
   int nparts = FlowSol->nproc;
 
-  float *tpwgts = (float*) calloc(klocal,sizeof(float));
-  for (int i=0;i<klocal;i++)
+  float *tpwgts = (float*) calloc(nparts,sizeof(float));
+  for (int i=0;i<nparts;i++)
     tpwgts[i] = 1./ (float)FlowSol->nproc;
 
   float *ubvec = (float*) calloc(ncon,sizeof(float));
